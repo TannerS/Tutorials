@@ -1,12 +1,17 @@
-import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef, useContext, createContext, memo } from 'react';
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  createContext,
+  useContext,
+  memo,
+} from 'react';
 
-const LogContext = createContext(null);
-
-function timestamp() {
-  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
-}
-
-const LOG_COLORS = {
+/* ─── colour palette ─── */
+const COLORS = {
   render:  '#22d3ee',
   mount:   '#4ade80',
   update:  '#5b9cf6',
@@ -15,28 +20,148 @@ const LOG_COLORS = {
   cleanup: '#f87171',
 };
 
-const LogPanel = memo(function LogPanel({ logs }) {
+const LEGEND = [
+  { emoji: '🔄', label: 'Render',  color: COLORS.render  },
+  { emoji: '✅', label: 'Mount',   color: COLORS.mount   },
+  { emoji: '📦', label: 'Update',  color: COLORS.update  },
+  { emoji: '📐', label: 'Layout',  color: COLORS.layout  },
+  { emoji: '🧮', label: 'Memo',    color: COLORS.memo    },
+  { emoji: '🧹', label: 'Cleanup', color: COLORS.cleanup },
+];
+
+const MAX_LOG = 200;
+
+/* ─── context ─── */
+const LogContext = createContext(null);
+
+function colorFor(msg) {
+  if (msg.startsWith('🧹')) return COLORS.cleanup;
+  if (msg.startsWith('📐')) return COLORS.layout;
+  if (msg.startsWith('✅')) return COLORS.mount;
+  if (msg.startsWith('📦')) return COLORS.update;
+  if (msg.startsWith('🧮')) return COLORS.memo;
+  return COLORS.render;
+}
+
+function ts() {
+  const d = new Date();
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const pad3 = (n) => String(n).padStart(3, '0');
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}.${pad3(d.getMilliseconds())}`;
+}
+
+/* ────────────────────────────────────────────
+   ChildDemo
+   ──────────────────────────────────────────── */
+function ChildDemo({ label, value }) {
+  const log = useContext(LogContext);
+  const renderCount = useRef(0);
+  const [name, setName] = useState('');
+
+  renderCount.current += 1;
+  log(`🔄 ${label}: Render phase (prop: ${value}, renders: ${renderCount.current})`);
+
+  const computed = useMemo(() => {
+    log(`🧮 ${label}: useMemo computed (value × 2)`);
+    return value * 2;
+  }, [value, label, log]);
+
+  useEffect(() => {
+    log(`✅ ${label}: useEffect [mounted]`, true);
+    return () => log(`🧹 ${label}: cleanup [unmounting]`, true);
+  }, [label, log]);
+
+  useEffect(() => {
+    log(`📦 ${label}: useEffect [prop changed → ${value}]`, true);
+    return () => log(`🧹 ${label}: cleanup [prop effect]`, true);
+  }, [value, label, log]);
+
+  useLayoutEffect(() => {
+    log(`📐 ${label}: useLayoutEffect`, true);
+    return () => log(`🧹 ${label}: layoutEffect cleanup`, true);
+  }, [label, log]);
+
+  return (
+    <div style={styles.childCard}>
+      <div style={styles.childHeader}>{label}</div>
+      <p style={styles.childText}>
+        Prop value: <strong style={{ color: COLORS.update }}>{value}</strong>
+        {' · '}Computed: <strong style={{ color: COLORS.memo }}>{computed}</strong>
+        {' · '}Renders: <strong style={{ color: COLORS.render }}>{renderCount.current}</strong>
+      </p>
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <label style={{ fontSize: '0.8rem', color: '#8b8fa3' }}>Local state:</label>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="type here…"
+          style={styles.input}
+        />
+        {name && <span style={{ color: '#e4e6f0', fontSize: '0.85rem' }}>→ {name}</span>}
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────
+   ParentDemo
+   ──────────────────────────────────────────── */
+function ParentDemo({ childMounted, childProp, secondChildMounted, count, log }) {
+  log(`🔄 Parent: Render phase (count: ${count})`);
+
+  useEffect(() => {
+    log('✅ Parent: useEffect [mounted]', true);
+    return () => log('🧹 Parent: cleanup [unmounting]', true);
+  }, [log]);
+
+  useEffect(() => {
+    log(`📦 Parent: useEffect [count changed → ${count}]`, true);
+    return () => log('🧹 Parent: cleanup [count effect]', true);
+  }, [count, log]);
+
+  useLayoutEffect(() => {
+    log('📐 Parent: useLayoutEffect [layout measured]', true);
+    return () => log('🧹 Parent: layoutEffect cleanup', true);
+  }, [log]);
+
+  return (
+    <div style={styles.parentCard}>
+      <div style={styles.parentHeader}>
+        Parent Component <span style={{ color: COLORS.render }}>count = {count}</span>
+      </div>
+      {childMounted && <ChildDemo label="Child A" value={childProp} />}
+      {secondChildMounted && <ChildDemo label="Child B" value={childProp + 10} />}
+      {!childMounted && !secondChildMounted && (
+        <p style={{ color: '#555b72', fontStyle: 'italic', margin: '1rem 0' }}>
+          No children mounted — click "Mount Child" to begin.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────
+   LogPanel
+   ──────────────────────────────────────────── */
+const LogPanel = memo(function LogPanel({ entries }) {
   const endRef = useRef(null);
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
+  }, [entries.length]);
+
   return (
-    <div style={{
-      flex: 1, background: '#0f1117', borderRadius: '8px',
-      border: '1px solid #2a2e42', overflow: 'hidden',
-      display: 'flex', flexDirection: 'column',
-    }}>
-      <div style={{
-        padding: '0.5rem 0.75rem', background: '#161822',
-        borderBottom: '1px solid #2a2e42', fontSize: '0.75rem',
-        color: '#9399b2', fontWeight: 600,
-      }}>Event Log ({logs.length})</div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem', fontFamily: "'JetBrains Mono', monospace", fontSize: '0.72rem' }}>
-        {logs.map((log, i) => (
-          <div key={i} style={{ color: LOG_COLORS[log.type] || '#e4e6f0', marginBottom: '2px', lineHeight: 1.4 }}>
-            <span style={{ color: '#6c7293' }}>[{log.time}] </span>
-            <span style={{ color: '#9399b2' }}>{log.component} </span>
-            {log.message}
+    <div style={styles.logPanel}>
+      <div style={styles.logHeader}>📋 Event Log ({entries.length})</div>
+      <div style={styles.logScroll}>
+        {entries.length === 0 && (
+          <p style={{ color: '#555b72', textAlign: 'center', padding: '2rem 0' }}>
+            Interact with the controls to see lifecycle events…
+          </p>
+        )}
+        {entries.map((e, i) => (
+          <div key={i} style={{ ...styles.logEntry, color: e.color }}>
+            <span style={styles.logTs}>{e.time}</span> {e.msg}
           </div>
         ))}
         <div ref={endRef} />
@@ -45,183 +170,295 @@ const LogPanel = memo(function LogPanel({ logs }) {
   );
 });
 
-function ChildDemo({ value, label }) {
-  const pushLog = useContext(LogContext);
-  const [input, setInput] = useState('');
-
-  pushLog({ type: 'render', component: label, message: `render (value=${value})` });
-
-  useLayoutEffect(() => {
-    pushLog({ type: 'layout', component: label, message: 'useLayoutEffect fired' });
-    return () => pushLog({ type: 'cleanup', component: label, message: 'useLayoutEffect cleanup' });
-  }, [value]);
-
-  useEffect(() => {
-    pushLog({ type: 'mount', component: label, message: 'mounted (useEffect [])' });
-    return () => pushLog({ type: 'cleanup', component: label, message: 'unmounted (cleanup)' });
-  }, []);
-
-  useEffect(() => {
-    pushLog({ type: 'update', component: label, message: `value changed → ${value}` });
-  }, [value]);
-
-  const derived = useMemo(() => {
-    pushLog({ type: 'memo', component: label, message: `useMemo recalculated: value*2=${value * 2}` });
-    return value * 2;
-  }, [value]);
-
-  return (
-    <div style={{
-      background: '#1a1d2e', border: '1px solid #2a2e42',
-      borderRadius: '8px', padding: '0.75rem', marginBottom: '0.5rem',
-    }}>
-      <div style={{ fontSize: '0.75rem', color: '#5b9cf6', fontWeight: 600, marginBottom: '0.5rem' }}>
-        {label} (value={value}, derived={derived})
-      </div>
-      <input
-        value={input}
-        onChange={e => setInput(e.target.value)}
-        placeholder="Type to trigger re-render..."
-        style={{
-          background: '#252a3f', border: '1px solid #2a2e42', borderRadius: '4px',
-          padding: '4px 8px', color: '#e4e6f0', fontSize: '0.75rem',
-          fontFamily: 'inherit', width: '100%', outline: 'none',
-        }}
-      />
-    </div>
-  );
-}
-
-function ParentDemo({ childProp }) {
-  const pushLog = useContext(LogContext);
-  const [count, setCount] = useState(0);
-  const [, setForce] = useState(0);
-
-  pushLog({ type: 'render', component: 'Parent', message: `render (count=${count}, childProp=${childProp})` });
-
-  useLayoutEffect(() => {
-    pushLog({ type: 'layout', component: 'Parent', message: 'useLayoutEffect fired' });
-  }, [count]);
-
-  useEffect(() => {
-    pushLog({ type: 'mount', component: 'Parent', message: 'mounted' });
-    return () => pushLog({ type: 'cleanup', component: 'Parent', message: 'unmounted' });
-  }, []);
-
-  useEffect(() => {
-    pushLog({ type: 'update', component: 'Parent', message: `count changed → ${count}` });
-  }, [count]);
-
-  const handleIncrement = useCallback(() => {
-    setCount(c => c + 1);
-  }, []);
-
-  return (
-    <div style={{
-      background: '#161822', border: '1px solid #2a2e42',
-      borderRadius: '8px', padding: '0.75rem',
-    }}>
-      <div style={{ fontSize: '0.75rem', color: '#a78bfa', fontWeight: 600, marginBottom: '0.5rem' }}>
-        Parent (count={count})
-      </div>
-      <button onClick={handleIncrement} style={btnStyle('#a78bfa')}>+ Increment Count</button>
-      <button onClick={() => setForce(f => f + 1)} style={btnStyle('#22d3ee')}>⚡ Force Re-render</button>
-    </div>
-  );
-}
-
-function btnStyle(color) {
-  return {
-    background: `${color}20`, border: `1px solid ${color}`,
-    color, borderRadius: '4px', padding: '4px 10px',
-    cursor: 'pointer', fontSize: '0.72rem', margin: '2px',
-    fontFamily: 'inherit', transition: 'background 0.15s',
-  };
-}
-
+/* ────────────────────────────────────────────
+   LifecycleSimulator  (default export)
+   ──────────────────────────────────────────── */
 export default function LifecycleSimulator() {
-  const [logs, setLogs] = useState([]);
-  const [showChildA, setShowChildA] = useState(true);
-  const [showChildB, setShowChildB] = useState(false);
-  const [childProp, setChildProp] = useState(0);
-  const pendingRef = useRef([]);
-  const flushRef = useRef(null);
+  const [childMounted, setChildMounted] = useState(false);
+  const [secondChild, setSecondChild] = useState(false);
+  const [count, setCount] = useState(0);
+  const [childProp, setChildProp] = useState(1);
+  const [, setTick] = useState(0);
 
-  const pushLog = useCallback((entry) => {
-    const logEntry = { ...entry, time: timestamp() };
-    console.log(`[${logEntry.time}] ${logEntry.component}: ${logEntry.message}`);
-    pendingRef.current.push(logEntry);
-    if (!flushRef.current) {
-      flushRef.current = setTimeout(() => {
-        setLogs(prev => {
-          const next = [...prev, ...pendingRef.current].slice(-200);
-          pendingRef.current = [];
-          flushRef.current = null;
-          return next;
-        });
-      }, 50);
-    }
+  const logRef = useRef([]);
+
+  const pushLog = useCallback((msg, flush = false) => {
+    const entry = { time: ts(), msg, color: colorFor(msg) };
+    logRef.current = [...logRef.current.slice(-(MAX_LOG - 1)), entry];
+    console.log(`[Lifecycle] ${entry.time}  ${msg}`);
+    // Only trigger a re-render when flush=true (effects & handlers).
+    // Render-phase calls (default) just write to the ref — the next
+    // committed render will pick them up, avoiding an infinite loop.
+    if (flush) setTick((t) => t + 1);
   }, []);
+
+  /* ─── button handlers ─── */
+  const handleMount = () => {
+    if (childMounted) return;
+    pushLog('── 🟢 Action: Mount Child ──');
+    setChildMounted(true);
+  };
+  const handleUnmount = () => {
+    if (!childMounted) return;
+    pushLog('── 🔴 Action: Unmount Child ──');
+    setChildMounted(false);
+  };
+  const handleParentUpdate = () => {
+    pushLog('── 🟡 Action: Update Parent State ──');
+    setCount((c) => c + 1);
+  };
+  const handleChildProp = () => {
+    pushLog('── 🔵 Action: Update Child Props ──');
+    setChildProp((p) => p + 1);
+  };
+  const handleForce = () => {
+    pushLog('── ⚡ Action: Force Re-render ──');
+    setTick((t) => t + 1);
+    setCount((c) => c); // identity update still triggers render in dev mode
+  };
+  const handleClear = () => {
+    logRef.current = [];
+    setTick((t) => t + 1);
+  };
+  const handleToggleSecond = () => {
+    pushLog(`── ${secondChild ? '🔴' : '🟢'} Action: Toggle Second Child ──`);
+    setSecondChild((s) => !s);
+  };
+
+  const buttons = [
+    { label: '🟢 Mount Child',       onClick: handleMount,        disabled: childMounted },
+    { label: '🔴 Unmount Child',     onClick: handleUnmount,      disabled: !childMounted },
+    { label: '🟡 Update Parent',     onClick: handleParentUpdate                          },
+    { label: '🔵 Update Child Props', onClick: handleChildProp                            },
+    { label: '⚡ Force Re-render',   onClick: handleForce                                 },
+    { label: '👥 Toggle 2nd Child',  onClick: handleToggleSecond                          },
+    { label: '🗑️ Clear Log',         onClick: handleClear                                 },
+  ];
 
   return (
     <LogContext.Provider value={pushLog}>
-      <div style={{
-        background: '#12141e', borderRadius: '12px',
-        border: '1px solid #2a2e42', overflow: 'hidden', margin: '1.5rem 0',
-      }}>
-        {/* Header */}
-        <div style={{
-          background: '#1a1d2e', padding: '0.75rem 1rem',
-          borderBottom: '1px solid #2a2e42',
-          display: 'flex', alignItems: 'center', gap: '0.5rem',
-        }}>
-          <span style={{ fontSize: '1rem' }}>⚛️</span>
-          <span style={{ fontWeight: 600, color: '#22d3ee', fontSize: '0.9rem' }}>React Lifecycle Simulator</span>
-          <span style={{ fontSize: '0.75rem', color: '#6c7293', marginLeft: 'auto' }}>Interact to see real lifecycle events</span>
+      <div style={styles.wrapper}>
+        {/* ─── Title ─── */}
+        <h2 style={styles.title}>⚛️ React Lifecycle Simulator</h2>
+        <p style={styles.subtitle}>
+          Click the buttons and watch real lifecycle hooks fire in the log panel →
+        </p>
+
+        {/* ─── Legend ─── */}
+        <div style={styles.legend}>
+          {LEGEND.map((l) => (
+            <span key={l.label} style={{ ...styles.legendItem, color: l.color }}>
+              {l.emoji} {l.label}
+            </span>
+          ))}
         </div>
 
-        {/* Controls */}
-        <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #2a2e42', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-          <button onClick={() => setShowChildA(true)} style={btnStyle('#4ade80')}>Mount Child A</button>
-          <button onClick={() => setShowChildA(false)} style={btnStyle('#f87171')}>Unmount Child A</button>
-          <button onClick={() => setChildProp(p => p + 1)} style={btnStyle('#fbbf24')}>Update Child Props</button>
-          <button onClick={() => setShowChildB(b => !b)} style={btnStyle('#a78bfa')}>Toggle Child B</button>
-          <button onClick={() => setLogs([])} style={btnStyle('#6c7293')}>Clear Log</button>
+        {/* ─── Control panel ─── */}
+        <div style={styles.controls}>
+          {buttons.map((b) => (
+            <button
+              key={b.label}
+              onClick={b.onClick}
+              disabled={b.disabled}
+              style={{
+                ...styles.btn,
+                ...(b.disabled ? styles.btnDisabled : {}),
+              }}
+              onMouseEnter={(e) => {
+                if (!b.disabled) e.currentTarget.style.filter = 'brightness(1.25)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.filter = 'brightness(1)';
+              }}
+            >
+              {b.label}
+            </button>
+          ))}
         </div>
 
-        {/* Body: split layout */}
-        <div style={{ display: 'flex', gap: '0', minHeight: '300px' }}>
-          {/* Component tree */}
-          <div style={{ flex: '0 0 45%', padding: '0.75rem', borderRight: '1px solid #2a2e42' }}>
-            <div style={{ fontSize: '0.72rem', color: '#9399b2', marginBottom: '0.5rem', fontWeight: 600 }}>
-              LIVE COMPONENT TREE
-            </div>
-            <ParentDemo childProp={childProp} />
-            <div style={{ marginTop: '0.5rem', paddingLeft: '1rem', borderLeft: '2px dashed #2a2e42' }}>
-              {showChildA && <ChildDemo value={childProp} label="Child A" />}
-              {showChildB && <ChildDemo value={childProp * 2} label="Child B" />}
-              {!showChildA && !showChildB && (
-                <div style={{ fontSize: '0.75rem', color: '#6c7293', padding: '0.5rem' }}>No children mounted</div>
-              )}
-            </div>
+        {/* ─── Main split ─── */}
+        <div style={styles.split}>
+          {/* Left: live area */}
+          <div style={styles.liveArea}>
+            <div style={styles.liveHeader}>🖥️ Live Component Tree</div>
+            <ParentDemo
+              childMounted={childMounted}
+              childProp={childProp}
+              secondChildMounted={secondChild}
+              count={count}
+              log={pushLog}
+            />
           </div>
 
-          {/* Log panel */}
-          <div style={{ flex: 1, padding: '0.75rem', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: '0.72rem', color: '#9399b2', marginBottom: '0.5rem', fontWeight: 600 }}>
-              EVENT LOG
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-              {Object.entries(LOG_COLORS).map(([type, color]) => (
-                <span key={type} style={{ fontSize: '0.65rem', color, background: `${color}15`, padding: '2px 6px', borderRadius: '4px' }}>
-                  {type}
-                </span>
-              ))}
-            </div>
-            <LogPanel logs={logs} />
-          </div>
+          {/* Right: log */}
+          <LogPanel entries={logRef.current} />
         </div>
       </div>
     </LogContext.Provider>
   );
 }
+
+/* ────────────────────────────────────────────
+   Inline styles
+   ──────────────────────────────────────────── */
+const styles = {
+  wrapper: {
+    background: '#0f1117',
+    color: '#e4e6f0',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    padding: '1.5rem',
+    borderRadius: '12px',
+    maxWidth: '1200px',
+    margin: '0 auto',
+  },
+  title: {
+    margin: '0 0 0.25rem',
+    fontSize: '1.5rem',
+    color: '#e4e6f0',
+  },
+  subtitle: {
+    margin: '0 0 0.75rem',
+    fontSize: '0.9rem',
+    color: '#8b8fa3',
+  },
+
+  /* legend */
+  legend: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.75rem',
+    marginBottom: '1rem',
+    padding: '0.5rem 0.75rem',
+    background: '#161824',
+    borderRadius: '8px',
+    border: '1px solid #2a2e42',
+    fontSize: '0.8rem',
+  },
+  legendItem: {
+    whiteSpace: 'nowrap',
+  },
+
+  /* controls */
+  controls: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.5rem',
+    marginBottom: '1rem',
+  },
+  btn: {
+    background: '#252a3f',
+    color: '#e4e6f0',
+    border: '1px solid #2a2e42',
+    borderRadius: '6px',
+    padding: '0.45rem 0.85rem',
+    fontSize: '0.82rem',
+    cursor: 'pointer',
+    transition: 'filter 0.15s',
+    whiteSpace: 'nowrap',
+  },
+  btnDisabled: {
+    opacity: 0.4,
+    cursor: 'not-allowed',
+  },
+
+  /* split layout */
+  split: {
+    display: 'flex',
+    gap: '1rem',
+    flexWrap: 'wrap',
+  },
+  liveArea: {
+    flex: '1 1 340px',
+    minWidth: 0,
+    background: '#161824',
+    borderRadius: '10px',
+    border: '1px solid #2a2e42',
+    padding: '1rem',
+  },
+  liveHeader: {
+    fontWeight: 600,
+    fontSize: '0.95rem',
+    marginBottom: '0.75rem',
+    color: '#c0c3d4',
+  },
+
+  /* parent / child cards */
+  parentCard: {
+    background: '#1c1f30',
+    border: '1px solid #2a2e42',
+    borderRadius: '8px',
+    padding: '0.75rem',
+  },
+  parentHeader: {
+    fontWeight: 600,
+    fontSize: '0.9rem',
+    marginBottom: '0.5rem',
+    display: 'flex',
+    gap: '0.5rem',
+    alignItems: 'center',
+  },
+  childCard: {
+    background: '#22253a',
+    border: '1px solid #2f3350',
+    borderRadius: '8px',
+    padding: '0.6rem 0.75rem',
+    marginTop: '0.5rem',
+  },
+  childHeader: {
+    fontWeight: 600,
+    fontSize: '0.85rem',
+    color: '#a78bfa',
+    marginBottom: '0.35rem',
+  },
+  childText: {
+    margin: '0 0 0.4rem',
+    fontSize: '0.82rem',
+    color: '#c0c3d4',
+  },
+  input: {
+    background: '#161824',
+    color: '#e4e6f0',
+    border: '1px solid #2a2e42',
+    borderRadius: '4px',
+    padding: '0.25rem 0.5rem',
+    fontSize: '0.82rem',
+    outline: 'none',
+    width: '120px',
+  },
+
+  /* log panel */
+  logPanel: {
+    flex: '1 1 380px',
+    minWidth: 0,
+    background: '#0d0f16',
+    borderRadius: '10px',
+    border: '1px solid #2a2e42',
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: '520px',
+  },
+  logHeader: {
+    fontWeight: 600,
+    fontSize: '0.95rem',
+    padding: '0.75rem 1rem',
+    borderBottom: '1px solid #2a2e42',
+    color: '#c0c3d4',
+    flexShrink: 0,
+  },
+  logScroll: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '0.5rem 0.75rem',
+  },
+  logEntry: {
+    fontFamily: '"SF Mono", "Fira Code", "Cascadia Code", Menlo, monospace',
+    fontSize: '0.78rem',
+    lineHeight: '1.65',
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+  },
+  logTs: {
+    color: '#555b72',
+    marginRight: '0.5rem',
+  },
+};

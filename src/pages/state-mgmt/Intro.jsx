@@ -4,272 +4,252 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function SMIntro() {
+export default function Intro() {
   return (
     <LessonLayout
-      title="State Management Introduction"
+      title="When Context Isn't Enough"
       sectionId="state-mgmt"
       lessonIndex={0}
       prev={null}
       next={{ path: '/state-mgmt/redux', label: 'Redux Toolkit' }}
     >
-      <h2>The Four Categories of State</h2>
+      <h2>React Context Recap</h2>
       <p>
-        Not all state is the same. The biggest mistake in React apps is using the wrong tool for
-        the wrong type of state. Before reaching for Redux or Zustand, ask: what kind of state
-        is this?
+        React Context lets you broadcast data to any component in a subtree without manually
+        threading props. It&apos;s built into React, requires zero dependencies, and is perfect
+        for low-frequency updates like themes, locale, or auth status.
       </p>
 
-      <FlowChart
-        title="State Decision Flowchart"
-        chart={"graph TD\n  A[I need state] --> B{Is it server data?}\n  B -- Yes --> C[React Query or SWR]\n  B -- No --> D{Shared across many components?}\n  D -- No --> E[useState or useReducer]\n  D -- Yes --> F{Large app with complex logic?}\n  F -- No --> G[Zustand or Context]\n  F -- Yes --> H[Redux Toolkit]\n  E --> I[Co-locate near usage]\n  G --> J[Small shared store]"}
-      />
+      <CodeBlock language="jsx" title="Basic Context Pattern">
+{`const ThemeContext = createContext('light');
 
-      <CodeBlock language="jsx" title="The Four State Categories">
-{`// ===== 1. LOCAL STATE — UI interactions, temporary values =====
-// Lives in a single component, not shared
-// Tool: useState, useReducer
-function Dropdown() {
-  const [isOpen, setIsOpen] = useState(false);    // UI state
-  const [inputValue, setInputValue] = useState(''); // form state
-  // ...
-}
-
-// ===== 2. SERVER STATE — data from APIs =====
-// Lives on the server, cached locally, needs sync/refresh
-// Tool: React Query (TanStack Query) or SWR — NOT useState + useEffect
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-function UserProfile({ userId }) {
-  const { data: user, isLoading, isError } = useQuery({
-    queryKey: ['user', userId],
-    queryFn: () => fetch('/api/users/' + userId).then(r => r.json()),
-    staleTime: 5 * 60 * 1000,    // treat as fresh for 5 minutes
-    gcTime: 10 * 60 * 1000,      // garbage collect after 10 minutes
-  });
-
-  if (isLoading) return <Spinner />;
-  if (isError) return <ErrorMessage />;
-  return <div>{user.name}</div>;
-}
-
-// ===== 3. GLOBAL CLIENT STATE — auth, preferences, cart =====
-// Client-only, shared across many components, rarely changes
-// Tool: Zustand (lightweight) or Redux Toolkit (complex/large apps)
-const useStore = create((set) => ({
-  user: null,
-  theme: 'dark',
-  setUser: (user) => set({ user }),
-  toggleTheme: () => set(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
-}));
-
-// ===== 4. URL STATE — filters, pagination, tabs =====
-// Lives in the URL — bookmarkable, shareable, browser back works
-// Tool: useSearchParams (React Router), nuqs (Next.js)
-function ProductList() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const page = parseInt(searchParams.get('page') ?? '1');
-  const query = searchParams.get('q') ?? '';
-  const sort = searchParams.get('sort') ?? 'newest';
-
+function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState('light');
+  // ⚠️ This object is recreated every render unless memoized
+  const value = useMemo(() => ({ theme, setTheme }), [theme]);
   return (
-    <input
-      value={query}
-      onChange={e => setSearchParams(p => {
-        p.set('q', e.target.value);
-        p.set('page', '1'); // reset page on search
-        return p;
-      })}
-    />
-  );
-}`}
-      </CodeBlock>
-
-      <h2>The Server State Problem</h2>
-      <p>
-        The #1 mistake in React is using <code>useState + useEffect</code> to manage server data.
-        React Query handles caching, deduplication, background refetch, loading/error states, and
-        cache invalidation — all the things you'd have to build yourself.
-      </p>
-
-      <CodeBlock language="jsx" title="useState+useEffect vs React Query">
-{`// ❌ THE WRONG WAY — manual server state management
-function UserList() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch('/api/users')
-      .then(r => r.json())
-      .then(data => {
-        setUsers(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err);
-        setLoading(false);
-      });
-  }, []);
-
-  // Problems:
-  // - No caching: refetches every mount (even seconds apart)
-  // - No deduplication: 5 components mount simultaneously = 5 API calls
-  // - No background updates: data goes stale
-  // - Race conditions: fast navigation can show wrong data
-  // - Manual loading/error state: repetitive boilerplate
-}
-
-// ✅ THE RIGHT WAY — React Query
-function UserList() {
-  const { data: users, isLoading, isError, error } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => fetch('/api/users').then(r => r.json()),
-  });
-
-  // Benefits:
-  // ✓ Auto-caching: same key = same cache entry, no duplicate calls
-  // ✓ Background refetch: keeps data fresh silently
-  // ✓ Loading/error states: built in
-  // ✓ DevTools: inspect and invalidate cache
-  // ✓ Optimistic updates: update UI before server confirms
-  // ✓ Infinite scroll, pagination: built-in utilities
-}
-
-// Mutations (POST/PUT/DELETE) with cache invalidation:
-function CreateUser() {
-  const queryClient = useQueryClient();
-  const mutation = useMutation({
-    mutationFn: (newUser) => fetch('/api/users', {
-      method: 'POST',
-      body: JSON.stringify(newUser),
-    }).then(r => r.json()),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      // ↑ Forces all useQuery(['users']) to refetch
-    },
-  });
-  return <button onClick={() => mutation.mutate({ name: 'Alice' })}>Add User</button>;
-}`}
-      </CodeBlock>
-
-      <h2>When to Reach for Global State</h2>
-
-      <CodeBlock language="jsx" title="Context + useReducer Pattern">
-{`// Context is fine for low-frequency global state (theme, auth, locale)
-// Problems start when: deeply nested components must subscribe,
-// any state change re-renders everything subscribed to the context
-
-// ✅ Context is RIGHT for:
-const ThemeContext = createContext('light');
-function App() {
-  const [theme, setTheme] = useState('dark');
-  return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
-      <Layout />
+    <ThemeContext.Provider value={value}>
+      {children}
     </ThemeContext.Provider>
   );
 }
-// Theme rarely changes → minimal re-renders → Context is fine
 
-// ❌ Context is WRONG for:
-// - High-frequency updates (mouse position, scroll, timers)
-// - Large state objects where parts update independently
-// - State shared by many distant components that need independent subscriptions
-
-// Context performance tip: split by update frequency
-const ThemeContext = createContext();     // changes rarely
-const AuthContext = createContext();     // changes on login/logout
-const NotifContext = createContext();    // changes frequently
-
-// This way a theme change doesn't re-render auth consumers
-
-// ✅ Zustand solves the subscription problem:
-// Components subscribe to individual slices
-// Only re-renders if the subscribed value changes
-const useUser = () => useStore(state => state.user);    // subscribes to user only
-const useTheme = () => useStore(state => state.theme);  // subscribes to theme only
-// Changing user doesn't re-render theme consumers`}
-      </CodeBlock>
-
-      <h2>Prop Drilling and When It Becomes a Problem</h2>
-
-      <CodeBlock language="jsx" title="Prop Drilling Analysis">
-{`// Prop drilling: passing state through many intermediate components
-// FINE for 1-2 levels — don't prematurely add complexity
-
-// OK — 2 levels, easy to follow
-function App() {
-  const [user, setUser] = useState(null);
-  return <Dashboard user={user} onLogout={() => setUser(null)} />;
-}
-function Dashboard({ user, onLogout }) {
-  return <Navbar user={user} onLogout={onLogout} />;
-}
-
-// ❌ PROBLEM — 5+ levels, intermediate components carry props they don't use
-function App() {
-  const [user, setUser] = useState(null);
-  return <Page1 user={user} />; // Page1 doesn't USE user
-}
-function Page1({ user }) {       // just passing through
-  return <Page2 user={user} />;  // just passing through
-}
-function Page2({ user }) {       // just passing through
-  return <Sidebar user={user} />; // just passing through
-}
-function Sidebar({ user }) {
-  return <Avatar user={user} />; // FINALLY uses it
-}
-
-// Solution: Context for tree-local state (auth user is classic example)
-const UserContext = createContext(null);
-function App() {
-  const [user, setUser] = useState(null);
-  return (
-    <UserContext.Provider value={{ user, setUser }}>
-      <Page1 /> {/* no props needed */}
-    </UserContext.Provider>
-  );
-}
-function Avatar() {
-  const { user } = useContext(UserContext); // reads directly
+function useTheme() {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be inside ThemeProvider');
+  return ctx;
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="State Colocation — The Most Underused Pattern">
-        <p>
-          Before adding global state, ask: can I move this state <em>down</em> to the component
-          that needs it? State at the highest necessary level is always better than state at a
-          global level. If only two sibling components share state, lifting to their common parent
-          is cleaner than Zustand. Global state should be a last resort, not a first instinct.
-        </p>
+      <h2>The Performance Problem</h2>
+      <p>
+        Context has a fundamental limitation: <strong>every consumer re-renders when the provider
+        value changes</strong>, even if the consumer only reads a slice of that value. There is no
+        built-in selector mechanism. This is fine for a theme toggle that fires once an hour — it&apos;s
+        catastrophic for a shopping cart that updates on every click.
+      </p>
+
+      <CodeBlock language="jsx" title="The Re-render Problem">
+{`const AppContext = createContext();
+
+function AppProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+
+  // Every consumer re-renders when ANY of these change
+  return (
+    <AppContext.Provider value={{
+      user, setUser,
+      cart, setCart,
+      notifications, setNotifications
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+// This component re-renders when cart or notifications change,
+// even though it only reads user
+function UserAvatar() {
+  const { user } = useContext(AppContext);
+  return <img src={user?.avatar} alt={user?.name} />;
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Context Splitting Isn't Free">
+        The common advice is &quot;split your context into multiple providers.&quot; This works but
+        quickly leads to Provider Hell — 8+ nested providers at your app root. Each split also
+        increases cognitive overhead and makes refactoring harder. At some point you&apos;re
+        reinventing a state management library, poorly.
+      </InfoBox>
+
+      <h2>Prop Drilling vs Context vs External Store</h2>
+
+      <CodeBlock language="jsx" title="The Three Approaches">
+{`// 1. Prop Drilling — explicit, traceable, but verbose
+<App user={user}>
+  <Dashboard user={user}>
+    <Sidebar user={user}>
+      <UserMenu user={user} />
+    </Sidebar>
+  </Dashboard>
+</App>
+
+// 2. Context — no drilling, but all consumers re-render
+<UserProvider>
+  <App>
+    <Dashboard>
+      <Sidebar>
+        <UserMenu /> {/* reads from context */}
+      </Sidebar>
+    </Dashboard>
+  </App>
+</UserProvider>
+
+// 3. External Store — selector-based, surgical re-renders
+function UserMenu() {
+  // Only re-renders when user.name actually changes
+  const name = useStore(state => state.user.name);
+  return <span>{name}</span>;
+}`}
+      </CodeBlock>
+
+      <h2>State Categories</h2>
+      <p>
+        Not all state is created equal. The first step in choosing a solution is categorizing
+        what you&apos;re actually managing. Most apps have four distinct types of state, and each
+        has a best-fit tool.
+      </p>
+
+      <FlowChart
+        title="State Categories and Best-Fit Tools"
+        chart={"graph TD\n  S[Application State] --> UI[UI State]\n  S --> SC[Server Cache]\n  S --> FS[Form State]\n  S --> URL[URL State]\n  UI --> UI1[Local: useState/useReducer]\n  UI --> UI2[Shared: Zustand/Redux/Context]\n  SC --> SC1[TanStack Query]\n  SC --> SC2[RTK Query / SWR]\n  FS --> FS1[React Hook Form]\n  FS --> FS2[Formik / useState]\n  URL --> URL1[React Router]\n  URL --> URL2[nuqs / useSearchParams]\n  style UI fill:#3b82f6,color:#fff\n  style SC fill:#10b981,color:#fff\n  style FS fill:#f59e0b,color:#fff\n  style URL fill:#8b5cf6,color:#fff"}
+      />
+
+      <h3>UI State</h3>
+      <p>
+        Modals, sidebars, selected tabs, accordion state. If it&apos;s local to one component,
+        <code>useState</code> is perfect. If it&apos;s shared across unrelated components (like a
+        global sidebar toggle), an external store shines.
+      </p>
+
+      <h3>Server Cache</h3>
+      <p>
+        Data fetched from APIs is <em>not your state</em> — it&apos;s a cache of someone else&apos;s
+        state. TanStack Query (React Query) handles caching, background refetching, stale-while-revalidate,
+        pagination, optimistic updates, and deduplication out of the box. Putting server data in Redux
+        is the single most common over-engineering mistake in React apps.
+      </p>
+
+      <CodeBlock language="jsx" title="Server State with TanStack Query">
+{`import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+function useTodos() {
+  return useQuery({
+    queryKey: ['todos'],
+    queryFn: () => fetch('/api/todos').then(r => r.json()),
+    staleTime: 5 * 60 * 1000, // 5 min before refetch
+  });
+}
+
+function useAddTodo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (todo) => fetch('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify(todo),
+    }).then(r => r.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos'] });
+    },
+  });
+}`}
+      </CodeBlock>
+
+      <h3>Form State</h3>
+      <p>
+        Form state is inherently local and ephemeral. Libraries like React Hook Form use
+        uncontrolled inputs and refs to avoid re-renders on every keystroke — something neither
+        Context nor Redux can match for performance.
+      </p>
+
+      <h3>URL State</h3>
+      <p>
+        Filters, pagination, sort order, selected tabs — if a user should be able to bookmark
+        or share the current view, it belongs in the URL. React Router&apos;s <code>useSearchParams</code> or
+        libraries like <code>nuqs</code> handle this natively.
+      </p>
+
+      <InfoBox variant="tip" title="You Might Not Need Redux">
+        Before reaching for any state library, audit your state. If 80% of it is server cache
+        (use TanStack Query), 15% is form state (use React Hook Form), and 5% is UI toggles
+        (use useState) — you might not need a global store at all. The best state management
+        is the state you don&apos;t manage.
+      </InfoBox>
+
+      <h2>The Decision Framework</h2>
+
+      <FlowChart
+        title="Do You Need a State Management Library?"
+        chart={"graph TD\n  START[New State Requirement] --> Q1{Is it server data?}\n  Q1 -->|Yes| TQ[Use TanStack Query / RTK Query]\n  Q1 -->|No| Q2{Is it form data?}\n  Q2 -->|Yes| RHF[Use React Hook Form]\n  Q2 -->|No| Q3{Is it URL state?}\n  Q3 -->|Yes| RR[Use Router / useSearchParams]\n  Q3 -->|No| Q4{Shared across 2+ unrelated components?}\n  Q4 -->|No| US[Use useState / useReducer]\n  Q4 -->|Yes| Q5{High-frequency updates?}\n  Q5 -->|No| CTX[Context might be fine]\n  Q5 -->|Yes| EXT[Use Zustand / Redux Toolkit]\n  style TQ fill:#10b981,color:#fff\n  style RHF fill:#f59e0b,color:#fff\n  style RR fill:#8b5cf6,color:#fff\n  style US fill:#6b7280,color:#fff\n  style CTX fill:#3b82f6,color:#fff\n  style EXT fill:#ef4444,color:#fff"}
+      />
+
+      <h2>Signals and the Future of React State</h2>
+      <p>
+        Signals (popularized by SolidJS, adopted by Preact and Angular) offer fine-grained
+        reactivity without selectors — the runtime tracks which components read which values
+        and only re-renders those. The React team has explored compiler-based approaches
+        (React Forget / React Compiler) that achieve similar goals by auto-memoizing components
+        at build time, reducing the need for manual <code>useMemo</code> and <code>useCallback</code>.
+      </p>
+
+      <CodeBlock language="jsx" title="Signals Concept (Preact Signals)">
+{`import { signal, computed } from '@preact/signals-react';
+
+// Granular reactivity — no selectors, no re-render of parent
+const count = signal(0);
+const doubled = computed(() => count.value * 2);
+
+function Counter() {
+  // Only this component re-renders when count changes
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <p>Doubled: {doubled}</p>
+      <button onClick={() => count.value++}>Increment</button>
+    </div>
+  );
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="React Compiler (React 19+)">
+        React Compiler (formerly React Forget) auto-memoizes components and hooks at build time.
+        It won&apos;t eliminate the need for external stores in complex apps, but it will reduce
+        the performance penalty of Context and make <code>useMemo</code>/<code>useCallback</code> largely
+        unnecessary for most components.
       </InfoBox>
 
       <InteractiveChallenge
-        question="You have a list of products fetched from an API. Which tool should manage this state?"
+        question={"A component reads `user.name` from a Context that also contains `cart`, `notifications`, and `preferences`. When does this component re-render?"}
         options={[
-          "useState with useEffect to fetch on mount",
-          "Redux with a products slice and async thunks",
-          "React Query (TanStack Query) with useQuery",
-          "Zustand with a products store"
+          "Only when user.name changes",
+          "When user.name or any other context value changes",
+          "Only on mount and unmount",
+          "When the parent component re-renders"
         ]}
-        correctIndex={2}
-        explanation="Products fetched from an API are server state — they live on the server and are cached locally. React Query is purpose-built for this: it handles caching (no duplicate requests), background refetching (stays fresh), loading/error states (no boilerplate), and cache invalidation (after mutations). useState+useEffect doesn't cache or deduplicate. Redux and Zustand are for client state — you'd still need to manage fetching yourself."
+        correctIndex={1}
+        explanation="React Context has no selector mechanism. When any value in the provider changes, every consumer re-renders — even if it only reads a single field. This is the core limitation that external state libraries solve with selector-based subscriptions."
+        language="jsx"
       />
 
-      <InteractiveChallenge
-        question="A user's search query and current page number should live in what kind of state?"
-        options={[
-          "Global state in Zustand — so any component can read it",
-          "Server state in React Query — since search results come from the server",
-          "URL state via useSearchParams — it should be bookmarkable",
-          "Local state in useState — it only affects the current component"
-        ]}
-        correctIndex={2}
-        explanation="Search queries and pagination are URL state. Storing them in the URL (/?q=react&page=2) makes the page bookmarkable, shareable, and back/forward navigable. useSearchParams from React Router reads and writes URL parameters. The server state (search results) is managed by React Query keyed on the URL parameters. This separation — URL state for filters, React Query for results — is the correct pattern."
-      />
+      <h2>What&apos;s Next</h2>
+      <p>
+        Now that you understand <em>when</em> you need external state management, the next lessons
+        dive into the <em>how</em>. We&apos;ll build the same todo app in Redux Toolkit and Zustand,
+        then compare every major library side-by-side so you can make an informed choice for your
+        next project.
+      </p>
     </LessonLayout>
   );
 }

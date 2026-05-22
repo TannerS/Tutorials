@@ -4,299 +4,348 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function RRNested() {
+export default function Nested() {
   return (
     <LessonLayout
-      title="Nested Routes"
+      title="Nested Routes & Outlets"
       sectionId="react-router"
       lessonIndex={1}
-      prev={{ path: "/react-router/intro", label: "Introduction" }}
-      next={{ path: "/react-router/data", label: "Data Loading" }}
+      prev={{ path: '/react-router/intro', label: 'Setup & Core Concepts' }}
+      next={{ path: '/react-router/data', label: 'Data Loading & Actions' }}
     >
       <p>
-        Nested routes let you build hierarchical URL structures that mirror your UI hierarchy.
-        A parent route renders a layout; child routes render their content into the parent's{' '}
-        <code>Outlet</code>. This enables shared navigation, sidebars, and layouts without repetition.
+        Nested routes are React Router&apos;s superpower. Instead of every page
+        being a standalone full-screen render, routes nest inside parent routes —
+        the parent renders shared layout (nav, sidebar, footer) and an{' '}
+        <code>&lt;Outlet /&gt;</code> that the child fills in. This mirrors how
+        real UIs work: a dashboard shell stays put while the inner content swaps.
       </p>
 
       <FlowChart
-        title="Nested Route URL to Component Mapping"
-        chart={"graph TD\n  A[/ RootLayout] --> B[/dashboard DashboardLayout]\n  A --> C[/about AboutPage]\n  B --> D[index DashboardHome]\n  B --> E[/dashboard/analytics Analytics]\n  B --> F[/dashboard/settings SettingsLayout]\n  F --> G[index GeneralSettings]\n  F --> H[/dashboard/settings/profile Profile]\n  F --> I[/dashboard/settings/security Security]"}
+        title="How Nested Routes Render"
+        chart={"graph TD\nA[URL: /dashboard/settings] --> B[Match: / => RootLayout]\nB --> C[Match: /dashboard => DashboardLayout]\nC --> D[Match: /dashboard/settings => SettingsPage]\nB --> E[RootLayout renders Outlet]\nE --> F[DashboardLayout renders Outlet]\nF --> G[SettingsPage renders content]\nstyle A fill:#3b82f6,color:#fff\nstyle E fill:#8b5cf6,color:#fff\nstyle F fill:#8b5cf6,color:#fff\nstyle G fill:#10b981,color:#fff"}
       />
 
-      <h2>Basic Nested Route Structure</h2>
+      <h2>The Outlet Component</h2>
+      <p>
+        <code>&lt;Outlet /&gt;</code> is a placeholder in a parent route&apos;s
+        element. React Router fills it with whichever child route matches the
+        current URL. Think of it like <code>{'{children}'}</code> but driven by
+        the URL.
+      </p>
 
-      <CodeBlock language="jsx" title="Defining and Rendering Nested Routes">
-{`import { createBrowserRouter, RouterProvider, Outlet, Link } from 'react-router-dom';
+      <CodeBlock language="jsx" title="Parent Layout with Outlet">
+{`import { Outlet, NavLink } from 'react-router-dom';
+
+function DashboardLayout() {
+  return (
+    <div className="dashboard">
+      <nav className="sidebar">
+        <NavLink to="/dashboard" end>Overview</NavLink>
+        <NavLink to="/dashboard/analytics">Analytics</NavLink>
+        <NavLink to="/dashboard/settings">Settings</NavLink>
+      </nav>
+      <main className="content">
+        {/* Child route renders here */}
+        <Outlet />
+      </main>
+    </div>
+  );
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The 'end' Prop on NavLink">
+        Without <code>end</code>, a <code>&lt;NavLink to=&quot;/dashboard&quot;&gt;</code>{' '}
+        stays active for <em>all</em> child routes like{' '}
+        <code>/dashboard/analytics</code>. Add <code>end</code> to match only the
+        exact path.
+      </InfoBox>
+
+      <h2>Nested Route Configuration</h2>
+      <CodeBlock language="jsx" title="Config-Based Nested Routes">
+{`import { createBrowserRouter } from 'react-router-dom';
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <RootLayout />,        // renders nav + <Outlet />
+    element: <RootLayout />,
+    errorElement: <RootError />,
     children: [
-      { index: true, element: <Home /> },       // matches "/"
-      { path: 'about', element: <About /> },
+      { index: true, element: <Home /> },
       {
         path: 'dashboard',
-        element: <DashboardLayout />,           // renders sidebar + <Outlet />
+        element: <DashboardLayout />,
         children: [
-          { index: true, element: <DashboardHome /> }, // matches "/dashboard"
+          { index: true, element: <DashboardOverview /> },
           { path: 'analytics', element: <Analytics /> },
+          { path: 'settings', element: <Settings /> },
           {
-            path: 'settings',
-            element: <SettingsLayout />,
+            path: 'users',
+            element: <UsersLayout />,
             children: [
-              { index: true, element: <GeneralSettings /> },
-              { path: 'profile', element: <Profile /> },
-              { path: 'security', element: <Security /> },
+              { index: true, element: <UsersList /> },
+              { path: ':userId', element: <UserDetail /> },
+              { path: ':userId/edit', element: <UserEdit /> },
             ],
           },
         ],
       },
     ],
   },
-]);
+]);`}
+      </CodeBlock>
 
-// Each layout renders <Outlet /> where children should appear
-function RootLayout() {
-  return (
-    <>
-      <nav>
-        <Link to="/">Home</Link>
-        <Link to="/dashboard">Dashboard</Link>
-        <Link to="/about">About</Link>
-      </nav>
-      <main>
-        <Outlet /> {/* Dashboard or About or Home renders here */}
-      </main>
-    </>
-  );
-}
+      <h2>Index Routes</h2>
+      <p>
+        An <strong>index route</strong> is a child route with no path that renders
+        when the parent&apos;s URL matches exactly. It&apos;s the &quot;default
+        child&quot; — like <code>index.html</code> for a directory.
+      </p>
 
-function DashboardLayout() {
-  return (
-    <div style={{ display: 'flex' }}>
-      <aside>
-        <Link to="/dashboard">Overview</Link>
-        <Link to="/dashboard/analytics">Analytics</Link>
-        <Link to="/dashboard/settings">Settings</Link>
-      </aside>
-      <section>
-        <Outlet /> {/* DashboardHome, Analytics, or SettingsLayout renders here */}
-      </section>
-    </div>
-  );
+      <CodeBlock language="jsx" title="Index Routes">
+{`// When the user visits /dashboard (not /dashboard/anything-else),
+// the index route renders inside DashboardLayout's Outlet
+{
+  path: 'dashboard',
+  element: <DashboardLayout />,
+  children: [
+    // index: true — renders at /dashboard exactly
+    { index: true, element: <DashboardHome /> },
+    { path: 'settings', element: <Settings /> },
+  ],
 }`}
       </CodeBlock>
 
-      <h2>Nested URL Parameters</h2>
+      <InfoBox variant="warning" title="Index Routes Cannot Have Children">
+        An index route is a leaf — it cannot have its own <code>children</code>.
+        If you need nested content under a path, use a regular route with a path
+        instead of an index route.
+      </InfoBox>
+
+      <h2>Layout Routes (Pathless Routes)</h2>
       <p>
-        URL parameters accumulate as you go deeper. A child route has access to all params defined
-        in ancestor route paths via a single <code>useParams()</code> call.
+        A route without a <code>path</code> (but with an <code>element</code>)
+        acts as a layout wrapper. It doesn&apos;t consume any URL segment — it
+        just wraps its children with shared UI or context providers.
       </p>
 
-      <CodeBlock language="jsx" title="Nested URL Params with useParams">
-{`// Route definition — parameters accumulate down the tree
-const router = createBrowserRouter([
+      <CodeBlock language="jsx" title="Pathless Layout Route">
+{`const router = createBrowserRouter([
   {
-    path: '/orgs/:orgId',
-    element: <OrgLayout />,
+    path: '/',
+    element: <RootLayout />,
     children: [
-      { index: true, element: <OrgHome /> },
+      // Pathless route — wraps children with AuthProvider
       {
-        path: 'repos/:repoId',
-        element: <RepoLayout />,
+        element: <AuthenticatedLayout />,
         children: [
-          { index: true, element: <RepoHome /> },
-          { path: 'issues/:issueId', element: <IssueDetail /> },
+          { path: 'dashboard', element: <Dashboard /> },
+          { path: 'profile', element: <Profile /> },
+          { path: 'settings', element: <Settings /> },
         ],
       },
+      // These routes are NOT wrapped by AuthenticatedLayout
+      { path: 'login', element: <Login /> },
+      { path: 'register', element: <Register /> },
     ],
   },
 ]);
 
-// URL: /orgs/acme/repos/my-app/issues/42
-function IssueDetail() {
-  const { orgId, repoId, issueId } = useParams();
-  // orgId   = "acme"
-  // repoId  = "my-app"
-  // issueId = "42"
-  // ALL ancestor params are available — no prop drilling needed
-  return <h1>Issue #{issueId} in {orgId}/{repoId}</h1>;
-}
+function AuthenticatedLayout() {
+  const user = useAuth();
+  if (!user) return <Navigate to="/login" />;
 
-// Relative paths in child routes — no leading slash
-function RepoLayout() {
-  const { orgId, repoId } = useParams();
   return (
-    <div>
-      <nav>
-        {/* Relative links — resolved against current route path */}
-        <Link to="">Overview</Link>
-        <Link to="issues">Issues</Link>
-        {/* Absolute link — starts with / */}
-        <Link to={'/orgs/' + orgId}>Back to Org</Link>
-      </nav>
+    <div className="authenticated-shell">
+      <UserNav user={user} />
       <Outlet />
     </div>
   );
 }`}
       </CodeBlock>
 
-      <h2>Index Routes — Default Child Content</h2>
+      <h2>Dynamic Segments</h2>
       <p>
-        An index route renders when the parent path matches exactly. It acts as the default content
-        for a layout — eliminating the empty-Outlet problem.
+        URL parameters are defined with a colon prefix (<code>:paramName</code>)
+        and read with <code>useParams()</code>. They match any non-empty segment.
       </p>
 
-      <CodeBlock language="jsx" title="Index Routes as Default Child">
-{`// Without index route: visiting /settings shows an EMPTY SettingsLayout
-// With index route: visiting /settings shows GeneralSettings inside SettingsLayout
+      <CodeBlock language="jsx" title="Dynamic Segments">
+{`// Route config
+{ path: 'users/:userId', element: <UserProfile /> }
+{ path: 'posts/:postId/comments/:commentId', element: <Comment /> }
 
-// Using object syntax (createBrowserRouter)
-{
-  path: 'settings',
-  element: <SettingsLayout />,
-  children: [
-    { index: true, element: <GeneralSettings /> }, // renders at /settings
-    { path: 'profile', element: <Profile /> },      // renders at /settings/profile
-    { path: 'security', element: <Security /> },    // renders at /settings/security
-  ],
+// Component
+import { useParams } from 'react-router-dom';
+
+function UserProfile() {
+  const { userId } = useParams();
+  // /users/42 => userId === "42"
+  // Note: params are always strings — parse if needed
+  const id = Number(userId);
+
+  return <h1>User #{id}</h1>;
+}`}
+      </CodeBlock>
+
+      <h2>Optional Segments</h2>
+      <p>
+        Add a <code>?</code> after a segment to make it optional. The route
+        matches with or without that segment.
+      </p>
+
+      <CodeBlock language="jsx" title="Optional Segments">
+{`// Matches both /posts and /posts/en, /posts/es, etc.
+{ path: 'posts/:lang?', element: <PostList /> }
+
+function PostList() {
+  const { lang } = useParams();
+  // /posts       => lang === undefined
+  // /posts/en    => lang === "en"
+  const language = lang || 'en'; // default to English
+  return <h1>Posts ({language})</h1>;
+}`}
+      </CodeBlock>
+
+      <h2>Splat (Catch-All) Routes</h2>
+      <p>
+        A <code>*</code> segment matches everything after it. Access the matched
+        portion with <code>useParams()['*']</code>.
+      </p>
+
+      <CodeBlock language="jsx" title="Splat Routes">
+{`// Matches /files, /files/docs, /files/docs/2024/report.pdf, etc.
+{ path: 'files/*', element: <FileBrowser /> }
+
+function FileBrowser() {
+  const params = useParams();
+  const filePath = params['*'];
+  // /files/docs/2024/report.pdf => filePath === "docs/2024/report.pdf"
+  // /files                      => filePath === ""
+
+  return <h1>Viewing: /{filePath || 'root'}</h1>;
 }
 
-// Using JSX syntax (<Routes>/<Route>)
-<Route path="settings" element={<SettingsLayout />}>
-  <Route index element={<GeneralSettings />} />
-  <Route path="profile" element={<Profile />} />
-  <Route path="security" element={<Security />} />
-</Route>
-
-// SettingsLayout — the index element renders into this Outlet at /settings
-function SettingsLayout() {
-  return (
-    <div>
-      <nav>
-        <NavLink to="" end>General</NavLink>
-        <NavLink to="profile">Profile</NavLink>
-        <NavLink to="security">Security</NavLink>
-      </nav>
-      <Outlet /> {/* GeneralSettings, Profile, or Security renders here */}
-    </div>
-  );
-}`}
+// 404 catch-all (place last in your route config)
+{ path: '*', element: <NotFound /> }`}
       </CodeBlock>
 
-      <h2>Pathless Layout Routes</h2>
+      <h2>Relative Paths</h2>
       <p>
-        A route without a <code>path</code> acts as a layout wrapper — it contributes shared UI or
-        logic without changing the URL. This is the recommended pattern for auth guards.
+        Links and route paths are relative to their parent by default. This keeps
+        route configs portable — you can move an entire branch without rewriting
+        all paths.
       </p>
 
-      <CodeBlock language="jsx" title="Pathless Layout Routes for Auth Grouping">
-{`const router = createBrowserRouter([
-  // Pathless route — wraps protected pages, no URL segment added
-  {
-    element: <AuthenticatedLayout />,
-    children: [
-      { path: '/dashboard', element: <Dashboard /> },
-      { path: '/profile', element: <Profile /> },
-      { path: '/settings', element: <Settings /> },
-    ],
-  },
-  // Public routes — outside the auth layout
-  { path: '/login', element: <Login /> },
-  { path: '/signup', element: <Signup /> },
-  { path: '/', element: <LandingPage /> },
-]);
-
-function AuthenticatedLayout() {
-  const { user } = useAuth();
-  // Redirects BEFORE rendering children — no flash of protected content
-  if (!user) return <Navigate to="/login" replace />;
-
-  return (
-    <div className="app-shell">
-      <Sidebar user={user} />
-      <main>
-        <Outlet /> {/* Dashboard, Profile, or Settings renders here */}
-      </main>
-    </div>
-  );
-}`}
-      </CodeBlock>
-
-      <h2>useOutletContext — Passing Data to Children</h2>
-
-      <CodeBlock language="jsx" title="useOutletContext for Sharing Data Down the Tree">
-{`import { Outlet, useOutletContext } from 'react-router-dom';
-
-// Parent layout passes shared data to all child routes
+      <CodeBlock language="jsx" title="Relative Links">
+{`// Inside DashboardLayout (path: "/dashboard")
 function DashboardLayout() {
-  const { user } = useAuth();
-  const [notifications, setNotifications] = useState([]);
-
-  useEffect(() => {
-    fetchNotifications(user.id).then(setNotifications);
-  }, [user.id]);
-
   return (
-    <div>
-      <header>Welcome, {user.name}</header>
-      {/* Pass data as context to all child routes via Outlet */}
-      <Outlet context={{ user, notifications, setNotifications }} />
-    </div>
+    <nav>
+      {/* These are relative to /dashboard */}
+      <Link to="analytics">Analytics</Link>    {/* /dashboard/analytics */}
+      <Link to="settings">Settings</Link>      {/* /dashboard/settings */}
+      <Link to="..">Back to Home</Link>        {/* / (one level up) */}
+      <Link to="../about">About</Link>         {/* /about */}
+    </nav>
   );
-}
-
-// Any child route can consume the context
-function Analytics() {
-  // No props needed — no prop drilling — no global state
-  const { user, notifications } = useOutletContext();
-  return (
-    <div>
-      <h2>Analytics for {user.name}</h2>
-      <p>{notifications.length} unread notifications</p>
-    </div>
-  );
-}
-
-// Best practice: export a typed hook for the context
-export function useDashboard() {
-  const ctx = useOutletContext();
-  if (!ctx) throw new Error('useDashboard must be used inside DashboardLayout');
-  return ctx;
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Relative vs Absolute Paths in Nested Routes">
-        Inside a nested route, <code>Link to=""</code> links to the current route's exact path.
-        <code>Link to="child"</code> appends to the current path. A leading <code>/</code> always
-        makes a path absolute from the root. Use relative paths when building reusable route subtrees
-        that might be mounted at different parent paths.
+      <InfoBox variant="info" title="Relative vs Absolute Paths">
+        Paths starting with <code>/</code> are absolute — they match from the
+        root. Paths without a leading slash are relative to the parent route.
+        Prefer relative paths for portability. Use <code>..</code> to navigate up.
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"What renders inside a DashboardLayout's <Outlet /> when the URL is exactly /dashboard?"}
-        options={[
-          "Nothing — Outlet only renders when a child path beyond /dashboard is matched",
-          "The DashboardLayout itself renders again recursively",
-          "The index route's element renders",
-          "A 404 page renders automatically"
-        ]}
-        correctIndex={2}
-        explanation={"When the URL matches the parent path exactly (/dashboard), the index route renders inside the Outlet. An index route is declared with index: true and serves as the default child. Without an index route, the Outlet renders nothing at the parent path — leaving a blank content area."}
+      <h2>Passing Data Through Outlet Context</h2>
+      <CodeBlock language="jsx" title="Outlet Context">
+{`import { Outlet, useOutletContext } from 'react-router-dom';
+
+// Parent passes data via context prop
+function DashboardLayout() {
+  const [theme, setTheme] = useState('light');
+
+  return (
+    <div>
+      <Outlet context={{ theme, setTheme }} />
+    </div>
+  );
+}
+
+// Any child route can consume it
+function Settings() {
+  const { theme, setTheme } = useOutletContext();
+
+  return (
+    <label>
+      Dark mode
+      <input
+        type="checkbox"
+        checked={theme === 'dark'}
+        onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       />
+    </label>
+  );
+}`}
+      </CodeBlock>
+
+      <h2>Complete Nested Layout Example</h2>
+      <CodeBlock language="jsx" title="Full Nested Route Tree">
+{`const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <AppShell />,         // top-level nav + footer
+    errorElement: <GlobalError />,
+    children: [
+      { index: true, element: <LandingPage /> },
+      { path: 'about', element: <About /> },
+      { path: 'login', element: <Login /> },
+      {
+        // Pathless layout — adds auth guard
+        element: <RequireAuth />,
+        children: [
+          {
+            path: 'app',
+            element: <AppLayout />,    // sidebar + header
+            children: [
+              { index: true, element: <AppHome /> },
+              {
+                path: 'projects',
+                element: <ProjectsLayout />,
+                children: [
+                  { index: true, element: <ProjectList /> },
+                  { path: ':projectId', element: <ProjectDetail /> },
+                  { path: ':projectId/settings', element: <ProjectSettings /> },
+                ],
+              },
+              { path: 'settings', element: <UserSettings /> },
+            ],
+          },
+        ],
+      },
+      { path: '*', element: <NotFound /> },
+    ],
+  },
+]);`}
+      </CodeBlock>
 
       <InteractiveChallenge
-        question={"What is the purpose of a pathless layout route (a route object with no path property)?"}
+        question={"What renders inside an Outlet when the user visits /dashboard and you have { path: 'dashboard', element: <DashboardLayout />, children: [{ index: true, element: <Overview /> }, { path: 'stats', element: <Stats /> }] }?"}
         options={[
-          "It renders a 404 page for unmatched routes",
-          "It wraps a group of routes with shared UI or logic without adding a URL segment",
-          "It replaces BrowserRouter when no URL is needed",
-          "It makes all child routes render simultaneously"
+          "Nothing — the Outlet is empty",
+          "Both Overview and Stats render",
+          "Overview renders (the index route)",
+          "DashboardLayout renders without any child",
         ]}
-        correctIndex={1}
-        explanation={"A pathless layout route has an element but no path. It wraps child routes in shared UI — like a sidebar or an auth check — without adding any URL segment. The children still have their own paths. This is the recommended pattern for grouping protected routes under a single auth guard."}
+        correctIndex={2}
+        explanation={"The index route (index: true) is the default child. When the URL matches the parent exactly (/dashboard), the index route's element renders inside the parent's Outlet."}
+        language="jsx"
+      />
+
+      <FlowChart
+        title="Route Matching Priority"
+        chart={"graph TD\nA[URL segments to match] --> B{Exact static match?}\nB -->|Yes| C[Use static route]\nB -->|No| D{Dynamic :param match?}\nD -->|Yes| E[Use dynamic route]\nD -->|No| F{Splat * match?}\nF -->|Yes| G[Use splat route]\nF -->|No| H[404 - No match]\nstyle C fill:#10b981,color:#fff\nstyle E fill:#3b82f6,color:#fff\nstyle G fill:#f59e0b,color:#fff\nstyle H fill:#ef4444,color:#fff"}
       />
     </LessonLayout>
   );

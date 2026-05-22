@@ -4,394 +4,387 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function SMRedux() {
+export default function Redux() {
   return (
     <LessonLayout
       title="Redux Toolkit"
       sectionId="state-mgmt"
       lessonIndex={1}
-      prev={{ path: '/state-mgmt/intro', label: 'State Management Introduction' }}
+      prev={{ path: '/state-mgmt/intro', label: "When Context Isn't Enough" }}
       next={{ path: '/state-mgmt/zustand', label: 'Zustand' }}
     >
-      <h2>Redux Mental Model</h2>
+      <h2>Redux Core Concepts</h2>
       <p>
-        Redux is a predictable state container: all application state lives in one store, state
-        can only change via dispatched actions, and reducers are pure functions that compute the
-        next state. Redux Toolkit (RTK) is the official, opinionated way to write Redux — it
-        eliminates the boilerplate of classic Redux with <code>createSlice</code>,
-        <code>configureStore</code>, and built-in Immer for immutable updates.
+        Redux is a predictable state container. Every state change follows the same unidirectional
+        flow: a component dispatches an action, a reducer processes it immutably, and the store
+        notifies subscribed components. This rigid flow makes state changes traceable and debuggable.
       </p>
 
       <FlowChart
         title="Redux Data Flow"
-        chart={"graph LR\n  A[User Action] --> B[dispatch action]\n  B --> C[Reducer]\n  C --> D[New State in Store]\n  D --> E[React re-renders]\n  E --> A\n  F[Async thunk] --> B\n  G[API call] --> F"}
+        chart={"graph LR\n  UI[Component] -->|dispatch| A[Action]\n  A --> MW[Middleware]\n  MW --> R[Reducer]\n  R --> S[Store]\n  S -->|useSelector| UI\n  style A fill:#f59e0b,color:#fff\n  style R fill:#3b82f6,color:#fff\n  style S fill:#10b981,color:#fff\n  style MW fill:#8b5cf6,color:#fff"}
       />
 
-      <CodeBlock language="jsx" title="createSlice — The Core RTK Primitive">
-{`import { createSlice, createAsyncThunk, configureStore } from '@reduxjs/toolkit';
+      <InfoBox variant="info" title="Redux Toolkit Is Redux">
+        Nobody writes vanilla Redux anymore. Redux Toolkit (RTK) is the official, opinionated
+        toolset that eliminates boilerplate. When someone says &quot;Redux&quot; in 2024+, they
+        mean RTK. If a tutorial has you writing <code>switch</code> statements and
+        <code>combineReducers</code>, close the tab.
+      </InfoBox>
 
-// createSlice combines: initial state + reducers + action creators
-const cartSlice = createSlice({
-  name: 'cart',
+      <h2>Store Setup</h2>
+      <p>
+        <code>configureStore</code> wraps <code>createStore</code> with good defaults: Redux
+        DevTools, <code>redux-thunk</code> middleware, and development-mode checks for accidental
+        mutations and non-serializable values.
+      </p>
+
+      <CodeBlock language="jsx" title="store.js">
+{`import { configureStore } from '@reduxjs/toolkit';
+import todosReducer from './features/todos/todosSlice';
+import authReducer from './features/auth/authSlice';
+
+export const store = configureStore({
+  reducer: {
+    todos: todosReducer,
+    auth: authReducer,
+  },
+  // middleware is auto-configured (thunk + dev checks)
+  // devTools is enabled in development automatically
+});
+
+// Infer types from the store itself
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;`}
+      </CodeBlock>
+
+      <h2>createSlice — Actions + Reducers in One</h2>
+      <p>
+        A slice owns a piece of state: its initial value, the reducers that update it, and the
+        action creators that trigger those reducers. RTK uses Immer under the hood, so you
+        write &quot;mutating&quot; syntax that produces immutable updates.
+      </p>
+
+      <CodeBlock language="jsx" title="features/todos/todosSlice.js">
+{`import { createSlice, nanoid } from '@reduxjs/toolkit';
+
+const todosSlice = createSlice({
+  name: 'todos',
   initialState: {
     items: [],
-    total: 0,
-    status: 'idle',  // 'idle' | 'loading' | 'error'
-    error: null,
+    filter: 'all', // 'all' | 'active' | 'completed'
   },
-
-  // reducers: each key becomes an action creator
   reducers: {
-    addItem(state, action) {
-      // Immer allows "mutating" syntax — converts to immutable update
-      state.items.push(action.payload);
-      state.total += action.payload.price;
+    addTodo: {
+      reducer(state, action) {
+        // Immer lets you "mutate" — it produces an immutable update
+        state.items.push(action.payload);
+      },
+      prepare(text) {
+        return { payload: { id: nanoid(), text, completed: false } };
+      },
     },
-
-    removeItem(state, action) {
-      const index = state.items.findIndex(i => i.id === action.payload);
-      if (index !== -1) {
-        state.total -= state.items[index].price;
-        state.items.splice(index, 1);
-      }
+    toggleTodo(state, action) {
+      const todo = state.items.find(t => t.id === action.payload);
+      if (todo) todo.completed = !todo.completed;
     },
-
-    updateQuantity(state, action) {
-      const { id, quantity } = action.payload;
-      const item = state.items.find(i => i.id === id);
-      if (item) {
-        state.total += (quantity - item.quantity) * item.price;
-        item.quantity = quantity;
-      }
+    removeTodo(state, action) {
+      state.items = state.items.filter(t => t.id !== action.payload);
     },
-
-    clearCart(state) {
-      state.items = [];
-      state.total = 0;
+    updateTodo(state, action) {
+      const { id, text } = action.payload;
+      const todo = state.items.find(t => t.id === id);
+      if (todo) todo.text = text;
     },
-  },
-
-  // extraReducers: handle actions from OTHER slices or async thunks
-  extraReducers: (builder) => {
-    builder
-      .addCase(submitCheckout.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-      })
-      .addCase(submitCheckout.fulfilled, (state) => {
-        state.items = [];
-        state.total = 0;
-        state.status = 'idle';
-      })
-      .addCase(submitCheckout.rejected, (state, action) => {
-        state.status = 'error';
-        state.error = action.payload;
-      });
+    setFilter(state, action) {
+      state.filter = action.payload;
+    },
   },
 });
 
-// Action creators are auto-generated from reducer names
-export const { addItem, removeItem, updateQuantity, clearCart } = cartSlice.actions;
-export default cartSlice.reducer;`}
+export const { addTodo, toggleTodo, removeTodo, updateTodo, setFilter } = todosSlice.actions;
+export default todosSlice.reducer;`}
       </CodeBlock>
 
-      <h2>Async Thunks — createAsyncThunk</h2>
+      <h2>Selectors — Deriving Data from State</h2>
+      <p>
+        Selectors extract and transform data from the store. Colocate them with the slice to
+        encapsulate the state shape. Use <code>createSelector</code> from Reselect (bundled with
+        RTK) for memoized derived data.
+      </p>
 
-      <CodeBlock language="jsx" title="createAsyncThunk for API Calls">
-{`import { createAsyncThunk } from '@reduxjs/toolkit';
+      <CodeBlock language="jsx" title="features/todos/todosSelectors.js">
+{`import { createSelector } from '@reduxjs/toolkit';
 
-// createAsyncThunk(typePrefix, payloadCreator)
-// Automatically dispatches: typePrefix/pending, /fulfilled, /rejected
+// Simple selectors
+export const selectAllTodos = (state) => state.todos.items;
+export const selectFilter = (state) => state.todos.filter;
 
-export const submitCheckout = createAsyncThunk(
-  'cart/checkout',
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const { cart, user } = getState();
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: cart.items,
-          userId: user.id,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        return rejectWithValue(error.message);  // triggers rejected action
-      }
-
-      return await response.json();  // triggers fulfilled action
-    } catch (err) {
-      return rejectWithValue('Network error');
+// Memoized selector — only recomputes when items or filter change
+export const selectFilteredTodos = createSelector(
+  [selectAllTodos, selectFilter],
+  (todos, filter) => {
+    switch (filter) {
+      case 'active':    return todos.filter(t => !t.completed);
+      case 'completed': return todos.filter(t => t.completed);
+      default:          return todos;
     }
   }
 );
 
-// Fetch with cancellation support
-export const fetchProducts = createAsyncThunk(
-  'products/fetchAll',
-  async (filters, { signal }) => {
-    const response = await fetch('/api/products?' + new URLSearchParams(filters), {
-      signal,  // AbortController signal — cancels on component unmount
-    });
-    return response.json();
-  }
-);
+export const selectTodoCount = createSelector(
+  [selectAllTodos],
+  (todos) => ({
+    total: todos.length,
+    active: todos.filter(t => !t.completed).length,
+    completed: todos.filter(t => t.completed).length,
+  })
+);`}
+      </CodeBlock>
 
-// Using thunks in components:
-function CheckoutButton() {
+      <h2>useSelector and useDispatch</h2>
+
+      <CodeBlock language="jsx" title="TodoApp.jsx — Complete Component">
+{`import { useSelector, useDispatch } from 'react-redux';
+import { addTodo, toggleTodo, removeTodo, setFilter } from './todosSlice';
+import { selectFilteredTodos, selectTodoCount } from './todosSelectors';
+
+function TodoApp() {
   const dispatch = useDispatch();
-  const { status, error } = useSelector(state => state.cart);
+  const todos = useSelector(selectFilteredTodos);
+  const counts = useSelector(selectTodoCount);
+  const [text, setText] = useState('');
 
-  const handleCheckout = async () => {
-    const result = await dispatch(submitCheckout());
-    if (submitCheckout.fulfilled.match(result)) {
-      navigate('/order-confirmed');
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (text.trim()) {
+      dispatch(addTodo(text.trim()));
+      setText('');
     }
   };
 
   return (
-    <button onClick={handleCheckout} disabled={status === 'loading'}>
-      {status === 'loading' ? 'Processing...' : 'Place Order'}
-    </button>
-  );
-}`}
-      </CodeBlock>
-
-      <h2>configureStore and Middleware</h2>
-
-      <CodeBlock language="jsx" title="Store Setup and Middleware">
-{`import { configureStore } from '@reduxjs/toolkit';
-import { Provider } from 'react-redux';
-import cartReducer from './cartSlice';
-import userReducer from './userSlice';
-import productsReducer from './productsSlice';
-
-// configureStore automatically adds:
-// - redux-thunk middleware (for async thunks)
-// - Redux DevTools Extension integration
-// - Immutability and serializability checks (dev mode)
-export const store = configureStore({
-  reducer: {
-    cart: cartReducer,
-    user: userReducer,
-    products: productsReducer,
-  },
-
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      // Allow non-serializable values (e.g., Dates, Maps) in specific paths
-      serializableCheck: {
-        ignoredActions: ['user/setLastLogin'],
-        ignoredPaths: ['user.lastLogin'],
-      },
-    }),
-    // .concat(loggerMiddleware)  // add custom middleware
-    // .concat(rtkQueryMiddleware)  // add RTK Query middleware
-});
-
-// Infer types from store (TypeScript pattern)
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
-
-// Provide to React
-function App() {
-  return (
-    <Provider store={store}>
-      <Router>
-        <Routes>{/* ... */}</Routes>
-      </Router>
-    </Provider>
-  );
-}`}
-      </CodeBlock>
-
-      <h2>Selectors — Derived State with Memoization</h2>
-
-      <CodeBlock language="jsx" title="createSelector for Performance">
-{`import { createSelector } from '@reduxjs/toolkit';
-
-// Raw selectors (simple, no memoization needed)
-const selectCartItems = (state) => state.cart.items;
-const selectCartTotal = (state) => state.cart.total;
-const selectDiscount = (state) => state.user.discount;
-
-// Derived selector — recomputes only when inputs change
-const selectDiscountedTotal = createSelector(
-  [selectCartTotal, selectDiscount],
-  (total, discount) => {
-    // This function only runs when total or discount actually changes
-    return total * (1 - discount / 100);
-  }
-);
-
-// Complex derived data — filter + sort without re-running on unrelated state changes
-const selectInStockProducts = createSelector(
-  [(state) => state.products.items, (state) => state.filters.category],
-  (products, category) => {
-    return products
-      .filter(p => p.inStock)
-      .filter(p => !category || p.category === category)
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }
-);
-
-// Usage in components — selector result memoized between renders
-function CartSummary() {
-  const items = useSelector(selectCartItems);
-  const total = useSelector(selectCartTotal);
-  const finalTotal = useSelector(selectDiscountedTotal);
-
-  return (
     <div>
-      <p>{items.length} items</p>
-      <p>Subtotal: \${total.toFixed(2)}</p>
-      <p>After discount: \${finalTotal.toFixed(2)}</p>
+      <form onSubmit={handleSubmit}>
+        <input value={text} onChange={e => setText(e.target.value)} />
+        <button type="submit">Add</button>
+      </form>
+
+      <div>
+        {['all', 'active', 'completed'].map(f => (
+          <button key={f} onClick={() => dispatch(setFilter(f))}>{f}</button>
+        ))}
+      </div>
+
+      <p>{counts.active} remaining / {counts.total} total</p>
+
+      <ul>
+        {todos.map(todo => (
+          <li key={todo.id}>
+            <input
+              type="checkbox"
+              checked={todo.completed}
+              onChange={() => dispatch(toggleTodo(todo.id))}
+            />
+            <span>{todo.text}</span>
+            <button onClick={() => dispatch(removeTodo(todo.id))}>Delete</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
-}
-
-// Per-item selector with argument (factory pattern)
-const makeSelectItemById = (id) =>
-  createSelector(
-    selectCartItems,
-    (items) => items.find(i => i.id === id)
-  );
-
-function CartItem({ id }) {
-  const item = useSelector(makeSelectItemById(id));
-  // Component only re-renders when THIS item changes
-  return <div>{item?.name}: {item?.quantity}</div>;
 }`}
       </CodeBlock>
 
-      <h2>RTK Query — Data Fetching Built In</h2>
+      <h2>Async Operations with createAsyncThunk</h2>
+      <p>
+        <code>createAsyncThunk</code> generates pending/fulfilled/rejected action types for async
+        operations. Handle each lifecycle in <code>extraReducers</code>.
+      </p>
 
-      <CodeBlock language="jsx" title="RTK Query API Slice">
+      <CodeBlock language="jsx" title="Async CRUD Operations">
+{`import { createAsyncThunk } from '@reduxjs/toolkit';
+
+export const fetchTodos = createAsyncThunk(
+  'todos/fetchAll',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetch('/api/todos');
+      if (!res.ok) throw new Error('Failed to fetch');
+      return await res.json();
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+export const saveTodo = createAsyncThunk(
+  'todos/save',
+  async (todo) => {
+    const res = await fetch('/api/todos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(todo),
+    });
+    return await res.json();
+  }
+);
+
+// In the slice:
+const todosSlice = createSlice({
+  name: 'todos',
+  initialState: { items: [], status: 'idle', error: null },
+  reducers: { /* ... */ },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchTodos.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchTodos.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.items = action.payload;
+      })
+      .addCase(fetchTodos.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      });
+  },
+});`}
+      </CodeBlock>
+
+      <h2>RTK Query — Built-in Data Fetching</h2>
+      <p>
+        RTK Query is Redux Toolkit&apos;s answer to TanStack Query. It auto-generates hooks,
+        handles caching, invalidation, polling, and optimistic updates — all integrated into your
+        Redux store.
+      </p>
+
+      <CodeBlock language="jsx" title="RTK Query API Definition">
 {`import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-// createApi defines an API slice with endpoints
-export const productsApi = createApi({
-  reducerPath: 'productsApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: '/api/',
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().user.token;
-      if (token) headers.set('Authorization', 'Bearer ' + token);
-      return headers;
-    },
-  }),
-  tagTypes: ['Product', 'Order'],  // for cache invalidation
-
+export const todosApi = createApi({
+  reducerPath: 'todosApi',
+  baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
+  tagTypes: ['Todo'],
   endpoints: (builder) => ({
-    // Query endpoint (GET)
-    getProducts: builder.query({
-      query: (filters = {}) => ({ url: 'products', params: filters }),
+    getTodos: builder.query({
+      query: () => '/todos',
       providesTags: (result) =>
         result
-          ? [...result.map(({ id }) => ({ type: 'Product', id })), 'Product']
-          : ['Product'],
+          ? [...result.map(({ id }) => ({ type: 'Todo', id })), 'Todo']
+          : ['Todo'],
     }),
-
-    getProductById: builder.query({
-      query: (id) => 'products/' + id,
-      providesTags: (result, error, id) => [{ type: 'Product', id }],
-    }),
-
-    // Mutation endpoint (POST/PUT/DELETE)
-    createProduct: builder.mutation({
-      query: (newProduct) => ({
-        url: 'products',
+    addTodo: builder.mutation({
+      query: (todo) => ({
+        url: '/todos',
         method: 'POST',
-        body: newProduct,
+        body: todo,
       }),
-      invalidatesTags: ['Product'],  // clears product cache after mutation
+      invalidatesTags: ['Todo'],
     }),
-
-    updateProduct: builder.mutation({
-      query: ({ id, ...patch }) => ({
-        url: 'products/' + id,
-        method: 'PATCH',
-        body: patch,
+    deleteTodo: builder.mutation({
+      query: (id) => ({
+        url: \`/todos/\${id}\`,
+        method: 'DELETE',
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Product', id }],
+      invalidatesTags: (result, error, id) => [{ type: 'Todo', id }],
     }),
   }),
 });
 
 // Auto-generated hooks
-export const {
-  useGetProductsQuery,
-  useGetProductByIdQuery,
-  useCreateProductMutation,
-  useUpdateProductMutation,
-} = productsApi;
-
-// Register in store
-const store = configureStore({
-  reducer: {
-    [productsApi.reducerPath]: productsApi.reducer,
-    // ...other reducers
-  },
-  middleware: (getDefault) => getDefault().concat(productsApi.middleware),
-});
-
-// Usage in component — automatic loading, caching, re-fetch on invalidation
-function ProductList({ category }) {
-  const {
-    data: products = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useGetProductsQuery({ category }, {
-    skip: !category,           // don't fetch until category is available
-    pollingInterval: 30_000,   // re-fetch every 30s
-  });
-
-  if (isLoading) return <Spinner />;
-  if (isError) return <Error message={error.message} />;
-
-  return products.map(p => <ProductCard key={p.id} product={p} />);
-}`}
+export const { useGetTodosQuery, useAddTodoMutation, useDeleteTodoMutation } = todosApi;`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Redux Toolkit vs React Query/RTK Query">
-        <p>
-          RTK Query (built into Redux Toolkit) handles server state: fetching, caching, loading
-          states, and cache invalidation. If you are already using Redux for UI state, RTK Query
-          is the natural choice — one store, consistent patterns. If you have no Redux for UI state,
-          React Query / TanStack Query may be simpler since it does not require setting up a Redux
-          store. Use Redux slices for client state (cart, modals, user preferences) and RTK Query
-          or React Query for server state (products, orders, user data from APIs).
-        </p>
+      <InfoBox variant="tip" title="RTK Query vs TanStack Query">
+        Use RTK Query if you&apos;re already using Redux and want everything in one store. Use
+        TanStack Query if you don&apos;t need Redux for client state — it&apos;s lighter, more
+        flexible, and framework-agnostic. Don&apos;t use both in the same app.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What does Immer (built into Redux Toolkit createSlice) allow you to do in reducers?"
-        options={[
-          "Write asynchronous code inside reducers with async/await",
-          "Write reducers that appear to mutate state directly — Immer converts them to immutable updates behind the scenes",
-          "Skip writing reducers entirely by auto-generating them from the initial state",
-          "Automatically persist Redux state to localStorage on every change"
-        ]}
-        correctIndex={1}
-        explanation="Redux requires immutable state updates. Immer (built into RTK createSlice) wraps your reducer in a JavaScript Proxy. You write state.items.push(item) or state.count++ as if mutating the state directly, but Immer records the changes and produces a brand-new immutable state object. This dramatically simplifies reducer code — no more spread operators or Object.assign — without sacrificing Redux's immutability guarantee."
-      />
+      <h2>Middleware</h2>
+      <p>
+        Middleware intercepts dispatched actions before they reach the reducer. Use it for logging,
+        analytics, side effects, or transforming actions. RTK includes <code>redux-thunk</code> by
+        default.
+      </p>
+
+      <CodeBlock language="jsx" title="Custom Middleware">
+{`const analyticsMiddleware = (store) => (next) => (action) => {
+  if (action.type === 'todos/addTodo') {
+    analytics.track('todo_created', {
+      userId: store.getState().auth.user?.id,
+    });
+  }
+  return next(action); // always call next()
+};
+
+const store = configureStore({
+  reducer: { todos: todosReducer },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(analyticsMiddleware),
+});`}
+      </CodeBlock>
+
+      <h2>Folder Structure</h2>
+
+      <CodeBlock language="jsx" title="Feature-Based Structure (Recommended)">
+{`src/
+├── app/
+│   ├── store.js          # configureStore
+│   └── hooks.js          # typed useAppDispatch, useAppSelector
+├── features/
+│   ├── todos/
+│   │   ├── todosSlice.js
+│   │   ├── todosSelectors.js
+│   │   ├── todosApi.js       # RTK Query endpoints
+│   │   ├── TodoList.jsx
+│   │   ├── TodoItem.jsx
+│   │   └── AddTodoForm.jsx
+│   └── auth/
+│       ├── authSlice.js
+│       ├── authSelectors.js
+│       ├── LoginForm.jsx
+│       └── UserMenu.jsx
+└── index.jsx`}
+      </CodeBlock>
+
+      <h2>DevTools</h2>
+      <p>
+        Redux DevTools (browser extension) lets you inspect every dispatched action, time-travel
+        through state changes, diff state before/after each action, and export/import state
+        snapshots. This is Redux&apos;s killer feature for debugging — no other library matches
+        its debugging experience out of the box.
+      </p>
 
       <InteractiveChallenge
-        question="When should you use createSelector instead of computing derived data directly in useSelector?"
+        question={"What does `createSlice` generate automatically?"}
         options={[
-          "Always — createSelector is required for all useSelector calls",
-          "When the derived computation is expensive or produces a new object/array reference each call, causing unnecessary re-renders",
-          "Only when the selector needs access to more than one slice of state",
-          "createSelector is for TypeScript only; JavaScript apps use plain functions"
+          "Only reducer functions",
+          "Action creators and action type constants from the reducer names",
+          "React components that connect to the store",
+          "API endpoints for data fetching"
         ]}
         correctIndex={1}
-        explanation="useSelector re-runs the selector on every state change and re-renders the component if the result is a new reference. If your selector does .filter() or .map(), it returns a new array every call — even if the data did not change — causing unnecessary re-renders. createSelector memoizes: it only recomputes when its input selectors return different values, and returns the cached result otherwise. Use it whenever the selector computes a new array/object or does significant work."
+        explanation="createSlice takes reducer functions and auto-generates corresponding action creators and action type strings (e.g., 'todos/addTodo'). This eliminates the need to manually define action types and action creator functions — the biggest source of Redux boilerplate."
+        language="jsx"
       />
+
+      <InfoBox variant="warning" title="Common RTK Mistakes">
+        Don&apos;t destructure or spread state outside of Immer reducers — Immer&apos;s proxy only
+        works inside <code>createSlice</code> reducers. Don&apos;t put non-serializable values
+        (class instances, functions, Promises) in the store. Don&apos;t create selectors inside
+        components — define them outside to enable memoization.
+      </InfoBox>
+
+      <h2>When Redux Toolkit Shines</h2>
+      <p>
+        RTK is the right choice for large teams that benefit from enforced conventions, apps with
+        complex state interactions across many features, and when you need the best debugging
+        tooling available. The tradeoff is more ceremony than lighter alternatives — which
+        we&apos;ll explore next with Zustand.
+      </p>
     </LessonLayout>
   );
 }

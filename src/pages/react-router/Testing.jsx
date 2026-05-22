@@ -4,141 +4,273 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function RRTesting() {
+export default function Testing() {
   return (
     <LessonLayout
       title="Testing Routes"
       sectionId="react-router"
       lessonIndex={5}
-      prev={{ path: '/react-router/advanced', label: 'Advanced Routing' }}
-      next={{ path: '/react-router/fullapp', label: 'Full Application Example' }}
+      prev={{ path: '/react-router/advanced', label: 'Advanced Patterns' }}
+      next={{ path: '/react-router/fullapp', label: 'Complete App Routing' }}
     >
-      <h2>Why Route Testing Is Different</h2>
       <p>
-        Components that use React Router hooks (<code>useParams</code>, <code>useNavigate</code>,
-        <code>useLocation</code>) must be rendered inside a router context. Tests also need to
-        control the initial URL, verify navigation happened, and test loaders and actions.
-        React Router provides dedicated test utilities for all of these scenarios.
+        Testing routes is essential for ensuring navigation, data loading, and
+        access control work correctly. React Router provides{' '}
+        <code>MemoryRouter</code> and <code>createMemoryRouter</code> for test
+        environments where there is no real browser history.
       </p>
 
       <FlowChart
-        title="Testing Router Scenarios"
-        chart={"graph TD\n  A[Test type] --> B[Component uses hooks]\n  A --> C[Has loaders or actions]\n  A --> D[Tests navigation]\n  B --> E[MemoryRouter wrapper]\n  C --> F[createMemoryRouter]\n  D --> G[Assert URL changed]"}
+        title="Route Testing Strategy"
+        chart={"graph TD\nA[Route Tests] --> B[Unit Tests]\nA --> C[Integration Tests]\nB --> D[Test individual components with mocked hooks]\nC --> E[Test full navigation flows with MemoryRouter]\nC --> F[Test loaders and actions in isolation]\nC --> G[Test protected routes with auth context]\nstyle A fill:#3b82f6,color:#fff\nstyle B fill:#8b5cf6,color:#fff\nstyle C fill:#8b5cf6,color:#fff"}
       />
 
-      <CodeBlock language="jsx" title="renderWithRouter — Test Helper">
+      <h2>Testing Setup with MemoryRouter</h2>
+      <p>
+        <code>MemoryRouter</code> keeps the history stack in memory — perfect for
+        tests. You control the initial URL via <code>initialEntries</code>.
+      </p>
+
+      <CodeBlock language="jsx" title="Basic MemoryRouter Test Setup">
 {`import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import About from './pages/About';
 
-// Helper: render a component inside a MemoryRouter at any path
-function renderWithRouter(ui, { path = '/', route = '/', routes = [] } = {}) {
-  return render(
-    <MemoryRouter initialEntries={[route]}>
+test('renders Home at /', () => {
+  render(
+    <MemoryRouter initialEntries={['/']}>
       <Routes>
-        <Route path={path} element={ui} />
-        {routes.map(r => (
-          <Route key={r.path} path={r.path} element={r.element} />
-        ))}
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
       </Routes>
     </MemoryRouter>
   );
-}
 
-// ── SIMPLE: component using useParams ────────────────────────────
-function UserProfile() {
-  const { userId } = useParams();
-  return <h1>Profile for user {userId}</h1>;
-}
-
-test('renders user ID from URL', () => {
-  renderWithRouter(<UserProfile />, {
-    path: '/users/:userId',
-    route: '/users/42',
-  });
-  expect(screen.getByRole('heading')).toHaveTextContent('Profile for user 42');
+  expect(screen.getByText('Welcome Home')).toBeInTheDocument();
 });
 
-// ── LOCATION STATE ────────────────────────────────────────────────
-function BackLink() {
-  const location = useLocation();
-  const from = location.state?.from ?? '/';
-  return <a href={from}>← Back</a>;
-}
-
-test('renders correct back link from location state', () => {
+test('renders About at /about', () => {
   render(
-    <MemoryRouter
-      initialEntries={[{ pathname: '/product/1', state: { from: '/search?q=react' } }]}
-    >
+    <MemoryRouter initialEntries={['/about']}>
       <Routes>
-        <Route path="/product/:id" element={<BackLink />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
       </Routes>
     </MemoryRouter>
   );
-  expect(screen.getByRole('link', { name: /back/i })).toHaveAttribute(
-    'href',
-    '/search?q=react'
-  );
+
+  expect(screen.getByText('About Us')).toBeInTheDocument();
 });`}
       </CodeBlock>
 
       <h2>Testing Navigation</h2>
+      <p>
+        Use <code>userEvent</code> to click links and verify that the correct
+        page renders after navigation.
+      </p>
 
-      <CodeBlock language="jsx" title="Asserting Navigation Happens">
-{`import { render, screen, waitFor } from '@testing-library/react';
+      <CodeBlock language="jsx" title="Testing Link Navigation">
+{`import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, Link } from 'react-router-dom';
 
-// Test that clicking causes navigation
-test('clicking product navigates to detail page', async () => {
+function Nav() {
+  return (
+    <nav>
+      <Link to="/">Home</Link>
+      <Link to="/dashboard">Dashboard</Link>
+    </nav>
+  );
+}
+
+test('navigates to dashboard on link click', async () => {
   const user = userEvent.setup();
 
   render(
-    <MemoryRouter initialEntries={['/products']}>
+    <MemoryRouter initialEntries={['/']}>
+      <Nav />
       <Routes>
-        <Route path="/products"     element={<ProductList />} />
-        <Route path="/products/:id" element={<div>Product Detail</div>} />
+        <Route path="/" element={<p>Home Page</p>} />
+        <Route path="/dashboard" element={<p>Dashboard Page</p>} />
       </Routes>
     </MemoryRouter>
   );
 
-  // Assert we start at the list
-  expect(screen.getByRole('heading', { name: /products/i })).toBeInTheDocument();
+  expect(screen.getByText('Home Page')).toBeInTheDocument();
+  await user.click(screen.getByText('Dashboard'));
+  expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+});`}
+      </CodeBlock>
 
-  // Click the first product link
-  await user.click(screen.getByRole('link', { name: 'View Widget' }));
+      <h2>Testing Route Params</h2>
+      <CodeBlock language="jsx" title="Testing Dynamic Route Segments">
+{`import { render, screen } from '@testing-library/react';
+import { MemoryRouter, Routes, Route, useParams } from 'react-router-dom';
 
-  // Assert navigation happened (new page content visible)
+function UserProfile() {
+  const { userId } = useParams();
+  return <h1>User: {userId}</h1>;
+}
+
+test('renders correct user from route param', () => {
+  render(
+    <MemoryRouter initialEntries={['/users/42']}>
+      <Routes>
+        <Route path="/users/:userId" element={<UserProfile />} />
+      </Routes>
+    </MemoryRouter>
+  );
+
+  expect(screen.getByText('User: 42')).toBeInTheDocument();
+});`}
+      </CodeBlock>
+
+      <h2>Testing Loaders and Actions</h2>
+      <p>
+        With <code>createMemoryRouter</code> you can test the full data API —
+        loaders, actions, and error boundaries — just as the real router runs
+        them.
+      </p>
+
+      <CodeBlock language="jsx" title="Testing Loaders with createMemoryRouter">
+{`import { render, screen, waitFor } from '@testing-library/react';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+
+function Dashboard() {
+  const data = useLoaderData();
+  return <h1>{data.title}</h1>;
+}
+
+test('loader provides data to component', async () => {
+  const routes = [
+    {
+      path: '/dashboard',
+      element: <Dashboard />,
+      loader: () => ({ title: 'My Dashboard' }),
+    },
+  ];
+
+  const router = createMemoryRouter(routes, {
+    initialEntries: ['/dashboard'],
+  });
+
+  render(<RouterProvider router={router} />);
+
   await waitFor(() => {
-    expect(screen.getByText('Product Detail')).toBeInTheDocument();
+    expect(screen.getByText('My Dashboard')).toBeInTheDocument();
+  });
+});`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="Testing Actions with Form Submission">
+{`import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {
+  createMemoryRouter, RouterProvider,
+  useLoaderData, useActionData, Form,
+} from 'react-router-dom';
+
+function ContactPage() {
+  const actionData = useActionData();
+  return (
+    <div>
+      <Form method="post">
+        <input name="email" placeholder="Email" />
+        <button type="submit">Submit</button>
+      </Form>
+      {actionData?.success && <p>Submitted!</p>}
+    </div>
+  );
+}
+
+test('action processes form and returns data', async () => {
+  const user = userEvent.setup();
+  const routes = [
+    {
+      path: '/contact',
+      element: <ContactPage />,
+      action: async ({ request }) => {
+        const formData = await request.formData();
+        return { success: true, email: formData.get('email') };
+      },
+    },
+  ];
+
+  const router = createMemoryRouter(routes, {
+    initialEntries: ['/contact'],
+  });
+
+  render(<RouterProvider router={router} />);
+
+  await user.type(screen.getByPlaceholderText('Email'), 'a@b.com');
+  await user.click(screen.getByText('Submit'));
+
+  await waitFor(() => {
+    expect(screen.getByText('Submitted!')).toBeInTheDocument();
+  });
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="createMemoryRouter vs MemoryRouter">
+        Use <code>createMemoryRouter</code> when you need to test loaders, actions,
+        or error boundaries. Use <code>MemoryRouter</code> for simpler tests that
+        only need component rendering and link navigation.
+      </InfoBox>
+
+      <h2>Testing Protected Routes</h2>
+      <CodeBlock language="jsx" title="Testing Auth Redirects">
+{`import { render, screen, waitFor } from '@testing-library/react';
+import { createMemoryRouter, RouterProvider, redirect } from 'react-router-dom';
+
+function requireAuth() {
+  const user = getStoredUser(); // your auth helper
+  if (!user) throw redirect('/login');
+  return user;
+}
+
+test('redirects unauthenticated user to login', async () => {
+  // Mock: no user stored
+  jest.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
+
+  const routes = [
+    { path: '/login', element: <p>Login Page</p> },
+    {
+      path: '/dashboard',
+      loader: requireAuth,
+      element: <p>Dashboard</p>,
+    },
+  ];
+
+  const router = createMemoryRouter(routes, {
+    initialEntries: ['/dashboard'],
+  });
+
+  render(<RouterProvider router={router} />);
+
+  await waitFor(() => {
+    expect(screen.getByText('Login Page')).toBeInTheDocument();
   });
 });
 
-// Test programmatic navigation with useNavigate
-function LoginForm({ onLogin }) {
-  const navigate = useNavigate();
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await onLogin();
-    navigate('/dashboard');
-  };
-  return <form onSubmit={handleSubmit}><button type="submit">Login</button></form>;
-}
+test('shows dashboard for authenticated user', async () => {
+  jest.spyOn(Storage.prototype, 'getItem')
+    .mockReturnValue(JSON.stringify({ name: 'Alice' }));
 
-test('navigates to dashboard after login', async () => {
-  const user = userEvent.setup();
-  const mockLogin = vi.fn().mockResolvedValue(true);
+  const routes = [
+    { path: '/login', element: <p>Login Page</p> },
+    {
+      path: '/dashboard',
+      loader: requireAuth,
+      element: <p>Dashboard</p>,
+    },
+  ];
 
-  render(
-    <MemoryRouter initialEntries={['/login']}>
-      <Routes>
-        <Route path="/login"     element={<LoginForm onLogin={mockLogin} />} />
-        <Route path="/dashboard" element={<div>Dashboard</div>} />
-      </Routes>
-    </MemoryRouter>
-  );
+  const router = createMemoryRouter(routes, {
+    initialEntries: ['/dashboard'],
+  });
 
-  await user.click(screen.getByRole('button', { name: 'Login' }));
+  render(<RouterProvider router={router} />);
 
   await waitFor(() => {
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
@@ -146,187 +278,140 @@ test('navigates to dashboard after login', async () => {
 });`}
       </CodeBlock>
 
-      <h2>Testing Loaders and Actions</h2>
+      <h2>Testing Error Boundaries</h2>
+      <CodeBlock language="jsx" title="Testing errorElement Rendering">
+{`import { render, screen, waitFor } from '@testing-library/react';
+import { createMemoryRouter, RouterProvider, useRouteError } from 'react-router-dom';
 
-      <CodeBlock language="jsx" title="createMemoryRouter for Data Router Tests">
-{`import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-
-// createMemoryRouter supports loaders, actions, and errorElement
-// Use it when your component depends on useLoaderData() or useActionData()
-
-// ── TEST A LOADER ─────────────────────────────────────────────────
-test('renders product from loader data', async () => {
-  const mockProduct = { id: '42', name: 'Test Book', price: 29.99, inStock: true };
-
-  const router = createMemoryRouter([
-    {
-      path: '/products/:id',
-      element: <ProductDetail />,
-      // Inject test data directly — no real API call
-      loader: () => mockProduct,
-    },
-  ], {
-    initialEntries: ['/products/42'],
-  });
-
-  render(<RouterProvider router={router} />);
-
-  await waitFor(() => {
-    expect(screen.getByRole('heading', { name: 'Test Book' })).toBeInTheDocument();
-    expect(screen.getByText('$29.99')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Add to cart' })).toBeEnabled();
-  });
-});
-
-// ── TEST AN ACTION ────────────────────────────────────────────────
-test('submitting form calls action and redirects', async () => {
-  const user = userEvent.setup();
-  const mockCreate = vi.fn().mockResolvedValue({ id: 'NEW-1' });
-
-  const router = createMemoryRouter([
-    {
-      path: '/products/new',
-      element: <NewProductForm />,
-      action: async ({ request }) => {
-        const data = Object.fromEntries(await request.formData());
-        return mockCreate(data);
-      },
-    },
-    {
-      path: '/products/NEW-1',
-      element: <div>Product created!</div>,
-    },
-  ], {
-    initialEntries: ['/products/new'],
-  });
-
-  render(<RouterProvider router={router} />);
-
-  await user.type(screen.getByLabelText('Product name'), 'My New Widget');
-  await user.type(screen.getByLabelText('Price'), '39.99');
-  await user.click(screen.getByRole('button', { name: 'Create product' }));
-
-  await waitFor(() => {
-    expect(screen.getByText('Product created!')).toBeInTheDocument();
-  });
-  expect(mockCreate).toHaveBeenCalledWith({
-    name: 'My New Widget',
-    price: '39.99',
-  });
-});
-
-// ── TEST ERROR STATES ─────────────────────────────────────────────
-test('shows 404 when product not found', async () => {
-  const router = createMemoryRouter([
-    {
-      path: '/products/:id',
-      element: <ProductDetail />,
-      errorElement: <div>Product not found</div>,
-      loader: () => {
-        throw new Response('Not Found', { status: 404 });
-      },
-    },
-  ], {
-    initialEntries: ['/products/999'],
-  });
-
-  render(<RouterProvider router={router} />);
-
-  await waitFor(() => {
-    expect(screen.getByText('Product not found')).toBeInTheDocument();
-  });
-});`}
-      </CodeBlock>
-
-      <h2>Testing Search Params</h2>
-
-      <CodeBlock language="jsx" title="Testing useSearchParams">
-{`import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-
-function SearchPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const query = searchParams.get('q') ?? '';
-
-  return (
-    <div>
-      <input
-        value={query}
-        onChange={e => setSearchParams({ q: e.target.value })}
-        placeholder="Search..."
-        aria-label="Search"
-      />
-      <p>Results for: {query}</p>
-    </div>
-  );
+function ErrorPage() {
+  const error = useRouteError();
+  return <p>Error: {error.message}</p>;
 }
 
-// Test with initial search params in the URL
-test('reads initial search params from URL', () => {
-  render(
-    <MemoryRouter initialEntries={['/search?q=react+hooks']}>
-      <Routes>
-        <Route path="/search" element={<SearchPage />} />
-      </Routes>
-    </MemoryRouter>
-  );
+test('displays error boundary when loader throws', async () => {
+  const routes = [
+    {
+      path: '/broken',
+      loader: () => { throw new Error('Server is down'); },
+      element: <p>Should not render</p>,
+      errorElement: <ErrorPage />,
+    },
+  ];
 
-  expect(screen.getByLabelText('Search')).toHaveValue('react hooks');
-  expect(screen.getByText('Results for: react hooks')).toBeInTheDocument();
-});
+  const router = createMemoryRouter(routes, {
+    initialEntries: ['/broken'],
+  });
 
-test('updates URL when user types', async () => {
-  const user = userEvent.setup();
-  render(
-    <MemoryRouter initialEntries={['/search']}>
-      <Routes>
-        <Route path="/search" element={<SearchPage />} />
-      </Routes>
-    </MemoryRouter>
-  );
+  render(<RouterProvider router={router} />);
 
-  await user.type(screen.getByLabelText('Search'), 'typescript');
-  expect(screen.getByText('Results for: typescript')).toBeInTheDocument();
+  await waitFor(() => {
+    expect(screen.getByText('Error: Server is down')).toBeInTheDocument();
+  });
 });`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="MemoryRouter vs createMemoryRouter">
-        <p>
-          Use <code>MemoryRouter</code> for components that use URL hooks but do NOT use
-          loaders/actions — it is simpler and pairs naturally with <code>{'<Routes><Route/></Routes>'}</code>.
-          Use <code>createMemoryRouter</code> with <code>{'<RouterProvider>'}</code> when your route
-          has a <code>loader</code>, <code>action</code>, or <code>errorElement</code> — these
-          only work with the data router API. Mixing them (MemoryRouter with loader routes) silently
-          ignores the loader.
-        </p>
+      <h2>Reusable Test Wrapper</h2>
+      <p>
+        Create a utility function to reduce boilerplate across all your route
+        tests. It wraps components with <code>MemoryRouter</code> and any
+        providers your app needs (auth context, theme, etc.).
+      </p>
+
+      <CodeBlock language="jsx" title="Test Utility Wrapper">
+{`// test-utils.jsx
+import { render } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+
+export function renderWithRouter(ui, { route = '/', ...options } = {}) {
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <AuthProvider>
+        <MemoryRouter initialEntries={[route]}>
+          {children}
+        </MemoryRouter>
+      </AuthProvider>
+    ),
+    ...options,
+  });
+}
+
+// Usage in tests:
+// import { renderWithRouter } from './test-utils';
+// renderWithRouter(<App />, { route: '/dashboard' });`}
+      </CodeBlock>
+
+      <h2>Mocking Router Hooks</h2>
+      <p>
+        For unit-testing a component in isolation, you can mock React Router
+        hooks instead of rendering a full router tree.
+      </p>
+
+      <CodeBlock language="jsx" title="Mocking useNavigate, useParams, useLocation">
+{`import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+// Mock the entire module
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: jest.fn(),
+  useParams: jest.fn(),
+  useLocation: jest.fn(),
+}));
+
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import UserProfile from './UserProfile';
+
+test('calls navigate on button click', async () => {
+  const navigate = jest.fn();
+  useNavigate.mockReturnValue(navigate);
+  useParams.mockReturnValue({ id: '7' });
+  useLocation.mockReturnValue({ pathname: '/users/7' });
+
+  const user = userEvent.setup();
+  render(<UserProfile />);
+
+  await user.click(screen.getByText('Go Back'));
+  expect(navigate).toHaveBeenCalledWith(-1);
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Prefer Integration Tests">
+        Mocking hooks is brittle — if the component switches from{' '}
+        <code>useNavigate</code> to <code>&lt;Link&gt;</code>, your mock breaks
+        even though the behavior is the same. Prefer <code>MemoryRouter</code>{' '}
+        integration tests and reserve hook mocks for truly isolated unit tests.
       </InfoBox>
 
       <InteractiveChallenge
-        question="Why use MemoryRouter instead of BrowserRouter in unit tests?"
+        question={"Which router should you use when testing loaders and actions?"}
         options={[
-          "MemoryRouter renders significantly faster than BrowserRouter",
-          "MemoryRouter keeps history in memory — no real browser URL bar needed, making tests hermetic and runnable in Node.js/jsdom",
-          "BrowserRouter does not work with React Testing Library at all",
-          "MemoryRouter automatically cleans up after each test"
+          "BrowserRouter with a test URL",
+          "MemoryRouter with initialEntries",
+          "createMemoryRouter with RouterProvider",
+          "StaticRouter for server-side tests only",
         ]}
-        correctIndex={1}
-        explanation="BrowserRouter relies on the browser's History API and actual URL bar, which do not exist in Node.js/jsdom (the test environment). MemoryRouter stores routing state in an in-memory array. You can set initialEntries to start at any URL, including routes with params and search params. Each test starts with a fresh memory history, so tests are independent and portable."
+        correctIndex={2}
+        explanation={"createMemoryRouter supports the full data API — loaders, actions, and errorElement — just like createBrowserRouter. MemoryRouter only supports component rendering and navigation. Use createMemoryRouter + RouterProvider when you need to test data loading or form actions."}
+        language="jsx"
       />
 
-      <InteractiveChallenge
-        question="When should you use createMemoryRouter instead of MemoryRouter in tests?"
-        options={[
-          "Always — createMemoryRouter is the modern API for all tests",
-          "When the route has a loader, action, or errorElement that needs to be tested",
-          "When you need to test multiple routes in a single test",
-          "createMemoryRouter is only needed for TypeScript projects"
-        ]}
-        correctIndex={1}
-        explanation="Loaders, actions, and errorElement only work with the data router API (createBrowserRouter/createMemoryRouter + RouterProvider). If you wrap a route with a loader in MemoryRouter, the loader silently does not run. Use createMemoryRouter when you need to test that a loader fetches data correctly, that an action processes a form submission, or that errors from loaders trigger the errorElement."
-      />
+      <h2>Quick Reference: Test Pattern Cheat Sheet</h2>
+      <CodeBlock language="jsx" title="When to Use Which Testing Pattern">
+{`/*
+Scenario                        → Pattern
+───────────────────────────────────────────────────
+Render at specific URL          → MemoryRouter + initialEntries
+Click link, check navigation    → MemoryRouter + userEvent.click
+Test route params               → MemoryRouter with param in URL
+Test loader data                → createMemoryRouter + RouterProvider
+Test form actions               → createMemoryRouter + RouterProvider
+Test auth redirects             → createMemoryRouter + mock auth
+Test error boundaries           → createMemoryRouter + throwing loader
+Isolated component test         → jest.mock('react-router-dom')
+Reusable across test files      → Custom renderWithRouter utility
+*/`}
+      </CodeBlock>
     </LessonLayout>
   );
 }

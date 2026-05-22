@@ -1,195 +1,234 @@
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function FTLinting() {
+export default function Linting() {
   return (
     <LessonLayout
       title="ESLint & Prettier"
       sectionId="frontend-tooling"
       lessonIndex={1}
-      prev={{ path: '/frontend-tooling/vite', label: 'Vite' }}
+      prev={{ path: '/frontend-tooling/vite', label: 'Vite Deep Dive' }}
       next={{ path: '/frontend-tooling/packages', label: 'Package Managers' }}
     >
-      <h2>ESLint — Static Code Analysis</h2>
+      <h2>Why Linting and Formatting Matter</h2>
       <p>
-        ESLint analyzes your JavaScript/TypeScript code for bugs, anti-patterns, and style issues without running it.
-        ESLint 9 introduced the flat config system (<code>eslint.config.js</code>), replacing <code>.eslintrc</code>.
+        On a team of 10+ engineers, code style debates are a waste of review cycles.
+        ESLint catches bugs and enforces patterns. Prettier enforces formatting.
+        Together they eliminate an entire category of PR comments so reviewers
+        can focus on logic and architecture.
       </p>
 
-      <CodeBlock language="bash" title="Installation">
-{`# ESLint 9+ with flat config
-npm install --save-dev eslint @eslint/js
+      <FlowChart
+        title="Lint & Format Pipeline"
+        chart={"graph LR\n  A[Write Code] --> B[Save File]\n  B --> C[Prettier Formats]\n  C --> D[ESLint Checks]\n  D -->|Errors| E[Fix in Editor]\n  D -->|Clean| F[Commit]\n  F --> G[Husky Pre-commit]\n  G --> H[lint-staged Runs]\n  H --> I[Push]"}
+      />
 
-# TypeScript support
-npm install --save-dev typescript-eslint
+      <h2>ESLint v9: Flat Config</h2>
+      <p>
+        ESLint v9 replaced the cascading <code>.eslintrc</code> system with a single
+        flat config file: <code>eslint.config.js</code>. It's an array of config
+        objects — no more "extends" chains or mysterious config merging.
+      </p>
 
-# React support
-npm install --save-dev eslint-plugin-react eslint-plugin-react-hooks
-npm install --save-dev eslint-plugin-react-refresh
-
-# Accessibility
-npm install --save-dev eslint-plugin-jsx-a11y`}
+      <CodeBlock language="bash" title="Install ESLint + Plugins">
+{`npm install -D eslint @eslint/js typescript-eslint \\
+  eslint-plugin-react-hooks eslint-plugin-react-refresh \\
+  eslint-plugin-jsx-a11y globals`}
       </CodeBlock>
 
-      <CodeBlock language="javascript" title="eslint.config.js (flat config)">
-{`import js from '@eslint/js'
-import globals from 'globals'
-import tseslint from 'typescript-eslint'
-import reactPlugin from 'eslint-plugin-react'
-import reactHooksPlugin from 'eslint-plugin-react-hooks'
-import reactRefreshPlugin from 'eslint-plugin-react-refresh'
-import jsxA11y from 'eslint-plugin-jsx-a11y'
+      <CodeBlock language="javascript" title="eslint.config.js (Flat Config)">
+{`import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+import globals from 'globals';
 
 export default tseslint.config(
   // Global ignores
   { ignores: ['dist', 'node_modules', '*.config.js'] },
 
-  // Base JS rules
+  // Base JS recommended rules
   js.configs.recommended,
 
-  // TypeScript rules
+  // TypeScript recommended rules
   ...tseslint.configs.recommended,
 
-  // React config
+  // Project-wide settings
   {
-    files: ['**/*.{jsx,tsx}'],
-    plugins: {
-      react: reactPlugin,
-      'react-hooks': reactHooksPlugin,
-      'react-refresh': reactRefreshPlugin,
-      'jsx-a11y': jsxA11y,
-    },
     languageOptions: {
-      globals: { ...globals.browser },
+      ecmaVersion: 2024,
+      sourceType: 'module',
+      globals: {
+        ...globals.browser,
+        ...globals.es2024,
+      },
       parserOptions: {
         ecmaFeatures: { jsx: true },
       },
     },
-    settings: {
-      react: { version: 'detect' },
-    },
+  },
+
+  // React Hooks rules
+  {
+    plugins: { 'react-hooks': reactHooks },
     rules: {
-      // React
-      'react/prop-types': 'off',              // not needed with TS
-      'react/react-in-jsx-scope': 'off',      // not needed with new JSX transform
-      'react/self-closing-comp': 'warn',
-      'react/jsx-curly-brace-presence': ['warn', { props: 'never', children: 'never' }],
+      ...reactHooks.configs.recommended.rules,
+    },
+  },
 
-      // React Hooks
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+  // React Refresh (for Vite HMR)
+  {
+    plugins: { 'react-refresh': reactRefresh },
+    rules: {
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  },
 
-      // Refresh
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-
-      // A11y
+  // Accessibility
+  {
+    plugins: { 'jsx-a11y': jsxA11y },
+    rules: {
       'jsx-a11y/alt-text': 'error',
       'jsx-a11y/anchor-has-content': 'error',
+      'jsx-a11y/click-events-have-key-events': 'warn',
+      'jsx-a11y/no-autofocus': 'warn',
+    },
+  },
 
-      // TypeScript
+  // Custom project rules
+  {
+    rules: {
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'error',
     },
   }
-)`}
+);`}
       </CodeBlock>
 
-      <h2>Prettier — Code Formatter</h2>
+      <InfoBox variant="tip" title="typescript-eslint v8+">
+        The <code>typescript-eslint</code> package is the new unified entry point that
+        replaces both <code>@typescript-eslint/parser</code> and
+        <code>@typescript-eslint/eslint-plugin</code>. Use the combined package for
+        flat config — it exports a <code>config()</code> helper that merges everything
+        cleanly.
+      </InfoBox>
+
+      <h3>Key Plugins Explained</h3>
       <p>
-        Prettier enforces consistent formatting by reprinting code from scratch. It is opinionated —
-        minimal configuration reduces bikeshedding.
+        <strong>eslint-plugin-react-hooks</strong> — Enforces the Rules of Hooks: no
+        conditional hooks, correct dependency arrays. This catches the most common React
+        bugs.
+      </p>
+      <p>
+        <strong>eslint-plugin-react-refresh</strong> — Ensures components export correctly
+        for Vite's Fast Refresh. Catches cases where HMR silently breaks.
+      </p>
+      <p>
+        <strong>eslint-plugin-jsx-a11y</strong> — Static analysis for accessibility:
+        missing alt text, improper ARIA roles, non-interactive elements with click handlers.
       </p>
 
-      <CodeBlock language="bash" title="Prettier installation">
-{`npm install --save-dev prettier
+      <h2>Prettier Setup</h2>
 
-# Disable ESLint rules that conflict with Prettier
-npm install --save-dev eslint-config-prettier`}
+      <CodeBlock language="bash" title="Install Prettier">
+{`npm install -D prettier eslint-config-prettier`}
       </CodeBlock>
 
       <CodeBlock language="json" title=".prettierrc">
 {`{
-  "semi": false,
+  "semi": true,
   "singleQuote": true,
-  "tabWidth": 2,
-  "trailingComma": "es5",
+  "trailingComma": "all",
   "printWidth": 100,
-  "bracketSpacing": true,
+  "tabWidth": 2,
   "arrowParens": "always",
+  "bracketSpacing": true,
   "endOfLine": "lf",
-  "jsxSingleQuote": false,
-  "overrides": [
-    {
-      "files": "*.json",
-      "options": { "printWidth": 200 }
-    }
-  ]
+  "jsxSingleQuote": false
 }`}
       </CodeBlock>
 
-      <CodeBlock language="json" title=".prettierignore">
+      <CodeBlock language="bash" title=".prettierignore">
 {`dist
 node_modules
-*.min.js
 coverage
-public`}
+*.min.js
+pnpm-lock.yaml
+package-lock.json`}
       </CodeBlock>
 
-      <h2>Integrating ESLint + Prettier</h2>
-
-      <CodeBlock language="javascript" title="eslint.config.js with prettier">
-{`import prettierConfig from 'eslint-config-prettier'
-
-export default tseslint.config(
-  // ... your other configs ...
-
-  // MUST be last — disables conflicting ESLint formatting rules
-  prettierConfig,
-)`}
-      </CodeBlock>
-
-      <h2>Husky — Git Hooks</h2>
+      <h2>ESLint + Prettier Integration</h2>
       <p>
-        Husky runs scripts on git events (pre-commit, pre-push). Use it with lint-staged to only lint
-        changed files, keeping the pre-commit hook fast.
+        The key rule: <strong>Prettier handles formatting, ESLint handles logic.</strong>{' '}
+        Use <code>eslint-config-prettier</code> to disable all ESLint formatting rules
+        that would conflict with Prettier.
       </p>
 
-      <CodeBlock language="bash" title="Husky + lint-staged setup">
-{`npm install --save-dev husky lint-staged
+      <CodeBlock language="javascript" title="Add Prettier to eslint.config.js">
+{`import prettierConfig from 'eslint-config-prettier';
+
+export default tseslint.config(
+  // ... all your other configs ...
+
+  // MUST be last — disables conflicting formatting rules
+  prettierConfig,
+);`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Don't Use eslint-plugin-prettier">
+        Running Prettier inside ESLint via <code>eslint-plugin-prettier</code> is
+        slower and produces noisy red-squiggly output. The modern approach is to run
+        them separately: Prettier formats, ESLint lints. Use
+        <code>eslint-config-prettier</code> to prevent conflicts.
+      </InfoBox>
+
+      <h2>Pre-commit Hooks: Husky + lint-staged</h2>
+      <p>
+        Enforce linting before code reaches the remote. Husky manages Git hooks,
+        lint-staged runs linters only on staged files for speed.
+      </p>
+
+      <CodeBlock language="bash" title="Setup Husky + lint-staged">
+{`npm install -D husky lint-staged
 
 # Initialize husky
 npx husky init
 
-# The above creates .husky/pre-commit
-# Edit .husky/pre-commit:
-echo "npx lint-staged" > .husky/pre-commit
-
-# Add prepare script to package.json
-npm pkg set scripts.prepare="husky"`}
+# The init command creates .husky/pre-commit
+# Edit it to run lint-staged:
+echo "npx lint-staged" > .husky/pre-commit`}
       </CodeBlock>
 
-      <CodeBlock language="json" title="package.json — lint-staged config">
+      <CodeBlock language="json" title="lint-staged config in package.json">
 {`{
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --fix",
+      "eslint --fix --max-warnings 0",
       "prettier --write"
     ],
-    "*.{js,jsx}": [
-      "eslint --fix",
+    "*.{json,md,yml,yaml}": [
       "prettier --write"
     ],
-    "*.{json,css,md}": [
+    "*.css": [
       "prettier --write"
     ]
   }
 }`}
       </CodeBlock>
 
-      <h2>VS Code Integration</h2>
+      <h2>VS Code Editor Integration</h2>
 
       <CodeBlock language="json" title=".vscode/settings.json">
 {`{
@@ -198,66 +237,107 @@ npm pkg set scripts.prepare="husky"`}
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "eslint.validate": ["javascript", "typescript", "javascriptreact", "typescriptreact"],
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "eslint.useFlatConfig": true,
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "editor.rulers": [100]
 }`}
       </CodeBlock>
 
       <CodeBlock language="json" title=".vscode/extensions.json">
 {`{
   "recommendations": [
-    "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
-    "bradlc.vscode-tailwindcss"
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "streetsidesoftware.code-spell-checker"
   ]
 }`}
       </CodeBlock>
 
-      <h2>package.json Scripts</h2>
+      <InfoBox variant="info" title="Commit Editor Config Too">
+        Always commit <code>.vscode/settings.json</code> and
+        <code>.vscode/extensions.json</code> to the repo. This ensures every developer
+        has the same editor behavior from day one — no manual setup required.
+      </InfoBox>
 
-      <CodeBlock language="json" title="Lint and format scripts">
+      <h2>Common Rules to Configure</h2>
+
+      <CodeBlock language="javascript" title="Rules Worth Enabling">
+{`rules: {
+  // Catch bugs
+  'no-console': ['warn', { allow: ['warn', 'error'] }],
+  'no-debugger': 'error',
+  'no-alert': 'error',
+  'prefer-const': 'error',
+  'no-var': 'error',
+
+  // TypeScript strictness
+  '@typescript-eslint/no-unused-vars': ['error', {
+    argsIgnorePattern: '^_',
+    varsIgnorePattern: '^_',
+    destructuredArrayIgnorePattern: '^_',
+  }],
+  '@typescript-eslint/no-explicit-any': 'warn',
+  '@typescript-eslint/consistent-type-imports': 'error',
+  '@typescript-eslint/no-non-null-assertion': 'warn',
+
+  // React
+  'react-hooks/rules-of-hooks': 'error',
+  'react-hooks/exhaustive-deps': 'warn',
+}`}
+      </CodeBlock>
+
+      <h2>Running Lint Commands</h2>
+
+      <CodeBlock language="json" title="package.json Scripts">
 {`{
   "scripts": {
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "format": "prettier --write src",
-    "format:check": "prettier --check src",
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,css,md}\"",
+    "type-check": "tsc --noEmit"
   }
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="ESLint vs Prettier — Division of Responsibility">
-        <p>
-          ESLint handles code quality (unused vars, hooks rules, accessibility). Prettier handles formatting (spacing, quotes, semicolons).
-          Never configure formatting rules in ESLint — Prettier wins formatting decisions. Use <code>eslint-config-prettier</code>
-          to disable any ESLint rules that conflict.
-        </p>
+      <InteractiveChallenge
+        question={"What is the modern recommended way to prevent Prettier and ESLint from conflicting?"}
+        options={[
+          "Use eslint-plugin-prettier to run Prettier as an ESLint rule",
+          "Use eslint-config-prettier as the last config to disable formatting rules",
+          "Only use Prettier and skip ESLint entirely",
+          "Configure both tools with identical formatting rules manually"
+        ]}
+        correctIndex={1}
+        explanation={"eslint-config-prettier disables all ESLint rules that would conflict with Prettier. It must be the last config in your array so it overrides everything else. Running Prettier inside ESLint (eslint-plugin-prettier) is slower and deprecated in modern setups."}
+      />
+
+      <h2>CI Pipeline Integration</h2>
+
+      <CodeBlock language="yaml" title="GitHub Actions Lint Job">
+{`name: Lint
+on: [pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run type-check`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Max Warnings = 0">
+        Always run ESLint with <code>--max-warnings 0</code> in CI. This prevents
+        warnings from piling up unchecked. If something is worth warning about,
+        it's worth failing the build over — or downgrade it to "off."
       </InfoBox>
-
-      <InteractiveChallenge
-        question="What does lint-staged do in the pre-commit workflow?"
-        options={[
-          "It runs ESLint on all files in the repository",
-          "It runs linters only on the files staged for the current commit",
-          "It prevents committing if any lint errors exist in the project",
-          "It formats all files regardless of git status"
-        ]}
-        correctIndex={1}
-        explanation="lint-staged only runs configured tools on the files that are staged (git add'd) for the commit, not the entire codebase. This keeps pre-commit hooks fast — linting 5 changed files takes milliseconds, while linting 500 files would be too slow and frustrating for developers."
-      />
-
-      <InteractiveChallenge
-        question="Why is eslint-config-prettier placed last in the ESLint config?"
-        options={[
-          "It needs to see all other rules before it can optimize them",
-          "It disables conflicting rules, so it must override all previously defined rules",
-          "It only applies to files that Prettier formats",
-          "Placement does not matter — it applies globally"
-        ]}
-        correctIndex={1}
-        explanation="eslint-config-prettier disables any ESLint rules that might conflict with Prettier's formatting decisions (indentation, quotes, semicolons, etc.). Since ESLint configs are merged in order with later entries overriding earlier ones, eslint-config-prettier must come last to ensure it overrides any formatting rules from plugins like @typescript-eslint or eslint-plugin-react."
-      />
     </LessonLayout>
   );
 }

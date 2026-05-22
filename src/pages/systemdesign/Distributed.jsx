@@ -4,521 +4,715 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function SysDistributed() {
+export default function Distributed() {
   return (
     <LessonLayout
       title="Distributed Systems"
       sectionId="systemdesign"
       lessonIndex={4}
-      prev={{ path: "/systemdesign/databases", label: "Databases" }}
-      next={{ path: "/systemdesign/messaging", label: "Messaging" }}
+      prev={{ path: '/systemdesign/databases', label: 'Database Design &amp; Scaling' }}
+      next={{ path: '/systemdesign/messaging', label: 'Message Queues &amp; Streaming' }}
     >
+      {/* ===== Section 1: CAP Theorem Deep Dive ===== */}
+      <h2>CAP Theorem Deep Dive</h2>
       <p>
-        Distributed systems are multiple independent computers working together to appear as a
-        single coherent system. The fundamental challenge: machines fail, networks partition,
-        and clocks drift — yet users expect consistent, available, and fast responses. This
-        lesson covers the theoretical foundations (CAP, PACELC), consensus algorithms (Raft),
-        distributed transactions, and the coordination primitives that underpin every large-scale system.
+        The CAP theorem, formulated by Eric Brewer, states that a distributed data store
+        can only guarantee two of the following three properties simultaneously:
+      </p>
+      <ul>
+        <li>
+          <strong>Consistency (C):</strong> Every read receives the most recent write or an
+          error. All nodes see the same data at the same time. This is linearizability &mdash;
+          once a write completes, all subsequent reads must reflect that write.
+        </li>
+        <li>
+          <strong>Availability (A):</strong> Every request receives a non-error response,
+          without the guarantee that it contains the most recent write. The system remains
+          operational and responsive even when some nodes are down.
+        </li>
+        <li>
+          <strong>Partition Tolerance (P):</strong> The system continues to operate despite
+          arbitrary message loss or failure of part of the network. Network partitions are
+          inevitable in distributed systems, so you must always tolerate them.
+        </li>
+      </ul>
+      <p>
+        Since network partitions are unavoidable in practice, the real choice is between
+        consistency and availability when a partition occurs. This is the fundamental
+        trade-off every distributed system must make.
       </p>
 
-      <h2>CAP Theorem — Deep Dive</h2>
+      <h3>Real-World CAP Classifications</h3>
       <p>
-        Eric Brewer's CAP theorem states that a distributed data store can only guarantee two
-        of three properties simultaneously: <strong>Consistency</strong>, <strong>Availability</strong>,
-        and <strong>Partition Tolerance</strong>. But the nuance matters: network partitions
-        are not optional — they happen in any real distributed system. So the real choice is:
-        during a partition, do you sacrifice consistency or availability?
+        <strong>CP Systems</strong> (Consistency + Partition Tolerance): These systems
+        sacrifice availability during partitions to maintain consistency.
       </p>
-
-      <FlowChart
-        title="CAP Theorem — Trade-Off Triangle"
-        chart={"graph TD\n  A[CAP Theorem] --> B[CP: Consistency + Partition Tolerance]\n  A --> C[AP: Availability + Partition Tolerance]\n  B --> D[HBase, Zookeeper, etcd, CockroachDB]\n  B --> E[Returns error during partition]\n  C --> F[Cassandra, DynamoDB, CouchDB]\n  C --> G[Returns possibly stale data during partition]"}
-      />
-
-      <CodeBlock language="java" title="CAP Theorem — Concrete Examples">
-{`// CP SYSTEM BEHAVIOR (e.g., ZooKeeper, etcd)
-// During a network partition, the minority partition refuses writes.
-// ZooKeeper requires a quorum (majority) to process writes.
-// If 3 of 5 nodes are reachable, writes succeed. If only 2 are reachable,
-// writes are REJECTED (returns error) to avoid inconsistency.
-
-// ZooKeeper ephemeral node for leader election:
-ZooKeeper zk = new ZooKeeper("zk-host:2181", 3000, watchedEvent -> {});
-// Create ephemeral sequential node — lowest sequence number = leader
-String path = zk.create("/election/node-",
-    nodeId.getBytes(),
-    ZooDefs.Ids.OPEN_ACL_UNSAFE,
-    CreateMode.EPHEMERAL_SEQUENTIAL);
-// Ephemeral = auto-deleted when session dies (failure detection built-in)
-
-// ─────────────────────────────────────────────────────────────────
-
-// AP SYSTEM BEHAVIOR (e.g., Cassandra with quorum < majority)
-// During a partition, ALL nodes accept writes (availability preserved).
-// Conflicting writes are resolved later via "last-write-wins" or CRDTs.
-// Cassandra consistency levels:
-//   ONE:    fastest; 1 replica must respond; may return stale data
-//   QUORUM: ceil(RF/2+1) replicas must respond; good balance
-//   ALL:    all replicas must respond; strong consistency; low availability
-
-// Cassandra write with tunable consistency:
-try (CqlSession session = CqlSession.builder().build()) {
-    SimpleStatement stmt = SimpleStatement.builder(
-        "INSERT INTO users (id, email) VALUES (?, ?)")
-        .setConsistencyLevel(ConsistencyLevel.QUORUM) // tune here
-        .build();
-    session.execute(stmt.bind(userId, email));
-}
-
-// ── PACELC EXTENSION TO CAP ───────────────────────────────────────
-// CAP only describes partition scenarios. PACELC adds:
-// "Even when there is No partition (E), there is a trade-off between
-//  Latency (L) and Consistency (C)"
-//
-// System choices:
-// PA/EL: DynamoDB (default), Cassandra — sacrifice consistency for low latency always
-// PC/EC: VoltDB, Spanner — always consistent, higher latency
-// PA/EC: MongoDB (default write concern = 1, but can tune)
-// PC/EL: not really possible (low latency AND strong consistency = hard)
-
-// Real implication: Spanner uses GPS clocks and atomic clocks to achieve
-// "external consistency" (linearizability) globally, but write latency
-// is ~5-14ms because it must do Paxos across data centers.`}
-      </CodeBlock>
-
-      <h2>Consensus — The Raft Algorithm</h2>
+      <ul>
+        <li><strong>MongoDB</strong> &mdash; Uses a primary node for writes; during a partition, minority partitions become unavailable.</li>
+        <li><strong>HBase</strong> &mdash; Strong consistency via a single RegionServer per region; unavailable if that server is partitioned.</li>
+        <li><strong>Redis Cluster</strong> &mdash; In cluster mode, favors consistency; partitioned minority nodes reject writes.</li>
+        <li><strong>ZooKeeper</strong> &mdash; Uses Zab consensus; minority partitions cannot serve requests.</li>
+      </ul>
       <p>
-        Consensus algorithms ensure all nodes in a distributed system agree on a single value
-        (e.g., who the leader is, what the next log entry is). Raft is the most understandable
-        consensus algorithm and underpins etcd, CockroachDB, TiKV, and many others.
+        <strong>AP Systems</strong> (Availability + Partition Tolerance): These systems
+        remain available during partitions but may return stale or conflicting data.
       </p>
+      <ul>
+        <li><strong>Cassandra</strong> &mdash; Tunable consistency, but defaults to eventual consistency with high availability.</li>
+        <li><strong>DynamoDB</strong> &mdash; Eventually consistent reads by default; always available across partitions.</li>
+        <li><strong>CouchDB</strong> &mdash; Multi-master replication with conflict resolution; stays available during partitions.</li>
+      </ul>
 
-      <InfoBox variant="note" title="Raft in Plain English">
+      <InfoBox title="PACELC Theorem">
         <p>
-          Raft works through <strong>leader election</strong> and <strong>log replication</strong>:
+          The PACELC theorem extends CAP by addressing behavior when no partition exists.
+          It states: if there is a <strong>P</strong>artition, choose between
+          <strong>A</strong>vailability and <strong>C</strong>onsistency; <strong>E</strong>lse
+          (when running normally), choose between <strong>L</strong>atency and
+          <strong>C</strong>onsistency.
         </p>
-        <ol>
-          <li>
-            <strong>Leader Election:</strong> All nodes start as Followers. If a Follower receives
-            no heartbeat within an election timeout (150–300ms, randomized), it becomes a Candidate
-            and requests votes. The first Candidate to receive a majority of votes becomes Leader.
-            A new election term begins each time.
-          </li>
-          <li>
-            <strong>Log Replication:</strong> All client writes go to the Leader. The Leader appends
-            the entry to its log and replicates it to all Followers via AppendEntries RPCs. Once a
-            majority of nodes confirm the entry is in their log, the Leader commits it and responds
-            to the client.
-          </li>
-          <li>
-            <strong>Safety:</strong> A Candidate can only win an election if its log is at least as
-            up-to-date as any other node that could vote — preventing a node with stale data from
-            becoming leader and overwriting committed entries.
-          </li>
-        </ol>
         <p>
-          Raft guarantees: at most one leader per term, committed entries are never lost, and all
-          committed entries are eventually present on all nodes.
+          For example, DynamoDB is PA/EL (available during partitions, low latency normally),
+          while MongoDB is PC/EC (consistent during partitions, consistent normally at the
+          cost of latency). This gives a more nuanced view of system trade-offs.
         </p>
       </InfoBox>
-
-      <CodeBlock language="python" title="Raft Leader Election — State Machine Logic">
-{`import threading, time, random
-
-class RaftNode:
-    FOLLOWER  = "follower"
-    CANDIDATE = "candidate"
-    LEADER    = "leader"
-
-    def __init__(self, node_id, peers):
-        self.id            = node_id
-        self.peers         = peers          # list of RaftNode
-        self.state         = self.FOLLOWER
-        self.current_term  = 0
-        self.voted_for     = None           # candidate we voted for in current term
-        self.log           = []             # (term, command) entries
-        self.commit_index  = -1
-        self.last_heartbeat = time.time()
-        self.election_timeout = random.uniform(0.15, 0.30)  # 150–300ms, randomized
-
-    def run(self):
-        while True:
-            if self.state == self.FOLLOWER:
-                # If no heartbeat received within timeout, start election
-                if time.time() - self.last_heartbeat > self.election_timeout:
-                    self.start_election()
-            elif self.state == self.LEADER:
-                self.send_heartbeats()
-                time.sleep(0.05)  # heartbeat every 50ms
-
-    def start_election(self):
-        self.current_term += 1
-        self.state = self.CANDIDATE
-        self.voted_for = self.id  # vote for ourselves
-        votes = 1  # count our own vote
-        print(f"[{self.id}] Starting election for term {self.current_term}")
-
-        for peer in self.peers:
-            if peer.request_vote(self.current_term, self.id,
-                                 len(self.log) - 1,
-                                 self.log[-1][0] if self.log else 0):
-                votes += 1
-
-        majority = (len(self.peers) + 1) // 2 + 1
-        if votes >= majority:
-            print(f"[{self.id}] Elected leader for term {self.current_term}")
-            self.state = self.LEADER
-        else:
-            self.state = self.FOLLOWER  # lost election, back to follower
-
-    def request_vote(self, term, candidate_id, last_log_index, last_log_term):
-        # Reject if we've seen a higher term
-        if term < self.current_term:
-            return False
-        if term > self.current_term:
-            self.current_term = term
-            self.state = self.FOLLOWER
-            self.voted_for = None
-
-        # Grant vote only if we haven't voted this term and candidate's log
-        # is at least as up-to-date as ours (prevents stale leaders)
-        if self.voted_for is None or self.voted_for == candidate_id:
-            my_last_term = self.log[-1][0] if self.log else 0
-            candidate_log_ok = (last_log_term > my_last_term or
-                (last_log_term == my_last_term and last_log_index >= len(self.log) - 1))
-            if candidate_log_ok:
-                self.voted_for = candidate_id
-                self.last_heartbeat = time.time()  # reset election timer
-                return True
-        return False
-
-    def send_heartbeats(self):
-        for peer in self.peers:
-            peer.append_entries(self.current_term, self.id, [], self.commit_index)
-
-    def append_entries(self, term, leader_id, entries, leader_commit):
-        if term < self.current_term:
-            return False
-        self.last_heartbeat = time.time()
-        self.state = self.FOLLOWER
-        self.current_term = term
-        # Append new log entries, update commit index...
-        return True`}
-      </CodeBlock>
-
-      <h2>Distributed Transactions</h2>
-
-      <CodeBlock language="java" title="Two-Phase Commit (2PC) and Its Limitations">
-{`// TWO-PHASE COMMIT (2PC)
-// Coordinator asks all participants to prepare (Phase 1).
-// If ALL vote Yes, coordinator sends commit (Phase 2).
-// If ANY vote No or timeout, coordinator sends rollback.
-//
-// Problem: The coordinator is a single point of failure.
-// If coordinator crashes between Phase 1 and Phase 2, participants
-// are stuck in "prepared" state (holding locks) indefinitely.
-// This is called the "in-doubt" problem.
-
-// Phase 1: Prepare
-@Transactional
-public void transferFunds(String fromAccount, String toAccount, BigDecimal amount) {
-    // Coordinator contacts both services
-    boolean debitReady  = accountService.prepare(fromAccount, amount, "DEBIT");
-    boolean creditReady = accountService.prepare(toAccount, amount, "CREDIT");
-
-    if (debitReady && creditReady) {
-        // Phase 2: Commit
-        accountService.commit(fromAccount);
-        accountService.commit(toAccount);
-    } else {
-        // Phase 2: Rollback
-        accountService.rollback(fromAccount);
-        accountService.rollback(toAccount);
-        throw new TransactionFailedException("Transfer failed");
-    }
-}
-// Drawback: Participants hold locks during network round trips — hurts throughput.
-// 2PC is used in: XA transactions, Google Spanner's TrueTime-based 2PC.
-
-// ──────────────────────────────────────────────────────────────────
-// SAGA PATTERN — preferred for microservices
-// Break a distributed transaction into a sequence of LOCAL transactions.
-// Each step publishes an event. On failure, execute compensating transactions.
-
-// CHOREOGRAPHY SAGA (event-driven — no central coordinator)
-@Service
-public class OrderSaga {
-    // Step 1: Create order
-    @EventHandler
-    public void onOrderCreated(OrderCreatedEvent e) {
-        inventoryService.reserveItems(e.getOrderId(), e.getItems());
-        // publishes: InventoryReservedEvent or InventoryFailedEvent
-    }
-
-    // Step 2: Reserve inventory
-    @EventHandler
-    public void onInventoryReserved(InventoryReservedEvent e) {
-        paymentService.chargeCard(e.getOrderId(), e.getTotalAmount());
-        // publishes: PaymentSucceededEvent or PaymentFailedEvent
-    }
-
-    // Step 3: Handle payment failure — compensate previous steps
-    @EventHandler
-    public void onPaymentFailed(PaymentFailedEvent e) {
-        inventoryService.releaseReservation(e.getOrderId()); // compensating txn
-        orderService.cancelOrder(e.getOrderId());            // compensating txn
-        notificationService.notifyUser(e.getUserId(), "Payment failed");
-    }
-}
-
-// ORCHESTRATION SAGA (central orchestrator — easier to trace and debug)
-@Service
-public class OrderSagaOrchestrator {
-    public void execute(CreateOrderCommand cmd) {
-        try {
-            Order order = orderService.createOrder(cmd);        // step 1
-            inventoryService.reserveItems(order.getId(), cmd);  // step 2
-            paymentService.charge(order.getId(), cmd);          // step 3
-            shippingService.scheduleShipment(order.getId());    // step 4
-        } catch (PaymentException e) {
-            inventoryService.release(cmd.getOrderId());         // compensate
-            orderService.cancel(cmd.getOrderId());              // compensate
-        }
-    }
-}`}
-      </CodeBlock>
-
-      <h2>Vector Clocks and Causality</h2>
-
-      <CodeBlock language="python" title="Vector Clocks — Tracking Causality in Distributed Systems">
-{`# PROBLEM: Distributed systems have no global clock.
-# Physical clocks drift; NTP has ~100ms accuracy.
-# Without ordering, you can't determine which of two events happened first.
-#
-# LAMPORT TIMESTAMPS: simple scalar counter — can only determine causal order
-# VECTOR CLOCKS: per-node counters — can determine concurrent vs causal events
-
-class VectorClock:
-    def __init__(self, node_id: str, all_nodes: list[str]):
-        self.node_id = node_id
-        self.clock = {n: 0 for n in all_nodes}
-
-    def tick(self):
-        """Increment own counter on a local event."""
-        self.clock[self.node_id] += 1
-        return dict(self.clock)
-
-    def send(self):
-        """Increment own counter before sending a message."""
-        self.clock[self.node_id] += 1
-        return dict(self.clock)  # attach this to the message
-
-    def receive(self, incoming_clock: dict):
-        """On receiving a message, take max of each component, then increment own."""
-        for node, ts in incoming_clock.items():
-            self.clock[node] = max(self.clock.get(node, 0), ts)
-        self.clock[self.node_id] += 1
-
-    def happens_before(self, vc_a: dict, vc_b: dict) -> bool:
-        """True if vc_a happened before vc_b (vc_a causally precedes vc_b)."""
-        return (all(vc_a.get(n, 0) <= vc_b.get(n, 0) for n in set(vc_a) | set(vc_b))
-                and any(vc_a.get(n, 0) < vc_b.get(n, 0) for n in set(vc_a) | set(vc_b)))
-
-    def concurrent(self, vc_a: dict, vc_b: dict) -> bool:
-        """True if neither happened before the other — a CONFLICT."""
-        return (not self.happens_before(vc_a, vc_b) and
-                not self.happens_before(vc_b, vc_a))
-
-# Example: Amazon Dynamo uses vector clocks for conflict detection.
-# DynamoDB exposes conflicts to the application for resolution.
-# Git uses a DAG (directed acyclic graph) to represent causal history —
-# a merge commit resolves concurrent branches.
-
-# PRACTICAL USE: Version vectors in DynamoDB
-# Each item has a "causality token" (version vector).
-# Concurrent writes create siblings — application must resolve.`}
-      </CodeBlock>
-
-      <h2>Gossip Protocol and Failure Detection</h2>
-
-      <FlowChart
-        title="Gossip Protocol — Information Propagation"
-        chart={"graph LR\n  A[Node A knows X] -- tells --> B[Node B]\n  B -- tells --> C[Node C]\n  B -- tells --> D[Node D]\n  C -- tells --> E[Node E]\n  D -- tells --> E\n  E -- tells --> F[All nodes know X within log N rounds]"}
-      />
-
-      <CodeBlock language="python" title="Gossip Protocol and Leader Election">
-{`# GOSSIP PROTOCOL
-# Each node periodically picks K random peers and exchanges state.
-# Information propagates in O(log N) rounds to reach all N nodes.
-# Used by: Cassandra (cluster membership, schema updates),
-#          Consul (service mesh), SWIM protocol (failure detection)
-
-import random, time, threading
-
-class GossipNode:
-    def __init__(self, node_id, peers):
-        self.id = node_id
-        self.state = {node_id: {"alive": True, "version": 0}}
-        self.peers = peers  # list of GossipNode
-
-    def gossip_round(self):
-        """Periodically executed — pick random peer and exchange state."""
-        while True:
-            time.sleep(1)  # gossip interval
-            if self.peers:
-                target = random.choice(self.peers)
-                # Send our state, receive their state
-                their_state = target.handle_gossip(self.state)
-                self.merge(their_state)
-
-    def handle_gossip(self, incoming_state):
-        self.merge(incoming_state)
-        return self.state  # respond with our full state
-
-    def merge(self, other_state):
-        for node_id, info in other_state.items():
-            if node_id not in self.state:
-                self.state[node_id] = info
-            elif info["version"] > self.state[node_id]["version"]:
-                self.state[node_id] = info  # take higher version
-
-    def mark_failed(self, node_id):
-        """Heartbeat timeout — mark node as suspected failed."""
-        if node_id in self.state:
-            self.state[node_id]["alive"] = False
-            self.state[node_id]["version"] += 1
-        # Gossip will propagate this to all nodes within O(log N) rounds
-
-# ── SPLIT BRAIN PROBLEM ───────────────────────────────────────────
-# Network partition creates two isolated groups, each thinking it's the
-# majority and electing its own leader. Both leaders accept writes.
-# When partition heals, you have two conflicting "sources of truth".
-#
-# Prevention strategies:
-# 1. Quorum: only allow writes if you have majority of votes (Raft does this)
-# 2. STONITH (Shoot The Other Node In The Head): isolated node fences itself
-#    off (shuts down) to prevent split-brain in database clusters
-# 3. Epoch fencing: old leader detects higher epoch from new leader and
-#    stops accepting writes (used by Kafka leader election)
-
-# ── PAXOS vs RAFT ────────────────────────────────────────────────
-# Paxos: original consensus algorithm (Lamport 1989). Correct but complex.
-#   Multi-Paxos (for log replication) requires significant engineering.
-#   Used by: Google Chubby, Google Spanner.
-# Raft: designed for understandability (Ongaro 2014). Equivalent safety.
-#   Clear leader structure, well-defined log replication.
-#   Used by: etcd, CockroachDB, TiKV, Consul, RethinkDB.
-#
-# Key difference: Paxos allows any node to propose in any phase (more
-# complex to reason about). Raft routes all proposals through the Leader
-# (simpler, but leader is a bottleneck for write throughput).`}
-      </CodeBlock>
-
-      <h2>Idempotency and At-Least-Once Delivery</h2>
-
-      <InfoBox variant="warning" title="The At-Least-Once Problem">
-        <p>
-          In any distributed system, networks are unreliable. When a client sends a request and
-          receives no response (timeout), it cannot distinguish between:
-        </p>
-        <ul>
-          <li>The request was never received by the server</li>
-          <li>The server processed it but the response was lost</li>
-          <li>The server is still processing</li>
-        </ul>
-        <p>
-          Safe retry behavior requires <strong>idempotency</strong>: processing the same request
-          multiple times has the same effect as processing it once. This is a design requirement,
-          not an optimization.
-        </p>
-      </InfoBox>
-
-      <CodeBlock language="java" title="Idempotency Keys — Safe Distributed Retries">
-{`// Idempotency key pattern: client generates a UUID for each logical operation.
-// Server stores the result keyed by idempotency key.
-// On retry, server returns the cached result without re-processing.
-
-@RestController
-public class PaymentController {
-    private final RedisTemplate<String, PaymentResult> redis;
-    private final PaymentService paymentService;
-
-    @PostMapping("/api/v1/payments")
-    public ResponseEntity<PaymentResult> charge(
-            @RequestHeader("Idempotency-Key") String idempotencyKey,
-            @RequestBody ChargeRequest request) {
-
-        String cacheKey = "idempotency:payment:" + idempotencyKey;
-
-        // 1. Check if we already processed this key
-        PaymentResult existing = redis.opsForValue().get(cacheKey);
-        if (existing != null) {
-            return ResponseEntity.ok()
-                .header("Idempotency-Replayed", "true")
-                .body(existing);
-        }
-
-        // 2. Acquire a lock to prevent concurrent duplicates
-        String lockKey = "lock:payment:" + idempotencyKey;
-        Boolean locked = redis.opsForValue().setIfAbsent(lockKey, "1",
-            Duration.ofSeconds(30));
-        if (!Boolean.TRUE.equals(locked)) {
-            throw new ConflictException("Concurrent request with same idempotency key");
-        }
-
-        try {
-            // 3. Process the payment
-            PaymentResult result = paymentService.charge(request);
-
-            // 4. Store result — client can safely retry and get same result
-            redis.opsForValue().set(cacheKey, result, Duration.ofDays(1));
-            return ResponseEntity.ok(result);
-
-        } finally {
-            redis.delete(lockKey);
-        }
-    }
-}
-
-// Client-side: always set Idempotency-Key header on non-idempotent requests
-// Retry policy with exponential backoff:
-public <T> T retryWithBackoff(Supplier<T> fn, int maxRetries) {
-    for (int attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-            return fn.get();
-        } catch (RetryableException e) {
-            if (attempt == maxRetries) throw e;
-            long delay = (long) Math.pow(2, attempt) * 100; // 100ms, 200ms, 400ms...
-            delay += ThreadLocalRandom.current().nextLong(50); // jitter
-            Thread.sleep(delay);
-        }
-    }
-    throw new IllegalStateException("unreachable");
-}`}
-      </CodeBlock>
 
       <InteractiveChallenge
-        question="The CAP theorem says you can only have two of: Consistency, Availability, and Partition Tolerance. In practice, why is 'CA' (Consistency + Availability, no partition tolerance) not a real option for distributed systems?"
+        question={"A social media app needs to show users' feeds. Posts can be slightly delayed but the feed must always load. During a network partition between data centers, what should the system prioritize?"}
         options={[
-          "Because CA systems are too expensive to build",
-          "Because network partitions are inevitable in any real multi-node system — you cannot opt out of handling them, so the real choice is between C and A during a partition",
-          "Because consistency and availability are mutually exclusive by definition",
-          "Because CA systems require too many servers"
+          'Consistency — block the feed until all data centers agree on the latest posts',
+          'Availability — show the feed with potentially stale posts rather than returning an error',
+          'Partition Tolerance — this is always required so it is not a choice',
+          'None of the above — CAP does not apply to social media'
         ]}
         correctIndex={1}
-        explanation={"Network partitions — where nodes cannot communicate — are not optional in any distributed system. Hardware fails, cables are cut, switches crash, and cloud availability zones lose connectivity. You cannot choose to 'not handle partitions'; you must decide what to do when they occur. The real choice is: during a partition, do you serve requests with possibly stale data (AP) or reject requests to avoid inconsistency (CP)? A single-node database is 'CA' but the moment you add a replica, you are a distributed system subject to CAP."}
+        explanation={"Social media feeds are a classic AP use case. Users expect the feed to always load even if some posts are slightly delayed. Showing a slightly stale feed is far better than showing an error page. Partition tolerance is always required, so the real choice during a partition is between consistency and availability."}
       />
 
+      {/* ===== Section 2: Consistency Models ===== */}
+      <h2>Consistency Models</h2>
+      <p>
+        Consistency models define the contract between a distributed data store and its
+        clients regarding the ordering and visibility of updates. Choosing the right model
+        is critical for balancing correctness, performance, and user experience.
+      </p>
+
+      <h3>Strong Consistency (Linearizability)</h3>
+      <p>
+        Every read returns the value of the most recent completed write. Operations appear
+        to execute atomically and in real-time order. This is the easiest model to reason
+        about but the most expensive to implement in a distributed system. It requires
+        coordination (consensus) between nodes on every operation.
+      </p>
+      <p>
+        <strong>Use when:</strong> Financial transactions, inventory management, leader
+        election, or any scenario where stale reads could cause incorrect behavior.
+      </p>
+
+      <h3>Eventual Consistency</h3>
+      <p>
+        If no new updates are made, all replicas will eventually converge to the same value.
+        There is no bound on how long convergence takes. Reads may return stale data, and
+        different clients may see different values at the same time.
+      </p>
+      <p>
+        <strong>Use when:</strong> Social media feeds, DNS, analytics, caching layers, or
+        any scenario where temporary staleness is acceptable for better performance and
+        availability.
+      </p>
+
+      <h3>Causal Consistency</h3>
+      <p>
+        Operations that are causally related are seen by all nodes in the same order.
+        Concurrent operations (those with no causal relationship) may be seen in different
+        orders by different nodes. This is stronger than eventual consistency but weaker
+        than strong consistency.
+      </p>
+      <p>
+        <strong>Use when:</strong> Collaborative editing, comment threads (a reply must
+        appear after the original post), or any system where cause-and-effect ordering
+        matters.
+      </p>
+
+      <h3>Read-Your-Writes Consistency</h3>
+      <p>
+        A client always sees its own writes. After a client writes a value, subsequent reads
+        by that same client will always return that value or a more recent one. Other clients
+        may still see stale data.
+      </p>
+      <p>
+        <strong>Use when:</strong> User profile updates (a user should see their own changes
+        immediately), shopping carts, or any user-facing write followed by a read.
+      </p>
+
+      <h3>Monotonic Reads</h3>
+      <p>
+        Once a client reads a value, it will never see an older value in subsequent reads.
+        Time does not appear to go backward for any given client. This prevents the confusing
+        experience of seeing newer data, then suddenly seeing older data.
+      </p>
+      <p>
+        <strong>Use when:</strong> Dashboards, message streams, any interface where users
+        would be confused by data appearing to revert.
+      </p>
+
+      {/* ===== Section 3: Consensus Algorithms ===== */}
+      <h2>Consensus Algorithms</h2>
+      <p>
+        Consensus algorithms allow a collection of machines to work as a coherent group
+        that can survive the failure of some members. They are the foundation of strongly
+        consistent distributed systems and are used for leader election, configuration
+        management, and distributed locking.
+      </p>
+
+      <h3>Why Consensus Is Needed</h3>
+      <p>
+        In a distributed system, nodes can fail, messages can be delayed or lost, and
+        network partitions can occur. Without consensus, nodes may disagree on the state
+        of the system &mdash; leading to split-brain scenarios, data corruption, or
+        inconsistent behavior. Consensus ensures that all non-faulty nodes agree on the
+        same sequence of operations.
+      </p>
+
+      <h3>Paxos</h3>
+      <p>
+        Paxos, designed by Leslie Lamport, is one of the earliest consensus algorithms.
+        It operates in two main phases:
+      </p>
+      <ul>
+        <li>
+          <strong>Prepare Phase:</strong> A proposer selects a proposal number and sends
+          a prepare request to a majority of acceptors. Each acceptor promises not to accept
+          proposals with lower numbers and responds with any previously accepted value.
+        </li>
+        <li>
+          <strong>Accept Phase:</strong> If the proposer receives promises from a majority,
+          it sends an accept request with the proposal number and a value (either its own
+          or one returned during prepare). Acceptors accept if they have not promised to a
+          higher-numbered proposal.
+        </li>
+      </ul>
+      <p>
+        Paxos is provably correct but notoriously difficult to understand and implement.
+        Multi-Paxos extends it for a sequence of decisions but adds significant complexity.
+      </p>
+
+      <h3>Raft</h3>
+      <p>
+        Raft was designed as an understandable alternative to Paxos. It decomposes consensus
+        into three sub-problems: leader election, log replication, and safety.
+      </p>
+      <ul>
+        <li>
+          <strong>Leader Election:</strong> Nodes start as followers. If a follower receives
+          no heartbeat within a randomized timeout, it becomes a candidate and requests
+          votes. A candidate that receives a majority of votes becomes the leader.
+        </li>
+        <li>
+          <strong>Log Replication:</strong> The leader accepts client requests, appends them
+          to its log, and replicates entries to followers. Once a majority acknowledges an
+          entry, it is committed and applied to the state machine.
+        </li>
+        <li>
+          <strong>Safety:</strong> Raft guarantees that only a node with the most up-to-date
+          log can win an election, preventing data loss.
+        </li>
+      </ul>
+
+      <FlowChart
+        title="Raft Leader Election Process"
+        chart={"graph TD\nA[Node starts as Follower] --> B{Heartbeat timeout?}\nB -->|No| A\nB -->|Yes| C[Becomes Candidate]\nC --> D[Increments term, votes for self]\nD --> E[Sends RequestVote to all nodes]\nE --> F{Majority votes received?}\nF -->|Yes| G[Becomes Leader]\nF -->|No, higher term seen| A\nG --> H[Sends heartbeats to all followers]\nH --> I{Leader still healthy?}\nI -->|Yes| H\nI -->|No| A"}
+      />
+
+      <InfoBox title="Raft: Designed for Understandability">
+        <p>
+          Raft was explicitly designed to be easier to understand than Paxos. The authors
+          conducted a user study showing that students learned Raft significantly faster.
+          Key design decisions include a strong leader model (all writes go through the
+          leader), randomized election timeouts to avoid split votes, and a clear separation
+          of concerns. Today, Raft is used in production systems like etcd (Kubernetes),
+          CockroachDB, Consul, and TiKV.
+        </p>
+      </InfoBox>
+
+      {/* ===== Section 4: Distributed Transactions ===== */}
+      <h2>Distributed Transactions</h2>
+      <p>
+        Distributed transactions span multiple services or databases. They are fundamentally
+        harder than local transactions because network failures, partial failures, and
+        message ordering issues can leave the system in an inconsistent state.
+      </p>
+
+      <h3>Two-Phase Commit (2PC)</h3>
+      <p>
+        2PC is a protocol that ensures all participants in a distributed transaction either
+        commit or abort together. It uses a coordinator to manage the process.
+      </p>
+
+      <FlowChart
+        title="Two-Phase Commit Protocol"
+        chart={"graph TD\nA[Coordinator: Begin Transaction] --> B[Phase 1: Prepare]\nB --> C[Send PREPARE to all participants]\nC --> D{All participants vote YES?}\nD -->|Yes| E[Phase 2: Commit]\nE --> F[Send COMMIT to all participants]\nF --> G[Participants commit and acknowledge]\nG --> H[Transaction Complete]\nD -->|Any votes NO| I[Phase 2: Abort]\nI --> J[Send ABORT to all participants]\nJ --> K[Participants rollback]\nK --> L[Transaction Aborted]"}
+      />
+
+      <p>
+        <strong>Problems with 2PC:</strong>
+      </p>
+      <ul>
+        <li>
+          <strong>Blocking:</strong> If the coordinator crashes after sending PREPARE but
+          before sending COMMIT/ABORT, participants are stuck holding locks indefinitely,
+          unable to proceed.
+        </li>
+        <li>
+          <strong>Single point of failure:</strong> The coordinator is a critical dependency.
+          Its failure can block the entire system.
+        </li>
+        <li>
+          <strong>Performance:</strong> Two rounds of network communication plus lock
+          holding make 2PC slow, especially across data centers.
+        </li>
+        <li>
+          <strong>Not partition tolerant:</strong> If a network partition separates the
+          coordinator from some participants, those participants are blocked.
+        </li>
+      </ul>
+
+      <h3>Saga Pattern</h3>
+      <p>
+        The Saga pattern breaks a distributed transaction into a sequence of local
+        transactions, each with a compensating transaction that undoes its work if a later
+        step fails. There are two coordination approaches:
+      </p>
+      <ul>
+        <li>
+          <strong>Choreography:</strong> Each service publishes events that trigger the next
+          step. There is no central coordinator. This is simpler for small workflows but
+          becomes hard to track as the number of steps grows.
+        </li>
+        <li>
+          <strong>Orchestration:</strong> A central orchestrator tells each service what to
+          do and when. It manages the workflow and triggers compensations on failure. This
+          is easier to understand and debug for complex workflows.
+        </li>
+      </ul>
+
+      <FlowChart
+        title="Saga with Compensating Transactions"
+        chart={"graph TD\nA[Order Service: Create Order] --> B[Payment Service: Charge Payment]\nB --> C[Inventory Service: Reserve Stock]\nC --> D{Shipping Service: Arrange Delivery}\nD -->|Success| E[Saga Complete]\nD -->|Failure| F[Compensate: Release Stock]\nF --> G[Compensate: Refund Payment]\nG --> H[Compensate: Cancel Order]\nH --> I[Saga Rolled Back]"}
+      />
+
+      <CodeBlock
+        title="Saga Orchestrator Pseudocode"
+        language="javascript"
+        code={`class OrderSaga {
+  constructor(orderId, orderData) {
+    this.orderId = orderId;
+    this.orderData = orderData;
+    this.completedSteps = [];
+  }
+
+  async execute() {
+    try {
+      // Step 1: Create the order
+      await this.createOrder();
+      this.completedSteps.push('CREATE_ORDER');
+
+      // Step 2: Process payment
+      await this.processPayment();
+      this.completedSteps.push('PROCESS_PAYMENT');
+
+      // Step 3: Reserve inventory
+      await this.reserveInventory();
+      this.completedSteps.push('RESERVE_INVENTORY');
+
+      // Step 4: Arrange shipping
+      await this.arrangeShipping();
+      this.completedSteps.push('ARRANGE_SHIPPING');
+
+      return { status: 'COMPLETED', orderId: this.orderId };
+    } catch (error) {
+      // Compensate in reverse order
+      await this.compensate();
+      return { status: 'ROLLED_BACK', orderId: this.orderId, error };
+    }
+  }
+
+  async compensate() {
+    const compensations = {
+      ARRANGE_SHIPPING: () => this.cancelShipping(),
+      RESERVE_INVENTORY: () => this.releaseInventory(),
+      PROCESS_PAYMENT: () => this.refundPayment(),
+      CREATE_ORDER: () => this.cancelOrder(),
+    };
+
+    // Compensate in reverse order of completion
+    for (const step of [...this.completedSteps].reverse()) {
+      try {
+        await compensations[step]();
+      } catch (compError) {
+        // Log and continue — compensation must be best-effort
+        console.error(\`Compensation failed for \${step}:\`, compError);
+      }
+    }
+  }
+}`}
+      />
+
+      <InfoBox title="Prefer Eventual Consistency Over 2PC">
+        <p>
+          In microservice architectures, 2PC is generally avoided because it introduces
+          tight coupling, blocks resources, and does not handle network partitions well.
+          Instead, prefer the Saga pattern with eventual consistency. Design your services
+          to tolerate temporary inconsistency and use compensating transactions to correct
+          failures. This approach is more resilient, scalable, and better suited to the
+          realities of distributed systems.
+        </p>
+      </InfoBox>
+
+      {/* ===== Section 5: Idempotency ===== */}
+      <h2>Idempotency</h2>
+      <p>
+        An operation is idempotent if performing it multiple times has the same effect as
+        performing it once. In distributed systems, network failures and retries are
+        inevitable, so idempotency is essential to prevent duplicate side effects.
+      </p>
+
+      <h3>Why Idempotency Matters</h3>
+      <p>
+        Consider a payment API: a client sends a charge request, the server processes it,
+        but the response is lost due to a network failure. The client retries, and without
+        idempotency, the customer is charged twice. Idempotent APIs ensure that retrying
+        a request produces the same result without double-processing.
+      </p>
+
+      <h3>Idempotency Keys</h3>
+      <p>
+        The most common approach is to have clients include a unique idempotency key with
+        each request. The server stores the result of the first execution and returns the
+        cached result for any subsequent requests with the same key.
+      </p>
+
+      <CodeBlock
+        title="Idempotent API Design"
+        language="javascript"
+        code={`async function processPayment(req, res) {
+  const idempotencyKey = req.headers['idempotency-key'];
+  if (!idempotencyKey) {
+    return res.status(400).json({ error: 'Idempotency-Key header required' });
+  }
+
+  // Check if this request was already processed
+  const existing = await db.idempotencyKeys.findOne({ key: idempotencyKey });
+  if (existing) {
+    // Return the cached response — do not reprocess
+    return res.status(existing.statusCode).json(existing.responseBody);
+  }
+
+  // Lock the key to prevent concurrent duplicate processing
+  const lock = await db.idempotencyKeys.insertOne({
+    key: idempotencyKey,
+    status: 'processing',
+    createdAt: new Date(),
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h TTL
+  });
+
+  try {
+    const result = await chargePaymentProvider(req.body);
+
+    // Store the successful result
+    await db.idempotencyKeys.updateOne(
+      { key: idempotencyKey },
+      { $set: { status: 'complete', statusCode: 200, responseBody: result } }
+    );
+
+    return res.status(200).json(result);
+  } catch (error) {
+    // Remove the key so the client can retry
+    await db.idempotencyKeys.deleteOne({ key: idempotencyKey });
+    return res.status(500).json({ error: 'Payment processing failed' });
+  }
+}`}
+      />
+
+      <h3>HTTP Method Idempotency</h3>
+      <ul>
+        <li><strong>GET, HEAD, OPTIONS:</strong> Always idempotent (read-only, no side effects).</li>
+        <li><strong>PUT:</strong> Idempotent by definition &mdash; replacing a resource with the same data multiple times yields the same result.</li>
+        <li><strong>DELETE:</strong> Idempotent &mdash; deleting a resource that is already deleted should return success (or 404), not an error.</li>
+        <li><strong>POST:</strong> Not inherently idempotent &mdash; each call may create a new resource. Use idempotency keys to make POST requests safe to retry.</li>
+        <li><strong>PATCH:</strong> Not inherently idempotent &mdash; depends on the operation. Incrementing a counter via PATCH is not idempotent; setting a field to a specific value is.</li>
+      </ul>
+
+      {/* ===== Section 6: Distributed Locking ===== */}
+      <h2>Distributed Locking</h2>
+      <p>
+        Distributed locks ensure that only one process across multiple nodes can access a
+        shared resource at a time. They are used for preventing duplicate processing,
+        coordinating scheduled jobs, and protecting critical sections in distributed systems.
+      </p>
+
+      <h3>Why Distributed Locks Are Needed</h3>
+      <p>
+        In a single-process application, you can use mutexes or synchronized blocks. In a
+        distributed system with multiple instances of a service, local locks are useless
+        because each instance has its own memory space. You need a shared, external lock
+        manager that all instances can coordinate through.
+      </p>
+
+      <h3>Redlock Algorithm</h3>
+      <p>
+        Redlock, proposed by Salvatore Sanfilippo (creator of Redis), uses multiple
+        independent Redis instances to provide a more reliable distributed lock:
+      </p>
+      <ol>
+        <li>Get the current time in milliseconds.</li>
+        <li>Try to acquire the lock on N Redis instances (typically 5) using the same key and a random value, with a small timeout on each attempt.</li>
+        <li>Calculate the elapsed time. The lock is acquired only if it was obtained on a majority (N/2 + 1) of instances and the total elapsed time is less than the lock&apos;s TTL.</li>
+        <li>If acquired, the effective lock validity time is the original TTL minus the elapsed time.</li>
+        <li>If the lock was not acquired on a majority, unlock all instances immediately.</li>
+      </ol>
+
+      <h3>Fencing Tokens</h3>
+      <p>
+        Even with distributed locks, a process that holds a lock can be paused (e.g., by
+        garbage collection) long enough for the lock to expire. Another process acquires
+        the lock, and now both believe they hold it. Fencing tokens solve this by assigning
+        a monotonically increasing token each time a lock is acquired. The resource being
+        protected rejects any request with a token lower than the highest it has seen.
+      </p>
+
+      <InfoBox title="Distributed Lock Pitfalls">
+        <p>
+          Distributed locks are surprisingly difficult to get right. Common pitfalls include:
+          relying on a single Redis instance (which creates a single point of failure),
+          not setting appropriate TTLs (too short causes premature expiration, too long
+          causes deadlocks), ignoring clock skew between nodes, and assuming the lock
+          protects against all races (it does not protect against GC pauses or network
+          delays after acquisition). Martin Kleppmann has argued that Redlock is fundamentally
+          flawed &mdash; consider whether you truly need distributed locking or if you can
+          design around it.
+        </p>
+      </InfoBox>
+
+      {/* ===== Section 7: Consistent Hashing ===== */}
+      <h2>Consistent Hashing</h2>
+      <p>
+        Traditional hash-based partitioning (key mod N) breaks when you add or remove nodes
+        because it changes the mapping for nearly every key. Consistent hashing solves this
+        by minimizing the number of keys that need to be remapped.
+      </p>
+
+      <h3>How It Works</h3>
+      <p>
+        Imagine a circular hash space (a ring) from 0 to 2^32. Both nodes and keys are
+        hashed onto this ring. Each key is assigned to the first node encountered when
+        walking clockwise from the key&apos;s position. When a node is added or removed,
+        only the keys between the affected node and its predecessor need to be remapped.
+      </p>
+
+      <h3>Virtual Nodes</h3>
+      <p>
+        With a small number of physical nodes, the distribution can be uneven &mdash; some
+        nodes may be responsible for a disproportionately large portion of the ring. Virtual
+        nodes solve this by mapping each physical node to multiple positions on the ring.
+        A node with 150 virtual nodes will have 150 positions spread around the ring,
+        resulting in a much more uniform distribution.
+      </p>
+
+      <FlowChart
+        title="Consistent Hashing Ring with Virtual Nodes"
+        chart={"graph TD\nA[Hash Ring: 0 to 2^32] --> B[Node A mapped to positions 10, 90, 200]\nA --> C[Node B mapped to positions 50, 150, 280]\nA --> D[Node C mapped to positions 30, 120, 240]\nB --> E[Key X hashes to 45 → assigned to Node B at position 50]\nC --> F[Key Y hashes to 100 → assigned to Node C at position 120]\nD --> G[Node C removed: only keys between C positions reassigned]\nG --> H[Most keys remain on same node → minimal disruption]"}
+      />
+
+      <p>
+        Consistent hashing is used in systems like Amazon DynamoDB, Apache Cassandra,
+        Memcached, and content delivery networks. It provides O(K/N) key remapping on
+        topology changes instead of O(K) with traditional hashing, where K is the number
+        of keys and N is the number of nodes.
+      </p>
+
+      {/* ===== Section 8: Other Distributed Concepts ===== */}
+      <h2>Other Distributed Concepts</h2>
+
+      <h3>Vector Clocks</h3>
+      <p>
+        Vector clocks are a mechanism for tracking causality in distributed systems. Each
+        node maintains a vector of logical timestamps, one per node. When a node performs
+        an operation, it increments its own entry. When it sends a message, it includes its
+        vector. The receiver merges the vectors by taking the element-wise maximum.
+      </p>
+      <p>
+        Vector clocks allow you to determine if two events are causally related or
+        concurrent. If event A&apos;s vector is less than or equal to event B&apos;s vector
+        in every component, then A happened before B. If neither is strictly less than the
+        other, the events are concurrent and may conflict &mdash; requiring application-level
+        resolution.
+      </p>
+
+      <h3>Gossip Protocol</h3>
+      <p>
+        The gossip protocol (also called epidemic protocol) is a peer-to-peer communication
+        mechanism where nodes periodically exchange state information with random peers.
+        Like the spread of a rumor, information eventually reaches all nodes.
+      </p>
+      <ul>
+        <li>Each node periodically selects a random peer and exchanges state.</li>
+        <li>Information propagates exponentially &mdash; reaching all N nodes in O(log N) rounds.</li>
+        <li>Highly fault-tolerant: works even when many nodes are unreachable.</li>
+        <li>Used by Cassandra, Consul, and SWIM for membership and failure detection.</li>
+      </ul>
+
+      <h3>Split-Brain Problem</h3>
+      <p>
+        Split-brain occurs when a network partition divides a cluster into two or more
+        sub-groups, each believing it is the entire cluster. Both partitions may elect
+        their own leader and accept writes independently, leading to data divergence.
+      </p>
+      <p>Solutions include:</p>
+      <ul>
+        <li><strong>Quorum-based decisions:</strong> Only the partition with a majority of nodes can operate. Minority partitions become read-only or unavailable.</li>
+        <li><strong>Fencing:</strong> Use a shared resource (like a disk) as a tie-breaker. The partition that can access it continues; the other shuts down.</li>
+        <li><strong>Odd-numbered clusters:</strong> Using 3, 5, or 7 nodes makes it impossible for two partitions to both have a majority.</li>
+      </ul>
+
+      <h3>Service Discovery</h3>
+      <p>
+        In dynamic distributed systems, services need to find each other. Service discovery
+        provides a registry of available service instances and their network locations.
+      </p>
+      <ul>
+        <li>
+          <strong>Client-Side Discovery:</strong> The client queries a service registry
+          (e.g., Consul, etcd, ZooKeeper) and selects an instance using a load balancing
+          strategy. The client is responsible for choosing and connecting to the instance.
+        </li>
+        <li>
+          <strong>Server-Side Discovery:</strong> The client sends requests to a load
+          balancer or API gateway, which queries the registry and routes the request.
+          The client does not need to know about the registry at all.
+        </li>
+      </ul>
+
+      <FlowChart
+        title="Service Discovery Patterns"
+        chart={"graph TD\nA[Client-Side Discovery] --> B[Client queries Service Registry]\nB --> C[Registry returns list of instances]\nC --> D[Client selects instance via load balancing]\nD --> E[Client connects directly to chosen instance]\nF[Server-Side Discovery] --> G[Client sends request to Load Balancer]\nG --> H[Load Balancer queries Service Registry]\nH --> I[Registry returns available instances]\nI --> J[Load Balancer routes request to an instance]"}
+      />
+
+      {/* ===== Section 9: Resilience Patterns ===== */}
+      <h2>Resilience Patterns</h2>
+      <p>
+        Distributed systems must be designed to handle failures gracefully. Resilience
+        patterns help prevent cascading failures, reduce the blast radius of outages, and
+        allow systems to recover automatically.
+      </p>
+
+      <h3>Circuit Breaker Pattern</h3>
+      <p>
+        The circuit breaker monitors calls to an external service and trips (opens) when
+        failures exceed a threshold. While open, requests fail immediately without calling
+        the service, preventing resource exhaustion. After a timeout, the circuit enters a
+        half-open state and allows a limited number of test requests through.
+      </p>
+      <ul>
+        <li><strong>Closed:</strong> Normal operation. Requests pass through. Failures are counted. If failures exceed the threshold, transition to Open.</li>
+        <li><strong>Open:</strong> All requests fail immediately with a fallback response. After the reset timeout, transition to Half-Open.</li>
+        <li><strong>Half-Open:</strong> A limited number of test requests are allowed through. If they succeed, transition back to Closed. If they fail, transition back to Open.</li>
+      </ul>
+
+      <FlowChart
+        title="Circuit Breaker State Machine"
+        chart={"graph TD\nA[CLOSED - Normal Operation] -->|Failure threshold exceeded| B[OPEN - Requests Fail Fast]\nB -->|Reset timeout expires| C[HALF-OPEN - Test Requests]\nC -->|Test requests succeed| A\nC -->|Test requests fail| B\nA -->|Requests succeeding| A\nB -->|Within timeout| B"}
+      />
+
+      <h3>Bulkhead Pattern</h3>
+      <p>
+        The bulkhead pattern isolates different parts of a system so that a failure in one
+        does not cascade to others. Named after the watertight compartments in a ship, it
+        applies to software by partitioning resources:
+      </p>
+      <ul>
+        <li>Separate thread pools for different downstream services.</li>
+        <li>Separate connection pools per dependency.</li>
+        <li>Dedicated resource limits per tenant in multi-tenant systems.</li>
+      </ul>
+      <p>
+        If one downstream service becomes slow and exhausts its thread pool, other services
+        remain unaffected because they use their own isolated pools.
+      </p>
+
+      <h3>Retry with Exponential Backoff &amp; Jitter</h3>
+      <p>
+        When a request fails, retrying immediately can overwhelm a struggling service.
+        Exponential backoff increases the delay between retries exponentially (1s, 2s, 4s,
+        8s, ...), giving the service time to recover. Adding random jitter prevents the
+        thundering herd problem where many clients retry at the exact same time.
+      </p>
+
+      <CodeBlock
+        title="Exponential Backoff with Jitter"
+        language="javascript"
+        code={`async function retryWithBackoff(fn, options = {}) {
+  const {
+    maxRetries = 5,
+    baseDelayMs = 1000,
+    maxDelayMs = 30000,
+    jitterFactor = 0.5,
+  } = options;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+
+      // Do not retry non-transient errors
+      if (error.statusCode >= 400 && error.statusCode < 500) throw error;
+
+      // Calculate delay with exponential backoff
+      const exponentialDelay = baseDelayMs * Math.pow(2, attempt);
+      const cappedDelay = Math.min(exponentialDelay, maxDelayMs);
+
+      // Add random jitter to prevent thundering herd
+      const jitter = cappedDelay * jitterFactor * Math.random();
+      const delay = cappedDelay + jitter;
+
+      console.log(
+        \`Attempt \${attempt + 1} failed. Retrying in \${Math.round(delay)}ms...\`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
+// Usage
+const result = await retryWithBackoff(
+  () => fetch('https://api.example.com/data'),
+  { maxRetries: 3, baseDelayMs: 500 }
+);`}
+      />
+
+      <InfoBox title="Combine Resilience Patterns">
+        <p>
+          In production systems, resilience patterns are most effective when combined.
+          A typical setup uses retries with exponential backoff for transient failures,
+          wrapped in a circuit breaker to stop retrying when a service is clearly down,
+          with bulkheads to isolate the blast radius. Add timeouts to every external call
+          and use fallbacks (cached data, default values, degraded functionality) when all
+          else fails.
+        </p>
+      </InfoBox>
+
       <InteractiveChallenge
-        question="What is the key advantage of the Saga pattern over Two-Phase Commit (2PC) for distributed transactions across microservices?"
+        question={"A microservice is experiencing intermittent timeouts when calling a payment provider. The payment provider occasionally goes down for 30-60 seconds. What combination of patterns would best handle this?"}
         options={[
-          "Sagas guarantee stronger ACID properties than 2PC",
-          "Sagas are faster to implement than 2PC",
-          "Sagas use local transactions without holding distributed locks across services, making them more resilient to failures and avoiding the in-doubt/blocking problem of 2PC",
-          "Sagas require fewer network round-trips than 2PC"
+          'Only retry failed requests immediately with no delay',
+          'Circuit breaker to stop calling when down, retries with exponential backoff when circuit is closed, and a fallback to queue payments for later processing',
+          'Increase the timeout to 5 minutes so requests always succeed',
+          'Use distributed locking to ensure only one request at a time reaches the payment provider'
         ]}
-        correctIndex={2}
-        explanation={"2PC requires all participants to hold locks during two network round trips, and if the coordinator crashes between phases, participants are stuck in 'prepared' state indefinitely (the in-doubt problem). Sagas decompose a distributed transaction into a sequence of local transactions, each committed independently. On failure, compensating transactions undo previous steps. There are no distributed locks, no blocking, and failure recovery is handled through compensations. The trade-off: Sagas provide eventual consistency (not atomicity), and compensations are application-specific logic that must be carefully designed."}
+        correctIndex={1}
+        explanation={"The circuit breaker detects when the payment provider is down and stops sending requests, preventing resource exhaustion. Retries with exponential backoff handle transient failures gracefully. A fallback mechanism such as queuing payments ensures the system degrades gracefully rather than failing entirely. Immediate retries would overwhelm the provider, long timeouts waste resources, and distributed locking is unrelated to resilience."}
       />
     </LessonLayout>
   );

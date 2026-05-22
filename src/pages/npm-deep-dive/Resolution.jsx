@@ -4,217 +4,306 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function NpmResolution() {
+export default function Resolution() {
   return (
     <LessonLayout
       title="Dependency Resolution"
       sectionId="npm-deep-dive"
       lessonIndex={1}
-      prev={{ path: '/npm-deep-dive/intro', label: 'npm Introduction' }}
-      next={{ path: '/npm-deep-dive/node-modules', label: 'node_modules Structure' }}
+      prev={{ path: '/npm-deep-dive/intro', label: 'How npm Works' }}
+      next={{ path: '/npm-deep-dive/node-modules', label: 'node_modules & Hoisting' }}
     >
-      <h2>Semantic Versioning (Semver)</h2>
+      <h2>Semantic Versioning (semver)</h2>
       <p>
-        npm uses semver for versioning. Every package version is <code>MAJOR.MINOR.PATCH</code>.
-        The version ranges in package.json specify which updates are acceptable.
+        Every npm package version follows the <strong>MAJOR.MINOR.PATCH</strong> convention.
+        This isn't just a nice format — it's a contract between the package author and its consumers
+        about what kinds of changes each release contains.
       </p>
 
-      <CodeBlock language="bash" title="Semver rules">
-{`# MAJOR.MINOR.PATCH
-# MAJOR: breaking changes
-# MINOR: new features, backwards compatible
-# PATCH: bug fixes, backwards compatible
+      <CodeBlock language="bash" title="Semver breakdown">
+{`# Version: 4.17.21
+#           │  │   └── PATCH: bug fixes, no API changes
+#           │  └────── MINOR: new features, backward compatible
+#           └───────── MAJOR: breaking changes, may require code updates
 
-# Version ranges in package.json:
-"react": "18.2.0"      # exact — only this version
-"react": "^18.2.0"     # caret — 18.x.x (minor + patch updates ok)
-"react": "~18.2.0"     # tilde — 18.2.x (patch updates only)
-"react": ">=18.0.0"    # at least 18.0.0
-"react": "18.x"        # any 18 minor version
-"react": "*"           # any version (avoid!)
-"react": "latest"      # latest tag (avoid in prod!)
-"react": "18.2.0 - 19.0.0"  # range
+# Examples:
+# 1.0.0 → 1.0.1  (patch: fixed a typo in output)
+# 1.0.0 → 1.1.0  (minor: added a new function)
+# 1.0.0 → 2.0.0  (major: renamed a function, removed an option)
 
-# Pre-release versions
-"react": "19.0.0-rc.1"  # release candidate
-"react": "^18.0.0-0"    # include pre-releases of 18
-
-# npm semver calculator: semver.npmjs.com`}
+# Pre-release versions:
+# 1.0.0-alpha.1  (early development, unstable)
+# 1.0.0-beta.3   (feature complete, may have bugs)
+# 1.0.0-rc.1     (release candidate, final testing)`}
       </CodeBlock>
 
-      <h2>Resolution Algorithm</h2>
+      <InfoBox variant="warning" title="Semver Is a Social Contract">
+        Semver only works if authors follow it honestly. In practice, many packages accidentally
+        ship breaking changes in minor or patch versions. This is why lockfiles exist — they
+        protect you from unexpected changes even when authors mess up semver.
+      </InfoBox>
+
+      <h2>Version Ranges</h2>
       <p>
-        When you run <code>npm install</code>, npm resolves the complete dependency tree by fetching
-        the metadata for every package and finding a set of versions that satisfies all constraints.
+        When you declare a dependency in package.json, you usually don't pin an exact version.
+        Instead, you specify a <strong>range</strong> that tells npm which versions are acceptable.
+        Here's what each range operator means:
+      </p>
+
+      <CodeBlock language="json" title="Version range examples in package.json">
+{`{
+  "dependencies": {
+    "exact":     "4.17.21",
+    "caret":     "^4.17.21",
+    "tilde":     "~4.17.21",
+    "gte":       ">=4.17.0",
+    "range":     ">=4.17.0 <5.0.0",
+    "or":        "^2.0.0 || ^3.0.0",
+    "any":       "*",
+    "latest":    "latest"
+  }
+}`}
+      </CodeBlock>
+
+      <h3>Range Operators Explained</h3>
+      <CodeBlock language="bash" title="What each range resolves to">
+{`# ^4.17.21 (caret — the default when you npm install)
+# Allows: 4.17.21, 4.17.22, 4.18.0, 4.99.99
+# Blocks: 5.0.0
+# Rule: "compatible with version" — allows MINOR and PATCH updates
+
+# ~4.17.21 (tilde)
+# Allows: 4.17.21, 4.17.22, 4.17.99
+# Blocks: 4.18.0
+# Rule: allows only PATCH updates
+
+# ^0.2.3 (caret with major version 0 — SPECIAL CASE!)
+# Allows: 0.2.3, 0.2.4, 0.2.99
+# Blocks: 0.3.0
+# Rule: when major is 0, caret acts like tilde (more conservative)
+
+# ^0.0.3 (caret with 0.0.x — EVEN MORE SPECIAL)
+# Allows: ONLY 0.0.3
+# Rule: when major.minor are both 0, caret pins exactly
+
+# 4.17.21 (no operator — exact match)
+# Allows: ONLY 4.17.21
+# Use with save-exact=true in .npmrc
+
+# * (any version)
+# Allows: anything — dangerous, never use in production
+
+# >=4.0.0 <5.0.0 (explicit range)
+# Equivalent to ^4.0.0`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Why Caret Is the Default">
+        When you run <code>npm install lodash</code>, npm writes <code>"lodash": "^4.17.21"</code>
+        to package.json (with a caret). This lets you automatically get bug fixes and new features
+        without breaking changes. If you want exact versions, set <code>save-exact=true</code> in
+        your .npmrc.
+      </InfoBox>
+
+      <h2>How npm Resolves the Dependency Tree</h2>
+      <p>
+        Resolution is recursive. npm starts with your package.json, resolves each dependency to
+        a concrete version, then does the same for each dependency's dependencies, and so on.
       </p>
 
       <FlowChart
-        title="Dependency Resolution Steps"
-        chart={"graph TD\n  A[npm install] --> B[Read package.json]\n  B --> C[Fetch registry metadata]\n  C --> D[Resolve version ranges]\n  D --> E[Build dependency tree]\n  E --> F{Conflicts?}\n  F -- No --> G[Install flat where possible]\n  F -- Yes --> H[Nest conflicting versions]\n  G --> I[Write package-lock.json]\n  H --> I"}
+        title="Dependency Resolution Algorithm"
+        chart={"graph TD\n  A[Read root package.json] --> B[For each dependency]\n  B --> C[Query registry for available versions]\n  C --> D[Find latest version matching range]\n  D --> E[Read THAT package's dependencies]\n  E --> F{More unresolved deps?}\n  F -->|Yes| B\n  F -->|No| G[Build complete dependency tree]\n  G --> H[Deduplicate compatible versions]\n  H --> I[Determine node_modules structure]"}
       />
 
-      <CodeBlock language="bash" title="Resolution example">
+      <CodeBlock language="bash" title="Visualize resolution in action">
+{`# See what npm resolves without installing
+npm install --dry-run
+
+# View the full dependency tree
+npm ls
+
+# View tree with all levels
+npm ls --all
+
+# Find a specific package in the tree
+npm ls lodash
+
+# See WHY a package is installed
+npm explain lodash
+# or shorthand:
+npm why lodash`}
+      </CodeBlock>
+
+      <h2>Version Conflicts</h2>
+      <p>
+        What happens when two packages need different versions of the same dependency?
+        For example, your project uses package A (needs lodash@4.17.x) and package B
+        (needs lodash@4.16.x).
+      </p>
+
+      <CodeBlock language="bash" title="Version conflict scenario">
 {`# Your package.json:
-# "react": "^18.2.0"
-# "react-query": "^5.0.0"  (requires react@^18)
-# "react-router": "^6.0.0" (requires react@^18)
+#   "package-a": "^1.0.0"  → depends on lodash@^4.17.0
+#   "package-b": "^2.0.0"  → depends on lodash@^4.16.0
 
-# npm resolves a single compatible version:
-# react@18.2.0 — satisfies all constraints
-# Installed once at root level (hoisted)
+# npm resolves this:
+# Both ranges overlap! ^4.17.0 and ^4.16.0 both accept 4.17.21
+# So npm installs lodash@4.17.21 ONCE (deduplication wins)
 
-# Conflict scenario:
-# "old-library": "^1.0.0"  (requires react@^16)
-# React 18 and React 16 cannot coexist at root
-# npm nests old-library/node_modules/react@16.x
-# Your app uses react@18, old-library uses react@16
-# (duplicate react = bugs! use resolutions to force version)
+# But what if the ranges DON'T overlap?
+#   "package-c": "^1.0.0"  → depends on lodash@^3.0.0
+#   "package-d": "^2.0.0"  → depends on lodash@^4.0.0
 
-# Force a specific version with overrides (npm 8.3+)
-{
-  "overrides": {
-    "react": "18.2.0"  // force ALL deps to use this version
-  }
-}`}
+# npm CANNOT deduplicate — installs BOTH versions:
+# node_modules/
+#   lodash/            (4.17.21 — hoisted)
+#   package-c/
+#     node_modules/
+#       lodash/        (3.10.1 — nested, only visible to package-c)`}
+      </CodeBlock>
+
+      <FlowChart
+        title="Conflict Resolution Strategy"
+        chart={"graph TD\n  A[Two packages need same dep] --> B{Ranges overlap?}\n  B -->|Yes| C[Install one version satisfying both]\n  B -->|No| D[Install both versions]\n  C --> E[Hoist to top-level node_modules]\n  D --> F[Hoist newer version]\n  D --> G[Nest older version inside dependent]"}
+      />
+
+      <h2>Deduplication</h2>
+      <p>
+        npm aggressively deduplicates. If multiple packages can share a single version,
+        npm hoists it to the top level. You can also force deduplication after the fact:
+      </p>
+
+      <CodeBlock language="bash" title="Deduplication commands">
+{`# See duplicate packages in your tree
+npm dedupe --dry-run
+
+# Actually deduplicate (restructure node_modules)
+npm dedupe
+
+# Check for duplication issues
+npm ls --all | grep "deduped"
+
+# Example output of npm ls:
+# my-app@1.0.0
+# ├── express@4.18.2
+# │   ├── accepts@1.3.8
+# │   │   └── mime-types@2.1.35 deduped    ← shared!
+# │   └── body-parser@1.20.1
+# │       └── mime-types@2.1.35 deduped    ← same instance
+# └── mime-types@2.1.35                     ← the single copy`}
       </CodeBlock>
 
       <h2>Peer Dependencies</h2>
       <p>
-        Peer dependencies specify that a package expects the host application to provide a certain
-        dependency. React plugins list React as a peer dep — they use the app's React, not their own.
+        Peer dependencies are a special declaration that says "I need this package, but I
+        don't install it myself — my CONSUMER must provide it." This pattern exists primarily
+        for plugins and framework extensions.
       </p>
 
-      <CodeBlock language="json" title="peerDependencies">
-{`// In a library's package.json:
-{
-  "name": "react-hooks-lib",
+      <CodeBlock language="json" title="Peer dependency example (a React component library)">
+{`{
+  "name": "my-ui-components",
+  "version": "1.0.0",
   "peerDependencies": {
-    "react": ">=17.0.0"    // expects host to provide react
+    "react": "^17.0.0 || ^18.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0"
   },
   "peerDependenciesMeta": {
     "react-dom": {
-      "optional": true     // peer dep that isn't required
+      "optional": true
     }
   },
   "devDependencies": {
-    "react": "^18.2.0"   // for testing the library itself
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
-}
-
-// npm 7+ automatically installs peer deps
-// To skip: npm install --legacy-peer-deps
-// To check: npm install --strict-peer-deps
-
-// Common peer dep error:
-// "react@16.8.0 is not compatible with react@^17.0.0"
-// Fix: upgrade the host app's react version`}
-      </CodeBlock>
-
-      <h2>Optional Dependencies</h2>
-
-      <CodeBlock language="json" title="optionalDependencies">
-{`// Optional deps: npm tries to install them, but does not fail if it can't
-// Use for: platform-specific native modules, fallback implementations
-{
-  "optionalDependencies": {
-    "fsevents": "^2.3.0"    // macOS file watching (not on Linux/Windows)
-  }
-}
-
-// In code, handle the optional dep being absent:
-let fsevents
-try {
-  fsevents = require('fsevents')
-} catch {
-  // fsevents not available on this platform
-  fsevents = null
 }`}
       </CodeBlock>
 
-      <h2>npm Overrides and Resolutions</h2>
-
-      <CodeBlock language="json" title="Forcing dependency versions">
-{`// npm 8.3+ overrides — force a specific version for any package in the tree
-{
-  "overrides": {
-    "lodash": "^4.17.21",       // force all lodash to 4.x
-    "some-package": {
-      "lodash": "^4.17.21"      // only for some-package's lodash
-    }
-  }
-}
-
-// yarn resolutions (equivalent)
-{
-  "resolutions": {
-    "lodash": "^4.17.21"
-  }
-}
-
-// pnpm overrides
-{
-  "pnpm": {
-    "overrides": {
-      "lodash": "^4.17.21"
-    }
-  }
-}
-
-// Use case: security vulnerabilities in transitive deps
-// npm audit may tell you "upgrade lodash to 4.17.21"
-// But you don't depend on lodash directly — use overrides`}
-      </CodeBlock>
-
-      <h2>dist-tags</h2>
-
-      <CodeBlock language="bash" title="npm dist-tags">
-{`# dist-tags map a label to a version
-# npm install react@latest   → installs the 'latest' tagged version
-# npm install react@next     → installs the 'next' tagged version (pre-release)
-# npm install react@legacy   → installs a legacy version
-
-# View dist-tags for a package
-npm dist-tag ls react
-# latest: 18.2.0
-# next: 19.0.0-rc.1
-# experimental: 0.0.0-experimental-...
-
-# Set a dist-tag (for publishers)
-npm dist-tag add my-package@1.2.3 stable
-npm dist-tag add my-package@2.0.0-beta.1 next`}
-      </CodeBlock>
-
-      <InfoBox variant="warning" title="Caret Range Gotcha">
-        <p>
-          <code>^0.x.x</code> behaves differently than <code>^1.x.x</code>. For versions below 1.0.0,
-          the caret only allows patch updates: <code>^0.2.3</code> matches <code>0.2.x</code> but NOT <code>0.3.x</code>.
-          This is because pre-1.0 packages consider minor version bumps as potentially breaking.
-        </p>
+      <InfoBox variant="info" title="Why Peer Dependencies Exist">
+        Without peer deps, a React component library would install its OWN copy of React.
+        Now your app has two Reacts — hooks break, context doesn't work, bundle is doubled.
+        Peer deps ensure everyone shares the same instance of critical packages.
       </InfoBox>
 
+      <CodeBlock language="bash" title="Dealing with peer dependency warnings">
+{`# npm 7+ auto-installs peer deps (npm 6 did not)
+# This can cause conflicts:
+
+# "ERESOLVE unable to resolve dependency tree"
+# package-a needs react@^17.0.0 (peer)
+# package-b needs react@^18.0.0 (peer)
+# Your app has react@18.2.0
+
+# Options:
+npm install --legacy-peer-deps    # Skip peer dep resolution (npm 6 behavior)
+npm install --force               # Force install, may break things
+
+# Better: check if package-a has a newer version supporting React 18
+npm info package-a peerDependencies`}
+      </CodeBlock>
+
+      <h2>Practical: Reading a Dependency Tree</h2>
+
+      <CodeBlock language="bash" title="Exploring your dependency tree">
+{`# Full tree (can be VERY long)
+npm ls --all
+
+# Just top-level deps
+npm ls --depth=0
+
+# Find all versions of a specific package
+npm ls react --all
+
+# Why is this package here?
+npm explain accepts
+# accepts@1.3.8
+# node_modules/accepts
+#   accepts@"~1.3.8" from express@4.18.2
+#   node_modules/express
+#     express@"^4.18.2" from the root project
+
+# Check for issues
+npm doctor
+
+# See outdated packages with current/wanted/latest
+npm outdated`}
+      </CodeBlock>
+
       <InteractiveChallenge
-        question="What does '^18.2.0' mean as a version range in package.json?"
+        question={"If your package.json has \"lodash\": \"^4.17.0\" and the latest lodash is 5.1.0, what will npm install?"}
         options={[
-          "Exactly version 18.2.0",
-          "18.2.0 or higher — compatible with 18.x.x but not 19.0.0",
-          "18.2.x — only patch updates allowed",
-          "Any version greater than 18.2.0"
+          "5.1.0 (always gets latest)",
+          "4.17.21 (latest 4.x version)",
+          "4.17.0 (the exact version specified)",
+          "It depends on the lockfile"
         ]}
         correctIndex={1}
-        explanation="The caret (^) allows compatible updates. For ^18.2.0, npm will accept any version >=18.2.0 and <19.0.0. This means minor version bumps (18.3.0, 18.4.0) and patch updates (18.2.1) are all accepted, but 19.0.0 is not (as it may have breaking changes). The tilde (~18.2.0) is more restrictive: only patch updates (18.2.x)."
+        explanation="The caret (^) allows minor and patch updates within the same major version. So ^4.17.0 matches anything >=4.17.0 and <5.0.0. npm will install the latest version in that range, which would be 4.17.21 (assuming that's the latest 4.x). However, if a lockfile exists with a specific version pinned, npm install will use THAT version unless you run npm update."
       />
 
       <InteractiveChallenge
-        question="What are peer dependencies used for?"
+        question="What's the key difference between peerDependencies and regular dependencies?"
         options={[
-          "Dependencies that are shared between multiple packages in a monorepo",
-          "Packages the host application must provide — the library uses the app's copy rather than bundling its own",
-          "Optional dependencies that improve performance if available",
-          "Dependencies only needed during the build process"
+          "Peer dependencies are faster to install",
+          "Peer dependencies must be provided by the consuming project, not installed by the package itself",
+          "Peer dependencies are only used in development",
+          "Peer dependencies are always optional"
         ]}
         correctIndex={1}
-        explanation="Peer dependencies declare that a package expects the consuming application to provide a certain dependency. For example, a React component library lists 'react' as a peer dependency because it wants to use the same React instance as the host app. Bundling its own React would create two separate React instances, breaking hooks (which rely on a single React context per app)."
+        explanation="Peer dependencies declare that a package NEEDS another package but expects the consumer to provide it. This prevents duplicate installations of framework-level packages (like React) that must be singletons in the dependency tree."
       />
+
+      <h2>Key Takeaways</h2>
+      <ul>
+        <li>Semver (MAJOR.MINOR.PATCH) is a contract — major = breaking, minor = features, patch = fixes</li>
+        <li>Caret (^) is the default range — allows minor+patch updates within the same major</li>
+        <li>Resolution is recursive: your deps have deps, which have deps, all the way down</li>
+        <li>When version ranges overlap, npm deduplicates to a single version</li>
+        <li>When ranges conflict, npm nests the conflicting version inside the package that needs it</li>
+        <li>Peer deps prevent duplicate framework installations (React, Angular, etc.)</li>
+        <li><code>npm ls</code>, <code>npm explain</code>, and <code>npm outdated</code> are your tree inspection tools</li>
+      </ul>
     </LessonLayout>
   );
 }

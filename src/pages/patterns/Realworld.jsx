@@ -4,201 +4,265 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function PatternsRealworld() {
+export default function Realworld() {
   return (
     <LessonLayout
-      title="Real-World Patterns"
+      title="Real-World Pattern Applications"
       sectionId="patterns"
       lessonIndex={7}
-      prev={{ path: "/patterns/proxy", label: "Proxy Pattern" }}
-      next={{ path: "/react-antipatterns/intro", label: "React Anti-Patterns" }}
+      prev={{ path: '/patterns/proxy', label: 'Proxy & Chain of Responsibility' }}
+      next={null}
     >
-      <p>In practice, design patterns rarely appear in isolation. Real applications combine multiple patterns to solve complex problems. This lesson walks through practical, production-grade examples where patterns work together.</p>
-
-      <h2>E-Commerce Order System</h2>
-      <p>A typical order processing flow combines Strategy (pricing), Builder (order construction), Observer (notifications), Command (undoable operations), and Decorator (order enrichment).</p>
-
-      <CodeBlock language="java" title="Order System — Multiple Patterns">
-{`// Strategy: pricing algorithm
-public interface PricingStrategy {
-    BigDecimal applyDiscount(BigDecimal price, Customer customer);
-}
-@Component class RegularPricing implements PricingStrategy {
-    public BigDecimal applyDiscount(BigDecimal p, Customer c) { return p; }
-    public String getType() { return "REGULAR"; }
-}
-@Component class VipPricing implements PricingStrategy {
-    public BigDecimal applyDiscount(BigDecimal p, Customer c) {
-        return p.multiply(BigDecimal.valueOf(0.85)); // 15% off
-    }
-    public String getType() { return "VIP"; }
-}
-
-// Builder: construct order
-@Builder
-public class Order {
-    private final String id;
-    private final String customerId;
-    private final List<OrderLine> lines;
-    private final BigDecimal total;
-    private final OrderStatus status;
-}
-
-// Observer: notify on order events
-public interface OrderEventListener {
-    void onOrderPlaced(Order order);
-}
-
-@Component class EmailNotifier implements OrderEventListener {
-    public void onOrderPlaced(Order o) {
-        emailService.send(o.getCustomerEmail(), "Order confirmed: " + o.getId());
-    }
-}
-@Component class InventoryReserver implements OrderEventListener {
-    public void onOrderPlaced(Order o) {
-        o.getLines().forEach(l -> inventory.reserve(l.getSku(), l.getQty()));
-    }
-}
-
-// Service orchestrates everything
-@Service
-public class OrderService {
-    private final Map<String, PricingStrategy> strategies;
-    private final List<OrderEventListener> listeners;
-    private final OrderRepository repo;
-
-    public Order placeOrder(Cart cart, Customer customer) {
-        PricingStrategy pricing = strategies.get(customer.getTier());
-        BigDecimal total = cart.getLines().stream()
-            .map(l -> pricing.applyDiscount(l.getTotal(), customer))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        Order order = Order.builder()
-            .id(UUID.randomUUID().toString())
-            .customerId(customer.getId())
-            .lines(cart.getLines())
-            .total(total)
-            .status(OrderStatus.PENDING)
-            .build();
-
-        repo.save(order);
-        listeners.forEach(l -> l.onOrderPlaced(order)); // notify all observers
-        return order;
-    }
-}`}
-      </CodeBlock>
+      <h2>Patterns in Enterprise Architecture</h2>
+      <p>
+        In real Spring Boot applications, patterns don't exist in isolation — they combine
+        to form architectural layers. Understanding how they work together is what separates
+        a senior developer from a junior one.
+      </p>
 
       <FlowChart
-        title="Order Processing Pattern Flow"
-        chart={"graph TD\n  A[Cart] --> B[OrderService]\n  B --> C[PricingStrategy]\n  B --> D[Order Builder]\n  D --> E[Order]\n  E --> F[Repository]\n  E --> G[EventPublisher]\n  G --> H[EmailNotifier]\n  G --> I[InventoryReserver]\n  G --> J[AnalyticsTracker]"}
+        title="Layered Architecture - Patterns at Each Level"
+        chart={"graph TD\n  A[Controller Layer] -->|DTO Pattern| B[Service Layer / Facade]\n  B -->|Strategy / Observer| C[Domain Logic]\n  C -->|Repository Pattern| D[Data Access Layer]\n  D -->|Adapter| E[Database / External APIs]\n  F[Spring AOP] -->|Proxy| A\n  F -->|Proxy| B\n  F -->|Proxy| D"}
       />
 
-      <h2>Repository with Decorator Chain</h2>
+      <h2>Repository Pattern</h2>
+      <p>
+        Mediates between the domain and data mapping layers. It provides a collection-like
+        interface for accessing domain objects, hiding the details of data access.
+      </p>
 
-      <CodeBlock language="java" title="Layered Repository Decorators">
-{`// Base interface
-public interface ProductRepository {
-    Optional<Product> findById(String id);
-    void save(Product product);
+      <CodeBlock language="java" title="Repository Pattern with Spring Data" showLineNumbers={true}>
+{`// Domain entity
+@Entity
+@Table(name = "customers")
+public class Customer {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+    private String email;
+    private String name;
+    private CustomerStatus status;
+    private LocalDateTime createdAt;
 }
 
-// JPA implementation
-@Repository
-class JpaProductRepository implements ProductRepository { ... }
+// Repository interface - Spring generates implementation via Proxy
+public interface CustomerRepository extends JpaRepository<Customer, String> {
+    // Derived query methods
+    Optional<Customer> findByEmail(String email);
+    List<Customer> findByStatus(CustomerStatus status);
 
-// Caching decorator
-class CachedProductRepository implements ProductRepository {
-    private final ProductRepository delegate;
-    private final Cache<String, Product> cache;
-    // ...
+    // Custom query
+    @Query("SELECT c FROM Customer c WHERE c.createdAt > :since AND c.status = :status")
+    List<Customer> findRecentByStatus(
+        @Param("since") LocalDateTime since,
+        @Param("status") CustomerStatus status);
 }
 
-// Audit decorator
-class AuditingProductRepository implements ProductRepository {
-    private final ProductRepository delegate;
-    private final AuditLog auditLog;
-    public void save(Product p) {
-        auditLog.record("PRODUCT_SAVE", p.getId(), SecurityContext.getUser());
-        delegate.save(p);
+// Service layer uses repository - doesn't know about SQL/JPA internals
+@Service
+@Transactional(readOnly = true)
+public class CustomerService {
+    private final CustomerRepository repository;
+
+    public CustomerService(CustomerRepository repository) {
+        this.repository = repository;
     }
-    // ...
-}
 
-// Spring configuration wires them together
-@Configuration
-class RepositoryConfig {
-    @Bean
-    ProductRepository productRepository(JpaProductRepository jpa,
-                                         Cache<String,Product> cache,
-                                         AuditLog audit) {
-        return new AuditingProductRepository(
-                   new CachedProductRepository(jpa, cache),
-                   audit);
+    public CustomerDto getByEmail(String email) {
+        return repository.findByEmail(email)
+            .map(this::toDto)
+            .orElseThrow(() -> new CustomerNotFoundException(email));
+    }
+
+    @Transactional
+    public CustomerDto create(CreateCustomerRequest request) {
+        if (repository.findByEmail(request.getEmail()).isPresent()) {
+            throw new DuplicateEmailException(request.getEmail());
+        }
+
+        Customer customer = new Customer();
+        customer.setEmail(request.getEmail());
+        customer.setName(request.getName());
+        customer.setStatus(CustomerStatus.ACTIVE);
+        customer.setCreatedAt(LocalDateTime.now());
+
+        return toDto(repository.save(customer));
     }
 }`}
       </CodeBlock>
 
-      <h2>Command Pattern for Undo/Redo</h2>
+      <h2>DTO Pattern &amp; Service Layer</h2>
 
-      <CodeBlock language="java" title="Command with Undo Stack">
-{`public interface Command {
-    void execute();
-    void undo();
+      <CodeBlock language="java" title="DTO + Service + Controller - Full Stack" showLineNumbers={true}>
+{`// DTO - what the API exposes (never expose entities directly!)
+@Builder
+@Value
+public class OrderResponseDto {
+    String orderId;
+    String customerName;
+    BigDecimal total;
+    OrderStatus status;
+    List<LineItemDto> items;
+    LocalDateTime placedAt;
 }
 
-public class MoveItemCommand implements Command {
-    private final CartService cart;
-    private final String itemId;
-    private final int fromQty, toQty;
-
-    public MoveItemCommand(CartService cart, String itemId, int qty) {
-        this.cart   = cart;
-        this.itemId = itemId;
-        this.fromQty = cart.getQuantity(itemId);
-        this.toQty   = qty;
+// Mapper - translates between layers
+@Component
+public class OrderMapper {
+    public OrderResponseDto toDto(Order order) {
+        return OrderResponseDto.builder()
+            .orderId(order.getId())
+            .customerName(order.getCustomer().getName())
+            .total(order.calculateTotal())
+            .status(order.getStatus())
+            .items(order.getItems().stream()
+                .map(this::toLineItemDto)
+                .toList())
+            .placedAt(order.getCreatedAt())
+            .build();
     }
-    public void execute() { cart.setQuantity(itemId, toQty); }
-    public void undo()    { cart.setQuantity(itemId, fromQty); }
+
+    private LineItemDto toLineItemDto(OrderItem item) {
+        return new LineItemDto(
+            item.getProduct().getName(),
+            item.getQuantity(),
+            item.getUnitPrice());
+    }
 }
 
-// Command history manager
-public class CommandHistory {
-    private final Deque<Command> history = new ArrayDeque<>();
-    private final Deque<Command> redoStack = new ArrayDeque<>();
+// Service - orchestrates business logic (Facade pattern)
+@Service
+@RequiredArgsConstructor
+public class OrderService {
+    private final OrderRepository orderRepo;
+    private final CustomerRepository customerRepo;
+    private final OrderMapper mapper;
+    private final List<OrderValidator> validators; // Strategy pattern
+    private final ApplicationEventPublisher events; // Observer pattern
 
-    public void execute(Command cmd) {
-        cmd.execute();
-        history.push(cmd);
-        redoStack.clear(); // new action clears redo stack
+    @Transactional
+    public OrderResponseDto placeOrder(PlaceOrderRequest request) {
+        // Validate using strategy chain
+        validators.forEach(v -> v.validate(request));
+
+        Customer customer = customerRepo.findById(request.getCustomerId())
+            .orElseThrow(() -> new NotFoundException("Customer not found"));
+
+        Order order = Order.create(customer, request.getItems());
+        order = orderRepo.save(order);
+
+        // Publish event for observers
+        events.publishEvent(new OrderPlacedEvent(order));
+
+        return mapper.toDto(order);
     }
-    public void undo() {
-        if (!history.isEmpty()) {
-            Command cmd = history.pop();
-            cmd.undo();
-            redoStack.push(cmd);
-        }
+}
+
+// Controller - thin, delegates everything to service
+@RestController
+@RequestMapping("/api/v1/orders")
+@RequiredArgsConstructor
+public class OrderController {
+    private final OrderService orderService;
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public OrderResponseDto placeOrder(@Valid @RequestBody PlaceOrderRequest request) {
+        return orderService.placeOrder(request);
     }
-    public void redo() {
-        if (!redoStack.isEmpty()) {
-            Command cmd = redoStack.pop();
-            cmd.execute();
-            history.push(cmd);
-        }
+
+    @GetMapping("/{id}")
+    public OrderResponseDto getOrder(@PathVariable String id) {
+        return orderService.getById(id);
     }
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Pattern Combinations to Know">
-        <p>Strategy + Factory: Factory creates the right Strategy. Decorator + Composite: Decorators wrap Composite leaves. Proxy + Singleton: The Proxy itself is a Singleton gateway. Observer + Command: Commands are queued and notify Observers on execution. These combinations are extremely common in production codebases.</p>
+      <InfoBox variant="info" title="How Spring Boot Uses Patterns Internally">
+        <ul>
+          <li><strong>Singleton</strong> — All beans are singleton-scoped by default</li>
+          <li><strong>Factory</strong> — BeanFactory creates and manages beans</li>
+          <li><strong>Proxy</strong> — AOP, @Transactional, @Cacheable, @Async</li>
+          <li><strong>Template Method</strong> — JdbcTemplate, RestTemplate, JmsTemplate</li>
+          <li><strong>Observer</strong> — ApplicationEventPublisher / @EventListener</li>
+          <li><strong>Strategy</strong> — HandlerMapping, ViewResolver, AuthenticationProvider</li>
+          <li><strong>Chain of Responsibility</strong> — Security Filter Chain</li>
+          <li><strong>Adapter</strong> — HandlerAdapter for different controller types</li>
+        </ul>
+      </InfoBox>
+
+      <h2>Event-Driven Architecture</h2>
+
+      <FlowChart
+        title="Event-Driven Order Processing"
+        chart={"graph LR\n  A[OrderController] --> B[OrderService]\n  B -->|publishes| C[OrderPlacedEvent]\n  C --> D[InventoryListener]\n  C --> E[PaymentListener]\n  C --> F[EmailListener]\n  C --> G[AnalyticsListener]\n  D -->|publishes| H[StockReservedEvent]\n  E -->|publishes| I[PaymentCapturedEvent]"}
+      />
+
+      <CodeBlock language="java" title="Event-Driven Architecture with Spring" showLineNumbers={true}>
+{`// Domain events
+public record OrderPlacedEvent(Order order, LocalDateTime timestamp) {}
+public record PaymentCapturedEvent(String orderId, BigDecimal amount) {}
+public record StockReservedEvent(String orderId, List<String> skus) {}
+
+// Listeners - each handles one concern (Single Responsibility)
+@Component
+@RequiredArgsConstructor
+public class InventoryEventListener {
+    private final InventoryService inventory;
+    private final ApplicationEventPublisher events;
+
+    @EventListener
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onOrderPlaced(OrderPlacedEvent event) {
+        Order order = event.order();
+        order.getItems().forEach(item ->
+            inventory.reserve(item.getSku(), item.getQuantity()));
+
+        events.publishEvent(new StockReservedEvent(
+            order.getId(),
+            order.getItems().stream().map(OrderItem::getSku).toList()));
+    }
+}
+
+@Component
+@RequiredArgsConstructor
+public class NotificationEventListener {
+    private final EmailService emailService;
+
+    @EventListener
+    @Async
+    public void onOrderPlaced(OrderPlacedEvent event) {
+        emailService.sendOrderConfirmation(
+            event.order().getCustomer().getEmail(),
+            event.order());
+    }
+
+    @EventListener
+    @Async
+    public void onPaymentCaptured(PaymentCapturedEvent event) {
+        emailService.sendPaymentReceipt(event.orderId(), event.amount());
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Interview Tip: Combining Patterns">
+        When asked "how would you design X?" in an interview, demonstrate how patterns work together:
+        Controller (thin) → Service (Facade) → Domain (Strategy/Observer) → Repository (Adapter to DB).
+        Show you understand the WHY, not just the structure.
       </InfoBox>
 
       <InteractiveChallenge
-        question="In the order system example, which pattern handles notifying the email service and inventory system when an order is placed?"
-        options={["Strategy", "Builder", "Observer", "Decorator"]}
-        correctIndex={2}
-        explanation="Observer (also called Event Listener or Pub/Sub) handles broadcasting events to multiple interested parties. When an order is placed, the OrderService publishes the event and all registered OrderEventListeners (email, inventory, analytics) are notified automatically without the OrderService knowing about them specifically."
+        question="Why should you NEVER expose JPA entities directly in your REST API responses?"
+        options={[
+          "JPA entities are too slow to serialize",
+          "Entities may expose sensitive fields, create circular references, and couple your API contract to your database schema",
+          "Spring Boot doesn't support serializing entities to JSON",
+          "Entities can only be used within @Transactional methods"
+        ]}
+        correctIndex={1}
+        explanation="Exposing entities directly means: (1) database schema changes break your API, (2) lazy-loaded relationships cause N+1 queries or LazyInitializationExceptions, (3) sensitive fields (passwords, internal IDs) leak to clients, (4) bidirectional relationships cause infinite JSON recursion. DTOs decouple your API contract from your persistence model."
       />
-
     </LessonLayout>
   );
 }

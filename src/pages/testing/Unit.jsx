@@ -4,341 +4,444 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function TestingUnit() {
+export default function Unit() {
   return (
     <LessonLayout
-      title="Unit Testing"
+      title="Unit Testing (JUnit & Jest)"
       sectionId="testing"
       lessonIndex={1}
-      prev={{ path: '/testing/intro', label: 'Testing Introduction' }}
-      next={{ path: '/testing/mocking', label: 'Mocking' }}
+      prev={{ path: '/testing/intro', label: 'Testing Pyramid & Philosophy' }}
+      next={{ path: '/testing/mocking', label: 'Mocking & Test Doubles' }}
     >
-      <h2>What Makes a Good Unit Test?</h2>
+      <h2>What Is a Unit Test?</h2>
       <p>
-        A unit test verifies a single unit of behavior in complete isolation — no database, no
-        network, no filesystem. The goal is not to "test code" but to <em>document behavior</em>:
-        given this situation, when this happens, this is the expected outcome. Tests that verify
-        behavior survive refactoring; tests that verify implementation details break every time
-        you rename a method.
+        A unit test verifies a single &quot;unit&quot; of code — typically a method or function —
+        in isolation from its dependencies. Unit tests are fast, deterministic, and should
+        pinpoint exactly where a failure occurs.
       </p>
 
       <FlowChart
         title="Unit Test Anatomy"
-        chart={"graph LR\n  A[Arrange - set up context] --> B[Act - call the code]\n  B --> C[Assert - verify outcome]\n  D[Mock dependencies] --> A\n  C --> E[Pass or Fail]\n  E --> F[Instant feedback]"}
+        chart={"graph LR\n  A[\"Arrange\\nSet up test data\"] --> B[\"Act\\nCall the method\"]\n  B --> C[\"Assert\\nVerify the result\"]"}
       />
 
-      <CodeBlock language="java" title="JUnit 5 + AssertJ Essentials">
-{`import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+      <h2>JUnit 5 — Java Unit Testing</h2>
 
-@ExtendWith(MockitoExtension.class)
+      <h3>Setup &amp; Dependencies</h3>
+      <CodeBlock language="java" title="Maven Dependencies (pom.xml)">
+{`<dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter</artifactId>
+    <version>5.10.2</version>
+    <scope>test</scope>
+</dependency>`}
+      </CodeBlock>
+
+      <h3>Core Annotations</h3>
+      <CodeBlock language="java" title="JUnit 5 Lifecycle Annotations">
+{`import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 class OrderServiceTest {
 
-    @Mock  OrderRepository repo;
-    @Mock  PaymentGateway payment;
-    @Mock  EmailService email;
-    @InjectMocks OrderService service;  // dependencies injected automatically
+    private OrderService orderService;
 
-    // === ARRANGE-ACT-ASSERT PATTERN ===
-    @Test
-    @DisplayName("should apply discount for orders over $100")
-    void applyBulkDiscount() {
-        // Arrange — set up test context
-        Order order = new Order("O-1", List.of(
-            new LineItem("Widget", 60.00, 2)   // total = $120
-        ));
-        when(repo.findById("O-1")).thenReturn(Optional.of(order));
-
-        // Act — invoke the behavior under test
-        BigDecimal finalPrice = service.calculateFinalPrice("O-1");
-
-        // Assert — verify expected outcome
-        assertThat(finalPrice)
-            .isEqualByComparingTo(new BigDecimal("108.00")); // 10% discount
-        verify(repo).findById("O-1");   // verify collaborator was called
-        verifyNoInteractions(email);     // email should NOT be sent during pricing
+    @BeforeAll
+    static void setupClass() {
+        // Runs ONCE before all tests in this class
+        System.out.println("Test class starting");
     }
 
-    // === EXCEPTION TESTING ===
-    @Test
-    void throwsWhenOrderNotFound() {
-        when(repo.findById("MISSING")).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.calculateFinalPrice("MISSING"))
-            .isInstanceOf(OrderNotFoundException.class)
-            .hasMessageContaining("MISSING")
-            .hasNoCause();
-    }
-
-    // === PARAMETERIZED TESTS — test multiple inputs ===
-    @ParameterizedTest
-    @CsvSource({
-        "50.00,  0,  50.00",   // below threshold — no discount
-        "100.00, 10, 90.00",   // exactly at threshold
-        "200.00, 10, 180.00",  // above threshold
-        "0.00,   0,  0.00",    // edge case: empty order
-    })
-    void calculateDiscount(double subtotal, double discountPct, double expected) {
-        assertThat(service.applyDiscount(
-            new BigDecimal(subtotal),
-            discountPct
-        )).isEqualByComparingTo(new BigDecimal(expected));
-    }
-
-    // === TEST LIFECYCLE ===
     @BeforeEach
     void setUp() {
-        // runs before each @Test — reset shared state here
+        // Runs before EACH test — fresh instance every time
+        orderService = new OrderService(new InMemoryOrderRepo());
     }
 
     @AfterEach
     void tearDown() {
-        // runs after each @Test — cleanup if needed
+        // Runs after EACH test — cleanup resources
+        orderService = null;
     }
 
-    @BeforeAll
-    static void setUpOnce() {
-        // runs once before all tests in class — expensive setup (test containers, etc.)
+    @AfterAll
+    static void tearDownClass() {
+        // Runs ONCE after all tests in this class
+        System.out.println("Test class complete");
     }
 
-    @Nested  // group related tests in an inner class
-    @DisplayName("when payment fails")
-    class WhenPaymentFails {
-        @Test void shouldNotSaveOrder() { /* ... */ }
-        @Test void shouldNotSendConfirmation() { /* ... */ }
-        @Test void shouldReturnPaymentError() { /* ... */ }
+    @Test
+    @DisplayName("should create order with valid items")
+    void createOrderWithValidItems() {
+        Order order = orderService.createOrder(List.of("item1", "item2"));
+        assertNotNull(order);
+        assertEquals(2, order.getItems().size());
     }
 }`}
       </CodeBlock>
 
-      <h2>AssertJ — Fluent Assertions</h2>
-
-      <CodeBlock language="java" title="AssertJ Assertion Patterns">
-{`import static org.assertj.core.api.Assertions.*;
-
-// String assertions
-assertThat(user.getEmail())
-    .isNotNull()
-    .isNotEmpty()
-    .endsWith("@example.com")
-    .doesNotContain("admin");
-
-// Numeric assertions
-assertThat(price)
-    .isPositive()
-    .isBetween(80.0, 120.0)
-    .isCloseTo(100.0, within(0.01));  // floating-point tolerance
-
-// Collection assertions
-assertThat(orders)
-    .hasSize(3)
-    .isNotEmpty()
-    .contains(order1, order2)
-    .doesNotContain(deletedOrder)
-    .allMatch(o -> o.getStatus() != null)
-    .anyMatch(o -> o.getTotal().compareTo(BigDecimal.ZERO) > 0);
-
-// Extract fields from objects in a list
-assertThat(users)
-    .extracting(User::getName, User::getEmail)
-    .containsExactlyInAnyOrder(
-        tuple("Alice", "alice@example.com"),
-        tuple("Bob", "bob@example.com")
-    );
-
-// Object field-by-field comparison (ignoring equals())
-assertThat(actualUser)
-    .usingRecursiveComparison()
-    .ignoringFields("id", "createdAt")  // exclude generated fields
-    .isEqualTo(expectedUser);
-
-// Soft assertions — report ALL failures, not just first
-SoftAssertions soft = new SoftAssertions();
-soft.assertThat(user.getName()).isEqualTo("Alice");
-soft.assertThat(user.getEmail()).endsWith("@example.com");
-soft.assertThat(user.getAge()).isBetween(18, 100);
-soft.assertAll();  // throws AssertionError listing ALL failures
-
-// Exception assertions
-assertThatThrownBy(() -> service.create(null))
-    .isInstanceOf(IllegalArgumentException.class)
-    .hasMessage("Name must not be null")
-    .hasNoCause();
-
-assertThatCode(() -> service.update(validRequest))
-    .doesNotThrowAnyException();`}
-      </CodeBlock>
-
-      <h2>Testing with Jest and Vitest (JavaScript)</h2>
-
-      <CodeBlock language="javascript" title="Jest / Vitest Unit Testing">
-{`// Vitest (recommended for Vite projects) — Jest-compatible API
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CartService } from './CartService';
-
-describe('CartService', () => {
-  let cart;
-
-  beforeEach(() => {
-    cart = new CartService();  // fresh instance per test
-  });
-
-  describe('addItem', () => {
-    it('adds item to empty cart', () => {
-      cart.addItem({ id: '1', name: 'Widget', price: 9.99 });
-      expect(cart.items).toHaveLength(1);
-      expect(cart.total).toBeCloseTo(9.99);
-    });
-
-    it('increments quantity when same item added twice', () => {
-      const item = { id: '1', name: 'Widget', price: 9.99 };
-      cart.addItem(item);
-      cart.addItem(item);
-      expect(cart.items).toHaveLength(1);
-      expect(cart.items[0].quantity).toBe(2);
-    });
-
-    it('throws for negative price', () => {
-      expect(() => cart.addItem({ id: '1', name: 'X', price: -1 }))
-        .toThrow('Price must be positive');
-    });
-  });
-
-  // Test.each — parameterized tests
-  it.each([
-    [100, 0.10, 90],
-    [50,  0.20, 40],
-    [200, 0.05, 190],
-  ])('applies %d% discount to $%i correctly', (total, rate, expected) => {
-    expect(CartService.applyDiscount(total, rate)).toBeCloseTo(expected);
-  });
-
-  // Mocking with vi.fn()
-  it('calls analytics when item added', () => {
-    const mockAnalytics = { track: vi.fn() };
-    const cartWithAnalytics = new CartService({ analytics: mockAnalytics });
-
-    cartWithAnalytics.addItem({ id: '1', name: 'Widget', price: 9.99 });
-
-    expect(mockAnalytics.track).toHaveBeenCalledOnce();
-    expect(mockAnalytics.track).toHaveBeenCalledWith('item_added', {
-      itemId: '1',
-      price: 9.99,
-    });
-  });
-});`}
-      </CodeBlock>
-
-      <h2>Testing React Components with Testing Library</h2>
-
-      <CodeBlock language="jsx" title="React Testing Library — Testing Behavior">
-{`import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
-import LoginForm from './LoginForm';
-
-// Testing Library philosophy: test what users see and do,
-// not component internals (state, props, refs)
-
-describe('LoginForm', () => {
-  it('shows validation error for empty email', async () => {
-    const user = userEvent.setup();
-    render(<LoginForm onSubmit={vi.fn()} />);
-
-    // Act like a user — click without filling in email
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
-
-    // Assert what the user sees
-    expect(screen.getByText('Email is required')).toBeInTheDocument();
-  });
-
-  it('calls onSubmit with credentials when form is valid', async () => {
-    const user = userEvent.setup();
-    const onSubmit = vi.fn().mockResolvedValue({ success: true });
-
-    render(<LoginForm onSubmit={onSubmit} />);
-
-    // Fill in the form
-    await user.type(screen.getByLabelText(/email/i), 'alice@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'SecretPass1!');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
-
-    // Verify callback was called correctly
-    expect(onSubmit).toHaveBeenCalledWith({
-      email: 'alice@example.com',
-      password: 'SecretPass1!',
-    });
-  });
-
-  it('shows loading state during submission', async () => {
-    const user = userEvent.setup();
-    // Delay the mock to test loading state
-    const onSubmit = vi.fn(() => new Promise(() => {})); // never resolves
-
-    render(<LoginForm onSubmit={onSubmit} />);
-    await user.type(screen.getByLabelText(/email/i), 'alice@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'SecretPass1!');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
-
-    expect(screen.getByRole('button', { name: /signing in/i })).toBeDisabled();
-  });
-
-  it('displays server error message', async () => {
-    const user = userEvent.setup();
-    const onSubmit = vi.fn().mockRejectedValue(new Error('Invalid credentials'));
-
-    render(<LoginForm onSubmit={onSubmit} />);
-    await user.type(screen.getByLabelText(/email/i), 'alice@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'WrongPass');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent('Invalid credentials');
-    });
-  });
-});`}
-      </CodeBlock>
-
-      <InfoBox variant="tip" title="Testing Library Query Priority">
-        <p>
-          React Testing Library's queries have a recommended priority order — use the most
-          accessible query first: <code>getByRole</code> (preferred — mirrors what screen readers
-          see), then <code>getByLabelText</code> (form elements), then <code>getByPlaceholderText</code>,
-          then <code>getByText</code>, and finally <code>getByTestId</code> (last resort — adds
-          test-only attributes). Preferring role-based queries ensures your tests verify that
-          the UI is accessible, not just that it renders.
-        </p>
+      <InfoBox variant="tip" title="Use @DisplayName Liberally">
+        Method names like <code>testCreateOrder1</code> are cryptic in reports.
+        Use <code>@DisplayName</code> to describe the scenario in plain English.
+        Your test report becomes living documentation.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What pattern should unit tests follow for structure?"
-        options={[
-          "Given-When-Then or Arrange-Act-Assert — set up context, execute behavior, verify outcome",
-          "Setup-Execute-Verify-Teardown (SEVT) — always clean up after every assertion",
-          "Input-Process-Output with full system integration on every test",
-          "Mock everything including the class under test to isolate perfectly"
-        ]}
-        correctIndex={0}
-        explanation="Both Given-When-Then (BDD) and Arrange-Act-Assert (AAA) describe the same three-phase structure: set up the test context (Given/Arrange), execute the behavior under test (When/Act), verify the outcome (Then/Assert). This structure makes tests self-documenting — a reader can understand what the test verifies without reading the implementation. Never mock the class under test itself; only mock its dependencies."
-      />
+      <h3>@Nested — Grouping Related Tests</h3>
+      <CodeBlock language="java" title="Nested Test Classes">
+{`class CalculatorTest {
+
+    private Calculator calc;
+
+    @BeforeEach
+    void setUp() {
+        calc = new Calculator();
+    }
+
+    @Nested
+    @DisplayName("Addition")
+    class AdditionTests {
+        @Test
+        @DisplayName("should add two positive numbers")
+        void addPositive() {
+            assertEquals(5, calc.add(2, 3));
+        }
+
+        @Test
+        @DisplayName("should handle negative numbers")
+        void addNegative() {
+            assertEquals(-1, calc.add(2, -3));
+        }
+    }
+
+    @Nested
+    @DisplayName("Division")
+    class DivisionTests {
+        @Test
+        @DisplayName("should divide evenly")
+        void divideEvenly() {
+            assertEquals(5, calc.divide(10, 2));
+        }
+
+        @Test
+        @DisplayName("should throw on divide by zero")
+        void divideByZero() {
+            assertThrows(ArithmeticException.class,
+                () -> calc.divide(10, 0));
+        }
+    }
+}`}
+      </CodeBlock>
+
+      <h3>@ParameterizedTest — Data-Driven Tests</h3>
+      <CodeBlock language="java" title="Parameterized Tests">
+{`import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.*;
+
+class EmailValidatorTest {
+
+    private final EmailValidator validator = new EmailValidator();
+
+    @ParameterizedTest
+    @ValueSource(strings = {"user@example.com", "admin@company.org"})
+    @DisplayName("should accept valid emails")
+    void validEmails(String email) {
+        assertTrue(validator.isValid(email));
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"not-an-email", "@missing.user"})
+    @DisplayName("should reject invalid emails")
+    void invalidEmails(String email) {
+        assertFalse(validator.isValid(email));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"100, 10, 10", "9, 3, 3", "20, 4, 5"})
+    @DisplayName("should divide correctly")
+    void division(int dividend, int divisor, int expected) {
+        assertEquals(expected, dividend / divisor);
+    }
+}`}
+      </CodeBlock>
+
+      <h3>Assertions Deep Dive</h3>
+      <CodeBlock language="java" title="JUnit 5 Assertions">
+{`// Basic assertions
+assertEquals("expected", actual);
+assertNotEquals("unexpected", actual);
+assertTrue(condition);
+assertFalse(condition);
+assertNull(value);
+assertNotNull(value);
+
+// Exception assertions
+ArithmeticException ex = assertThrows(
+    ArithmeticException.class,
+    () -> calculator.divide(1, 0)
+);
+assertEquals("/ by zero", ex.getMessage());
+
+// Grouped assertions — all run even if one fails
+assertAll("user validation",
+    () -> assertEquals("Alice", user.getName()),
+    () -> assertEquals("alice@test.com", user.getEmail()),
+    () -> assertTrue(user.isActive())
+);
+
+// Timeout assertion
+assertTimeout(Duration.ofMillis(500), () -> {
+    slowService.process();
+});`}
+      </CodeBlock>
+
+      <h2>Jest — JavaScript Unit Testing</h2>
+
+      <h3>Setup</h3>
+      <CodeBlock language="bash" title="Install Jest">
+{`npm install --save-dev jest @types/jest
+
+# For TypeScript
+npm install --save-dev ts-jest
+npx ts-jest config:init`}
+      </CodeBlock>
+
+      <h3>describe / it / test</h3>
+      <CodeBlock language="javascript" title="Jest Test Structure">
+{`const { calculateDiscount } = require('./pricing');
+
+describe('calculateDiscount', () => {
+  it('should return 0 for orders under $50', () => {
+    expect(calculateDiscount(49.99)).toBe(0);
+  });
+
+  it('should apply 10% discount for orders over $100', () => {
+    expect(calculateDiscount(200)).toBe(20);
+  });
+});`}
+      </CodeBlock>
+
+      <h3>Expect Matchers</h3>
+      <CodeBlock language="javascript" title="Common Jest Matchers">
+{`// Equality
+expect(value).toBe(42);              // strict equality (===)
+expect(obj).toEqual({ a: 1, b: 2 }); // deep equality
+expect(obj).toStrictEqual(expected);  // deep + type checking
+
+// Truthiness
+expect(value).toBeTruthy();
+expect(value).toBeFalsy();
+expect(value).toBeNull();
+expect(value).toBeDefined();
+
+// Numbers
+expect(value).toBeGreaterThan(3);
+expect(value).toBeLessThanOrEqual(10);
+expect(0.1 + 0.2).toBeCloseTo(0.3);
+
+// Strings
+expect(str).toMatch(/pattern/);
+expect(str).toContain('substring');
+
+// Arrays & Iterables
+expect(arr).toContain('item');
+expect(arr).toHaveLength(3);
+expect(arr).toEqual(expect.arrayContaining([1, 2]));
+
+// Exceptions
+expect(() => dangerousCall()).toThrow();
+expect(() => dangerousCall()).toThrow('specific message');
+expect(() => dangerousCall()).toThrow(CustomError);
+
+// Functions (spies/mocks)
+expect(mockFn).toHaveBeenCalled();
+expect(mockFn).toHaveBeenCalledWith('arg1', 'arg2');
+expect(mockFn).toHaveBeenCalledTimes(3);`}
+      </CodeBlock>
+
+      <h2>React Testing Library</h2>
+      <p>
+        React Testing Library (RTL) encourages testing components the way users
+        interact with them — by querying the DOM like a user would.
+      </p>
+
+      <InfoBox variant="info" title="Philosophy: Test Behavior, Not Implementation">
+        RTL deliberately does not expose component internals. You query by role, text,
+        and label — the same things a user sees. If your test breaks, it means the user
+        experience changed, not just an internal detail.
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Basic Component Test">
+{`import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import LoginForm from './LoginForm';
+
+describe('LoginForm', () => {
+  it('should render email and password fields', () => {
+    render(<LoginForm />);
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument();
+  });
+
+  it('should show error for invalid email', async () => {
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    await user.type(screen.getByLabelText(/email/i), 'not-an-email');
+    await user.click(screen.getByRole('button', { name: /log in/i }));
+
+    expect(screen.getByText(/invalid email/i)).toBeInTheDocument();
+  });
+
+  it('should call onSubmit with form data', async () => {
+    const handleSubmit = jest.fn();
+    const user = userEvent.setup();
+    render(<LoginForm onSubmit={handleSubmit} />);
+
+    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.click(screen.getByRole('button', { name: /log in/i }));
+
+    expect(handleSubmit).toHaveBeenCalledWith({
+      email: 'test@example.com',
+      password: 'password123',
+    });
+  });
+});`}
+      </CodeBlock>
+
+      <h3>Async Testing with waitFor</h3>
+      <CodeBlock language="jsx" title="Testing Async Behavior">
+{`import { render, screen, waitFor } from '@testing-library/react';
+import UserProfile from './UserProfile';
+
+it('should load and display user data', async () => {
+  render(<UserProfile userId="123" />);
+  expect(screen.getByText(/loading/i)).toBeInTheDocument();
+
+  await waitFor(() => {
+    expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
+  });
+  expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+});`}
+      </CodeBlock>
+
+      <h3>Testing Custom Hooks</h3>
+      <CodeBlock language="jsx" title="Testing Hooks with renderHook">
+{`import { renderHook, act } from '@testing-library/react';
+import useCounter from './useCounter';
+
+describe('useCounter', () => {
+  it('should initialize with default value', () => {
+    const { result } = renderHook(() => useCounter(0));
+    expect(result.current.count).toBe(0);
+  });
+
+  it('should increment the counter', () => {
+    const { result } = renderHook(() => useCounter(0));
+    act(() => {
+      result.current.increment();
+    });
+    expect(result.current.count).toBe(1);
+  });
+
+  it('should accept a custom initial value', () => {
+    const { result } = renderHook(() => useCounter(10));
+    expect(result.current.count).toBe(10);
+  });
+});`}
+      </CodeBlock>
+
+      <h3>Snapshot Testing</h3>
+      <CodeBlock language="jsx" title="Snapshot Tests">
+{`import { render } from '@testing-library/react';
+import Button from './Button';
+
+it('should match snapshot', () => {
+  const { container } = render(
+    <Button variant="primary" size="large">Click Me</Button>
+  );
+  expect(container.firstChild).toMatchSnapshot();
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Snapshot Testing Caveats">
+        Snapshots are easy to write but can become a maintenance burden. Large snapshots
+        get blindly updated. Use them sparingly — prefer explicit assertions for critical
+        behavior. Snapshots work best for small, stable UI components.
+      </InfoBox>
+
+      <h2>JUnit vs Jest Comparison</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>JUnit 5</th>
+            <th>Jest</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Test annotation/function</td>
+            <td><code>@Test</code></td>
+            <td><code>test()</code> / <code>it()</code></td>
+          </tr>
+          <tr>
+            <td>Setup</td>
+            <td><code>@BeforeEach</code></td>
+            <td><code>beforeEach()</code></td>
+          </tr>
+          <tr>
+            <td>Grouping</td>
+            <td><code>@Nested</code></td>
+            <td><code>describe()</code></td>
+          </tr>
+          <tr>
+            <td>Display name</td>
+            <td><code>@DisplayName</code></td>
+            <td>String in <code>it()</code></td>
+          </tr>
+          <tr>
+            <td>Parameterized</td>
+            <td><code>@ParameterizedTest</code></td>
+            <td><code>test.each()</code></td>
+          </tr>
+          <tr>
+            <td>Exception assertion</td>
+            <td><code>assertThrows()</code></td>
+            <td><code>expect().toThrow()</code></td>
+          </tr>
+          <tr>
+            <td>Snapshot testing</td>
+            <td>N/A (use ApprovalTests)</td>
+            <td>Built-in</td>
+          </tr>
+        </tbody>
+      </table>
 
       <InteractiveChallenge
-        question="Why does React Testing Library recommend getByRole over getByTestId for finding elements?"
+        question={"Which React Testing Library query best follows the \"test like a user\" philosophy?"}
         options={[
-          "getByRole is faster at runtime than getByTestId",
-          "getByRole queries the DOM the same way assistive technology does — tests that use it verify accessibility automatically",
-          "getByTestId requires adding extra HTML attributes, which getByRole avoids",
-          "getByRole is newer and will eventually replace all other query methods"
+          "getByTestId('submit-btn')",
+          "container.querySelector('.btn-primary')",
+          "getByRole('button', { name: /submit/i })",
+          "wrapper.find('Button').props()"
         ]}
-        correctIndex={1}
-        explanation="getByRole queries elements by their ARIA role — the same way screen readers navigate. A test that finds a button via getByRole('button', {name: /submit/i}) simultaneously verifies that the element is a real button (not a div with onClick), that it has an accessible name, and that the name is correct. getByTestId adds data-testid attributes that exist only for tests and tell you nothing about accessibility or user experience."
+        correctIndex={2}
+        explanation="getByRole queries by accessibility role and visible label — exactly how a user or screen reader would find the button. getByTestId is acceptable as a last resort, but role-based queries should be preferred."
+        language="javascript"
       />
+
+      <h2>Key Takeaways</h2>
+      <ul>
+        <li>JUnit 5 uses annotations (@Test, @BeforeEach, @Nested, @ParameterizedTest) for structure</li>
+        <li>Jest uses functions (describe, it, beforeEach, test.each) for the same patterns</li>
+        <li>React Testing Library tests user behavior, not implementation details</li>
+        <li>Use <code>userEvent</code> over <code>fireEvent</code> for more realistic interactions</li>
+        <li>Use <code>waitFor</code> for async operations, <code>renderHook</code> for custom hooks</li>
+        <li>Snapshots are useful but use them sparingly</li>
+      </ul>
     </LessonLayout>
   );
 }

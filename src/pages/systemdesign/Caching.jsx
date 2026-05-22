@@ -4,343 +4,655 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function SysCaching() {
+export default function Caching() {
   return (
     <LessonLayout
       title="Caching Strategies"
       sectionId="systemdesign"
       lessonIndex={2}
-      prev={{ path: '/systemdesign/scaling', label: 'Scaling Patterns' }}
-      next={{ path: '/systemdesign/databases', label: 'Databases' }}
+      prev={{ path: '/systemdesign/scaling', label: 'Scaling &amp; Load Balancing' }}
+      next={{ path: '/systemdesign/databases', label: 'Database Design &amp; Scaling' }}
     >
-      <h2>Why Caching?</h2>
+      {/* ================================================================
+          SECTION 1: WHY CACHE?
+          ================================================================ */}
+
+      <h2>Why Cache?</h2>
       <p>
-        Cache hit rates of 99% are common in read-heavy systems — this means 100× fewer database
-        queries. Caching is the single highest-leverage optimization available. A well-placed Redis
-        cache can handle 100,000+ ops/sec vs a database's 10,000 reads/sec.
+        Caching is the single most effective technique for improving application performance. By
+        storing frequently accessed data in a fast, temporary storage layer, you can reduce latency
+        from hundreds of milliseconds down to single-digit milliseconds. Caching sits between your
+        application and slower data sources — databases, APIs, file systems — and intercepts
+        requests before they hit the expensive backend.
       </p>
 
       <FlowChart
-        title="Cache Read Path"
-        chart={"graph LR\n  A[Request] --> B{Cache Hit?}\n  B -- Yes --> C[Return cached data]\n  B -- No --> D[Query Database]\n  D --> E[Store in Cache]\n  E --> F[Return data]\n  C --> G[Response in < 1ms]\n  F --> H[Response in 10-100ms]"}
+        title="Request With Cache vs Without Cache"
+        chart={"graph TD\n  subgraph Without Cache\n    A1[Client Request] --> B1[Application Server]\n    B1 --> C1[Database Query ~50-200ms]\n    C1 --> D1[Return Response ~200ms total]\n  end\n  subgraph With Cache\n    A2[Client Request] --> B2[Application Server]\n    B2 --> E2{Cache Hit?}\n    E2 -->|Hit ~1-5ms| F2[Return Cached Data ~5ms total]\n    E2 -->|Miss| G2[Database Query ~50-200ms]\n    G2 --> H2[Store in Cache]\n    H2 --> I2[Return Response ~200ms first time]\n  end\n  style F2 fill:#10b981,color:#fff\n  style D1 fill:#ef4444,color:#fff\n  style E2 fill:#6366f1,color:#fff"}
       />
 
-      <h2>Caching Patterns</h2>
+      <h3>Common Caching Use Cases</h3>
+      <ul>
+        <li><strong>Database query results:</strong> Cache expensive or frequently repeated queries to avoid redundant database load</li>
+        <li><strong>API responses:</strong> Cache responses from third-party APIs to reduce latency and avoid rate limits</li>
+        <li><strong>Session data:</strong> Store user sessions in Redis instead of hitting the database on every request</li>
+        <li><strong>Computed results:</strong> Cache the output of expensive calculations, aggregations, or report generation</li>
+        <li><strong>Static assets:</strong> CDN caching for images, CSS, JavaScript files</li>
+        <li><strong>Configuration data:</strong> Cache application config that rarely changes but is read on every request</li>
+      </ul>
 
-      <CodeBlock language="java" title="Cache-Aside (Lazy Loading) — Most Common">
-{`// Also called "look-aside" or "lazy population"
-// Application manages the cache explicitly
-// Cache is NOT automatically in sync — app reads/writes both
-
-@Service
-public class UserService {
-    @Autowired private UserRepository userRepo;
-    @Autowired private RedisTemplate<String, User> redis;
-
-    private static final Duration TTL = Duration.ofMinutes(30);
-
-    public User getUser(Long id) {
-        String key = "user:" + id;
-
-        // 1. Try cache first
-        User cached = redis.opsForValue().get(key);
-        if (cached != null) {
-            return cached; // cache hit — ~0.1ms
-        }
-
-        // 2. Cache miss — read from DB
-        User user = userRepo.findById(id)
-            .orElseThrow(() -> new NotFoundException("User " + id));
-
-        // 3. Populate cache for next time
-        redis.opsForValue().set(key, user, TTL);
-        return user;
-    }
-
-    public User updateUser(Long id, UpdateUserRequest req) {
-        User user = userRepo.save(/* update */);
-        // 4. Invalidate cache after write
-        redis.delete("user:" + id);
-        return user;
-    }
-}
-
-// ✓ Most resilient: cache failure doesn't break reads
-// ✓ Only cache what's actually needed (lazy)
-// ✓ Works well with read-heavy workloads
-// ✗ First request after cold start or expiry has higher latency
-// ✗ Risk of stale data between write and invalidation`}
-      </CodeBlock>
-
-      <CodeBlock language="java" title="Write-Through — Cache Stays in Sync">
-{`// Every write goes to BOTH cache and DB synchronously
-// Cache is always up to date — no stale reads
-
-public User updateUser(Long id, UpdateUserRequest req) {
-    User user = userRepo.save(buildUpdatedUser(req));
-
-    // Write to cache immediately after DB write
-    String key = "user:" + id;
-    redis.opsForValue().set(key, user, Duration.ofMinutes(30));
-    return user;
-}
-
-// ✓ Cache always consistent with DB
-// ✓ No stale reads (great for financial data, inventory)
-// ✗ Write latency = DB write + cache write (both in hot path)
-// ✗ Cache fills with data that may never be read (cold data gets cached too)
-// Use: banking, inventory, anything where staleness is unacceptable
-
-// Write-Behind (Write-Back) — async DB write
-// Write to cache immediately, queue DB write asynchronously
-// ✓ Very fast writes (cache only in hot path)
-// ✗ Data loss risk if cache fails before DB write
-// ✗ Complex implementation
-// Use: analytics counters, activity tracking, non-critical writes
-
-// Read-Through — cache sits in front, handles misses
-// App always reads from cache; cache fetches from DB on miss
-// ✓ Transparent to application
-// ✗ Cold start: all keys must warm up
-// Used by: AWS ElastiCache with DAX (DynamoDB), Hibernate 2nd-level cache`}
-      </CodeBlock>
-
-      <h2>Redis Data Structures</h2>
-      <p>
-        Redis is not just a key-value store — it has rich data structures that map to real
-        use cases. Choosing the right structure is critical for performance.
-      </p>
-
-      <CodeBlock language="bash" title="Redis Data Structures and Use Cases">
-{`# STRING — most versatile, stores any value (text, JSON, binary)
-SET user:1 '{"id":1,"name":"Alice"}'  EX 3600  # EX = expire in seconds
-GET user:1
-INCR page:views:home   # atomic counter — race-condition safe
-SETNX lock:payment:123 1  EX 30  # distributed lock (SET if Not eXists)
-
-# HASH — field-value pairs, efficient for objects
-HSET user:1 name "Alice" age 30 role "admin"
-HGET user:1 name          # "Alice"
-HMGET user:1 name age     # ["Alice", "30"]
-HINCRBY user:1 loginCount 1  # increment a field
-# Use: user sessions, product data, any object with many fields
-# Advantage: update one field without re-serializing the entire object
-
-# LIST — ordered collection with head/tail operations
-LPUSH queue:emails email1 email2  # push to front
-RPUSH queue:emails email3         # push to back
-RPOP queue:emails                 # pop from back (FIFO queue)
-LRANGE queue:emails 0 -1          # get all items
-LLEN queue:emails                 # length
-# Use: message queues, activity feeds, recent items list
-
-# SET — unique unordered elements
-SADD user:1:interests "golang" "react" "redis"
-SADD user:2:interests "react" "python" "redis"
-SINTER user:1:interests user:2:interests  # ["react", "redis"] — common interests
-SUNION user:1:interests user:2:interests  # all interests combined
-SISMEMBER user:1:interests "react"        # 1 (true)
-# Use: tags, unique visitors, friend graphs, permissions
-
-# SORTED SET — set with scores, ordered by score
-ZADD leaderboard 9500 "alice" 8200 "bob" 7800 "charlie"
-ZRANK leaderboard "bob"         # 1 (0-indexed rank)
-ZREVRANGE leaderboard 0 9       # top 10 players
-ZINCRBY leaderboard 300 "bob"   # update score
-ZRANGEBYSCORE leaderboard 8000 10000  # players with score 8000-10000
-# Use: leaderboards, rate limiting (sliding window), priority queues, time-series
-
-# HyperLogLog — probabilistic cardinality counting
-PFADD daily:visitors:20240115 "user:1" "user:2" "user:1"
-PFCOUNT daily:visitors:20240115   # returns ~2 (unique count)
-# Use: unique visitor counts, A/B test user counting
-# Memory: 12KB regardless of cardinality (vs storing every user ID)`}
-      </CodeBlock>
-
-      <h2>Cache Eviction Policies</h2>
-
-      <CodeBlock language="bash" title="Redis Eviction Policies">
-{`# Configure in redis.conf or with CONFIG SET:
-CONFIG SET maxmemory 2gb
-CONFIG SET maxmemory-policy allkeys-lru
-
-# Eviction policies when memory is full:
-
-# noeviction (default)
-# → Returns error on write when memory full
-# Use: when data loss is unacceptable (session store)
-
-# allkeys-lru (most common for caching)
-# → Evict least recently used key from ALL keys
-# Use: general cache — let Redis figure out what's "cold"
-
-# volatile-lru
-# → Evict LRU key, but only among keys with TTL set
-# Use: mix of "must keep forever" and "can evict" data
-
-# allkeys-lfu (Redis 4.0+, often better than LRU)
-# → Evict least frequently used key
-# Use: when access frequency matters more than recency
-# Better than LRU for social media (popular posts stay cached)
-
-# allkeys-random
-# → Evict random key
-# Use: uniform access pattern (rare)
-
-# volatile-ttl
-# → Evict key with shortest remaining TTL
-# Use: when you want most-expiring keys evicted first
-
-# Rule of thumb: allkeys-lru for caches, noeviction for sessions`}
-      </CodeBlock>
-
-      <h2>Cache Invalidation Strategies</h2>
-
-      <CodeBlock language="java" title="Cache Invalidation Patterns">
-{`// PROBLEM: cache and DB can get out of sync
-
-// Strategy 1: TTL (Time-To-Live) — simplest
-// Data expires after N seconds — accept brief staleness
-redis.opsForValue().set(key, value, Duration.ofMinutes(5));
-// ✓ Simple, self-healing
-// ✗ Stale for up to TTL duration
-
-// Strategy 2: Delete-on-write (Cache Aside)
-public void updateProduct(Product p) {
-    productRepo.save(p);
-    redis.delete("product:" + p.getId());     // invalidate
-    redis.delete("product:list:*");           // invalidate collections too
-}
-// ✓ Fresh data on next read
-// ✗ Cache miss storm if popular key (thundering herd)
-
-// Strategy 3: Update-on-write (Write-Through)
-public void updateProduct(Product p) {
-    productRepo.save(p);
-    redis.opsForValue().set("product:" + p.getId(), p, Duration.ofMinutes(30));
-}
-// ✓ Cache always fresh
-// ✗ Write latency includes both DB and cache
-
-// Strategy 4: Event-driven invalidation (best at scale)
-// After DB write, publish event: productUpdated:{id}
-// Cache service subscribes, invalidates on event
-// ✓ Decoupled, works across services
-// ✗ Complex, requires messaging infrastructure
-
-// Strategy 5: Versioned keys (cache busting)
-String key = "product:" + id + ":v" + product.getVersion();
-// Old version key just expires naturally
-// ✓ Never stale
-// ✗ Cache fills with versioned entries — needs cleanup`}
-      </CodeBlock>
-
-      <h2>Distributed Caching — Redis Cluster</h2>
-
-      <FlowChart
-        title="Redis Cluster Architecture"
-        chart={"graph TD\n  A[Client] --> B[Redis Cluster]\n  B --> C[Shard 1 - slots 0-5460]\n  B --> D[Shard 2 - slots 5461-10922]\n  B --> E[Shard 3 - slots 10923-16383]\n  C --> F[Primary]\n  C --> G[Replica]\n  D --> H[Primary]\n  D --> I[Replica]\n  E --> J[Primary]\n  E --> K[Replica]"}
-      />
-
-      <CodeBlock language="markdown" title="Redis High Availability Options">
-{`## Standalone Redis
-# Single node — simple, fast, no HA
-# Use: development, non-critical caching
-
-## Redis Sentinel
-# 1 master + N replicas + 3+ sentinel processes
-# Sentinels monitor master, vote on failure, promote replica
-# Automatic failover: ~30 seconds
-# Client must connect via sentinel, not direct
-# Use: modest scale, need HA without clustering
-
-## Redis Cluster
-# Data auto-sharded across 3+ primary nodes (16384 hash slots)
-# Each primary has 1+ replicas
-# Automatic failover and resharding
-# Horizontal scaling: add shards as data grows
-# Caveat: multi-key operations require same hash slot
-#   → use hash tags: {user:1}.profile and {user:1}.session
-#     → both route to same shard
-# Use: large-scale production, > 100GB cache
-
-## AWS ElastiCache / Azure Cache for Redis
-# Managed Redis — no ops, automatic backups, multi-AZ
-# ElastiCache Serverless: auto-scales with zero config
-# Use: almost always prefer managed in cloud deployments`}
-      </CodeBlock>
-
-      <h2>CDN as Cache Layer</h2>
-
-      <CodeBlock language="markdown" title="Caching at Every Layer">
-{`## Layer 1: Browser Cache
-# Cache-Control: max-age=3600 → browser caches for 1 hour
-# ETag + If-None-Match → conditional requests (304 Not Modified)
-# Cache-Control: no-store → never cache (login pages, API responses)
-
-## Layer 2: CDN (Cloudflare, CloudFront, Fastly)
-# Cache static assets globally: JS, CSS, images, videos
-# Cache public API responses with Cache-Control headers
-# 99%+ cache hit rate for popular content → near-zero origin load
-# Cache invalidation: purge API or use content-hashed filenames
-
-## Layer 3: Load Balancer / Reverse Proxy
-# Nginx: proxy_cache (file-based cache)
-# Varnish: high-performance HTTP cache
-# Cache whole page responses (full-page caching)
-# Use: news sites, blogs, marketing pages
-
-## Layer 4: Application Cache (Redis/Memcached)
-# Cache computed results, DB query results, session data
-# This is what most backend services need
-
-## Layer 5: Database Buffer Pool
-# PostgreSQL: shared_buffers (keep hot data in RAM)
-# MySQL InnoDB: innodb_buffer_pool_size
-# Set to 25-80% of available RAM
-# This is "free" caching — happens automatically
-
-## Key Metric: Cache Hit Rate
-# Hit rate < 80%: you're not caching the right things
-# Hit rate > 95%: healthy cache — check TTL isn't too short
-# Monitor: cache misses, eviction rate, memory usage`}
-      </CodeBlock>
-
-      <InfoBox variant="warning" title="Cache Stampede (Thundering Herd)">
-        <p>
-          When a hot cache key expires simultaneously for many users, they all miss and hammer
-          the database at once. Solutions: (1) <strong>Mutex/lock</strong> — one request regenerates,
-          others wait or return stale data. (2) <strong>Jitter on TTL</strong> — add random ±10% to
-          expiry so related keys don't expire together. (3) <strong>Probabilistic Early Expiration
-          (XFetch)</strong> — randomly refresh the cache slightly before expiry, with probability
-          proportional to computation cost. (4) <strong>Background refresh</strong> — a cron job or
-          event refreshes cache before it expires.
-        </p>
+      <InfoBox variant="info" title="The 80/20 Rule of Caching">
+        In most applications, roughly 80% of requests access only 20% of the data. This is known as
+        the Pareto principle, and it is what makes caching so effective. You do not need to cache
+        everything — caching only the &quot;hot&quot; 20% of data can eliminate 80% of your database load.
+        Identify your hot keys and cache those first.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your social media app stores user profile data. Which caching strategy is best?"
-        options={[
-          "Write-through — always keep cache in sync with every profile update",
-          "Cache-aside with TTL — load on demand, expire after 30 minutes",
-          "No caching — profiles change too often",
-          "Write-behind — write to cache first, async to database"
-        ]}
-        correctIndex={1}
-        explanation="Cache-aside with TTL is ideal here. Most profiles are read far more than written (high read:write ratio). Loading on demand (lazy) means you only cache profiles that are actually viewed. A 30-minute TTL means slightly stale data is acceptable (fine for social media) and self-heals automatically. Write-through would add write latency and cache every profile even cold ones. Write-behind risks data loss."
+      {/* ================================================================
+          SECTION 2: CACHE-ASIDE PATTERN (LAZY LOADING)
+          ================================================================ */}
+
+      <h2>Cache-Aside Pattern (Lazy Loading)</h2>
+      <p>
+        Cache-aside is the most common caching pattern. The application is responsible for reading
+        from and writing to the cache. The cache does not interact with the database directly —
+        the application manages everything. Data is loaded into the cache lazily, only when it is
+        first requested.
+      </p>
+
+      <h3>How It Works</h3>
+      <ol>
+        <li>Application receives a request for data</li>
+        <li>Application checks the cache for the requested key</li>
+        <li>If the key exists (cache hit), return the cached value immediately</li>
+        <li>If the key does not exist (cache miss), query the database</li>
+        <li>Store the result in the cache with a TTL (time to live)</li>
+        <li>Return the result to the caller</li>
+      </ol>
+
+      <FlowChart
+        title="Cache-Aside Pattern Flow"
+        chart={"graph TD\n  A[App Receives Request] --> B{Check Cache}\n  B -->|Cache Hit| C[Return Cached Data]\n  B -->|Cache Miss| D[Query Database]\n  D --> E[Store Result in Cache]\n  E --> F[Return Data to Client]\n  style C fill:#10b981,color:#fff\n  style D fill:#f59e0b,color:#000\n  style E fill:#6366f1,color:#fff"}
       />
 
+      <h3>Pros and Cons</h3>
+      <ul>
+        <li><strong>Pro:</strong> Only requested data is cached — no wasted memory on data nobody reads</li>
+        <li><strong>Pro:</strong> Cache failures are non-fatal — the app falls back to the database</li>
+        <li><strong>Pro:</strong> Simple to implement and understand</li>
+        <li><strong>Con:</strong> First request is always a cache miss (cold start penalty)</li>
+        <li><strong>Con:</strong> Data can become stale if the database is updated without invalidating the cache</li>
+        <li><strong>Con:</strong> Application code must handle both cache and database logic</li>
+      </ul>
+
+      <CodeBlock language="javascript" title="Cache-Aside Implementation">
+{`async function getUserById(userId) {
+  const cacheKey = \`user:\${userId}\`;
+
+  // Step 1: Check cache
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);  // Cache hit
+  }
+
+  // Step 2: Cache miss — query database
+  const user = await db.query(
+    'SELECT * FROM users WHERE id = $1', [userId]
+  );
+
+  if (user) {
+    // Step 3: Store in cache with 5-minute TTL
+    await redis.setex(cacheKey, 300, JSON.stringify(user));
+  }
+
+  return user;
+}
+
+// When updating, invalidate the cache
+async function updateUser(userId, data) {
+  await db.query(
+    'UPDATE users SET name = $1 WHERE id = $2',
+    [data.name, userId]
+  );
+  // Delete stale cache entry
+  await redis.del(\`user:\${userId}\`);
+}`}
+      </CodeBlock>
+
+      {/* ================================================================
+          SECTION 3: READ-THROUGH CACHE
+          ================================================================ */}
+
+      <h2>Read-Through Cache</h2>
+      <p>
+        In a read-through cache, the cache itself is responsible for loading data from the database
+        on a cache miss. The application only interacts with the cache — it never queries the
+        database directly. The cache library or middleware handles the read-through logic.
+      </p>
+
+      <h3>How It Differs from Cache-Aside</h3>
+      <ul>
+        <li><strong>Cache-Aside:</strong> Application manages both cache and database reads — two separate code paths</li>
+        <li><strong>Read-Through:</strong> Application only talks to the cache — the cache loads data from the database transparently</li>
+      </ul>
+
+      <FlowChart
+        title="Read-Through Cache Flow"
+        chart={"graph TD\n  A[App Requests Data] --> B[Cache Layer]\n  B --> C{Key Exists?}\n  C -->|Hit| D[Return Cached Data]\n  C -->|Miss| E[Cache Loads from DB]\n  E --> F[Cache Stores Data]\n  F --> G[Return Data to App]\n  style B fill:#6366f1,color:#fff\n  style D fill:#10b981,color:#fff\n  style E fill:#f59e0b,color:#000"}
+      />
+
+      <h3>When to Use Read-Through</h3>
+      <ul>
+        <li>When you want to simplify application code by abstracting cache management</li>
+        <li>When using a cache library or framework that supports read-through (e.g., Caffeine, Guava, NCache)</li>
+        <li>When multiple services need the same caching logic — centralize it in the cache layer</li>
+      </ul>
+
+      {/* ================================================================
+          SECTION 4: WRITE-THROUGH CACHE
+          ================================================================ */}
+
+      <h2>Write-Through Cache</h2>
+      <p>
+        In a write-through pattern, the application writes data to the cache, and the cache
+        synchronously writes the data to the database before confirming the write. This ensures
+        the cache and database are always consistent.
+      </p>
+
+      <FlowChart
+        title="Write-Through Cache Flow"
+        chart={"graph TD\n  A[App Writes Data] --> B[Write to Cache]\n  B --> C[Cache Writes to DB Synchronously]\n  C --> D{DB Write Success?}\n  D -->|Yes| E[Acknowledge Write to App]\n  D -->|No| F[Rollback Cache + Return Error]\n  style B fill:#6366f1,color:#fff\n  style C fill:#f59e0b,color:#000\n  style E fill:#10b981,color:#fff\n  style F fill:#ef4444,color:#fff"}
+      />
+
+      <h3>Pros and Cons</h3>
+      <ul>
+        <li><strong>Pro:</strong> Cache and database are always consistent — no stale data</li>
+        <li><strong>Pro:</strong> Reads after writes are always cache hits — great for read-after-write patterns</li>
+        <li><strong>Con:</strong> Higher write latency — every write goes through two steps (cache + DB)</li>
+        <li><strong>Con:</strong> Infrequently-read data still gets cached, wasting memory</li>
+        <li><strong>Best for:</strong> Systems where data consistency is critical and write volume is moderate</li>
+      </ul>
+
+      {/* ================================================================
+          SECTION 5: WRITE-BEHIND (WRITE-BACK) CACHE
+          ================================================================ */}
+
+      <h2>Write-Behind (Write-Back) Cache</h2>
+      <p>
+        Write-behind is similar to write-through, but the cache writes to the database
+        asynchronously. The application writes to the cache and receives an immediate acknowledgment.
+        The cache then flushes changes to the database in the background, often batching multiple
+        writes for efficiency.
+      </p>
+
+      <FlowChart
+        title="Write-Behind Cache Flow"
+        chart={"graph TD\n  A[App Writes Data] --> B[Write to Cache]\n  B --> C[Acknowledge Write Immediately]\n  B --> D[Async Queue]\n  D --> E[Batch Write to DB]\n  E --> F{DB Write Success?}\n  F -->|Yes| G[Complete]\n  F -->|No| H[Retry / Dead Letter Queue]\n  style C fill:#10b981,color:#fff\n  style D fill:#f59e0b,color:#000\n  style H fill:#ef4444,color:#fff"}
+      />
+
+      <h3>Pros and Cons</h3>
+      <ul>
+        <li><strong>Pro:</strong> Very low write latency — app does not wait for database writes</li>
+        <li><strong>Pro:</strong> Batching reduces database write load significantly</li>
+        <li><strong>Con:</strong> Risk of data loss if the cache node crashes before flushing to the database</li>
+        <li><strong>Con:</strong> Eventual consistency — database may lag behind the cache</li>
+        <li><strong>Best for:</strong> High write-throughput systems where some data loss is acceptable (e.g., analytics, logging)</li>
+      </ul>
+
+      <InfoBox variant="warning" title="Data Loss Risk">
+        Write-behind caching introduces a window of potential data loss. If the cache node crashes
+        before the asynchronous write completes, that data is gone. To mitigate this, use Redis
+        with AOF persistence, maintain a write-ahead log, or use a message queue (Kafka, RabbitMQ)
+        as the async buffer instead of relying solely on the cache&apos;s memory.
+      </InfoBox>
+
+      {/* ================================================================
+          SECTION 6: WRITE-AROUND CACHE
+          ================================================================ */}
+
+      <h2>Write-Around Cache</h2>
+      <p>
+        In write-around, the application writes data directly to the database, bypassing the cache
+        entirely. The cache is only populated on reads (via cache-aside or read-through). This
+        prevents the cache from being filled with data that may never be read.
+      </p>
+
+      <h3>How It Works</h3>
+      <ol>
+        <li>Application writes data directly to the database — cache is not updated</li>
+        <li>On subsequent reads, the cache-aside pattern loads the data into the cache</li>
+        <li>Only data that is actually read gets cached</li>
+      </ol>
+
+      <h3>When to Use Write-Around</h3>
+      <ul>
+        <li>When most written data is not immediately read (e.g., audit logs, historical records)</li>
+        <li>When you want to avoid cache pollution with write-heavy data</li>
+        <li>When combined with cache-aside for reads — write-around handles writes, cache-aside handles reads</li>
+        <li>Trade-off: first read after a write is always a cache miss</li>
+      </ul>
+
+      {/* ================================================================
+          SECTION 7: CACHE EVICTION POLICIES
+          ================================================================ */}
+
+      <h2>Cache Eviction Policies</h2>
+      <p>
+        Caches have limited memory. When the cache is full and a new entry needs to be stored,
+        the cache must evict an existing entry. The eviction policy determines which entry to remove.
+        Choosing the right eviction policy is crucial for cache hit rates.
+      </p>
+
+      <h3>LRU — Least Recently Used</h3>
+      <p>
+        Evicts the entry that has not been accessed for the longest time. This is the most commonly
+        used eviction policy and works well for most workloads. It assumes that recently accessed
+        data is more likely to be accessed again (temporal locality).
+      </p>
+
+      <h3>LFU — Least Frequently Used</h3>
+      <p>
+        Evicts the entry that has been accessed the fewest times. This works well when some data is
+        consistently popular — it protects hot data from being evicted by a burst of one-time
+        accesses. However, it can be slow to adapt to changing access patterns because old popular
+        entries retain high counts.
+      </p>
+
+      <h3>FIFO — First In First Out</h3>
+      <p>
+        Evicts the oldest entry regardless of how recently or frequently it was accessed. Simple to
+        implement but generally provides worse hit rates than LRU or LFU. Useful when all entries
+        have similar access patterns.
+      </p>
+
+      <h3>TTL — Time To Live</h3>
+      <p>
+        Each entry has an expiration time. After the TTL expires, the entry is automatically removed
+        (either immediately or lazily on next access). TTL is not strictly an eviction policy but is
+        used alongside LRU/LFU to prevent stale data. Most caches use TTL + LRU together.
+      </p>
+
+      <h3>Eviction Policy Comparison</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Policy</th>
+            <th>Evicts</th>
+            <th>Best For</th>
+            <th>Weakness</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>LRU</td>
+            <td>Least recently accessed</td>
+            <td>General-purpose, most workloads</td>
+            <td>Scan pollution (one-time bulk reads evict hot data)</td>
+          </tr>
+          <tr>
+            <td>LFU</td>
+            <td>Least frequently accessed</td>
+            <td>Stable popularity distributions</td>
+            <td>Slow to adapt when popularity shifts</td>
+          </tr>
+          <tr>
+            <td>FIFO</td>
+            <td>Oldest entry</td>
+            <td>Simple, uniform access patterns</td>
+            <td>Ignores access frequency and recency</td>
+          </tr>
+          <tr>
+            <td>TTL</td>
+            <td>Expired entries</td>
+            <td>Time-sensitive data, staleness control</td>
+            <td>Not size-based — won&apos;t free space on demand</td>
+          </tr>
+          <tr>
+            <td>Random</td>
+            <td>Random entry</td>
+            <td>When access patterns are unpredictable</td>
+            <td>May evict hot data</td>
+          </tr>
+        </tbody>
+      </table>
+
       <InteractiveChallenge
-        question="What is the main advantage of Redis Sorted Sets for a leaderboard?"
+        question={"Your cache is full and you observe a periodic batch job scanning millions of records once per day. After the batch job runs, your cache hit rate drops from 95% to 20%. Which eviction policy would best prevent this?"}
         options={[
-          "They are stored on disk, so they persist after restart",
-          "They maintain elements sorted by score with O(log N) insertions and range queries",
-          "They automatically expire old entries",
-          "They support full-text search on member names"
+          'FIFO — evict the oldest entries first',
+          'LRU — evict least recently used entries',
+          'LFU — evict least frequently used entries',
+          'Random — evict random entries'
+        ]}
+        correctIndex={2}
+        explanation={"LFU protects frequently accessed (hot) data from being evicted by a burst of one-time accesses. The batch job reads each record once, giving each a frequency count of 1. With LFU, these low-frequency entries are evicted first, preserving the hot data that your application actually needs. LRU would fail here because the batch job's one-time reads would be the 'most recently used' entries, causing hot data to be evicted."}
+      />
+
+      {/* ================================================================
+          SECTION 8: REDIS OVERVIEW
+          ================================================================ */}
+
+      <h2>Redis Overview</h2>
+      <p>
+        Redis (Remote Dictionary Server) is the most popular in-memory data store used for caching.
+        It is not just a key-value store — Redis supports rich data types, atomic operations,
+        pub/sub messaging, Lua scripting, and more. Understanding Redis data types and commands is
+        essential for system design interviews.
+      </p>
+
+      <h3>Key Data Types</h3>
+      <ul>
+        <li><strong>Strings:</strong> Simple key-value pairs. Can store text, numbers, or serialized JSON. Supports atomic increment/decrement for counters.</li>
+        <li><strong>Lists:</strong> Ordered collections of strings. Support push/pop from both ends. Great for queues, recent activity feeds, and message buffers.</li>
+        <li><strong>Sets:</strong> Unordered collections of unique strings. Support set operations (union, intersection, difference). Great for tags, unique visitors, and membership checks.</li>
+        <li><strong>Sorted Sets:</strong> Sets where each member has a score. Members are ordered by score. Perfect for leaderboards, rate limiting windows, and priority queues.</li>
+        <li><strong>Hashes:</strong> Maps of field-value pairs under a single key. Perfect for storing objects (user profiles, product details) without serializing to JSON.</li>
+      </ul>
+
+      <CodeBlock language="bash" title="Essential Redis Commands">
+{`# Strings
+SET user:123 '{"name":"Alice","role":"admin"}'
+GET user:123
+SETEX session:abc 3600 '{"userId":123}'   # Set with 1-hour TTL
+INCR page:views:homepage                   # Atomic counter
+
+# Hashes — store objects as fields
+HSET user:123 name "Alice" role "admin" email "alice@co.com"
+HGET user:123 name                         # Get single field
+HGETALL user:123                           # Get all fields
+
+# Lists — queues and recent items
+LPUSH notifications:user:123 "New message from Bob"
+RPOP notifications:user:123                # Process oldest first
+LRANGE recent:posts 0 9                    # Get 10 most recent
+
+# Sets — unique collections
+SADD online:users "user:123" "user:456"
+SISMEMBER online:users "user:123"          # Check membership
+SCARD online:users                         # Count members
+
+# Sorted Sets — leaderboards
+ZADD leaderboard 1500 "player:alice"
+ZADD leaderboard 2200 "player:bob"
+ZREVRANGE leaderboard 0 9 WITHSCORES      # Top 10 players
+
+# Key management
+TTL user:123                               # Check remaining TTL
+EXPIRE user:123 600                        # Set TTL to 10 minutes
+DEL user:123                               # Delete key
+KEYS user:*                                # Find keys (AVOID in prod)
+SCAN 0 MATCH user:* COUNT 100             # Safe iteration`}
+      </CodeBlock>
+
+      <h3>Redis as Cache vs Redis as Primary Store</h3>
+      <ul>
+        <li><strong>As Cache:</strong> Volatile, TTL on all keys, eviction policy set (allkeys-lru), data loss is acceptable, backed by a primary database</li>
+        <li><strong>As Primary Store:</strong> Persistence enabled (RDB snapshots + AOF log), replication configured, data loss is NOT acceptable, requires careful memory management</li>
+      </ul>
+
+      <InfoBox variant="info" title="Redis Persistence Options">
+        <ul>
+          <li><strong>RDB Snapshots:</strong> Point-in-time snapshots at configured intervals (e.g., every 5 minutes). Fast restarts but you lose data since the last snapshot.</li>
+          <li><strong>AOF (Append Only File):</strong> Logs every write operation. More durable (can sync every second or every write) but slower restarts and larger files.</li>
+          <li><strong>RDB + AOF:</strong> Use both for the best durability. AOF is used for recovery, RDB for faster restarts.</li>
+          <li><strong>No persistence:</strong> Pure cache mode. Fastest performance, all data lost on restart.</li>
+        </ul>
+      </InfoBox>
+
+      {/* ================================================================
+          SECTION 9: CACHE INVALIDATION STRATEGIES
+          ================================================================ */}
+
+      <h2>Cache Invalidation Strategies</h2>
+      <p>
+        &quot;There are only two hard things in Computer Science: cache invalidation and naming things.&quot;
+        — Phil Karlton. Cache invalidation is the process of removing or updating stale data
+        from the cache when the underlying source of truth changes. Getting this wrong leads to
+        users seeing stale data, inconsistent state, and hard-to-debug production issues.
+      </p>
+
+      <h3>Time-Based Invalidation (TTL)</h3>
+      <p>
+        The simplest approach: set a TTL on every cache entry. After the TTL expires, the entry is
+        automatically evicted and the next read fetches fresh data from the database. This is the
+        most common strategy and works well when some staleness is acceptable.
+      </p>
+      <ul>
+        <li><strong>Short TTL (seconds):</strong> Near real-time freshness, higher database load</li>
+        <li><strong>Long TTL (hours/days):</strong> Lower database load, more stale data</li>
+        <li><strong>Choose TTL based on:</strong> How stale can this data be before users notice or it causes bugs?</li>
+      </ul>
+
+      <h3>Event-Based Invalidation</h3>
+      <p>
+        When data changes, explicitly delete or update the corresponding cache entries. This can be
+        done directly in the application code (after a database write, delete the cache key) or via
+        an event system (database change events trigger cache invalidation).
+      </p>
+      <ul>
+        <li>Direct invalidation: <code>redis.del(&quot;user:123&quot;)</code> after updating user 123</li>
+        <li>Pub/sub: Publish an event on data change, subscribers invalidate their local caches</li>
+        <li>CDC (Change Data Capture): Tools like Debezium stream database changes to Kafka, which triggers cache invalidation</li>
+      </ul>
+
+      <h3>Version-Based Invalidation</h3>
+      <p>
+        Embed a version number in the cache key. When data changes, increment the version. Old
+        cache entries are never explicitly deleted — they are simply never read again and eventually
+        evicted by the eviction policy.
+      </p>
+      <ul>
+        <li>Cache key: <code>user:123:v5</code> — when the user is updated, read from <code>user:123:v6</code></li>
+        <li>Pro: No need for explicit deletion, no race conditions</li>
+        <li>Con: Old versions waste memory until evicted</li>
+      </ul>
+
+      <InfoBox variant="warning" title="Cache Invalidation Is Hard">
+        Cache invalidation bugs are among the most difficult to debug in production. Stale data
+        can cause incorrect business logic, display wrong information to users, or create
+        inconsistencies between services. When in doubt, use shorter TTLs and accept the
+        performance trade-off. A slower correct system is always better than a fast incorrect one.
+        Always ask: &quot;What happens if a user sees stale data here?&quot;
+      </InfoBox>
+
+      {/* ================================================================
+          SECTION 10: DISTRIBUTED CACHING
+          ================================================================ */}
+
+      <h2>Distributed Caching</h2>
+      <p>
+        A single cache node has limited memory and is a single point of failure. Distributed caching
+        spreads cache data across multiple nodes, providing higher capacity, fault tolerance, and
+        horizontal scalability.
+      </p>
+
+      <h3>Why Single-Node Cache Is Not Enough</h3>
+      <ul>
+        <li><strong>Memory limit:</strong> A single Redis instance is limited to the machine&apos;s RAM (typically 64-256 GB)</li>
+        <li><strong>Single point of failure:</strong> If the node crashes, all cached data is lost</li>
+        <li><strong>Throughput limit:</strong> A single node can handle ~100K-200K operations per second — not enough for very high-traffic systems</li>
+      </ul>
+
+      <h3>Consistent Hashing for Cache Distribution</h3>
+      <p>
+        Consistent hashing distributes cache keys across nodes such that adding or removing a node
+        only remaps a fraction of keys (approximately 1/N where N is the number of nodes) instead
+        of all of them. This is critical for cache clusters because rehashing all keys would cause
+        a massive cache miss storm.
+      </p>
+      <ul>
+        <li>Each node is assigned a position on a hash ring</li>
+        <li>Each key is hashed to a position on the ring</li>
+        <li>The key is assigned to the first node clockwise from its position</li>
+        <li>Virtual nodes (vnodes) ensure even distribution across physical nodes</li>
+      </ul>
+
+      <h3>Cache Replication</h3>
+      <ul>
+        <li><strong>Redis Sentinel:</strong> Automatic failover — promotes a replica to primary if the primary goes down. Provides high availability but not horizontal scaling of writes.</li>
+        <li><strong>Redis Cluster:</strong> Automatic sharding across multiple nodes with built-in replication. Each shard has a primary + replicas. Supports horizontal scaling of both reads and writes.</li>
+        <li><strong>Client-side sharding:</strong> The application decides which node to read/write based on a hashing function. Simple but no automatic failover.</li>
+      </ul>
+
+      {/* ================================================================
+          SECTION 11: CACHE STAMPEDE PREVENTION
+          ================================================================ */}
+
+      <h2>Cache Stampede Prevention</h2>
+      <p>
+        A cache stampede (also called thundering herd) occurs when a popular cache key expires and
+        hundreds or thousands of concurrent requests all miss the cache simultaneously, flooding the
+        database with identical queries. This can overwhelm the database and cause cascading failures.
+      </p>
+
+      <FlowChart
+        title="Cache Stampede Scenario"
+        chart={"graph TD\n  A[Popular Cache Key Expires] --> B[1000 Concurrent Requests Arrive]\n  B --> C[All Check Cache]\n  C --> D[All Get Cache Miss]\n  D --> E[All Query Database Simultaneously]\n  E --> F[Database Overloaded]\n  F --> G[Timeouts and Failures]\n  style A fill:#f59e0b,color:#000\n  style E fill:#ef4444,color:#fff\n  style F fill:#ef4444,color:#fff\n  style G fill:#ef4444,color:#fff"}
+      />
+
+      <h3>Prevention Strategies</h3>
+
+      <h4>1. Locking (Mutex Approach)</h4>
+      <p>
+        When a cache miss occurs, acquire a distributed lock before querying the database. Only
+        the first request queries the database and repopulates the cache. All other requests wait
+        for the lock to be released and then read from the cache.
+      </p>
+      <ul>
+        <li>Use Redis <code>SET key value NX EX 10</code> as a distributed lock</li>
+        <li>Only the lock holder queries the database</li>
+        <li>Other requests either wait and retry, or return a stale value</li>
+      </ul>
+
+      <h4>2. Probabilistic Early Expiration</h4>
+      <p>
+        Instead of all entries expiring at the exact same time, each request has a small probability
+        of refreshing the cache before the TTL actually expires. As the TTL approaches expiration,
+        the probability increases. This spreads out cache refreshes over time, preventing a stampede.
+      </p>
+
+      <h4>3. Background Refresh</h4>
+      <p>
+        A background worker proactively refreshes popular cache entries before they expire. The
+        cache never actually goes empty for hot keys — the worker repopulates them ahead of time.
+        This ensures cache hits for the most critical data at all times.
+      </p>
+
+      <CodeBlock language="javascript" title="Cache Stampede Prevention with Locking">
+{`async function getWithLock(key, fetchFn, ttl = 300) {
+  // Try cache first
+  const cached = await redis.get(key);
+  if (cached) return JSON.parse(cached);
+
+  // Acquire lock (NX = only if not exists, EX = 10s timeout)
+  const lockKey = \`lock:\${key}\`;
+  const acquired = await redis.set(lockKey, '1', 'NX', 'EX', 10);
+
+  if (acquired) {
+    try {
+      // We got the lock — fetch from database
+      const data = await fetchFn();
+      await redis.setex(key, ttl, JSON.stringify(data));
+      return data;
+    } finally {
+      await redis.del(lockKey);  // Release lock
+    }
+  } else {
+    // Another request holds the lock — wait and retry
+    await sleep(50);  // Wait 50ms
+    return getWithLock(key, fetchFn, ttl);  // Retry
+  }
+}
+
+// Usage
+const user = await getWithLock(
+  'user:123',
+  () => db.query('SELECT * FROM users WHERE id = $1', [123]),
+  300  // 5-minute TTL
+);`}
+      </CodeBlock>
+
+      {/* ================================================================
+          SECTION 12: MULTI-TIER CACHING
+          ================================================================ */}
+
+      <h2>Multi-Tier Caching</h2>
+      <p>
+        In a production system, caching happens at multiple layers. Each tier trades off between
+        speed, capacity, and freshness. A request passes through each tier in order — the fastest
+        and closest caches are checked first.
+      </p>
+
+      <FlowChart
+        title="Multi-Tier Cache Architecture"
+        chart={"graph LR\n  A[Browser Cache] --> B[CDN Cache]\n  B --> C[API Gateway Cache]\n  C --> D[Application Cache / Redis]\n  D --> E[Database Query Cache]\n  E --> F[Database Disk]\n  style A fill:#10b981,color:#fff\n  style B fill:#06b6d4,color:#fff\n  style C fill:#3b82f6,color:#fff\n  style D fill:#6366f1,color:#fff\n  style E fill:#8b5cf6,color:#fff\n  style F fill:#ef4444,color:#fff"}
+      />
+
+      <h3>The Cache Tiers</h3>
+      <ul>
+        <li><strong>Browser Cache:</strong> Closest to the user. Controlled by Cache-Control headers. Zero network latency for cached resources. Stores static assets, API responses.</li>
+        <li><strong>CDN Cache:</strong> Edge servers distributed globally. Reduces latency for geographically distributed users. Caches static assets and sometimes API responses.</li>
+        <li><strong>API Gateway Cache:</strong> Caches entire API responses at the gateway level. Prevents requests from reaching backend services at all.</li>
+        <li><strong>Application Cache (Redis/Memcached):</strong> In-memory cache shared across application instances. Caches database query results, computed values, session data.</li>
+        <li><strong>Database Query Cache:</strong> Built-in query result caching in the database engine. Transparent to the application but limited in scope.</li>
+      </ul>
+
+      <CodeBlock language="http" title="Cache-Control Headers">
+{`# Browser should cache for 1 hour, CDN for 1 day
+Cache-Control: public, max-age=3600, s-maxage=86400
+
+# No caching at all (sensitive data)
+Cache-Control: no-store, no-cache, must-revalidate
+
+# Private — only browser can cache, not CDN
+Cache-Control: private, max-age=600
+
+# Stale-while-revalidate — serve stale while fetching fresh
+Cache-Control: max-age=60, stale-while-revalidate=300
+
+# ETag-based validation — conditional requests
+ETag: "abc123"
+# Client sends: If-None-Match: "abc123"
+# Server returns 304 Not Modified if unchanged
+
+# Common patterns:
+# Static assets (CSS/JS): public, max-age=31536000, immutable
+# API responses:          private, max-age=0, must-revalidate
+# User-specific data:     private, no-cache
+# Public content:         public, max-age=300, s-maxage=3600`}
+      </CodeBlock>
+
+      <InteractiveChallenge
+        question={"You are designing a social media feed that shows posts from followed users. Each user's feed is unique. You need low latency but the feed must reflect new posts within 30 seconds. Which caching strategy combination would you use?"}
+        options={[
+          'Write-through cache with no TTL — perfect consistency',
+          'Cache-aside with 30-second TTL + event-based invalidation on new posts',
+          'Write-behind cache with LFU eviction',
+          'CDN caching with 1-hour TTL for all feeds'
         ]}
         correctIndex={1}
-        explanation="Redis Sorted Sets maintain a sorted order by score using a skip list + hash map. This gives O(log N) for inserts and updates, and O(log N + M) for range queries. For a leaderboard: ZADD leaderboard 9500 'alice' adds or updates a score, ZREVRANGE leaderboard 0 9 returns the top 10 — all blazing fast regardless of leaderboard size. No SQL ORDER BY + LIMIT can match this at high concurrent write rates."
+        explanation={"Cache-aside with a short TTL ensures feeds are never more than 30 seconds stale. Event-based invalidation (when a new post is created, invalidate the feed caches of all followers) provides near-real-time updates for active users. Write-through would be wasteful since feeds are computed, not directly written. CDN caching won't work because each user's feed is unique (private data). Write-behind doesn't apply to reads."}
       />
+
+      {/* ================================================================
+          SUMMARY
+          ================================================================ */}
+
+      <h2>Summary</h2>
+
+      <InfoBox variant="success" title="Key Takeaways">
+        <ul>
+          <li>Cache-aside is the most common pattern — application manages cache reads and writes separately</li>
+          <li>Write-through guarantees consistency but adds write latency</li>
+          <li>Write-behind reduces write latency but risks data loss</li>
+          <li>LRU is the default eviction policy for most workloads — use LFU if scan pollution is a problem</li>
+          <li>Redis is the go-to caching solution — know its data types, commands, and persistence options</li>
+          <li>Cache invalidation is the hardest problem — when in doubt, use shorter TTLs</li>
+          <li>Use distributed caching with consistent hashing for scalability</li>
+          <li>Prevent cache stampedes with locking, early expiration, or background refresh</li>
+          <li>Multi-tier caching (browser → CDN → app → DB) provides defense in depth</li>
+        </ul>
+      </InfoBox>
     </LessonLayout>
   );
 }

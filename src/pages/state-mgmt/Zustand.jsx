@@ -4,309 +4,451 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function SMZustand() {
+export default function Zustand() {
   return (
     <LessonLayout
       title="Zustand"
       sectionId="state-mgmt"
       lessonIndex={2}
       prev={{ path: '/state-mgmt/redux', label: 'Redux Toolkit' }}
-      next={{ path: '/state-mgmt/comparison', label: 'State Library Comparison' }}
+      next={{ path: '/state-mgmt/comparison', label: 'Library Comparison' }}
     >
       <h2>Why Zustand?</h2>
       <p>
-        Zustand is a minimal, unopinionated state management library — less than 1KB gzipped.
-        Unlike Redux, there are no actions, reducers, or providers. Unlike React Context, components
-        only re-render when the specific slice of state they subscribe to changes. You get a store,
-        a hook, and a simple update function. That is the entire API.
+        Zustand (&quot;state&quot; in German) is a minimal state management library that strips away
+        everything you don&apos;t need: no providers, no boilerplate, no context, no reducers. You
+        create a store with a function, use it with a hook, and you&apos;re done. At ~1KB gzipped,
+        it adds almost nothing to your bundle.
       </p>
 
       <FlowChart
-        title="Zustand vs Context vs Redux"
-        chart={"graph LR\n  A[Context] --> B[All consumers re-render on any change]\n  C[Zustand] --> D[Only subscribed slice triggers re-render]\n  E[Redux] --> F[Selector-based, requires Provider + actions]\n  C --> G[No Provider needed]\n  C --> H[Simple set function]\n  C --> I[Built-in devtools and persist]"}
+        title="Zustand Architecture"
+        chart={"graph LR\n  S[create store] --> H[useStore hook]\n  H --> C1[Component A]\n  H --> C2[Component B]\n  H --> C3[Component C]\n  C1 -->|selector| S\n  C2 -->|selector| S\n  C3 -->|action| S\n  style S fill:#10b981,color:#fff\n  style H fill:#3b82f6,color:#fff"}
       />
 
-      <CodeBlock language="jsx" title="Creating a Store">
+      <InfoBox variant="tip" title="No Provider Required">
+        Unlike Redux or Context, Zustand stores live outside the React tree. No
+        <code>&lt;Provider&gt;</code> wrapping, no prop drilling, no context nesting. Any component
+        anywhere in your app can subscribe to any store — including components rendered outside
+        the main React root (portals, micro-frontends).
+      </InfoBox>
+
+      <h2>Creating a Store</h2>
+
+      <CodeBlock language="jsx" title="todosStore.js — Complete CRUD Store">
 {`import { create } from 'zustand';
 
-// create() takes a function that receives set and get
-// Returns a hook — use directly in any component, no Provider needed!
-
-const useCartStore = create((set, get) => ({
-  // ── STATE ───────────────────────────────────────────────────────
+const useTodoStore = create((set, get) => ({
+  // State
   items: [],
-  total: 0,
-  couponCode: null,
+  filter: 'all',
 
-  // ── ACTIONS ─────────────────────────────────────────────────────
-  // set(updater) — merge partial state (like setState in class components)
-  addItem: (product) => set((state) => ({
-    items: [...state.items, { ...product, quantity: 1 }],
-    total: state.total + product.price,
-  })),
+  // Actions — just functions that call set()
+  addTodo: (text) =>
+    set((state) => ({
+      items: [...state.items, {
+        id: crypto.randomUUID(),
+        text,
+        completed: false,
+      }],
+    })),
 
-  removeItem: (id) => set((state) => {
-    const item = state.items.find(i => i.id === id);
-    return {
-      items: state.items.filter(i => i.id !== id),
-      total: state.total - (item ? item.price * item.quantity : 0),
-    };
-  }),
-
-  updateQuantity: (id, quantity) => set((state) => {
-    const item = state.items.find(i => i.id === id);
-    if (!item) return state;
-    const diff = (quantity - item.quantity) * item.price;
-    return {
-      items: state.items.map(i =>
-        i.id === id ? { ...i, quantity } : i
+  toggleTodo: (id) =>
+    set((state) => ({
+      items: state.items.map((t) =>
+        t.id === id ? { ...t, completed: !t.completed } : t
       ),
-      total: state.total + diff,
-    };
-  }),
+    })),
 
-  clearCart: () => set({ items: [], total: 0, couponCode: null }),
+  removeTodo: (id) =>
+    set((state) => ({
+      items: state.items.filter((t) => t.id !== id),
+    })),
 
-  applyCoupon: (code) => set({ couponCode: code }),
+  updateTodo: (id, text) =>
+    set((state) => ({
+      items: state.items.map((t) =>
+        t.id === id ? { ...t, text } : t
+      ),
+    })),
 
-  // ── COMPUTED VALUES via get() ────────────────────────────────────
-  // get() reads current state — useful for derived values or async actions
-  getItemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
+  setFilter: (filter) => set({ filter }),
 
-  getDiscountedTotal: () => {
-    const { total, couponCode } = get();
-    const discount = couponCode === 'SAVE10' ? 0.10 : 0;
-    return total * (1 - discount);
+  // Computed values via get()
+  getFilteredTodos: () => {
+    const { items, filter } = get();
+    switch (filter) {
+      case 'active':    return items.filter((t) => !t.completed);
+      case 'completed': return items.filter((t) => t.completed);
+      default:          return items;
+    }
   },
-}));`}
+
+  getCounts: () => {
+    const { items } = get();
+    return {
+      total: items.length,
+      active: items.filter((t) => !t.completed).length,
+      completed: items.filter((t) => t.completed).length,
+    };
+  },
+}));
+
+export default useTodoStore;`}
       </CodeBlock>
 
-      <h2>Selective Subscriptions — Performance</h2>
+      <h2>Using the Store in Components</h2>
 
-      <CodeBlock language="jsx" title="Subscribing to Slices of State">
-{`// KEY PERFORMANCE PATTERN: subscribe to only what you need
-// Each selector runs on every state change — component re-renders
-// only if the selected value actually changed
+      <CodeBlock language="jsx" title="TodoApp.jsx — Same App, Zustand Edition">
+{`import useTodoStore from './todosStore';
 
-// ✓ Subscribe to specific field — re-renders only when items.length changes
-function CartIcon() {
-  const itemCount = useCartStore(state => state.items.length);
-  return <span className="badge">{itemCount}</span>;
-}
+function TodoApp() {
+  const [text, setText] = useState('');
 
-// ✓ Subscribe to derived value
-function CartTotal() {
-  const total = useCartStore(state => state.total);
-  const coupon = useCartStore(state => state.couponCode);
-  // Re-renders when total OR couponCode changes — fine, both affect display
-  return <p>Total: \${coupon ? (total * 0.9).toFixed(2) : total.toFixed(2)}</p>;
-}
+  // Selectors — component only re-renders when selected value changes
+  const addTodo = useTodoStore((s) => s.addTodo);
+  const setFilter = useTodoStore((s) => s.setFilter);
+  const filteredTodos = useTodoStore((s) => s.getFilteredTodos());
+  const counts = useTodoStore((s) => s.getCounts());
 
-// ✓ Subscribe to an action (actions are stable — never cause re-renders)
-function AddToCartButton({ product }) {
-  const addItem = useCartStore(state => state.addItem);
-  // addItem is a stable function reference — component never re-renders
-  // because actions don't change (only their internal state does)
-  return <button onClick={() => addItem(product)}>Add to cart</button>;
-}
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (text.trim()) {
+      addTodo(text.trim());
+      setText('');
+    }
+  };
 
-// ✓ Subscribe to multiple fields with shallow equality
-import { shallow } from 'zustand/shallow';
+  return (
+    <div>
+      <form onSubmit={handleSubmit}>
+        <input value={text} onChange={(e) => setText(e.target.value)} />
+        <button type="submit">Add</button>
+      </form>
 
-function CheckoutSummary() {
-  // shallow: re-renders only if items or total reference changes
-  const { items, total } = useCartStore(
-    state => ({ items: state.items, total: state.total }),
-    shallow
+      <div>
+        {['all', 'active', 'completed'].map((f) => (
+          <button key={f} onClick={() => setFilter(f)}>{f}</button>
+        ))}
+      </div>
+
+      <p>{counts.active} remaining / {counts.total} total</p>
+
+      <TodoList todos={filteredTodos} />
+    </div>
   );
-  return <div>{items.length} items · \${total.toFixed(2)}</div>;
 }
 
-// ✗ Anti-pattern: subscribing to entire store — re-renders on ANY change
-function BadComponent() {
-  const store = useCartStore();  // DO NOT DO THIS
-  // This re-renders whenever ANYTHING in the store changes
-  return <div>{store.items.length}</div>;
+// Extracted component with its own selectors
+function TodoList({ todos }) {
+  const toggleTodo = useTodoStore((s) => s.toggleTodo);
+  const removeTodo = useTodoStore((s) => s.removeTodo);
+
+  return (
+    <ul>
+      {todos.map((todo) => (
+        <li key={todo.id}>
+          <input
+            type="checkbox"
+            checked={todo.completed}
+            onChange={() => toggleTodo(todo.id)}
+          />
+          <span>{todo.text}</span>
+          <button onClick={() => removeTodo(todo.id)}>Delete</button>
+        </li>
+      ))}
+    </ul>
+  );
 }`}
       </CodeBlock>
 
-      <h2>Middleware — Persist, DevTools, Immer</h2>
+      <h2>Selectors for Performance</h2>
+      <p>
+        Zustand uses strict equality (<code>===</code>) by default. If your selector returns a
+        new object/array reference every render, the component re-renders unnecessarily. Use
+        <code>shallow</code> comparison for object slices, or select primitives individually.
+      </p>
 
-      <CodeBlock language="jsx" title="Zustand Middleware">
+      <CodeBlock language="jsx" title="Selector Strategies">
+{`import { shallow } from 'zustand/shallow';
+
+// ❌ BAD — creates new object every time, always re-renders
+const { items, filter } = useTodoStore((s) => ({
+  items: s.items,
+  filter: s.filter,
+}));
+
+// ✅ GOOD — shallow comparison prevents unnecessary re-renders
+const { items, filter } = useTodoStore(
+  (s) => ({ items: s.items, filter: s.filter }),
+  shallow
+);
+
+// ✅ BEST — select primitives individually (no comparison needed)
+const filter = useTodoStore((s) => s.filter);
+const count = useTodoStore((s) => s.items.length);
+
+// ✅ ALSO GOOD — useShallow (Zustand v4.5+)
+import { useShallow } from 'zustand/react/shallow';
+
+const { items, filter } = useTodoStore(
+  useShallow((s) => ({ items: s.items, filter: s.filter }))
+);`}
+      </CodeBlock>
+
+      <h2>Middleware</h2>
+      <p>
+        Zustand middleware wraps the store creator to add cross-cutting behavior. Stack them
+        by nesting function calls.
+      </p>
+
+      <CodeBlock language="jsx" title="Middleware — persist, devtools, immer">
 {`import { create } from 'zustand';
-import { persist, devtools, subscribeWithSelector } from 'zustand/middleware';
+import { persist, devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-// ── PERSIST — save to localStorage ───────────────────────────────
-const useSettingsStore = create(
-  persist(
-    (set) => ({
-      theme: 'light',
-      language: 'en',
-      notifications: true,
-      setTheme: (theme) => set({ theme }),
-      setLanguage: (lang) => set({ language: lang }),
-      toggleNotifications: () => set(state => ({ notifications: !state.notifications })),
-    }),
-    {
-      name: 'app-settings',       // localStorage key
-      // Optionally persist only specific fields:
-      partialize: (state) => ({ theme: state.theme, language: state.language }),
-    }
-  )
-);
-
-// ── DEVTOOLS — Redux DevTools integration ──────────────────────────
-const useCounterStore = create(
-  devtools(
-    (set) => ({
-      count: 0,
-      increment: () => set(state => ({ count: state.count + 1 }), false, 'increment'),
-      //                                                           ^^^^ replace?  ^^^^ action name in devtools
-      decrement: () => set(state => ({ count: state.count - 1 }), false, 'decrement'),
-    }),
-    { name: 'CounterStore' }      // DevTools label
-  )
-);
-
-// ── IMMER — mutable syntax for complex state ──────────────────────
 const useTodoStore = create(
-  immer((set) => ({
-    todos: [],
-    addTodo: (text) => set(state => {
-      state.todos.push({ id: Date.now(), text, done: false });
-    }),
-    toggleTodo: (id) => set(state => {
-      const todo = state.todos.find(t => t.id === id);
-      if (todo) todo.done = !todo.done;  // direct mutation — Immer handles it
-    }),
-    deleteTodo: (id) => set(state => {
-      state.todos = state.todos.filter(t => t.id !== id);
-    }),
-  }))
-);
-
-// ── COMBINE MIDDLEWARE ─────────────────────────────────────────────
-const useUserStore = create(
   devtools(
     persist(
-      immer((set, get) => ({
-        user: null,
-        token: null,
-        setUser: (user) => set(state => { state.user = user; }),
-        logout: () => set(state => { state.user = null; state.token = null; }),
-        isLoggedIn: () => get().user !== null,
+      immer((set) => ({
+        items: [],
+        filter: 'all',
+
+        // With immer middleware, you can "mutate" directly
+        addTodo: (text) =>
+          set((state) => {
+            state.items.push({
+              id: crypto.randomUUID(),
+              text,
+              completed: false,
+            });
+          }),
+
+        toggleTodo: (id) =>
+          set((state) => {
+            const todo = state.items.find((t) => t.id === id);
+            if (todo) todo.completed = !todo.completed;
+          }),
+
+        removeTodo: (id) =>
+          set((state) => {
+            const idx = state.items.findIndex((t) => t.id === id);
+            if (idx !== -1) state.items.splice(idx, 1);
+          }),
       })),
-      { name: 'user-session' }
+      { name: 'todo-storage' } // localStorage key for persist
     ),
-    { name: 'UserStore' }
+    { name: 'TodoStore' }      // DevTools label
   )
 );`}
       </CodeBlock>
 
-      <h2>Async Actions and Data Fetching</h2>
+      <InfoBox variant="info" title="Middleware Ordering Matters">
+        Middleware is applied inside-out. <code>devtools(persist(immer(fn)))</code> means immer
+        runs first (closest to your code), then persist serializes the result, then devtools logs
+        it. If you put <code>immer</code> outside <code>persist</code>, persist would try to
+        serialize Immer&apos;s draft objects — which breaks.
+      </InfoBox>
 
-      <CodeBlock language="jsx" title="Async State in Zustand">
-{`const useProductStore = create((set, get) => ({
-  products: [],
-  loading: false,
+      <h2>Async Actions</h2>
+      <p>
+        No special utilities needed. Actions are plain functions — just use <code>async/await</code>.
+      </p>
+
+      <CodeBlock language="jsx" title="Async CRUD">
+{`const useTodoStore = create((set, get) => ({
+  items: [],
+  status: 'idle',  // 'idle' | 'loading' | 'error'
   error: null,
-  selectedId: null,
 
-  // Async action — Zustand has no special async handling needed
-  // Just call set() when the promise resolves
-  fetchProducts: async (filters = {}) => {
-    set({ loading: true, error: null });
+  fetchTodos: async () => {
+    set({ status: 'loading', error: null });
     try {
-      const params = new URLSearchParams(filters);
-      const response = await fetch('/api/products?' + params);
-      if (!response.ok) throw new Error('Failed to fetch');
-      const products = await response.json();
-      set({ products, loading: false });
+      const res = await fetch('/api/todos');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      set({ items: data, status: 'idle' });
     } catch (err) {
-      set({ error: err.message, loading: false });
+      set({ status: 'error', error: err.message });
     }
   },
 
-  selectProduct: (id) => set({ selectedId: id }),
-
-  getSelectedProduct: () => {
-    const { products, selectedId } = get();
-    return products.find(p => p.id === selectedId) ?? null;
+  saveTodo: async (text) => {
+    const todo = { id: crypto.randomUUID(), text, completed: false };
+    // Optimistic update
+    set((state) => ({ items: [...state.items, todo] }));
+    try {
+      await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(todo),
+      });
+    } catch {
+      // Rollback on failure
+      set((state) => ({
+        items: state.items.filter((t) => t.id !== todo.id),
+      }));
+    }
   },
-
-  addProduct: async (productData) => {
-    const response = await fetch('/api/products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(productData),
-    });
-    const newProduct = await response.json();
-    // Optimistically add to list
-    set(state => ({ products: [...state.products, newProduct] }));
-    return newProduct;
-  },
-}));
-
-// Usage in component
-function ProductList() {
-  const { products, loading, error, fetchProducts } = useProductStore(
-    state => ({
-      products: state.products,
-      loading: state.loading,
-      error: state.error,
-      fetchProducts: state.fetchProducts,
-    }),
-    shallow
-  );
-
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
-
-  if (loading) return <Spinner />;
-  if (error) return <ErrorMessage>{error}</ErrorMessage>;
-
-  return products.map(p => <ProductCard key={p.id} product={p} />);
-}
-
-// Note: For most data fetching, prefer React Query or RTK Query over
-// manual loading state in Zustand — they handle caching, stale data,
-// background refetch, and deduplication automatically.`}
+}));`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Zustand vs React Context">
-        <p>
-          The key difference is subscription granularity. With React Context, any update to the
-          context value re-renders <em>all</em> consumers — even ones that don't use the changed
-          data. Zustand's selector-based subscriptions mean each component only re-renders when
-          its specific slice changes. For a cart with items, total, and coupon: a CartIcon
-          subscribed to <code>state.items.length</code> won't re-render when the coupon changes.
-          This makes Zustand dramatically more performant for frequently-updated state.
-        </p>
+      <h2>Subscriptions Outside React</h2>
+      <p>
+        Zustand stores are framework-agnostic. You can subscribe to changes from vanilla JS,
+        Node.js, or any other context — useful for analytics, logging, or WebSocket bridges.
+      </p>
+
+      <CodeBlock language="jsx" title="External Subscriptions">
+{`// Subscribe to all changes
+const unsub = useTodoStore.subscribe((state) => {
+  console.log('State changed:', state);
+});
+
+// Subscribe to a slice (only fires when that slice changes)
+const unsub = useTodoStore.subscribe(
+  (state) => state.items.length,
+  (count, prevCount) => {
+    console.log(\`Todo count: \${prevCount} → \${count}\`);
+  }
+);
+
+// Read state outside React
+const currentItems = useTodoStore.getState().items;
+
+// Set state outside React
+useTodoStore.getState().addTodo('From a WebSocket handler');
+// or directly:
+useTodoStore.setState({ filter: 'completed' });`}
+      </CodeBlock>
+
+      <h2>TypeScript Integration</h2>
+
+      <CodeBlock language="jsx" title="Fully Typed Store">
+{`interface Todo {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
+interface TodoState {
+  items: Todo[];
+  filter: 'all' | 'active' | 'completed';
+  addTodo: (text: string) => void;
+  toggleTodo: (id: string) => void;
+  removeTodo: (id: string) => void;
+  fetchTodos: () => Promise<void>;
+}
+
+const useTodoStore = create<TodoState>()((set) => ({
+  items: [],
+  filter: 'all',
+  addTodo: (text) =>
+    set((state) => ({
+      items: [...state.items, {
+        id: crypto.randomUUID(),
+        text,
+        completed: false,
+      }],
+    })),
+  toggleTodo: (id) =>
+    set((state) => ({
+      items: state.items.map((t) =>
+        t.id === id ? { ...t, completed: !t.completed } : t
+      ),
+    })),
+  removeTodo: (id) =>
+    set((state) => ({
+      items: state.items.filter((t) => t.id !== id),
+    })),
+  fetchTodos: async () => {
+    const res = await fetch('/api/todos');
+    const data = await res.json();
+    set({ items: data });
+  },
+}));`}
+      </CodeBlock>
+
+      <h2>Multiple Stores vs Single Store</h2>
+
+      <InfoBox variant="warning" title="One Store or Many?">
+        Unlike Redux (which enforces a single store), Zustand encourages multiple stores split
+        by domain: <code>useAuthStore</code>, <code>useTodoStore</code>, <code>useUIStore</code>.
+        Each store is independent, testable, and tree-shakeable. Only merge stores if they
+        have tightly coupled state that changes together.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What is the key performance advantage of Zustand over React Context for global state?"
-        options={[
-          "Zustand is built into React's core, making it faster than third-party Context",
-          "Components subscribed to Zustand only re-render when their specific selector result changes — unlike Context where all consumers re-render on any update",
-          "Zustand automatically memoizes all component renders",
-          "Zustand uses Web Workers to compute state off the main thread"
-        ]}
-        correctIndex={1}
-        explanation="With React Context, any value change re-renders all consumers of that context — even ones that use a different field. Zustand uses selector subscriptions: useCartStore(state => state.items.length) only triggers a re-render if items.length actually changes. If the coupon code changes but item count doesn't, CartIcon (subscribed to items.length) does not re-render. This makes Zustand much more efficient for frequently-updated or large state objects."
-      />
+      <h2>Zustand vs Redux — Code Comparison</h2>
+      <p>
+        Here&apos;s the same &quot;add todo&quot; feature side by side. Zustand removes the
+        action types, action creators, reducers, selectors, Provider, and dispatch ceremony.
+      </p>
+
+      <CodeBlock language="jsx" title="Redux Toolkit — Adding a Todo">
+{`// todosSlice.js (RTK)
+const todosSlice = createSlice({
+  name: 'todos',
+  initialState: { items: [] },
+  reducers: {
+    addTodo: {
+      reducer(state, action) { state.items.push(action.payload); },
+      prepare(text) { return { payload: { id: nanoid(), text, completed: false } }; },
+    },
+  },
+});
+export const { addTodo } = todosSlice.actions;
+export default todosSlice.reducer;
+
+// store.js
+export const store = configureStore({ reducer: { todos: todosReducer } });
+
+// App.jsx — needs Provider
+<Provider store={store}><App /></Provider>
+
+// Component
+const dispatch = useDispatch();
+const todos = useSelector((s) => s.todos.items);
+dispatch(addTodo('Buy milk'));`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="Zustand — Adding a Todo">
+{`// todosStore.js
+const useTodoStore = create((set) => ({
+  items: [],
+  addTodo: (text) => set((s) => ({
+    items: [...s.items, { id: crypto.randomUUID(), text, completed: false }],
+  })),
+}));
+
+// No Provider needed — ever.
+
+// Component
+const addTodo = useTodoStore((s) => s.addTodo);
+const items = useTodoStore((s) => s.items);
+addTodo('Buy milk');`}
+      </CodeBlock>
 
       <InteractiveChallenge
-        question="When would you choose Zustand over Redux Toolkit for a new project?"
+        question={"Why does Zustand not need a Provider component?"}
         options={[
-          "Zustand is always better — RTK is outdated",
-          "When the app is medium-sized, the team prefers simplicity, and you don't need advanced DevTools features like time-travel debugging or action replay",
-          "When you need persistence — RTK has no built-in persistence",
-          "Zustand supports TypeScript but Redux Toolkit does not"
+          "It uses React Context internally but hides the Provider",
+          "It stores state in a module-level closure outside the React tree",
+          "It patches React's internal fiber tree directly",
+          "It requires a Provider but it's optional for small apps"
         ]}
         correctIndex={1}
-        explanation="Zustand shines for medium-sized apps that need global state without Redux's boilerplate (slices, actions, reducers, dispatch). RTK is better for large teams that benefit from enforced structure, comprehensive DevTools with time-travel debugging, and RTK Query for server state. Both support TypeScript well. Both support DevTools. Choose by team size and complexity: Zustand for simplicity, RTK for scale and structure."
+        explanation="Zustand stores live in a module-level closure (a plain JavaScript variable outside React). Components subscribe to changes via useSyncExternalStore. No Context, no Provider, no tree dependency — any component anywhere can access any store."
+        language="jsx"
       />
+
+      <h2>When to Choose Zustand</h2>
+      <p>
+        Zustand is the right choice when you want minimal API surface, fast setup, and
+        don&apos;t need the enforced structure that Redux provides. It&apos;s excellent for
+        small-to-medium apps, prototypes, and teams that prefer convention over configuration.
+        For large teams that need strict patterns and the best debugging tools, Redux Toolkit
+        may still be worth the extra ceremony.
+      </p>
     </LessonLayout>
   );
 }

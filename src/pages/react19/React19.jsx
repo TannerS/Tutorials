@@ -4,141 +4,284 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function ReactNew() {
+export default function React19() {
   return (
     <LessonLayout
       title="React 19 New Features"
       sectionId="react19"
-      lessonIndex={7}
-      prev={{ path: "/react19/performance", label: "Performance Optimization" }}
-      next={{ path: "/react19/server", label: "Server Components" }}
+      lessonIndex={6}
+      prev={{ path: '/react19/performance', label: 'Performance & Memoization' }}
+      next={{ path: '/react19/server', label: 'Server Components & Actions' }}
     >
-      <p>React 19 is a major release with Actions, the use() hook, the React Compiler, new form hooks, and improved error handling.</p>
+      <p>React 19 is the most significant release since hooks. It introduces the React Compiler (automatic memoization), Actions for async state transitions, new hooks for forms and optimistic UI, and the <code>use()</code> hook. Let's dive into each.</p>
 
-      <h2>Actions — Async Transitions</h2>
-      <CodeBlock language="jsx" title="Server and Client Actions">
-{`// Actions replace manual isPending/error state management
-// useActionState manages form state + server action transitions
-import { useActionState } from 'react';
+      <h2>React Compiler (React Forget)</h2>
 
-async function submitOrder(prevState, formData) {
-    const item = formData.get("item");
-    try {
-        await api.order(item);
-        return { success: true, error: null };
-    } catch (err) {
-        return { success: false, error: err.message };
-    }
+      <InfoBox variant="success" title="The End of Manual Memoization">
+        <p>The React Compiler automatically memoizes components, hooks, and their dependencies at build time. This means <code>useMemo</code>, <code>useCallback</code>, and <code>React.memo</code> are largely unnecessary in React 19 projects using the compiler. It analyzes your code and inserts memoization where beneficial.</p>
+      </InfoBox>
+
+      <FlowChart
+        title="React Compiler — Before and After"
+        chart={"graph LR\n  A[Your Code] --> B[React Compiler - Build Step]\n  B --> C[Auto-memoized Output]\n  D[Before: Manual] --> E[useMemo useCallback React.memo]\n  F[After: Compiler] --> G[Just write plain code]\n  G --> H[Compiler inserts memo where needed]\n  H --> I[Same or better performance]"}
+      />
+
+      <CodeBlock language="jsx" title="React Compiler — Write Less, Get More" showLineNumbers>
+{`// BEFORE React 19 (manual memoization hell)
+function TodoList({ todos, filter }) {
+  const filteredTodos = useMemo(
+    () => todos.filter(t => t.status === filter),
+    [todos, filter]
+  );
+
+  const handleToggle = useCallback((id) => {
+    dispatch({ type: 'TOGGLE', id });
+  }, [dispatch]);
+
+  return filteredTodos.map(todo => (
+    <MemoizedTodoItem key={todo.id} todo={todo} onToggle={handleToggle} />
+  ));
 }
+const MemoizedTodoItem = React.memo(TodoItem);
 
-function OrderForm() {
-    const [state, action, isPending] = useActionState(submitOrder, null);
+// AFTER React 19 with Compiler — just write normal code
+function TodoList({ todos, filter }) {
+  const filteredTodos = todos.filter(t => t.status === filter);
 
-    return (
-        <form action={action}>
-            <input name="item" required />
-            <button type="submit" disabled={isPending}>
-                {isPending ? "Ordering..." : "Order Now"}
-            </button>
-            {state?.error && <p style={{color:"red"}}>{state.error}</p>}
-            {state?.success && <p style={{color:"green"}}>Order placed!</p>}
-        </form>
-    );
-}`}
+  const handleToggle = (id) => {
+    dispatch({ type: 'TOGGLE', id });
+  };
+
+  return filteredTodos.map(todo => (
+    <TodoItem key={todo.id} todo={todo} onToggle={handleToggle} />
+  ));
+}
+// The compiler figures out what to memoize automatically!`}
       </CodeBlock>
 
-      <h2>use() Hook</h2>
-      <CodeBlock language="jsx" title="use() for Promises and Context">
-{`import { use, Suspense } from 'react';
+      <h2>Actions & useActionState</h2>
 
-// use() unwraps a Promise (must be wrapped in Suspense)
-function UserCard({ userPromise }) {
-    const user = use(userPromise); // suspends until resolved
-    return <div>{user.name}</div>;
-}
+      <p>Actions are async functions that handle form submissions and state transitions with built-in pending states, error handling, and optimistic updates.</p>
 
-function App() {
-    const userPromise = fetchUser(1); // start fetch outside component
-    return (
-        <Suspense fallback={<Spinner />}>
-            <UserCard userPromise={userPromise} />
-        </Suspense>
-    );
-}
+      <CodeBlock language="jsx" title="useActionState — Form Actions" showLineNumbers>
+{`import { useActionState } from 'react';
 
-// use() for Context (unlike useContext, works in conditionals)
-function ConditionalUser({ show }) {
-    if (!show) return null; // early return is fine!
-    const user = use(UserContext); // use() after conditional
-    return <span>{user.name}</span>;
-}`}
-      </CodeBlock>
+// Action function: receives previous state + form data, returns new state
+async function updateProfile(previousState, formData) {
+  const name = formData.get('name');
+  const email = formData.get('email');
 
-      <h2>useFormStatus</h2>
-      <CodeBlock language="jsx" title="useFormStatus for Submit Button State">
-{`import { useFormStatus } from 'react-dom';
-
-// Must be a child component inside a <form>
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <button type="submit" disabled={pending}>
-            {pending ? "Saving..." : "Save"}
-        </button>
-    );
+  try {
+    const result = await api.updateProfile({ name, email });
+    return { success: true, message: 'Profile updated!', errors: null };
+  } catch (error) {
+    return { success: false, message: null, errors: error.fields };
+  }
 }
 
 function ProfileForm() {
-    return (
-        <form action={updateProfile}>
-            <input name="name" />
-            <SubmitButton /> {/* has access to form pending state */}
-        </form>
-    );
+  // useActionState wraps an async action with pending state management
+  const [state, formAction, isPending] = useActionState(updateProfile, {
+    success: false,
+    message: null,
+    errors: null,
+  });
+
+  return (
+    <form action={formAction}>
+      <input name="name" disabled={isPending} />
+      {state.errors?.name && <span>{state.errors.name}</span>}
+
+      <input name="email" disabled={isPending} />
+      {state.errors?.email && <span>{state.errors.email}</span>}
+
+      <button type="submit" disabled={isPending}>
+        {isPending ? 'Saving...' : 'Save'}
+      </button>
+
+      {state.message && <p>{state.message}</p>}
+    </form>
+  );
+}
+// No manual useState for loading/error/success states!
+// No event.preventDefault() — React handles the form submission`}
+      </CodeBlock>
+
+      <h2>useFormStatus</h2>
+
+      <CodeBlock language="jsx" title="useFormStatus — Child Components Read Form State" showLineNumbers>
+{`import { useFormStatus } from 'react-dom';
+
+// useFormStatus lets ANY child of a <form> read the pending state
+// Must be rendered inside a <form> that uses an action
+function SubmitButton() {
+  const { pending, data, method, action } = useFormStatus();
+
+  return (
+    <button type="submit" disabled={pending}>
+      {pending ? 'Submitting...' : 'Submit'}
+    </button>
+  );
+}
+
+// Works great for reusable form UI components
+function FormProgress() {
+  const { pending } = useFormStatus();
+  return pending ? <ProgressBar /> : null;
+}
+
+function MyForm() {
+  return (
+    <form action={submitAction}>
+      <input name="title" />
+      <FormProgress />    {/* Reads pending state from nearest form */}
+      <SubmitButton />    {/* Reads pending state from nearest form */}
+    </form>
+  );
 }`}
       </CodeBlock>
 
       <h2>useOptimistic</h2>
-      <CodeBlock language="jsx" title="Optimistic UI Updates">
+
+      <CodeBlock language="jsx" title="useOptimistic — Instant UI Feedback" showLineNumbers>
 {`import { useOptimistic } from 'react';
 
-function TodoList({ todos, addTodo }) {
-    const [optimisticTodos, addOptimistic] = useOptimistic(
-        todos,
-        (current, newTodo) => [...current, { ...newTodo, pending: true }]
-    );
+function MessageThread({ messages, sendMessage }) {
+  // optimisticMessages shows immediately, reverts if action fails
+  const [optimisticMessages, addOptimistic] = useOptimistic(
+    messages,
+    // Merge function: (currentState, optimisticValue) => newOptimisticState
+    (currentMessages, newMessage) => [
+      ...currentMessages,
+      { ...newMessage, status: 'sending' },
+    ]
+  );
 
-    async function handleAdd(formData) {
-        const text = formData.get("text");
-        addOptimistic({ id: Date.now(), text }); // instantly show
-        await addTodo(text);                      // real async call
-    }
+  async function handleSend(formData) {
+    const text = formData.get('message');
+    const optimisticMsg = { id: crypto.randomUUID(), text, status: 'sending' };
 
-    return (
-        <form action={handleAdd}>
-            <input name="text" />
-            <button type="submit">Add</button>
-            <ul>
-                {optimisticTodos.map(t => (
-                    <li key={t.id} style={{ opacity: t.pending ? 0.5 : 1 }}>
-                        {t.text} {t.pending && "(saving...)"}
-                    </li>
-                ))}
-            </ul>
-        </form>
-    );
+    addOptimistic(optimisticMsg); // Instantly shows in UI
+
+    // When this resolves, React uses the real 'messages' prop again
+    await sendMessage(text);
+  }
+
+  return (
+    <div>
+      {optimisticMessages.map(msg => (
+        <div key={msg.id} style={{ opacity: msg.status === 'sending' ? 0.7 : 1 }}>
+          {msg.text}
+          {msg.status === 'sending' && <span> (sending...)</span>}
+        </div>
+      ))}
+      <form action={handleSend}>
+        <input name="message" />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  );
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="React Compiler">
-        <p>React 19 ships the React Compiler (formerly React Forget) which automatically memoizes components, hooks, and computed values. When enabled, you can remove most manual useMemo, useCallback, and React.memo calls — the compiler handles it.</p>
+      <h2>use() Hook — Resolve Promises & Read Context Conditionally</h2>
+
+      <InfoBox variant="info" title="use() Breaks the Rules (Intentionally)">
+        <p>The <code>use()</code> hook is special: it CAN be called inside conditionals and loops. It reads the value from a Promise (suspending until resolved) or from a Context. It replaces many patterns that previously required useEffect for data fetching.</p>
       </InfoBox>
 
+      <CodeBlock language="jsx" title="use() Hook — Promise Resolution" showLineNumbers>
+{`import { use, Suspense } from 'react';
+
+// use() with Promises — component suspends until resolved
+function UserProfile({ userPromise }) {
+  // Suspends this component until promise resolves
+  const user = use(userPromise);
+
+  return <h1>{user.name}</h1>;
+}
+
+// Parent creates the promise, child consumes it
+function ProfilePage({ userId }) {
+  // Start fetching immediately (not inside useEffect!)
+  const userPromise = fetchUser(userId);
+
+  return (
+    <Suspense fallback={<Skeleton />}>
+      <UserProfile userPromise={userPromise} />
+    </Suspense>
+  );
+}
+
+// use() with Context — can be conditional!
+function Dashboard({ showAdmin }) {
+  if (showAdmin) {
+    const admin = use(AdminContext); // Conditional context read — LEGAL with use()
+    return <AdminPanel config={admin} />;
+  }
+  return <UserDashboard />;
+}
+
+// use() replaces many useEffect data-fetching patterns:
+// Before: useState + useEffect + loading/error states
+// After: Pass promise as prop, use() to read, Suspense for loading`}
+      </CodeBlock>
+
+      <h2>Other React 19 Improvements</h2>
+
+      <CodeBlock language="jsx" title="ref as Prop, Document Metadata, Error Reporting" showLineNumbers>
+{`// REF AS PROP — no more forwardRef!
+// React 19: ref is just a regular prop on function components
+function MyInput({ ref, ...props }) {
+  return <input ref={ref} {...props} />;
+}
+// Usage: <MyInput ref={inputRef} /> — works directly!
+
+// Before React 19 (still works but unnecessary):
+const MyInput = forwardRef(function MyInput(props, ref) {
+  return <input ref={ref} {...props} />;
+});
+
+// DOCUMENT METADATA — render <title>, <meta>, <link> anywhere
+function BlogPost({ post }) {
+  return (
+    <article>
+      <title>{post.title}</title>
+      <meta name="description" content={post.summary} />
+      <link rel="canonical" href={post.url} />
+      <h1>{post.title}</h1>
+      <p>{post.content}</p>
+    </article>
+  );
+  // React 19 hoists these to <head> automatically!
+}
+
+// IMPROVED ERROR REPORTING
+// React 19 deduplicates errors and provides better stack traces
+// onCaughtError: called when ErrorBoundary catches an error
+// onUncaughtError: called for uncaught errors
+// onRecoverableError: called when React recovers from an error
+createRoot(document.getElementById('root'), {
+  onCaughtError: (error, errorInfo) => {
+    reportToSentry(error, { componentStack: errorInfo.componentStack });
+  },
+  onUncaughtError: (error, errorInfo) => {
+    showCrashDialog(error);
+  },
+});`}
+      </CodeBlock>
+
       <InteractiveChallenge
-        question="What does useOptimistic do?"
-        options={["Optimizes component rendering speed", "Shows an optimistic (immediate) UI update before the async operation completes, reverting on error", "Caches API responses", "Defers non-urgent state updates"]}
+        question="What makes the use() hook unique compared to other React hooks?"
+        options={[
+          "It can only be used in Server Components",
+          "It can be called inside conditionals, loops, and after early returns",
+          "It automatically caches the resolved value forever",
+          "It replaces both useState and useEffect completely"
+        ]}
         correctIndex={1}
-        explanation="useOptimistic immediately shows the expected result of an async action in the UI before the server responds. If the action succeeds, the real data takes over. If it fails, the optimistic state reverts. This makes apps feel instant while remaining correct."
+        explanation="Unlike all other hooks which must be called at the top level unconditionally, use() can be called conditionally. This is because use() integrates with React's Suspense mechanism rather than the hook linked-list. It suspends the component until the promise resolves, working with Suspense boundaries for loading states."
+        language="jsx"
       />
     </LessonLayout>
   );

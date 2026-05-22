@@ -1,296 +1,638 @@
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function RTPatterns() {
+export default function Patterns() {
   return (
     <LessonLayout
-      title="Testing Patterns"
+      title="Testing Patterns & CI"
       sectionId="react-testing"
       lessonIndex={5}
-      prev={{ path: '/react-testing/forms', label: 'Testing Forms' }}
+      prev={{ path: '/react-testing/forms', label: 'Testing Forms & Routing' }}
       next={null}
     >
-      <h2>Custom Render Function</h2>
+      <h2>Custom Render Utility</h2>
       <p>
-        A custom render helper wraps your component in all the providers it needs (Router, Store, Theme, etc.)
-        so every test gets a realistic environment without boilerplate.
+        Most apps have providers (theme, auth, router, query client). Create a
+        custom render that wraps every test automatically so you never forget one.
       </p>
 
-      <CodeBlock language="jsx" title="Custom render with all providers">
-{`// src/test/utils.jsx
-import { render } from '@testing-library/react'
-import { BrowserRouter } from 'react-router-dom'
-import { Provider } from 'react-redux'
-import { ThemeProvider } from './ThemeContext'
-import { createStore } from '../store'
+      <CodeBlock language="jsx" title="test-utils.jsx — The All-Providers Wrapper">
+{`import { render } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './ThemeContext';
+import { AuthProvider } from './AuthContext';
 
-function AllProviders({ children, initialState }) {
-  const store = createStore(initialState)
-  return (
-    <BrowserRouter>
-      <Provider store={store}>
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
-      </Provider>
-    </BrowserRouter>
-  )
-}
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
 
-function customRender(ui, { initialState = {}, ...renderOptions } = {}) {
+export function renderWithProviders(ui, {
+  queryClient = createTestQueryClient(),
+  route = '/',
+  user = null,
+  ...renderOptions
+} = {}) {
+  window.history.pushState({}, 'Test', route);
+
   function Wrapper({ children }) {
-    return <AllProviders initialState={initialState}>{children}</AllProviders>
+    return (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider initialUser={user}>
+          <ThemeProvider>
+            <BrowserRouter>{children}</BrowserRouter>
+          </ThemeProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    );
   }
-  return render(ui, { wrapper: Wrapper, ...renderOptions })
+
+  return {
+    ...render(ui, { wrapper: Wrapper, ...renderOptions }),
+    queryClient,
+  };
 }
 
-// Re-export everything
-export * from '@testing-library/react'
-export { customRender as render }
-
-// Usage in tests:
-import { render, screen } from '../test/utils'  // NOT from @testing-library/react
-
-test('ProfilePage shows username', async () => {
-  render(<ProfilePage />, {
-    initialState: { auth: { user: { name: 'Alice' } } }
-  })
-  expect(await screen.findByText('Alice')).toBeInTheDocument()
-})`}
+// Re-export everything from RTL
+export * from '@testing-library/react';
+export { renderWithProviders as render };`}
       </CodeBlock>
 
-      <h2>Testing with Mock Timers</h2>
+      <CodeBlock language="jsx" title="Using Custom Render in Tests">
+{`// Import from YOUR test-utils, not @testing-library/react
+import { render, screen } from '../test-utils';
+import Dashboard from './Dashboard';
 
-      <CodeBlock language="jsx" title="Fake timers for debounce and timeouts">
-{`// Debounce component
-function SearchInput({ onSearch }) {
-  const [query, setQuery] = useState('')
+test('shows dashboard for authenticated user', () => {
+  render(<Dashboard />, {
+    user: { id: 1, name: 'Alice', role: 'admin' },
+    route: '/dashboard',
+  });
 
-  useEffect(() => {
-    const timer = setTimeout(() => onSearch(query), 500)
-    return () => clearTimeout(timer)
-  }, [query, onSearch])
+  expect(screen.getByRole('heading', { name: /dashboard/i })).toBeInTheDocument();
+  expect(screen.getByText(/alice/i)).toBeInTheDocument();
+});`}
+      </CodeBlock>
 
-  return <input value={query} onChange={e => setQuery(e.target.value)} aria-label="Search" />
+      <h2>Test Data Factories</h2>
+      <p>
+        Hardcoded mock data becomes a maintenance nightmare. Build factories that
+        generate realistic test data with sensible defaults and easy overrides.
+      </p>
+
+      <CodeBlock language="jsx" title="Test Data Factories">
+{`// factories.js
+let nextId = 1;
+
+export function buildUser(overrides = {}) {
+  const id = nextId++;
+  return {
+    id,
+    name: \`User \${id}\`,
+    email: \`user\${id}@test.com\`,
+    role: 'viewer',
+    avatar: null,
+    createdAt: new Date().toISOString(),
+    ...overrides,
+  };
 }
 
-// Test with fake timers
-test('debounces search calls', async () => {
-  vi.useFakeTimers()
-  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-  const onSearch = vi.fn()
-
-  render(<SearchInput onSearch={onSearch} />)
-
-  await user.type(screen.getByLabelText('Search'), 'hello')
-
-  // Not called yet — debounce pending
-  expect(onSearch).not.toHaveBeenCalled()
-
-  // Advance timers past debounce window
-  act(() => { vi.advanceTimersByTime(500) })
-
-  expect(onSearch).toHaveBeenCalledWith('hello')
-  expect(onSearch).toHaveBeenCalledTimes(1)  // not once per keystroke
-
-  vi.useRealTimers()
-})`}
-      </CodeBlock>
-
-      <h2>Testing Router Navigation</h2>
-
-      <CodeBlock language="jsx" title="Testing with MemoryRouter">
-{`import { MemoryRouter, Route, Routes } from 'react-router-dom'
-
-// Nav component with links
-function Nav() {
-  return (
-    <nav>
-      <a href="/home">Home</a>
-      <a href="/about">About</a>
-    </nav>
-  )
+export function buildProduct(overrides = {}) {
+  const id = nextId++;
+  return {
+    id,
+    name: \`Product \${id}\`,
+    price: parseFloat((Math.random() * 100).toFixed(2)),
+    category: 'general',
+    inStock: true,
+    ...overrides,
+  };
 }
 
-// Page components
-const Home = () => <h1>Home Page</h1>
-const About = () => <h1>About Page</h1>
+// Usage in tests
+import { buildUser, buildProduct } from '../factories';
 
-test('navigates to about page', async () => {
-  const user = userEvent.setup()
-
-  render(
-    <MemoryRouter initialEntries={['/home']}>
-      <Nav />
-      <Routes>
-        <Route path="/home" element={<Home />} />
-        <Route path="/about" element={<About />} />
-      </Routes>
-    </MemoryRouter>
-  )
-
-  expect(screen.getByRole('heading', { name: 'Home Page' })).toBeInTheDocument()
-
-  await user.click(screen.getByRole('link', { name: 'About' }))
-
-  expect(screen.getByRole('heading', { name: 'About Page' })).toBeInTheDocument()
-})
-
-// Test current route
-test('highlights active nav item', () => {
-  render(
-    <MemoryRouter initialEntries={['/about']}>
-      <NavWithActive />
-    </MemoryRouter>
-  )
-  expect(screen.getByRole('link', { name: 'About' })).toHaveClass('active')
-})`}
+const admin = buildUser({ role: 'admin', name: 'Alice' });
+const expensiveItem = buildProduct({ price: 999.99, name: 'Premium Widget' });
+const outOfStock = buildProduct({ inStock: false });`}
       </CodeBlock>
 
-      <h2>Organizing Tests</h2>
+      <InfoBox variant="tip" title="Factory Benefits">
+        Factories make tests self-documenting. When you see
+        <code>buildUser({"{ role: 'admin' }"})</code>, the override tells you exactly
+        what matters for this test. Everything else is just realistic filler data.
+      </InfoBox>
 
-      <CodeBlock language="jsx" title="describe blocks and test grouping">
-{`// Prefer colocation — put test files next to source files
-// src/components/Button/
-//   Button.jsx
-//   Button.test.jsx     <- colocated
-//   Button.module.css
+      <h2>Page Object Pattern</h2>
+      <p>
+        For complex components with many interactions, encapsulate queries and
+        actions in a page object. This DRYs up your tests and makes them read
+        like user stories.
+      </p>
 
-// Or in __tests__ subdirectory
-// src/components/__tests__/Button.test.jsx
+      <CodeBlock language="jsx" title="Page Object for DataGrid">
+{`// DataGrid.page.js
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
-// Group related tests with describe
-describe('Button', () => {
-  describe('rendering', () => {
-    test('renders with label', () => { /* ... */ })
-    test('renders disabled state', () => { /* ... */ })
-  })
+export class DataGridPage {
+  user = userEvent.setup();
 
-  describe('interaction', () => {
-    test('calls onClick on click', async () => { /* ... */ })
-    test('does not call onClick when disabled', async () => { /* ... */ })
-  })
-})
+  get table() {
+    return screen.getByRole('table');
+  }
 
-// Shared setup with beforeEach
-describe('UserProfile', () => {
-  let user
-  beforeEach(() => {
-    user = userEvent.setup()
-  })
+  get rows() {
+    return within(this.table).getAllByRole('row').slice(1); // skip header
+  }
 
-  test('...', async () => { await user.click(/* ... */) })
-})`}
+  get headerCells() {
+    return within(this.table).getAllByRole('columnheader');
+  }
+
+  getCell(rowIndex, colIndex) {
+    const row = this.rows[rowIndex];
+    return within(row).getAllByRole('cell')[colIndex];
+  }
+
+  async sortBy(columnName) {
+    const header = screen.getByRole('columnheader', { name: new RegExp(columnName, 'i') });
+    await this.user.click(header);
+  }
+
+  async search(query) {
+    await this.user.type(screen.getByRole('searchbox'), query);
+  }
+
+  async selectRow(index) {
+    const checkbox = within(this.rows[index]).getByRole('checkbox');
+    await this.user.click(checkbox);
+  }
+
+  async deleteSelected() {
+    await this.user.click(screen.getByRole('button', { name: /delete/i }));
+  }
+}
+
+// DataGrid.test.jsx
+import { render } from '../test-utils';
+import DataGrid from './DataGrid';
+import { DataGridPage } from './DataGrid.page';
+
+test('sorts rows by name', async () => {
+  render(<DataGrid data={testData} />);
+  const page = new DataGridPage();
+
+  await page.sortBy('name');
+  expect(page.getCell(0, 0)).toHaveTextContent('Alice');
+});
+
+test('deletes selected rows', async () => {
+  render(<DataGrid data={testData} />);
+  const page = new DataGridPage();
+
+  await page.selectRow(0);
+  await page.selectRow(2);
+  await page.deleteSelected();
+
+  expect(page.rows).toHaveLength(testData.length - 2);
+});`}
       </CodeBlock>
 
-      <h2>Coverage Configuration</h2>
+      <h2>Testing Error Boundaries</h2>
 
-      <CodeBlock language="typescript" title="vitest.config.ts with coverage">
-{`import { defineConfig } from 'vitest/config'
+      <CodeBlock language="jsx" title="Error Boundary Test">
+{`import { render, screen } from '@testing-library/react';
+import ErrorBoundary from './ErrorBoundary';
 
-export default defineConfig({
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./src/test/setup.ts'],
-    coverage: {
-      provider: 'v8',               // or 'istanbul'
-      reporter: ['text', 'lcov', 'html'],
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: [
-        'src/test/**',
-        'src/**/*.d.ts',
-        'src/main.tsx',
-        'src/vite-env.d.ts',
-      ],
-      thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 75,
-        statements: 80,
-      },
+// Component that throws
+const ThrowingComponent = ({ shouldThrow }) => {
+  if (shouldThrow) throw new Error('Boom!');
+  return <div>All good</div>;
+};
+
+describe('ErrorBoundary', () => {
+  // Suppress console.error for expected errors
+  const originalError = console.error;
+  beforeAll(() => { console.error = jest.fn(); });
+  afterAll(() => { console.error = originalError; });
+
+  test('renders children when no error', () => {
+    render(
+      <ErrorBoundary>
+        <ThrowingComponent shouldThrow={false} />
+      </ErrorBoundary>
+    );
+    expect(screen.getByText('All good')).toBeInTheDocument();
+  });
+
+  test('renders fallback UI on error', () => {
+    render(
+      <ErrorBoundary fallback={<div>Something went wrong</div>}>
+        <ThrowingComponent shouldThrow={true} />
+      </ErrorBoundary>
+    );
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+    expect(screen.queryByText('All good')).not.toBeInTheDocument();
+  });
+
+  test('calls onError callback', () => {
+    const onError = jest.fn();
+    render(
+      <ErrorBoundary onError={onError} fallback={<div>Error</div>}>
+        <ThrowingComponent shouldThrow={true} />
+      </ErrorBoundary>
+    );
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Boom!' }),
+      expect.any(Object) // errorInfo
+    );
+  });
+});`}
+      </CodeBlock>
+
+      <h2>Testing Portals and Modals</h2>
+
+      <CodeBlock language="jsx" title="Modal/Portal Test">
+{`import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import Modal from './Modal';
+
+// Ensure portal root exists
+beforeEach(() => {
+  const portalRoot = document.createElement('div');
+  portalRoot.setAttribute('id', 'modal-root');
+  document.body.appendChild(portalRoot);
+});
+
+afterEach(() => {
+  document.getElementById('modal-root')?.remove();
+});
+
+describe('Modal', () => {
+  test('renders content in portal', () => {
+    render(<Modal isOpen={true}><p>Modal content</p></Modal>);
+
+    // Content is in the DOM even though it's in a portal
+    expect(screen.getByText('Modal content')).toBeInTheDocument();
+  });
+
+  test('does not render when closed', () => {
+    render(<Modal isOpen={false}><p>Hidden</p></Modal>);
+    expect(screen.queryByText('Hidden')).not.toBeInTheDocument();
+  });
+
+  test('calls onClose when backdrop is clicked', async () => {
+    const user = userEvent.setup();
+    const onClose = jest.fn();
+    render(<Modal isOpen={true} onClose={onClose}><p>Content</p></Modal>);
+
+    await user.click(screen.getByTestId('modal-backdrop'));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  test('closes on Escape key', async () => {
+    const user = userEvent.setup();
+    const onClose = jest.fn();
+    render(<Modal isOpen={true} onClose={onClose}><p>Content</p></Modal>);
+
+    await user.keyboard('{Escape}');
+    expect(onClose).toHaveBeenCalled();
+  });
+});`}
+      </CodeBlock>
+
+      <h2>Accessibility Testing with jest-axe</h2>
+
+      <CodeBlock language="jsx" title="Automated a11y Checks">
+{`import { render } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
+import LoginForm from './LoginForm';
+import Navigation from './Navigation';
+
+expect.extend(toHaveNoViolations);
+
+test('LoginForm has no accessibility violations', async () => {
+  const { container } = render(<LoginForm onSubmit={jest.fn()} />);
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+
+test('Navigation has no accessibility violations', async () => {
+  const { container } = render(<Navigation items={navItems} />);
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="jest-axe Catches Common Issues">
+        jest-axe checks for missing alt text, bad color contrast, missing form labels,
+        incorrect ARIA attributes, and more. It won't catch everything (keyboard navigation
+        needs manual testing), but it's a great automated baseline.
+      </InfoBox>
+
+      <h2>Code Coverage Configuration</h2>
+
+      <CodeBlock language="jsx" title="jest.config.js — Coverage Settings">
+{`// jest.config.js
+module.exports = {
+  collectCoverageFrom: [
+    'src/**/*.{js,jsx,ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/index.{js,tsx}',
+    '!src/reportWebVitals.js',
+    '!src/**/*.stories.{js,jsx,ts,tsx}',
+    '!src/mocks/**',
+  ],
+  coverageThresholds: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
     },
   },
-})`}
+  coverageReporters: ['text', 'lcov', 'clover'],
+};
+
+// Run: npx jest --coverage`}
       </CodeBlock>
 
-      <CodeBlock language="bash" title="Running tests">
-{`# Run all tests
-npx vitest
+      <h2>CI Pipeline for Tests</h2>
 
-# Run with coverage
-npx vitest --coverage
-
-# Run in watch mode (dev)
-npx vitest --watch
-
-# Run specific file
-npx vitest src/components/Button.test.jsx
-
-# Run tests matching pattern
-npx vitest -t "submits form"
-
-# Update snapshots
-npx vitest --update-snapshots`}
-      </CodeBlock>
-
-      <h2>CI/CD Test Configuration</h2>
-
-      <CodeBlock language="yaml" title=".github/workflows/test.yml">
-{`name: Test
-
-on: [push, pull_request]
+      <CodeBlock language="jsx" title=".github/workflows/test.yml">
+{`name: Test Suite
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
           cache: 'npm'
+
       - run: npm ci
-      - run: npm test -- --run --coverage
-      - uses: codecov/codecov-action@v4
+
+      - name: Run Tests with Coverage
+        run: npx jest --coverage --ci --maxWorkers=2
+
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v4
         with:
-          file: coverage/lcov.info`}
+          name: coverage-report
+          path: coverage/lcov-report/
+
+      - name: Check Coverage Thresholds
+        run: npx jest --coverage --coverageThreshold='{"global":{"branches":80,"functions":80,"lines":80}}'`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="The Testing Trophy">
-        <p>
-          Kent C. Dodds advocates the Testing Trophy over the Testing Pyramid for frontend:
-          a small base of static analysis (TypeScript + ESLint), a medium layer of integration tests (RTL),
-          a small layer of unit tests (pure functions), and a small top layer of E2E tests.
-          RTL integration tests give the highest ROI for React apps.
-        </p>
+      <h2>Test File Organization</h2>
+
+      <FlowChart
+        title="Recommended File Structure"
+        chart={"graph TD\n  S[src/] --> C[components/]\n  S --> H[hooks/]\n  S --> P[pages/]\n  S --> M[mocks/]\n  S --> TU[test-utils.jsx]\n  S --> F[factories.js]\n  C --> CF[Button/]\n  CF --> CFI[Button.jsx]\n  CF --> CFT[Button.test.jsx]\n  M --> MH[handlers/]\n  M --> MS[server.js]"}
+      />
+
+      <CodeBlock language="jsx" title="Naming Conventions">
+{`// Co-locate tests with source files
+src/
+  components/
+    Button/
+      Button.jsx
+      Button.test.jsx        // Unit tests
+      Button.stories.jsx     // Storybook (optional)
+    DataGrid/
+      DataGrid.jsx
+      DataGrid.test.jsx
+      DataGrid.page.js       // Page object (complex components)
+  hooks/
+    useAuth.js
+    useAuth.test.js
+  pages/
+    Dashboard.jsx
+    Dashboard.test.jsx
+  mocks/
+    handlers/
+      users.js
+      products.js
+      index.js
+    server.js
+  test-utils.jsx              // Custom render
+  factories.js                // Test data builders`}
+      </CodeBlock>
+
+      <h2>When to Mock vs Use Real Implementations</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Mock It</th>
+            <th>Use Real</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Network requests (use MSW)</td>
+            <td>React state and hooks</td>
+          </tr>
+          <tr>
+            <td>Timers (jest.useFakeTimers)</td>
+            <td>Context providers (wrap in test)</td>
+          </tr>
+          <tr>
+            <td>Random/Date values</td>
+            <td>React Router (use MemoryRouter)</td>
+          </tr>
+          <tr>
+            <td>Browser APIs (localStorage, IntersectionObserver)</td>
+            <td>Child components (test integration)</td>
+          </tr>
+          <tr>
+            <td>Heavy third-party libs (chart libraries)</td>
+            <td>Form libraries (React Hook Form)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <InteractiveChallenge
+        question={"Which of these is a test smell (anti-pattern) you should avoid?"}
+        options={[
+          "Using getByRole to query elements",
+          "Testing the component after a user clicks a button",
+          "Checking internal component state with wrapper.state()",
+          "Using a custom render that includes providers"
+        ]}
+        correctIndex={2}
+        explanation={"Accessing internal component state (wrapper.state()) is an implementation detail. RTL doesn't even support it. Test what the user sees and interacts with, not internal state variables."}
+        language="jsx"
+      />
+
+      <h2>Test Smell Anti-Patterns</h2>
+
+      <CodeBlock language="jsx" title="Anti-Patterns to Avoid">
+{`// BAD: Testing implementation details
+test('sets isOpen state to true', () => {
+  // Don't check internal state — check what the USER sees
+  expect(component.state.isOpen).toBe(true); // WRONG
+});
+
+// BAD: Snapshot everything
+test('renders correctly', () => {
+  const { container } = render(<Dashboard />);
+  expect(container).toMatchSnapshot(); // Too broad — any change breaks it
+});
+
+// BAD: Testing library internals
+test('calls useEffect', () => {
+  const spy = jest.spyOn(React, 'useEffect'); // Don't spy on React
+});
+
+// BAD: Overly specific queries
+screen.getByTestId('submit-btn'); // Use getByRole('button', { name: /submit/i })
+
+// BAD: Testing styles directly
+expect(element).toHaveStyle({ color: '#3b82f6' }); // Fragile — test behavior not pixels
+
+// GOOD: Test user-observable behavior
+test('shows success message after form submission', async () => {
+  const user = userEvent.setup();
+  render(<Form />);
+
+  await user.type(screen.getByLabelText(/email/i), 'a@b.com');
+  await user.click(screen.getByRole('button', { name: /submit/i }));
+
+  expect(await screen.findByText(/success/i)).toBeInTheDocument();
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="The Golden Rule of Test Smells">
+        If your test breaks when you refactor without changing behavior, it's
+        testing implementation details. Rewrite it to test what the user sees.
+        A good test survives refactoring from class to functional components,
+        from useState to useReducer, and from fetch to axios.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What is the main benefit of creating a custom render function in your test utilities?"
-        options={[
-          "It makes tests run faster by skipping provider initialization",
-          "It reduces boilerplate and ensures every test gets the full provider context",
-          "It prevents tests from sharing state between runs",
-          "It automatically mocks all context values"
-        ]}
-        correctIndex={1}
-        explanation="A custom render helper ensures every test component renders inside all the providers it needs (Router, Redux store, Theme, etc.) without repeating that setup in every test. It also allows you to pass initial state or configuration to set up specific scenarios, making tests cleaner and more maintainable."
-      />
+      <h2>Complete Test Suite Structure</h2>
 
-      <InteractiveChallenge
-        question="When should you use vi.useFakeTimers() in a test?"
-        options={[
-          "Always — fake timers make all tests deterministic",
-          "When testing components that use setTimeout, setInterval, or debounce",
-          "When testing async data fetching",
-          "When you want to speed up slow tests"
-        ]}
-        correctIndex={1}
-        explanation="Fake timers are specifically useful for components that use time-based mechanisms: setTimeout, setInterval, debounce, or animation delays. They let you control time programmatically (vi.advanceTimersByTime(500)) instead of actually waiting. For async data fetching (fetch, API calls), use waitFor or MSW instead."
-      />
+      <CodeBlock language="jsx" title="Full Feature Test Suite — UserManagement">
+{`// UserManagement.test.jsx
+import { render, screen, waitFor } from '../test-utils';
+import userEvent from '@testing-library/user-event';
+import { server } from '../mocks/server';
+import { http, HttpResponse } from 'msw';
+import { buildUser } from '../factories';
+import UserManagement from './UserManagement';
+
+const users = [
+  buildUser({ name: 'Alice', role: 'admin' }),
+  buildUser({ name: 'Bob', role: 'viewer' }),
+  buildUser({ name: 'Charlie', role: 'editor' }),
+];
+
+beforeEach(() => {
+  server.use(
+    http.get('/api/users', () => HttpResponse.json(users)),
+    http.delete('/api/users/:id', () => new HttpResponse(null, { status: 204 }))
+  );
+});
+
+describe('UserManagement', () => {
+  describe('rendering', () => {
+    test('shows loading state', () => {
+      render(<UserManagement />);
+      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    });
+
+    test('renders user list', async () => {
+      render(<UserManagement />);
+      expect(await screen.findByText('Alice')).toBeInTheDocument();
+      expect(screen.getByText('Bob')).toBeInTheDocument();
+      expect(screen.getByText('Charlie')).toBeInTheDocument();
+    });
+  });
+
+  describe('filtering', () => {
+    test('filters by search query', async () => {
+      const user = userEvent.setup();
+      render(<UserManagement />);
+      await screen.findByText('Alice');
+
+      await user.type(screen.getByRole('searchbox'), 'ali');
+      expect(screen.getByText('Alice')).toBeInTheDocument();
+      expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+    });
+
+    test('filters by role', async () => {
+      const user = userEvent.setup();
+      render(<UserManagement />);
+      await screen.findByText('Alice');
+
+      await user.selectOptions(
+        screen.getByRole('combobox', { name: /role/i }),
+        'admin'
+      );
+      expect(screen.getByText('Alice')).toBeInTheDocument();
+      expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('deletion', () => {
+    test('removes user after confirmation', async () => {
+      const user = userEvent.setup();
+      render(<UserManagement />);
+      await screen.findByText('Bob');
+
+      // Click delete on Bob's row
+      const bobRow = screen.getByText('Bob').closest('tr');
+      await user.click(
+        within(bobRow).getByRole('button', { name: /delete/i })
+      );
+
+      // Confirm dialog
+      await user.click(screen.getByRole('button', { name: /confirm/i }));
+
+      await waitFor(() => {
+        expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('error handling', () => {
+    test('shows error when fetch fails', async () => {
+      server.use(
+        http.get('/api/users', () =>
+          HttpResponse.json({ error: 'Server down' }, { status: 500 })
+        )
+      );
+
+      render(<UserManagement />);
+      expect(await screen.findByRole('alert')).toHaveTextContent(/server down/i);
+    });
+  });
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="success" title="You Made It!">
+        You now have a complete toolkit for testing React applications: RTL
+        fundamentals, component testing, hook testing, async patterns, forms,
+        routing, and production-ready patterns. The key takeaway: always test
+        behavior, never implementation.
+      </InfoBox>
     </LessonLayout>
   );
 }

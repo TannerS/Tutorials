@@ -4,152 +4,222 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function PatternsComposite() {
+export default function Composite() {
   return (
     <LessonLayout
-      title="Composite Pattern"
+      title="Composite & Facade Patterns"
       sectionId="patterns"
       lessonIndex={5}
-      prev={{ path: "/patterns/builder", label: "Builder Pattern" }}
-      next={{ path: "/patterns/proxy", label: "Proxy Pattern" }}
+      prev={{ path: '/patterns/builder', label: 'Builder & Prototype' }}
+      next={{ path: '/patterns/proxy', label: 'Proxy & Chain of Responsibility' }}
     >
-      <p>The Composite pattern lets you compose objects into tree structures to represent part-whole hierarchies. It lets clients treat individual objects (leaves) and compositions of objects (composites) uniformly through a shared interface.</p>
+      <h2>Composite Pattern</h2>
+      <p>
+        Composes objects into tree structures to represent part-whole hierarchies.
+        Composite lets clients treat individual objects and compositions uniformly.
+        Think: file systems, UI component trees, org charts, menu structures.
+      </p>
 
-      <h2>File System Example</h2>
+      <FlowChart
+        title="Composite Pattern - File System Example"
+        chart={"graph TD\n  A[Component] --> B[Leaf: File]\n  A --> C[Composite: Directory]\n  C --> D[File A]\n  C --> E[File B]\n  C --> F[Subdirectory]\n  F --> G[File C]\n  F --> H[File D]"}
+      />
 
-      <CodeBlock language="java" title="Composite — File System Tree">
-{`// Component interface — both File and Directory implement this
-public interface FileSystemEntry {
+      <CodeBlock language="java" title="Composite - File System with Size Calculation" showLineNumbers={true}>
+{`// Component interface - uniform treatment of files and directories
+public interface FileSystemNode {
     String getName();
     long getSize();
     void print(String indent);
 }
 
-// Leaf — no children
-public class File implements FileSystemEntry {
+// Leaf - a single file
+public class File implements FileSystemNode {
     private final String name;
     private final long size;
 
-    public File(String name, long size) { this.name = name; this.size = size; }
+    public File(String name, long size) {
+        this.name = name;
+        this.size = size;
+    }
+
+    @Override
     public String getName() { return name; }
-    public long getSize()   { return size; }
+
+    @Override
+    public long getSize() { return size; }
+
+    @Override
     public void print(String indent) {
         System.out.printf("%s📄 %s (%d bytes)%n", indent, name, size);
     }
 }
 
-// Composite — has children (can be Files or other Directories)
-public class Directory implements FileSystemEntry {
+// Composite - a directory containing other nodes
+public class Directory implements FileSystemNode {
     private final String name;
-    private final List<FileSystemEntry> children = new ArrayList<>();
+    private final List<FileSystemNode> children = new ArrayList<>();
 
-    public Directory(String name) { this.name = name; }
-    public void add(FileSystemEntry entry) { children.add(entry); }
+    public Directory(String name) {
+        this.name = name;
+    }
 
+    public void add(FileSystemNode node) {
+        children.add(node);
+    }
+
+    public void remove(FileSystemNode node) {
+        children.remove(node);
+    }
+
+    @Override
     public String getName() { return name; }
-    public long getSize()   { return children.stream().mapToLong(FileSystemEntry::getSize).sum(); }
+
+    @Override
+    public long getSize() {
+        // Recursively sum all children's sizes
+        return children.stream()
+            .mapToLong(FileSystemNode::getSize)
+            .sum();
+    }
+
+    @Override
     public void print(String indent) {
-        System.out.printf("%s📁 %s (%d bytes)%n", indent, name, getSize());
-        children.forEach(c -> c.print(indent + "  "));
+        System.out.printf("%s📁 %s/ (%d bytes total)%n", indent, name, getSize());
+        children.forEach(child -> child.print(indent + "  "));
     }
 }
 
-// Usage — client treats files and directories identically
-Directory root = new Directory("root");
-Directory src  = new Directory("src");
-src.add(new File("Main.java",   2048));
-src.add(new File("Config.java", 1024));
-Directory test = new Directory("test");
-test.add(new File("MainTest.java", 3072));
-root.add(src);
-root.add(test);
-root.add(new File("README.md", 512));
+// Usage - client doesn't care if it's a file or directory
+Directory root = new Directory("project");
+root.add(new File("README.md", 2048));
+root.add(new File("pom.xml", 4096));
 
-root.print("");
-// 📁 root (6656 bytes)
-//   📁 src (3072 bytes)
-//     📄 Main.java (2048 bytes)
-//     📄 Config.java (1024 bytes)
-//   📁 test (3072 bytes)
-//     📄 MainTest.java (3072 bytes)
-//   📄 README.md (512 bytes)
-System.out.println("Total: " + root.getSize()); // 6656`}
+Directory src = new Directory("src");
+src.add(new File("Main.java", 1024));
+src.add(new File("Service.java", 3072));
+root.add(src);
+
+// Works uniformly on any node
+System.out.println("Total size: " + root.getSize()); // Recursively calculates
+root.print("");  // Recursively prints tree`}
       </CodeBlock>
+
+      <InfoBox variant="info" title="Composite in Enterprise Java">
+        You'll see Composite everywhere: Spring Security's filter chains, menu/navigation systems,
+        permission hierarchies (a Role contains Permissions AND other Roles), bill-of-materials
+        structures, and organizational hierarchies.
+      </InfoBox>
+
+      <h2>Facade Pattern</h2>
+      <p>
+        Provides a unified, simplified interface to a set of interfaces in a subsystem.
+        Facade defines a higher-level interface that makes the subsystem easier to use.
+        It doesn't hide the subsystem — clients can still use it directly if needed.
+      </p>
 
       <FlowChart
-        title="Composite Tree Structure"
-        chart={"graph TD\n  A[Component Interface] --> B[Leaf]\n  A --> C[Composite]\n  C --> D[Leaf 1]\n  C --> E[Leaf 2]\n  C --> F[Composite 2]\n  F --> G[Leaf 3]\n  F --> H[Leaf 4]"}
+        title="Facade Pattern Structure"
+        chart={"graph TD\n  A[Client] --> B[Facade]\n  B --> C[Subsystem A]\n  B --> D[Subsystem B]\n  B --> E[Subsystem C]\n  B --> F[Subsystem D]"}
       />
 
-      <h2>Menu System with Composite</h2>
-
-      <CodeBlock language="java" title="UI Menu Tree">
-{`public interface MenuComponent {
-    String getName();
-    void render(int depth);
-    boolean isEnabled();
+      <CodeBlock language="java" title="Facade - Order Processing System" showLineNumbers={true}>
+{`// Complex subsystems
+public class InventoryService {
+    public boolean checkStock(String sku, int qty) { /* ... */ }
+    public void reserveStock(String sku, int qty) { /* ... */ }
+    public void releaseStock(String sku, int qty) { /* ... */ }
 }
 
-// Leaf — a clickable menu item
-public class MenuItem implements MenuComponent {
-    private final String name;
-    private final Runnable action;
-    private boolean enabled;
-
-    public MenuItem(String name, Runnable action) {
-        this.name = name; this.action = action; this.enabled = true;
-    }
-    public String getName()    { return name; }
-    public boolean isEnabled() { return enabled; }
-    public void setEnabled(boolean e) { this.enabled = e; }
-    public void render(int depth) {
-        String indent = "  ".repeat(depth);
-        System.out.printf("%s%s [item]%s%n", indent, name, enabled ? "" : " (disabled)");
-    }
-    public void execute() { if (enabled) action.run(); }
+public class PaymentService {
+    public PaymentAuth authorize(String cardToken, BigDecimal amount) { /* ... */ }
+    public void capture(String authId) { /* ... */ }
+    public void voidAuth(String authId) { /* ... */ }
 }
 
-// Composite — a submenu
-public class Menu implements MenuComponent {
-    private final String name;
-    private final List<MenuComponent> children = new ArrayList<>();
-
-    public Menu(String name) { this.name = name; }
-    public void add(MenuComponent c) { children.add(c); }
-    public String getName()    { return name; }
-    public boolean isEnabled() { return children.stream().anyMatch(MenuComponent::isEnabled); }
-    public void render(int depth) {
-        System.out.printf("%s%s [menu]%n", "  ".repeat(depth), name);
-        children.forEach(c -> c.render(depth + 1));
-    }
+public class ShippingService {
+    public ShippingRate calculateRate(Address from, Address to, double weight) { /* ... */ }
+    public String createLabel(Order order, ShippingRate rate) { /* ... */ }
 }
 
-// Build a menu tree
-Menu menuBar = new Menu("Menu Bar");
-Menu fileMenu = new Menu("File");
-fileMenu.add(new MenuItem("New",  () -> System.out.println("New file")));
-fileMenu.add(new MenuItem("Open", () -> System.out.println("Open")));
-fileMenu.add(new MenuItem("Save", () -> System.out.println("Saved")));
-Menu editMenu = new Menu("Edit");
-editMenu.add(new MenuItem("Cut",   () -> System.out.println("Cut")));
-editMenu.add(new MenuItem("Copy",  () -> System.out.println("Copy")));
-editMenu.add(new MenuItem("Paste", () -> System.out.println("Paste")));
-menuBar.add(fileMenu);
-menuBar.add(editMenu);
-menuBar.render(0);`}
+public class NotificationService {
+    public void sendOrderConfirmation(String email, Order order) { /* ... */ }
+    public void sendShippingUpdate(String email, String tracking) { /* ... */ }
+}
+
+// Facade - simplifies the complex multi-step process
+@Service
+public class OrderFacade {
+    private final InventoryService inventory;
+    private final PaymentService payment;
+    private final ShippingService shipping;
+    private final NotificationService notifications;
+    private final OrderRepository orderRepo;
+
+    public OrderFacade(InventoryService inventory, PaymentService payment,
+                      ShippingService shipping, NotificationService notifications,
+                      OrderRepository orderRepo) {
+        this.inventory = inventory;
+        this.payment = payment;
+        this.shipping = shipping;
+        this.notifications = notifications;
+        this.orderRepo = orderRepo;
+    }
+
+    // One method hides 6+ subsystem interactions
+    @Transactional
+    public OrderResult placeOrder(OrderRequest request) {
+        // 1. Check inventory
+        for (LineItem item : request.getItems()) {
+            if (!inventory.checkStock(item.getSku(), item.getQty())) {
+                return OrderResult.outOfStock(item.getSku());
+            }
+        }
+
+        // 2. Reserve inventory
+        request.getItems().forEach(item ->
+            inventory.reserveStock(item.getSku(), item.getQty()));
+
+        // 3. Authorize payment
+        PaymentAuth auth = payment.authorize(
+            request.getCardToken(), request.getTotal());
+        if (!auth.isApproved()) {
+            request.getItems().forEach(item ->
+                inventory.releaseStock(item.getSku(), item.getQty()));
+            return OrderResult.paymentDeclined(auth.getReason());
+        }
+
+        // 4. Create order
+        Order order = orderRepo.save(Order.from(request, auth));
+
+        // 5. Capture payment
+        payment.capture(auth.getId());
+
+        // 6. Send confirmation
+        notifications.sendOrderConfirmation(request.getEmail(), order);
+
+        return OrderResult.success(order);
+    }
+}`}
       </CodeBlock>
 
-      <InfoBox variant="note" title="When to Use Composite">
-        <p>Use Composite when your domain naturally forms a tree: file systems, org charts, UI component hierarchies, bills of materials, parse trees, category trees. The pattern shines when client code must treat single items and groups identically — e.g., calculating total cost whether it's one item or a bundle of bundles.</p>
+      <InfoBox variant="tip" title="Facade vs Service Layer">
+        In Spring Boot applications, your @Service classes often act as facades. The Controller
+        calls one service method, which orchestrates multiple repositories and other services.
+        This is the Facade pattern applied at the architectural level.
       </InfoBox>
 
       <InteractiveChallenge
-        question="What is the key characteristic of the Composite pattern?"
-        options={["Ensures a class has only one instance", "Treats individual objects and compositions uniformly via a shared interface", "Adds behavior to objects dynamically at runtime", "Converts an interface to another interface"]}
+        question="In the Composite pattern, what makes it possible to call getSize() on both a File and a Directory?"
+        options={[
+          "Directory inherits from File",
+          "Both implement the same FileSystemNode interface",
+          "Java's dynamic dispatch automatically handles both cases",
+          "The Visitor pattern is used internally"
+        ]}
         correctIndex={1}
-        explanation="Composite allows clients to treat leaves (individual objects) and composites (groups of objects) identically through a shared Component interface. This uniformity means you can write code that works on a single file or an entire directory tree without knowing the difference."
+        explanation="The key to Composite is the shared Component interface (FileSystemNode). Both leaves (File) and composites (Directory) implement it, so clients can call getSize() without knowing whether they're dealing with a single file or an entire directory tree."
       />
-
     </LessonLayout>
   );
 }

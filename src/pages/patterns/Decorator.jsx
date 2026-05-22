@@ -4,150 +4,199 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function PatternsDecorator() {
+export default function Decorator() {
   return (
     <LessonLayout
-      title="Decorator Pattern"
+      title="Decorator & Adapter Patterns"
       sectionId="patterns"
       lessonIndex={3}
-      prev={{ path: "/patterns/strategy", label: "Strategy Pattern" }}
-      next={{ path: "/patterns/builder", label: "Builder Pattern" }}
+      prev={{ path: '/patterns/strategy', label: 'Strategy & Observer' }}
+      next={{ path: '/patterns/builder', label: 'Builder & Prototype' }}
     >
-      <p>The Decorator pattern attaches additional responsibilities to an object dynamically by wrapping it in decorator objects. It is an alternative to subclassing for extending functionality — instead of creating an explosion of subclasses, you compose decorators at runtime.</p>
+      <h2>Decorator Pattern</h2>
+      <p>
+        Attaches additional responsibilities to an object dynamically. Decorators provide a
+        flexible alternative to subclassing for extending functionality. Java's I/O streams
+        are the classic real-world example.
+      </p>
 
-      <h2>The Subclass Explosion Problem</h2>
-      <p>Imagine a coffee system: Coffee, CoffeeWithMilk, CoffeeWithSugar, CoffeeWithMilkAndSugar, EspressoWithMilk, EspressoWithSugarAndWhip... Every combination requires a new subclass. Decorator solves this by composing features.</p>
+      <FlowChart
+        title="Decorator Pattern Structure"
+        chart={"graph TD\n  A[Component Interface] --> B[ConcreteComponent]\n  A --> C[BaseDecorator]\n  C --> D[DecoratorA]\n  C --> E[DecoratorB]\n  C -->|wraps| A"}
+      />
 
-      <CodeBlock language="java" title="Decorator Pattern — Coffee Example">
+      <CodeBlock language="java" title="Decorator - Java I/O Streams Example" showLineNumbers={true}>
+{`// This is how Java I/O actually works - layers of decorators:
+InputStream raw = new FileInputStream("data.txt");        // Base component
+InputStream buffered = new BufferedInputStream(raw);       // Decorator: adds buffering
+InputStream gzip = new GZIPInputStream(buffered);          // Decorator: adds decompression
+Reader reader = new InputStreamReader(gzip, "UTF-8");      // Decorator: adds char decoding
+
+// Each layer adds behavior without modifying the original
+// You can compose them in any combination!`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="Custom Decorator - Logging HTTP Client" showLineNumbers={true}>
 {`// Component interface
-public interface Coffee {
-    String getDescription();
-    double getCost();
+public interface HttpClient {
+    HttpResponse send(HttpRequest request);
 }
 
 // Concrete component
-public class Espresso implements Coffee {
-    public String getDescription() { return "Espresso"; }
-    public double getCost() { return 1.99; }
+public class DefaultHttpClient implements HttpClient {
+    @Override
+    public HttpResponse send(HttpRequest request) {
+        // Actual HTTP call
+        return executeHttp(request);
+    }
 }
 
-// Base decorator — implements Coffee, wraps a Coffee
-public abstract class CoffeeDecorator implements Coffee {
-    protected final Coffee wrapped;
-    public CoffeeDecorator(Coffee coffee) { this.wrapped = coffee; }
-    public String getDescription() { return wrapped.getDescription(); }
-    public double getCost() { return wrapped.getCost(); }
+// Base decorator
+public abstract class HttpClientDecorator implements HttpClient {
+    protected final HttpClient delegate;
+
+    protected HttpClientDecorator(HttpClient delegate) {
+        this.delegate = delegate;
+    }
 }
 
-// Concrete decorators
-public class Milk extends CoffeeDecorator {
-    public Milk(Coffee coffee) { super(coffee); }
-    public String getDescription() { return wrapped.getDescription() + ", Milk"; }
-    public double getCost() { return wrapped.getCost() + 0.25; }
-}
-public class Sugar extends CoffeeDecorator {
-    public Sugar(Coffee coffee) { super(coffee); }
-    public String getDescription() { return wrapped.getDescription() + ", Sugar"; }
-    public double getCost() { return wrapped.getCost() + 0.10; }
-}
-public class WhipCream extends CoffeeDecorator {
-    public WhipCream(Coffee coffee) { super(coffee); }
-    public String getDescription() { return wrapped.getDescription() + ", Whip"; }
-    public double getCost() { return wrapped.getCost() + 0.50; }
+// Concrete decorator: logging
+public class LoggingHttpClient extends HttpClientDecorator {
+    private static final Logger log = LoggerFactory.getLogger(LoggingHttpClient.class);
+
+    public LoggingHttpClient(HttpClient delegate) {
+        super(delegate);
+    }
+
+    @Override
+    public HttpResponse send(HttpRequest request) {
+        log.info("Sending {} to {}", request.getMethod(), request.getUri());
+        long start = System.currentTimeMillis();
+
+        HttpResponse response = delegate.send(request);
+
+        long elapsed = System.currentTimeMillis() - start;
+        log.info("Received {} in {}ms", response.getStatus(), elapsed);
+        return response;
+    }
 }
 
-// Usage — compose at runtime
-Coffee order = new WhipCream(new Sugar(new Milk(new Espresso())));
-System.out.println(order.getDescription()); // Espresso, Milk, Sugar, Whip
-System.out.println(order.getCost());        // 2.84`}
+// Concrete decorator: retry
+public class RetryingHttpClient extends HttpClientDecorator {
+    private final int maxRetries;
+
+    public RetryingHttpClient(HttpClient delegate, int maxRetries) {
+        super(delegate);
+        this.maxRetries = maxRetries;
+    }
+
+    @Override
+    public HttpResponse send(HttpRequest request) {
+        int attempts = 0;
+        while (true) {
+            try {
+                return delegate.send(request);
+            } catch (HttpException e) {
+                if (++attempts >= maxRetries) throw e;
+                sleep(attempts * 1000L); // Exponential backoff
+            }
+        }
+    }
+}
+
+// Compose decorators - order matters!
+HttpClient client = new LoggingHttpClient(
+    new RetryingHttpClient(
+        new DefaultHttpClient(), 3
+    )
+);
+// Logs -> Retries -> Actual HTTP call`}
       </CodeBlock>
 
+      <InfoBox variant="tip" title="Decorator vs Inheritance">
+        Inheritance is static — you choose the behavior at compile time. Decorator is dynamic —
+        you compose behavior at runtime. With 5 optional features, inheritance needs 2^5 = 32 subclasses.
+        Decorator needs just 5 decorator classes that can be combined freely.
+      </InfoBox>
+
+      <h2>Adapter Pattern</h2>
+      <p>
+        Converts the interface of a class into another interface that clients expect.
+        Adapter lets classes work together that couldn't otherwise because of incompatible interfaces.
+        It's like a power adapter when you travel abroad.
+      </p>
+
       <FlowChart
-        title="Decorator Wrapping Structure"
-        chart={"graph LR\n  A[Client] --> B[WhipCream]\n  B --> C[Sugar]\n  C --> D[Milk]\n  D --> E[Espresso]\n  style E fill:#22d3ee20\n  style B fill:#a78bfa20\n  style C fill:#a78bfa20\n  style D fill:#a78bfa20"}
+        title="Adapter Pattern Structure"
+        chart={"graph LR\n  A[Client] -->|uses| B[Target Interface]\n  B --> C[Adapter]\n  C -->|delegates to| D[Adaptee / Legacy System]"}
       />
 
-      <h2>Java I/O is Decorator</h2>
-      <p>The Java I/O library is the most famous real-world use of Decorator. InputStream is the component; BufferedInputStream, GZIPInputStream, and CipherInputStream are decorators that add buffering, compression, and encryption respectively.</p>
-
-      <CodeBlock language="java" title="Java I/O — Classic Decorator in Action">
-{`// Stacking I/O decorators
-InputStream raw        = new FileInputStream("data.txt.gz");
-InputStream unzipped   = new GZIPInputStream(raw);        // adds decompression
-InputStream buffered   = new BufferedInputStream(unzipped); // adds buffering
-Reader      reader     = new InputStreamReader(buffered);   // adds charset decoding
-BufferedReader lines   = new BufferedReader(reader);        // adds line reading
-
-// Each decorator adds one responsibility
-// Compose to get: file + decompression + buffering + charset + line API
-String line;
-while ((line = lines.readLine()) != null) {
-    System.out.println(line);
+      <CodeBlock language="java" title="Adapter - Integrating Legacy Payment System" showLineNumbers={true}>
+{`// Your application's expected interface (Target)
+public interface PaymentProcessor {
+    PaymentResult charge(String customerId, BigDecimal amount, Currency currency);
 }
-lines.close();
 
-// Try-with-resources is cleaner:
-try (var br = new BufferedReader(
-                new InputStreamReader(
-                  new GZIPInputStream(
-                    new FileInputStream("data.txt.gz"))))) {
-    br.lines().forEach(System.out::println);
+// Legacy third-party SDK you can't modify (Adaptee)
+public class LegacyPaymentGateway {
+    public int makePayment(String acctNum, double amountInCents, String currCode) {
+        // Returns: 0 = success, 1 = declined, 2 = error
+        // Uses doubles, cents, and string currency codes
+    }
+}
+
+// Adapter - translates between your interface and the legacy one
+public class LegacyPaymentAdapter implements PaymentProcessor {
+    private final LegacyPaymentGateway legacy;
+    private final AccountMappingService accountService;
+
+    public LegacyPaymentAdapter(LegacyPaymentGateway legacy,
+                                AccountMappingService accountService) {
+        this.legacy = legacy;
+        this.accountService = accountService;
+    }
+
+    @Override
+    public PaymentResult charge(String customerId, BigDecimal amount, Currency currency) {
+        // Adapt: customerId -> account number
+        String acctNum = accountService.getAccountNumber(customerId);
+
+        // Adapt: BigDecimal dollars -> double cents
+        double amountInCents = amount.multiply(BigDecimal.valueOf(100)).doubleValue();
+
+        // Adapt: Currency enum -> string code
+        String currCode = currency.getCurrencyCode();
+
+        // Delegate to legacy system
+        int result = legacy.makePayment(acctNum, amountInCents, currCode);
+
+        // Adapt: int code -> PaymentResult
+        return switch (result) {
+            case 0 -> PaymentResult.success();
+            case 1 -> PaymentResult.declined("Card declined");
+            default -> PaymentResult.error("Gateway error: " + result);
+        };
+    }
 }`}
       </CodeBlock>
 
-      <h2>Decorator for Cross-Cutting Concerns</h2>
-
-      <CodeBlock language="java" title="Logging and Metrics Decorator">
-{`public interface UserRepository {
-    User findById(long id);
-    void save(User user);
-}
-
-// Real implementation
-public class JpaUserRepository implements UserRepository {
-    public User findById(long id) { /* JPA query */ return null; }
-    public void save(User user)   { /* JPA save */ }
-}
-
-// Logging decorator
-public class LoggingUserRepository implements UserRepository {
-    private final UserRepository delegate;
-    private final Logger log = LoggerFactory.getLogger(getClass());
-
-    public LoggingUserRepository(UserRepository delegate) {
-        this.delegate = delegate;
-    }
-
-    public User findById(long id) {
-        log.info("findById({})", id);
-        long start = System.nanoTime();
-        User result = delegate.findById(id);
-        log.info("findById({}) took {}ms", id, (System.nanoTime()-start)/1_000_000);
-        return result;
-    }
-
-    public void save(User user) {
-        log.info("save({})", user.getId());
-        delegate.save(user);
-        log.info("save complete");
-    }
-}
-
-// Wire: logging wraps JPA
-UserRepository repo = new LoggingUserRepository(new JpaUserRepository());`}
-      </CodeBlock>
-
-      <InfoBox variant="note" title="Decorator vs Inheritance">
-        <p>Inheritance is static — you choose a subclass at compile time. Decorator is dynamic — you compose behaviors at runtime. Also, Decorator avoids the fragile base class problem: decorators don't override methods, they delegate. This makes them much safer to stack.</p>
+      <InfoBox variant="info" title="Adapter in the Wild">
+        You use adapters constantly in enterprise Java: SLF4J adapts various logging frameworks,
+        Spring's HandlerAdapter adapts different controller types, and JDBC itself is an adapter
+        between your code and vendor-specific database drivers.
       </InfoBox>
 
       <InteractiveChallenge
-        question="Which Java library is a classic real-world example of the Decorator pattern?"
-        options={["java.util.Collections", "java.io streams", "java.lang.Math", "java.util.concurrent"]}
+        question="What is the key structural difference between Decorator and Adapter?"
+        options={[
+          "Decorator uses inheritance while Adapter uses composition",
+          "Decorator enhances existing behavior while Adapter translates between incompatible interfaces",
+          "Decorator is a structural pattern while Adapter is behavioral",
+          "Decorator works with multiple objects while Adapter works with only one"
+        ]}
         correctIndex={1}
-        explanation="Java I/O uses Decorator extensively. InputStream is the component interface, and classes like BufferedInputStream, GZIPInputStream, and CipherInputStream are decorators that wrap an InputStream to add buffering, compression, and encryption. You compose them by nesting constructors."
+        explanation="Both use composition (wrapping another object). The intent differs: Decorator adds/enhances behavior while keeping the same interface. Adapter converts one interface into another to make incompatible systems work together. Both are structural patterns."
       />
-
     </LessonLayout>
   );
 }

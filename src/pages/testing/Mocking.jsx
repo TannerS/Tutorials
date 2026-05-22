@@ -4,278 +4,437 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function TestingMocking() {
+export default function Mocking() {
   return (
     <LessonLayout
-      title="Mocking"
+      title="Mocking & Test Doubles"
       sectionId="testing"
       lessonIndex={2}
-      prev={{ path: '/testing/unit', label: 'Unit Testing' }}
+      prev={{ path: '/testing/unit', label: 'Unit Testing (JUnit & Jest)' }}
       next={{ path: '/testing/integration', label: 'Integration Testing' }}
     >
-      <h2>Test Doubles — The Full Vocabulary</h2>
+      <h2>Why Mock?</h2>
       <p>
-        A test double is any object that stands in for a real dependency in a test. The term
-        "mock" is often used loosely to mean any test double, but there are five distinct types,
-        each with a different purpose. Understanding which to use makes tests cleaner, faster,
-        and more intentional.
+        Unit tests should run in isolation. When your code depends on a database,
+        an API, or another service, you replace those dependencies with test doubles
+        so your test stays fast, deterministic, and focused on the unit under test.
+      </p>
+
+      <h2>Test Doubles Taxonomy</h2>
+      <p>
+        The term &quot;mock&quot; is often used loosely, but there are actually five distinct
+        types of test doubles, each serving a different purpose.
       </p>
 
       <FlowChart
-        title="Test Double Types"
-        chart={"graph TD\n  A[Test Doubles] --> B[Dummy - passed but never used]\n  A --> C[Stub - returns hardcoded values]\n  A --> D[Fake - working implementation]\n  A --> E[Spy - records calls to real object]\n  A --> F[Mock - stub plus verification]"}
+        title="Types of Test Doubles"
+        chart={"graph TD\n  TD[\"Test Doubles\"] --> DUMMY[\"Dummy\\nPassed but never used\"]\n  TD --> STUB[\"Stub\\nReturns canned answers\"]\n  TD --> SPY[\"Spy\\nRecords calls for verification\"]\n  TD --> MOCK[\"Mock\\nPre-programmed expectations\"]\n  TD --> FAKE[\"Fake\\nWorking implementation\\n(e.g., in-memory DB)\"]"}
       />
 
-      <CodeBlock language="java" title="The Five Test Double Types">
-{`// ── DUMMY ──────────────────────────────────────────────────────────
-// Passed to satisfy a parameter — never actually used
-UserProfile dummyProfile = new UserProfile(); // not used in this test
-emailService.send("alice@example.com", "Subject", "Body", dummyProfile);
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Purpose</th>
+            <th>Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dummy</td>
+            <td>Fill a parameter list — never actually used</td>
+            <td>Passing <code>null</code> for an unused logger</td>
+          </tr>
+          <tr>
+            <td>Stub</td>
+            <td>Return predetermined data</td>
+            <td>A repository that always returns the same user</td>
+          </tr>
+          <tr>
+            <td>Spy</td>
+            <td>Record interactions for later verification</td>
+            <td>Checking that an email service was called</td>
+          </tr>
+          <tr>
+            <td>Mock</td>
+            <td>Verify expected interactions happened</td>
+            <td>Assert that <code>save()</code> was called exactly once</td>
+          </tr>
+          <tr>
+            <td>Fake</td>
+            <td>Simplified but working implementation</td>
+            <td>In-memory database instead of real PostgreSQL</td>
+          </tr>
+        </tbody>
+      </table>
 
-// ── STUB ────────────────────────────────────────────────────────────
-// Returns hardcoded/pre-programmed values; no verification
-// Use when: you need a dependency to return specific values
-public class StubOrderRepository implements OrderRepository {
-    @Override
-    public Optional<Order> findById(String id) {
-        if ("O-1".equals(id)) return Optional.of(new Order("O-1", 100.0));
-        return Optional.empty();
-    }
-    // All other methods throw UnsupportedOperationException
-}
+      <InfoBox variant="info" title="Stubs vs Mocks">
+        The key distinction: <strong>stubs</strong> provide data to the system under test
+        (state verification), while <strong>mocks</strong> verify that the system under test
+        called the right methods (behavior verification). Both have their place.
+      </InfoBox>
 
-// ── FAKE ────────────────────────────────────────────────────────────
-// Working implementation, simpler than production
-// Fake DB = in-memory map; Fake SMTP = captures emails in a list
-public class FakeUserRepository implements UserRepository {
-    private final Map<Long, User> store = new HashMap<>();
-    private long nextId = 1;
+      <h2>Mockito — Java Mocking</h2>
 
-    @Override public User save(User user) {
-        user.setId(nextId++);
-        store.put(user.getId(), user);
-        return user;
-    }
-    @Override public Optional<User> findById(Long id) {
-        return Optional.ofNullable(store.get(id));
-    }
-    @Override public List<User> findAll() { return new ArrayList<>(store.values()); }
-}
-// Much more powerful than a Mockito mock for complex interactions
-
-// ── SPY ─────────────────────────────────────────────────────────────
-// Wraps a real object; records calls and can override specific methods
-@Spy EmailService emailService = new EmailService(realMailSender);
-// Calls real send() unless explicitly stubbed:
-doReturn(true).when(emailService).send(eq("blocked@spam.com"), any(), any());
-
-// ── MOCK ────────────────────────────────────────────────────────────
-// Stub + built-in verification of interactions
-// Created by Mockito — most common in Java unit tests
-@Mock OrderRepository orderRepo;
-when(orderRepo.findById("O-1")).thenReturn(Optional.of(order));
-orderService.process("O-1");
-verify(orderRepo).findById("O-1");  // assert the interaction happened`}
+      <h3>Setup</h3>
+      <CodeBlock language="java" title="Maven Dependency">
+{`<dependency>
+    <groupId>org.mockito</groupId>
+    <artifactId>mockito-core</artifactId>
+    <version>5.11.0</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.mockito</groupId>
+    <artifactId>mockito-junit-jupiter</artifactId>
+    <version>5.11.0</version>
+    <scope>test</scope>
+</dependency>`}
       </CodeBlock>
 
-      <h2>Mockito Complete Reference</h2>
+      <h3>Basic Mocking with Mockito</h3>
+      <CodeBlock language="java" title="mock(), when(), verify()">
+{`import static org.mockito.Mockito.*;
 
-      <CodeBlock language="java" title="Stubbing — Controlling Return Values">
-{`@ExtendWith(MockitoExtension.class)
-class PaymentServiceTest {
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
 
-    @Mock PaymentGateway gateway;
-    @Mock AuditLogger audit;
-    @Captor ArgumentCaptor<PaymentRequest> requestCaptor;
-    @InjectMocks PaymentService service;
+    @Mock
+    private OrderRepository orderRepo;
 
-    // ── BASIC STUBBING ───────────────────────────────────────────────
-    @Test void basic_stubbing() {
-        // Return a value
-        when(gateway.charge(any(), any())).thenReturn(new Receipt("R-1", 100.0));
+    @Mock
+    private EmailService emailService;
 
-        // Return different values on successive calls
-        when(gateway.isAvailable())
-            .thenReturn(false)     // first call
-            .thenReturn(true)      // second call
-            .thenReturn(true);     // all subsequent calls
+    @InjectMocks
+    private OrderService orderService;
 
-        // Throw an exception
-        when(gateway.charge(eq("BAD_CARD"), any()))
-            .thenThrow(new PaymentDeclinedException("Insufficient funds"));
+    @Test
+    @DisplayName("should save order and send confirmation email")
+    void placeOrder() {
+        // Arrange — stub the repository
+        Order order = new Order("ORD-001", List.of("item1"));
+        when(orderRepo.save(any(Order.class))).thenReturn(order);
 
-        // Return based on argument value (custom matcher)
-        when(gateway.charge(anyString(), argThat(amount -> amount.compareTo(BigDecimal.ZERO) < 0)))
-            .thenThrow(new IllegalArgumentException("Amount must be positive"));
-    }
+        // Act
+        Order result = orderService.placeOrder(List.of("item1"));
 
-    // ── STUBBING VOID METHODS ─────────────────────────────────────────
-    @Test void void_method_stubbing() {
-        // Do nothing (default for void mocks, but explicit is clearer)
-        doNothing().when(audit).log(any());
-
-        // Throw from void method
-        doThrow(new AuditException("Audit system down"))
-            .when(audit).log(argThat(e -> e.contains("FAILED")));
-    }
-
-    // ── ARGUMENT CAPTORS ──────────────────────────────────────────────
-    @Test void capture_what_was_sent_to_gateway() {
-        when(gateway.charge(any(), any())).thenReturn(new Receipt("R-1", 99.0));
-
-        service.processOrder("ORDER-42");
-
-        // Capture the actual argument passed to the mock
-        verify(gateway).charge(requestCaptor.capture(), any());
-        PaymentRequest captured = requestCaptor.getValue();
-
-        assertThat(captured.getOrderId()).isEqualTo("ORDER-42");
-        assertThat(captured.getAmount()).isEqualByComparingTo(new BigDecimal("99.00"));
-        assertThat(captured.getCurrency()).isEqualTo("USD");
+        // Assert — verify behavior
+        assertNotNull(result);
+        assertEquals("ORD-001", result.getId());
+        verify(orderRepo).save(any(Order.class));
+        verify(emailService).sendConfirmation(eq("ORD-001"), anyString());
+        verify(emailService, never()).sendCancellation(anyString());
     }
 }`}
       </CodeBlock>
 
-      <CodeBlock language="java" title="Verification — Asserting Interactions">
-{`// ── VERIFY CALL COUNT ─────────────────────────────────────────────
-verify(gateway).charge(any(), any());           // exactly once (default)
-verify(gateway, times(1)).charge(any(), any()); // explicitly once
-verify(gateway, times(3)).retry(any());         // exactly 3 times
-verify(gateway, never()).refund(any());         // never called
-verify(gateway, atLeast(1)).charge(any(), any()); // at least once
-verify(gateway, atMost(2)).charge(any(), any());  // at most twice
+      <h3>Stubbing Patterns</h3>
+      <CodeBlock language="java" title="Advanced Stubbing">
+{`// Return different values on successive calls
+when(mockRepo.findById("1"))
+    .thenReturn(Optional.empty())    // first call
+    .thenReturn(Optional.of(user));  // second call
 
-// ── VERIFY ORDER OF CALLS ─────────────────────────────────────────
-InOrder inOrder = inOrder(gateway, audit);
-inOrder.verify(gateway).charge(any(), any());  // gateway first
-inOrder.verify(audit).log(any());              // audit second
+// Throw an exception
+when(mockService.process(null))
+    .thenThrow(new IllegalArgumentException("Input cannot be null"));
 
-// ── VERIFY NO UNEXPECTED INTERACTIONS ────────────────────────────
-verifyNoMoreInteractions(gateway, audit);  // fail if extra calls exist
-verifyNoInteractions(audit);              // fail if audit was called at all
-
-// ── ARGUMENT MATCHERS ─────────────────────────────────────────────
-// If ANY argument uses a matcher, ALL must use matchers
-verify(gateway).charge(
-    eq("card-token-123"),       // exact value
-    any(BigDecimal.class),      // any BigDecimal
-    argThat(req ->              // custom predicate
-        req.getCurrency().equals("USD") && req.getAmount().compareTo(BigDecimal.ZERO) > 0
-    )
-);
-
-// ── AVOID OVER-VERIFICATION ───────────────────────────────────────
-// ✗ Don't verify every single method call — tests become fragile
-verify(repo).save(any());
-verify(repo).flush();        // do you really care about flush?
-verify(cache).evict(any());  // this makes refactoring painful
-
-// ✓ Verify the outcomes that matter for THIS test
-verify(gateway).charge(any(), any());  // the payment was attempted
-// Let the assertion on the return value verify the rest`}
+// Use thenAnswer for dynamic responses
+when(mockRepo.save(any(User.class))).thenAnswer(invocation -> {
+    User user = invocation.getArgument(0);
+    user.setId(UUID.randomUUID().toString());
+    return user;
+});`}
       </CodeBlock>
 
-      <h2>Mocking in JavaScript — Vitest / Jest</h2>
+      <h3>ArgumentCaptor</h3>
+      <CodeBlock language="java" title="Capturing Arguments for Verification">
+{`@Test
+void shouldSendFormattedEmail() {
+    orderService.placeOrder(List.of("Widget", "Gadget"));
 
-      <CodeBlock language="javascript" title="vi.fn() and Module Mocking">
-{`import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { OrderService } from './OrderService';
-import * as emailModule from './emailService';
+    ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+    verify(emailService).sendConfirmation(anyString(), bodyCaptor.capture());
 
-// ── FUNCTION MOCKS ────────────────────────────────────────────────
-describe('OrderService', () => {
-  let mockPaymentGateway;
-  let service;
+    String emailBody = bodyCaptor.getValue();
+    assertTrue(emailBody.contains("Widget"));
+    assertTrue(emailBody.contains("Gadget"));
+}`}
+      </CodeBlock>
 
-  beforeEach(() => {
-    // Create a mock object with vi.fn() methods
-    mockPaymentGateway = {
-      charge: vi.fn().mockResolvedValue({ transactionId: 'TXN-1', status: 'success' }),
-      refund: vi.fn().mockResolvedValue({ status: 'refunded' }),
-      isAvailable: vi.fn().mockReturnValue(true),
-    };
-    service = new OrderService({ paymentGateway: mockPaymentGateway });
-  });
+      <h3>Mockito BDD Style</h3>
+      <CodeBlock language="java" title="BDDMockito — Given/When/Then">
+{`import static org.mockito.BDDMockito.*;
 
-  it('charges the correct amount', async () => {
-    await service.processOrder({ id: 'O-1', total: 99.99 });
+@Test
+@DisplayName("should return user by ID")
+void findUserById() {
+    // Given
+    User alice = new User("1", "Alice");
+    given(userRepo.findById("1")).willReturn(Optional.of(alice));
 
-    expect(mockPaymentGateway.charge).toHaveBeenCalledOnce();
-    expect(mockPaymentGateway.charge).toHaveBeenCalledWith({
-      amount: 99.99,
-      currency: 'USD',
-      orderId: 'O-1',
-    });
-  });
+    // When
+    User result = userService.getUser("1");
 
-  it('retries on transient failure', async () => {
-    mockPaymentGateway.charge
-      .mockRejectedValueOnce(new Error('Network timeout'))  // first call fails
-      .mockResolvedValue({ transactionId: 'TXN-1' });       // second succeeds
+    // Then
+    then(userRepo).should().findById("1");
+    assertThat(result.getName()).isEqualTo("Alice");
+}`}
+      </CodeBlock>
 
-    await service.processOrder({ id: 'O-1', total: 99.99 });
-    expect(mockPaymentGateway.charge).toHaveBeenCalledTimes(2);
-  });
-});
+      <h2>Jest Mocking — JavaScript</h2>
 
-// ── MODULE MOCKING ────────────────────────────────────────────────
-// Mock an entire module — replaces it for the entire test file
-vi.mock('./emailService', () => ({
-  sendEmail: vi.fn().mockResolvedValue({ messageId: 'msg-123' }),
-  sendBatch: vi.fn().mockResolvedValue({ count: 0 }),
+      <h3>jest.fn() — Manual Mocks</h3>
+      <CodeBlock language="javascript" title="Creating Mock Functions">
+{`// Simple mock function
+const mockCallback = jest.fn();
+mockCallback('hello');
+mockCallback('world');
+
+expect(mockCallback).toHaveBeenCalledTimes(2);
+expect(mockCallback).toHaveBeenCalledWith('hello');
+
+// Mock with return values
+const mockFetch = jest.fn()
+  .mockReturnValueOnce('first call')
+  .mockReturnValueOnce('second call')
+  .mockReturnValue('default');
+
+// Mock with implementation
+const mockCalculate = jest.fn((a, b) => a + b);
+expect(mockCalculate(2, 3)).toBe(5);`}
+      </CodeBlock>
+
+      <h3>jest.mock() — Module Mocking</h3>
+      <CodeBlock language="javascript" title="Mocking Entire Modules">
+{`// Automatically mock all exports
+jest.mock('./userService');
+
+// Mock with custom implementation
+jest.mock('./api', () => ({
+  fetchUser: jest.fn().mockResolvedValue({ id: 1, name: 'Alice' }),
+  fetchOrders: jest.fn().mockResolvedValue([]),
 }));
 
-it('sends confirmation email after successful order', async () => {
-  await service.processOrder({ id: 'O-1', total: 99.99, email: 'alice@example.com' });
+// Usage in tests
+import { fetchUser } from './api';
 
-  expect(emailModule.sendEmail).toHaveBeenCalledWith({
-    to: 'alice@example.com',
-    subject: expect.stringContaining('Order'),
-    body: expect.stringContaining('O-1'),
+test('should display user name', async () => {
+  fetchUser.mockResolvedValue({ id: 1, name: 'Bob' });
+
+  render(<UserProfile userId={1} />);
+
+  await waitFor(() => {
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+  });
+
+  expect(fetchUser).toHaveBeenCalledWith(1);
+});`}
+      </CodeBlock>
+
+      <h3>jest.spyOn() — Spying on Real Methods</h3>
+      <CodeBlock language="javascript" title="Spying Without Replacing">
+{`import * as mathUtils from './mathUtils';
+
+test('should call multiply internally', () => {
+  const spy = jest.spyOn(mathUtils, 'multiply');
+  const result = mathUtils.square(5);
+
+  expect(result).toBe(25);
+  expect(spy).toHaveBeenCalledWith(5, 5);
+  spy.mockRestore();
+});`}
+      </CodeBlock>
+
+      <h3>Mocking Timers</h3>
+      <CodeBlock language="javascript" title="Controlling Time in Tests">
+{`beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
+
+test('should debounce search input', () => {
+  const mockSearch = jest.fn();
+  const debouncedSearch = debounce(mockSearch, 300);
+
+  debouncedSearch('h');
+  debouncedSearch('he');
+  debouncedSearch('hel');
+  debouncedSearch('hello');
+
+  // Nothing called yet
+  expect(mockSearch).not.toHaveBeenCalled();
+
+  // Fast-forward 300ms
+  jest.advanceTimersByTime(300);
+
+  // Only the last call goes through
+  expect(mockSearch).toHaveBeenCalledTimes(1);
+  expect(mockSearch).toHaveBeenCalledWith('hello');
+});`}
+      </CodeBlock>
+
+      <h2>MSW — Mock Service Worker</h2>
+      <p>
+        MSW intercepts HTTP requests at the network level, providing a more realistic
+        mocking approach than replacing fetch or axios.
+      </p>
+
+      <CodeBlock language="javascript" title="MSW Setup for Tests">
+{`import { setupServer } from 'msw/node';
+import { http, HttpResponse } from 'msw';
+
+const server = setupServer(
+  http.get('/api/users/:id', ({ params }) => {
+    return HttpResponse.json({
+      id: params.id,
+      name: 'Alice',
+      email: 'alice@test.com',
+    });
+  }),
+
+  http.post('/api/users', async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json(
+      { id: '99', ...body },
+      { status: 201 }
+    );
+  }),
+
+  http.delete('/api/users/:id', () => {
+    return new HttpResponse(null, { status: 204 });
+  })
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+test('should fetch and display user', async () => {
+  render(<UserProfile userId="1" />);
+
+  await waitFor(() => {
+    expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 });
 
-// ── SPY ON EXISTING MODULE ────────────────────────────────────────
-const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-// ... trigger error condition ...
-expect(spy).toHaveBeenCalledWith(expect.stringContaining('Payment failed'));
-spy.mockRestore(); // restore original console.error`}
+test('should handle server errors', async () => {
+  // Override for a single test
+  server.use(
+    http.get('/api/users/:id', () => {
+      return HttpResponse.json(
+        { message: 'Internal Server Error' },
+        { status: 500 }
+      );
+    })
+  );
+
+  render(<UserProfile userId="1" />);
+
+  await waitFor(() => {
+    expect(screen.getByText(/error/i)).toBeInTheDocument();
+  });
+});`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="The Over-Mocking Trap">
-        <p>
-          Mocking everything makes tests pass even when the code is wrong. Classic mistakes:
-          (1) mocking the class under test — you are now testing the mock, not your code;
-          (2) mocking value objects like strings or simple data classes — just use real ones;
-          (3) verifying internal implementation details — tests break on every refactor.
-          Mock at the boundary: mock external services, databases, email, HTTP calls. Let
-          business logic run with real collaborators or fakes.
-        </p>
+      <InfoBox variant="tip" title="MSW vs jest.mock for API Calls">
+        MSW is generally preferred over mocking fetch/axios directly because it
+        tests the full request/response cycle. Your component&apos;s HTTP client code
+        runs for real — only the network is intercepted. This catches serialization
+        bugs and header issues that module mocking would miss.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What is the difference between verify() and when() in Mockito?"
-        options={[
-          "when() sets up return values before the code runs; verify() asserts interactions happened after the code runs",
-          "verify() is faster than when() at runtime",
-          "when() works only on void methods; verify() works only on methods with return values",
-          "They are interchangeable — use whichever is more readable"
-        ]}
-        correctIndex={0}
-        explanation="when().thenReturn() is test setup — it configures what a mock returns when called with specific arguments. It runs before the code under test. verify() is assertion — it checks after the fact that the mock was called with specific arguments a specific number of times. Confusing the two is a common mistake: you cannot use verify() to set up behavior, and when() does not check whether a method was called."
+      <h2>When NOT to Mock</h2>
+
+      <FlowChart
+        title="Should You Mock It?"
+        chart={"graph TD\n  Q[\"Should I mock this?\"] --> FAST{\"Is it fast?\"}\n  FAST -->|Yes| DET{\"Is it deterministic?\"}\n  FAST -->|No| MOCK[\"Mock it\"]\n  DET -->|Yes| SIDE{\"Any side effects?\"}\n  DET -->|No| MOCK\n  SIDE -->|No| REAL[\"Use the real thing\"]\n  SIDE -->|Yes| MOCK"}
       />
 
+      <InfoBox variant="warning" title="Over-Mocking Is Dangerous">
+        If you mock everything, you&apos;re only testing that your mocks work, not your
+        code. Common signs of over-mocking:
+        <ul>
+          <li>Tests pass but the feature is broken in production</li>
+          <li>Tests break every time you refactor internals</li>
+          <li>Mock setup is longer than the actual test</li>
+          <li>You&apos;re mocking the thing you&apos;re supposed to be testing</li>
+        </ul>
+      </InfoBox>
+
+      <h2>Mockito vs Jest Comparison</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Mockito (Java)</th>
+            <th>Jest (JavaScript)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Create a mock</td>
+            <td><code>mock(UserRepo.class)</code></td>
+            <td><code>jest.fn()</code></td>
+          </tr>
+          <tr>
+            <td>Stub a return value</td>
+            <td><code>when(m.get()).thenReturn(v)</code></td>
+            <td><code>m.mockReturnValue(v)</code></td>
+          </tr>
+          <tr>
+            <td>Verify a call</td>
+            <td><code>verify(m).save(any())</code></td>
+            <td><code>expect(m).toHaveBeenCalled()</code></td>
+          </tr>
+          <tr>
+            <td>Spy on real code</td>
+            <td><code>spy(realObject)</code></td>
+            <td><code>jest.spyOn(obj, &apos;method&apos;)</code></td>
+          </tr>
+          <tr>
+            <td>Mock a module</td>
+            <td>N/A (use DI)</td>
+            <td><code>jest.mock(&apos;./module&apos;)</code></td>
+          </tr>
+          <tr>
+            <td>Argument capture</td>
+            <td><code>ArgumentCaptor</code></td>
+            <td><code>mock.calls[0][0]</code></td>
+          </tr>
+          <tr>
+            <td>Async mocking</td>
+            <td><code>thenReturn(CompletableFuture)</code></td>
+            <td><code>mockResolvedValue()</code></td>
+          </tr>
+        </tbody>
+      </table>
+
       <InteractiveChallenge
-        question="When should you use a Fake instead of a Mockito Mock for a repository dependency?"
+        question={"What is the key difference between a stub and a mock?"}
         options={[
-          "Never — Mockito mocks are always preferable to hand-written fakes",
-          "When multiple tests need to interact through the repository — a fake remembers saved data, a mock does not",
-          "Fakes are only appropriate in integration tests, not unit tests",
-          "When the Mockito version does not support the repository interface"
+          "Stubs are for Java, mocks are for JavaScript",
+          "Stubs provide canned data; mocks verify interactions",
+          "Mocks are simpler than stubs",
+          "There is no difference — they are the same thing"
         ]}
         correctIndex={1}
-        explanation="A Mockito mock is stateless — when(repo.save(user)).thenReturn(user) does not remember that the user was saved. A subsequent findById call would return empty. A fake (in-memory Map implementation) provides real save/find behavior. If your tests involve sequences like 'save, then findAll, then delete', a fake makes them natural and readable. Use Mockito mocks when you want to control exactly what is returned and verify interactions; use fakes when real data flow between methods matters."
+        explanation="Stubs supply predetermined responses (state verification), while mocks set expectations about how the system under test should interact with dependencies (behavior verification). Both are useful in different scenarios."
+        language="java"
       />
+
+      <h2>Key Takeaways</h2>
+      <ul>
+        <li>Understand the five test double types: dummy, stub, spy, mock, fake</li>
+        <li>Mockito handles Java mocking with @Mock, @InjectMocks, when/verify</li>
+        <li>Jest provides jest.fn(), jest.mock(), and jest.spyOn() for JavaScript</li>
+        <li>MSW is the preferred approach for mocking API calls in frontend tests</li>
+        <li>Only mock what you must — fast, deterministic, side-effect-free code should use real implementations</li>
+        <li>Over-mocking leads to tests that pass but features that break</li>
+      </ul>
     </LessonLayout>
   );
 }

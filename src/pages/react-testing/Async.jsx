@@ -1,279 +1,502 @@
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function RTAsync() {
+export default function Async() {
   return (
     <LessonLayout
-      title="Async Testing"
+      title="Testing Async & APIs"
       sectionId="react-testing"
       lessonIndex={3}
       prev={{ path: '/react-testing/hooks', label: 'Testing Custom Hooks' }}
-      next={{ path: '/react-testing/forms', label: 'Testing Forms' }}
+      next={{ path: '/react-testing/forms', label: 'Testing Forms & Routing' }}
     >
-      <h2>Async Testing in React</h2>
+      <h2>Async Testing Fundamentals</h2>
       <p>
-        Many React components fetch data, show loading states, then display results or errors.
-        Testing async behavior requires waiting for DOM updates after promises resolve.
+        Most real components fetch data, wait for timers, or respond to async events.
+        RTL provides <code>findBy</code> queries and <code>waitFor</code> to handle
+        these patterns without flaky timeouts or manual delays.
       </p>
 
-      <h2>waitFor and findBy Queries</h2>
+      <FlowChart
+        title="Async Component Test Flow"
+        chart={"graph TD\n  R[Render component] --> L[Assert loading state]\n  L --> W[await findBy or waitFor]\n  W --> S{Success?}\n  S -->|Yes| D[Assert data rendered]\n  S -->|No| E[Assert error state]"}
+      />
 
-      <CodeBlock language="jsx" title="waitFor vs findBy">
-{`import { render, screen, waitFor } from '@testing-library/react'
+      <CodeBlock language="jsx" title="findBy vs waitFor">
+{`import { render, screen, waitFor } from '@testing-library/react';
+import UserList from './UserList';
 
-// findBy* — async version of getBy* (uses polling + waitFor internally)
-// Best for: asserting that something APPEARS
-const heading = await screen.findByRole('heading', { name: /users/i })
+// findBy — waits for an element to appear (preferred)
+test('shows users after loading', async () => {
+  render(<UserList />);
+  const heading = await screen.findByRole('heading', { name: /users/i });
+  expect(heading).toBeInTheDocument();
+});
 
-// waitFor — poll until assertion stops throwing
-// Best for: asserting state changes, multiple conditions, disappearance
-await waitFor(() => {
-  expect(screen.getByText('Data loaded')).toBeInTheDocument()
-})
-
-// waitFor with multiple assertions (all must pass)
-await waitFor(() => {
-  expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
-  expect(screen.getByRole('list')).toBeInTheDocument()
-})
-
-// waitForElementToBeRemoved — waits for element to disappear
-await waitForElementToBeRemoved(() => screen.queryByText('Loading...'))
-
-// Default timeout is 1000ms, interval is 50ms
-await waitFor(
-  () => expect(screen.getByText('Done')).toBeInTheDocument(),
-  { timeout: 3000, interval: 100 }
-)`}
-      </CodeBlock>
-
-      <h2>Mocking fetch with vi.fn()</h2>
-
-      <CodeBlock language="jsx" title="Mocking global fetch">
-{`// UserList.jsx
-function UserList() {
-  const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    fetch('/api/users')
-      .then(r => r.json())
-      .then(data => { setUsers(data); setLoading(false) })
-      .catch(err => { setError(err.message); setLoading(false) })
-  }, [])
-
-  if (loading) return <p>Loading...</p>
-  if (error) return <p role="alert">Error: {error}</p>
-  return (
-    <ul>
-      {users.map(u => <li key={u.id}>{u.name}</li>)}
-    </ul>
-  )
-}
-
-// UserList.test.jsx
-beforeEach(() => {
-  global.fetch = vi.fn()
-})
-
-afterEach(() => {
-  vi.resetAllMocks()
-})
-
-test('shows loading then users', async () => {
-  global.fetch.mockResolvedValueOnce({
-    json: () => Promise.resolve([
-      { id: 1, name: 'Alice' },
-      { id: 2, name: 'Bob' },
-    ]),
-  })
-
-  render(<UserList />)
-
-  // Loading state is immediate
-  expect(screen.getByText('Loading...')).toBeInTheDocument()
-
-  // Wait for data to load
-  await waitForElementToBeRemoved(() => screen.queryByText('Loading...'))
-
-  expect(screen.getAllByRole('listitem')).toHaveLength(2)
-  expect(screen.getByText('Alice')).toBeInTheDocument()
-})
-
-test('shows error on fetch failure', async () => {
-  global.fetch.mockRejectedValueOnce(new Error('Network error'))
-
-  render(<UserList />)
-
+// waitFor — waits for an assertion to pass (when findBy isn't enough)
+test('shows correct user count', async () => {
+  render(<UserList />);
   await waitFor(() => {
-    expect(screen.getByRole('alert')).toHaveTextContent('Network error')
-  })
-})`}
+    expect(screen.getAllByRole('listitem')).toHaveLength(5);
+  });
+});`}
       </CodeBlock>
 
-      <h2>Mock Service Worker (MSW)</h2>
+      <InfoBox variant="tip" title="Prefer findBy Over waitFor">
+        <code>findBy</code> is syntactic sugar for <code>waitFor + getBy</code>.
+        Use it when waiting for a single element. Use <code>waitFor</code> when
+        you need to assert on multiple conditions or non-element checks.
+      </InfoBox>
+
+      <h2>Testing Loading → Success → Error</h2>
+
+      <CodeBlock language="jsx" title="Full Async Lifecycle Test">
+{`import { render, screen } from '@testing-library/react';
+import UserProfile from './UserProfile';
+
+// Mock the API module
+jest.mock('./api', () => ({
+  fetchUser: jest.fn(),
+}));
+
+import { fetchUser } from './api';
+
+describe('UserProfile async states', () => {
+  test('shows loading, then user data on success', async () => {
+    fetchUser.mockResolvedValueOnce({ name: 'Alice', email: 'alice@test.com' });
+
+    render(<UserProfile userId={1} />);
+
+    // Loading state
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+
+    // Wait for data
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
+    expect(screen.getByText('alice@test.com')).toBeInTheDocument();
+
+    // Loading gone
+    expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+  });
+
+  test('shows error message on failure', async () => {
+    fetchUser.mockRejectedValueOnce(new Error('Network error'));
+
+    render(<UserProfile userId={1} />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Network error');
+    expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+  });
+});`}
+      </CodeBlock>
+
+      <h2>MSW (Mock Service Worker)</h2>
       <p>
-        MSW intercepts network requests at the service worker level, letting you test with realistic HTTP
-        behavior without touching the production fetch code.
+        MSW intercepts network requests at the service worker level. Your
+        component code stays untouched — no mocking fetch or axios. This is the
+        gold standard for testing API interactions.
       </p>
 
-      <CodeBlock language="bash" title="MSW setup">
-{`npm install --save-dev msw
-
-# For Node.js (Vitest / Jest):
-# No service worker needed — uses Node.js http interceptor`}
-      </CodeBlock>
-
-      <CodeBlock language="jsx" title="MSW handlers and server">
-{`// src/mocks/handlers.js
-import { http, HttpResponse } from 'msw'
+      <CodeBlock language="jsx" title="MSW Setup">
+{`// mocks/handlers.js
+import { http, HttpResponse } from 'msw';
 
 export const handlers = [
   http.get('/api/users', () => {
     return HttpResponse.json([
       { id: 1, name: 'Alice' },
       { id: 2, name: 'Bob' },
-    ])
-  }),
-
-  http.post('/api/users', async ({ request }) => {
-    const body = await request.json()
-    return HttpResponse.json({ id: 3, ...body }, { status: 201 })
+    ]);
   }),
 
   http.get('/api/users/:id', ({ params }) => {
-    if (params.id === '999') {
-      return HttpResponse.json({ message: 'Not found' }, { status: 404 })
-    }
-    return HttpResponse.json({ id: params.id, name: 'User ' + params.id })
+    const { id } = params;
+    return HttpResponse.json({ id: Number(id), name: 'Alice' });
   }),
-]
 
-// src/mocks/server.js
-import { setupServer } from 'msw/node'
-import { handlers } from './handlers'
+  http.post('/api/users', async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({ id: 3, ...body }, { status: 201 });
+  }),
 
-export const server = setupServer(...handlers)
-
-// src/test/setup.ts
-import { server } from '../mocks/server'
-
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
-afterEach(() => server.resetHandlers())   // reset overrides between tests
-afterAll(() => server.close())`}
+  http.delete('/api/users/:id', () => {
+    return new HttpResponse(null, { status: 204 });
+  }),
+];`}
       </CodeBlock>
 
-      <CodeBlock language="jsx" title="Using MSW in tests">
-{`import { server } from '../mocks/server'
-import { http, HttpResponse } from 'msw'
+      <CodeBlock language="jsx" title="MSW Server Configuration">
+{`// mocks/server.js
+import { setupServer } from 'msw/node';
+import { handlers } from './handlers';
 
-test('renders user list', async () => {
-  render(<UserList />)
+export const server = setupServer(...handlers);
 
-  await screen.findByText('Alice')
-  expect(screen.getByText('Bob')).toBeInTheDocument()
-})
+// setupTests.js
+import { server } from './mocks/server';
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="onUnhandledRequest: 'error'">
+        Setting this to <code>'error'</code> makes your test fail if a request
+        goes out that no handler matches. This catches missing mocks early and
+        prevents tests from accidentally hitting real APIs.
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Test with MSW">
+{`import { render, screen } from '@testing-library/react';
+import { server } from '../mocks/server';
+import { http, HttpResponse } from 'msw';
+import UserList from './UserList';
+
+test('renders users from API', async () => {
+  render(<UserList />);
+
+  expect(await screen.findByText('Alice')).toBeInTheDocument();
+  expect(screen.getByText('Bob')).toBeInTheDocument();
+});
 
 test('handles server error', async () => {
-  // Override handler for this test only
+  // Override handler for this single test
   server.use(
     http.get('/api/users', () => {
       return HttpResponse.json(
-        { message: 'Internal server error' },
+        { message: 'Internal Server Error' },
         { status: 500 }
-      )
+      );
     })
-  )
+  );
 
-  render(<UserList />)
+  render(<UserList />);
 
-  await screen.findByRole('alert')
-  expect(screen.getByRole('alert')).toHaveTextContent(/error/i)
-})
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    /something went wrong/i
+  );
+});`}
+      </CodeBlock>
 
-test('handles network error', async () => {
+      <h2>Mocking fetch Directly</h2>
+      <p>
+        When MSW is overkill (simple unit tests), you can mock fetch or axios directly.
+      </p>
+
+      <CodeBlock language="jsx" title="Mocking Global fetch">
+{`beforeEach(() => {
+  global.fetch = jest.fn();
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+test('fetches and displays data', async () => {
+  global.fetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => [{ id: 1, name: 'Alice' }],
+  });
+
+  render(<UserList />);
+  expect(await screen.findByText('Alice')).toBeInTheDocument();
+  expect(global.fetch).toHaveBeenCalledWith('/api/users');
+});
+
+test('handles fetch failure', async () => {
+  global.fetch.mockResolvedValueOnce({ ok: false, status: 500 });
+
+  render(<UserList />);
+  expect(await screen.findByRole('alert')).toBeInTheDocument();
+});`}
+      </CodeBlock>
+
+      <h2>Testing Components That Fetch on Mount</h2>
+
+      <CodeBlock language="jsx" title="Data Table Fetching Pattern">
+{`import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import DataTable from './DataTable';
+
+// Using MSW handlers already defined for /api/products
+
+describe('DataTable', () => {
+  test('shows loading skeleton initially', () => {
+    render(<DataTable endpoint="/api/products" />);
+    expect(screen.getByTestId('table-skeleton')).toBeInTheDocument();
+  });
+
+  test('renders table rows after fetch', async () => {
+    render(<DataTable endpoint="/api/products" />);
+
+    const rows = await screen.findAllByRole('row');
+    // +1 for header row
+    expect(rows).toHaveLength(4); // 3 products + header
+  });
+
+  test('sorts by column when header is clicked', async () => {
+    const user = userEvent.setup();
+    render(<DataTable endpoint="/api/products" />);
+
+    await screen.findByText('Widget A'); // Wait for data
+
+    await user.click(screen.getByRole('columnheader', { name: /price/i }));
+
+    const cells = screen.getAllByRole('cell');
+    const prices = cells
+      .filter((_, i) => i % 3 === 1) // price is 2nd column
+      .map(c => c.textContent);
+
+    // Verify sorted ascending
+    expect(prices).toEqual([...prices].sort());
+  });
+});`}
+      </CodeBlock>
+
+      <h2>Testing Pagination</h2>
+
+      <CodeBlock language="jsx" title="Paginated Data Fetching">
+{`import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { server } from '../mocks/server';
+import { http, HttpResponse } from 'msw';
+import PaginatedList from './PaginatedList';
+
+const page1 = { items: [{ id: 1, name: 'Item 1' }], totalPages: 3, page: 1 };
+const page2 = { items: [{ id: 2, name: 'Item 2' }], totalPages: 3, page: 2 };
+
+beforeEach(() => {
   server.use(
-    http.get('/api/users', () => {
-      return HttpResponse.error()  // simulates network failure
+    http.get('/api/items', ({ request }) => {
+      const url = new URL(request.url);
+      const page = url.searchParams.get('page');
+      return HttpResponse.json(page === '2' ? page2 : page1);
     })
-  )
+  );
+});
 
-  render(<UserList />)
-  await screen.findByRole('alert')
-})`}
+test('navigates between pages', async () => {
+  const user = userEvent.setup();
+  render(<PaginatedList />);
+
+  // Page 1
+  expect(await screen.findByText('Item 1')).toBeInTheDocument();
+  expect(screen.getByText('Page 1 of 3')).toBeInTheDocument();
+
+  // Go to page 2
+  await user.click(screen.getByRole('button', { name: /next/i }));
+
+  expect(await screen.findByText('Item 2')).toBeInTheDocument();
+  expect(screen.queryByText('Item 1')).not.toBeInTheDocument();
+});`}
       </CodeBlock>
 
-      <h2>Testing Loading and Success States</h2>
+      <h2>Testing Error Retry</h2>
 
-      <CodeBlock language="jsx" title="Three-state component test">
-{`// Profile.jsx
-function Profile({ userId }) {
-  const [user, setUser] = useState(null)
-  const [status, setStatus] = useState('loading')
+      <CodeBlock language="jsx" title="Retry After Failure">
+{`import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { server } from '../mocks/server';
+import { http, HttpResponse } from 'msw';
+import UserProfile from './UserProfile';
 
-  useEffect(() => {
-    fetch(\`/api/users/\${userId}\`)
-      .then(r => {
-        if (!r.ok) throw new Error('Not found')
-        return r.json()
-      })
-      .then(data => { setUser(data); setStatus('success') })
-      .catch(() => setStatus('error'))
-  }, [userId])
+test('retries fetch when retry button is clicked', async () => {
+  const user = userEvent.setup();
 
-  if (status === 'loading') return <div aria-busy="true">Loading...</div>
-  if (status === 'error') return <div role="alert">Failed to load profile</div>
-  return <div><h1>{user.name}</h1><p>{user.email}</p></div>
-}
+  // First request fails
+  server.use(
+    http.get('/api/users/1', () => {
+      return HttpResponse.json({ error: 'timeout' }, { status: 504 });
+    })
+  );
 
-// Profile.test.jsx
-test('loading → success flow', async () => {
-  render(<Profile userId={1} />)
+  render(<UserProfile userId={1} />);
+  expect(await screen.findByRole('alert')).toBeInTheDocument();
 
-  // Loading state
-  expect(screen.getByText('Loading...')).toBeInTheDocument()
-  expect(screen.getByRole('generic', { busy: true })).toBeInTheDocument()
+  // Override to succeed on retry
+  server.use(
+    http.get('/api/users/1', () => {
+      return HttpResponse.json({ id: 1, name: 'Alice' });
+    })
+  );
 
-  // Success state (MSW returns data)
-  await screen.findByRole('heading', { name: 'Alice' })
-  expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
-})`}
+  await user.click(screen.getByRole('button', { name: /retry/i }));
+
+  expect(await screen.findByText('Alice')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Prefer MSW Over vi.fn() for fetch">
-        <p>
-          vi.fn() mocking of fetch is fragile — your test couples to the exact fetch call signature.
-          MSW mocks at the network level, letting your component use fetch, axios, or any HTTP library
-          while keeping tests realistic and decoupled from implementation.
-        </p>
+      <h2>Jest Fake Timers for Debounce</h2>
+
+      <CodeBlock language="jsx" title="Testing Debounced Search Input">
+{`import { render, screen, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import SearchInput from './SearchInput';
+
+describe('SearchInput with debounce', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  test('debounces search callback', async () => {
+    const onSearch = jest.fn();
+    // advanceTimers tells user-event to advance fake timers
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+
+    render(<SearchInput onSearch={onSearch} debounceMs={300} />);
+
+    await user.type(screen.getByRole('searchbox'), 'react');
+
+    // Not called yet — still within debounce window
+    expect(onSearch).not.toHaveBeenCalled();
+
+    // Advance past debounce
+    act(() => jest.advanceTimersByTime(300));
+
+    expect(onSearch).toHaveBeenCalledTimes(1);
+    expect(onSearch).toHaveBeenCalledWith('react');
+  });
+
+  test('resets debounce on continued typing', async () => {
+    const onSearch = jest.fn();
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+
+    render(<SearchInput onSearch={onSearch} debounceMs={300} />);
+
+    await user.type(screen.getByRole('searchbox'), 'rea');
+    act(() => jest.advanceTimersByTime(200));
+    await user.type(screen.getByRole('searchbox'), 'ct');
+    act(() => jest.advanceTimersByTime(300));
+
+    expect(onSearch).toHaveBeenCalledTimes(1);
+    expect(onSearch).toHaveBeenCalledWith('react');
+  });
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="user-event and Fake Timers">
+        When combining <code>userEvent.setup()</code> with <code>jest.useFakeTimers()</code>,
+        pass <code>{"{ advanceTimers: jest.advanceTimersByTime }"}</code> to the setup options.
+        Otherwise user-event's internal delays will hang because the fake timer
+        never advances.
       </InfoBox>
 
       <InteractiveChallenge
-        question="What is the difference between findByText() and waitFor(() => getByText())?"
+        question={"What's the recommended way to mock API calls in React Testing Library tests?"}
         options={[
-          "findByText is for synchronous elements, waitFor is for async",
-          "They are equivalent — findByText is syntactic sugar over waitFor + getByText",
-          "findByText waits forever, waitFor times out after 1 second",
-          "waitFor can only be used with queryBy queries"
+          "jest.mock() the fetch function in every test",
+          "Use MSW to intercept requests at the network level",
+          "Mock the component's props to skip the fetch entirely",
+          "Use jest.spyOn(window, 'fetch')"
         ]}
         correctIndex={1}
-        explanation="findByText('...') is exactly equivalent to waitFor(() => getByText('...')). findBy* variants are syntactic sugar that combine waiting with querying. Use findBy* for simpler cases (waiting for a single element to appear) and waitFor() for complex assertions involving multiple elements or conditions."
+        explanation={"MSW intercepts at the network layer, keeping your component code untouched. It tests the real fetch/axios calls your component makes, providing the highest confidence that your integration works correctly."}
+        language="jsx"
       />
 
-      <InteractiveChallenge
-        question="What does server.resetHandlers() do in an MSW test suite?"
-        options={[
-          "Shuts down the MSW server between tests",
-          "Removes all handlers including the base handlers",
-          "Removes only the handlers added with server.use() in individual tests",
-          "Resets all request counts to zero"
-        ]}
-        correctIndex={2}
-        explanation="server.resetHandlers() removes only the override handlers added with server.use() during a test — it does NOT affect the base handlers from setupServer(...handlers). This is typically called in afterEach() to restore default behavior between tests. To remove all handlers including base ones, use server.close() or server.restoreHandlers()."
-      />
+      <h2>MSW Handler Organization</h2>
+
+      <CodeBlock language="jsx" title="Organizing Handlers by Feature">
+{`// mocks/handlers/users.js
+import { http, HttpResponse } from 'msw';
+
+export const userHandlers = [
+  http.get('/api/users', () =>
+    HttpResponse.json([{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }])
+  ),
+  http.post('/api/users', async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({ id: 3, ...body }, { status: 201 });
+  }),
+];
+
+// mocks/handlers/products.js
+import { http, HttpResponse } from 'msw';
+
+export const productHandlers = [
+  http.get('/api/products', () =>
+    HttpResponse.json([{ id: 1, name: 'Widget', price: 9.99 }])
+  ),
+];
+
+// mocks/handlers/index.js
+import { userHandlers } from './users';
+import { productHandlers } from './products';
+
+export const handlers = [...userHandlers, ...productHandlers];
+
+// mocks/server.js
+import { setupServer } from 'msw/node';
+import { handlers } from './handlers';
+export const server = setupServer(...handlers);`}
+      </CodeBlock>
+
+      <h2>Testing Optimistic Updates</h2>
+
+      <CodeBlock language="jsx" title="Optimistic UI Test">
+{`import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { server } from '../mocks/server';
+import { http, HttpResponse } from 'msw';
+import TodoApp from './TodoApp';
+
+test('optimistically adds todo then confirms', async () => {
+  const user = userEvent.setup();
+  server.use(
+    http.post('/api/todos', async ({ request }) => {
+      const body = await request.json();
+      // Simulate slow server
+      await new Promise(r => setTimeout(r, 200));
+      return HttpResponse.json({ id: 99, ...body });
+    })
+  );
+
+  render(<TodoApp />);
+  await screen.findByRole('list'); // Wait for initial load
+
+  await user.type(screen.getByLabelText(/new todo/i), 'Test optimistic');
+  await user.click(screen.getByRole('button', { name: /add/i }));
+
+  // Immediately visible (optimistic)
+  expect(screen.getByText('Test optimistic')).toBeInTheDocument();
+
+  // After server confirms, still there and no error
+  await waitFor(() => {
+    expect(screen.queryByText(/saving/i)).not.toBeInTheDocument();
+  });
+  expect(screen.getByText('Test optimistic')).toBeInTheDocument();
+});
+
+test('reverts optimistic update on server error', async () => {
+  const user = userEvent.setup();
+  server.use(
+    http.post('/api/todos', () => {
+      return HttpResponse.json({ error: 'fail' }, { status: 500 });
+    })
+  );
+
+  render(<TodoApp />);
+  await screen.findByRole('list');
+
+  await user.type(screen.getByLabelText(/new todo/i), 'Will fail');
+  await user.click(screen.getByRole('button', { name: /add/i }));
+
+  // Reverted after server error
+  await waitFor(() => {
+    expect(screen.queryByText('Will fail')).not.toBeInTheDocument();
+  });
+  expect(screen.getByRole('alert')).toHaveTextContent(/failed/i);
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="Async Test Timeout">
+        By default, <code>findBy</code> and <code>waitFor</code> time out after
+        1000ms. Override with <code>{"{ timeout: 3000 }"}</code> if your test needs
+        more time. But if you regularly need long timeouts, your mock setup might be
+        the problem.
+      </InfoBox>
     </LessonLayout>
   );
 }

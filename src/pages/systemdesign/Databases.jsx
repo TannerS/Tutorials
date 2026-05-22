@@ -4,390 +4,777 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function SysDatabases() {
+export default function Databases() {
   return (
     <LessonLayout
-      title="Databases"
+      title="Database Design &amp; Scaling"
       sectionId="systemdesign"
       lessonIndex={3}
-      prev={{ path: "/systemdesign/caching", label: "Caching" }}
-      next={{ path: "/systemdesign/distributed", label: "Distributed Systems" }}
+      prev={{ path: '/systemdesign/caching', label: 'Caching Strategies' }}
+      next={{ path: '/systemdesign/distributed', label: 'Distributed Systems' }}
     >
+      {/* ===== Section 1: SQL vs NoSQL ===== */}
+      <h2>SQL vs NoSQL</h2>
       <p>
-        Choosing the right database is one of the most consequential decisions in system design.
-        The wrong choice can cripple performance at scale or make your data model unworkable.
-        This lesson covers SQL vs NoSQL trade-offs, PostgreSQL internals, sharding, replication,
-        and the principle of <strong>polyglot persistence</strong> — using multiple database types
-        together, each for what it does best.
+        One of the most fundamental decisions in system design is choosing between SQL
+        and NoSQL databases. Each paradigm has distinct strengths, and the right choice
+        depends on your data model, consistency requirements, and scaling needs.
       </p>
 
-      <FlowChart
-        title="Database Selection Decision Tree"
-        chart={"graph TD\n  A[What are your access patterns?] --> B{Complex JOINs or ACID?}\n  B -- Yes --> C[Relational: PostgreSQL / MySQL]\n  B -- No --> D{Document or flexible schema?}\n  D -- Yes --> E[Document: MongoDB / Firestore]\n  D -- No --> F{Simple key-value lookups?}\n  F -- Yes --> G[Key-Value: Redis / DynamoDB]\n  F -- No --> H{Time-series metrics?}\n  H -- Yes --> I[TimescaleDB / InfluxDB]\n  H -- No --> J{Wide-column analytics?}\n  J -- Yes --> K[Cassandra / HBase]\n  J -- No --> L[Graph: Neo4j / Amazon Neptune]"}
-      />
+      <h3>Comparison Table</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>SQL (Relational)</th>
+            <th>NoSQL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Data Model</td>
+            <td>Tables with rows &amp; columns</td>
+            <td>Document, key-value, column-family, or graph</td>
+          </tr>
+          <tr>
+            <td>Schema</td>
+            <td>Fixed schema, enforced by DB</td>
+            <td>Flexible / schema-less</td>
+          </tr>
+          <tr>
+            <td>Scaling</td>
+            <td>Primarily vertical (scale up)</td>
+            <td>Primarily horizontal (scale out)</td>
+          </tr>
+          <tr>
+            <td>ACID</td>
+            <td>Full ACID support</td>
+            <td>Varies — often eventual consistency</td>
+          </tr>
+          <tr>
+            <td>Query Language</td>
+            <td>SQL (standardized)</td>
+            <td>Database-specific APIs or query languages</td>
+          </tr>
+          <tr>
+            <td>Joins</td>
+            <td>Native multi-table joins</td>
+            <td>Generally no joins — denormalized data</td>
+          </tr>
+          <tr>
+            <td>Examples</td>
+            <td>PostgreSQL, MySQL, Oracle, SQL Server</td>
+            <td>MongoDB, Redis, Cassandra, Neo4j</td>
+          </tr>
+        </tbody>
+      </table>
 
-      <h2>SQL vs NoSQL — The Real Trade-Offs</h2>
+      <h3>When to Use SQL</h3>
+      <ul>
+        <li>Complex queries with joins across multiple entities</li>
+        <li>Strong consistency and transactional guarantees (banking, e-commerce orders)</li>
+        <li>Well-defined, stable schema that rarely changes</li>
+        <li>Relational data with many-to-many relationships</li>
+        <li>Regulatory requirements demanding ACID compliance</li>
+      </ul>
+
+      <h3>When to Use NoSQL</h3>
+      <ul>
+        <li>Rapidly evolving schema or semi-structured data</li>
+        <li>Massive write throughput requirements</li>
+        <li>Horizontal scaling across many nodes</li>
+        <li>Low-latency reads on simple key-based lookups</li>
+        <li>Hierarchical or nested data that maps poorly to tables</li>
+      </ul>
+
+      <h3>Types of NoSQL Databases</h3>
       <p>
-        The SQL vs NoSQL debate is not about one being better. It is about matching the tool to
-        the access patterns, consistency requirements, and scale of your system.
+        NoSQL is not a single technology — it is a family of database paradigms, each
+        optimized for different access patterns:
+      </p>
+      <ul>
+        <li>
+          <strong>Document Stores (MongoDB, CouchDB):</strong> Store data as JSON-like
+          documents. Great for content management, catalogs, and user profiles where
+          each record can have a different structure.
+        </li>
+        <li>
+          <strong>Key-Value Stores (Redis, DynamoDB):</strong> Simple key-to-value
+          mappings with extremely fast reads and writes. Ideal for caching, session
+          storage, and real-time leaderboards.
+        </li>
+        <li>
+          <strong>Column-Family Stores (Cassandra, HBase):</strong> Organize data by
+          columns rather than rows. Excellent for time-series data, analytics, and
+          write-heavy workloads at massive scale.
+        </li>
+        <li>
+          <strong>Graph Databases (Neo4j, Amazon Neptune):</strong> Model data as
+          nodes and edges. Perfect for social networks, recommendation engines, and
+          fraud detection where relationships are the primary query target.
+        </li>
+      </ul>
+
+      <InfoBox type="tip" title="Choosing the Right Database">
+        In system design interviews, don&apos;t default to one database type. Start by
+        understanding the data model, read/write ratio, consistency requirements, and
+        scale expectations. Then justify your choice. Using multiple databases in a
+        single system (polyglot persistence) is common and often the correct answer.
+      </InfoBox>
+
+      {/* ===== Section 2: ACID Properties ===== */}
+      <h2>ACID Properties</h2>
+      <p>
+        ACID is a set of properties that guarantee database transactions are processed
+        reliably. Understanding ACID is essential for designing systems where data
+        integrity is non-negotiable.
       </p>
 
-      <InfoBox variant="note" title="When to Choose SQL (PostgreSQL / MySQL)">
-        <ul>
-          <li><strong>Complex relationships:</strong> Data has many-to-many relationships requiring JOINs (e-commerce, ERP, finance).</li>
-          <li><strong>ACID transactions:</strong> You need guaranteed atomicity across multiple tables (payments, inventory updates).</li>
-          <li><strong>Ad-hoc queries:</strong> Analysts need to run arbitrary SQL queries you did not anticipate at design time.</li>
-          <li><strong>Strong consistency:</strong> Every read must see the latest committed write.</li>
-          <li><strong>Mature tooling:</strong> You need migrations, ORMs, reporting tools, backups — the ecosystem is enormous.</li>
-        </ul>
-      </InfoBox>
-
-      <InfoBox variant="note" title="When to Choose NoSQL">
-        <ul>
-          <li><strong>Massive write throughput:</strong> Cassandra handles millions of writes/second across a cluster with no single-master bottleneck.</li>
-          <li><strong>Flexible / evolving schema:</strong> Each document can have different fields (MongoDB, Firestore).</li>
-          <li><strong>Global distribution:</strong> DynamoDB and Cosmos DB offer multi-region active-active writes.</li>
-          <li><strong>Simple access patterns:</strong> Always query by primary key or a known index — no ad-hoc queries.</li>
-          <li><strong>Massive datasets:</strong> NoSQL stores scale horizontally by design; relational sharding is complex.</li>
-        </ul>
-      </InfoBox>
-
-      <h2>PostgreSQL Internals — What Every Engineer Should Know</h2>
-
-      <CodeBlock language="sql" title="MVCC — Multi-Version Concurrency Control">
-{`-- PostgreSQL never overwrites rows in place.
--- Instead, it writes a new version of the row (tuple) with updated xmin/xmax
--- transaction IDs. Old versions are kept until VACUUM removes them.
--- This means: readers never block writers, writers never block readers.
-
--- Each row has hidden system columns:
--- xmin: transaction ID that created this row version
--- xmax: transaction ID that deleted/updated this row version (0 if current)
--- ctid:  physical location (page, offset) of the row
-
-SELECT xmin, xmax, ctid, * FROM orders WHERE id = 42;
--- xmin=1500  xmax=0  ctid=(3,7)  id=42 status='pending'
-
--- After an UPDATE:
-UPDATE orders SET status = 'shipped' WHERE id = 42;
--- Old row: xmin=1500 xmax=1750 ctid=(3,7)   -- marked deleted by txn 1750
--- New row: xmin=1750 xmax=0    ctid=(3,8)   -- new version created by txn 1750
-
--- VACUUM reclaims dead tuples (old row versions no longer visible to any txn)
-VACUUM orders;            -- reclaim space, but doesn't shrink file
-VACUUM FULL orders;       -- shrink file (takes exclusive lock — use with caution)
-AUTOVACUUM runs automatically, but you may need to tune it for write-heavy tables.
-
--- ── WAL — Write-Ahead Log ───────────────────────────────────────
--- All changes are written to WAL (sequential log) BEFORE the data pages.
--- On crash, PostgreSQL replays WAL to recover to a consistent state.
--- WAL is also used for streaming replication (standby replicas replay WAL).
-
--- WAL configuration (postgresql.conf):
--- wal_level = replica          -- enables streaming replication
--- max_wal_senders = 10         -- max concurrent replication connections
--- synchronous_commit = on      -- wait for WAL to be flushed before returning
---   (set to 'off' for ~3x write throughput at cost of up to 600ms of data loss)
-
--- ── TRANSACTION ISOLATION LEVELS ────────────────────────────────
-BEGIN ISOLATION LEVEL READ COMMITTED;     -- default; sees committed reads
-BEGIN ISOLATION LEVEL REPEATABLE READ;    -- snapshot at txn start; no phantom reads
-BEGIN ISOLATION LEVEL SERIALIZABLE;       -- full serializability; max protection
-
--- Check for lock waits
-SELECT pid, wait_event_type, wait_event, query
-FROM pg_stat_activity
-WHERE wait_event_type = 'Lock';`}
-      </CodeBlock>
-
-      <CodeBlock language="sql" title="Indexing Strategies — Getting Performance Right">
-{`-- ── B-TREE INDEX (default) ───────────────────────────────────────
--- Good for: equality (=), range (<, >, BETWEEN), ORDER BY, LIKE 'foo%'
-CREATE INDEX CONCURRENTLY idx_orders_customer_created
-  ON orders(customer_id, created_at DESC);
--- CONCURRENTLY = build without taking exclusive lock (safe in production)
--- Composite index rule: put equality columns first, range/sort column last
-
--- ── PARTIAL INDEX ────────────────────────────────────────────────
--- Indexes only rows matching a WHERE clause — smaller and faster
-CREATE INDEX idx_orders_pending ON orders(created_at)
-  WHERE status = 'pending';
--- Index is tiny: only unprocessed orders; perfect for "pending orders" queries
-
--- ── GIN INDEX (Generalized Inverted Index) ────────────────────────
--- Good for: full-text search, JSONB fields, arrays
-CREATE INDEX idx_articles_search ON articles USING GIN(to_tsvector('english', body));
--- Query using index:
-SELECT * FROM articles
-WHERE to_tsvector('english', body) @@ plainto_tsquery('english', 'redis caching');
-
-CREATE INDEX idx_products_attributes ON products USING GIN(attributes);
--- Query JSONB field (uses GIN index):
-SELECT * FROM products WHERE attributes @> '{"color": "red", "size": "L"}';
-
--- ── BRIN INDEX (Block Range Index) ───────────────────────────────
--- Very small index for naturally-ordered data (timestamps, sequential IDs)
--- Each entry covers a range of data blocks (not individual rows)
-CREATE INDEX idx_events_created_brin ON events USING BRIN(created_at);
--- Orders of magnitude smaller than B-tree; good for append-only time-series tables
-
--- ── EXPLAIN ANALYZE — find slow queries ─────────────────────────
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
-SELECT o.*, c.email
-FROM orders o
-JOIN customers c ON c.id = o.customer_id
-WHERE o.status = 'pending'
-  AND o.created_at > NOW() - INTERVAL '7 days'
-ORDER BY o.created_at DESC
-LIMIT 50;
--- Look for: "Seq Scan" on large tables (needs index), high cost nodes,
--- "rows=10000 actual rows=1" (bad estimate → stale statistics → run ANALYZE)`}
-      </CodeBlock>
-
-      <h2>Sharding Strategies</h2>
+      <h3>Atomicity</h3>
       <p>
-        Sharding (horizontal partitioning) splits a single large dataset across multiple database
-        servers. Each server owns a subset of the data. This is the primary way to scale writes
-        beyond what a single database server can handle.
+        A transaction is treated as a single, indivisible unit. Either all operations
+        within the transaction succeed, or none of them do. If any part fails, the
+        entire transaction is rolled back to its previous state. Think of transferring
+        money between accounts — you never want to debit one account without crediting
+        the other.
       </p>
 
-      <CodeBlock language="python" title="Sharding Strategies — Range, Hash, Directory">
-{`# ── RANGE SHARDING ───────────────────────────────────────────────
-# Split by value range of the shard key.
-# Pros: Simple; range queries stay on one shard; easy to add shards.
-# Cons: Hot spots if data isn't uniformly distributed (e.g., recent IDs get all writes).
+      <h3>Consistency</h3>
+      <p>
+        A transaction brings the database from one valid state to another valid state.
+        All data integrity constraints, foreign keys, and business rules are satisfied
+        before and after the transaction. The database never enters a state that violates
+        its own rules.
+      </p>
 
-def get_shard_range(user_id: int) -> str:
-    if user_id < 1_000_000:
-        return "db-shard-0"  # users 0–999,999
-    elif user_id < 2_000_000:
-        return "db-shard-1"  # users 1M–1.99M
-    else:
-        return "db-shard-2"  # users 2M+
+      <h3>Isolation</h3>
+      <p>
+        Concurrent transactions execute as if they were running sequentially. One
+        transaction cannot see the intermediate results of another. Isolation levels
+        (Read Uncommitted, Read Committed, Repeatable Read, Serializable) let you
+        trade strictness for performance.
+      </p>
 
-# ── HASH SHARDING ────────────────────────────────────────────────
-# Hash the shard key modulo the number of shards.
-# Pros: Even distribution; no hot spots (usually).
-# Cons: Range queries span ALL shards; resharding requires moving ~all data.
+      <h3>Durability</h3>
+      <p>
+        Once a transaction is committed, the changes are permanent — even if the
+        system crashes immediately afterward. This is typically achieved through
+        write-ahead logging (WAL) and flushing data to non-volatile storage.
+      </p>
 
-import hashlib
-
-def get_shard_hash(user_id: int, num_shards: int = 4) -> str:
-    h = int(hashlib.md5(str(user_id).encode()).hexdigest(), 16)
-    return f"db-shard-{h % num_shards}"
-
-# ── CONSISTENT HASHING ───────────────────────────────────────────
-# Maps shard keys to positions on a "ring". Adding/removing a shard
-# only moves ~1/N of keys (vs all keys in plain hash sharding).
-# Used by: Cassandra, DynamoDB, Memcached, Riak.
-
-# ── DIRECTORY SHARDING ───────────────────────────────────────────
-# A lookup table maps each key to its shard.
-# Pros: Fully flexible; easy to rebalance; no algorithmic constraint.
-# Cons: Lookup table becomes a bottleneck and single point of failure.
-
-SHARD_MAP = {
-    "user:1": "db-shard-0",
-    "user:2": "db-shard-1",
-    # ...
-}
-
-def get_shard_directory(user_id: int) -> str:
-    shard = SHARD_MAP.get(f"user:{user_id}")
-    if not shard:
-        shard = assign_to_least_loaded_shard(user_id)
-        SHARD_MAP[f"user:{user_id}"] = shard  # cache the assignment
-    return shard
-
-# ── CROSS-SHARD CHALLENGES ───────────────────────────────────────
-# 1. JOINs across shards: must be done in application code (scatter-gather)
-# 2. Distributed transactions: 2PC or saga pattern required
-# 3. Auto-increment IDs: use snowflake IDs (timestamp + machineId + sequence)
-#    to generate globally unique IDs without coordination
-
-def snowflake_id(machine_id: int) -> int:
-    import time
-    epoch = 1420070400000  # custom epoch (Jan 1 2015)
-    ts = int(time.time() * 1000) - epoch
-    seq = next_sequence()  # per-machine sequence number, 12 bits
-    return (ts << 22) | (machine_id << 12) | seq`}
-      </CodeBlock>
-
-      <h2>Replication Types</h2>
-
-      <FlowChart
-        title="Replication Topology"
-        chart={"graph TD\n  A[Primary DB Write] --> B[Sync Replica 1]\n  A --> C[Async Replica 2]\n  A --> D[Async Replica 3 Read]\n  B -- failover --> E[New Primary]\n  D --> F[Read Traffic]"}
-      />
-
-      <CodeBlock language="yaml" title="Replication Strategies — Trade-Offs">
-{`# ── SINGLE-LEADER REPLICATION ────────────────────────────────────
-# One primary accepts writes; replicas follow via WAL/binlog streaming.
-# PostgreSQL streaming replication example (postgresql.conf on primary):
-primary:
-  wal_level: replica
-  max_wal_senders: 5
-  synchronous_standby_names: ''  # '' = async; 'replica-1' = sync
-
-# Async replication: primary commits without waiting for replica ACK.
-#   Pros: Low write latency. Cons: Up to N seconds of data loss on primary failure.
-# Sync replication: primary waits for at least one replica to confirm WAL write.
-#   Pros: Zero data loss (RPO=0). Cons: Write latency includes network RTT to replica.
-
-replica:
-  primary_conninfo: 'host=primary-db port=5432 user=repl password=secret'
-  recovery_target_timeline: latest
-  hot_standby: on     # allows read queries on replica while replicating
-
-# ── MULTI-LEADER REPLICATION ─────────────────────────────────────
-# Multiple nodes accept writes. Used for multi-region active-active setups.
-# Challenge: Write conflicts when two leaders update the same row.
-# Conflict resolution strategies:
-#   - Last-write-wins (LWW): highest timestamp wins — risk of data loss
-#   - Application-level merge: application merges conflicting versions
-#   - CRDTs: data structures that merge automatically (counters, sets)
-# Used by: CockroachDB, Cassandra, DynamoDB Global Tables
-
-# ── LEADERLESS REPLICATION ────────────────────────────────────────
-# Any node accepts writes. Uses quorum reads and writes.
-# Write quorum W + Read quorum R > N (total replicas) = strong consistency
-# Cassandra example: replication_factor=3, consistency_level=QUORUM
-#   Write: must succeed on ceil(3/2) = 2 nodes
-#   Read:  must succeed on ceil(3/2) = 2 nodes
-#   2 + 2 > 3: guaranteed to see the latest write`}
-      </CodeBlock>
-
-      <h2>Polyglot Persistence — Using Multiple Databases</h2>
-
-      <InfoBox variant="tip" title="Real-World Polyglot Architecture">
-        <p>
-          Large systems rarely use just one database type. A typical e-commerce platform might use:
-        </p>
-        <ul>
-          <li><strong>PostgreSQL</strong> — orders, payments, user accounts (ACID, complex queries)</li>
-          <li><strong>Redis</strong> — sessions, carts, rate limiting, leaderboards (sub-millisecond latency)</li>
-          <li><strong>Elasticsearch</strong> — product search, full-text queries, faceted filtering</li>
-          <li><strong>Cassandra / DynamoDB</strong> — event logs, audit trails, recommendation data (massive write scale)</li>
-          <li><strong>S3 / GCS</strong> — images, documents, large binary objects</li>
-          <li><strong>TimescaleDB / InfluxDB</strong> — metrics, monitoring, time-series analytics</li>
-        </ul>
-        <p>
-          The key is maintaining the source of truth in one place (usually the relational DB) and
-          keeping other stores as derived views, synchronized via change data capture (CDC) or
-          event streams.
-        </p>
+      <InfoBox type="warning" title="ACID in Financial Systems">
+        Financial applications (banking, payments, trading) require strict ACID
+        guarantees. A failure in atomicity could cause money to vanish or appear from
+        nowhere. A failure in durability could lose confirmed transactions. Never
+        compromise on ACID for financial data.
       </InfoBox>
 
-      <h2>Time-Series Databases</h2>
+      <CodeBlock
+        language="sql"
+        title="SQL Transaction Example"
+        code={`-- Transfer $500 from Account A to Account B
+BEGIN TRANSACTION;
 
-      <CodeBlock language="sql" title="TimescaleDB — PostgreSQL Extension for Time-Series">
-{`-- TimescaleDB extends PostgreSQL with automatic time partitioning ("chunks").
--- Each chunk covers a time range (e.g., 7 days). Queries only scan relevant chunks.
--- Compression can achieve 90%+ storage reduction on old data.
+UPDATE accounts
+SET balance = balance - 500
+WHERE account_id = 'A'
+  AND balance >= 500;  -- Prevent overdraft
 
--- Create a hypertable (partitioned by time automatically)
-CREATE TABLE metrics (
-    time        TIMESTAMPTZ NOT NULL,
-    device_id   TEXT NOT NULL,
-    metric_name TEXT NOT NULL,
-    value       DOUBLE PRECISION
-);
+UPDATE accounts
+SET balance = balance + 500
+WHERE account_id = 'B';
 
-SELECT create_hypertable('metrics', 'time',
-    chunk_time_interval => INTERVAL '1 day');
+-- Record the transfer
+INSERT INTO transfers (from_acct, to_acct, amount, created_at)
+VALUES ('A', 'B', 500, NOW());
 
--- Add a secondary index on device_id for per-device queries
-CREATE INDEX ON metrics (device_id, time DESC);
-
--- Insert — same as regular PostgreSQL
-INSERT INTO metrics VALUES (NOW(), 'sensor-1', 'temperature', 23.4);
-
--- Time-bucketing aggregation — built-in function
-SELECT time_bucket('1 hour', time) AS bucket,
-       device_id,
-       avg(value) AS avg_temp,
-       max(value) AS max_temp,
-       min(value) AS min_temp
-FROM metrics
-WHERE metric_name = 'temperature'
-  AND time > NOW() - INTERVAL '24 hours'
-GROUP BY bucket, device_id
-ORDER BY bucket DESC;
-
--- Continuous aggregate — materialized and auto-refreshed
-CREATE MATERIALIZED VIEW hourly_metrics
-WITH (timescaledb.continuous) AS
-SELECT time_bucket('1 hour', time) AS bucket,
-       device_id,
-       avg(value) AS avg_value
-FROM metrics
-GROUP BY bucket, device_id;
-
--- Compress chunks older than 7 days (saves 90%+ storage)
-ALTER TABLE metrics SET (
-    timescaledb.compress,
-    timescaledb.compress_segmentby = 'device_id'
-);
-SELECT add_compression_policy('metrics', INTERVAL '7 days');`}
-      </CodeBlock>
-
-      <h2>NewSQL — The Best of Both Worlds</h2>
-
-      <CodeBlock language="sql" title="CockroachDB / Spanner — Distributed SQL">
-{`-- NewSQL databases (CockroachDB, Google Spanner, TiDB) offer:
--- - Full SQL semantics and ACID transactions
--- - Horizontal scaling like NoSQL
--- - Automatic sharding and rebalancing
--- - Multi-region deployments with strong consistency
--- Trade-off: higher write latency due to distributed consensus (Raft/Paxos)
-
--- CockroachDB: standard PostgreSQL-compatible SQL
-CREATE TABLE orders (
-    id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    customer   UUID NOT NULL,
-    total      DECIMAL(10,2) NOT NULL,
-    status     STRING DEFAULT 'pending',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    INDEX idx_customer_created (customer, created_at DESC)
-);
-
--- Multi-region table — data replicated across US, EU, APAC
-ALTER TABLE orders SET LOCALITY REGIONAL BY ROW;
-
--- Serializable transactions across shards — no application-level 2PC needed
-BEGIN;
-  UPDATE accounts SET balance = balance - 100 WHERE id = 'alice';
-  UPDATE accounts SET balance = balance + 100 WHERE id = 'bob';
+-- If all three statements succeed, commit
 COMMIT;
--- CockroachDB handles distributed coordination internally via Raft
 
--- When to use NewSQL vs traditional sharded SQL:
--- Use NewSQL: multi-region active-active, global user base, want SQL without sharding complexity
--- Use sharded SQL: very high throughput single-region, team familiar with manual sharding, cost-sensitive`}
-      </CodeBlock>
+-- If any statement fails, the DB rolls back all changes
+-- ROLLBACK;`}
+      />
+
+      {/* ===== Section 3: BASE Properties ===== */}
+      <h2>BASE Properties</h2>
+      <p>
+        BASE is the counterpart to ACID, commonly associated with NoSQL and distributed
+        systems. BASE trades strong consistency for availability and partition tolerance.
+      </p>
+
+      <h3>Basically Available</h3>
+      <p>
+        The system guarantees availability as defined by the CAP theorem. Every request
+        receives a response — though the data may not be the most recent version.
+        The system prioritizes staying online over returning perfectly accurate data.
+      </p>
+
+      <h3>Soft State</h3>
+      <p>
+        The state of the system may change over time, even without new input. This is
+        because data is being propagated across replicas asynchronously. The system is
+        always in flux until all replicas converge.
+      </p>
+
+      <h3>Eventually Consistent</h3>
+      <p>
+        Given enough time without new updates, all replicas will converge to the same
+        value. The system does not guarantee immediate consistency after a write, but
+        it will become consistent eventually — typically within milliseconds to seconds.
+      </p>
+
+      <h3>ACID vs BASE</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>ACID</th>
+            <th>BASE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Consistency</td>
+            <td>Strong — immediate</td>
+            <td>Eventual — delayed</td>
+          </tr>
+          <tr>
+            <td>Availability</td>
+            <td>May sacrifice availability for consistency</td>
+            <td>Prioritizes availability</td>
+          </tr>
+          <tr>
+            <td>Performance</td>
+            <td>Slower due to locking &amp; coordination</td>
+            <td>Faster due to relaxed guarantees</td>
+          </tr>
+          <tr>
+            <td>Use Cases</td>
+            <td>Banking, inventory, booking systems</td>
+            <td>Social feeds, analytics, caching layers</td>
+          </tr>
+          <tr>
+            <td>Scaling</td>
+            <td>Harder to scale horizontally</td>
+            <td>Designed for horizontal scaling</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong>When BASE is acceptable:</strong> Social media timelines (seeing a post
+        a few seconds late is fine), product view counts (approximate counts are okay),
+        DNS propagation, search engine indexing, and analytics dashboards where real-time
+        precision is not critical.
+      </p>
+
+      {/* ===== Section 4: Database Indexing Deep Dive ===== */}
+      <h2>Database Indexing Deep Dive</h2>
+      <p>
+        An index is a data structure that improves the speed of data retrieval at the
+        cost of additional storage and slower writes. Without indexes, the database must
+        perform a full table scan — reading every row to find matches. With the right
+        indexes, queries that once scanned millions of rows can return results in
+        milliseconds.
+      </p>
+
+      <h3>B-Tree Indexes</h3>
+      <p>
+        B-Tree (balanced tree) indexes are the default index type in most relational
+        databases. They maintain sorted data in a tree structure where each node can
+        have multiple children. This makes them efficient for:
+      </p>
+      <ul>
+        <li>Equality lookups: <code>WHERE id = 42</code></li>
+        <li>Range queries: <code>WHERE created_at &gt; &apos;2024-01-01&apos;</code></li>
+        <li>Sorting: <code>ORDER BY last_name</code></li>
+        <li>Prefix matching: <code>WHERE name LIKE &apos;John%&apos;</code></li>
+      </ul>
+      <p>
+        B-Trees have O(log n) lookup time and keep data balanced, ensuring consistent
+        performance regardless of data distribution.
+      </p>
+
+      <h3>Hash Indexes</h3>
+      <p>
+        Hash indexes use a hash function to map keys directly to locations. They provide
+        O(1) lookups for exact-match queries but cannot support range queries, sorting,
+        or partial matching. Use hash indexes when you only need equality comparisons
+        and want the fastest possible lookups.
+      </p>
+
+      <h3>Composite Indexes</h3>
+      <p>
+        A composite (multi-column) index covers multiple columns. The order of columns
+        in a composite index is critical — the index can only be used efficiently when
+        queries filter on a <strong>leftmost prefix</strong> of the indexed columns.
+      </p>
+      <p>
+        For example, an index on <code>(country, city, zip_code)</code> can accelerate
+        queries filtering by <code>country</code> alone, <code>country + city</code>,
+        or all three columns. But it <strong>cannot</strong> efficiently serve a query
+        filtering only by <code>city</code> or <code>zip_code</code> because those are
+        not leftmost prefixes.
+      </p>
+
+      <CodeBlock
+        language="sql"
+        title="Index Examples"
+        code={`-- Single-column index for fast user lookups by email
+CREATE INDEX idx_users_email ON users (email);
+
+-- Composite index: column order matters!
+-- This index supports queries on (status), (status, created_at),
+-- and (status, created_at, priority) — but NOT (created_at) alone.
+CREATE INDEX idx_orders_status_date ON orders (status, created_at, priority);
+
+-- Unique index enforces uniqueness AND speeds up lookups
+CREATE UNIQUE INDEX idx_users_username ON users (username);
+
+-- Partial index: only index active users (PostgreSQL)
+CREATE INDEX idx_active_users ON users (email)
+WHERE is_active = true;
+
+-- Covering index: includes extra columns to avoid table lookups
+CREATE INDEX idx_orders_covering ON orders (customer_id)
+INCLUDE (total_amount, status);
+
+-- Check existing indexes
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE tablename = 'orders';
+
+-- Analyze query plan to verify index usage
+EXPLAIN ANALYZE
+SELECT * FROM orders
+WHERE status = 'pending'
+  AND created_at > '2024-01-01'
+ORDER BY created_at DESC;`}
+      />
+
+      <InfoBox type="warning" title="The Danger of Over-Indexing">
+        Every index slows down INSERT, UPDATE, and DELETE operations because the index
+        must be updated alongside the data. Indexes also consume disk space. A table
+        with 10 indexes will have significantly slower write performance than one with
+        2. Only create indexes that serve actual query patterns. Use EXPLAIN ANALYZE
+        to verify your indexes are being used — unused indexes are pure overhead.
+      </InfoBox>
 
       <InteractiveChallenge
-        question="In PostgreSQL, what does MVCC (Multi-Version Concurrency Control) mean and why is it important?"
+        question={"You have a query: SELECT * FROM orders WHERE customer_id = 123 AND status = 'shipped' ORDER BY created_at DESC. Which composite index best supports this query?"}
         options={[
-          "Multiple database versions can be installed simultaneously",
-          "PostgreSQL creates new row versions on update instead of overwriting, so readers never block writers and writers never block readers",
-          "Multiple applications can connect to the same database concurrently",
-          "The database maintains multiple backups of each table"
+          'CREATE INDEX idx ON orders (created_at, customer_id, status)',
+          'CREATE INDEX idx ON orders (customer_id, status, created_at)',
+          'CREATE INDEX idx ON orders (status, created_at, customer_id)',
+          'CREATE INDEX idx ON orders (customer_id, created_at, status)',
         ]}
         correctIndex={1}
-        explanation={"MVCC means PostgreSQL never modifies rows in place. An UPDATE writes a new tuple with a new transaction ID (xmin), while the old tuple is kept with its xmax set to the updating transaction. Readers see a consistent snapshot as of their transaction start time, without acquiring locks. Writers create new versions without blocking readers. Old versions accumulate as 'dead tuples' until VACUUM reclaims them. This is why PostgreSQL can have high concurrent read/write throughput but requires regular VACUUM maintenance."}
+        explanation={"The optimal index is (customer_id, status, created_at). Equality columns (customer_id, status) should come first, followed by the sort column (created_at). This lets the database seek directly to the matching customer_id + status combination and then scan the index in order for created_at DESC, avoiding a separate sort step. Putting created_at first would waste the index's sorted structure on a column that isn't filtered by equality."}
       />
 
+      {/* ===== Section 5: Sharding Strategies ===== */}
+      <h2>Sharding Strategies</h2>
+      <p>
+        Sharding (horizontal partitioning) distributes data across multiple database
+        nodes. Each shard holds a subset of the total data. Sharding is necessary when
+        a single database server can no longer handle the data volume, write throughput,
+        or query load.
+      </p>
+
+      <h3>Hash-Based Sharding</h3>
+      <p>
+        Apply a hash function to the shard key (e.g., <code>hash(user_id) % num_shards</code>)
+        to determine which shard stores the data. This distributes data evenly across
+        shards but makes range queries difficult because adjacent keys may land on
+        different shards. Adding or removing shards requires rehashing (consistent
+        hashing mitigates this).
+      </p>
+
+      <h3>Range-Based Sharding</h3>
+      <p>
+        Partition data by ranges of the shard key. For example, users A–M go to shard 1,
+        N–Z go to shard 2. This preserves data locality and supports efficient range
+        queries, but can lead to hotspots if certain ranges receive disproportionate
+        traffic.
+      </p>
+
+      <h3>Directory-Based Sharding</h3>
+      <p>
+        Maintain a lookup table (directory) that maps each shard key to its shard. This
+        is the most flexible approach — you can move data between shards without changing
+        the algorithm. However, the directory itself becomes a single point of failure
+        and a potential bottleneck.
+      </p>
+
+      <FlowChart
+        title="Hash-Based Sharding Architecture"
+        chart={`graph TD
+    Client[Client Request] --> Router[Shard Router]
+    Router --> Hash[Hash Function]
+    Hash --> Decision{hash mod N}
+    Decision -->|mod 0| S0[Shard 0\nUsers 0-hash]
+    Decision -->|mod 1| S1[Shard 1\nUsers 1-hash]
+    Decision -->|mod 2| S2[Shard 2\nUsers 2-hash]
+    S0 --> R0[Replica 0]
+    S1 --> R1[Replica 1]
+    S2 --> R2[Replica 2]`}
+      />
+
+      <h3>Choosing a Good Shard Key</h3>
+      <p>
+        The shard key determines how data is distributed. A good shard key should:
+      </p>
+      <ul>
+        <li><strong>High cardinality:</strong> Many distinct values to distribute data evenly</li>
+        <li><strong>Even distribution:</strong> Avoid keys that cluster (e.g., country code in a US-heavy app)</li>
+        <li><strong>Query alignment:</strong> Most queries should target a single shard, not scatter across all shards</li>
+        <li><strong>Immutability:</strong> Changing a shard key requires moving data between shards — very expensive</li>
+      </ul>
+
+      <h3>Resharding Challenges</h3>
+      <p>
+        When you need to add or remove shards, existing data must be redistributed. This
+        is complex and risky:
+      </p>
+      <ul>
+        <li>Data migration can take hours or days for large datasets</li>
+        <li>The system must handle reads and writes during migration</li>
+        <li>Consistent hashing reduces the amount of data moved but adds complexity</li>
+        <li>Virtual shards (mapping many virtual shards to fewer physical nodes) make future resharding easier</li>
+      </ul>
+
+      <InfoBox type="tip" title="Preventing Hotspots">
+        Hotspots occur when one shard receives disproportionate traffic. Common causes
+        include poor shard key selection (e.g., sharding by date puts all current writes
+        on one shard), celebrity users generating massive read traffic, or sequential
+        IDs that cluster new data on the latest shard. Mitigations include adding a
+        random suffix to shard keys, using consistent hashing with virtual nodes, or
+        splitting hot shards.
+      </InfoBox>
+
+      {/* ===== Section 6: Replication ===== */}
+      <h2>Replication</h2>
+      <p>
+        Replication copies data across multiple database servers to improve availability,
+        fault tolerance, and read performance. If one server goes down, replicas ensure
+        the data is still accessible.
+      </p>
+
+      <h3>Primary-Replica Replication</h3>
+      <p>
+        One primary node handles all writes. Replica nodes receive copies of the data
+        and serve read traffic. This is the most common replication topology. If the
+        primary fails, a replica can be promoted to take over. The trade-off is that
+        replicas may serve slightly stale data if replication is asynchronous.
+      </p>
+
+      <h3>Multi-Primary Replication</h3>
+      <p>
+        Multiple nodes accept writes, and changes are synchronized between them. This
+        improves write availability and supports multi-region deployments. However, it
+        introduces write conflicts — two primaries may update the same record simultaneously.
+        Conflict resolution strategies include last-write-wins, application-level
+        merging, or CRDTs (Conflict-free Replicated Data Types).
+      </p>
+
+      <FlowChart
+        title="Primary-Replica Replication Topology"
+        chart={`graph TD
+    App[Application] --> LB[Load Balancer]
+    LB -->|Writes| Primary[Primary Node]
+    LB -->|Reads| R1[Replica 1]
+    LB -->|Reads| R2[Replica 2]
+    LB -->|Reads| R3[Replica 3]
+    Primary -->|Replication Stream| R1
+    Primary -->|Replication Stream| R2
+    Primary -->|Replication Stream| R3
+    Primary -->|WAL| WAL[Write-Ahead Log]`}
+      />
+
+      <h3>Synchronous vs Asynchronous Replication</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Synchronous</th>
+            <th>Asynchronous</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Write latency</td>
+            <td>Higher — waits for replica acknowledgment</td>
+            <td>Lower — returns immediately after primary write</td>
+          </tr>
+          <tr>
+            <td>Data safety</td>
+            <td>No data loss on primary failure</td>
+            <td>Potential data loss of unreplicated writes</td>
+          </tr>
+          <tr>
+            <td>Availability</td>
+            <td>Reduced — replica failure blocks writes</td>
+            <td>Higher — replica failure does not block writes</td>
+          </tr>
+          <tr>
+            <td>Common in</td>
+            <td>Financial systems, critical data</td>
+            <td>Most web applications, analytics</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Replication Lag &amp; Its Consequences</h3>
+      <p>
+        In asynchronous replication, there is always a delay between when data is written
+        to the primary and when it appears on replicas. This replication lag can cause:
+      </p>
+      <ul>
+        <li>
+          <strong>Read-after-write inconsistency:</strong> A user writes data, then
+          immediately reads from a replica that hasn&apos;t received the update yet.
+          Solution: route reads to the primary for a short window after writes.
+        </li>
+        <li>
+          <strong>Monotonic read violations:</strong> A user sees newer data, then
+          refreshes and sees older data because a different replica served the request.
+          Solution: pin users to a specific replica (sticky sessions).
+        </li>
+        <li>
+          <strong>Causal ordering issues:</strong> A reply to a comment appears before
+          the comment itself because they were replicated at different speeds.
+          Solution: use logical timestamps or version vectors.
+        </li>
+      </ul>
+
+      {/* ===== Section 7: Denormalization ===== */}
+      <h2>Denormalization</h2>
+      <p>
+        Normalization eliminates data redundancy by splitting data into multiple related
+        tables. Denormalization intentionally introduces redundancy to optimize read
+        performance by reducing the number of joins needed to serve a query.
+      </p>
+
+      <h3>Why Denormalize?</h3>
+      <p>
+        In a fully normalized schema, displaying a user&apos;s order history might require
+        joining 5 tables: users, orders, order_items, products, and addresses. At scale
+        with millions of rows, these joins become expensive. Denormalization pre-computes
+        and stores the joined result, trading storage space and write complexity for
+        dramatically faster reads.
+      </p>
+
+      <h3>Trade-offs</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Normalized</th>
+            <th>Denormalized</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Read performance</td>
+            <td>Slower — multiple joins</td>
+            <td>Faster — single table scan</td>
+          </tr>
+          <tr>
+            <td>Write performance</td>
+            <td>Faster — update one place</td>
+            <td>Slower — update many copies</td>
+          </tr>
+          <tr>
+            <td>Data consistency</td>
+            <td>Strong — single source of truth</td>
+            <td>Risk of inconsistency across copies</td>
+          </tr>
+          <tr>
+            <td>Storage</td>
+            <td>Minimal — no redundancy</td>
+            <td>Higher — duplicated data</td>
+          </tr>
+          <tr>
+            <td>Schema complexity</td>
+            <td>More tables, more joins</td>
+            <td>Fewer tables, wider rows</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>When to Denormalize</h3>
+      <ul>
+        <li>Read-heavy workloads where query latency is critical</li>
+        <li>Data that is read far more often than it is written</li>
+        <li>Reporting and analytics dashboards</li>
+        <li>Caching layers where pre-computed results are stored</li>
+        <li>NoSQL databases that don&apos;t support joins natively</li>
+      </ul>
+
+      <InfoBox type="info" title="Denormalization in Interviews">
+        Interviewers often expect you to start with a normalized schema and then
+        selectively denormalize based on access patterns. Show that you understand the
+        trade-offs: explain which queries drive the denormalization, how you&apos;ll keep
+        the denormalized data consistent (e.g., background sync jobs, change data
+        capture), and what happens if the source of truth and the denormalized copy
+        diverge.
+      </InfoBox>
+
+      <CodeBlock
+        language="sql"
+        title="Denormalization Example"
+        code={`-- Normalized: requires a 3-table join for order display
+SELECT o.id, o.total, u.name, u.email, a.city, a.state
+FROM orders o
+JOIN users u ON o.user_id = u.id
+JOIN addresses a ON o.shipping_address_id = a.id
+WHERE o.user_id = 42;
+
+-- Denormalized: single table with embedded data
+-- Faster reads, but user_name/user_email must be
+-- updated everywhere if the user changes their profile.
+CREATE TABLE order_details_denormalized (
+    order_id      INT PRIMARY KEY,
+    order_total   DECIMAL(10,2),
+    user_id       INT,
+    user_name     VARCHAR(100),
+    user_email    VARCHAR(255),
+    ship_city     VARCHAR(100),
+    ship_state    VARCHAR(50),
+    created_at    TIMESTAMP DEFAULT NOW()
+);
+
+-- Single fast query, no joins needed
+SELECT * FROM order_details_denormalized
+WHERE user_id = 42;`}
+      />
+
+      {/* ===== Section 8: Advanced Database Topics ===== */}
+      <h2>Advanced Database Topics</h2>
+
+      <h3>Database per Service Pattern</h3>
+      <p>
+        In a microservices architecture, each service owns its own database. No service
+        accesses another service&apos;s database directly — all communication happens
+        through APIs or events. This provides strong encapsulation and lets each service
+        choose the database technology best suited to its needs (polyglot persistence).
+      </p>
+      <ul>
+        <li><strong>Benefits:</strong> Independent scaling, independent deployment, technology freedom, fault isolation</li>
+        <li><strong>Challenges:</strong> Distributed transactions, data consistency across services, more complex queries that span services</li>
+        <li><strong>Patterns to manage:</strong> Saga pattern for distributed transactions, CQRS for cross-service queries, event sourcing for audit trails</li>
+      </ul>
+
+      <h3>Materialized Views</h3>
+      <p>
+        A materialized view is a precomputed query result stored as a physical table.
+        Unlike regular views (which execute the query each time), materialized views
+        cache the result and refresh periodically or on demand. They are excellent for
+        expensive aggregation queries on dashboards or reporting systems.
+      </p>
+
+      <CodeBlock
+        language="sql"
+        title="Materialized View Example"
+        code={`-- Create a materialized view for daily sales summary
+CREATE MATERIALIZED VIEW daily_sales_summary AS
+SELECT
+    DATE(order_date) AS sale_date,
+    product_category,
+    COUNT(*) AS total_orders,
+    SUM(amount) AS total_revenue,
+    AVG(amount) AS avg_order_value
+FROM orders
+JOIN products ON orders.product_id = products.id
+WHERE order_date >= CURRENT_DATE - INTERVAL '90 days'
+GROUP BY DATE(order_date), product_category;
+
+-- Create an index on the materialized view
+CREATE INDEX idx_sales_date ON daily_sales_summary (sale_date);
+
+-- Fast query against precomputed data
+SELECT * FROM daily_sales_summary
+WHERE sale_date = '2024-06-15';
+
+-- Refresh when underlying data changes
+REFRESH MATERIALIZED VIEW CONCURRENTLY daily_sales_summary;`}
+      />
+
+      <h3>Time-Series Databases</h3>
+      <p>
+        Time-series databases (InfluxDB, TimescaleDB, QuestDB) are optimized for
+        timestamped data that is written sequentially and queried by time ranges.
+        Use cases include:
+      </p>
+      <ul>
+        <li>Infrastructure monitoring (CPU, memory, network metrics)</li>
+        <li>IoT sensor data (temperature, pressure, location)</li>
+        <li>Financial market data (stock prices, trade volumes)</li>
+        <li>Application performance monitoring (response times, error rates)</li>
+      </ul>
+      <p>
+        These databases optimize for high write throughput, efficient time-range queries,
+        and automatic data retention policies (e.g., downsample data older than 30 days,
+        delete data older than 1 year).
+      </p>
+
+      <h3>Graph Databases</h3>
+      <p>
+        Graph databases (Neo4j, Amazon Neptune, JanusGraph) excel when relationships
+        between entities are the primary concern. They store data as nodes (entities)
+        and edges (relationships) and support efficient traversal queries.
+      </p>
+      <ul>
+        <li><strong>Social networks:</strong> Friends of friends, mutual connections, influence scoring</li>
+        <li><strong>Recommendation engines:</strong> Users who bought X also bought Y</li>
+        <li><strong>Fraud detection:</strong> Tracing suspicious transaction chains across accounts</li>
+        <li><strong>Knowledge graphs:</strong> Modeling complex domain relationships (medical, legal)</li>
+      </ul>
+      <p>
+        A query like &quot;find all friends of friends within 3 degrees of separation&quot; that
+        would require complex recursive joins in SQL is a simple, fast traversal in a
+        graph database.
+      </p>
+
+      <h3>NewSQL Databases</h3>
+      <p>
+        NewSQL databases (CockroachDB, TiDB, Google Spanner, YugabyteDB) combine the
+        horizontal scalability of NoSQL with the strong consistency and SQL interface
+        of traditional relational databases. They aim to provide the best of both worlds:
+      </p>
+      <ul>
+        <li>Full SQL support with familiar query syntax</li>
+        <li>ACID transactions across distributed nodes</li>
+        <li>Horizontal scaling by adding more nodes</li>
+        <li>Automatic sharding and rebalancing</li>
+        <li>High availability with automatic failover</li>
+      </ul>
+      <p>
+        The trade-off is higher latency per query (due to distributed consensus
+        protocols like Raft or Paxos) and operational complexity. NewSQL is ideal when
+        you need SQL semantics at NoSQL scale — for example, a global e-commerce
+        platform that requires both strong consistency and geographic distribution.
+      </p>
+
+      <InfoBox type="tip" title="Database Selection in System Design Interviews">
+        When an interviewer asks you to design a system, walk through this decision
+        framework: (1) What is the data model — relational, hierarchical, graph?
+        (2) What is the read/write ratio? (3) What consistency level is required?
+        (4) What scale are we targeting? (5) Are there specific query patterns —
+        time-series, full-text search, traversals? Match your answers to the right
+        database category and name specific technologies.
+      </InfoBox>
+
       <InteractiveChallenge
-        question="Your application needs to store 10 billion IoT sensor readings per month, queried primarily by device and time range. Which database choice is most appropriate?"
+        question={"You are designing a social media platform that needs to store user profiles, posts, and friend relationships. The system must support friend-of-friend queries, news feed generation, and real-time notifications. Which database strategy is most appropriate?"}
         options={[
-          "PostgreSQL with a single massive table and B-tree index on timestamp",
-          "MongoDB, because the flexible schema can handle different sensor types",
-          "TimescaleDB (PostgreSQL + automatic time partitioning) or Cassandra, partitioned by device_id and time",
-          "Redis, because it has very low write latency"
+          'Single PostgreSQL instance for everything',
+          'MongoDB for all data with embedded documents',
+          'PostgreSQL for profiles and posts, Neo4j for friend graph, Redis for caching and notifications',
+          'Cassandra for all data with denormalized tables',
         ]}
         correctIndex={2}
-        explanation={"10 billion rows/month is a classic time-series workload. TimescaleDB automatically partitions ('chunks') the data by time, so range queries only scan relevant partitions. Cassandra partitions by device_id and uses a clustering key on time — queries for a device's readings in a time range are extremely fast. A plain PostgreSQL B-tree on a single table would be slow and require manual partitioning. MongoDB lacks automatic time-based partitioning. Redis does not have persistent ordered time-series semantics at this scale."}
+        explanation={"Polyglot persistence is the best approach here. PostgreSQL handles structured user and post data with ACID transactions. Neo4j efficiently traverses friend relationships for friend-of-friend queries and recommendations. Redis provides low-latency caching for news feeds and pub/sub for real-time notifications. Each database is used for what it does best, rather than forcing one technology to handle all access patterns."}
       />
     </LessonLayout>
   );

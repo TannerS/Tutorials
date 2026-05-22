@@ -4,7 +4,7 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function SolidIsp() {
+export default function Isp() {
   return (
     <LessonLayout
       title="Interface Segregation Principle"
@@ -13,278 +13,258 @@ export default function SolidIsp() {
       prev={{ path: '/solid/lsp', label: 'Liskov Substitution' }}
       next={{ path: '/solid/dip', label: 'Dependency Inversion' }}
     >
-      <h2>What Is ISP?</h2>
+      <h2>No Client Should Be Forced to Depend on Methods It Does Not Use</h2>
       <p>
-        The Interface Segregation Principle: <em>clients should not be forced to depend on methods
-        they do not use.</em> A "fat" interface with 20 methods forces every implementor to
-        implement all 20 — even the 15 that are irrelevant to them. ISP says to split large
-        interfaces into small, cohesive ones so each client depends only on the methods it
-        actually uses.
+        The Interface Segregation Principle (ISP) states that many small,
+        focused interfaces are better than one large, general-purpose
+        interface. When a class is forced to implement methods it does not
+        need, you create coupling, empty stub implementations, and fragile
+        code.
       </p>
 
+      <InfoBox variant="info" title="Robert C. Martin on ISP">
+        <p>
+          Uncle Bob articulated ISP after working on Xerox printer software.
+          A single <code>Job</code> interface had grown so large that every
+          change caused a cascade of recompilation. Splitting it into focused
+          interfaces solved the problem. The lesson: fat interfaces create
+          unnecessary coupling.
+        </p>
+      </InfoBox>
+
       <FlowChart
-        title="ISP — Focused Interfaces"
-        chart={"graph TD\n  A[Fat Worker interface - 6 methods] --> B[Robot forced to throw on eat/sleep]\n  A --> C[Human implements all]\n  D[Workable interface] --> E[Robot implements]\n  D --> F[Human implements]\n  G[Feedable interface] --> F\n  H[Payable interface] --> F"}
+        title="Fat Interface vs. Segregated Interfaces"
+        chart={"graph TD\nFAT[Fat Interface: 10 methods] --> ROBOT[Robot]\nFAT --> HUMAN[Human Worker]\nFAT --> INTERN[Intern]\nP[Workable] --> ROBOT2[Robot]\nP --> HUMAN2[Human Worker]\nE[Eatable] --> HUMAN2\nS[Sleepable] --> HUMAN2"}
       />
 
-      <h2>Fat Interface — The Classic ISP Violation</h2>
+      <h2>Bad Example — The Fat Interface</h2>
+      <p>
+        Consider a multi-function machine interface. A simple printer is
+        forced to implement fax and scan methods it cannot perform, leading
+        to stub methods that throw exceptions or do nothing.
+      </p>
 
-      <CodeBlock language="java" title="One Big Interface Forces Useless Implementations">
-{`// FAT interface — every implementor must deal with ALL methods
+      <CodeBlock language="java" title="MultiFunctionMachineBad.java">
+{`// BAD — One fat interface forces all implementors to handle
+// every method, even when they don't apply.
+public interface MultiFunctionDevice {
+    void print(Document doc);
+    void scan(Document doc);
+    void fax(Document doc);
+    void staple(Document doc);
+    void photocopy(Document doc);
+}
+
+// A simple printer only prints, but must implement everything.
+public class SimplePrinter implements MultiFunctionDevice {
+    @Override
+    public void print(Document doc) {
+        System.out.println("Printing: " + doc.getTitle());
+    }
+
+    @Override
+    public void scan(Document doc) {
+        throw new UnsupportedOperationException("Cannot scan");
+    }
+
+    @Override
+    public void fax(Document doc) {
+        throw new UnsupportedOperationException("Cannot fax");
+    }
+
+    @Override
+    public void staple(Document doc) {
+        throw new UnsupportedOperationException("Cannot staple");
+    }
+
+    @Override
+    public void photocopy(Document doc) {
+        throw new UnsupportedOperationException("Cannot photocopy");
+    }
+}`}
+      </CodeBlock>
+
+      <p>
+        The same anti-pattern appears in worker interfaces:
+      </p>
+
+      <CodeBlock language="java" title="WorkerBad.java">
+{`// BAD — Robot workers don't eat or sleep, but must implement these.
 public interface Worker {
     void work();
     void eat();
     void sleep();
-    void takeBreak();
-    void receivePaycheck();
     void attendMeeting();
 }
 
-// HumanWorker — all methods are relevant
-public class HumanWorker implements Worker {
-    @Override public void work()      { /* genuine implementation */ }
-    @Override public void eat()       { /* genuine implementation */ }
-    @Override public void sleep()     { /* genuine implementation */ }
-    @Override public void takeBreak() { /* genuine implementation */ }
-    @Override public void receivePaycheck() { /* genuine implementation */ }
-    @Override public void attendMeeting()   { /* genuine implementation */ }
-}
-
-// ✗ RobotWorker — forced to implement irrelevant methods
 public class RobotWorker implements Worker {
-    @Override public void work()      { System.out.println("Processing..."); }
+    @Override
+    public void work() {
+        System.out.println("Robot working 24/7");
+    }
 
-    // Robots don't eat, sleep, or get paychecks — forced stubs:
-    @Override public void eat()             { throw new UnsupportedOperationException(); }
-    @Override public void sleep()           { throw new UnsupportedOperationException(); }
-    @Override public void receivePaycheck() { /* do nothing — robots don't earn */ }
-    @Override public void attendMeeting()   { /* questionable meaning */ }
-    @Override public void takeBreak()       { /* maintenance window? */ }
-}
-// Problems:
-// 1. RobotWorker violates LSP — throws where parent says it should work
-// 2. Code that calls worker.eat() must handle runtime exceptions for robots
-// 3. Any change to any Worker method (even receivePaycheck) forces
-//    all implementors to recompile — even those who don't use it
-// 4. Test setup must mock/stub irrelevant methods`}
+    @Override
+    public void eat() {
+        // Robots don't eat — empty stub!
+    }
+
+    @Override
+    public void sleep() {
+        // Robots don't sleep — empty stub!
+    }
+
+    @Override
+    public void attendMeeting() {
+        // Robots don't attend meetings — empty stub!
+    }
+}`}
       </CodeBlock>
 
-      <h2>ISP Applied — Segregated Interfaces</h2>
+      <h2>Good Example — Small, Focused Interfaces</h2>
+      <p>
+        Split the fat interface into cohesive, single-purpose interfaces.
+        Each implementor picks only the interfaces that match its
+        capabilities.
+      </p>
 
-      <CodeBlock language="java" title="Small Focused Interfaces — Each Client Gets What It Needs">
-{`// Split into focused, single-purpose interfaces
+      <CodeBlock language="java" title="SegregatedInterfaces.java">
+{`// GOOD — Each interface represents one capability.
+public interface Printer {
+    void print(Document doc);
+}
+
+public interface Scanner {
+    void scan(Document doc);
+}
+
+public interface Fax {
+    void fax(Document doc);
+}
+
+public interface Stapler {
+    void staple(Document doc);
+}
+
+public interface Photocopier {
+    void photocopy(Document doc);
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="DeviceImplementations.java">
+{`// GOOD — SimplePrinter only implements what it can do.
+public class SimplePrinter implements Printer {
+    @Override
+    public void print(Document doc) {
+        System.out.println("Printing: " + doc.getTitle());
+    }
+}
+
+// GOOD — MultiFunctionPrinter composes multiple interfaces.
+public class MultiFunctionPrinter
+        implements Printer, Scanner, Fax, Photocopier {
+
+    @Override
+    public void print(Document doc) {
+        System.out.println("Printing: " + doc.getTitle());
+    }
+
+    @Override
+    public void scan(Document doc) {
+        System.out.println("Scanning: " + doc.getTitle());
+    }
+
+    @Override
+    public void fax(Document doc) {
+        System.out.println("Faxing: " + doc.getTitle());
+    }
+
+    @Override
+    public void photocopy(Document doc) {
+        System.out.println("Photocopying: " + doc.getTitle());
+    }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="WorkerGood.java">
+{`// GOOD — Segregated worker interfaces.
 public interface Workable {
     void work();
 }
 
-public interface Restable {
-    void takeBreak();
+public interface Eatable {
+    void eat();
 }
 
-public interface Feedable {
-    void eat();
+public interface Sleepable {
     void sleep();
 }
 
-public interface Payable {
-    void receivePaycheck();
-    Money calculateGrossPay(int hoursWorked);
-}
-
 public interface MeetingAttendee {
-    void attendMeeting(MeetingType type);
-    boolean isAvailable(TimeSlot slot);
+    void attendMeeting();
 }
 
-// HumanWorker — implements all interfaces that apply
-public class HumanWorker implements Workable, Restable, Feedable, Payable, MeetingAttendee {
-    // All implementations are meaningful and correct
+// Human implements all relevant interfaces.
+public class HumanWorker
+        implements Workable, Eatable, Sleepable, MeetingAttendee {
+
+    @Override public void work() { System.out.println("Working"); }
+    @Override public void eat() { System.out.println("Eating lunch"); }
+    @Override public void sleep() { System.out.println("Sleeping"); }
+    @Override public void attendMeeting() { System.out.println("In meeting"); }
 }
 
-// RobotWorker — only implements what it actually does
-public class RobotWorker implements Workable, Restable {
-    @Override public void work()      { processingEngine.run(); }
-    @Override public void takeBreak() { maintenanceMode.activate(); }
-    // No Feedable, no Payable — no need to stub anything!
-}
+// Robot only implements what it can do.
+public class RobotWorker implements Workable {
+    @Override
+    public void work() {
+        System.out.println("Robot working 24/7");
+    }
+}`}
+      </CodeBlock>
 
-// ContractorWorker — different combination of interfaces
-public class ContractorWorker implements Workable, Payable {
-    // Contractors work and get paid, but on different terms
-    // No Feedable (they provide their own breaks), no MeetingAttendee (async only)
-}
+      <p>
+        Client code now depends only on the interface it needs:
+      </p>
 
-// Client code depends only on what it actually uses
-public class WorkScheduler {
-    private final List<Workable> workers;  // accepts humans AND robots — just needs work()
+      <CodeBlock language="java" title="ClientCode.java">
+{`// GOOD — This service only depends on Printer, not the full device.
+public class PrintService {
+    private final Printer printer;
 
-    public void runShift() {
-        workers.forEach(Workable::work);
+    public PrintService(Printer printer) {
+        this.printer = printer;
+    }
+
+    public void printDocument(Document doc) {
+        printer.print(doc);
     }
 }
 
-public class PayrollService {
-    private final List<Payable> employees;  // only those who can receive pay
-
-    public void processPayroll() {
-        employees.forEach(e -> e.receivePaycheck());
-    }
-}
-// WorkScheduler doesn't know or care about pay
-// PayrollService doesn't know or care about work scheduling`}
+// Works with SimplePrinter or MultiFunctionPrinter — doesn't matter.
+PrintService service = new PrintService(new SimplePrinter());
+service.printDocument(myDoc);`}
       </CodeBlock>
 
-      <h2>ISP in Spring Data Repositories</h2>
-
-      <CodeBlock language="java" title="Spring Data — ISP in the Standard Library">
-{`// Spring Data demonstrates ISP by layering interfaces
-// Each layer adds methods — extend only what you need
-
-// Layer 1: Read-only — just exists check and count
-public interface Repository<T, ID> { /* marker interface */ }
-
-// Layer 2: Basic CRUD
-public interface CrudRepository<T, ID> extends Repository<T, ID> {
-    <S extends T> S save(S entity);
-    Optional<T> findById(ID id);
-    boolean existsById(ID id);
-    Iterable<T> findAll();
-    long count();
-    void deleteById(ID id);
-}
-
-// Layer 3: Sorting and paging
-public interface PagingAndSortingRepository<T, ID> extends CrudRepository<T, ID> {
-    Iterable<T> findAll(Sort sort);
-    Page<T> findAll(Pageable pageable);
-}
-
-// Layer 4: JPA-specific (flush, batch save, etc.)
-public interface JpaRepository<T, ID> extends PagingAndSortingRepository<T, ID> {
-    void flush();
-    <S extends T> List<S> saveAllAndFlush(Iterable<S> entities);
-    void deleteAllInBatch();
-    List<T> findAll(Example<S> example);
-}
-
-// You extend only the level you need:
-// Read-only cache access:
-public interface ProductCacheRepository extends CrudRepository<Product, Long> {
-    // Add custom query methods — no write methods forced by caller
-}
-
-// Full JPA repository for complex queries:
-public interface OrderRepository extends JpaRepository<Order, Long> {
-    List<Order> findByCustomerIdAndStatusOrderByCreatedAtDesc(
-        Long customerId, OrderStatus status
-    );
-    @Query("SELECT o FROM Order o WHERE o.total > :threshold")
-    List<Order> findHighValueOrders(@Param("threshold") BigDecimal threshold);
-}
-
-// ISP benefit: code that just reads products depends on CrudRepository,
-// not JpaRepository — insulated from JPA-specific changes`}
-      </CodeBlock>
-
-      <h2>ISP in TypeScript — React Prop Interfaces</h2>
-
-      <CodeBlock language="typescript" title="ISP Applied to React Component Props">
-{`// ✗ FAT props interface — every component sees everything
-interface ProductCardProps {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  imageUrl: string;
-  stock: number;
-  rating: number;
-  reviewCount: number;
-  onAddToCart: (id: string) => void;
-  onAddToWishlist: (id: string) => void;
-  onQuickView: (id: string) => void;
-  onShare: (id: string) => void;
-  isInWishlist: boolean;
-  isInCart: boolean;
-  isLoading: boolean;
-  isAdmin: boolean;
-  onDelete: (id: string) => void;    // admin-only!
-  onEdit: (id: string) => void;      // admin-only!
-}
-// Every usage needs to handle 16 props; admin logic leaks into public component
-
-// ✓ SEGREGATED interfaces — compose what you need
-interface ProductDisplayProps {
-  id: string;
-  name: string;
-  price: number;
-  imageUrl: string;
-}
-
-interface ProductActionsProps {
-  onAddToCart: (id: string) => void;
-  isInCart: boolean;
-}
-
-interface WishlistActionsProps {
-  onAddToWishlist: (id: string) => void;
-  isInWishlist: boolean;
-}
-
-interface AdminActionsProps {
-  onDelete: (id: string) => void;
-  onEdit: (id: string) => void;
-}
-
-// Regular product card — depends only on what it uses
-type PublicProductCardProps = ProductDisplayProps & ProductActionsProps & WishlistActionsProps;
-function ProductCard(props: PublicProductCardProps) { /* ... */ }
-
-// Admin product card — extends with admin actions
-type AdminProductCardProps = PublicProductCardProps & AdminActionsProps;
-function AdminProductCard(props: AdminProductCardProps) { /* ... */ }
-
-// Usage — TypeScript enforces correct shape, no extraneous props
-<ProductCard
-  id="P-1" name="Widget" price={29.99} imageUrl="/widget.jpg"
-  onAddToCart={handleAdd} isInCart={false}
-  onAddToWishlist={handleWishlist} isInWishlist={true}
-/>`}
-      </CodeBlock>
-
-      <InfoBox variant="tip" title="ISP and Spring Repositories">
+      <InfoBox variant="tip" title="Composing Interfaces in Java">
         <p>
-          Spring Data is a textbook ISP example in the standard library.
-          <code>Repository</code> is a marker. <code>CrudRepository</code> adds basic operations.
-          <code>PagingAndSortingRepository</code> adds paging. <code>JpaRepository</code> adds
-          JPA specifics. Your repository extends the level that matches your needs — a read-only
-          cache extends <code>CrudRepository</code>, a full data store extends
-          <code>JpaRepository</code>. Clients depend only on the interface level they use, not
-          on the full JPA surface area.
+          Java allows a class to implement multiple interfaces. This makes ISP
+          natural in Java: define small interfaces and let implementors
+          compose exactly the capabilities they support. This also pairs well
+          with Dependency Inversion — clients depend on the narrowest
+          interface possible.
         </p>
       </InfoBox>
 
       <InteractiveChallenge
-        question="What is the main problem with a fat interface that forces implementors to stub unused methods?"
+        question="What is the main problem with a fat interface?"
         options={[
-          "Fat interfaces are harder to name with a good class name",
-          "Implementors are forced to write misleading empty or throwing implementations for methods they don't support — and any change to any method forces all implementors to recompile",
-          "Fat interfaces use significantly more memory at runtime",
-          "Fat interfaces automatically violate the Single Responsibility Principle in all cases"
+          "It makes the interface file too long to read",
+          "It forces implementors to depend on methods they don't use, causing empty stubs or exceptions",
+          "Java limits the number of methods an interface can have",
+          "Fat interfaces run slower than small interfaces at runtime"
         ]}
         correctIndex={1}
-        explanation="A fat interface forces every implementor to deal with every method, even irrelevant ones. This leads to throw-not-implemented stubs (which violate LSP) or empty no-op implementations (which mislead callers). It also creates unnecessary coupling: a client that only uses two methods still depends on the full interface, meaning changes to any of the other methods force recompilation and re-testing of that client."
-      />
-
-      <InteractiveChallenge
-        question="How does the Spring Data repository hierarchy demonstrate the Interface Segregation Principle?"
-        options={[
-          "It does not — Spring Data uses a single large repository interface",
-          "Each layer adds methods to a smaller base, so code extends only the layer with the methods it actually needs",
-          "Spring Data generates separate interfaces for each entity automatically",
-          "ISP only applies to application code, not framework code like Spring"
-        ]}
-        correctIndex={1}
-        explanation="Spring Data layers interfaces: Repository (marker), CrudRepository (basic save/find/delete), PagingAndSortingRepository (adds pagination), JpaRepository (JPA-specific like flush and batch). You extend the level that matches your needs. A read-only service repository can extend CrudRepository without gaining JPA-specific methods it doesn't need. Clients depend only on the interface level that matches their usage — exactly what ISP prescribes."
+        explanation="The core problem with fat interfaces is forced coupling. Implementors must provide bodies for methods they don't need, resulting in UnsupportedOperationException throws or empty no-op stubs. This violates ISP and often LSP as well, since the subtype doesn't truly fulfill the interface contract."
       />
     </LessonLayout>
   );

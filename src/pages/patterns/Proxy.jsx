@@ -4,181 +4,255 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function PatternsProxy() {
+export default function Proxy() {
   return (
     <LessonLayout
-      title="Proxy Pattern"
+      title="Proxy & Chain of Responsibility"
       sectionId="patterns"
       lessonIndex={6}
-      prev={{ path: "/patterns/composite", label: "Composite Pattern" }}
-      next={{ path: "/patterns/realworld", label: "Real-World Patterns" }}
+      prev={{ path: '/patterns/composite', label: 'Composite & Facade' }}
+      next={{ path: '/patterns/realworld', label: 'Real-World Applications' }}
     >
-      <p>The Proxy pattern provides a surrogate or placeholder for another object to control access to it. The proxy implements the same interface as the real object, so clients can't tell the difference. Proxies add a layer of indirection for lazy initialization, access control, logging, caching, or remote communication.</p>
-
-      <h2>Proxy Types</h2>
-
-      <CodeBlock language="java" title="Virtual Proxy — Lazy Loading">
-{`// Real object — expensive to create
-public class HeavyReport {
-    private final byte[] data;
-
-    public HeavyReport(String reportId) {
-        // Simulate expensive operation: DB query, PDF generation, etc.
-        System.out.println("Loading report " + reportId + "...");
-        this.data = loadFromDatabase(reportId);  // expensive!
-    }
-    public byte[] getData() { return data; }
-}
-
-// Proxy — same interface, defers creation until needed
-public interface Report { byte[] getData(); }
-
-public class LazyReportProxy implements Report {
-    private final String reportId;
-    private HeavyReport realReport;  // null until first access
-
-    public LazyReportProxy(String reportId) {
-        this.reportId = reportId;
-        System.out.println("Proxy created for " + reportId + " (no load yet)");
-    }
-
-    public byte[] getData() {
-        if (realReport == null) {
-            realReport = new HeavyReport(reportId);  // load on first access only
-        }
-        return realReport.getData();
-    }
-}
-
-// Client creates many reports cheaply, only loads what's actually accessed
-List<Report> reports = List.of(
-    new LazyReportProxy("Q1-2024"),  // not loaded
-    new LazyReportProxy("Q2-2024"),  // not loaded
-    new LazyReportProxy("Q3-2024")   // not loaded
-);
-byte[] data = reports.get(0).getData();  // Q1 loaded here, Q2/Q3 never loaded`}
-      </CodeBlock>
-
-      <CodeBlock language="java" title="Protection Proxy — Access Control">
-{`public interface DocumentService {
-    String getDocument(String docId);
-    void updateDocument(String docId, String content);
-    void deleteDocument(String docId);
-}
-
-public class RealDocumentService implements DocumentService {
-    public String getDocument(String id)              { return "content of " + id; }
-    public void updateDocument(String id, String c)   { System.out.println("Updated " + id); }
-    public void deleteDocument(String id)             { System.out.println("Deleted " + id); }
-}
-
-// Proxy enforces authorization
-public class SecureDocumentProxy implements DocumentService {
-    private final DocumentService real;
-    private final User currentUser;
-
-    public SecureDocumentProxy(DocumentService real, User user) {
-        this.real = real; this.currentUser = user;
-    }
-
-    public String getDocument(String id) {
-        if (!currentUser.hasPermission("READ", id)) throw new AccessDeniedException();
-        return real.getDocument(id);
-    }
-    public void updateDocument(String id, String content) {
-        if (!currentUser.hasPermission("WRITE", id)) throw new AccessDeniedException();
-        real.updateDocument(id, content);
-    }
-    public void deleteDocument(String id) {
-        if (!currentUser.hasRole("ADMIN")) throw new AccessDeniedException();
-        real.deleteDocument(id);
-    }
-}`}
-      </CodeBlock>
+      <h2>Proxy Pattern</h2>
+      <p>
+        Provides a surrogate or placeholder for another object to control access to it.
+        The proxy has the same interface as the real object, so clients can't tell the difference.
+        Common variants: virtual proxy (lazy loading), protection proxy (access control),
+        and caching proxy.
+      </p>
 
       <FlowChart
-        title="Proxy Pattern Flow"
-        chart={"graph LR\n  A[Client] --> B[Proxy]\n  B --> C{Access Check}\n  C -- Allowed --> D[Real Subject]\n  C -- Denied --> E[Exception]\n  D --> F[Result]\n  F --> B\n  B --> A"}
+        title="Proxy Pattern Structure"
+        chart={"graph LR\n  A[Client] --> B[Proxy]\n  B -->|delegates to| C[RealSubject]\n  B -->|controls access| C\n  D[Subject Interface] --> B\n  D --> C"}
       />
 
-      <h2>Caching Proxy</h2>
+      <CodeBlock language="java" title="Caching Proxy - Expensive Service Calls" showLineNumbers={true}>
+{`// Subject interface
+public interface ProductService {
+    Product findById(String id);
+    List<Product> search(String query);
+}
 
-      <CodeBlock language="java" title="Caching Proxy with Expiry">
-{`public class CachingUserRepository implements UserRepository {
-    private final UserRepository real;
-    private final Map<Long, CacheEntry> cache = new ConcurrentHashMap<>();
-    private final Duration ttl;
+// Real subject - hits the database
+@Repository
+public class ProductServiceImpl implements ProductService {
+    private final JdbcTemplate jdbc;
 
-    public CachingUserRepository(UserRepository real, Duration ttl) {
-        this.real = real; this.ttl = ttl;
+    @Override
+    public Product findById(String id) {
+        return jdbc.queryForObject(
+            "SELECT * FROM products WHERE id = ?",
+            productRowMapper, id);
     }
 
-    public User findById(long id) {
-        CacheEntry entry = cache.get(id);
-        if (entry != null && !entry.isExpired()) {
-            System.out.println("Cache HIT for user " + id);
-            return entry.user;
+    @Override
+    public List<Product> search(String query) {
+        return jdbc.query(
+            "SELECT * FROM products WHERE name ILIKE ?",
+            productRowMapper, "%" + query + "%");
+    }
+}
+
+// Caching Proxy - same interface, adds caching behavior
+public class CachingProductService implements ProductService {
+    private final ProductService delegate;
+    private final Cache<String, Product> cache;
+    private final Cache<String, List<Product>> searchCache;
+
+    public CachingProductService(ProductService delegate) {
+        this.delegate = delegate;
+        this.cache = Caffeine.newBuilder()
+            .maximumSize(10_000)
+            .expireAfterWrite(Duration.ofMinutes(5))
+            .build();
+        this.searchCache = Caffeine.newBuilder()
+            .maximumSize(1_000)
+            .expireAfterWrite(Duration.ofMinutes(1))
+            .build();
+    }
+
+    @Override
+    public Product findById(String id) {
+        return cache.get(id, delegate::findById); // Cache miss -> delegate
+    }
+
+    @Override
+    public List<Product> search(String query) {
+        return searchCache.get(query, delegate::search);
+    }
+}
+
+// Client doesn't know it's using a proxy
+ProductService service = new CachingProductService(new ProductServiceImpl(jdbc));
+Product p = service.findById("prod-123"); // First call: hits DB
+Product p2 = service.findById("prod-123"); // Second call: from cache`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="Protection Proxy - Access Control" showLineNumbers={true}>
+{`// Protection Proxy - checks permissions before delegating
+public class SecureDocumentService implements DocumentService {
+    private final DocumentService delegate;
+    private final SecurityContext securityContext;
+
+    public SecureDocumentService(DocumentService delegate,
+                                SecurityContext securityContext) {
+        this.delegate = delegate;
+        this.securityContext = securityContext;
+    }
+
+    @Override
+    public Document getDocument(String id) {
+        // Read access - most users allowed
+        User user = securityContext.getCurrentUser();
+        Document doc = delegate.getDocument(id);
+
+        if (!doc.isPublic() && !user.hasPermission("DOCUMENT_READ")) {
+            throw new AccessDeniedException(
+                "User " + user.getId() + " cannot access document " + id);
         }
-        System.out.println("Cache MISS for user " + id);
-        User user = real.findById(id);
-        cache.put(id, new CacheEntry(user, Instant.now().plus(ttl)));
-        return user;
+        return doc;
     }
 
-    public void save(User user) {
-        real.save(user);
-        cache.remove(user.getId()); // invalidate on write
-    }
-
-    private record CacheEntry(User user, Instant expiresAt) {
-        boolean isExpired() { return Instant.now().isAfter(expiresAt); }
+    @Override
+    public void deleteDocument(String id) {
+        // Delete - admin only
+        User user = securityContext.getCurrentUser();
+        if (!user.hasRole(Role.ADMIN)) {
+            throw new AccessDeniedException(
+                "Only admins can delete documents");
+        }
+        delegate.deleteDocument(id);
     }
 }`}
       </CodeBlock>
 
-      <h2>Java Dynamic Proxy</h2>
+      <InfoBox variant="info" title="Proxy in Spring Boot">
+        Spring uses proxies extensively! @Transactional, @Cacheable, @Async, and @Secured all work
+        via dynamic proxies (JDK Proxy or CGLIB). When you annotate a method, Spring wraps your bean
+        in a proxy that adds the cross-cutting behavior before/after your method runs.
+      </InfoBox>
 
-      <CodeBlock language="java" title="Java Reflection — Dynamic Proxy">
-{`// Java can create proxies at runtime without writing a class
-import java.lang.reflect.*;
+      <h2>Chain of Responsibility</h2>
+      <p>
+        Passes a request along a chain of handlers. Each handler decides either to process the
+        request or pass it to the next handler in the chain. Think: servlet filters, Spring
+        Security filter chain, middleware in web frameworks.
+      </p>
 
-// Create a logging proxy for ANY interface
-public class LoggingProxyFactory {
-    @SuppressWarnings("unchecked")
-    public static <T> T wrap(T target, Class<T> iface) {
-        return (T) Proxy.newProxyInstance(
-            iface.getClassLoader(),
-            new Class[]{ iface },
-            (proxy, method, args) -> {
-                System.out.printf("→ %s(%s)%n", method.getName(),
-                    args == null ? "" : Arrays.toString(args));
-                long start = System.nanoTime();
-                Object result = method.invoke(target, args);
-                long ms = (System.nanoTime() - start) / 1_000_000;
-                System.out.printf("← %s returned in %dms%n", method.getName(), ms);
-                return result;
-            }
-        );
+      <FlowChart
+        title="Chain of Responsibility Structure"
+        chart={"graph LR\n  A[Request] --> B[Handler 1]\n  B -->|pass| C[Handler 2]\n  C -->|pass| D[Handler 3]\n  D -->|pass| E[Handler 4]\n  B -->|or handle| F[Response]\n  C -->|or handle| F\n  D -->|or handle| F\n  E -->|or handle| F"}
+      />
+
+      <CodeBlock language="java" title="Chain of Responsibility - Request Validation Pipeline" showLineNumbers={true}>
+{`// Handler interface
+public interface RequestHandler {
+    void setNext(RequestHandler next);
+    ApiResponse handle(ApiRequest request);
+}
+
+// Base handler with chaining logic
+public abstract class BaseHandler implements RequestHandler {
+    private RequestHandler next;
+
+    @Override
+    public void setNext(RequestHandler next) {
+        this.next = next;
+    }
+
+    protected ApiResponse passToNext(ApiRequest request) {
+        if (next != null) {
+            return next.handle(request);
+        }
+        return ApiResponse.ok(); // End of chain
     }
 }
 
-// Usage
-UserRepository logged = LoggingProxyFactory.wrap(
-    new JpaUserRepository(), UserRepository.class);
-User u = logged.findById(42);  // prints method entry/exit with timing`}
+// Concrete handlers
+public class AuthenticationHandler extends BaseHandler {
+    private final TokenService tokenService;
+
+    @Override
+    public ApiResponse handle(ApiRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            return ApiResponse.unauthorized("Missing auth token");
+        }
+
+        User user = tokenService.validate(token.substring(7));
+        if (user == null) {
+            return ApiResponse.unauthorized("Invalid token");
+        }
+
+        request.setUser(user);
+        return passToNext(request); // Authenticated - pass along
+    }
+}
+
+public class RateLimitHandler extends BaseHandler {
+    private final RateLimiter limiter;
+
+    @Override
+    public ApiResponse handle(ApiRequest request) {
+        String clientId = request.getUser().getId();
+        if (!limiter.tryAcquire(clientId)) {
+            return ApiResponse.tooManyRequests("Rate limit exceeded");
+        }
+        return passToNext(request);
+    }
+}
+
+public class ValidationHandler extends BaseHandler {
+    @Override
+    public ApiResponse handle(ApiRequest request) {
+        List<String> errors = request.validate();
+        if (!errors.isEmpty()) {
+            return ApiResponse.badRequest(errors);
+        }
+        return passToNext(request);
+    }
+}
+
+public class BusinessLogicHandler extends BaseHandler {
+    @Override
+    public ApiResponse handle(ApiRequest request) {
+        // Actual business logic here
+        Object result = processRequest(request);
+        return ApiResponse.ok(result);
+    }
+}
+
+// Assemble the chain
+AuthenticationHandler auth = new AuthenticationHandler(tokenService);
+RateLimitHandler rateLimit = new RateLimitHandler(limiter);
+ValidationHandler validation = new ValidationHandler();
+BusinessLogicHandler logic = new BusinessLogicHandler();
+
+auth.setNext(rateLimit);
+rateLimit.setNext(validation);
+validation.setNext(logic);
+
+// Process request through the chain
+ApiResponse response = auth.handle(incomingRequest);`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Spring AOP is Proxy">
-        <p>Spring's @Transactional, @Cacheable, @Async, and security annotations all work through the Proxy pattern (JDK dynamic proxies or CGLIB). When Spring creates a bean with these annotations, it wraps the bean in a proxy that intercepts method calls to add the cross-cutting behavior before/after delegating to the real method.</p>
+      <InfoBox variant="tip" title="Chain vs Decorator">
+        Chain of Responsibility and Decorator look similar (both wrap behavior), but differ in intent.
+        Decorator always delegates to the wrapped object. Chain handlers can short-circuit — if
+        authentication fails, validation never runs. This "fail fast" behavior is the key distinction.
       </InfoBox>
 
       <InteractiveChallenge
-        question="How does Spring implement @Transactional behavior?"
-        options={["It modifies the bytecode of your class", "It wraps your bean in a proxy that starts/commits transactions before/after method calls", "It requires you to extend a TransactionalBase class", "It uses AspectJ load-time weaving only"]}
+        question="In Spring Boot, which annotation creates a proxy that adds caching behavior to a method?"
+        options={[
+          "@Proxy",
+          "@Cacheable",
+          "@CacheProxy",
+          "@Cached"
+        ]}
         correctIndex={1}
-        explanation="Spring uses the Proxy pattern for @Transactional. It creates a proxy (JDK dynamic proxy or CGLIB subclass) that intercepts calls to @Transactional methods, begins a transaction before the call, commits on success, and rolls back on exception — then delegates to your real method."
+        explanation="@Cacheable tells Spring to create a proxy around your bean. The proxy intercepts method calls, checks the cache first, and only calls the real method on a cache miss. This is the Proxy pattern implemented via Spring AOP."
       />
-
     </LessonLayout>
   );
 }

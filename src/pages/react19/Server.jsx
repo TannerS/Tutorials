@@ -4,116 +4,200 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function ReactServer() {
+export default function Server() {
   return (
     <LessonLayout
-      title="Server Components"
+      title="Server Components & Actions"
       sectionId="react19"
-      lessonIndex={8}
-      prev={{ path: "/react19/react19", label: "React 19 New Features" }}
-      next={{ path: "/react19/patterns", label: "React Patterns" }}
+      lessonIndex={7}
+      prev={{ path: '/react19/react19', label: 'React 19 New Features' }}
+      next={{ path: '/react19/patterns', label: 'Advanced Patterns' }}
     >
-      <p>React Server Components (RSC) run on the server, enabling direct database access and reduced client bundle sizes. They represent a fundamental shift in how React apps are architected.</p>
+      <p>Server Components represent a fundamental shift in React architecture. Components can now run exclusively on the server, sending only their rendered output to the client — zero JavaScript for those components ships to the browser.</p>
+
+      <h2>The Mental Model</h2>
 
       <FlowChart
-        title="Server vs Client Components"
-        chart={"graph TD\n  A[React App] --> B[Server Components]\n  A --> C[Client Components]\n  B --> D[Run on server only]\n  B --> E[Zero client JS]\n  B --> F[Direct DB access]\n  C --> G[Run in browser]\n  C --> H[useState hooks]\n  C --> I[Event handlers]"}
+        title="Server vs Client Component Execution"
+        chart={"graph TD\n  A[Request] --> B[Server Components Execute on Server]\n  B --> C[Fetch data directly - no API needed]\n  B --> D[Access DB/filesystem/secrets]\n  B --> E[Render to serialized output]\n  E --> F[Stream to Client]\n  F --> G[Client Components Hydrate]\n  G --> H[Interactive - state/effects/events]\n  I[Key Rule] --> J[Server Components CANNOT use state/effects/browser APIs]\n  I --> K[Client Components CAN import Server Components as children]"}
       />
 
-      <h2>Server Components</h2>
-      <CodeBlock language="jsx" title="Server Component (Next.js App Router)">
-{`// app/users/page.tsx — Server Component by default
-// No "use client" directive = server component
+      <InfoBox variant="info" title="Default is Server">
+        <p>In frameworks that support React Server Components (Next.js App Router, etc.), <strong>all components are Server Components by default</strong>. You opt INTO client behavior with <code>"use client"</code> at the top of a file. Think of it as a boundary — everything below that directive (and its imports) becomes client code.</p>
+      </InfoBox>
+
+      <h2>Server Components — Direct Data Access</h2>
+
+      <CodeBlock language="jsx" title="Server Components — No useEffect, No Loading States" showLineNumbers>
+{`// This is a Server Component (default in App Router)
+// It runs ONLY on the server — no JS sent to browser for this component
 
 import { db } from '@/lib/database';
 
-// Direct database access — no API layer needed!
-async function UsersPage() {
-    const users = await db.query('SELECT * FROM users ORDER BY name');
+async function ProductPage({ params }) {
+  // Direct database access — no API route needed!
+  const product = await db.products.findUnique({
+    where: { slug: params.slug },
+    include: { reviews: true, category: true },
+  });
 
-    return (
-        <main>
-            <h1>Users ({users.length})</h1>
-            <ul>
-                {users.map(user => (
-                    <li key={user.id}>
-                        {user.name}
-                        {/* Nest a client component for interactivity */}
-                        <DeleteButton userId={user.id} />
-                    </li>
-                ))}
-            </ul>
-        </main>
-    );
+  // Access environment secrets safely
+  const price = await convertCurrency(product.price, process.env.EXCHANGE_API_KEY);
+
+  return (
+    <div>
+      <title>{product.name} | Our Store</title>
+      <h1>{product.name}</h1>
+      <p>{product.description}</p>
+      <span>\${price}</span>
+
+      {/* Client Component for interactivity */}
+      <AddToCartButton productId={product.id} />
+
+      {/* Server-rendered list — could be 1000 reviews, zero client JS */}
+      <ReviewList reviews={product.reviews} />
+    </div>
+  );
 }
 
-export default UsersPage;`}
+export default ProductPage;`}
       </CodeBlock>
 
-      <h2>Client Components</h2>
-      <CodeBlock language="jsx" title="Client Component with use client">
-{`'use client'; // Opt into client-side rendering
+      <h2>"use client" Directive</h2>
 
-import { useState } from 'react';
+      <CodeBlock language="jsx" title="Client Components — When You Need Interactivity" showLineNumbers>
+{`"use client"; // This file and its imports are client-side code
 
-// Client components: useState, useEffect, event handlers, browser APIs
-function DeleteButton({ userId }) {
-    const [loading, setLoading] = useState(false);
+import { useState, useTransition } from 'react';
+import { addToCart } from '@/actions/cart'; // Server Action
 
-    async function handleDelete() {
-        setLoading(true);
-        await fetch("/api/users/" + userId, { method: "DELETE" });
-        router.refresh(); // revalidate server component data
-    }
+export function AddToCartButton({ productId }) {
+  const [isPending, startTransition] = useTransition();
+  const [added, setAdded] = useState(false);
 
-    return (
-        <button onClick={handleDelete} disabled={loading}>
-            {loading ? "Deleting..." : "Delete"}
-        </button>
-    );
-}`}
-      </CodeBlock>
+  const handleClick = () => {
+    startTransition(async () => {
+      await addToCart(productId); // Calls server action
+      setAdded(true);
+    });
+  };
 
-      <h2>Server Actions</h2>
-      <CodeBlock language="jsx" title="Server Actions for Form Mutations">
-{`// Server action — runs on server when called from client
-'use server';
-
-export async function createUser(formData) {
-    const name  = formData.get('name');
-    const email = formData.get('email');
-
-    // Validate
-    if (!name || !email) throw new Error('Name and email required');
-
-    // Direct DB write from server action
-    await db.insert('users', { name, email, createdAt: new Date() });
-
-    // Revalidate cached data
-    revalidatePath('/users');
+  return (
+    <button onClick={handleClick} disabled={isPending}>
+      {isPending ? 'Adding...' : added ? 'Added ✓' : 'Add to Cart'}
+    </button>
+  );
 }
 
-// In a Client Component:
-function CreateUserForm() {
-    return (
-        <form action={createUser}> {/* server action as form action */}
-            <input name="name" required />
-            <input name="email" type="email" required />
-            <button type="submit">Create User</button>
-        </form>
-    );
-}`}
+// When to use "use client":
+// - useState, useEffect, useRef, or any hook with state/lifecycle
+// - Event handlers (onClick, onChange, etc.)
+// - Browser-only APIs (window, document, localStorage)
+// - Third-party libs that use any of the above`}
       </CodeBlock>
 
-      <InfoBox variant="note" title="RSC vs SSR">
-        <p>Server Components and Server-Side Rendering (SSR) are different. SSR renders a full page to HTML on the server and hydrates on the client. RSC selectively renders components on the server with zero hydration cost. RSC can be nested inside SSR pages.</p>
+      <h2>Server Actions — "use server"</h2>
+
+      <CodeBlock language="jsx" title="Server Actions — Mutations Without API Routes" showLineNumbers>
+{`// Server Action — runs on server, callable from client
+"use server";
+
+import { db } from '@/lib/database';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+
+export async function createPost(formData) {
+  // Validate on server — never trust client
+  const title = formData.get('title');
+  const content = formData.get('content');
+
+  if (!title || title.length < 3) {
+    return { error: 'Title must be at least 3 characters' };
+  }
+
+  // Direct DB mutation
+  const post = await db.posts.create({
+    data: { title, content, authorId: getCurrentUser().id },
+  });
+
+  // Invalidate cached data so UI refreshes
+  revalidatePath('/posts');
+  redirect(\`/posts/\${post.slug}\`);
+}
+
+export async function deletePost(postId) {
+  await db.posts.delete({ where: { id: postId } });
+  revalidatePath('/posts');
+}
+
+// Usage in a Client Component:
+// import { createPost } from './actions';
+// <form action={createPost}> ... </form>
+
+// Or called imperatively:
+// const result = await createPost(formData);`}
+      </CodeBlock>
+
+      <h2>Streaming & Suspense Boundaries</h2>
+
+      <CodeBlock language="jsx" title="Progressive Loading with Suspense" showLineNumbers>
+{`import { Suspense } from 'react';
+
+// Server Component that orchestrates streaming
+async function DashboardPage() {
+  // This data loads fast — renders immediately
+  const user = await getUser();
+
+  return (
+    <div>
+      <h1>Welcome, {user.name}</h1>
+
+      {/* Each Suspense boundary streams independently */}
+      <Suspense fallback={<StatsSkeleton />}>
+        <StatsPanel userId={user.id} />  {/* Slow query — streams when ready */}
+      </Suspense>
+
+      <Suspense fallback={<FeedSkeleton />}>
+        <ActivityFeed userId={user.id} /> {/* Another slow query */}
+      </Suspense>
+
+      <Suspense fallback={<ChartSkeleton />}>
+        <AnalyticsChart userId={user.id} /> {/* Slowest — arrives last */}
+      </Suspense>
+    </div>
+  );
+}
+
+// Each async server component resolves independently
+async function StatsPanel({ userId }) {
+  const stats = await db.stats.aggregate({ where: { userId } }); // 200ms
+  return <div>{/* render stats */}</div>;
+}
+
+async function ActivityFeed({ userId }) {
+  const feed = await db.activity.findMany({ where: { userId } }); // 500ms
+  return <ul>{feed.map(item => <li key={item.id}>{item.text}</li>)}</ul>;
+}
+
+// Result: User sees header immediately, then stats pop in,
+// then feed, then chart — no all-or-nothing loading`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Composition Rule">
+        <p>Server Components can render Client Components (as imports). Client Components can render Server Components only if passed as <code>children</code> or other props (not as direct imports). This is because the client can't execute server code, but it CAN render pre-rendered server output passed to it.</p>
       </InfoBox>
 
       <InteractiveChallenge
-        question="Can a Server Component use useState?"
-        options={["Yes, all hooks work in Server Components", "No — useState and other stateful hooks only work in Client Components", "Yes, but only in useEffect", "Only if marked with use server directive"]}
+        question="A Server Component imports and renders a Client Component. What gets sent to the browser?"
+        options={[
+          "Both components' JavaScript code",
+          "Only the Client Component's JS; the Server Component's rendered HTML is inlined",
+          "Neither — Server Components handle all rendering",
+          "The Server Component's JS with a placeholder for the Client Component"
+        ]}
         correctIndex={1}
-        explanation="Server Components run only on the server and have no concept of state, effects, or browser APIs. They cannot use useState, useEffect, useContext, or event handlers. Add 'use client' at the top of a file to make it a Client Component with access to all hooks."
+        explanation="Server Components execute on the server and produce serialized output (RSC payload / HTML). Only Client Components ship their JavaScript to the browser for hydration and interactivity. The Server Component's output is already rendered — it's just HTML/data by the time it reaches the client."
+        language="jsx"
       />
     </LessonLayout>
   );

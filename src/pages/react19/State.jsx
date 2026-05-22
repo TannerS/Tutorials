@@ -4,108 +4,244 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function ReactState() {
+export default function State() {
   return (
     <LessonLayout
-      title="State Management"
+      title="State Management Patterns"
       sectionId="react19"
-      lessonIndex={3}
-      prev={{ path: "/react19/hooks", label: "React Hooks Deep Dive" }}
-      next={{ path: "/react19/effects", label: "Side Effects & useEffect" }}
+      lessonIndex={2}
+      prev={{ path: '/react19/hooks', label: 'Hooks Deep Dive' }}
+      next={{ path: '/react19/effects', label: 'Effects & Data Fetching' }}
     >
-      <p>State is the core of React interactivity. Understanding batching, immutability, and the relationship between local state and derived values is essential.</p>
+      <p>State management is the central challenge in React applications. The right approach depends on the scope, frequency of updates, and number of consumers. Here's a framework for choosing.</p>
 
-      <h2>State Fundamentals</h2>
-      <CodeBlock language="jsx" title="State Rules and Patterns">
-{`// State triggers re-render — plain variables do not
-function Counter() {
-    let count = 0;                    // WRONG: won't re-render
-    const [count, setCount] = useState(0); // CORRECT
+      <FlowChart
+        title="State Management Decision Tree"
+        chart={"graph TD\n  A[Where does this state belong?] --> B{Used by single component?}\n  B -->|Yes| C[Local useState/useReducer]\n  B -->|No| D{Used by parent + few children?}\n  D -->|Yes| E[Lift state to parent]\n  D -->|No| F{Deeply nested consumers?}\n  F -->|Yes| G{Updates frequently?}\n  F -->|No| E\n  G -->|No| H[Context + useReducer]\n  G -->|Yes| I{Need derived/computed state?}\n  I -->|Yes| J[Zustand or Jotai]\n  I -->|No| K[Zustand with selectors]\n  L[Server state?] --> M[TanStack Query / SWR]"}
+      />
 
-    // WRONG: direct mutation
-    const addItem = () => { items.push(newItem); setItems(items); };
-    // CORRECT: create new array
-    const addItem = () => setItems([...items, newItem]);
+      <h2>Lifting State & Prop Drilling</h2>
 
-    // WRONG: update and read in same render
-    setCount(count + 1);
-    console.log(count); // still old value! State updates are async
+      <InfoBox variant="info" title="Prop Drilling Is Not Always Bad">
+        <p>Passing props through 2-3 levels is normal React. It makes data flow explicit and components easy to test. Start worrying at 4+ levels or when intermediate components don't use the props at all.</p>
+      </InfoBox>
 
-    // CORRECT: functional update for sequential changes
-    setCount(c => c + 1);
-    setCount(c => c + 1); // both apply: count += 2
+      <CodeBlock language="jsx" title="Prop Drilling Solutions" showLineNumbers>
+{`// Problem: intermediate components pass props they don't use
+function App() {
+  const [user, setUser] = useState(null);
+  return <Layout user={user} setUser={setUser} />;
+}
+function Layout({ user, setUser }) {
+  // Layout doesn't use user — it just passes it through
+  return <Sidebar user={user} setUser={setUser} />;
+}
+
+// Solution 1: Component composition (move components up)
+function App() {
+  const [user, setUser] = useState(null);
+  return (
+    <Layout
+      sidebar={<Sidebar user={user} setUser={setUser} />}
+    />
+  );
+}
+function Layout({ sidebar }) {
+  return <div className="layout">{sidebar}</div>; // No prop drilling!
+}
+
+// Solution 2: Children pattern
+function App() {
+  const [user, setUser] = useState(null);
+  return (
+    <Layout>
+      <Sidebar user={user} setUser={setUser} />
+    </Layout>
+  );
 }`}
       </CodeBlock>
 
-      <h2>Immutable State Updates</h2>
-      <CodeBlock language="jsx" title="Updating Nested State">
-{`const [form, setForm] = useState({ name: "", address: { city: "", zip: "" } });
+      <h2>useReducer + Context — Built-in Global State</h2>
 
-// Update nested object — must spread at each level
-const updateCity = (city) => setForm(prev => ({
-    ...prev,
-    address: { ...prev.address, city }
+      <CodeBlock language="jsx" title="Scalable Context + Reducer Pattern" showLineNumbers>
+{`// Split context into State and Dispatch for performance
+const TodoStateContext = createContext(null);
+const TodoDispatchContext = createContext(null);
+
+function todoReducer(state, action) {
+  switch (action.type) {
+    case 'ADD':
+      return [...state, { id: crypto.randomUUID(), text: action.text, done: false }];
+    case 'TOGGLE':
+      return state.map(t => t.id === action.id ? { ...t, done: !t.done } : t);
+    case 'DELETE':
+      return state.filter(t => t.id !== action.id);
+    default:
+      throw new Error(\`Unknown action: \${action.type}\`);
+  }
+}
+
+function TodoProvider({ children }) {
+  const [todos, dispatch] = useReducer(todoReducer, []);
+  return (
+    <TodoStateContext.Provider value={todos}>
+      <TodoDispatchContext.Provider value={dispatch}>
+        {children}
+      </TodoDispatchContext.Provider>
+    </TodoStateContext.Provider>
+  );
+}
+
+// Custom hooks for consuming — encapsulate context access
+function useTodos() {
+  const context = useContext(TodoStateContext);
+  if (context === null) throw new Error('useTodos must be inside TodoProvider');
+  return context;
+}
+
+function useTodoDispatch() {
+  const context = useContext(TodoDispatchContext);
+  if (context === null) throw new Error('useTodoDispatch must be inside TodoProvider');
+  return context;
+}
+
+// WHY split? Components using only dispatch won't re-render when state changes.
+// dispatch is stable (same reference across renders).
+function AddTodo() {
+  const dispatch = useTodoDispatch(); // Never re-renders from state changes
+  const [text, setText] = useState('');
+  return (
+    <form onSubmit={e => {
+      e.preventDefault();
+      dispatch({ type: 'ADD', text });
+      setText('');
+    }}>
+      <input value={text} onChange={e => setText(e.target.value)} />
+    </form>
+  );
+}`}
+      </CodeBlock>
+
+      <h2>External Libraries — Zustand & Jotai</h2>
+
+      <CodeBlock language="jsx" title="Zustand — Minimal Global Store" showLineNumbers>
+{`import { create } from 'zustand';
+
+// Define store — plain function, no providers needed
+const useStore = create((set, get) => ({
+  bears: 0,
+  fish: [],
+  // Actions live alongside state
+  increasePopulation: () => set(state => ({ bears: state.bears + 1 })),
+  removeAllBears: () => set({ bears: 0 }),
+  addFish: (fish) => set(state => ({ fish: [...state.fish, fish] })),
+  // Async actions are just regular async functions
+  fetchFish: async () => {
+    const response = await fetch('/api/fish');
+    const fish = await response.json();
+    set({ fish });
+  },
 }));
 
-// Arrays — never mutate directly
-const [todos, setTodos] = useState([]);
-
-// Add
-setTodos(prev => [...prev, { id: Date.now(), text, done: false }]);
-
-// Remove
-setTodos(prev => prev.filter(t => t.id !== id));
-
-// Update one item
-setTodos(prev => prev.map(t =>
-    t.id === id ? { ...t, done: !t.done } : t
-));
-
-// Reorder
-setTodos(prev => {
-    const next = [...prev];
-    [next[i], next[j]] = [next[j], next[i]];
-    return next;
-});`}
-      </CodeBlock>
-
-      <h2>Derived State vs Stored State</h2>
-      <CodeBlock language="jsx" title="Avoid Redundant State">
-{`// BAD: redundant state — derives from existing state
-const [items, setItems] = useState([]);
-const [count, setCount] = useState(0); // redundant!
-// count is always items.length
-
-// GOOD: derive it
-const count = items.length; // no state needed
-
-// BAD: mirroring props in state
-function Component({ initialName }) {
-    const [name, setName] = useState(initialName); // stale on prop change!
+// Components subscribe to slices — only re-render when selected value changes
+function BearCounter() {
+  const bears = useStore(state => state.bears); // Selector!
+  return <h1>{bears} bears</h1>;
 }
 
-// GOOD: use prop directly, or use key to reset
-function Component({ name }) {
-    return <div>{name}</div>; // just use the prop
+function Controls() {
+  const increase = useStore(state => state.increasePopulation);
+  return <button onClick={increase}>Add bear</button>;
 }
 
-// BAD: storing computed values in state
-const [fullName, setFullName] = useState(first + " " + last);
+// Zustand with immer for nested updates
+import { immer } from 'zustand/middleware/immer';
 
-// GOOD: compute on every render (or useMemo for expensive ones)
-const fullName = first + " " + last;`}
+const useNestedStore = create(immer((set) => ({
+  deeply: { nested: { value: 0 } },
+  increment: () => set(state => { state.deeply.nested.value += 1; }),
+})));`}
       </CodeBlock>
 
-      <FlowChart
-        title="When to Use Which State Solution"
-        chart={"graph TD\n  A[Need state?] --> B{Shared across components?}\n  B --> |No - single component| C[useState or useReducer]\n  B --> |Yes - nearby components| D[Lift state up]\n  B --> |Yes - distant components| E{How often changes?}\n  E --> |Rarely - theme/user| F[Context + useContext]\n  E --> |Frequently| G[State library - Zustand/Redux]"}
-      />
+      <CodeBlock language="jsx" title="Jotai — Atomic State" showLineNumbers>
+{`import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
+
+// Atoms are minimal state units — like useState but shareable
+const countAtom = atom(0);
+const doubleCountAtom = atom(get => get(countAtom) * 2); // Derived atom
+
+// Async derived atom
+const userAtom = atom(async (get) => {
+  const id = get(userIdAtom);
+  const res = await fetch(\`/api/users/\${id}\`);
+  return res.json();
+});
+
+function Counter() {
+  const [count, setCount] = useAtom(countAtom);
+  const doubled = useAtomValue(doubleCountAtom); // Read-only
+  return (
+    <div>
+      <span>{count} (doubled: {doubled})</span>
+      <button onClick={() => setCount(c => c + 1)}>+</button>
+    </div>
+  );
+}
+
+// When to choose Jotai over Zustand:
+// - Fine-grained reactivity (many independent pieces of state)
+// - Derived/computed state is central to your app
+// - You want React-like mental model (atoms ≈ useState that's global)`}
+      </CodeBlock>
+
+      <h2>State Machines Concept</h2>
+
+      <InfoBox variant="tip" title="State Machines Prevent Impossible States">
+        <p>Instead of multiple booleans (<code>isLoading</code>, <code>isError</code>, <code>isSuccess</code>) that can conflict, model state as explicit states with defined transitions. Libraries like XState formalize this, but you can apply the concept with useReducer.</p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="State Machine with useReducer" showLineNumbers>
+{`// Define valid states and transitions explicitly
+const machine = {
+  idle: { FETCH: 'loading' },
+  loading: { SUCCESS: 'success', ERROR: 'error' },
+  success: { FETCH: 'loading', RESET: 'idle' },
+  error: { RETRY: 'loading', RESET: 'idle' },
+};
+
+function reducer(state, event) {
+  const nextStatus = machine[state.status]?.[event.type];
+  if (!nextStatus) return state; // Invalid transition — ignore
+
+  switch (event.type) {
+    case 'FETCH':
+    case 'RETRY':
+      return { status: 'loading', data: state.data, error: null };
+    case 'SUCCESS':
+      return { status: 'success', data: event.data, error: null };
+    case 'ERROR':
+      return { status: 'error', data: null, error: event.error };
+    case 'RESET':
+      return { status: 'idle', data: null, error: null };
+    default:
+      return state;
+  }
+}
+
+// Now it's IMPOSSIBLE to be in loading + error simultaneously`}
+      </CodeBlock>
 
       <InteractiveChallenge
-        question="What happens when you call setState multiple times in the same event handler in React 19?"
-        options={["Three separate re-renders occur", "All updates are batched into a single re-render", "Only the last setState call takes effect", "React throws an error"]}
+        question="Why split Context into separate State and Dispatch providers?"
+        options={[
+          "It reduces bundle size by tree-shaking unused context",
+          "Components that only dispatch actions won't re-render when state changes",
+          "React requires separate contexts for objects vs functions",
+          "It enables server-side rendering of the dispatch context"
+        ]}
         correctIndex={1}
-        explanation="React 19 (and React 18+) automatically batches ALL state updates — even those in setTimeout, Promises, and native event handlers — into a single re-render. This is a performance improvement over React 17 which only batched updates in React event handlers."
+        explanation="When state and dispatch share a context, every state change creates a new context value object, causing ALL consumers to re-render — even those that only call dispatch. Since dispatch from useReducer is referentially stable, putting it in its own context means action-only consumers never re-render from state changes."
+        language="jsx"
       />
     </LessonLayout>
   );

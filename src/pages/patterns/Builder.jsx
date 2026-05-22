@@ -4,177 +4,230 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function PatternsBuilder() {
+export default function Builder() {
   return (
     <LessonLayout
-      title="Builder Pattern"
+      title="Builder & Prototype Patterns"
       sectionId="patterns"
       lessonIndex={4}
-      prev={{ path: "/patterns/decorator", label: "Decorator Pattern" }}
-      next={{ path: "/patterns/composite", label: "Composite Pattern" }}
+      prev={{ path: '/patterns/decorator', label: 'Decorator & Adapter' }}
+      next={{ path: '/patterns/composite', label: 'Composite & Facade' }}
     >
-      <p>The Builder pattern separates the construction of a complex object from its representation. When an object has many optional parameters, telescoping constructors become unwieldy. Builder provides a fluent API that only sets what you need, with a final <code>build()</code> call to validate and create the object.</p>
+      <h2>Builder Pattern</h2>
+      <p>
+        Separates the construction of a complex object from its representation, allowing
+        the same construction process to create different representations. Ideal when an object
+        has many optional parameters or requires step-by-step construction.
+      </p>
 
-      <h2>Telescoping Constructor Problem</h2>
+      <FlowChart
+        title="Builder Pattern Structure"
+        chart={"graph TD\n  A[Client] --> B[Builder]\n  B -->|step 1| C[set field A]\n  B -->|step 2| D[set field B]\n  B -->|step 3| E[set field C]\n  B -->|build| F[Immutable Product]\n  G[Director] -->|orchestrates| B"}
+      />
 
-      <CodeBlock language="java" title="Before Builder — Constructor Explosion">
-{`// With 8 fields, you need constructors for every combo, or one giant one
-class HttpRequest {
-    HttpRequest(String url) { ... }
-    HttpRequest(String url, String method) { ... }
-    HttpRequest(String url, String method, Map<String,String> headers) { ... }
-    HttpRequest(String url, String method, Map<String,String> headers, String body) { ... }
-    // ... or one nightmare constructor:
-    HttpRequest(String url, String method, Map<String,String> headers,
-                String body, int timeout, boolean followRedirects,
-                String contentType, boolean ssl) { ... }
-    // Called as: new HttpRequest("http://...", "POST", null, "{}", 5000, true, "application/json", true)
-    // Can you tell what 'true' means in position 6 vs 8? No.
-}`}
-      </CodeBlock>
-
-      <CodeBlock language="java" title="After Builder — Fluent and Readable">
+      <CodeBlock language="java" title="Builder - Fluent API for Complex Object" showLineNumbers={true}>
 {`public class HttpRequest {
-    private final String url;
     private final String method;
+    private final String url;
     private final Map<String, String> headers;
     private final String body;
-    private final int timeoutMs;
-    private final boolean followRedirects;
-    private final String contentType;
+    private final Duration timeout;
+    private final int retries;
 
-    // Private — only Builder can call this
+    // Private constructor - only Builder can create instances
     private HttpRequest(Builder builder) {
-        this.url             = builder.url;
-        this.method          = builder.method;
-        this.headers         = Collections.unmodifiableMap(builder.headers);
-        this.body            = builder.body;
-        this.timeoutMs       = builder.timeoutMs;
-        this.followRedirects = builder.followRedirects;
-        this.contentType     = builder.contentType;
+        this.method = builder.method;
+        this.url = builder.url;
+        this.headers = Collections.unmodifiableMap(builder.headers);
+        this.body = builder.body;
+        this.timeout = builder.timeout;
+        this.retries = builder.retries;
+    }
+
+    // Static factory method to get builder
+    public static Builder builder(String method, String url) {
+        return new Builder(method, url);
     }
 
     public static class Builder {
-        // Required
+        // Required parameters
+        private final String method;
         private final String url;
-        // Optional with defaults
-        private String method          = "GET";
-        private Map<String,String> headers = new HashMap<>();
-        private String body            = null;
-        private int timeoutMs          = 30_000;
-        private boolean followRedirects = true;
-        private String contentType     = "application/json";
 
-        public Builder(String url) { this.url = url; }  // required param
+        // Optional parameters with defaults
+        private Map<String, String> headers = new HashMap<>();
+        private String body = null;
+        private Duration timeout = Duration.ofSeconds(30);
+        private int retries = 0;
 
-        public Builder method(String m)          { this.method = m; return this; }
-        public Builder header(String k, String v){ this.headers.put(k, v); return this; }
-        public Builder body(String b)            { this.body = b; return this; }
-        public Builder timeout(int ms)           { this.timeoutMs = ms; return this; }
-        public Builder followRedirects(boolean f){ this.followRedirects = f; return this; }
-        public Builder contentType(String ct)    { this.contentType = ct; return this; }
+        private Builder(String method, String url) {
+            this.method = Objects.requireNonNull(method);
+            this.url = Objects.requireNonNull(url);
+        }
+
+        public Builder header(String key, String value) {
+            this.headers.put(key, value);
+            return this; // Fluent API - return this for chaining
+        }
+
+        public Builder body(String body) {
+            this.body = body;
+            return this;
+        }
+
+        public Builder timeout(Duration timeout) {
+            this.timeout = timeout;
+            return this;
+        }
+
+        public Builder retries(int retries) {
+            if (retries < 0) throw new IllegalArgumentException("Retries must be >= 0");
+            this.retries = retries;
+            return this;
+        }
 
         public HttpRequest build() {
-            if (url == null || url.isBlank()) throw new IllegalStateException("URL required");
-            if (body != null && method.equals("GET")) throw new IllegalStateException("GET cannot have body");
+            // Validate state before building
+            if (body != null && method.equals("GET")) {
+                throw new IllegalStateException("GET requests cannot have a body");
+            }
             return new HttpRequest(this);
         }
     }
 }
 
-// Usage — clear, readable, only set what you need
-HttpRequest request = new HttpRequest.Builder("https://api.example.com/orders")
-    .method("POST")
+// Usage - clean, readable, self-documenting
+HttpRequest request = HttpRequest.builder("POST", "https://api.example.com/orders")
+    .header("Content-Type", "application/json")
     .header("Authorization", "Bearer " + token)
-    .body("""{"item":"book","qty":2}""")
-    .timeout(5_000)
+    .body(orderJson)
+    .timeout(Duration.ofSeconds(10))
+    .retries(3)
     .build();`}
       </CodeBlock>
 
-      <FlowChart
-        title="Builder Construction Flow"
-        chart={"graph LR\n  A[Client] --> B[Builder]\n  B --> C[set method]\n  B --> D[set headers]\n  B --> E[set body]\n  B --> F[set timeout]\n  C & D & E & F --> G[build]\n  G --> H[Validate]\n  H --> I[HttpRequest]"}
-      />
+      <h3>Lombok @Builder</h3>
+      <InfoBox variant="tip" title="Lombok Eliminates Boilerplate">
+        In production code, you rarely write builders by hand. Lombok's @Builder annotation
+        generates the entire builder pattern at compile time. Understanding the manual version
+        is important for interviews, but use Lombok in real projects.
+      </InfoBox>
 
-      <h2>Lombok @Builder</h2>
-
-      <CodeBlock language="java" title="Lombok @Builder (Zero Boilerplate)">
-{`import lombok.Builder;
-import lombok.Value;  // immutable @Data
-
-@Value  // immutable: final fields, no setters
-@Builder(toBuilder = true)  // generates Builder class
-public class UserProfile {
-    String userId;
-    String displayName;
+      <CodeBlock language="java" title="Lombok @Builder - Zero Boilerplate" showLineNumbers={true}>
+{`@Builder
+@Value // Makes all fields private final, generates getters, equals, hashCode, toString
+public class UserDto {
+    String id;
     String email;
-    String avatarUrl;
+    String displayName;
+
     @Builder.Default
-    boolean emailVerified = false;
+    Role role = Role.USER;
+
     @Builder.Default
-    Instant createdAt = Instant.now();
+    boolean active = true;
+
+    @Singular  // Generates addPermission() for individual items
+    List<String> permissions;
 }
 
-// Usage — Lombok generates the builder for you
-UserProfile profile = UserProfile.builder()
-    .userId("u-123")
-    .displayName("Alice")
-    .email("alice@example.com")
-    .emailVerified(true)
+// Usage - identical API to hand-written builder
+UserDto admin = UserDto.builder()
+    .id("usr-123")
+    .email("admin@company.com")
+    .displayName("Admin User")
+    .role(Role.ADMIN)
+    .permission("READ")
+    .permission("WRITE")
+    .permission("DELETE")
     .build();
 
-// toBuilder copies existing + overrides specific fields
-UserProfile updated = profile.toBuilder()
-    .displayName("Alice Smith")
+// Modify immutable objects with toBuilder()
+UserDto deactivated = admin.toBuilder()
+    .active(false)
     .build();`}
       </CodeBlock>
 
-      <h2>Builder for Test Data</h2>
+      <h2>Prototype Pattern</h2>
+      <p>
+        Creates new objects by cloning an existing instance (prototype) rather than
+        constructing from scratch. Useful when object creation is expensive or when you
+        need copies with slight variations.
+      </p>
 
-      <CodeBlock language="java" title="Test Object Builder">
-{`// Test builders make test setup readable
-public class OrderTestBuilder {
-    private String orderId      = UUID.randomUUID().toString();
-    private String customerId   = "customer-1";
-    private List<OrderLine> lines = new ArrayList<>();
-    private OrderStatus status  = OrderStatus.PENDING;
-    private BigDecimal total    = BigDecimal.ZERO;
+      <FlowChart
+        title="Prototype Pattern Structure"
+        chart={"graph TD\n  A[Prototype Interface] -->|clone| B[ConcretePrototype]\n  C[Client] -->|requests clone| A\n  B --> D[Cloned Object 1]\n  B --> E[Cloned Object 2]\n  B --> F[Cloned Object 3]"}
+      />
 
-    public OrderTestBuilder withCustomer(String id) { this.customerId = id; return this; }
-    public OrderTestBuilder withLine(String sku, int qty, double price) {
-        lines.add(new OrderLine(sku, qty, price));
-        total = total.add(BigDecimal.valueOf(qty * price));
-        return this;
+      <CodeBlock language="java" title="Prototype - Document Template System" showLineNumbers={true}>
+{`public abstract class DocumentTemplate implements Cloneable {
+    private String title;
+    private String content;
+    private List<String> sections;
+    private Map<String, String> metadata;
+
+    // Deep clone - critical for mutable fields
+    @Override
+    public DocumentTemplate clone() {
+        try {
+            DocumentTemplate copy = (DocumentTemplate) super.clone();
+            // Deep copy mutable collections
+            copy.sections = new ArrayList<>(this.sections);
+            copy.metadata = new HashMap<>(this.metadata);
+            return copy;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError("Clone not supported", e);
+        }
     }
-    public OrderTestBuilder shipped() { this.status = OrderStatus.SHIPPED; return this; }
 
-    public Order build() { return new Order(orderId, customerId, lines, status, total); }
+    public abstract void customize(Map<String, String> params);
 }
 
-// Test becomes a narrative
-@Test void should_calculate_shipping_for_heavy_order() {
-    Order order = new OrderTestBuilder()
-        .withCustomer("vip-customer")
-        .withLine("BOOK-1", 3, 15.99)
-        .withLine("LAPTOP-1", 1, 999.99)
-        .build();
+// Registry of prototypes
+public class TemplateRegistry {
+    private final Map<String, DocumentTemplate> templates = new HashMap<>();
 
-    double shipping = shippingService.calculate(order);
-    assertThat(shipping).isEqualTo(25.00);
-}`}
+    public void register(String key, DocumentTemplate template) {
+        templates.put(key, template);
+    }
+
+    public DocumentTemplate create(String key) {
+        DocumentTemplate prototype = templates.get(key);
+        if (prototype == null) {
+            throw new IllegalArgumentException("Unknown template: " + key);
+        }
+        return prototype.clone(); // Return a fresh copy
+    }
+}
+
+// Usage
+TemplateRegistry registry = new TemplateRegistry();
+registry.register("invoice", new InvoiceTemplate());
+registry.register("report", new ReportTemplate());
+
+// Each call returns a new independent copy
+DocumentTemplate myInvoice = registry.create("invoice");
+myInvoice.customize(Map.of("customer", "Acme Corp", "amount", "$5,000"));`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Builder vs Factory">
-        <p>Use Factory when the creation logic is simple and you want to hide which subclass to return. Use Builder when construction requires many parameters, optional fields, or multi-step validation. They are complementary: a Factory can use a Builder internally.</p>
+      <InfoBox variant="warning" title="Shallow vs Deep Clone">
+        Java's Object.clone() performs a shallow copy by default. If your object contains mutable
+        references (lists, maps, other objects), you MUST deep-copy them manually. Otherwise,
+        clones will share mutable state — a common source of subtle bugs.
       </InfoBox>
 
       <InteractiveChallenge
-        question="What problem does the Builder pattern primarily solve?"
-        options={["Lazy initialization of expensive objects", "Telescoping constructors with many optional parameters", "Ensuring only one instance exists", "Converting between incompatible interfaces"]}
+        question="Why does the Builder pattern make the constructed object immutable (all fields final, no setters)?"
+        options={[
+          "To save memory by allowing the JVM to optimize field storage",
+          "To ensure thread safety and prevent invalid state after construction",
+          "Because Java requires final fields when using inner classes",
+          "To make serialization with Jackson easier"
+        ]}
         correctIndex={1}
-        explanation="Builder solves the telescoping constructor problem. When a class has many optional parameters, constructors become unreadable and error-prone. Builder provides a fluent step-by-step API and a final build() method that validates and constructs the object."
+        explanation="The Builder validates all constraints during build(), guaranteeing the object is in a valid state. Making it immutable ensures no one can put it into an invalid state later. This also makes the object inherently thread-safe — it can be shared across threads without synchronization."
       />
-
     </LessonLayout>
   );
 }

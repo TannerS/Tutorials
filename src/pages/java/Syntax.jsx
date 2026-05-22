@@ -4,179 +4,315 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function JavaSyntax() {
+function Syntax() {
   return (
     <LessonLayout
-      title="Java Syntax"
+      title="Syntax & Data Types"
       sectionId="java"
       lessonIndex={1}
-      prev={{ path: "/java/intro", label: "Introduction to Java" }}
-      next={{ path: "/java/oop", label: "Object-Oriented Programming" }}
+      prev={{ path: '/java/intro', label: 'Introduction to Java' }}
+      next={{ path: '/java/oop', label: 'OOP Fundamentals' }}
     >
-      <p>Java is a statically-typed language — every variable must declare its type. This section covers primitives, operators, control flow, and strings.</p>
+      <h2>Variables and Data Types</h2>
+      <p>
+        In Java, every variable must be declared with a specific type before it can be used. Java
+        is a <strong>statically-typed</strong> language, meaning the compiler checks types at
+        compile time rather than at runtime. This catches many errors early in the development
+        process.
+      </p>
 
-      <h2>Primitive Data Types</h2>
-      <p>Java has 8 primitives. They store values directly (not as objects), making them fast and memory-efficient.</p>
+      <h3>Primitive Data Types</h3>
+      <p>
+        Java has eight primitive data types that serve as the building blocks for data
+        manipulation:
+      </p>
 
-      <CodeBlock language="java" title="Primitive Types">
-{`// Integer types
-byte   b = 127;           // 8-bit: -128 to 127
-short  s = 32767;         // 16-bit: -32768 to 32767
-int    i = 2_147_483_647; // 32-bit (most common integer type)
-long   l = 99_999_999L;   // 64-bit, use L suffix
+      <FlowChart
+        title="Java Primitive Type Hierarchy"
+        chart={"graph TD\nA[Primitive Types] --> B[Numeric]\nA --> C[Boolean]\nB --> D[Integer Types]\nB --> E[Floating Point]\nD --> F[byte 8-bit]\nD --> G[short 16-bit]\nD --> H[int 32-bit]\nD --> I[long 64-bit]\nE --> J[float 32-bit]\nE --> K[double 64-bit]\nA --> L[Character]\nL --> M[char 16-bit]"}
+      />
 
-// Floating-point
-float  f = 3.14f;         // 32-bit, use f suffix
-double d = 3.14159265;    // 64-bit (default decimal type)
+      <CodeBlock language="java" title="PrimitiveTypes.java">
+{`public class PrimitiveTypes {
+    public static void main(String[] args) {
+        // Integer types
+        byte smallNumber = 127;           // -128 to 127
+        short mediumNumber = 32000;       // -32,768 to 32,767
+        int number = 2_000_000;           // -2^31 to 2^31-1 (underscores for readability)
+        long bigNumber = 9_000_000_000L;  // -2^63 to 2^63-1 (L suffix required)
 
-// Other
-char    c = 'A';          // 16-bit Unicode character
-boolean ok = true;        // true or false
+        // Floating point types
+        float decimal = 3.14f;            // ~7 decimal digits (f suffix required)
+        double preciseDecimal = 3.14159;  // ~15 decimal digits (default for decimals)
 
-// Wrapper classes (autoboxing)
-Integer boxed = 42;       // autoboxed from int
-int unboxed = boxed;      // auto-unboxed
+        // Character type
+        char letter = 'A';               // Single 16-bit Unicode character
+        char unicodeChar = '\\u0041';     // Unicode representation of 'A'
 
-// Useful constants
-System.out.println(Integer.MAX_VALUE);  // 2147483647
-System.out.println(Double.MAX_VALUE);   // 1.7976931348623157E308`}
-      </CodeBlock>
+        // Boolean type
+        boolean isJavaFun = true;         // true or false only
 
-      <h2>Variables and Constants</h2>
-      <CodeBlock language="java" title="Variables and final constants">
-{`int count = 0;
-String name = "Alice";
-
-// Type inference with var (Java 10+)
-var list = new ArrayList<String>(); // compiler infers ArrayList<String>
-var map  = new HashMap<String, Integer>();
-
-// Constants: final + ALL_CAPS convention
-final int MAX_RETRIES = 3;
-final double TAX_RATE = 0.08;
-final String APP_NAME = "MyApp";`}
-      </CodeBlock>
-
-      <h2>Operators</h2>
-      <CodeBlock language="java" title="All Operator Categories">
-{`int a = 10, b = 3;
-
-// Arithmetic
-System.out.println(a + b);  // 13
-System.out.println(a - b);  // 7
-System.out.println(a * b);  // 30
-System.out.println(a / b);  // 3  (integer division truncates!)
-System.out.println(a % b);  // 1  (remainder)
-
-// Cast to get decimal
-System.out.println((double) a / b); // 3.3333...
-
-// Comparison → boolean
-boolean eq = (a == b); // false
-boolean gt = (a > b);  // true
-
-// Logical (short-circuit)
-boolean and = (a > 0 && b > 0);  // true
-boolean or  = (a < 0 || b > 0);  // true
-boolean not = !(a == b);          // true
-
-// Compound assignment
-a += 5;  a -= 2;  a *= 2;  a /= 3;  a %= 4;
-
-// Ternary
-String label = (a > 5) ? "big" : "small";`}
-      </CodeBlock>
-
-      <h2>Control Flow</h2>
-      <CodeBlock language="java" title="If, Switch, For, While">
-{`// if / else if / else
-int score = 85;
-if (score >= 90)      System.out.println("A");
-else if (score >= 80) System.out.println("B");
-else                  System.out.println("C");
-
-// Switch expression (Java 14+, arrow syntax)
-String grade = switch (score / 10) {
-    case 10, 9 -> "A";
-    case 8     -> "B";
-    case 7     -> "C";
-    default    -> "F";
-};
-
-// Standard for loop
-for (int i = 0; i < 5; i++) System.out.print(i + " ");
-
-// Enhanced for (for-each)
-int[] nums = {1, 2, 3, 4, 5};
-for (int n : nums) System.out.print(n + " ");
-
-// While loop
-int i = 0;
-while (i < 5) { System.out.print(i++ + " "); }
-
-// Do-while — always runs at least once
-do {
-    System.out.println("runs once");
-} while (false);
-
-// break and continue
-for (int x = 0; x < 10; x++) {
-    if (x == 3) continue; // skip 3
-    if (x == 7) break;    // stop at 7
-    System.out.print(x + " "); // 0 1 2 4 5 6
+        System.out.println("byte: " + smallNumber);
+        System.out.println("int: " + number);
+        System.out.println("long: " + bigNumber);
+        System.out.println("double: " + preciseDecimal);
+        System.out.println("char: " + letter);
+        System.out.println("boolean: " + isJavaFun);
+    }
 }`}
       </CodeBlock>
 
-      <h2>String and StringBuilder</h2>
-      <p>Strings are immutable in Java. For heavy manipulation use StringBuilder — it avoids creating many intermediate String objects.</p>
-
-      <CodeBlock language="java" title="String Methods">
-{`String s = "  Hello, World!  ";
-s.trim();                  // "Hello, World!"
-s.strip();                 // modern trim (handles Unicode spaces)
-s.toUpperCase();           // "  HELLO, WORLD!  "
-s.toLowerCase();           // "  hello, world!  "
-s.contains("World");       // true
-s.replace("World", "Java");// "  Hello, Java!  "
-s.substring(2, 7);         // "Hello"
-s.split(", ");             // ["  Hello", "World!  "]
-s.startsWith("  H");       // true
-s.isEmpty();               // false
-s.isBlank();               // false
-String.valueOf(42);        // "42"
-String.format("Age: %d", 25); // "Age: 25"
-"hello".equals("hello");   // true — ALWAYS use equals() not ==`}
-      </CodeBlock>
-
-      <CodeBlock language="java" title="StringBuilder for Performance">
-{`// Bad: creates 1000 String objects
-String result = "";
-for (int i = 0; i < 1000; i++) result += i;
-
-// Good: StringBuilder is mutable
-StringBuilder sb = new StringBuilder();
-for (int i = 0; i < 1000; i++) sb.append(i).append(",");
-sb.deleteCharAt(sb.length() - 1); // remove last comma
-String finalStr = sb.toString();`}
-      </CodeBlock>
-
-      <InfoBox variant="warning" title="String Equality Trap">
-        <p>Never use == to compare String values. It compares object references, not content. Use .equals() for case-sensitive comparison or .equalsIgnoreCase() for case-insensitive.</p>
+      <InfoBox variant="info" title="Primitive vs Reference Types">
+        <p>
+          Primitive types store actual values directly in memory, making them fast and efficient.
+          Reference types (like <code>String</code>, arrays, and objects) store a reference
+          (memory address) that points to the actual data on the heap. Java also provides wrapper
+          classes (<code>Integer</code>, <code>Double</code>, etc.) that let you treat primitives
+          as objects when needed — this is called <strong>autoboxing</strong>.
+        </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What does 7 / 2 evaluate to in Java?"
-        options={["3.5", "3", "4", "Compilation error"]}
-        correctIndex={1}
-        explanation="Java performs integer division when both operands are integers — the decimal part is truncated. 7 / 2 = 3. To get 3.5, cast one operand: (double)7 / 2 or 7.0 / 2."
-      />
+      <h2>Variables and Constants</h2>
+      <p>
+        Variables can be declared, initialized, and reassigned. Constants are declared with the{' '}
+        <code>final</code> keyword and cannot be changed after initialization.
+      </p>
+
+      <CodeBlock language="java" title="VariablesAndConstants.java">
+{`public class VariablesAndConstants {
+    public static void main(String[] args) {
+        // Variable declaration and initialization
+        String greeting = "Hello";
+        int count = 10;
+
+        // Reassignment is allowed for variables
+        greeting = "Hi there";
+        count = 20;
+
+        // Constants use the 'final' keyword
+        final double PI = 3.14159265;
+        final String APP_NAME = "My Java App";
+        // PI = 3.14; // ERROR: cannot assign a value to final variable
+
+        // Type inference with 'var' (Java 10+)
+        var message = "Java infers this is a String";
+        var value = 42;  // inferred as int
+
+        System.out.println(greeting + ", count is " + count);
+        System.out.println("PI = " + PI);
+        System.out.println(message);
+    }
+}`}
+      </CodeBlock>
+
+      <h2>Operators</h2>
+      <p>
+        Java provides a rich set of operators for performing calculations, comparisons, and
+        logical operations:
+      </p>
+
+      <CodeBlock language="java" title="Operators.java">
+{`public class Operators {
+    public static void main(String[] args) {
+        // Arithmetic operators
+        int a = 10, b = 3;
+        System.out.println("a + b = " + (a + b));   // 13
+        System.out.println("a - b = " + (a - b));   // 7
+        System.out.println("a * b = " + (a * b));   // 30
+        System.out.println("a / b = " + (a / b));   // 3 (integer division)
+        System.out.println("a % b = " + (a % b));   // 1 (remainder)
+
+        // Comparison operators
+        System.out.println("a == b: " + (a == b));   // false
+        System.out.println("a != b: " + (a != b));   // true
+        System.out.println("a > b: " + (a > b));     // true
+
+        // Logical operators
+        boolean x = true, y = false;
+        System.out.println("x && y: " + (x && y));   // false (AND)
+        System.out.println("x || y: " + (x || y));   // true (OR)
+        System.out.println("!x: " + (!x));            // false (NOT)
+
+        // Increment and decrement
+        int counter = 5;
+        System.out.println("counter++: " + counter++); // prints 5, then increments
+        System.out.println("++counter: " + (++counter)); // increments, then prints 7
+
+        // Compound assignment
+        int total = 100;
+        total += 50;  // total = total + 50
+        total -= 20;  // total = total - 20
+        total *= 2;   // total = total * 2
+        System.out.println("total: " + total); // 260
+    }
+}`}
+      </CodeBlock>
+
+      <h2>Control Flow</h2>
+      <h3>If/Else Statements</h3>
+
+      <CodeBlock language="java" title="ControlFlow.java">
+{`public class ControlFlow {
+    public static void main(String[] args) {
+        int score = 85;
+
+        // If-else chain
+        if (score >= 90) {
+            System.out.println("Grade: A");
+        } else if (score >= 80) {
+            System.out.println("Grade: B");
+        } else if (score >= 70) {
+            System.out.println("Grade: C");
+        } else {
+            System.out.println("Grade: F");
+        }
+
+        // Ternary operator (compact if-else)
+        String result = (score >= 60) ? "Pass" : "Fail";
+        System.out.println("Result: " + result);
+
+        // Switch statement (traditional)
+        int day = 3;
+        switch (day) {
+            case 1: System.out.println("Monday"); break;
+            case 2: System.out.println("Tuesday"); break;
+            case 3: System.out.println("Wednesday"); break;
+            default: System.out.println("Other day"); break;
+        }
+
+        // Switch expression (Java 14+)
+        String dayName = switch (day) {
+            case 1 -> "Monday";
+            case 2 -> "Tuesday";
+            case 3 -> "Wednesday";
+            case 4 -> "Thursday";
+            case 5 -> "Friday";
+            default -> "Weekend";
+        };
+        System.out.println("Day: " + dayName);
+    }
+}`}
+      </CodeBlock>
+
+      <h3>Loops</h3>
+
+      <CodeBlock language="java" title="Loops.java">
+{`public class Loops {
+    public static void main(String[] args) {
+        // For loop
+        System.out.println("For loop:");
+        for (int i = 0; i < 5; i++) {
+            System.out.println("  i = " + i);
+        }
+
+        // While loop
+        System.out.println("While loop:");
+        int count = 0;
+        while (count < 3) {
+            System.out.println("  count = " + count);
+            count++;
+        }
+
+        // Do-while loop (executes at least once)
+        System.out.println("Do-while loop:");
+        int num = 10;
+        do {
+            System.out.println("  num = " + num);
+            num--;
+        } while (num > 7);
+
+        // Enhanced for-each loop
+        String[] fruits = {"Apple", "Banana", "Cherry"};
+        System.out.println("For-each loop:");
+        for (String fruit : fruits) {
+            System.out.println("  " + fruit);
+        }
+
+        // Break and continue
+        System.out.println("Break and continue:");
+        for (int i = 0; i < 10; i++) {
+            if (i == 3) continue; // skip 3
+            if (i == 7) break;    // stop at 7
+            System.out.println("  i = " + i);
+        }
+    }
+}`}
+      </CodeBlock>
+
+      <h2>Arrays</h2>
+      <p>
+        Arrays are fixed-size containers that hold elements of a single type. They are indexed
+        starting at 0.
+      </p>
+
+      <CodeBlock language="java" title="Arrays.java">
+{`import java.util.Arrays;
+
+public class ArrayExamples {
+    public static void main(String[] args) {
+        // Declare and initialize
+        int[] numbers = {10, 20, 30, 40, 50};
+        String[] names = new String[3];
+        names[0] = "Alice";
+        names[1] = "Bob";
+        names[2] = "Charlie";
+
+        // Access and modify
+        System.out.println("First number: " + numbers[0]);
+        System.out.println("Array length: " + numbers.length);
+        numbers[2] = 99;
+
+        // Iterate with for-each
+        for (int n : numbers) {
+            System.out.print(n + " ");
+        }
+        System.out.println();
+
+        // Useful Arrays utility methods
+        int[] data = {5, 2, 8, 1, 9};
+        Arrays.sort(data);
+        System.out.println("Sorted: " + Arrays.toString(data));
+
+        int index = Arrays.binarySearch(data, 8);
+        System.out.println("Index of 8: " + index);
+
+        // Multi-dimensional arrays
+        int[][] matrix = {
+            {1, 2, 3},
+            {4, 5, 6},
+            {7, 8, 9}
+        };
+        System.out.println("matrix[1][2] = " + matrix[1][2]); // 6
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="ArrayIndexOutOfBoundsException">
+        <p>
+          Accessing an array with an invalid index (negative or greater than or equal to the
+          array length) throws an <code>ArrayIndexOutOfBoundsException</code> at runtime. Always
+          check bounds before accessing array elements, especially when the index comes from user
+          input or calculations.
+        </p>
+      </InfoBox>
+
+      <h2>Test Your Knowledge</h2>
 
       <InteractiveChallenge
-        question="Which method should you use to compare two String values in Java?"
-        options={["==", ".compare()", ".equals()", ".same()"]}
-        correctIndex={2}
-        explanation=".equals() compares the actual content of two Strings. The == operator compares object references (memory addresses), which can give misleading results since String literals may or may not be the same object."
+        question="What is the output of the following code?\n\nint x = 10;\nint y = 3;\nSystem.out.println(x / y);"
+        options={[
+          "3.33",
+          "3",
+          "3.0",
+          "Compilation error"
+        ]}
+        correctIndex={1}
+        explanation="When both operands are integers, Java performs integer division, which truncates the decimal part. So 10 / 3 = 3 (not 3.33). To get a decimal result, at least one operand must be a floating-point type: (double) x / y would give 3.3333..."
+        code={"int x = 10;\nint y = 3;\nSystem.out.println(x / y);"}
+        language="java"
       />
     </LessonLayout>
   );
 }
+
+export default Syntax;

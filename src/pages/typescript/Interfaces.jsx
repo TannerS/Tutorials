@@ -4,424 +4,507 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function TsInterfaces() {
+export default function Interfaces() {
   return (
     <LessonLayout
-      title="Interfaces and Type Aliases"
+      title="Interfaces &amp; Type Aliases"
       sectionId="typescript"
       lessonIndex={2}
-      prev={{ path: "/typescript/types", label: "Types" }}
-      next={{ path: "/typescript/generics", label: "Generics" }}
+      prev={{ path: '/typescript/types', label: 'Type System Fundamentals' }}
+      next={{ path: '/typescript/generics', label: 'Generics Deep Dive' }}
     >
-      <p>
-        Interfaces and type aliases are the two ways to name and reuse object shapes in TypeScript. They are mostly
-        interchangeable, but each has capabilities the other lacks. Understanding the differences helps you choose
-        the right tool for each situation.
-      </p>
-
-      <FlowChart
-        title="Interface vs Type Alias Decision"
-        chart={"graph TD\n  A[Defining a shape?] --> B{Is it an object?}\n  B -->|Yes| C{Needs merging or implements?}\n  C -->|Yes| D[Use interface]\n  C -->|No| E[Either works — prefer interface]\n  B -->|No| F{Union or intersection?}\n  F -->|Yes| G[Use type alias]\n  F -->|No| H{Primitive alias or tuple?}\n  H -->|Yes| I[Use type alias]\n  H -->|No| J[Use interface]"}
-      />
-
+      {/* ── Section 1: Interface Declaration ── */}
       <h2>Interface Declaration</h2>
       <p>
-        An interface declares the shape of an object. Every object assigned to an interface type must have at least
-        all the required properties with the correct types.
+        Interfaces are the primary way to define the shape of an object in TypeScript.
+        They describe what properties and methods an object must have.
       </p>
 
-      <CodeBlock language="typescript" title="Interface Declaration Basics">
-{`// Basic interface
-interface User {
+      <CodeBlock language="typescript" title="Basic Interface Syntax">
+{`interface User {
   id: number;
   name: string;
   email: string;
+  isActive: boolean;
 }
 
-// Using the interface
-const alice: User = { id: 1, name: "Alice", email: "alice@example.com" };
-
-// Function that accepts User objects
-function greet(user: User): string {
-  return \`Hello, \${user.name}!\`;
-}
-
-// Structural typing applies — any object with the right shape works:
-const bob = { id: 2, name: "Bob", email: "bob@example.com", role: "admin" };
-greet(bob);  // ✓ OK — has all required User properties (plus extra role)
-
-// ─── OPTIONAL PROPERTIES: ? ─────────────────────────────────────────────────
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  description?: string;    // optional — may be undefined
-  tags?: string[];         // optional array
-  discount?: number;       // optional number
-}
-
-// Can omit optional properties:
-const laptop: Product = { id: 1, name: "Laptop", price: 999 };  // ✓ OK
-const phone: Product = {
-  id: 2,
-  name: "Phone",
-  price: 599,
-  description: "Latest flagship",
-  tags: ["mobile", "flagship"],
-};  // ✓ Also OK — optional properties included
-
-// ─── READONLY PROPERTIES ────────────────────────────────────────────────────
-interface Config {
-  readonly apiUrl: string;      // can't be changed after assignment
-  readonly version: number;
-  timeout: number;              // mutable
-}
-
-const config: Config = { apiUrl: "https://api.example.com", version: 2, timeout: 5000 };
-config.timeout = 3000;         // ✓ OK — mutable
-config.apiUrl = "other url";   // Error: Cannot assign to 'apiUrl' — it is read-only
-config.version = 3;            // Error: Cannot assign to 'version' — it is read-only`}
+const user: User = {
+  id: 1,
+  name: "Alice",
+  email: "alice@example.com",
+  isActive: true,
+};`}
       </CodeBlock>
 
-      <h2>Extending Interfaces</h2>
-      <p>
-        Interfaces can extend one or more other interfaces, inheriting all their properties and adding new ones.
-        This models inheritance hierarchies cleanly.
-      </p>
-
-      <CodeBlock language="typescript" title="Interface Inheritance and Extension">
-{`// Single extension
-interface Animal {
+      <CodeBlock language="typescript" title="Optional and Readonly Properties">
+{`interface Product {
+  readonly id: string;
   name: string;
-  age: number;
+  price: number;
+  description?: string;   // optional
+  readonly createdAt: Date; // cannot be reassigned
 }
 
-interface Dog extends Animal {
-  breed: string;
-  bark(): void;
-}
-
-interface ServiceDog extends Dog {
-  certificationNumber: string;
-  tasks: string[];
-}
-
-const rex: ServiceDog = {
-  name: "Rex",
-  age: 3,
-  breed: "German Shepherd",
-  certificationNumber: "SD-2024-001",
-  tasks: ["guide", "alert"],
-  bark() { console.log("Woof!"); },
+const item: Product = {
+  id: "abc-123",
+  name: "Widget",
+  price: 9.99,
+  createdAt: new Date(),
 };
 
-// Multiple extension (TypeScript supports this, unlike class extends)
-interface HasName    { name: string; }
-interface HasEmail   { email: string; }
-interface HasAddress { address: string; }
+// item.id = "xyz"; // Error: Cannot assign to 'id' because it is read-only`}
+      </CodeBlock>
 
-interface ContactInfo extends HasName, HasEmail, HasAddress {
-  phone?: string;
+      {/* ── Section 2: Type Alias Declaration ── */}
+      <h2>Type Alias Declaration</h2>
+      <p>
+        Type aliases create a new name for any type. They shine when you need unions,
+        tuples, primitives, or mapped types that interfaces cannot express.
+      </p>
+
+      <CodeBlock language="typescript" title="Type Alias Basics">
+{`// Primitive alias
+type ID = string | number;
+
+// Tuple alias
+type Coordinate = [x: number, y: number];
+
+// Union alias
+type Status = "pending" | "active" | "archived";
+
+// Object alias (looks like an interface)
+type Point = {
+  x: number;
+  y: number;
+};
+
+const userId: ID = 42;
+const pos: Coordinate = [10, 20];
+const status: Status = "active";`}
+      </CodeBlock>
+
+      {/* ── Section 3: Interface vs Type Alias ── */}
+      <h2>Interface vs Type Alias</h2>
+      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
+            <th style={{ textAlign: 'left', padding: '0.75rem', color: '#5b9cf6' }}>Feature</th>
+            <th style={{ textAlign: 'center', padding: '0.75rem', color: '#5b9cf6' }}>Interface</th>
+            <th style={{ textAlign: 'center', padding: '0.75rem', color: '#5b9cf6' }}>Type Alias</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[
+            ['Declaration merging', '✅', '❌'],
+            ['Extends / inheritance', '✅ extends', '✅ via &amp;'],
+            ['Union types', '❌', '✅'],
+            ['Tuple types', '❌', '✅'],
+            ['Primitive aliases', '❌', '✅'],
+            ['implements in classes', '✅', '✅'],
+            ['Computed properties', '❌', '✅'],
+            ['Mapped types', '❌', '✅'],
+          ].map(([feature, iface, alias], i) => (
+            <tr key={i} style={{ borderBottom: '1px solid #2a2e42' }}>
+              <td style={{ padding: '0.5rem 0.75rem', color: '#e4e6f0' }}>{feature}</td>
+              <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>{iface}</td>
+              <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>{alias}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <InfoBox variant="tip" title="When To Use Which?">
+        <p>
+          <strong>Use interfaces</strong> for public API contracts, object shapes you expect
+          others to extend, and class implementations. Their merging capability makes them
+          ideal for library authors.
+        </p>
+        <p>
+          <strong>Use type aliases</strong> for unions, tuples, mapped types, and any type
+          that is not purely an object shape. When in doubt, interfaces are a safe default
+          for object types.
+        </p>
+      </InfoBox>
+
+      {/* ── Section 4: Optional Properties ── */}
+      <h2>Optional Properties</h2>
+      <p>
+        The <code>?</code> modifier marks a property as optional. TypeScript narrows
+        optional values to <code>T | undefined</code>, so you must handle the missing case.
+      </p>
+
+      <CodeBlock language="typescript" title="Handling Optional Values Safely">
+{`interface Config {
+  host: string;
+  port?: number;
+  ssl?: boolean;
 }
 
-// ─── FUNCTION TYPES IN INTERFACES ────────────────────────────────────────────
-interface EventEmitter {
-  // Method syntax (preferred for object methods)
-  on(event: string, handler: (data: unknown) => void): void;
-  off(event: string, handler: (data: unknown) => void): void;
-  emit(event: string, data?: unknown): void;
+function connect(config: Config) {
+  const port = config.port ?? 3000;     // default via nullish coalescing
+  const ssl = config.ssl === true;      // explicit boolean check
 
-  // Property function syntax (slightly different: disables method bivariance)
-  transform: (input: string) => string;
-
-  // Overloaded method signatures
-  subscribe(event: "click", handler: (e: MouseEvent) => void): void;
-  subscribe(event: "keydown", handler: (e: KeyboardEvent) => void): void;
-  subscribe(event: string, handler: (e: Event) => void): void;
+  console.log("Connecting to " + config.host + ":" + port);
 }
 
-// ─── CALL SIGNATURES AND CONSTRUCT SIGNATURES ────────────────────────────────
-interface Formatter {
-  // Call signature — the interface itself is callable
-  (value: string): string;
-  // Can also have regular properties
-  locale: string;
-  precision: number;
+connect({ host: "localhost" });           // port defaults to 3000
+connect({ host: "prod.io", port: 443, ssl: true });`}
+      </CodeBlock>
+
+      {/* ── Section 5: Readonly Properties ── */}
+      <h2>Readonly Properties</h2>
+
+      <CodeBlock language="typescript" title="Readonly Patterns">
+{`// Per-property readonly
+interface Immutable {
+  readonly id: string;
+  readonly data: number[];
 }
 
-interface Constructor<T> {
-  // Construct signature — the interface describes a class/constructor
-  new(id: number, name: string): T;
+// Utility type: makes ALL properties readonly
+type FrozenUser = Readonly<User>;
+
+// Deep readonly (recursive)
+type DeepReadonly<T> = {
+  readonly [K in keyof T]: T[K] extends object
+    ? DeepReadonly<T[K]>
+    : T[K];
+};`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Readonly Is Shallow">
+        <p>
+          The built-in <code>Readonly&lt;T&gt;</code> only freezes top-level properties.
+          Nested objects remain mutable unless you use a deep readonly pattern like above.
+        </p>
+      </InfoBox>
+
+      {/* ── Section 6: Index Signatures ── */}
+      <h2>Index Signatures</h2>
+
+      <CodeBlock language="typescript" title="Index Signatures with Known Properties">
+{`interface AppConfig {
+  appName: string;
+  version: string;
+  [key: string]: unknown; // allow arbitrary extra keys
 }
 
-function createInstance<T>(Ctor: Constructor<T>, id: number, name: string): T {
-  return new Ctor(id, name);
+const config: AppConfig = {
+  appName: "Dashboard",
+  version: "2.1.0",
+  featureFlags: { darkMode: true },
+  maxRetries: 3,
+};`}
+      </CodeBlock>
+
+      {/* ── Section 7: Extending Interfaces ── */}
+      <h2>Extending Interfaces</h2>
+
+      <CodeBlock language="typescript" title="Single and Multiple Extends">
+{`interface Timestamped {
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface SoftDeletable {
+  deletedAt?: Date;
+  isDeleted: boolean;
+}
+
+// Single extension
+interface BaseEntity extends Timestamped {
+  id: string;
+}
+
+// Multiple extension
+interface ManagedEntity extends Timestamped, SoftDeletable {
+  id: string;
+  version: number;
 }`}
       </CodeBlock>
 
-      <h2>Declaration Merging</h2>
+      {/* ── Section 8: Intersection Types ── */}
+      <h2>Intersection Types for Combining</h2>
       <p>
-        One of the most unique features of interfaces (not type aliases) is <strong>declaration merging</strong>:
-        if you declare the same interface name twice, TypeScript merges them into one interface with all the
-        properties from both declarations. This is how libraries extend global types like <code>Window</code> or
-        Express's <code>Request</code>.
+        Type aliases use the <code>&amp;</code> operator to combine types, achieving the
+        same result as interface extends.
       </p>
 
-      <CodeBlock language="typescript" title="Declaration Merging in Practice">
-{`// ─── BASIC DECLARATION MERGING ───────────────────────────────────────────────
-interface User {
-  id: number;
+      <CodeBlock language="typescript" title="Intersection with Type Aliases">
+{`type Timestamped = {
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type Identifiable = {
+  id: string;
+};
+
+type Resource = Identifiable & Timestamped & {
   name: string;
-}
+  owner: string;
+};
 
-interface User {
-  email: string;    // merged into the same User interface
-  role: string;
-}
+// Equivalent to an interface extending both`}
+      </CodeBlock>
 
-// Merged result: User = { id: number; name: string; email: string; role: string }
-const user: User = { id: 1, name: "Alice", email: "alice@example.com", role: "admin" };
+      {/* ── Section 9: Declaration Merging ── */}
+      <h2>Declaration Merging</h2>
+      <p>
+        Interfaces with the same name in the same scope automatically merge. This is
+        especially useful for extending third-party library types.
+      </p>
 
-// ─── AUGMENTING GLOBAL INTERFACES ────────────────────────────────────────────
-// This is how you add properties to the browser's Window object:
+      <CodeBlock language="typescript" title="Merging Interfaces">
+{`// Original interface
 interface Window {
-  __APP_VERSION__: string;
-  __FEATURE_FLAGS__: Record<string, boolean>;
+  title: string;
 }
 
-// Now TypeScript accepts this without errors:
-window.__APP_VERSION__ = "1.2.3";
-window.__FEATURE_FLAGS__ = { darkMode: true, betaFeatures: false };
+// Merged automatically — no error!
+interface Window {
+  appVersion: number;
+}
 
-// ─── AUGMENTING LIBRARY INTERFACES ───────────────────────────────────────────
-// Add custom properties to Express Request (common pattern):
-// In a file: src/types/express.d.ts
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthenticatedUser;
-      requestId: string;
-    }
+// Result: Window has both title AND appVersion
+const w: Window = { title: "App", appVersion: 2 };`}
+      </CodeBlock>
+
+      <CodeBlock language="typescript" title="Extending Express Request">
+{`// Extend Express Request to include authenticated user
+declare namespace Express {
+  interface Request {
+    user?: { id: string; role: "admin" | "user" };
   }
 }
 
-// After augmentation, in route handlers:
+// Now req.user is available in all handlers
 app.get("/profile", (req, res) => {
-  // req.user is now typed as AuthenticatedUser | undefined — no any cast needed
-  if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-  res.json({ user: req.user });
-});
-
-// ─── WHY TYPE ALIASES CAN'T DO THIS ─────────────────────────────────────────
-type UserType = { id: number; name: string; };
-type UserType = { email: string; };  // Error: Duplicate identifier 'UserType'
-// Type aliases are closed — you cannot add to them after declaration.
-// This is intentional: declaration merging is a specialized feature.`}
+  if (req.user) {
+    res.json({ id: req.user.id });
+  }
+});`}
       </CodeBlock>
 
-      <h2>Index Signatures</h2>
-      <p>
-        Index signatures describe objects where you don't know the property names in advance but you know the
-        types of the keys and values.
-      </p>
-
-      <CodeBlock language="typescript" title="Index Signatures">
-{`// ─── BASIC INDEX SIGNATURE ────────────────────────────────────────────────────
-interface StringMap {
-  [key: string]: string;  // any string key, string value
-}
-
-const headers: StringMap = {
-  "Content-Type": "application/json",
-  "Authorization": "Bearer token123",
-  "X-Request-Id": "abc-def-ghi",
-};
-
-// Access any key — TypeScript knows the value is string:
-const contentType: string = headers["Content-Type"];
-
-// ─── MIXING KNOWN AND DYNAMIC PROPERTIES ─────────────────────────────────────
-interface Cache {
-  ttl: number;               // known property (must match index value type)
-  maxSize: number;           // known property
-  [key: string]: unknown;   // dynamic properties (use unknown for safety)
-}
-
-// More type-safe: require known properties to match the index signature type
-interface StrictCache {
-  [key: string]: string | number;
-  ttl: number;               // ✓ number is assignable to string | number
-  prefix: string;            // ✓ string is assignable to string | number
-  // flag: boolean;          // Error: boolean is not assignable to string | number
-}
-
-// ─── NUMBER INDEX SIGNATURES ──────────────────────────────────────────────────
-interface NumberIndexed {
-  [index: number]: string;  // array-like
-  length: number;
-}
-
-// ─── RECORD TYPE: THE PRACTICAL ALTERNATIVE ──────────────────────────────────
-// Record<K, V> is shorthand for { [key in K]: V }
-type Translations = Record<string, string>;
-type RolePermissions = Record<"admin" | "user" | "guest", string[]>;
-type UserMap = Record<number, User>;
-
-const roles: RolePermissions = {
-  admin: ["read", "write", "delete"],
-  user:  ["read", "write"],
-  guest: ["read"],
-};
-// Advantage over index signature: Record<"admin"|"user"|"guest", ...>
-// requires ALL three keys to be present`}
-      </CodeBlock>
-
-      <h2>Interface vs Type Alias: When to Use Which</h2>
-
-      <InfoBox variant="tip" title="The Practical Rule for Interface vs Type">
-        <p><strong>Use interface when:</strong> you are describing the shape of an object that might be extended or implemented by a class, you want declaration merging (library augmentation), or you are defining a public API for a library or module.</p>
-        <p><strong>Use type when:</strong> you need a union type (<code>A | B</code>), an intersection type (<code>A &amp; B</code>), a mapped type, a conditional type, a tuple type, or a primitive alias (<code>type ID = string</code>). Type aliases can do things interfaces simply cannot.</p>
-        <p><strong>When in doubt:</strong> Both work for basic object shapes. Pick one style and be consistent within a codebase. Many teams use interface for public object types and type for computed/derived types.</p>
+      <InfoBox variant="info" title="Type Aliases Cannot Merge">
+        <p>
+          Attempting to declare two type aliases with the same name causes a compile error.
+          Declaration merging is exclusive to interfaces and namespaces.
+        </p>
       </InfoBox>
 
-      <CodeBlock language="typescript" title="Interface vs Type Alias: What Each Can Do">
-{`// ─── THINGS ONLY type CAN DO ─────────────────────────────────────────────────
+      {/* ── Section 10: Implementing Interfaces ── */}
+      <h2>Implementing Interfaces in Classes</h2>
 
-// Union types:
-type Result<T> = { success: true; data: T } | { success: false; error: Error };
-// interface Result<T> = ... | ...  ← Syntax error: interfaces can't be unions
-
-// Primitive aliases:
-type UserID = string;
-type Milliseconds = number;
-// interface UserID = string;  ← Syntax error
-
-// Tuple types:
-type Pair = [string, number];
-// interface Pair = [string, number];  ← Syntax error
-
-// Mapped types:
-type Optional<T> = { [K in keyof T]?: T[K] };
-// interface cannot express this directly
-
-// Conditional types:
-type NonNullable<T> = T extends null | undefined ? never : T;
-
-// ─── THINGS ONLY interface CAN DO ────────────────────────────────────────────
-
-// Declaration merging:
-interface Plugin { name: string; }
-interface Plugin { version: string; }  // ✓ Merged — type alias would error
-
-// implements keyword (classes):
-interface Printable { print(): void; }
-class Report implements Printable {
-  print() { console.log("Printing report..."); }
-}
-// Can't use type alias with 'implements'... actually you CAN in modern TS:
-type Serializable = { toJSON(): string };
-class DataModel implements Serializable {
-  toJSON() { return JSON.stringify(this); }  // ✓ Works with type aliases too
+      <CodeBlock language="typescript" title="Class Implements">
+{`interface Logger {
+  log(message: string): void;
+  error(message: string, code?: number): void;
 }
 
-// ─── THINGS BOTH CAN DO ──────────────────────────────────────────────────────
+interface Serializable {
+  serialize(): string;
+}
 
-// Object shapes:
-interface UserI { id: number; name: string; }
-type UserT = { id: number; name: string; };  // identical capability
-
-// Extension/intersection:
-interface AdminI extends UserI { role: string; }
-type AdminT = UserT & { role: string; };     // equivalent
-
-// Generics:
-interface Box<T> { value: T; }
-type Box2<T> = { value: T; };  // identical`}
+class AppLogger implements Logger, Serializable {
+  log(message: string) {
+    console.log("[LOG] " + message);
+  }
+  error(message: string, code?: number) {
+    console.error("[ERR " + (code ?? 500) + "] " + message);
+  }
+  serialize() {
+    return JSON.stringify({ type: "AppLogger" });
+  }
+}`}
       </CodeBlock>
 
-      <h2>The implements Keyword</h2>
-      <p>
-        Classes can declare that they implement an interface, which tells TypeScript to verify the class has
-        all the required members.
-      </p>
+      {/* ── Section 11: Function Types ── */}
+      <h2>Function Types</h2>
 
-      <CodeBlock language="typescript" title="implements in Classes">
-{`interface Repository<T, ID = number> {
-  findById(id: ID): Promise<T | null>;
-  findAll(filter?: Partial<T>): Promise<T[]>;
-  save(entity: T): Promise<T>;
-  update(id: ID, changes: Partial<T>): Promise<T | null>;
-  delete(id: ID): Promise<boolean>;
+      <CodeBlock language="typescript" title="Function Type Signatures">
+{`// Type alias for a function
+type Comparator<T> = (a: T, b: T) => number;
+
+// Interface with a call signature
+interface SearchFn {
+  (source: string, term: string): boolean;
 }
 
-interface User {
-  id: number;
+// Callable interface with additional properties
+interface Formatter {
+  (value: unknown): string;
+  locale: string;
+}
+
+// Overloaded function signatures
+interface DateParser {
+  (input: string): Date;
+  (input: number): Date;
+  (input: string, format: string): Date;
+}`}
+      </CodeBlock>
+
+      {/* ── Section 12: Constructable Signatures ── */}
+      <h2>Constructable Signatures</h2>
+
+      <CodeBlock language="typescript" title="Constructor Signatures">
+{`interface ClockConstructor {
+  new (hour: number, minute: number): ClockInterface;
+}
+
+interface ClockInterface {
+  tick(): void;
+}
+
+function createClock(
+  Ctor: ClockConstructor,
+  h: number, m: number
+): ClockInterface {
+  return new Ctor(h, m);
+}`}
+      </CodeBlock>
+
+      {/* ── Section 13: Discriminated Unions ── */}
+      <h2>Discriminated Unions</h2>
+      <p>
+        A discriminated union combines a union type with a literal discriminant property,
+        enabling exhaustive type narrowing via switch or if statements.
+      </p>
+
+      <FlowChart
+        title="Discriminated Union Pattern"
+        chart={"graph TD\n  A[Shape Union] --> B{Check kind}\n  B -->|circle| C[Circle branch]\n  B -->|rectangle| D[Rectangle branch]\n  B -->|triangle| E[Triangle branch]\n  C --> F[Access radius]\n  D --> G[Access width, height]\n  E --> H[Access base, height]"}
+      />
+
+      <CodeBlock language="typescript" title="Exhaustive Shape Handling">
+{`interface Circle    { kind: "circle";    radius: number }
+interface Rectangle { kind: "rectangle"; width: number; height: number }
+interface Triangle  { kind: "triangle";  base: number;  height: number }
+
+type Shape = Circle | Rectangle | Triangle;
+
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2;
+    case "rectangle":
+      return shape.width * shape.height;
+    case "triangle":
+      return (shape.base * shape.height) / 2;
+    default:
+      // Exhaustive check — errors if a variant is missed
+      const _exhaustive: never = shape;
+      return _exhaustive;
+  }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The never Trick">
+        <p>
+          Assigning to <code>never</code> in the default branch ensures a compile error if
+          you add a new variant to the union but forget to handle it in the switch.
+        </p>
+      </InfoBox>
+
+      {/* ── Section 14: Utility Types ── */}
+      <h2>Utility Types Intro</h2>
+      <p>
+        TypeScript ships with built-in utility types that transform existing types.
+        These eliminate boilerplate and keep your types DRY.
+      </p>
+
+      <CodeBlock language="typescript" title="Partial, Required, Pick, Omit">
+{`interface User {
+  id: string;
+  name: string;
+  email: string;
+  age: number;
+}
+
+// All properties become optional
+type UserUpdate = Partial<User>;
+
+// All properties become required
+type StrictUser = Required<User>;
+
+// Select specific properties
+type UserPreview = Pick<User, "id" | "name">;
+
+// Remove specific properties
+type PublicUser = Omit<User, "email">;
+
+function updateUser(id: string, changes: Partial<User>) {
+  // changes can have any subset of User fields
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="typescript" title="Record">
+{`type Role = "admin" | "editor" | "viewer";
+
+type RolePermissions = Record<Role, string[]>;
+
+const permissions: RolePermissions = {
+  admin: ["read", "write", "delete", "manage"],
+  editor: ["read", "write"],
+  viewer: ["read"],
+};`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="Composing Utility Types">
+        <p>
+          Utility types compose naturally. For example,
+          <code>Readonly&lt;Partial&lt;User&gt;&gt;</code> creates a frozen partial user,
+          and <code>Omit&lt;User, &quot;id&quot;&gt; &amp; {'{'}id: number{'}'}</code> replaces
+          the id type from string to number.
+        </p>
+      </InfoBox>
+
+      {/* ── Section 15: Interactive Challenges ── */}
+      <h2>Test Your Knowledge</h2>
+
+      <InteractiveChallenge
+        question={"You are designing a public SDK. Users should be able to add custom properties to your Config type. Which should you use?"}
+        options={[
+          "type Config = { host: string; port: number }",
+          "interface Config { host: string; port: number }",
+          "const Config = { host: '', port: 0 }",
+          "enum Config { Host, Port }",
+        ]}
+        correctIndex={1}
+        explanation={"Interfaces support declaration merging, allowing SDK consumers to extend Config with their own properties by simply redeclaring the interface. Type aliases cannot be merged and would require intersection types instead."}
+      />
+
+      <InteractiveChallenge
+        question={"Which utility type would you use to create a function that accepts any subset of User fields for a PATCH endpoint?"}
+        code={`interface User {
+  id: string;
   name: string;
   email: string;
 }
 
-// Class must implement all interface members:
-class InMemoryUserRepository implements Repository<User> {
-  private users: Map<number, User> = new Map();
-
-  async findById(id: number): Promise<User | null> {
-    return this.users.get(id) ?? null;
-  }
-
-  async findAll(filter?: Partial<User>): Promise<User[]> {
-    const all = Array.from(this.users.values());
-    if (!filter) return all;
-    return all.filter(u =>
-      Object.entries(filter).every(([k, v]) => u[k as keyof User] === v)
-    );
-  }
-
-  async save(user: User): Promise<User> {
-    this.users.set(user.id, user);
-    return user;
-  }
-
-  async update(id: number, changes: Partial<User>): Promise<User | null> {
-    const existing = this.users.get(id);
-    if (!existing) return null;
-    const updated = { ...existing, ...changes };
-    this.users.set(id, updated);
-    return updated;
-  }
-
-  async delete(id: number): Promise<boolean> {
-    return this.users.delete(id);
-  }
-}
-
-// ─── BENEFIT: Swap implementations without changing call sites ────────────────
-// In tests:       const repo = new InMemoryUserRepository();
-// In production:  const repo = new PostgresUserRepository();
-// Both satisfy Repository<User> — calling code is identical`}
-      </CodeBlock>
-
-      <InteractiveChallenge
-        question="What is declaration merging and which TypeScript construct supports it?"
+function patchUser(id: string, data: ??? ) { /* ... */ }`}
+        language="typescript"
         options={[
-          "Combining two files into one — supported by both interfaces and type aliases",
-          "Declaring the same interface name multiple times, causing TypeScript to merge all declarations into one — only interfaces support this, not type aliases",
-          "Using the spread operator to merge two objects at runtime",
-          "Extending an interface with new properties — supported by both interfaces and type aliases"
+          "Required<User>",
+          "Partial<User>",
+          "Pick<User, 'name'>",
+          "Readonly<User>",
         ]}
         correctIndex={1}
-        explanation="Declaration merging is when you write the same interface name in multiple places and TypeScript automatically combines them into one interface with all properties from every declaration. This is an interface-only feature — type aliases with the same name cause a duplicate identifier error. Declaration merging is essential for augmenting global types like Window, or extending library types like Express's Request object, without modifying the original source."
+        explanation={"Partial<T> makes every property optional, which is exactly what a PATCH endpoint needs — callers send only the fields they want to update. Required would force all fields, Pick limits to specific fields, and Readonly prevents mutation."}
       />
 
       <InteractiveChallenge
-        question="Which of these can ONLY be expressed with a type alias, not an interface?"
+        question={"What happens if you add a new variant to a discriminated union but forget to handle it in the switch statement that assigns to never?"}
         options={[
-          "An object with id: number and name: string",
-          "An object that extends another interface",
-          "A union type like string | number | null",
-          "A generic container like Box<T>"
+          "Nothing — it silently returns undefined",
+          "A runtime error is thrown",
+          "A compile-time error flags the unhandled variant",
+          "TypeScript infers the return type as any",
         ]}
         correctIndex={2}
-        explanation="Union types (A | B) can only be expressed with a type alias. Interfaces describe a single, concrete shape — they cannot be defined as 'either this or that'. type aliases can express unions, primitive aliases, tuples, mapped types, and conditional types. Interfaces can express object shapes, method signatures, generics, and allow declaration merging and extends. For basic object shapes, both work equivalently."
+        explanation={"The never type cannot accept any value. When a new variant is added but not handled, the default branch receives that variant's type which is not assignable to never — producing a compile-time error that catches the oversight immediately."}
       />
     </LessonLayout>
   );
