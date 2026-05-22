@@ -4,354 +4,437 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function RRFullapp() {
+export default function Fullapp() {
   return (
     <LessonLayout
-      title="Full Application Example"
+      title="Complete App Routing"
       sectionId="react-router"
       lessonIndex={6}
       prev={{ path: '/react-router/testing', label: 'Testing Routes' }}
-      next={{ path: '/react-router/migration', label: 'v5 to v6 Migration' }}
+      next={{ path: '/react-router/migration', label: 'Migration Guide (v5→v7)' }}
     >
-      <h2>Complete Router Architecture</h2>
       <p>
-        This lesson assembles all React Router concepts — layouts, nested routes, loaders, actions,
-        guards, error boundaries, and lazy loading — into a production-ready application structure.
-        The router configuration becomes the single source of truth for your app's URL structure.
+        Let&apos;s build a complete routing structure for a production-style app.
+        We&apos;ll combine every pattern from the previous lessons — nested
+        layouts, loaders, protected routes, error boundaries, and loading
+        states — into a cohesive architecture.
       </p>
 
       <FlowChart
-        title="App Route Structure"
-        chart={"graph TD\n  A[/ RootLayout] --> B[index LandingPage]\n  A --> C[/login LoginPage]\n  A --> D[/app requireAuth]\n  D --> E[AppLayout]\n  E --> F[index Dashboard]\n  E --> G[/orders OrdersLayout]\n  G --> H[index OrderList]\n  G --> I[/:id OrderDetail]\n  G --> J[/new NewOrder]\n  E --> K[/admin requireAdmin]\n  K --> L[AdminDashboard]\n  A --> M[* NotFound]"}
+        title="Application Route Tree"
+        chart={"graph TD\nR[Root Layout] --> H[/ Home]\nR --> A[/about]\nR --> P[/pricing]\nR --> AUTH[/login & /register & /forgot-password]\nR --> DASH[/dashboard - Protected Layout]\nDASH --> DO[/dashboard Overview]\nDASH --> DP[/dashboard/profile]\nDASH --> DS[/dashboard/settings]\nDASH --> DU[/dashboard/users/:id]\nR --> NF[* 404 Catch-All]\nstyle R fill:#3b82f6,color:#fff\nstyle DASH fill:#8b5cf6,color:#fff\nstyle NF fill:#ef4444,color:#fff"}
       />
 
-      <CodeBlock language="jsx" title="Router Configuration — The Spine of the App">
-{`// router.jsx — single source of truth for URL structure
-import { createBrowserRouter } from 'react-router-dom';
-import { lazy } from 'react';
+      <h2>Step 1: Root Layout</h2>
+      <p>
+        The root layout renders the global navigation bar and an{' '}
+        <code>&lt;Outlet /&gt;</code> for child routes. Every page in the app
+        shares this shell.
+      </p>
 
-// Eagerly loaded — critical first-render paths
-import RootLayout    from './layouts/RootLayout';
-import AppLayout     from './layouts/AppLayout';
-import LandingPage   from './pages/LandingPage';
-import LoginPage     from './pages/LoginPage';
-import Dashboard     from './pages/Dashboard';
-import NotFound      from './pages/NotFound';
+      <CodeBlock language="jsx" title="layouts/RootLayout.jsx">
+{`import { Outlet, NavLink, ScrollRestoration, useNavigation } from 'react-router-dom';
 
-// Lazily loaded — deferred until navigation
-const OrdersLayout  = lazy(() => import('./layouts/OrdersLayout'));
-const OrderList     = lazy(() => import('./pages/orders/OrderList'));
-const OrderDetail   = lazy(() => import('./pages/orders/OrderDetail'));
-const NewOrder      = lazy(() => import('./pages/orders/NewOrder'));
-const AdminLayout   = lazy(() => import('./layouts/AdminLayout'));
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
-const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
+export default function RootLayout() {
+  const navigation = useNavigation();
+  const isLoading = navigation.state === 'loading';
 
-// Loaders and actions (co-located with their pages)
-import { ordersLoader }    from './pages/orders/OrderList';
-import { orderLoader }     from './pages/orders/OrderDetail';
-import { createOrderAction } from './pages/orders/NewOrder';
-import { profileLoader, updateProfileAction } from './pages/Profile';
+  return (
+    <div className="app">
+      <header>
+        <nav>
+          <NavLink to="/">Home</NavLink>
+          <NavLink to="/about">About</NavLink>
+          <NavLink to="/pricing">Pricing</NavLink>
+          <NavLink to="/dashboard">Dashboard</NavLink>
+        </nav>
+      </header>
 
-// Guards
-import { requireAuthLoader, requireAdminLoader } from './auth/loaders';
+      {isLoading && <div className="global-loading-bar" />}
+
+      <main>
+        <Outlet />
+      </main>
+
+      <footer>© 2024 My App</footer>
+      <ScrollRestoration />
+    </div>
+  );
+}`}
+      </CodeBlock>
+
+      <h2>Step 2: Public Pages</h2>
+      <CodeBlock language="jsx" title="pages/Home.jsx, About.jsx, Pricing.jsx">
+{`// pages/Home.jsx
+export default function Home() {
+  return (
+    <div>
+      <h1>Welcome</h1>
+      <p>This is the public home page.</p>
+    </div>
+  );
+}
+
+// pages/About.jsx
+export default function About() {
+  return <h1>About Us</h1>;
+}
+
+// pages/Pricing.jsx
+export function loader() {
+  return fetch('/api/plans').then((r) => r.json());
+}
+
+export default function Pricing() {
+  const plans = useLoaderData();
+  return (
+    <div>
+      <h1>Pricing</h1>
+      {plans.map((plan) => (
+        <div key={plan.id}>{plan.name} — ${plan.price}/mo</div>
+      ))}
+    </div>
+  );
+}`}
+      </CodeBlock>
+
+      <h2>Step 3: Auth Routes</h2>
+      <CodeBlock language="jsx" title="pages/Login.jsx (with action)">
+{`import { Form, useActionData, useNavigation, redirect } from 'react-router-dom';
+
+export async function action({ request }) {
+  const formData = await request.formData();
+  const email = formData.get('email');
+  const password = formData.get('password');
+
+  const res = await fetch('/api/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!res.ok) return { error: 'Invalid credentials' };
+
+  const user = await res.json();
+  localStorage.setItem('user', JSON.stringify(user));
+
+  const url = new URL(request.url);
+  const returnTo = url.searchParams.get('returnTo') || '/dashboard';
+  return redirect(returnTo);
+}
+
+export default function Login() {
+  const actionData = useActionData();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === 'submitting';
+
+  return (
+    <div>
+      <h1>Log In</h1>
+      {actionData?.error && <p className="error">{actionData.error}</p>}
+      <Form method="post">
+        <input name="email" type="email" required placeholder="Email" />
+        <input name="password" type="password" required placeholder="Password" />
+        <button disabled={isSubmitting}>
+          {isSubmitting ? 'Logging in...' : 'Log In'}
+        </button>
+      </Form>
+    </div>
+  );
+}`}
+      </CodeBlock>
+
+      <h2>Step 4: Protected Route Wrapper</h2>
+      <CodeBlock language="jsx" title="components/ProtectedRoute.jsx">
+{`import { redirect } from 'react-router-dom';
+
+// Use as a loader guard — prevents render entirely
+export function requireAuth({ request }) {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) {
+    const url = new URL(request.url);
+    throw redirect(\`/login?returnTo=\${encodeURIComponent(url.pathname)}\`);
+  }
+  return user;
+}`}
+      </CodeBlock>
+
+      <h2>Step 5: Dashboard Layout with Sidebar</h2>
+      <CodeBlock language="jsx" title="layouts/DashboardLayout.jsx">
+{`import { Outlet, NavLink, useNavigation } from 'react-router-dom';
+
+export default function DashboardLayout() {
+  const navigation = useNavigation();
+
+  return (
+    <div className="dashboard">
+      <aside className="sidebar">
+        <NavLink to="/dashboard" end>Overview</NavLink>
+        <NavLink to="/dashboard/profile">Profile</NavLink>
+        <NavLink to="/dashboard/settings">Settings</NavLink>
+      </aside>
+
+      <section className="dashboard-content">
+        {navigation.state === 'loading'
+          ? <div className="spinner">Loading...</div>
+          : <Outlet />
+        }
+      </section>
+    </div>
+  );
+}`}
+      </CodeBlock>
+
+      <h2>Step 6: Dashboard Sub-Routes</h2>
+      <CodeBlock language="jsx" title="Dashboard Pages">
+{`// pages/dashboard/Overview.jsx
+export function loader() {
+  return fetch('/api/dashboard/stats').then((r) => r.json());
+}
+
+export default function Overview() {
+  const stats = useLoaderData();
+  return <h2>Dashboard — {stats.totalUsers} users</h2>;
+}
+
+// pages/dashboard/Profile.jsx
+export default function Profile() {
+  const user = useRouteLoaderData('dashboard');
+  return <h2>Profile: {user.name}</h2>;
+}
+
+// pages/dashboard/Settings.jsx
+export default function Settings() {
+  return <h2>Settings</h2>;
+}
+
+// pages/dashboard/UserDetail.jsx
+export function loader({ params }) {
+  return fetch(\`/api/users/\${params.id}\`).then((r) => {
+    if (!r.ok) throw new Response('User not found', { status: 404 });
+    return r.json();
+  });
+}
+
+export default function UserDetail() {
+  const user = useLoaderData();
+  return <h2>{user.name} — {user.email}</h2>;
+}`}
+      </CodeBlock>
+
+      <h2>Step 7: Error Boundaries</h2>
+      <CodeBlock language="jsx" title="Error Boundaries per Section">
+{`import { useRouteError, isRouteErrorResponse, Link } from 'react-router-dom';
+
+// Root-level error boundary
+export function RootError() {
+  const error = useRouteError();
+  return (
+    <div className="error-page">
+      <h1>Something went wrong</h1>
+      <p>{error?.message || 'Unknown error'}</p>
+      <Link to="/">Go Home</Link>
+    </div>
+  );
+}
+
+// Dashboard-specific error boundary
+export function DashboardError() {
+  const error = useRouteError();
+
+  if (isRouteErrorResponse(error) && error.status === 404) {
+    return (
+      <div>
+        <h2>Not Found</h2>
+        <p>That dashboard page does not exist.</p>
+        <Link to="/dashboard">Back to Dashboard</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2>Dashboard Error</h2>
+      <p>{error?.message || 'Failed to load dashboard data'}</p>
+    </div>
+  );
+}
+
+// 404 catch-all page
+export function NotFound() {
+  return (
+    <div>
+      <h1>404 — Page Not Found</h1>
+      <Link to="/">Return Home</Link>
+    </div>
+  );
+}`}
+      </CodeBlock>
+
+      <h2>Step 8: Full Router Configuration</h2>
+      <p>
+        Now we assemble every piece into a single{' '}
+        <code>createBrowserRouter</code> config. This is the complete route map
+        for the application.
+      </p>
+
+      <CodeBlock language="jsx" title="router.jsx — Complete Configuration">
+{`import { createBrowserRouter } from 'react-router-dom';
+import RootLayout from './layouts/RootLayout';
+import DashboardLayout from './layouts/DashboardLayout';
+import { requireAuth } from './components/ProtectedRoute';
+import { RootError, DashboardError, NotFound } from './components/ErrorPages';
+
+import Home from './pages/Home';
+import About from './pages/About';
+import Pricing, { loader as pricingLoader } from './pages/Pricing';
+import Login, { action as loginAction } from './pages/Login';
+import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import Overview, { loader as overviewLoader } from './pages/dashboard/Overview';
+import Profile from './pages/dashboard/Profile';
+import Settings from './pages/dashboard/Settings';
+import UserDetail, { loader as userLoader } from './pages/dashboard/UserDetail';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    id: 'root',                // id allows useRouteLoaderData('root')
     element: <RootLayout />,
-    errorElement: <GlobalError />,  // catches anything not caught lower
-    loader: rootLoader,             // fetches session/user for whole app
-
+    errorElement: <RootError />,
     children: [
       // Public routes
-      { index: true, element: <LandingPage /> },
-      { path: 'login',    element: <LoginPage /> },
-      { path: 'register', element: <RegisterPage /> },
+      { index: true, element: <Home /> },
+      { path: 'about', element: <About /> },
+      { path: 'pricing', element: <Pricing />, loader: pricingLoader },
 
-      // Protected section — requireAuthLoader redirects unauthenticated users
+      // Auth routes (public, redirect if logged in)
+      { path: 'login', element: <Login />, action: loginAction },
+      { path: 'register', element: <Register /> },
+      { path: 'forgot-password', element: <ForgotPassword /> },
+
+      // Protected dashboard routes
       {
-        path: 'app',
-        id: 'app',
-        loader: requireAuthLoader,   // runs before ANY child renders
-        element: <AppLayout />,
+        path: 'dashboard',
+        id: 'dashboard',
+        element: <DashboardLayout />,
+        loader: requireAuth,           // gate the entire section
+        errorElement: <DashboardError />,
         children: [
-          { index: true, element: <Dashboard />, loader: dashboardLoader },
-
-          // Orders sub-section with its own layout
-          {
-            path: 'orders',
-            element: <OrdersLayout />,
-            children: [
-              {
-                index: true,
-                element: <OrderList />,
-                loader: ordersLoader,
-              },
-              {
-                path: ':orderId',
-                element: <OrderDetail />,
-                loader: orderLoader,
-                errorElement: <OrderError />,  // handles missing orders
-              },
-              {
-                path: 'new',
-                element: <NewOrder />,
-                action: createOrderAction,      // handles form submission
-              },
-            ],
-          },
-
-          // Profile with inline loader+action
-          {
-            path: 'profile',
-            element: <ProfilePage />,
-            loader: profileLoader,
-            action: updateProfileAction,
-          },
-
-          // Admin section — extra auth guard
-          {
-            path: 'admin',
-            loader: requireAdminLoader,  // checks for admin role
-            element: <AdminLayout />,
-            children: [
-              { index: true, element: <AdminDashboard /> },
-              {
-                path: 'users',
-                element: <UserManagement />,
-                loader: usersLoader,
-              },
-            ],
-          },
+          { index: true, element: <Overview />, loader: overviewLoader },
+          { path: 'profile', element: <Profile /> },
+          { path: 'settings', element: <Settings /> },
+          { path: 'users/:id', element: <UserDetail />, loader: userLoader },
         ],
       },
 
-      // Catch-all must be last
+      // 404 catch-all
       { path: '*', element: <NotFound /> },
     ],
   },
 ]);`}
       </CodeBlock>
 
-      <h2>Layout Components</h2>
+      <InfoBox variant="tip" title="Route id for useRouteLoaderData">
+        Adding <code>id: &quot;dashboard&quot;</code> to the dashboard route lets any
+        child access the parent&apos;s loader data via{' '}
+        <code>useRouteLoaderData(&quot;dashboard&quot;)</code> — handy for sharing
+        the authenticated user object without prop drilling.
+      </InfoBox>
 
-      <CodeBlock language="jsx" title="Root and App Layouts">
-{`// layouts/RootLayout.jsx
-import { Outlet, ScrollRestoration, useNavigation } from 'react-router-dom';
+      <h2>Step 9: App Entry Point</h2>
+      <CodeBlock language="jsx" title="main.jsx">
+{`import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { RouterProvider } from 'react-router-dom';
+import { router } from './router';
 
-export default function RootLayout() {
-  const navigation = useNavigation();
-  const isLoading = navigation.state !== 'idle';
-
-  return (
-    <html lang="en">
-      <head>
-        <title>My App</title>
-      </head>
-      <body>
-        {/* Global loading bar during route transitions */}
-        {isLoading && (
-          <div className="fixed top-0 inset-x-0 h-1 bg-blue-500 animate-pulse z-50" />
-        )}
-
-        {/* Renders matched child route */}
-        <Outlet />
-
-        {/* Restores scroll position on back/forward navigation */}
-        <ScrollRestoration />
-      </body>
-    </html>
-  );
-}
-
-// layouts/AppLayout.jsx
-import { Outlet, NavLink, useRouteLoaderData } from 'react-router-dom';
-
-export default function AppLayout() {
-  // Access the auth loader data from the parent 'app' route
-  const { user } = useRouteLoaderData('app');
-
-  return (
-    <div className="flex h-screen">
-      <Sidebar user={user} />
-      <main className="flex-1 overflow-auto p-6">
-        {/* Suspense wraps lazy child routes */}
-        <Suspense fallback={<PageSkeleton />}>
-          <Outlet />
-        </Suspense>
-      </main>
-    </div>
-  );
-}
-
-function Sidebar({ user }) {
-  return (
-    <nav className="w-64 bg-gray-900 text-white p-4">
-      <div className="mb-6">
-        <p className="text-sm text-gray-400">Signed in as</p>
-        <p className="font-semibold">{user.name}</p>
-      </div>
-      <ul>
-        <li>
-          {/* NavLink adds active class automatically */}
-          <NavLink
-            to="/app"
-            end                        // only active on exact /app
-            className={({ isActive }) =>
-              isActive ? 'nav-item active' : 'nav-item'
-            }
-          >
-            Dashboard
-          </NavLink>
-        </li>
-        <li>
-          <NavLink
-            to="/app/orders"
-            className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
-          >
-            Orders
-          </NavLink>
-        </li>
-        {user.role === 'admin' && (
-          <li>
-            <NavLink to="/app/admin" className={({ isActive }) =>
-              isActive ? 'nav-item active' : 'nav-item'
-            }>
-              Admin
-            </NavLink>
-          </li>
-        )}
-      </ul>
-    </nav>
-  );
-}`}
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <RouterProvider
+      router={router}
+      fallbackElement={<div className="app-spinner">Loading app...</div>}
+    />
+  </StrictMode>
+);`}
       </CodeBlock>
 
-      <h2>Co-located Loaders and Actions</h2>
-
-      <CodeBlock language="jsx" title="pages/orders/OrderList.jsx — Loader Pattern">
-{`// Co-locate loader with the component it feeds — export both from same file
-import { useLoaderData, Link, Form } from 'react-router-dom';
-
-// Named export: loader function (used in router config)
-export async function ordersLoader({ request }) {
-  const url = new URL(request.url);
-  const status = url.searchParams.get('status') ?? 'all';
-  const page   = Number(url.searchParams.get('page') ?? '1');
-
-  const { orders, totalPages } = await fetchOrders({ status, page });
-  return { orders, totalPages, status, page };
-}
-
-// Default export: the component (also used in router config)
-export default function OrderList() {
-  const { orders, totalPages, status, page } = useLoaderData();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  return (
-    <div>
-      <div className="flex justify-between mb-4">
-        <h1>Orders</h1>
-        <Link to="new" className="btn-primary">New Order</Link>
-      </div>
-
-      <select
-        value={status}
-        onChange={e => setSearchParams({ status: e.target.value, page: '1' })}
-      >
-        <option value="all">All</option>
-        <option value="pending">Pending</option>
-        <option value="shipped">Shipped</option>
-      </select>
-
-      {orders.map(order => (
-        <Link key={order.id} to={order.id}>
-          <OrderCard order={order} />
-        </Link>
-      ))}
-
-      <Pagination current={page} total={totalPages} />
-    </div>
-  );
-}
-
-// pages/orders/NewOrder.jsx — Action pattern
-export async function createOrderAction({ request }) {
-  const formData = await request.formData();
-  const data = Object.fromEntries(formData);
-
-  const errors = validateOrder(data);
-  if (errors) return { errors };  // return errors — action data, no redirect
-
-  const order = await createOrder(data);
-  return redirect('/app/orders/' + order.id);  // redirect on success
-}
-
-export default function NewOrder() {
-  const actionData = useActionData();  // gets return value from action
-  const navigation = useNavigation();
-  const isSubmitting = navigation.state === 'submitting';
-
-  return (
-    <Form method="post">  {/* React Router Form — submits to action */}
-      <h1>New Order</h1>
-
-      {actionData?.errors?.general && (
-        <div role="alert">{actionData.errors.general}</div>
-      )}
-
-      <label>
-        Customer
-        <input name="customerId" required />
-        {actionData?.errors?.customerId && (
-          <span>{actionData.errors.customerId}</span>
-        )}
-      </label>
-
-      <button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Creating...' : 'Create Order'}
-      </button>
-    </Form>
-  );
-}`}
+      <h2>Code Organization</h2>
+      <CodeBlock language="jsx" title="Recommended Folder Structure">
+{`/*
+src/
+├── main.jsx                    Entry point
+├── router.jsx                  createBrowserRouter config
+├── layouts/
+│   ├── RootLayout.jsx          Global shell (nav + footer + Outlet)
+│   └── DashboardLayout.jsx     Sidebar + Outlet for /dashboard/*
+├── pages/
+│   ├── Home.jsx
+│   ├── About.jsx
+│   ├── Pricing.jsx
+│   ├── Login.jsx
+│   ├── Register.jsx
+│   ├── ForgotPassword.jsx
+│   └── dashboard/
+│       ├── Overview.jsx
+│       ├── Profile.jsx
+│       ├── Settings.jsx
+│       └── UserDetail.jsx
+├── components/
+│   ├── ProtectedRoute.jsx      requireAuth loader guard
+│   └── ErrorPages.jsx          RootError, DashboardError, NotFound
+└── lib/
+    └── api.js                  Fetch helpers shared by loaders
+*/`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Router Architecture Tips">
-        <p>
-          Three key conventions for maintainable router architecture:
-        </p>
-        <ul>
-          <li><strong>Co-locate</strong> loaders and actions with their component — export both from the same file as named exports</li>
-          <li><strong>Use route IDs</strong> (<code>id: 'app'</code>) to access parent loader data anywhere in the tree via <code>useRouteLoaderData('app')</code> — eliminates prop drilling</li>
-          <li><strong>Error boundaries at each level</strong> — root catches everything, individual routes show contextual errors (OrderError shows order-specific messaging)</li>
-        </ul>
+      <InfoBox variant="info" title="Why a Separate router.jsx?">
+        Keeping the router config in its own file makes it easy to import into
+        tests (<code>createMemoryRouter</code> with the same route array) and
+        keeps <code>main.jsx</code> clean.
       </InfoBox>
 
       <InteractiveChallenge
-        question="Where is the best place to put a loader for data needed by all authenticated routes?"
+        question={"Where should ScrollRestoration be placed in a React Router v7 app?"}
         options={[
-          "In every individual child route's loader so each page fetches what it needs",
-          "In the parent authenticated layout route's loader — children access it via useRouteLoaderData",
-          "In a React Context provider wrapped around the entire router",
-          "In localStorage, fetched once on app startup"
+          "In main.jsx, above RouterProvider",
+          "In the root layout component, after all content",
+          "In every page component that needs scroll behavior",
+          "In the router config as a route property",
         ]}
         correctIndex={1}
-        explanation="A parent route's loader runs before any child route renders. Auth data (like the current user) fetched in the parent AppLayout loader is available to all children via useRouteLoaderData('app'). This eliminates duplication: no need to fetch the current user in every child route. Give the parent route an id prop, then any descendant can call useRouteLoaderData('that-id') to access the data."
+        explanation={"ScrollRestoration should be placed once, inside your root layout component, after all rendered content. It uses sessionStorage to track scroll positions and automatically restores them during back/forward navigation. It only works with createBrowserRouter."}
+        language="jsx"
       />
 
-      <InteractiveChallenge
-        question="What is the difference between returning data and throwing a redirect from a loader?"
-        options={[
-          "They are identical — both send data to the component",
-          "Returning data makes it available via useLoaderData; throwing redirect sends the user to a different URL before the component renders",
-          "Throwing redirect only works in actions, not loaders",
-          "Returning data causes a re-render; throwing redirect causes a full page reload"
-        ]}
-        correctIndex={1}
-        explanation="A loader can return any serializable data — available to the component via useLoaderData(). A loader can also throw redirect('/login') to redirect the user before the component ever renders (useful for auth guards: check auth, redirect if not logged in). The redirect is thrown (not returned) so React Router can catch it and initiate the navigation before the route renders."
-      />
+      <h2>Loading States with useNavigation</h2>
+      <CodeBlock language="jsx" title="Global and Local Loading Indicators">
+{`import { useNavigation } from 'react-router-dom';
+
+// Global loading bar (in RootLayout)
+function GlobalLoadingBar() {
+  const navigation = useNavigation();
+  if (navigation.state === 'idle') return null;
+
+  return (
+    <div className="loading-bar">
+      {navigation.state === 'loading' && 'Loading page...'}
+      {navigation.state === 'submitting' && 'Submitting form...'}
+    </div>
+  );
+}
+
+// navigation.state values:
+// "idle"       — nothing happening
+// "loading"    — a loader is running (GET navigation)
+// "submitting" — an action is running (POST/PUT/DELETE)`}
+      </CodeBlock>
+
+      <InfoBox variant="success" title="Full App Complete">
+        You now have a production-ready routing architecture: public pages, auth
+        flows with redirect, a protected dashboard with nested layouts, error
+        boundaries scoped to each section, loading indicators, and a clean file
+        organization. This pattern scales from small apps to large SPAs.
+      </InfoBox>
     </LessonLayout>
   );
 }

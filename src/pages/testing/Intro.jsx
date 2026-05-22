@@ -4,269 +4,316 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function TestIntro() {
+export default function Intro() {
   return (
     <LessonLayout
-      title="Testing Strategies"
+      title="Testing Pyramid & Philosophy"
       sectionId="testing"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/testing/unit', label: 'Unit Testing' }}
+      next={{ path: '/testing/unit', label: 'Unit Testing (JUnit & Jest)' }}
     >
+      <h2>Why Testing Matters</h2>
+      <p>
+        Software testing is the practice of verifying that your code behaves as expected.
+        Without tests, every code change becomes a gamble. With a solid test suite, you
+        refactor with confidence, catch regressions early, and document expected behavior
+        for the entire team.
+      </p>
+
+      <InfoBox variant="tip" title="Testing Is a Skill">
+        Writing good tests is a discipline that takes practice. Great tests are fast,
+        deterministic, focused, and act as living documentation. Poor tests are brittle,
+        slow, and give false confidence.
+      </InfoBox>
+
       <h2>The Testing Pyramid</h2>
       <p>
-        The testing pyramid describes the ideal proportion of test types: many fast unit tests at
-        the base, fewer integration tests in the middle, and a small number of slow end-to-end
-        tests at the top. Each layer serves a different purpose and has different cost/value.
+        The testing pyramid is a mental model for balancing test types. More tests at the
+        bottom (fast, cheap unit tests), fewer at the top (slow, expensive E2E tests).
       </p>
 
       <FlowChart
-        title="Testing Pyramid"
-        chart={"graph TD\n  A[E2E Tests - 10%] --> B[Integration Tests - 30%]\n  B --> C[Unit Tests - 60%]\n  A --> D[Slow - expensive - realistic]\n  B --> E[Medium - verify wiring]\n  C --> F[Fast - cheap - isolated]"}
+        title="The Testing Pyramid"
+        chart={"graph TD\n  E2E[\"E2E Tests\\n(Few, Slow, Expensive)\"]\n  INT[\"Integration Tests\\n(Some, Medium Speed)\"]\n  UNIT[\"Unit Tests\\n(Many, Fast, Cheap)\"]\n  E2E --> INT\n  INT --> UNIT"}
       />
 
-      <CodeBlock language="markdown" title="Test Types Comparison">
-{`## Unit Tests
-# What: test a single function, method, or class in isolation
-# Speed: milliseconds per test — run thousands in seconds
-# Dependencies: mocked (no DB, no network, no filesystem)
-# Feedback: instant — tells you exactly which logic is wrong
-# When to write: every business logic function, edge cases, algorithms
-# Tools: JUnit 5 (Java), Jest/Vitest (JavaScript)
+      <h3>Layer Breakdown</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Speed</th>
+            <th>Scope</th>
+            <th>Quantity</th>
+            <th>Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Unit Tests</td>
+            <td>Milliseconds</td>
+            <td>Single function/class</td>
+            <td>Hundreds to thousands</td>
+            <td>Low</td>
+          </tr>
+          <tr>
+            <td>Integration Tests</td>
+            <td>Seconds</td>
+            <td>Multiple components</td>
+            <td>Tens to hundreds</td>
+            <td>Medium</td>
+          </tr>
+          <tr>
+            <td>E2E Tests</td>
+            <td>Seconds to minutes</td>
+            <td>Entire application flow</td>
+            <td>Tens</td>
+            <td>High</td>
+          </tr>
+        </tbody>
+      </table>
 
-## Integration Tests
-# What: test how components work together (e.g., service + real DB)
-# Speed: seconds — real DB connections, real HTTP calls
-# Dependencies: real (test DB, embedded server, containers)
-# Feedback: slower, but tests actual wiring between layers
-# When to write: repository queries, REST endpoint behavior, auth flows
-# Tools: @SpringBootTest (Java), Testing Library (React)
+      <h2>Unit vs Integration vs E2E</h2>
 
-## End-to-End (E2E) Tests
-# What: test complete user workflows through a real browser
-# Speed: minutes — real browser, real server, real DB
-# Dependencies: fully deployed system (or close to it)
-# Feedback: most realistic, but slow and flaky
-# When to write: critical user journeys (checkout, login, signup)
-# Tools: Playwright (recommended), Cypress, Selenium
+      <h3>Unit Tests</h3>
+      <p>
+        Test a single unit of code in isolation. Dependencies are mocked or stubbed.
+        These run extremely fast and pinpoint exactly where failures occur.
+      </p>
 
-## Contract Tests
-# What: verify API producer and consumer agree on interface
-# When: microservices, frontend + backend separate teams
-# Tools: Pact (consumer-driven contract testing)
-
-## Proportion Rule of Thumb
-# 60% unit, 30% integration, 10% E2E for most applications
-# E2E ratio lower → faster CI, less flakiness
-# Unit ratio lower → less confidence in business logic`}
+      <CodeBlock language="java" title="Java Unit Test Example">
+{`@Test
+@DisplayName("should calculate total with tax")
+void calculateTotalWithTax() {
+    PriceCalculator calculator = new PriceCalculator(0.08);
+    double result = calculator.calculateTotal(100.00);
+    assertEquals(108.00, result, 0.01);
+}`}
       </CodeBlock>
 
-      <h2>TDD and BDD</h2>
+      <CodeBlock language="javascript" title="JavaScript Unit Test Example">
+{`test('should calculate total with tax', () => {
+  const calculator = new PriceCalculator(0.08);
+  const result = calculator.calculateTotal(100.00);
+  expect(result).toBeCloseTo(108.00);
+});`}
+      </CodeBlock>
 
-      <CodeBlock language="java" title="Test-Driven Development (TDD)">
-{`// TDD Cycle: Red → Green → Refactor
-// 1. RED: write a failing test for the feature you're about to build
-// 2. GREEN: write the minimal code to make the test pass
-// 3. REFACTOR: clean up the code, tests still pass
+      <h3>Integration Tests</h3>
+      <p>
+        Verify that multiple components work together correctly. These might test a
+        controller with its service layer, or a React component that calls an API.
+      </p>
 
-// Example: implementing a password validator with TDD
-// Step 1 — RED: write tests first (feature doesn't exist yet)
-@Test
-void passwordMustBeAtLeast8Characters() {
-    assertThrows(InvalidPasswordException.class,
-        () -> new Password("short"));
-}
-@Test
-void passwordMustContainUppercase() {
-    assertThrows(InvalidPasswordException.class,
-        () -> new Password("alllowercase1"));
-}
-@Test
-void validPasswordIsAccepted() {
-    assertDoesNotThrow(() -> new Password("Str0ng!Pass"));
-}
+      <h3>End-to-End Tests</h3>
+      <p>
+        Simulate real user behavior through the full application stack. Slow but
+        catch issues that unit and integration tests miss.
+      </p>
 
-// Step 2 — GREEN: minimal implementation
-public class Password {
-    public Password(String value) {
-        if (value.length() < 8)
-            throw new InvalidPasswordException("Must be 8+ chars");
-        if (!value.matches(".*[A-Z].*"))
-            throw new InvalidPasswordException("Must have uppercase");
+      <h2>TDD: Test-Driven Development</h2>
+      <p>
+        TDD is a development discipline where you write tests before writing production
+        code. It follows a strict cycle known as Red-Green-Refactor.
+      </p>
+
+      <FlowChart
+        title="TDD Cycle: Red-Green-Refactor"
+        chart={"graph LR\n  RED[\"RED\\nWrite a failing test\"] --> GREEN[\"GREEN\\nWrite minimal code to pass\"]\n  GREEN --> REFACTOR[\"REFACTOR\\nClean up the code\"]\n  REFACTOR --> RED"}
+      />
+
+      <h3>TDD in Practice</h3>
+      <CodeBlock language="java" title="Step 1: RED — Write a Failing Test">
+{`@Test
+void shouldReturnEmptyListWhenNoUsersExist() {
+    UserService service = new UserService(new InMemoryUserRepo());
+    List<User> users = service.findAll();
+    assertTrue(users.isEmpty());
+}
+// Compile error — UserService doesn't exist yet!`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="Step 2: GREEN — Minimal Implementation">
+{`public class UserService {
+    private final UserRepository repo;
+
+    public UserService(UserRepository repo) {
+        this.repo = repo;
     }
-}
 
-// Step 3 — REFACTOR: clean up, add more edge cases
-
-// TDD benefits:
-// - Tests document exactly what the code should do
-// - Design pressure: hard-to-test code → refactor the design
-// - Confidence: every feature has a test by definition
-// - Debugging: failing test immediately narrows the problem`}
+    public List<User> findAll() {
+        return repo.findAll();
+    }
+}`}
       </CodeBlock>
 
-      <CodeBlock language="java" title="BDD — Given/When/Then">
-{`// BDD (Behavior-Driven Development) uses domain language
-// Tests read like specifications rather than code
+      <CodeBlock language="java" title="Step 3: REFACTOR — Clean Up">
+{`// Maybe extract an interface, add null checks,
+// or improve naming. Tests keep you safe during refactoring.`}
+      </CodeBlock>
 
-// JUnit 5 with BDD style
-@Test
-@DisplayName("Given a valid user, when they log in, then they get a JWT token")
-void givenValidUser_whenLoginCalled_thenReturnsJwt() {
+      <h2>BDD: Behavior-Driven Development</h2>
+      <p>
+        BDD extends TDD by using natural language to describe behavior. Tests are
+        written in a Given-When-Then format that stakeholders can understand.
+      </p>
+
+      <CodeBlock language="java" title="BDD-Style Test (Java)">
+{`@Test
+@DisplayName("Given a user with admin role, when accessing settings, then allow access")
+void adminCanAccessSettings() {
     // Given
-    User user = new User("alice@example.com", passwordEncoder.encode("secret"));
-    userRepository.save(user);
+    User admin = new User("alice", Role.ADMIN);
+    SettingsService settings = new SettingsService();
 
     // When
-    LoginResponse response = authService.login("alice@example.com", "secret");
+    boolean hasAccess = settings.canAccess(admin);
 
     // Then
-    assertThat(response.getToken()).isNotNull();
-    assertThat(response.getToken()).startsWith("eyJ"); // JWT prefix
-}
+    assertTrue(hasAccess);
+}`}
+      </CodeBlock>
 
-// Jest with BDD style
-describe('ShoppingCart', () => {
-  describe('when adding an item', () => {
-    it('increases the cart total', () => {
-      // Given
-      const cart = new ShoppingCart();
+      <CodeBlock language="javascript" title="BDD-Style Test (JavaScript)">
+{`describe('SettingsService', () => {
+  it('should allow admin users to access settings', () => {
+    // Given
+    const admin = { name: 'alice', role: 'ADMIN' };
+    const settings = new SettingsService();
 
-      // When
-      cart.addItem({ name: 'Widget', price: 9.99 });
+    // When
+    const hasAccess = settings.canAccess(admin);
 
-      // Then
-      expect(cart.total).toBe(9.99);
-    });
-
-    it('updates item count', () => {
-      const cart = new ShoppingCart();
-      cart.addItem({ name: 'Widget', price: 9.99 });
-      expect(cart.itemCount).toBe(1);
-    });
+    // Then
+    expect(hasAccess).toBe(true);
   });
 });`}
       </CodeBlock>
 
-      <h2>FIRST Principles of Good Tests</h2>
+      <h2>Testing ROI</h2>
+      <p>
+        Not all tests provide equal value. Focus your testing effort where it matters most:
+      </p>
 
-      <CodeBlock language="java" title="What Makes a Good Test">
-{`// FIRST: Fast, Isolated, Repeatable, Self-validating, Timely
-
-// FAST
-// Unit tests should run in < 1ms each, thousands in seconds
-// Slow tests: DB calls, network, file I/O — use mocks in unit tests
-// Running tests frequently requires them to be fast
-
-// ISOLATED
-// Each test must be independent — order doesn't matter, no shared state
-@BeforeEach
-void setUp() {
-    // Reset state before each test
-    database.clear();
-    cache.invalidateAll();
-}
-// ❌ Bad: test 2 depends on test 1 creating a user
-// ✓ Good: each test creates its own data
-
-// REPEATABLE
-// Same test must give same result every time, in any environment
-// ❌ Bad: test that depends on current time, random values
-// ✓ Good: mock Clock.fixed(Instant.now(), ZoneId.UTC)
-//         mock Random with a fixed seed
-
-// SELF-VALIDATING
-// Test must have a clear pass/fail — no manual inspection
-// ❌ Bad: test that just prints output, developer reads it
-// ✓ Good: assertEquals, assertThat, expect().toBe()
-
-// TIMELY
-// Tests should be written at the same time as the code
-// Retroactively testing legacy code is valuable but much harder
-// TDD: tests BEFORE code (most timely)
-// At minimum: tests in the same PR as the feature`}
-      </CodeBlock>
-
-      <h2>Test Coverage — What It Means and What It Doesn't</h2>
-
-      <CodeBlock language="bash" title="Coverage Metrics">
-{`# Line Coverage — % of lines executed during tests
-# 80% line coverage = 80% of code was executed
-# Most common metric, but can be gamed
-
-# Branch Coverage — % of branches (if/else, switch) tested
-# More valuable than line coverage
-# A line can be covered without testing all branches
-
-# Mutation Coverage (most valuable)
-# Intentionally mutate code (change > to >=, remove conditions)
-# Tests should FAIL when code is mutated
-# If tests still pass with mutations → tests don't verify behavior
-# Tools: PIT (Java), Stryker (JS/TS)
-
-# Coverage targets
-# 70% line coverage: minimum for non-trivial business logic
-# 80% line coverage: solid baseline for most apps
-# 100%: overkill for most apps, appropriate for critical libraries
-
-# What coverage DOESN'T tell you:
-# - Quality of assertions (covered but not actually verified)
-# - Integration between modules
-# - Performance and scalability
-# - Security vulnerabilities
-# - User experience
-
-# Jacoco (Java) configuration in pom.xml:
-<plugin>
-  <groupId>org.jacoco</groupId>
-  <artifactId>jacoco-maven-plugin</artifactId>
-  <configuration>
-    <rules>
-      <rule>
-        <limits>
-          <limit>
-            <minimum>0.80</minimum>  <!-- 80% line coverage -->
-          </limit>
-        </limits>
-      </rule>
-    </rules>
-  </configuration>
-</plugin>`}
-      </CodeBlock>
-
-      <InfoBox variant="tip" title="Testing Mindset: What Are You Testing?">
-        <p>
-          The most important question before writing any test: <em>what behavior are you verifying?</em>
-          Not "does this method return X" but "given this situation, when this happens, then this outcome
-          should result." Tests that verify implementation details break every refactor.
-          Tests that verify behavior survive refactoring and become living documentation.
-          Write tests that would still be valuable if you rewrote the implementation from scratch.
-        </p>
+      <InfoBox variant="info" title="High-Value Testing Targets">
+        <ul>
+          <li><strong>Business logic</strong> — core domain rules, calculations, state machines</li>
+          <li><strong>Edge cases</strong> — boundaries, null values, empty collections</li>
+          <li><strong>Error handling</strong> — exception paths, validation failures</li>
+          <li><strong>Integration points</strong> — API contracts, database queries</li>
+          <li><strong>Regression-prone areas</strong> — code that has broken before</li>
+        </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Why does the testing pyramid recommend many unit tests but few E2E tests?"
-        options={[
-          "E2E tests are harder to write than unit tests",
-          "Unit tests are faster, cheaper, and more isolated — they pinpoint failures precisely; E2E tests are slow, expensive, and flaky",
-          "E2E tests require paid tools while unit tests are free",
-          "Unit tests cover more code than E2E tests"
-        ]}
-        correctIndex={1}
-        explanation="Unit tests run in milliseconds, require no infrastructure, and when they fail they point directly to the broken function. E2E tests take minutes, require a deployed environment, are prone to flakiness (timing, network, data), and when they fail you don't know which layer broke. Many fast unit tests give continuous feedback; a few E2E tests verify critical user journeys. The pyramid shape optimizes for both speed and confidence."
+      <h3>What NOT to Test</h3>
+      <ul>
+        <li>Framework code (Spring, React internals) — trust the framework</li>
+        <li>Simple getters/setters with no logic</li>
+        <li>Private methods directly — test them through public interfaces</li>
+        <li>Implementation details — test behavior, not how it&apos;s done</li>
+        <li>Third-party library internals</li>
+      </ul>
+
+      <h2>Code Coverage Philosophy</h2>
+      <p>
+        Code coverage measures what percentage of your code is exercised by tests.
+        It&apos;s a useful metric but can be misleading if used as a target.
+      </p>
+
+      <InfoBox variant="warning" title="The 80% Rule">
+        Aim for around 80% code coverage. Going from 80% to 100% often means writing
+        low-value tests for trivial code. The last 20% typically takes 80% of the effort
+        and provides diminishing returns. Coverage tells you what&apos;s NOT tested — it
+        doesn&apos;t tell you if your tests are any good.
+      </InfoBox>
+
+      <CodeBlock language="bash" title="Checking Coverage">
+{`# Java (JaCoCo via Maven)
+mvn test jacoco:report
+
+# JavaScript (Jest built-in)
+npx jest --coverage
+
+# Coverage thresholds in jest.config.js
+module.exports = {
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+};`}
+      </CodeBlock>
+
+      <h2>Testing Anti-Patterns</h2>
+
+      <FlowChart
+        title="Common Testing Anti-Patterns"
+        chart={"graph TD\n  A[\"Testing Anti-Patterns\"] --> B[\"Ice Cream Cone\\nToo many E2E, few unit\"]\n  A --> C[\"Testing Implementation\\nCoupled to internals\"]\n  A --> D[\"Flaky Tests\\nNon-deterministic results\"]\n  A --> E[\"Slow Test Suite\\nDiscourages running tests\"]\n  A --> F[\"Test Duplication\\nSame logic tested many times\"]\n  A --> G[\"No Assertions\\nTests that can't fail\"]"}
       />
 
+      <table>
+        <thead>
+          <tr>
+            <th>Anti-Pattern</th>
+            <th>Problem</th>
+            <th>Solution</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ice Cream Cone</td>
+            <td>Inverted pyramid — too many slow E2E tests</td>
+            <td>Push tests down to unit/integration level</td>
+          </tr>
+          <tr>
+            <td>Testing Implementation</td>
+            <td>Tests break when refactoring internals</td>
+            <td>Test behavior and outputs, not how</td>
+          </tr>
+          <tr>
+            <td>Flaky Tests</td>
+            <td>Tests pass/fail randomly</td>
+            <td>Eliminate time dependencies, use deterministic data</td>
+          </tr>
+          <tr>
+            <td>Slow Suites</td>
+            <td>Developers skip running tests</td>
+            <td>Parallelize, mock heavy dependencies</td>
+          </tr>
+          <tr>
+            <td>No Assertions</td>
+            <td>Tests that never fail are worthless</td>
+            <td>Every test must assert something meaningful</td>
+          </tr>
+        </tbody>
+      </table>
+
       <InteractiveChallenge
-        question="What is the TDD cycle in order?"
+        question={"In the testing pyramid, which layer should have the MOST tests?"}
         options={[
-          "Write code → Write tests → Refactor",
-          "Write tests → Refactor → Write code",
-          "Write failing test (Red) → Write minimal code to pass (Green) → Refactor",
-          "Design interface → Implement → Test"
+          "End-to-End tests",
+          "Integration tests",
+          "Unit tests",
+          "Manual tests"
         ]}
         correctIndex={2}
-        explanation="TDD follows Red-Green-Refactor: (1) Red — write a test for the feature before any implementation; it fails because the feature doesn't exist. (2) Green — write the minimal code to make the test pass (no more, no less). (3) Refactor — improve the code quality while keeping tests green. This cycle ensures every feature has tests from day one, and the 'minimal implementation' step prevents over-engineering."
+        explanation="Unit tests form the base of the pyramid. They are fast, cheap, and should make up the majority of your test suite. E2E tests are at the top — few in number but high in confidence."
+        language="java"
       />
+
+      <h2>Key Takeaways</h2>
+      <ul>
+        <li>Follow the testing pyramid: many unit tests, fewer integration, fewest E2E</li>
+        <li>Use TDD (Red-Green-Refactor) to drive design and catch bugs early</li>
+        <li>Write BDD-style tests for better readability and documentation</li>
+        <li>Aim for ~80% coverage but focus on quality over quantity</li>
+        <li>Avoid anti-patterns: flaky tests, ice cream cones, testing implementation details</li>
+        <li>Test behavior, not implementation</li>
+      </ul>
     </LessonLayout>
   );
 }

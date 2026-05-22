@@ -1,251 +1,407 @@
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function NpmScripts() {
+export default function Scripts() {
   return (
     <LessonLayout
-      title="npm Scripts"
+      title="Scripts & Lifecycle Hooks"
       sectionId="npm-deep-dive"
       lessonIndex={4}
-      prev={{ path: '/npm-deep-dive/lockfile', label: 'Lockfiles' }}
-      next={{ path: '/npm-deep-dive/security', label: 'npm Security' }}
+      prev={{ path: '/npm-deep-dive/lockfile', label: 'Lockfiles & Reproducibility' }}
+      next={{ path: '/npm-deep-dive/security', label: 'Security & Auditing' }}
     >
-      <h2>npm Scripts</h2>
+      <h2>npm Scripts Basics</h2>
       <p>
-        npm scripts are shell commands defined in <code>package.json</code> under the <code>scripts</code> field.
-        They provide a standardized way to run project tasks, with access to locally installed binaries.
+        The <code>"scripts"</code> field in package.json is npm's built-in task runner. Each
+        key is a command name, each value is a shell command that gets executed in a subshell.
+        It's deceptively simple but has powerful features most developers never discover.
       </p>
 
-      <CodeBlock language="json" title="package.json scripts">
+      <CodeBlock language="json" title="Common scripts section">
 {`{
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "format": "prettier --write src",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write src/",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist node_modules",
-    "ci": "npm run lint && npm run typecheck && npm run test"
+    "clean": "rm -rf dist node_modules/.cache",
+    "prepare": "husky install"
   }
 }`}
       </CodeBlock>
 
-      <h2>Running Scripts</h2>
-
-      <CodeBlock language="bash" title="Invoking scripts">
-{`# Standard scripts (no 'run' needed)
-npm test      # → npm run test
-npm start     # → npm run start
-npm stop      # → npm run stop
-npm restart   # → npm run restart
-
-# Custom scripts require 'run'
+      <CodeBlock language="bash" title="Running scripts">
+{`# Run any script with "npm run":
 npm run dev
 npm run build
 npm run lint:fix
 
-# Pass arguments with --
-npm test -- --reporter verbose
-npm run lint -- --max-warnings 0
+# Special shorthand scripts (no "run" needed):
+npm start      # runs "start" script
+npm test       # runs "test" script (alias: npm t)
+npm stop       # runs "stop" script
+npm restart    # runs "restart" (or stop + start)
 
-# Run silently (suppress npm logging)
-npm run build --silent
-
-# pnpm and yarn
-pnpm run dev
-yarn dev`}
+# These shortcuts exist because they're so common.
+# All other scripts require "npm run <name>"`}
       </CodeBlock>
 
-      <h2>Lifecycle Scripts</h2>
+      <h2>How Scripts Find Binaries</h2>
       <p>
-        npm automatically runs certain scripts at specific points during <code>npm install</code>,
-        <code>npm publish</code>, and other lifecycle events.
+        The magic that makes scripts work: when npm runs a script, it temporarily adds
+        <code>node_modules/.bin</code> to the PATH environment variable. This means any
+        CLI tool installed as a dependency is available by name — no full paths needed.
       </p>
 
-      <CodeBlock language="json" title="Lifecycle hooks">
+      <CodeBlock language="bash" title="PATH augmentation in scripts">
+{`# In your package.json:
+{
+  "scripts": {
+    "lint": "eslint src/"
+  },
+  "devDependencies": {
+    "eslint": "^8.50.0"
+  }
+}
+
+# When you run "npm run lint", npm does:
+# 1. Add ./node_modules/.bin to front of PATH
+# 2. Execute: eslint src/
+# 3. Shell finds "eslint" at ./node_modules/.bin/eslint
+
+# Without scripts, you'd need:
+./node_modules/.bin/eslint src/
+# or:
+npx eslint src/
+
+# The script PATH includes parent node_modules too:
+# ./node_modules/.bin
+# ../node_modules/.bin
+# ../../node_modules/.bin (useful in monorepos)`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="Scripts Run in sh, Not bash">
+        npm scripts execute in the system's default shell (sh on Unix, cmd.exe on Windows).
+        This means bash-specific syntax (arrays, [[ ]]) won't work cross-platform. Stick to
+        POSIX-compatible commands or use cross-env/shx for portability.
+      </InfoBox>
+
+      <h2>Pre and Post Hooks</h2>
+      <p>
+        For any script named <code>X</code>, npm automatically runs <code>preX</code> before
+        it and <code>postX</code> after it. This is the lifecycle hook system.
+      </p>
+
+      <CodeBlock language="json" title="Pre/post hooks in action">
 {`{
   "scripts": {
-    // Install lifecycle
-    "preinstall": "node check-node-version.js",
-    "install": "...",
-    "postinstall": "patch-package",   // common for applying patches
-
-    // Test lifecycle
-    "pretest": "npm run lint",
-    "test": "vitest run",
-    "posttest": "...",
-
-    // Publish lifecycle
-    "prepublishOnly": "npm run build && npm test",
-    "prepack": "npm run build",
-    "prepare": "husky",               // runs after install AND before pack/publish
-
-    // Build lifecycle
     "prebuild": "rm -rf dist",
     "build": "tsc && vite build",
-    "postbuild": "node scripts/copy-assets.js"
+    "postbuild": "echo Build complete! Size: $(du -sh dist | cut -f1)",
+
+    "pretest": "npm run lint",
+    "test": "jest",
+    "posttest": "echo All tests passed!",
+
+    "preversion": "npm test",
+    "version": "",
+    "postversion": "git push && git push --tags"
   }
 }`}
       </CodeBlock>
 
-      <h2>PATH and Local Binaries</h2>
+      <CodeBlock language="bash" title="Execution order">
+{`# Running "npm run build" executes:
+# 1. prebuild  → rm -rf dist
+# 2. build     → tsc && vite build
+# 3. postbuild → echo Build complete!
+
+# Running "npm test" executes:
+# 1. pretest   → npm run lint
+# 2. test      → jest
+# 3. posttest  → echo All tests passed!
+
+# If any step fails (non-zero exit), the chain STOPS
+# e.g., if lint fails in pretest, jest never runs`}
+      </CodeBlock>
+
+      <h2>Built-in Lifecycle Scripts</h2>
       <p>
-        npm scripts automatically add <code>node_modules/.bin</code> to PATH. This lets you run locally
-        installed tools (vite, eslint, vitest) without installing them globally or using npx.
+        Beyond pre/post hooks, npm has lifecycle scripts that run at specific points during
+        npm operations (install, publish, version bump):
       </p>
 
-      <CodeBlock language="bash" title="Local binaries in scripts">
-{`# Without npm scripts, you'd need:
-./node_modules/.bin/vite build
-# OR:
-npx vite build
+      <FlowChart
+        title="npm Lifecycle Script Order"
+        chart={"graph TD\n  A[npm install] --> B[preinstall]\n  B --> C[install]\n  C --> D[postinstall]\n  D --> E[prepublish - DEPRECATED]\n  E --> F[preprepare]\n  F --> G[prepare]\n  G --> H[postprepare]\n  I[npm publish] --> J[prepublishOnly]\n  J --> K[prepack]\n  K --> L[prepare]\n  L --> M[postpack]\n  M --> N[publish]\n  N --> O[postpublish]"}
+      />
 
-# In package.json scripts, PATH includes node_modules/.bin
+      <CodeBlock language="json" title="Key lifecycle scripts explained">
+{`{
+  "scripts": {
+    "preinstall": "node check-node-version.js",
+
+    "prepare": "husky install",
+
+    "prepublishOnly": "npm run build && npm test",
+
+    "prepack": "npm run build",
+
+    "postpack": "echo Package created successfully"
+  }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="prepare Is Your Friend">
+        The <code>prepare</code> script runs after <code>npm install</code> (in development)
+        and before <code>npm publish</code>. It's perfect for build steps and setting up git
+        hooks (husky). It does NOT run when your package is installed as a dependency.
+      </InfoBox>
+
+      <CodeBlock language="bash" title="When each lifecycle runs">
+{`# prepare:
+# - After "npm install" in development (not in production/CI with --omit=dev)
+# - Before "npm publish"
+# - When package is installed from git URL
+# Use for: build steps, git hooks setup
+
+# prepublishOnly:
+# - ONLY before "npm publish" (not on install)
+# Use for: build + test before publishing
+
+# prepack:
+# - Before "npm pack" and "npm publish" (tarball creation)
+# Use for: building dist/ files
+
+# postinstall:
+# - After package is installed
+# - Runs for dependencies too (controversial — security risk)
+# Use for: native compilation (node-gyp), optional setup`}
+      </CodeBlock>
+
+      <h2>Passing Arguments to Scripts</h2>
+
+      <CodeBlock language="bash" title="The -- separator">
+{`# Arguments after -- are passed to the underlying command
+npm run test -- --watch --coverage
+# Executes: jest --watch --coverage
+
+npm run lint -- --fix
+# Executes: eslint src/ --fix
+
+npm run dev -- --port 3001
+# Executes: vite --port 3001
+
+# Without --, npm tries to parse the args itself:
+npm run test --watch      # WRONG: --watch goes to npm, not jest
+npm run test -- --watch   # RIGHT: --watch goes to jest
+
+# In npm 9+, you can also use:
+npm test -- --watch
+# (the -- works with shorthand commands too)`}
+      </CodeBlock>
+
+      <h2>Environment Variables in Scripts</h2>
+      <p>
+        npm injects a rich set of environment variables when running scripts. These let your
+        scripts access package metadata without hardcoding values.
+      </p>
+
+      <CodeBlock language="bash" title="npm-injected environment variables">
+{`# All package.json fields are available as npm_package_* vars:
+echo $npm_package_name        # "my-app"
+echo $npm_package_version     # "1.0.0"
+
+# The current lifecycle event:
+echo $npm_lifecycle_event     # "build", "test", etc.
+
+# npm configuration:
+echo $npm_config_registry     # "https://registry.npmjs.org/"
+
+# Node and npm paths:
+echo $npm_node_execpath       # /usr/local/bin/node
+echo $npm_execpath            # /usr/local/lib/node_modules/npm/bin/npm-cli.js
+
+# Use in scripts:
 {
   "scripts": {
-    "build": "vite build",    // finds ./node_modules/.bin/vite automatically
-    "lint": "eslint src"      // finds ./node_modules/.bin/eslint
+    "greet": "echo Building $npm_package_name v$npm_package_version",
+    "banner": "echo Running: $npm_lifecycle_event"
   }
-}
-
-# View available local binaries
-ls node_modules/.bin
-
-# Useful binaries to know:
-# tsc, vite, vitest, jest, eslint, prettier, rollup, esbuild`}
+}`}
       </CodeBlock>
 
       <h2>Cross-Platform Scripts</h2>
+      <p>
+        Shell commands differ between Unix and Windows. If your team uses both (or CI runs
+        Linux while devs use Mac/Windows), you need cross-platform solutions:
+      </p>
 
-      <CodeBlock language="json" title="Cross-platform compatible scripts">
-{`// Problem: Unix scripts don't work on Windows
-{
-  "scripts": {
-    "clean": "rm -rf dist"    // fails on Windows!
-  }
-}
-
-// Solution 1: cross-env for env variables
-npm install --save-dev cross-env
-{
-  "scripts": {
-    "build:prod": "cross-env NODE_ENV=production vite build"
-  }
-}
-
-// Solution 2: rimraf for rm -rf
-npm install --save-dev rimraf
-{
-  "scripts": {
-    "clean": "rimraf dist"    // works on all platforms
-  }
-}
-
-// Solution 3: npm-run-all for parallel/sequential
-npm install --save-dev npm-run-all
-{
-  "scripts": {
-    "build": "run-s clean compile",       // sequential
-    "dev": "run-p dev:server dev:watch"   // parallel
-  }
-}`}
-      </CodeBlock>
-
-      <h2>npx — Running Packages Without Installing</h2>
-
-      <CodeBlock language="bash" title="npx usage">
-{`# Run a package from the registry without installing globally
-npx create-vite@latest my-app
-npx prettier --write .
-npx eslint --init
-
-# npx priority:
-# 1. Check node_modules/.bin (local install)
-# 2. Check npm cache
-# 3. Download from registry, run once, then discard
-
-# Specify version
-npx eslint@8 .
-
-# Run an npm script in a child package (monorepos)
-npx --workspaces --if-present run build
-
-# pnpm equivalent
-pnpm dlx create-vite my-app
-
-# Common one-off tasks
-npx npm-check-updates         # show all available upgrades
-npx depcheck                  # find unused dependencies
-npx bundlesize                # check bundle size budgets
-npx serve dist                # serve a static directory`}
-      </CodeBlock>
-
-      <h2>Scripting Patterns</h2>
-
-      <CodeBlock language="json" title="Advanced script patterns">
+      <CodeBlock language="json" title="Cross-platform tools">
 {`{
   "scripts": {
-    // Chaining: && (stop on error), ; (continue on error), | (pipe)
-    "verify": "npm run lint && npm run typecheck && npm run test",
-
-    // Multiple commands in parallel (Unix)
-    "start": "concurrently \"npm run server\" \"npm run client\"",
-
-    // Environment-specific
-    "build:dev": "vite build --mode development",
-    "build:staging": "vite build --mode staging",
-    "build:prod": "vite build --mode production",
-
-    // Git hooks helper
-    "prepare": "husky",
-    "precommit": "lint-staged",
-
-    // Version bumping
-    "release:patch": "npm version patch && git push --follow-tags",
-    "release:minor": "npm version minor && git push --follow-tags",
-    "release:major": "npm version major && git push --follow-tags"
+    "clean": "rimraf dist",
+    "set-env": "cross-env NODE_ENV=production node server.js",
+    "copy": "shx cp -r assets/ dist/assets/",
+    "mkdir": "shx mkdir -p dist/reports"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "rimraf": "^5.0.0",
+    "shx": "^0.3.4"
   }
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Script Naming Convention">
-        <p>
-          Prefix related scripts with the same namespace: <code>test</code>, <code>test:watch</code>,
-          <code>test:coverage</code>. This makes it easy to discover related commands. Use
-          <code>npm run</code> without arguments to list all available scripts in the current project.
-        </p>
+      <CodeBlock language="bash" title="Common cross-platform issues">
+{`# FAILS on Windows:
+"clean": "rm -rf dist"              # rm doesn't exist
+"env": "NODE_ENV=production node ." # env vars set differently
+
+# WORKS everywhere:
+"clean": "rimraf dist"              # cross-platform rm -rf
+"env": "cross-env NODE_ENV=production node ."  # cross-platform env
+
+# Alternatively, use Node.js scripts for complex operations:
+"complex-task": "node scripts/build.js"`}
+      </CodeBlock>
+
+      <h2>Script Composition</h2>
+      <p>
+        Real projects need to run multiple scripts together — either sequentially (one after
+        another) or in parallel (simultaneously). Here are the patterns:
+      </p>
+
+      <CodeBlock language="json" title="Running scripts together">
+{`{
+  "scripts": {
+    "build:css": "tailwindcss -o dist/styles.css",
+    "build:js": "esbuild src/index.ts --bundle --outfile=dist/app.js",
+    "build:types": "tsc --emitDeclarationOnly",
+
+    "build:sequential": "npm run build:css && npm run build:js && npm run build:types",
+
+    "build:parallel": "concurrently \"npm:build:css\" \"npm:build:js\" \"npm:build:types\"",
+
+    "dev": "concurrently \"npm:dev:*\"",
+    "dev:server": "node server.js",
+    "dev:client": "vite",
+    "dev:css": "tailwindcss --watch",
+
+    "ci": "npm run lint && npm run typecheck && npm run test && npm run build",
+
+    "validate": "npm-run-all --parallel lint typecheck --sequential test build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0",
+    "npm-run-all": "^4.1.5"
+  }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="bash" title="Composition operators">
+{`# Sequential (&&) — next command runs only if previous succeeds
+npm run lint && npm run test && npm run build
+
+# Sequential (;) — runs all regardless of exit codes (DON'T use in CI)
+npm run lint ; npm run test
+
+# Parallel (&) — runs simultaneously (Unix only)
+npm run dev:server & npm run dev:client
+
+# Pipe (|) — output of one feeds into next
+npm run build 2>&1 | tee build.log
+
+# concurrently — cross-platform parallel execution with colored output
+npx concurrently "npm:dev:*"  # runs all scripts matching dev:*
+
+# npm-run-all — flexible sequential/parallel composition
+npx npm-run-all --parallel lint typecheck
+npx npm-run-all --sequential build deploy`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Don't Use & on Windows">
+        The <code>&</code> operator for background processes is Unix-only. Use the
+        <code>concurrently</code> package for cross-platform parallel script execution.
+        It also gives you better output formatting and error handling.
       </InfoBox>
 
+      <h2>Practical: Complete Scripts for a React + TypeScript Project</h2>
+
+      <CodeBlock language="json" title="Production-ready scripts section">
+{`{
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+
+    "lint": "eslint src/ --max-warnings 0",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write 'src/**/*.{ts,tsx,css}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx,css}'",
+
+    "typecheck": "tsc --noEmit",
+
+    "clean": "rimraf dist coverage",
+    "clean:all": "rimraf dist coverage node_modules",
+
+    "validate": "npm run typecheck && npm run lint && npm run test",
+    "ci": "npm run validate && npm run build",
+
+    "prepare": "husky install",
+    "pre-commit": "lint-staged"
+  }
+}`}
+      </CodeBlock>
+
       <InteractiveChallenge
-        question="Why can npm scripts run 'eslint' directly without 'npx eslint' or './node_modules/.bin/eslint'?"
+        question={"You run 'npm run test --watch'. Why doesn't Jest enter watch mode?"}
         options={[
-          "npm automatically installs eslint globally when detected in package.json",
-          "npm scripts add node_modules/.bin to PATH before running the command",
-          "npm has built-in support for common tools like eslint and prettier",
-          "npm scripts use a special shell that resolves packages differently"
+          "Jest doesn't support --watch",
+          "The --watch flag is consumed by npm, not passed to Jest",
+          "You need to install jest-watch separately",
+          "Watch mode only works with npm test, not npm run test"
         ]}
         correctIndex={1}
-        explanation="When npm runs a script, it temporarily prepends node_modules/.bin to the system PATH. This means any locally installed package with a bin entry (like eslint, vite, vitest) can be called by name directly in scripts. This is why 'vite build' works in package.json scripts but fails in your regular terminal (unless vite is installed globally)."
+        explanation={"Without the -- separator, flags are interpreted by npm itself, not passed to the underlying script. The correct command is 'npm run test -- --watch' (or 'npm test -- --watch'). The double dash tells npm to pass everything after it to the script command."}
       />
 
       <InteractiveChallenge
-        question="What is the 'prepare' lifecycle script used for and when does it run?"
+        question="What does the 'prepare' lifecycle script do?"
         options={[
-          "Only runs before npm publish to build the package",
-          "Runs after npm install AND before npm pack/publish — commonly used for Husky setup",
-          "Runs only when the package is installed as a dependency by others",
-          "Runs before every npm run command"
+          "Runs before every npm command",
+          "Runs after npm install in dev and before npm publish",
+          "Runs only when you explicitly call npm run prepare",
+          "Runs before the package is downloaded from the registry"
         ]}
         correctIndex={1}
-        explanation="The 'prepare' script runs: (1) after npm install in the project root, (2) before npm pack, and (3) before npm publish. It also runs when the package is installed as a git dependency. This makes it ideal for building the package (tsc) and setting up git hooks (husky). Note: 'prepublishOnly' is better than 'prepare' for build steps since prepare also runs on install."
+        explanation="The 'prepare' script runs automatically after 'npm install' during local development and before 'npm publish'. This makes it perfect for setting up git hooks (husky) or running build steps. It does NOT run when your package is installed as a dependency by someone else (unless they install from git)."
       />
+
+      <h2>Key Takeaways</h2>
+      <ul>
+        <li>npm scripts are shell commands defined in package.json, run with <code>npm run name</code></li>
+        <li>npm adds node_modules/.bin to PATH, making installed CLIs available by name</li>
+        <li>Pre/post hooks run automatically: preBUILD → build → postBUILD</li>
+        <li>Use <code>--</code> to pass arguments through: <code>npm run test -- --watch</code></li>
+        <li>The <code>prepare</code> lifecycle is ideal for build steps and git hooks</li>
+        <li>Use concurrently or npm-run-all for parallel/sequential script composition</li>
+        <li>Use cross-env and rimraf for Windows compatibility</li>
+      </ul>
     </LessonLayout>
   );
 }

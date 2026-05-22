@@ -4,309 +4,421 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function CSSFlexbox() {
+export default function Flexbox() {
   return (
     <LessonLayout
-      title="CSS Flexbox"
+      title="Flexbox Complete Guide"
       sectionId="css-mastery"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/css-mastery/grid', label: 'CSS Grid' }}
+      next={{ path: '/css-mastery/grid', label: 'CSS Grid Complete Guide' }}
     >
-      <h2>Flexbox Mental Model</h2>
+      <h2>Flex Container vs Flex Items</h2>
       <p>
-        Flexbox is a one-dimensional layout system — it lays items out along a single axis
-        (row or column). The key insight: there is a <strong>flex container</strong> (parent) and
-        <strong> flex items</strong> (direct children). Properties on the container control how
-        items are distributed; properties on items control how they individually behave.
+        Flexbox operates on a parent-child relationship. The element with <code>display: flex</code> becomes
+        the <strong>flex container</strong>. Its direct children automatically become <strong>flex items</strong>.
+        Only direct children participate in the flex formatting context &mdash; grandchildren are unaffected
+        unless they themselves become flex containers. This single-level scope is a key distinction from
+        older layout methods and means you frequently nest flex containers to build complex layouts.
+      </p>
+
+      <CodeBlock language="html" title="Container and Items">{`.flex-container {
+  display: flex; /* establishes flex formatting context */
+}
+/* .item-a, .item-b, .item-c are flex items */
+<div class="flex-container">
+  <div class="item-a">A</div>
+  <div class="item-b">B</div>
+  <div class="item-c">C</div>
+</div>`}</CodeBlock>
+
+      <h2>Main Axis vs Cross Axis</h2>
+      <p>
+        Every flex container has two axes. The <strong>main axis</strong> is defined by <code>flex-direction</code> and
+        determines the direction items flow. The <strong>cross axis</strong> runs perpendicular to it.
+        Understanding which axis you&apos;re targeting is critical &mdash; <code>justify-content</code> always
+        controls the main axis, while <code>align-items</code> and <code>align-content</code> control the cross axis.
       </p>
 
       <FlowChart
-        title="Flexbox Axis System"
-        chart={"graph LR\n  A[flex-direction: row] --> B[Main Axis: horizontal]\n  A --> C[Cross Axis: vertical]\n  D[flex-direction: column] --> E[Main Axis: vertical]\n  D --> F[Cross Axis: horizontal]\n  B --> G[justify-content controls]\n  C --> H[align-items controls]"}
+        title="Axis Directions by flex-direction"
+        chart={"graph LR\n  A[flex-direction: row] --> B[Main Axis = Horizontal]\n  A --> C[Cross Axis = Vertical]\n  D[flex-direction: column] --> E[Main Axis = Vertical]\n  D --> F[Cross Axis = Horizontal]"}
       />
 
-      <CodeBlock language="css" title="Flex Container — The Basics">
-{`.container {
-  display: flex;              /* or inline-flex */
-  flex-direction: row;        /* row | row-reverse | column | column-reverse */
-  flex-wrap: nowrap;          /* nowrap | wrap | wrap-reverse */
-  gap: 1rem;                  /* space between items (modern approach, replaces margin hacks) */
-}
+      <InfoBox variant="tip" title="Axis Mental Model">
+        When you switch <code>flex-direction</code> from <code>row</code> to <code>column</code>, the
+        axes swap. That means <code>justify-content: center</code> centers horizontally in row mode
+        but vertically in column mode. This catches many developers off guard.
+      </InfoBox>
 
-/* flex-flow is shorthand for flex-direction + flex-wrap */
-.container { flex-flow: row wrap; }
+      <h2>display: flex vs display: inline-flex</h2>
+      <p>
+        <code>display: flex</code> makes the container a block-level flex container &mdash; it takes the full
+        width of its parent and starts on a new line. <code>display: inline-flex</code> makes it an inline-level
+        flex container &mdash; it only takes the width needed by its content and sits inline with surrounding
+        elements. Inside both, flex item behavior is identical; the difference is purely how the container
+        participates in the outer layout.
+      </p>
 
-/* justify-content — distribution along the MAIN axis */
-.container {
-  justify-content: flex-start;    /* default — items at start */
-  justify-content: flex-end;      /* items at end */
-  justify-content: center;        /* centered */
-  justify-content: space-between; /* equal space BETWEEN items (no edge space) */
-  justify-content: space-around;  /* equal space AROUND each item (half-space at edges) */
-  justify-content: space-evenly;  /* equal space everywhere including edges */
-}
-
-/* align-items — alignment along the CROSS axis */
-.container {
-  align-items: stretch;     /* default — items stretch to fill container height */
-  align-items: flex-start;  /* items at start of cross axis */
-  align-items: flex-end;    /* items at end of cross axis */
-  align-items: center;      /* centered on cross axis */
-  align-items: baseline;    /* aligned by text baseline */
-}
-
-/* align-content — controls ROWS when wrapping (like justify-content for rows) */
-.container {
-  align-content: flex-start;    /* rows packed at start */
-  align-content: space-between; /* equal space between rows */
-  align-content: center;        /* rows centered vertically */
-}`}
-      </CodeBlock>
-
-      <CodeBlock language="css" title="Flex Items — Individual Control">
-{`/* flex-grow — how much an item grows to fill available space */
-.item { flex-grow: 0; } /* default — don't grow */
-.item { flex-grow: 1; } /* grow proportionally with others that have grow:1 */
-/* If item A has flex-grow:2 and item B has flex-grow:1,
-   A gets twice the extra space as B */
-
-/* flex-shrink — how much an item shrinks when space is tight */
-.item { flex-shrink: 1; } /* default — shrink proportionally */
-.item { flex-shrink: 0; } /* don't shrink — stays at its base size */
-
-/* flex-basis — the starting size before grow/shrink applies */
-.item { flex-basis: auto; }    /* default — use width/height */
-.item { flex-basis: 200px; }   /* start at 200px, then grow/shrink */
-.item { flex-basis: 0; }       /* ignore content size — grow from zero */
-
-/* flex shorthand: flex: grow shrink basis */
-.item { flex: 1; }             /* flex: 1 1 0 — equal-width flexible items */
-.item { flex: auto; }          /* flex: 1 1 auto — flexible, content-aware */
-.item { flex: none; }          /* flex: 0 0 auto — rigid, no grow/shrink */
-.item { flex: 0 1 200px; }     /* start at 200px, can shrink but not grow */
-
-/* order — visual reordering without changing DOM order */
-.item { order: 0; }   /* default */
-.item { order: -1; }  /* move to front */
-.item { order: 10; }  /* move to back */
-/* Warning: breaks keyboard tab order — accessibility concern! */
-
-/* align-self — override container's align-items for one item */
-.special-item {
-  align-self: flex-start;  /* while others are centered */
-}`}
-      </CodeBlock>
-
-      <h2>Real-World Flexbox Patterns</h2>
-
-      <CodeBlock language="css" title="Navbar Pattern">
-{`/* Classic navbar: logo left, links right */
-.navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 1.5rem;
-  height: 56px;
-}
-
-/* OR: logo left, links centered, actions right */
-.navbar {
-  display: flex;
+      <CodeBlock language="css" title="inline-flex Example">{`/* Useful for inline badges, tag groups, icon rows */
+.tag-group {
+  display: inline-flex;
+  gap: 4px;
   align-items: center;
 }
-.navbar-logo { /* takes natural width */ }
-.navbar-links {
-  flex: 1;              /* takes all remaining space */
-  display: flex;
-  justify-content: center; /* centers links within that space */
-  gap: 2rem;
-}
-.navbar-actions { /* takes natural width */ }
+/* Container sits inline with surrounding text */`}</CodeBlock>
 
-/* Responsive: collapse to hamburger at small screens */
+      <h2>flex-direction</h2>
+      <p>
+        Controls the main axis direction and, consequently, the order in which items are placed.
+      </p>
+      <CodeBlock language="css" title="All flex-direction Values">{`.row        { flex-direction: row; }            /* left to right (default) */
+.row-rev    { flex-direction: row-reverse; }    /* right to left */
+.col        { flex-direction: column; }         /* top to bottom */
+.col-rev    { flex-direction: column-reverse; } /* bottom to top */`}</CodeBlock>
+
+      <InfoBox variant="warning" title="Accessibility with Reverse Directions">
+        Visual reordering via <code>row-reverse</code>, <code>column-reverse</code>, or the <code>order</code> property
+        does not change DOM order. Screen readers and keyboard navigation still follow the source order.
+        Use these only for decorative reordering, never for meaningful content sequencing.
+      </InfoBox>
+
+      <h2>flex-wrap</h2>
+      <p>
+        By default, flex items try to fit on one line (<code>nowrap</code>). When items exceed the
+        container&apos;s main axis size, <code>flex-wrap: wrap</code> lets them flow onto new lines.
+        With <code>wrap-reverse</code>, new lines stack in the opposite direction along the cross axis.
+      </p>
+      <CodeBlock language="css" title="flex-wrap Behavior">{`.no-wrap     { flex-wrap: nowrap; }       /* default: items shrink to fit */
+.wrap        { flex-wrap: wrap; }         /* overflow onto new lines */
+.wrap-rev    { flex-wrap: wrap-reverse; } /* new lines stack in reverse */
+.shorthand   { flex-flow: row wrap; }    /* direction + wrap combined */`}</CodeBlock>
+
+      <h2>justify-content (Main Axis Alignment)</h2>
+      <p>
+        Distributes free space along the main axis. This is the property you reach for
+        when items don&apos;t fill the container and you need to control their positioning.
+      </p>
+      <CodeBlock language="css" title="justify-content Values">{`.jc-start    { justify-content: flex-start; }    /* pack to start (default) */
+.jc-end      { justify-content: flex-end; }      /* pack to end */
+.jc-center   { justify-content: center; }        /* center on main axis */
+.jc-between  { justify-content: space-between; } /* first/last flush, equal gaps */
+.jc-around   { justify-content: space-around; }  /* equal space around items */
+.jc-evenly   { justify-content: space-evenly; }  /* truly uniform gaps */
+/*
+ * space-between: |A     B     C|  — no outer gaps
+ * space-around:  | A   B   C |  — half gap at edges
+ * space-evenly:  |  A  B  C  |  — uniform gaps everywhere
+ */`}</CodeBlock>
+
+      <h2>align-items (Cross Axis Alignment)</h2>
+      <p>
+        Controls how items align along the cross axis within each flex line.
+        <code>stretch</code> is the default, which is why flex items expand to fill the
+        container height in a row layout &mdash; a behavior many developers find surprising.
+      </p>
+      <CodeBlock language="css" title="align-items Values">{`.ai-stretch   { align-items: stretch; }    /* fill cross axis (default) */
+.ai-start     { align-items: flex-start; } /* align to cross-axis start */
+.ai-end       { align-items: flex-end; }   /* align to cross-axis end */
+.ai-center    { align-items: center; }     /* center along cross axis */
+/* baseline: align by text baselines — great for mixed font sizes */
+.ai-baseline  { align-items: baseline; }`}</CodeBlock>
+
+      <h2>align-content (Multi-Line Cross Axis)</h2>
+      <p>
+        Only applies when <code>flex-wrap: wrap</code> produces multiple lines.
+        It controls how those lines distribute across the cross axis &mdash; the
+        cross-axis equivalent of <code>justify-content</code>. Has no effect on
+        single-line containers.
+      </p>
+      <CodeBlock language="css" title="align-content Values">{`.ac-stretch  { align-content: stretch; }       /* lines stretch (default) */
+.ac-start    { align-content: flex-start; }    /* pack to cross-axis start */
+.ac-end      { align-content: flex-end; }      /* pack to cross-axis end */
+.ac-center   { align-content: center; }        /* center lines */
+.ac-between  { align-content: space-between; } /* equal space between lines */
+.ac-around   { align-content: space-around; }  /* equal space around lines */`}</CodeBlock>
+
+      <h2>The gap Property</h2>
+      <p>
+        <code>gap</code> defines spacing between flex items without adding margins. It only
+        creates space between items, never at the outer edges &mdash; eliminating the classic
+        &quot;last-child negative margin&quot; hack. Accepts one value (both axes) or two
+        values (row-gap, column-gap).
+      </p>
+      <CodeBlock language="css" title="gap Usage">{`/* Uniform 16px gap between all items */
+.cards { display: flex; flex-wrap: wrap; gap: 16px; }
+
+/* Different row and column gaps */
+.grid-like { display: flex; flex-wrap: wrap; gap: 24px 16px; }
+
+/* Individual axis control */
+.fine-tuned {
+  row-gap: 1rem;
+  column-gap: 0.5rem;
+}`}</CodeBlock>
+
+      <h2>flex-grow</h2>
+      <p>
+        Defines how much of the remaining free space an item absorbs. A value of <code>0</code> (default)
+        means the item won&apos;t grow. The growth is proportional: if item A has <code>flex-grow: 2</code> and
+        item B has <code>flex-grow: 1</code>, A gets twice as much of the leftover space as B &mdash; not
+        twice the total width.
+      </p>
+      <CodeBlock language="css" title="flex-grow Distribution">{`/* 300px container, three 50px items → 150px free space */
+.item-a { flex-grow: 2; } /* gets 2/4 = 75px extra → 125px */
+.item-b { flex-grow: 1; } /* gets 1/4 = 37.5px extra → 87.5px */
+.item-c { flex-grow: 1; } /* gets 1/4 = 37.5px extra → 87.5px */`}</CodeBlock>
+
+      <h2>flex-shrink</h2>
+      <p>
+        Controls how items shrink when they overflow the container. Default is <code>1</code>, meaning
+        all items shrink equally. Set to <code>0</code> to prevent an item from shrinking &mdash; common
+        for fixed-width sidebars or icons that must maintain their size.
+      </p>
+      <CodeBlock language="css" title="flex-shrink Example">{`.sidebar { flex-shrink: 0; width: 250px; } /* stays fixed at 250px */
+.main    { flex-shrink: 1; }               /* absorbs overflow */
+.shrink-fast { flex-shrink: 3; } /* shrinks 3x faster than default */
+.shrink-slow { flex-shrink: 1; }`}</CodeBlock>
+
+      <h2>flex-basis</h2>
+      <p>
+        Sets the initial main-axis size of an item before <code>flex-grow</code> and <code>flex-shrink</code> kick
+        in. Defaults to <code>auto</code>, which uses the item&apos;s <code>width</code> or <code>height</code> (depending
+        on the main axis). Setting <code>flex-basis: 0</code> ignores intrinsic size and distributes all
+        space purely via <code>flex-grow</code> ratios.
+      </p>
+      <CodeBlock language="css" title="flex-basis vs width">{`/* flex-basis takes precedence over width in flex context */
+.item { width: 200px; flex-basis: 300px; } /* 300px wins */
+
+.equal-share { flex-grow: 1; flex-basis: 0; }    /* start from nothing */
+.natural     { flex-grow: 1; flex-basis: auto; } /* use content size */`}</CodeBlock>
+
+      <h2>flex Shorthand</h2>
+      <p>
+        The <code>flex</code> shorthand sets <code>flex-grow</code>, <code>flex-shrink</code>,
+        and <code>flex-basis</code> in one declaration. The spec strongly recommends using
+        the shorthand because it intelligently resets unspecified values.
+      </p>
+      <CodeBlock language="css" title="Common flex Shorthand Patterns">{`/* flex: <grow> <shrink> <basis> */
+/* flex: 1 → 1 1 0% — equal-width items, THE most common pattern */
+.fill { flex: 1; }
+
+/* flex: auto → 1 1 auto — grows/shrinks, respects content size */
+.fluid { flex: auto; }
+
+/* flex: none → 0 0 auto — rigid, no flex behavior */
+.rigid { flex: none; }
+
+/* Fixed 250px, never grows or shrinks */
+.fixed-sidebar { flex: 0 0 250px; }
+
+/* Grows at 2x rate relative to flex: 1 siblings */
+.double-wide { flex: 2; }`}</CodeBlock>
+
+      <InfoBox variant="info" title="Why Use the Shorthand?">
+        Writing <code>flex-grow: 1</code> alone leaves <code>flex-basis</code> at its
+        default <code>auto</code>. The shorthand <code>flex: 1</code> sets
+        <code>flex-basis</code> to <code>0%</code>, which usually produces the equal-width
+        columns you actually want. Always prefer the shorthand unless you have a specific
+        reason to set individual properties.
+      </InfoBox>
+
+      <h2>order Property</h2>
+      <p>
+        Overrides the visual rendering order of a flex item without changing the DOM.
+        Default is <code>0</code>. Lower values render first. Useful for responsive layouts
+        where you need a sidebar to appear before or after main content depending on viewport.
+      </p>
+      <CodeBlock language="css" title="order Usage">{`.featured   { order: -1; } /* renders first visually */
+.normal     { order: 0; }  /* default */
+.secondary  { order: 1; }  /* renders last visually */
+
+/* Responsive reorder — sidebar drops below main on mobile */
 @media (max-width: 768px) {
-  .navbar-links {
-    display: none; /* or position:fixed for mobile drawer */
-  }
-}`}
-      </CodeBlock>
+  .sidebar { order: 2; }
+  .main    { order: 1; }
+}`}</CodeBlock>
 
-      <CodeBlock language="css" title="Common Flexbox Patterns">
-{`/* ===== PERFECT CENTERING ===== */
-.center-everything {
+      <h2>align-self</h2>
+      <p>
+        Overrides the container&apos;s <code>align-items</code> for a single item. Accepts the same values:
+        <code>stretch</code>, <code>flex-start</code>, <code>flex-end</code>, <code>center</code>,
+        and <code>baseline</code>. Indispensable for one-off alignment tweaks.
+      </p>
+      <CodeBlock language="css" title="align-self Override">{`/* Container aligns everything to the top */
+.container { display: flex; align-items: flex-start; }
+
+/* But this one item centers itself vertically */
+.special-item { align-self: center; }
+
+/* And this one sticks to the bottom */
+.bottom-item { align-self: flex-end; }`}</CodeBlock>
+
+      <h2>Common Flexbox Patterns</h2>
+
+      <h3>Perfect Centering</h3>
+      <CodeBlock language="css" title="Centering Techniques">{`/* Center both axes — the classic two-liner */
+.center-both {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh; /* or any height */
 }
+/* Horizontal only */
+.center-h { display: flex; justify-content: center; }
+/* Vertical only */
+.center-v { display: flex; align-items: center; }
+/* Single-item centering with margin auto */
+.container { display: flex; }
+.centered-child { margin: auto; }`}</CodeBlock>
 
-/* ===== SIDEBAR LAYOUT ===== */
-.layout {
-  display: flex;
-  min-height: 100vh;
-}
-.sidebar {
-  width: 280px;
-  flex-shrink: 0;  /* don't let sidebar shrink */
-}
-.main-content {
-  flex: 1;          /* take all remaining width */
-  overflow-y: auto;
-}
-
-/* ===== CARD GRID (equal height cards) ===== */
-.card-row {
+      <h3>Equal Height Columns</h3>
+      <CodeBlock language="css" title="Equal Height Columns">{`/* align-items: stretch (default) does the heavy lifting */
+.columns {
   display: flex;
   gap: 1rem;
-  align-items: stretch; /* all cards same height */
 }
-.card {
-  flex: 1;         /* equal width */
-  display: flex;
-  flex-direction: column;
-}
-.card-body {
-  flex: 1;         /* push footer to bottom */
-}
-.card-footer { /* sticks to bottom */ }
+.column {
+  flex: 1;           /* equal widths */
+  /* height auto-stretches to tallest sibling */
+  padding: 1.5rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+}`}</CodeBlock>
 
-/* ===== STICKY FOOTER ===== */
-body {
+      <h3>Sticky Footer</h3>
+      <CodeBlock language="css" title="Sticky Footer Layout">{`/* Footer stays at bottom even with little content */
+.page {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
-main {
-  flex: 1; /* push footer down */
-}
-footer { /* natural height */ }`}
-      </CodeBlock>
+.header  { flex-shrink: 0; }
+.main    { flex: 1; }          /* absorbs all free space */
+.footer  { flex-shrink: 0; }`}</CodeBlock>
 
-      <CodeBlock language="css" title="Flexbox for Forms and Inputs">
-{`/* ===== INLINE FORM ===== */
-.search-form {
+      <h3>Navigation Bar</h3>
+      <CodeBlock language="css" title="Responsive Navigation">{`.navbar {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  height: 64px;
+}
+.logo {
+  flex: none;              /* fixed size */
+  margin-right: auto;      /* pushes nav links to the right */
+}
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+.auth-buttons {
   display: flex;
   gap: 0.5rem;
-  align-items: center;
-}
-.search-input {
-  flex: 1;        /* expand to fill space */
-  min-width: 0;   /* allow shrinking below default min-width! */
-}
-.search-btn {
-  flex-shrink: 0; /* keep button at natural size */
-  white-space: nowrap;
-}
+  margin-left: 2rem;
+}`}</CodeBlock>
 
-/* ===== LABEL + INPUT ROW ===== */
-.field {
+      <h3>Card Layout with Wrapping</h3>
+      <CodeBlock language="css" title="Responsive Card Grid">{`.card-grid {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
 }
-.field label {
-  flex-basis: 120px;
+.card {
+  flex: 1 1 300px;         /* grow, shrink, min 300px */
+  max-width: 400px;        /* prevent cards from getting too wide */
+  display: flex;
+  flex-direction: column;  /* nested flex for internal layout */
+}
+.card-body {
+  flex: 1;                 /* body fills available height */
+}
+.card-footer {
+  flex-shrink: 0;          /* footer stays at bottom of card */
+  margin-top: auto;        /* pushes footer down */
+}`}</CodeBlock>
+
+      <h3>Holy Grail Layout</h3>
+      <CodeBlock language="css" title="Holy Grail with Flexbox">{`.holy-grail {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.hg-header, .hg-footer {
   flex-shrink: 0;
-  text-align: right;
 }
-.field input {
-  flex: 1;
-  min-width: 0;  /* ALWAYS add this to flex children that can shrink */
-}
-
-/* ===== INPUT GROUP (prepend/append) ===== */
-.input-group {
+.hg-body {
   display: flex;
-}
-.input-group-prefix {
-  display: flex;
-  align-items: center;
-  padding: 0 0.75rem;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-}
-.input-group input {
   flex: 1;
-  border-radius: 0 4px 4px 0;
-}`}
-      </CodeBlock>
+}
+.hg-content {
+  flex: 1;                  /* main content fills center */
+  padding: 1rem;
+}
+.hg-nav {
+  flex: 0 0 200px;          /* left sidebar fixed 200px */
+  order: -1;                /* DOM: content first for SEO */
+}
+.hg-aside {
+  flex: 0 0 200px;          /* right sidebar fixed 200px */
+}`}</CodeBlock>
 
-      <h2>Common Flexbox Bugs and Fixes</h2>
+      <CodeBlock language="html" title="Holy Grail HTML Structure">{`<div class="holy-grail">
+  <header class="hg-header">Header</header>
+  <div class="hg-body">
+    <!-- Content first in DOM for accessibility/SEO -->
+    <main class="hg-content">Main Content</main>
+    <nav class="hg-nav">Left Nav</nav>
+    <aside class="hg-aside">Right Sidebar</aside>
+  </div>
+  <footer class="hg-footer">Footer</footer>
+</div>`}</CodeBlock>
 
-      <CodeBlock language="css" title="Flexbox Gotchas">
-{`/* BUG 1: Text truncation not working */
-/* Problem: flex items have a default min-width:auto (content size) */
-/* Text expands the item instead of truncating */
-.item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Fix: add min-width: 0 to the flex item */
-.item { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      <h2>Property Decision Tree</h2>
+      <FlowChart
+        title="Choosing the Right Flex Property"
+        chart={"graph TD\n  A[What do you need?] --> B[Distribute items along main axis]\n  A --> C[Align items along cross axis]\n  A --> D[Control item sizing]\n  A --> E[Reorder items]\n  B --> F[justify-content]\n  C --> G{All items or one?}\n  G --> H[All: align-items]\n  G --> I[One: align-self]\n  D --> J{Grow into space?}\n  J --> K[flex-grow]\n  J --> L{Shrink when tight?}\n  L --> M[flex-shrink]\n  L --> N[Set base size: flex-basis]\n  E --> O[order property]"}
+      />
 
-/* BUG 2: Image stretching vertically in flex container */
-/* Problem: align-items: stretch stretches images to container height */
-/* Fix: set align-items: flex-start or set align-self on the image */
-.container { align-items: flex-start; }
-/* OR */
-img { align-self: flex-start; }
-
-/* BUG 3: Flex items not wrapping */
-/* Default is flex-wrap: nowrap — items compress instead of wrapping */
-.container { flex-wrap: wrap; }
-
-/* BUG 4: flex: 1 items not equal width */
-/* Problem: flex: 1 is flex: 1 1 auto — starts from content size */
-/* Fix: use flex: 1 1 0 or just flex: 1 with flex-basis: 0 */
-.equal-item { flex: 1; flex-basis: 0; }
-/* OR shorthand */
-.equal-item { flex: 1 1 0%; }
-
-/* BUG 5: Gap not working (older browsers) */
-/* Flexbox gap has excellent support now (>95% global) */
-/* Fallback for old browsers: */
-.item + .item { margin-left: 1rem; }  /* replaced by gap: 1rem in modern code */
-
-/* BUG 6: Nested flex containers and height */
-/* Parent needs explicit height for children to flex properly */
-.outer { display: flex; height: 100vh; }
-.sidebar { display: flex; flex-direction: column; }
-/* Without height on outer, inner flex won't stretch to fill */`}
-      </CodeBlock>
-
-      <InfoBox variant="tip" title="Flexbox vs Grid: When to Use Which">
-        <p>
-          <strong>Use Flexbox when:</strong> you have a single row or column of items, you need
-          content-driven sizing, you're building navbars, button groups, or form rows.<br /><br />
-          <strong>Use Grid when:</strong> you have a two-dimensional layout (rows AND columns),
-          you want to define a layout template and place items into it, or you're building page
-          layouts, dashboards, or image galleries.<br /><br />
-          They work great together: Grid for page layout, Flexbox for component internals.
-        </p>
-      </InfoBox>
+      <h2>Knowledge Check</h2>
 
       <InteractiveChallenge
-        question="A flex item has flex: 1 but is not shrinking below its text content width. What property fixes this?"
+        question={"What does flex: 1 expand to?"}
         options={[
-          "overflow: hidden",
-          "min-width: 0",
-          "flex-shrink: 1",
-          "width: 100%"
+          "flex-grow: 1; flex-shrink: 1; flex-basis: auto;",
+          "flex-grow: 1; flex-shrink: 1; flex-basis: 0%;",
+          "flex-grow: 1; flex-shrink: 0; flex-basis: 0%;",
+          "flex-grow: 1; flex-shrink: 1; flex-basis: 100%;"
         ]}
         correctIndex={1}
-        explanation="Flex items have min-width: auto by default, which prevents them from shrinking below their content size. Adding min-width: 0 overrides this, allowing the flex item to shrink as needed. This is the most common flexbox bug — you'll hit it constantly with text truncation, responsive layouts, and any flex item containing content that resists shrinking."
+        explanation={"flex: 1 is shorthand for flex: 1 1 0%. The key insight is that flex-basis becomes 0%, not auto. This means all items ignore their intrinsic width and divide space purely by flex-grow ratio, giving you truly equal-width columns."}
+        language="css"
       />
 
       <InteractiveChallenge
-        question="What is the difference between justify-content and align-items in a row-direction flex container?"
+        question="Which property controls spacing between wrapped flex lines?"
         options={[
-          "They are identical — both align items on all axes",
-          "justify-content controls horizontal distribution; align-items controls vertical alignment",
-          "justify-content aligns the container; align-items aligns each item",
-          "justify-content is for grid; align-items is for flexbox"
+          "justify-content",
+          "align-items",
+          "align-content",
+          "gap"
+        ]}
+        correctIndex={2}
+        explanation="align-content controls the distribution of space between flex lines on the cross axis when wrapping occurs. justify-content handles the main axis, align-items handles individual item alignment within a line, and gap sets fixed spacing between items but does not distribute remaining space."
+        language="css"
+      />
+
+      <InteractiveChallenge
+        question={"An item has flex: 0 0 250px. What behavior does this produce?"}
+        options={[
+          "The item is 250px wide and can grow or shrink",
+          "The item is exactly 250px wide and will not flex at all",
+          "The item starts at 250px but shrinks if the container is smaller",
+          "The item ignores 250px and uses its content width"
         ]}
         correctIndex={1}
-        explanation="In a row-direction flex container, justify-content distributes items along the horizontal (main) axis — space-between, center, flex-end, etc. align-items aligns items along the vertical (cross) axis — center, flex-start, stretch, baseline. When you flip to column direction, the axes swap: justify-content becomes vertical and align-items becomes horizontal."
+        explanation={"flex: 0 0 250px means flex-grow: 0 (won't grow), flex-shrink: 0 (won't shrink), flex-basis: 250px (starts at 250px). This creates a rigid, fixed-width item — perfect for sidebars or fixed-width panels that should never change size."}
+        language="css"
       />
     </LessonLayout>
   );

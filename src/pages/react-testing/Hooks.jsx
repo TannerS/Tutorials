@@ -1,290 +1,488 @@
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function RTHooks() {
+export default function Hooks() {
   return (
     <LessonLayout
       title="Testing Custom Hooks"
       sectionId="react-testing"
       lessonIndex={2}
       prev={{ path: '/react-testing/components', label: 'Testing Components' }}
-      next={{ path: '/react-testing/async', label: 'Async Testing' }}
+      next={{ path: '/react-testing/async', label: 'Testing Async & APIs' }}
     >
-      <h2>Testing Custom Hooks with renderHook</h2>
+      <h2>Why Test Hooks Separately?</h2>
       <p>
-        Custom hooks can be tested directly using <code>renderHook</code> from React Testing Library.
-        This renders a host component that calls your hook and exposes its return value.
+        Custom hooks encapsulate reusable logic. Testing them in isolation (without
+        a component) gives you faster, more focused tests. RTL provides{' '}
+        <code>renderHook</code> for exactly this purpose.
       </p>
 
-      <CodeBlock language="jsx" title="Basic renderHook usage">
-{`import { renderHook, act } from '@testing-library/react'
-import { useCounter } from './useCounter'
+      <FlowChart
+        title="Hook Testing Flow"
+        chart={"graph LR\n  R[renderHook] --> A[Access result.current]\n  A --> ACT[act: trigger updates]\n  ACT --> AS[Assert new state]\n  AS --> RR[rerender with new props]\n  RR --> CL[Verify cleanup]"}
+      />
 
-// useCounter.js
-function useCounter(initialValue = 0) {
-  const [count, setCount] = useState(initialValue)
-  const increment = () => setCount(c => c + 1)
-  const decrement = () => setCount(c => c - 1)
-  const reset = () => setCount(initialValue)
-  return { count, increment, decrement, reset }
-}
+      <CodeBlock language="jsx" title="renderHook Basics">
+{`import { renderHook, act } from '@testing-library/react';
+import useCounter from './useCounter';
 
-// useCounter.test.js
-test('starts at initial value', () => {
-  const { result } = renderHook(() => useCounter(5))
-  expect(result.current.count).toBe(5)
-})
+test('initializes with default value', () => {
+  const { result } = renderHook(() => useCounter());
+  expect(result.current.count).toBe(0);
+});
 
-test('increments count', () => {
-  const { result } = renderHook(() => useCounter())
+test('initializes with provided value', () => {
+  const { result } = renderHook(() => useCounter(10));
+  expect(result.current.count).toBe(10);
+});
 
-  // Wrap state updates in act()
-  act(() => {
-    result.current.increment()
-  })
-
-  expect(result.current.count).toBe(1)
-})
-
-test('resets to initial value', () => {
-  const { result } = renderHook(() => useCounter(10))
+test('increments the counter', () => {
+  const { result } = renderHook(() => useCounter());
 
   act(() => {
-    result.current.increment()
-    result.current.increment()
-    result.current.reset()
-  })
+    result.current.increment();
+  });
 
-  expect(result.current.count).toBe(10)
-})`}
+  expect(result.current.count).toBe(1);
+});`}
       </CodeBlock>
 
-      <h2>Testing Hooks with Props (rerendering)</h2>
+      <InfoBox variant="info" title="When Do You Need act()?">
+        Wrap state updates in <code>act()</code> when calling functions returned by
+        your hook. RTL's <code>render</code> and <code>userEvent</code> handle this
+        automatically, but <code>renderHook</code> requires explicit <code>act()</code>
+        for synchronous state changes.
+      </InfoBox>
 
-      <CodeBlock language="jsx" title="Updating hook arguments">
-{`function useMultiplier(base, factor) {
-  return useMemo(() => base * factor, [base, factor])
-}
+      <h2>Testing useState-Based Hooks</h2>
 
-test('recomputes when args change', () => {
-  const { result, rerender } = renderHook(
-    ({ base, factor }) => useMultiplier(base, factor),
-    { initialProps: { base: 3, factor: 4 } }
-  )
+      <CodeBlock language="jsx" title="useToggle — Full Test Suite">
+{`// useToggle.js
+// export function useToggle(initial = false) {
+//   const [value, setValue] = useState(initial);
+//   const toggle = useCallback(() => setValue(v => !v), []);
+//   const setTrue = useCallback(() => setValue(true), []);
+//   const setFalse = useCallback(() => setValue(false), []);
+//   return { value, toggle, setTrue, setFalse };
+// }
 
-  expect(result.current).toBe(12)
+import { renderHook, act } from '@testing-library/react';
+import { useToggle } from './useToggle';
 
-  // Provide new props to trigger rerender
-  rerender({ base: 5, factor: 4 })
+describe('useToggle', () => {
+  test('defaults to false', () => {
+    const { result } = renderHook(() => useToggle());
+    expect(result.current.value).toBe(false);
+  });
 
-  expect(result.current).toBe(20)
-})`}
-      </CodeBlock>
+  test('accepts initial value', () => {
+    const { result } = renderHook(() => useToggle(true));
+    expect(result.current.value).toBe(true);
+  });
 
-      <h2>Testing Hooks with Context</h2>
+  test('toggles value', () => {
+    const { result } = renderHook(() => useToggle());
 
-      <CodeBlock language="jsx" title="Providing context in renderHook">
-{`const AuthContext = createContext(null)
+    act(() => result.current.toggle());
+    expect(result.current.value).toBe(true);
 
-function useAuth() {
-  const auth = useContext(AuthContext)
-  if (!auth) throw new Error('useAuth must be used within AuthProvider')
-  return auth
-}
+    act(() => result.current.toggle());
+    expect(result.current.value).toBe(false);
+  });
 
-test('returns auth from context', () => {
-  const mockAuth = { user: { name: 'Alice' }, logout: vi.fn() }
+  test('setTrue forces true', () => {
+    const { result } = renderHook(() => useToggle(false));
+    act(() => result.current.setTrue());
+    expect(result.current.value).toBe(true);
+  });
 
-  const wrapper = ({ children }) => (
-    <AuthContext.Provider value={mockAuth}>
-      {children}
-    </AuthContext.Provider>
-  )
-
-  const { result } = renderHook(() => useAuth(), { wrapper })
-
-  expect(result.current.user.name).toBe('Alice')
-})
-
-test('throws without provider', () => {
-  // Suppress console.error for this test
-  vi.spyOn(console, 'error').mockImplementation(() => {})
-
-  expect(() => renderHook(() => useAuth())).toThrow(
-    'useAuth must be used within AuthProvider'
-  )
-})`}
-      </CodeBlock>
-
-      <h2>Testing Async Hooks</h2>
-
-      <CodeBlock language="jsx" title="Async hook test">
-{`// useFetch.js
-function useFetch(url) {
-  const [state, setState] = useState({ data: null, loading: true, error: null })
-
-  useEffect(() => {
-    let cancelled = false
-    fetch(url)
-      .then(r => r.json())
-      .then(data => { if (!cancelled) setState({ data, loading: false, error: null }) })
-      .catch(error => { if (!cancelled) setState({ data: null, loading: false, error }) })
-    return () => { cancelled = true }
-  }, [url])
-
-  return state
-}
-
-// useFetch.test.js
-import { renderHook, waitFor } from '@testing-library/react'
-
-// Mock fetch globally
-beforeEach(() => {
-  global.fetch = vi.fn()
-})
-
-afterEach(() => {
-  vi.resetAllMocks()
-})
-
-test('fetches and returns data', async () => {
-  global.fetch.mockResolvedValueOnce({
-    json: () => Promise.resolve({ id: 1, name: 'Alice' }),
-  })
-
-  const { result } = renderHook(() => useFetch('/api/user'))
-
-  expect(result.current.loading).toBe(true)
-
-  await waitFor(() => {
-    expect(result.current.loading).toBe(false)
-  })
-
-  expect(result.current.data).toEqual({ id: 1, name: 'Alice' })
-  expect(result.current.error).toBeNull()
-})`}
-      </CodeBlock>
-
-      <h2>Testing useEffect Cleanup</h2>
-
-      <CodeBlock language="jsx" title="Testing cleanup behavior">
-{`function useWindowResize(callback) {
-  useEffect(() => {
-    window.addEventListener('resize', callback)
-    return () => window.removeEventListener('resize', callback)
-  }, [callback])
-}
-
-test('removes event listener on unmount', () => {
-  const addSpy = vi.spyOn(window, 'addEventListener')
-  const removeSpy = vi.spyOn(window, 'removeEventListener')
-  const callback = vi.fn()
-
-  const { unmount } = renderHook(() => useWindowResize(callback))
-
-  expect(addSpy).toHaveBeenCalledWith('resize', callback)
-
-  unmount()
-
-  expect(removeSpy).toHaveBeenCalledWith('resize', callback)
-})`}
+  test('setFalse forces false', () => {
+    const { result } = renderHook(() => useToggle(true));
+    act(() => result.current.setFalse());
+    expect(result.current.value).toBe(false);
+  });
+});`}
       </CodeBlock>
 
       <h2>Testing useReducer Hooks</h2>
 
-      <CodeBlock language="jsx" title="Complex reducer hook test">
-{`// useShoppingCart.js
-const initialState = { items: [], total: 0 }
+      <CodeBlock language="jsx" title="useCart — Reducer-Based Hook">
+{`import { renderHook, act } from '@testing-library/react';
+import { useCart } from './useCart';
 
-function cartReducer(state, action) {
-  switch (action.type) {
-    case 'ADD_ITEM':
-      return {
-        items: [...state.items, action.item],
-        total: state.total + action.item.price,
-      }
-    case 'REMOVE_ITEM': {
-      const item = state.items.find(i => i.id === action.id)
-      return {
-        items: state.items.filter(i => i.id !== action.id),
-        total: state.total - (item?.price ?? 0),
-      }
-    }
-    case 'CLEAR':
-      return initialState
-    default:
-      return state
-  }
-}
+const apple = { id: 'a1', name: 'Apple', price: 1.5 };
+const banana = { id: 'b1', name: 'Banana', price: 0.75 };
 
-function useShoppingCart() {
-  const [state, dispatch] = useReducer(cartReducer, initialState)
-  return {
-    ...state,
-    addItem: (item) => dispatch({ type: 'ADD_ITEM', item }),
-    removeItem: (id) => dispatch({ type: 'REMOVE_ITEM', id }),
-    clear: () => dispatch({ type: 'CLEAR' }),
-  }
-}
+describe('useCart', () => {
+  test('starts with empty cart', () => {
+    const { result } = renderHook(() => useCart());
+    expect(result.current.items).toEqual([]);
+    expect(result.current.total).toBe(0);
+  });
 
-// Tests
-test('adds item and updates total', () => {
-  const { result } = renderHook(() => useShoppingCart())
+  test('adds an item', () => {
+    const { result } = renderHook(() => useCart());
 
-  act(() => {
-    result.current.addItem({ id: 1, name: 'Widget', price: 9.99 })
-  })
+    act(() => result.current.addItem(apple));
 
-  expect(result.current.items).toHaveLength(1)
-  expect(result.current.total).toBe(9.99)
-})
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0]).toMatchObject({ id: 'a1', quantity: 1 });
+    expect(result.current.total).toBe(1.5);
+  });
 
-test('clears cart', () => {
-  const { result } = renderHook(() => useShoppingCart())
+  test('increments quantity for duplicate items', () => {
+    const { result } = renderHook(() => useCart());
 
-  act(() => {
-    result.current.addItem({ id: 1, name: 'Widget', price: 9.99 })
-    result.current.clear()
-  })
+    act(() => result.current.addItem(apple));
+    act(() => result.current.addItem(apple));
 
-  expect(result.current.items).toHaveLength(0)
-  expect(result.current.total).toBe(0)
-})`}
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].quantity).toBe(2);
+    expect(result.current.total).toBe(3.0);
+  });
+
+  test('removes an item', () => {
+    const { result } = renderHook(() => useCart());
+
+    act(() => result.current.addItem(apple));
+    act(() => result.current.addItem(banana));
+    act(() => result.current.removeItem('a1'));
+
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].id).toBe('b1');
+  });
+
+  test('clears the cart', () => {
+    const { result } = renderHook(() => useCart());
+
+    act(() => result.current.addItem(apple));
+    act(() => result.current.addItem(banana));
+    act(() => result.current.clearCart());
+
+    expect(result.current.items).toEqual([]);
+    expect(result.current.total).toBe(0);
+  });
+});`}
       </CodeBlock>
 
-      <InfoBox variant="note" title="act() is Required for State Updates">
-        <p>
-          Wrap any code that triggers state updates in <code>act()</code>. Calling hook methods that
-          dispatch state changes outside <code>act()</code> will cause React to warn about missing batching.
-          <code>waitFor</code> automatically wraps assertions in <code>act()</code> for async cases.
-        </p>
+      <h2>Testing Hooks with Side Effects</h2>
+
+      <CodeBlock language="jsx" title="useLocalStorage — Side Effect Hook">
+{`import { renderHook, act } from '@testing-library/react';
+import { useLocalStorage } from './useLocalStorage';
+
+describe('useLocalStorage', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  test('returns initial value when key is not in storage', () => {
+    const { result } = renderHook(() =>
+      useLocalStorage('theme', 'light')
+    );
+    expect(result.current[0]).toBe('light');
+  });
+
+  test('returns stored value when key exists', () => {
+    localStorage.setItem('theme', JSON.stringify('dark'));
+
+    const { result } = renderHook(() =>
+      useLocalStorage('theme', 'light')
+    );
+    expect(result.current[0]).toBe('dark');
+  });
+
+  test('updates localStorage when value changes', () => {
+    const { result } = renderHook(() =>
+      useLocalStorage('theme', 'light')
+    );
+
+    act(() => {
+      result.current[1]('dark');
+    });
+
+    expect(result.current[0]).toBe('dark');
+    expect(JSON.parse(localStorage.getItem('theme'))).toBe('dark');
+  });
+
+  test('handles objects in storage', () => {
+    const { result } = renderHook(() =>
+      useLocalStorage('user', { name: 'Alice' })
+    );
+
+    act(() => {
+      result.current[1]({ name: 'Bob' });
+    });
+
+    expect(result.current[0]).toEqual({ name: 'Bob' });
+    expect(JSON.parse(localStorage.getItem('user'))).toEqual({ name: 'Bob' });
+  });
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Clean Up Global State">
+        Hooks that write to localStorage, sessionStorage, or the DOM need cleanup
+        in <code>beforeEach</code> or <code>afterEach</code>. Otherwise tests
+        bleed state into each other and produce flaky results.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What does renderHook's rerender() method do?"
-        options={[
-          "Unmounts and remounts the hook from scratch",
-          "Re-invokes the hook with new arguments without unmounting",
-          "Clears all state and effects",
-          "Runs the cleanup function and re-runs effects"
-        ]}
-        correctIndex={1}
-        explanation="renderHook().rerender(newProps) calls the hook again with new props, simulating a parent re-render with changed arguments. State is preserved from the previous render — only prop-dependent computations (useMemo, useEffect deps) update. This tests how hooks respond to prop changes without the overhead of a full remount."
-      />
+      <h2>Testing useDebounce</h2>
+
+      <CodeBlock language="jsx" title="useDebounce — Timer-Based Hook">
+{`import { renderHook, act } from '@testing-library/react';
+import { useDebounce } from './useDebounce';
+
+describe('useDebounce', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test('returns initial value immediately', () => {
+    const { result } = renderHook(() => useDebounce('hello', 500));
+    expect(result.current).toBe('hello');
+  });
+
+  test('does not update before delay', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      { initialProps: { value: 'hello', delay: 500 } }
+    );
+
+    rerender({ value: 'world', delay: 500 });
+    act(() => jest.advanceTimersByTime(300));
+
+    expect(result.current).toBe('hello'); // Not updated yet
+  });
+
+  test('updates after delay', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      { initialProps: { value: 'hello', delay: 500 } }
+    );
+
+    rerender({ value: 'world', delay: 500 });
+    act(() => jest.advanceTimersByTime(500));
+
+    expect(result.current).toBe('world');
+  });
+
+  test('resets timer on rapid changes', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      { initialProps: { value: 'a', delay: 500 } }
+    );
+
+    rerender({ value: 'ab', delay: 500 });
+    act(() => jest.advanceTimersByTime(200));
+
+    rerender({ value: 'abc', delay: 500 });
+    act(() => jest.advanceTimersByTime(200));
+
+    // Only 400ms since last change — should still be 'a'
+    expect(result.current).toBe('a');
+
+    act(() => jest.advanceTimersByTime(300));
+    expect(result.current).toBe('abc');
+  });
+});`}
+      </CodeBlock>
+
+      <h2>Testing usePagination</h2>
+
+      <CodeBlock language="jsx" title="usePagination — Complex Logic Hook">
+{`import { renderHook, act } from '@testing-library/react';
+import { usePagination } from './usePagination';
+
+describe('usePagination', () => {
+  const setup = (totalItems = 50, pageSize = 10) =>
+    renderHook(() => usePagination({ totalItems, pageSize }));
+
+  test('starts on page 1', () => {
+    const { result } = setup();
+    expect(result.current.currentPage).toBe(1);
+  });
+
+  test('calculates total pages', () => {
+    const { result } = setup(50, 10);
+    expect(result.current.totalPages).toBe(5);
+  });
+
+  test('goes to next page', () => {
+    const { result } = setup();
+    act(() => result.current.nextPage());
+    expect(result.current.currentPage).toBe(2);
+  });
+
+  test('goes to previous page', () => {
+    const { result } = setup();
+    act(() => result.current.nextPage());
+    act(() => result.current.nextPage());
+    act(() => result.current.prevPage());
+    expect(result.current.currentPage).toBe(2);
+  });
+
+  test('does not go below page 1', () => {
+    const { result } = setup();
+    act(() => result.current.prevPage());
+    expect(result.current.currentPage).toBe(1);
+  });
+
+  test('does not go past last page', () => {
+    const { result } = setup(30, 10);
+    act(() => result.current.goToPage(3));
+    act(() => result.current.nextPage());
+    expect(result.current.currentPage).toBe(3);
+  });
+
+  test('jumps to specific page', () => {
+    const { result } = setup();
+    act(() => result.current.goToPage(4));
+    expect(result.current.currentPage).toBe(4);
+  });
+
+  test('reports hasNext and hasPrev correctly', () => {
+    const { result } = setup(30, 10);
+
+    expect(result.current.hasPrev).toBe(false);
+    expect(result.current.hasNext).toBe(true);
+
+    act(() => result.current.goToPage(3));
+    expect(result.current.hasPrev).toBe(true);
+    expect(result.current.hasNext).toBe(false);
+  });
+});`}
+      </CodeBlock>
+
+      <h2>Testing Hooks with Context</h2>
+
+      <CodeBlock language="jsx" title="Testing Hook That Reads Context">
+{`import { renderHook } from '@testing-library/react';
+import { useAuth } from './useAuth';
+import { AuthProvider } from './AuthContext';
+
+// Create a wrapper that provides the context
+const createWrapper = (user = null) => {
+  return function Wrapper({ children }) {
+    return (
+      <AuthProvider initialUser={user}>
+        {children}
+      </AuthProvider>
+    );
+  };
+};
+
+describe('useAuth', () => {
+  test('returns null when no user is logged in', () => {
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(null),
+    });
+    expect(result.current.user).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+  });
+
+  test('returns user when logged in', () => {
+    const mockUser = { id: 1, name: 'Alice' };
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: createWrapper(mockUser),
+    });
+    expect(result.current.user).toEqual(mockUser);
+    expect(result.current.isAuthenticated).toBe(true);
+  });
+});`}
+      </CodeBlock>
 
       <InteractiveChallenge
-        question="Why must state-updating calls in renderHook tests be wrapped in act()?"
+        question={"When testing a custom hook that calls setState, why do you wrap the call in act()?"}
         options={[
-          "act() prevents test timeouts",
-          "act() ensures React flushes all state updates and effects before assertions",
-          "act() mocks the React reconciler",
-          "act() is only needed for class component tests"
+          "To make the test run faster",
+          "To ensure React processes the state update and re-renders before assertions",
+          "To prevent memory leaks",
+          "To mock the state update"
         ]}
         correctIndex={1}
-        explanation="act() tells React to process all pending state updates, effects, and re-renders synchronously before the test assertions run. Without act(), state updates might not be applied yet when you check result.current, leading to flaky tests that assert against stale values."
+        explanation={"act() ensures all state updates, effects, and re-renders triggered by the wrapped code are fully processed before your test continues to make assertions. Without it, you might assert against stale state."}
+        language="jsx"
       />
+
+      <h2>Testing Hook Cleanup</h2>
+
+      <CodeBlock language="jsx" title="Testing Effect Cleanup">
+{`import { renderHook } from '@testing-library/react';
+import { useEventListener } from './useEventListener';
+
+describe('useEventListener', () => {
+  test('adds event listener on mount', () => {
+    const handler = jest.fn();
+    const addSpy = jest.spyOn(window, 'addEventListener');
+
+    renderHook(() => useEventListener('resize', handler));
+
+    expect(addSpy).toHaveBeenCalledWith('resize', expect.any(Function));
+    addSpy.mockRestore();
+  });
+
+  test('removes event listener on unmount', () => {
+    const handler = jest.fn();
+    const removeSpy = jest.spyOn(window, 'removeEventListener');
+
+    const { unmount } = renderHook(() => useEventListener('resize', handler));
+    unmount();
+
+    expect(removeSpy).toHaveBeenCalledWith('resize', expect.any(Function));
+    removeSpy.mockRestore();
+  });
+});`}
+      </CodeBlock>
+
+      <h2>Rerender with New Props</h2>
+
+      <CodeBlock language="jsx" title="Testing Hook Rerender Behavior">
+{`import { renderHook } from '@testing-library/react';
+import { useDocumentTitle } from './useDocumentTitle';
+
+describe('useDocumentTitle', () => {
+  const originalTitle = document.title;
+  afterEach(() => { document.title = originalTitle; });
+
+  test('sets document title', () => {
+    renderHook(() => useDocumentTitle('New Title'));
+    expect(document.title).toBe('New Title');
+  });
+
+  test('updates title on rerender', () => {
+    const { rerender } = renderHook(
+      ({ title }) => useDocumentTitle(title),
+      { initialProps: { title: 'Page 1' } }
+    );
+
+    expect(document.title).toBe('Page 1');
+
+    rerender({ title: 'Page 2' });
+    expect(document.title).toBe('Page 2');
+  });
+
+  test('restores title on unmount', () => {
+    const { unmount } = renderHook(() => useDocumentTitle('Temp'));
+    expect(document.title).toBe('Temp');
+
+    unmount();
+    expect(document.title).toBe(originalTitle);
+  });
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Hook Testing Rule of Thumb">
+        If a hook is used by only one component, test it through that component.
+        If it's used by multiple components or has complex logic, test it
+        independently with <code>renderHook</code>. Both approaches are valid.
+      </InfoBox>
     </LessonLayout>
   );
 }

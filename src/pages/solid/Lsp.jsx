@@ -4,7 +4,7 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function SolidLsp() {
+export default function Lsp() {
   return (
     <LessonLayout
       title="Liskov Substitution Principle"
@@ -13,298 +13,235 @@ export default function SolidLsp() {
       prev={{ path: '/solid/ocp', label: 'Open/Closed Principle' }}
       next={{ path: '/solid/isp', label: 'Interface Segregation' }}
     >
-      <h2>What Is LSP?</h2>
+      <h2>Subtypes Must Be Substitutable</h2>
       <p>
-        The Liskov Substitution Principle: <em>objects of a supertype should be replaceable with
-        objects of any subtype without breaking correctness.</em> If code works with a
-        <code>Shape</code> reference, it must work just as correctly whether that shape is a
-        <code>Circle</code>, <code>Rectangle</code>, or any other subtype. LSP violations cause
-        silent, hard-to-debug failures — code that looks right but produces wrong results when
-        a different implementation is used.
+        The Liskov Substitution Principle (LSP), formulated by Barbara Liskov
+        in 1987, states that objects of a superclass should be replaceable
+        with objects of a subclass <strong>without altering the correctness
+        </strong> of the program. If class <code>B</code> extends class{' '}
+        <code>A</code>, then anywhere <code>A</code> is used,{' '}
+        <code>B</code> should work seamlessly.
       </p>
 
+      <InfoBox variant="info" title="Formal Definition">
+        <p>
+          If <em>S</em> is a subtype of <em>T</em>, then objects of type{' '}
+          <em>T</em> may be replaced with objects of type <em>S</em> without
+          altering any of the desirable properties of the program
+          (correctness, task performed, etc.). Violations typically surface
+          as unexpected exceptions, broken invariants, or silent incorrect
+          results.
+        </p>
+      </InfoBox>
+
       <FlowChart
-        title="LSP — Subtypes Must Honor the Contract"
-        chart={"graph TD\n  A[Base class contract] --> B[Preconditions - what it requires]\n  A --> C[Postconditions - what it guarantees]\n  A --> D[Invariants - what always remains true]\n  E[Subclass must] --> F[Not strengthen preconditions]\n  E --> G[Not weaken postconditions]\n  E --> H[Not break invariants]"}
+        title="LSP — Proper Hierarchy Design"
+        chart={"graph TD\nSHAPE[Shape interface] --> RECT[Rectangle]\nSHAPE --> SQUARE[Square]\nSHAPE --> CIRCLE[Circle]\nRECT -.->|NOT a parent of| SQUARE\nstyle SQUARE fill:#ff9800,color:#fff\nstyle RECT fill:#2196f3,color:#fff"}
       />
 
-      <h2>The Rectangle-Square Problem — The Classic Violation</h2>
+      <h2>Bad Example — Rectangle / Square Problem</h2>
+      <p>
+        The classic LSP violation: making <code>Square</code> extend{' '}
+        <code>Rectangle</code>. Mathematically a square <em>is a</em>{' '}
+        rectangle, but in code the substitution breaks because{' '}
+        <code>Square</code> overrides setters in a way that violates the
+        expected behavior of <code>Rectangle</code>.
+      </p>
 
-      <CodeBlock language="java" title="Classic LSP Violation — Square Extends Rectangle">
-{`// Intuition: a Square IS-A Rectangle — inheritance seems natural
+      <CodeBlock language="java" title="RectangleBad.java">
+{`// BAD — Square inherits from Rectangle but changes setter behavior.
 public class Rectangle {
-    protected double width;
-    protected double height;
+    protected int width;
+    protected int height;
 
-    public void setWidth(double w)  { this.width = w; }
-    public void setHeight(double h) { this.height = h; }
-    public double getWidth()  { return width; }
-    public double getHeight() { return height; }
-    public double area() { return width * height; }
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public int getArea() {
+        return width * height;
+    }
 }
 
-// Square "fixes" the setters to maintain the equal-sides invariant
 public class Square extends Rectangle {
+    // Overriding setters to enforce equal sides — breaks LSP!
     @Override
-    public void setWidth(double w)  { this.width  = w; this.height = w; } // surprise!
+    public void setWidth(int width) {
+        this.width = width;
+        this.height = width; // surprise side-effect
+    }
+
     @Override
-    public void setHeight(double h) { this.width  = h; this.height = h; } // surprise!
-}
+    public void setHeight(int height) {
+        this.width = height; // surprise side-effect
+        this.height = height;
+    }
+}`}
+      </CodeBlock>
 
-// This utility method is correct for Rectangle but BREAKS for Square
-void scaleWidth(Rectangle rect, double factor) {
-    double originalHeight = rect.getHeight();
-    rect.setWidth(rect.getWidth() * factor);
+      <CodeBlock language="java" title="RectangleTestBad.java">
+{`// BAD — This test passes for Rectangle but FAILS for Square.
+public class RectangleTest {
+    public static void checkArea(Rectangle r) {
+        r.setWidth(5);
+        r.setHeight(4);
+        // Expected: 5 * 4 = 20
+        assert r.getArea() == 20 : "Area should be 20, got " + r.getArea();
+    }
 
-    // Postcondition: area should equal newWidth * originalHeight
-    // For Rectangle: 6 * 4 * 2 = 48 — correct
-    // For Square: setWidth ALSO changes height, so area = (6*2)^2 = 144 — WRONG!
-    assert rect.area() == rect.getWidth() * originalHeight : "LSP violated!";
-}
+    public static void main(String[] args) {
+        checkArea(new Rectangle()); // PASSES — area is 20
+        checkArea(new Square());    // FAILS  — area is 16 (4 * 4)
+    }
+}`}
+      </CodeBlock>
 
-// The problem: Square strengthens the postcondition of setWidth()
-// Parent guarantees: "sets width, height unchanged"
-// Square changes: "sets width AND height (they must stay equal)"
-// This breaks code that depended on "height unchanged"
+      <h2>Good Example — Proper Hierarchy</h2>
+      <p>
+        Instead of forcing an inheritance relationship, define a common
+        interface that both shapes implement independently. Each shape
+        maintains its own invariants without breaking the contract.
+      </p>
 
-// ── CORRECT DESIGN ─────────────────────────────────────────────────
-// Don't use inheritance — use separate types sharing a common interface
-
+      <CodeBlock language="java" title="ShapeGood.java">
+{`// GOOD — Common interface; no broken inheritance.
 public interface Shape {
-    double area();
-    double perimeter();
+    int getArea();
 }
 
-public record Rectangle(double width, double height) implements Shape {
-    public double area()      { return width * height; }
-    public double perimeter() { return 2 * (width + height); }
-}
+public class Rectangle implements Shape {
+    private final int width;
+    private final int height;
 
-public record Square(double side) implements Shape {
-    public double area()      { return side * side; }
-    public double perimeter() { return 4 * side; }
-}
-// Now scaleWidth() takes Rectangle — not Shape — correctly expressing intent
-// If you need to work with any shape: use the Shape interface`}
-      </CodeBlock>
-
-      <h2>LSP Violations in Practice</h2>
-
-      <CodeBlock language="java" title="NotImplementedException — The Obvious Violation">
-{`// Common LSP violation: subclass throws UnsupportedOperationException
-// for methods it "doesn't support"
-
-public interface Repository<T, ID> {
-    T save(T entity);
-    Optional<T> findById(ID id);
-    List<T> findAll();
-    void delete(ID id);
-    long count();
-}
-
-// VIOLATION: ReadOnly subtype throws on write methods
-public class ReadOnlyUserCache implements Repository<User, Long> {
-    private final Map<Long, User> cache = new HashMap<>();
-
-    @Override public Optional<User> findById(Long id) { return Optional.ofNullable(cache.get(id)); }
-    @Override public List<User> findAll() { return new ArrayList<>(cache.values()); }
-    @Override public long count() { return cache.size(); }
-
-    // ✗ VIOLATIONS: breaks callers who expect these to work
-    @Override public User save(User user) { throw new UnsupportedOperationException("Read-only!"); }
-    @Override public void delete(Long id) { throw new UnsupportedOperationException("Read-only!"); }
-}
-
-// Any code using Repository<User, Long> will crash at runtime when
-// handed a ReadOnlyUserCache and calling save() — silent type system failure!
-
-// ── CORRECT DESIGN ─────────────────────────────────────────────────
-// Separate read and write interfaces — ISP + LSP together
-
-public interface ReadRepository<T, ID> {
-    Optional<T> findById(ID id);
-    List<T> findAll();
-    long count();
-}
-
-public interface WriteRepository<T, ID> {
-    T save(T entity);
-    void delete(ID id);
-}
-
-// Full repository: extends both
-public interface Repository<T, ID> extends ReadRepository<T, ID>, WriteRepository<T, ID> {}
-
-// Read-only implementation: only implements ReadRepository
-public class ReadOnlyUserCache implements ReadRepository<User, Long> {
-    // Only implements read methods — no need to throw on write methods
-    // Code that uses ReadRepository<User, Long> can safely be passed this
-}
-
-// Now the type system enforces LSP at compile time, not runtime`}
-      </CodeBlock>
-
-      <CodeBlock language="java" title="Strengthened Preconditions — Another LSP Violation">
-{`// LSP Rule: subclass must NOT require MORE from callers than the parent
-
-public class EmailService {
-    // Parent postcondition: send returns true on success, false on failure
-    // Parent precondition: 'to' is a valid email string
-    public boolean send(String to, String subject, String body) {
-        return mailer.send(new Email(to, subject, body));
+    public Rectangle(int width, int height) {
+        this.width = width;
+        this.height = height;
     }
-}
 
-// VIOLATION: subclass STRENGTHENS preconditions
-public class PremiumEmailService extends EmailService {
+    public int getWidth() { return width; }
+    public int getHeight() { return height; }
+
     @Override
-    public boolean send(String to, String subject, String body) {
-        // Now requires 'to' to be a verified premium subscriber — MORE restrictive!
-        if (!premiumSubscriberRepo.isVerified(to)) {
-            throw new NotPremiumSubscriberException(to);
-        }
-        return super.send(to, subject, body);
+    public int getArea() {
+        return width * height;
     }
 }
 
-// Calling code:
-void notifyUser(EmailService emailService, String email) {
-    emailService.send(email, "Hello", "Message");
-    // Works fine with EmailService
-    // Throws runtime exception with PremiumEmailService
-    // — LSP violated, callers must know the concrete type!
-}
+public class Square implements Shape {
+    private final int side;
 
-// ── CORRECT DESIGN ─────────────────────────────────────────────────
-// Don't inherit — compose or use different method signature
-public class PremiumEmailService {
-    private final EmailService base;
+    public Square(int side) {
+        this.side = side;
+    }
 
-    // Different method — different preconditions are explicit in the signature
-    public boolean sendToPremium(PremiumSubscriber subscriber, String subject, String body) {
-        if (!subscriber.isVerified()) throw new NotVerifiedException();
-        return base.send(subscriber.getEmail(), subject, body);
+    public int getSide() { return side; }
+
+    @Override
+    public int getArea() {
+        return side * side;
     }
 }`}
       </CodeBlock>
 
-      <h2>LSP in JavaScript — Duck Typing</h2>
+      <p>
+        Now any code that depends on <code>Shape</code> works correctly
+        regardless of which implementation it receives:
+      </p>
 
-      <CodeBlock language="javascript" title="LSP in Dynamic Languages">
-{`// JavaScript has structural typing — LSP still applies at the contract level
-// If code expects an "iterable", every iterable must work the same way
+      <CodeBlock language="java" title="ShapeServiceGood.java">
+{`// GOOD — Works with any Shape implementation — LSP satisfied.
+public class ShapeService {
+    public void printArea(Shape shape) {
+        System.out.println("Area: " + shape.getArea());
+    }
 
-// ── PROMISE-LIKE VIOLATION ────────────────────────────────────────
-// Contract: async functions return something with .then() and .catch()
-async function fetchData(url) {
-  return fetch(url).then(r => r.json());
+    public int totalArea(List<Shape> shapes) {
+        return shapes.stream()
+            .mapToInt(Shape::getArea)
+            .sum();
+    }
 }
 
-// Caller code expects Promise-like behavior:
-const result = await fetchData('/api/users');
-// Works with real fetch
+// Usage:
+ShapeService service = new ShapeService();
+service.printArea(new Rectangle(5, 4)); // Area: 20
+service.printArea(new Square(4));       // Area: 16
+service.printArea(new Rectangle(3, 7)); // Area: 21`}
+      </CodeBlock>
 
-// ── VIOLATING THE ITERATOR PROTOCOL ──────────────────────────────
-// Built-in iterables: Array, Set, Map, String, generators
-// All must implement Symbol.iterator returning { next() { return {value, done} } }
+      <h2>Another Real-World Example</h2>
+      <p>
+        LSP violations also appear when subclasses throw unexpected
+        exceptions or silently ignore operations:
+      </p>
 
-// ✗ Bad custom iterable — breaks when used in for...of
-class BadCounter {
-  [Symbol.iterator]() {
-    let i = 0;
-    return {
-      next() {
-        i++;
-        if (i > 5) return { value: undefined, done: true };
-        // VIOLATION: returns value even when done=true (spec says value should be undefined)
-        return { value: i, done: true };  // done=true but value set — unexpected
-      }
-    };
-  }
+      <CodeBlock language="java" title="BirdBad.java">
+{`// BAD — Ostrich inherits fly() but cannot fly.
+public class Bird {
+    public void fly() {
+        System.out.println("Flying...");
+    }
 }
 
-// ✓ Correct iterator
-class Counter {
-  constructor(max) { this.max = max; }
-  [Symbol.iterator]() {
-    let i = 0;
-    const max = this.max;
-    return {
-      next() {
-        return i < max
-          ? { value: ++i, done: false }
-          : { value: undefined, done: true }; // value undefined when done
-      }
-    };
-  }
-}
-
-// for (const n of new Counter(5)) console.log(n); // 1 2 3 4 5
-
-// ── REACT COMPONENT SUBSTITUTABILITY ─────────────────────────────
-// If you have multiple button components, they should all accept the same props
-// and behave consistently — LSP for UI components
-
-// ✗ Violation: PrimaryButton ignores onClick in some conditions
-function PrimaryButton({ onClick, children, loading }) {
-  return (
-    <button
-      onClick={loading ? undefined : onClick}  // surprising: onClick sometimes ignored
-      disabled={loading}
-    >
-      {children}
-    </button>
-  );
-}
-
-// ✓ Consistent: always calls onClick if provided; caller controls disabled state
-function Button({ onClick, children, disabled, loading }) {
-  return (
-    <button onClick={onClick} disabled={disabled || loading}>
-      {loading ? <Spinner /> : children}
-    </button>
-  );
+public class Ostrich extends Bird {
+    @Override
+    public void fly() {
+        throw new UnsupportedOperationException("Ostriches can't fly!");
+    }
 }`}
       </CodeBlock>
 
-      <InfoBox variant="note" title="Design by Contract">
+      <CodeBlock language="java" title="BirdGood.java">
+{`// GOOD — Separate interfaces for different capabilities.
+public interface Bird {
+    void eat();
+}
+
+public interface FlyingBird extends Bird {
+    void fly();
+}
+
+public class Sparrow implements FlyingBird {
+    @Override
+    public void eat() { System.out.println("Pecking seeds"); }
+
+    @Override
+    public void fly() { System.out.println("Flying high"); }
+}
+
+public class Ostrich implements Bird {
+    @Override
+    public void eat() { System.out.println("Eating plants"); }
+    // No fly() method — no LSP violation!
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Signs of LSP Violations">
         <p>
-          LSP is grounded in Bertrand Meyer's <em>Design by Contract</em>. Every method has:
-        </p>
-        <ul>
-          <li><strong>Preconditions</strong> — what the method requires from callers (e.g., "argument must not be null")</li>
-          <li><strong>Postconditions</strong> — what the method guarantees to callers (e.g., "returns a non-empty list")</li>
-          <li><strong>Invariants</strong> — what always remains true about the object's state</li>
-        </ul>
-        <p>
-          LSP rules: subclasses may <em>weaken</em> preconditions (require less from callers — fine) but must
-          not <em>strengthen</em> them (require more — breaks callers). Subclasses may <em>strengthen</em>
-          postconditions (guarantee more — fine) but must not <em>weaken</em> them (guarantee less — breaks callers).
+          Watch for these red flags: subclasses that throw{' '}
+          <code>UnsupportedOperationException</code>, override methods with
+          empty bodies, add <code>instanceof</code> checks in client code, or
+          have preconditions that are stricter than the parent class. All of
+          these break the substitution contract.
         </p>
       </InfoBox>
 
       <InteractiveChallenge
-        question="Which behavior in a subclass violates LSP?"
+        question="Why does making Square extend Rectangle violate LSP?"
         options={[
-          "A subclass adds new public methods that the parent does not have",
-          "A subclass overrides a method to throw UnsupportedOperationException for functionality the parent supports",
-          "A subclass calls super() at the start of every overridden method",
-          "A subclass implements an additional interface beyond the parent"
+          "Squares have fewer methods than Rectangles",
+          "Square overrides setters with side-effects that break Rectangle's expected behavior",
+          "Java does not allow Square to extend Rectangle",
+          "Rectangles cannot be instantiated if Square exists"
         ]}
         correctIndex={1}
-        explanation="Throwing UnsupportedOperationException in a subclass is the classic LSP violation — it weakens the postcondition. Code written against the parent type expects all inherited methods to work. When a subclass throws instead, substituting it breaks the calling code at runtime. The fix is to split the interface so the subtype only implements what it genuinely supports."
-      />
-
-      <InteractiveChallenge
-        question="In the Rectangle-Square problem, why does Square extending Rectangle violate LSP?"
-        options={[
-          "Square has fewer fields than Rectangle, making it a bad subtype",
-          "Square's setWidth also changes height, breaking the postcondition that setWidth only changes width",
-          "Rectangle is immutable and Square is mutable — type system conflict",
-          "LSP only applies to interfaces, not abstract classes or concrete inheritance"
-        ]}
-        correctIndex={1}
-        explanation="Rectangle's setWidth postcondition is: 'after calling setWidth(w), getWidth() returns w and getHeight() is unchanged.' Square violates this: it changes both width and height when setWidth is called, weakening the 'height is unchanged' guarantee. Code that uses a Rectangle and calls setWidth to scale width independently of height will produce wrong results when given a Square. The fix: use a Shape interface where width and height are not independently mutable."
+        explanation="When Square overrides setWidth() to also set height (and vice versa), it changes the postcondition of the setter. Client code that calls setWidth(5) then setHeight(4) on a Rectangle expects area = 20, but gets 16 from a Square. The subclass is not safely substitutable for the parent — a textbook LSP violation."
+        code={"Rectangle r = new Square();\nr.setWidth(5);\nr.setHeight(4);\n// Expected area: 20\n// Actual area:  16 (4 * 4)"}
+        language="java"
       />
     </LessonLayout>
   );

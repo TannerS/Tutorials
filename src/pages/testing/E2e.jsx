@@ -4,7 +4,7 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function TestingE2e() {
+export default function E2e() {
   return (
     <LessonLayout
       title="End-to-End Testing"
@@ -13,328 +13,435 @@ export default function TestingE2e() {
       prev={{ path: '/testing/integration', label: 'Integration Testing' }}
       next={{ path: '/testing/bestpractices', label: 'Testing Best Practices' }}
     >
-      <h2>What Are E2E Tests?</h2>
+      <h2>E2E Testing Philosophy</h2>
       <p>
-        End-to-end tests verify complete user workflows through a real browser against a running
-        application. They are the most realistic test type — they find problems no unit or
-        integration test catches: broken routing, missing environment variables, auth cookie
-        issues, or UI bugs. The trade-off is cost: E2E tests are slow (seconds to minutes each),
-        sometimes flaky, and expensive to maintain. Focus them on your most critical user journeys.
+        End-to-end tests simulate real user workflows through the entire application stack —
+        browser, frontend, API, and database. They provide the highest confidence that your
+        system works but are the slowest and most expensive to maintain.
       </p>
 
       <FlowChart
-        title="Playwright Test Flow"
-        chart={"graph LR\n  A[Test starts browser] --> B[Navigate to page]\n  B --> C[Interact via locators]\n  C --> D[Wait for assertions]\n  D --> E[Pass or Fail]\n  F[Network requests] --> C\n  G[Real server + DB] --> F"}
+        title="E2E Test Flow"
+        chart={"graph LR\n  BROWSER[\"Browser\\n(Automated)\"] --> FE[\"Frontend\\n(React App)\"]\n  FE --> API[\"Backend API\\n(Spring/Express)\"]\n  API --> DB[\"Database\\n(Real or Test)\"]"}
       />
 
-      <h2>Playwright — Modern E2E Testing</h2>
+      <InfoBox variant="warning" title="E2E Tests: Less Is More">
+        Write E2E tests for critical user journeys only — login, checkout, signup,
+        core workflows. Don&apos;t duplicate what unit and integration tests already cover.
+        A good rule: if a unit test can catch the bug, don&apos;t write an E2E test for it.
+      </InfoBox>
 
-      <CodeBlock language="javascript" title="Playwright Setup and Configuration">
-{`// Install: npm install -D @playwright/test
-// Initialize: npx playwright install (downloads browsers)
+      <h2>Playwright Overview</h2>
+      <p>
+        Playwright is a modern E2E testing framework by Microsoft. It supports Chromium,
+        Firefox, and WebKit with a single API, runs tests in parallel, and has excellent
+        auto-wait capabilities.
+      </p>
 
-// playwright.config.ts
-import { defineConfig, devices } from '@playwright/test';
+      <h3>Setup</h3>
+      <CodeBlock language="bash" title="Install Playwright">
+{`# Initialize a new Playwright project
+npm init playwright@latest
+
+# Or add to existing project
+npm install --save-dev @playwright/test
+npx playwright install`}
+      </CodeBlock>
+
+      <CodeBlock language="javascript" title="playwright.config.js">
+{`import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './tests/e2e',
-  timeout: 30_000,          // 30s per test
-  retries: process.env.CI ? 2 : 0,  // retry flaky tests in CI
-  workers: process.env.CI ? 1 : 4,  // parallel workers
+  testDir: './e2e',
+  timeout: 30000,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
 
   use: {
-    baseURL: 'http://localhost:5173',
-    trace: 'on-first-retry',   // capture trace on failure
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
   },
 
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox',  use: { ...devices['Desktop Firefox'] } },
-    { name: 'mobile',   use: { ...devices['iPhone 15'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    { name: 'mobile', use: { ...devices['iPhone 13'] } },
   ],
 
-  // Start dev server before running tests
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: 'npm run start',
+    port: 3000,
     reuseExistingServer: !process.env.CI,
   },
 });`}
       </CodeBlock>
 
-      <CodeBlock language="javascript" title="Playwright Locators and Interactions">
+      <h3>Core API</h3>
+      <CodeBlock language="javascript" title="Navigation and Actions">
 {`import { test, expect } from '@playwright/test';
 
-// ── LOCATOR PRIORITY — from most to least preferred ───────────────
-// 1. Role-based (most accessible and resilient)
-page.getByRole('button', { name: 'Submit order' })
-page.getByRole('heading', { name: 'Checkout', level: 1 })
-page.getByRole('link', { name: 'Sign in' })
-page.getByRole('textbox', { name: 'Email address' })
-page.getByRole('checkbox', { name: 'Remember me' })
+test('user login flow', async ({ page }) => {
+  // Navigation
+  await page.goto('/login');
 
-// 2. Label (form elements)
-page.getByLabel('Password')
-page.getByLabel('Date of birth')
+  // Fill form fields
+  await page.fill('[name="email"]', 'user@example.com');
+  await page.fill('[name="password"]', 'securePass123');
 
-// 3. Placeholder
-page.getByPlaceholder('Search products...')
+  // Click actions
+  await page.click('button[type="submit"]');
 
-// 4. Text content
-page.getByText('Order confirmed!')
-page.getByText('Error', { exact: false })  // partial match
+  // Wait for navigation
+  await page.waitForURL('/dashboard');
 
-// 5. Test ID (last resort — add data-testid to element)
-page.getByTestId('cart-item-count')
-
-// ── INTERACTIONS ─────────────────────────────────────────────────
-await page.getByRole('textbox', { name: 'Email' }).fill('alice@example.com');
-await page.getByRole('button', { name: 'Sign in' }).click();
-await page.getByRole('combobox', { name: 'Country' }).selectOption('US');
-await page.getByRole('checkbox', { name: 'Agree to terms' }).check();
-await page.getByRole('textbox', { name: 'Search' }).press('Enter');
-await page.keyboard.press('Escape');  // dismiss modals
-
-// ── NAVIGATION AND WAITING ────────────────────────────────────────
-await page.goto('/checkout');
-await page.waitForURL('/order-confirmed');  // wait for redirect
-await page.waitForLoadState('networkidle'); // wait for all requests done
-
-// ── ASSERTIONS (auto-retry until timeout) ────────────────────────
-await expect(page).toHaveURL('/dashboard');
-await expect(page).toHaveTitle('Dashboard | MyApp');
-await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
-await expect(page.getByRole('alert')).toHaveText('Order placed successfully');
-await expect(page.getByTestId('cart-count')).toHaveText('3');
-await expect(page.getByRole('button', { name: 'Submit' })).toBeDisabled();`}
+  // Verify content
+  await expect(page.locator('h1')).toHaveText('Welcome Back');
+});`}
       </CodeBlock>
 
-      <h2>Complete E2E Test Examples</h2>
+      <h3>Locator Strategies</h3>
+      <p>
+        Playwright provides semantic locators that mirror how users find elements.
+        Always prefer accessible locators over CSS selectors or test IDs.
+      </p>
 
-      <CodeBlock language="javascript" title="Authentication and Protected Routes">
+      <CodeBlock language="javascript" title="Locator Priority (Best to Worst)">
+{`// 1. getByRole — BEST: accessible, resilient to markup changes
+const submitBtn = page.getByRole('button', { name: 'Submit' });
+const emailInput = page.getByRole('textbox', { name: 'Email' });
+const nav = page.getByRole('navigation');
+const heading = page.getByRole('heading', { level: 1 });
+
+// 2. getByLabel — Great for form fields
+const passwordField = page.getByLabel('Password');
+
+// 3. getByText — Good for static content
+const welcomeMsg = page.getByText('Welcome to the app');
+
+// 4. getByPlaceholder — Acceptable for inputs
+const searchBox = page.getByPlaceholder('Search...');
+
+// 5. getByTestId — Last resort when no semantic option exists
+const customWidget = page.getByTestId('color-picker');`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Locator Best Practice">
+        Use <code>getByRole</code> as your default. It tests accessibility for free —
+        if your locator can&apos;t find the element by role, your app likely has an
+        accessibility problem. Fall back to <code>getByTestId</code> only for custom
+        components with no accessible role.
+      </InfoBox>
+
+      <h3>Assertions</h3>
+      <CodeBlock language="javascript" title="Playwright Assertions">
 {`import { test, expect } from '@playwright/test';
 
-// ── FIXTURE: log in once, reuse across tests ──────────────────────
-// fixtures/auth.ts
-import { test as base } from '@playwright/test';
+test('dashboard content verification', async ({ page }) => {
+  await page.goto('/dashboard');
 
-export const test = base.extend({
-  // Auto-login fixture — runs before tests that need it
-  authenticatedPage: async ({ page }, use) => {
-    await page.goto('/login');
-    await page.getByLabel('Email').fill('alice@example.com');
-    await page.getByLabel('Password').fill('testpassword123');
-    await page.getByRole('button', { name: 'Sign in' }).click();
-    await page.waitForURL('/dashboard');
-    await use(page);  // hand authenticated page to the test
-  },
-});
+  // Visibility and text
+  await expect(page.getByRole('heading')).toBeVisible();
+  await expect(page.getByRole('heading')).toHaveText('Dashboard');
 
-// ── AUTH TESTS ────────────────────────────────────────────────────
+  // URL and title
+  await expect(page).toHaveURL(/.*dashboard/);
+  await expect(page).toHaveTitle('My App - Dashboard');
+
+  // Element state
+  await expect(page.getByRole('button', { name: 'Save' })).toBeEnabled();
+  await expect(page.getByRole('checkbox')).toBeChecked();
+
+  // Count
+  await expect(page.getByRole('listitem')).toHaveCount(5);
+});`}
+      </CodeBlock>
+
+      <h2>Page Object Model</h2>
+      <p>
+        The Page Object Model (POM) encapsulates page interactions into reusable classes,
+        making tests more readable and easier to maintain.
+      </p>
+
+      <FlowChart
+        title="Page Object Model Pattern"
+        chart={"graph TD\n  TEST[\"Test File\\nDescribes user scenarios\"] --> POM[\"Page Object\\nEncapsulates page interactions\"]\n  POM --> PAGE[\"Actual Page\\nHTML/DOM elements\"]"}
+      />
+
+      <CodeBlock language="javascript" title="Page Object Class">
+{`// pages/LoginPage.js
+export class LoginPage {
+  constructor(page) {
+    this.page = page;
+    this.emailInput = page.getByLabel('Email');
+    this.passwordInput = page.getByLabel('Password');
+    this.submitButton = page.getByRole('button', { name: 'Log In' });
+    this.errorMessage = page.getByRole('alert');
+  }
+
+  async goto() {
+    await this.page.goto('/login');
+  }
+
+  async login(email, password) {
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(password);
+    await this.submitButton.click();
+  }
+
+  async expectError(message) {
+    await expect(this.errorMessage).toHaveText(message);
+  }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="javascript" title="Using Page Objects in Tests">
+{`import { test, expect } from '@playwright/test';
+import { LoginPage } from './pages/LoginPage';
+import { DashboardPage } from './pages/DashboardPage';
+
 test.describe('Authentication', () => {
-
   test('successful login redirects to dashboard', async ({ page }) => {
-    await page.goto('/login');
-    await page.getByLabel('Email').fill('alice@example.com');
-    await page.getByLabel('Password').fill('testpassword123');
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    const loginPage = new LoginPage(page);
+    const dashboardPage = new DashboardPage(page);
+
+    await loginPage.goto();
+    await loginPage.login('admin@example.com', 'password123');
 
     await expect(page).toHaveURL('/dashboard');
-    await expect(page.getByRole('heading', { name: /welcome/i })).toBeVisible();
-    // Verify nav shows logged-in state
-    await expect(page.getByRole('link', { name: 'Sign in' })).not.toBeVisible();
-    await expect(page.getByRole('button', { name: 'Account' })).toBeVisible();
+    await dashboardPage.expectWelcomeMessage('Welcome, Admin');
   });
 
-  test('invalid credentials shows error', async ({ page }) => {
-    await page.goto('/login');
-    await page.getByLabel('Email').fill('wrong@example.com');
-    await page.getByLabel('Password').fill('wrongpassword');
-    await page.getByRole('button', { name: 'Sign in' }).click();
+  test('invalid credentials show error', async ({ page }) => {
+    const loginPage = new LoginPage(page);
 
-    // Stays on login
+    await loginPage.goto();
+    await loginPage.login('wrong@example.com', 'badpassword');
+
+    await loginPage.expectError('Invalid email or password');
     await expect(page).toHaveURL('/login');
-    await expect(page.getByRole('alert')).toHaveText(/invalid email or password/i);
-    // Password field cleared for security
-    await expect(page.getByLabel('Password')).toHaveValue('');
-  });
-
-  test('protected routes redirect to login', async ({ page }) => {
-    await page.goto('/dashboard');
-    await expect(page).toHaveURL(/\/login\?redirect=\/dashboard/);
-  });
-
-  // Using the authenticated fixture
-  test('logout clears session', async ({ authenticatedPage: page }) => {
-    await page.getByRole('button', { name: 'Account' }).click();
-    await page.getByRole('menuitem', { name: 'Sign out' }).click();
-
-    await expect(page).toHaveURL('/');
-    // Can no longer access protected page
-    await page.goto('/dashboard');
-    await expect(page).toHaveURL(/\/login/);
   });
 });`}
       </CodeBlock>
 
-      <CodeBlock language="javascript" title="Complete Checkout Flow">
+      <h2>API Testing with Playwright</h2>
+      <CodeBlock language="javascript" title="API Tests Without a Browser">
 {`import { test, expect } from '@playwright/test';
 
-test.describe('Shopping Cart and Checkout', () => {
+test.describe('Users API', () => {
+  let createdUserId;
 
-  test.beforeEach(async ({ page }) => {
-    // Log in before each cart test
-    await page.goto('/login');
-    await page.getByLabel('Email').fill('alice@example.com');
-    await page.getByLabel('Password').fill('testpassword123');
-    await page.getByRole('button', { name: 'Sign in' }).click();
-    await page.waitForURL('/dashboard');
+  test('POST /api/users — create user', async ({ request }) => {
+    const response = await request.post('/api/users', {
+      data: { name: 'Alice', email: 'alice@test.com' },
+    });
+
+    expect(response.status()).toBe(201);
+    const body = await response.json();
+    expect(body.name).toBe('Alice');
+    createdUserId = body.id;
   });
 
-  test('add product to cart and verify count', async ({ page }) => {
-    await page.goto('/products');
+  test('GET /api/users/:id — fetch user', async ({ request }) => {
+    const response = await request.get(\`/api/users/\${createdUserId}\`);
 
-    // Add first product
-    const firstProduct = page.getByTestId('product-card').first();
-    await firstProduct.getByRole('button', { name: 'Add to cart' }).click();
-
-    // Cart count updates immediately (optimistic update)
-    await expect(page.getByTestId('cart-count')).toHaveText('1');
-
-    // Toast notification appears
-    await expect(page.getByRole('status')).toContainText('Added to cart');
-    await expect(page.getByRole('status')).not.toBeVisible({ timeout: 3000 });
-  });
-
-  test('complete checkout flow', async ({ page }) => {
-    // Add a product
-    await page.goto('/products');
-    await page.getByTestId('product-WIDGET-1')
-      .getByRole('button', { name: 'Add to cart' }).click();
-
-    // Go to cart
-    await page.getByRole('link', { name: 'Cart (1)' }).click();
-    await expect(page).toHaveURL('/cart');
-    await expect(page.getByRole('heading', { name: 'Shopping Cart' })).toBeVisible();
-
-    // Proceed to checkout
-    await page.getByRole('button', { name: 'Proceed to checkout' }).click();
-    await expect(page).toHaveURL('/checkout');
-
-    // Fill shipping
-    await page.getByLabel('Full name').fill('Alice Smith');
-    await page.getByLabel('Address').fill('123 Main St');
-    await page.getByLabel('City').fill('Seattle');
-    await page.getByLabel('ZIP Code').fill('98101');
-    await page.getByLabel('Country').selectOption('US');
-
-    // Fill payment
-    await page.getByLabel('Card number').fill('4242424242424242');
-    await page.getByLabel('Expiry').fill('12/26');
-    await page.getByLabel('CVV').fill('123');
-
-    // Submit
-    await page.getByRole('button', { name: 'Place order' }).click();
-
-    // Confirm order
-    await expect(page).toHaveURL(/\/orders\/[A-Z0-9-]+\/confirmation/);
-    await expect(page.getByRole('heading', { name: 'Order confirmed!' })).toBeVisible();
-    await expect(page.getByTestId('order-number')).toBeVisible();
-
-    // Cart is cleared
-    await expect(page.getByTestId('cart-count')).not.toBeVisible();
-  });
-});`}
-      </CodeBlock>
-
-      <h2>API Mocking and Network Interception</h2>
-
-      <CodeBlock language="javascript" title="Playwright Network Interception">
-{`// Playwright can intercept and mock network requests
-// Use for: testing error states, payment APIs, third-party services
-
-test('shows error when payment fails', async ({ page }) => {
-  // Intercept POST to payment endpoint
-  await page.route('/api/orders', async (route) => {
-    await route.fulfill({
-      status: 402,
-      contentType: 'application/json',
-      body: JSON.stringify({ error: 'Card declined', code: 'PAYMENT_DECLINED' }),
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body).toMatchObject({
+      name: 'Alice',
+      email: 'alice@test.com',
     });
   });
 
-  // Complete checkout form...
-  await page.getByRole('button', { name: 'Place order' }).click();
+  test('DELETE /api/users/:id — remove user', async ({ request }) => {
+    const response = await request.delete(\`/api/users/\${createdUserId}\`);
+    expect(response.status()).toBe(204);
 
-  await expect(page.getByRole('alert')).toHaveText(
-    /your card was declined/i
-  );
-  await expect(page).toHaveURL('/checkout'); // stays on checkout
-});
-
-test('handles slow API gracefully', async ({ page }) => {
-  // Delay API response to test loading states
-  await page.route('/api/products*', async (route) => {
-    await new Promise(r => setTimeout(r, 2000)); // 2 second delay
-    await route.continue();
-  });
-
-  await page.goto('/products');
-  await expect(page.getByTestId('loading-skeleton')).toBeVisible();
-  await expect(page.getByTestId('product-card').first()).toBeVisible({ timeout: 5000 });
-});
-
-// Screenshot and visual comparison
-test('product page matches screenshot', async ({ page }) => {
-  await page.goto('/products/WIDGET-1');
-  await expect(page).toHaveScreenshot('product-detail.png', {
-    maxDiffPixels: 100,    // allow minor rendering differences
-    threshold: 0.2,         // 20% pixel difference threshold
+    const getResponse = await request.get(\`/api/users/\${createdUserId}\`);
+    expect(getResponse.status()).toBe(404);
   });
 });`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="E2E Test Strategy — What to Test">
-        <p>
-          E2E tests are expensive — 10x slower and 10x flakier than unit tests. Limit them to:
-        </p>
-        <ul>
-          <li><strong>Critical paths</strong>: login, signup, checkout, primary CRUD</li>
-          <li><strong>Auth boundaries</strong>: protected routes, role-based access</li>
-          <li><strong>Integrations</strong>: payment flow, email confirmation, SSO login</li>
-          <li><strong>Cross-browser</strong>: layout and interaction differences</li>
-        </ul>
-        <p>
-          Run a fast smoke suite (5–10 tests) on every PR. Run the full E2E suite nightly
-          or before releases. Never use E2E to test business logic — that belongs in unit tests.
-        </p>
+      <h2>Visual Regression Testing</h2>
+      <CodeBlock language="javascript" title="Screenshot Comparison">
+{`test('homepage visual regression', async ({ page }) => {
+  await page.goto('/');
+
+  // Full page screenshot comparison
+  await expect(page).toHaveScreenshot('homepage.png', {
+    maxDiffPixels: 100,
+  });
+
+  // Element-level screenshot
+  const header = page.getByRole('banner');
+  await expect(header).toHaveScreenshot('header.png');
+
+  // With masking for dynamic content
+  await expect(page).toHaveScreenshot('dashboard.png', {
+    mask: [
+      page.locator('.timestamp'),
+      page.locator('.user-avatar'),
+    ],
+  });
+});`}
+      </CodeBlock>
+
+      <h2>CI Integration</h2>
+      <CodeBlock language="yaml" title="GitHub Actions Workflow">
+{`name: E2E Tests
+on: [push, pull_request]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+      - run: npx playwright install --with-deps
+
+      - run: npx playwright test
+        env:
+          CI: true
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7`}
+      </CodeBlock>
+
+      <h2>Cypress vs Playwright</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Playwright</th>
+            <th>Cypress</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Browser support</td>
+            <td>Chromium, Firefox, WebKit</td>
+            <td>Chromium, Firefox, WebKit (limited)</td>
+          </tr>
+          <tr>
+            <td>Language</td>
+            <td>JS, TS, Python, .NET, Java</td>
+            <td>JavaScript/TypeScript only</td>
+          </tr>
+          <tr>
+            <td>Parallel execution</td>
+            <td>Built-in, free</td>
+            <td>Paid (Cypress Cloud)</td>
+          </tr>
+          <tr>
+            <td>Multi-tab/multi-origin</td>
+            <td>Full support</td>
+            <td>Limited</td>
+          </tr>
+          <tr>
+            <td>Auto-waiting</td>
+            <td>Built-in for all actions</td>
+            <td>Built-in with retry-ability</td>
+          </tr>
+          <tr>
+            <td>API testing</td>
+            <td>First-class support</td>
+            <td><code>cy.request()</code></td>
+          </tr>
+          <tr>
+            <td>Visual testing</td>
+            <td>Built-in screenshots</td>
+            <td>Plugin required</td>
+          </tr>
+          <tr>
+            <td>Test runner UI</td>
+            <td>HTML report, trace viewer</td>
+            <td>Interactive runner (great DX)</td>
+          </tr>
+          <tr>
+            <td>Community</td>
+            <td>Growing rapidly</td>
+            <td>Large, mature ecosystem</td>
+          </tr>
+          <tr>
+            <td>iframes</td>
+            <td>Full support</td>
+            <td>Limited support</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <InfoBox variant="info" title="Our Recommendation">
+        For new projects, Playwright is generally the better choice — it&apos;s faster, supports
+        more browsers, and has free parallelism. Cypress still excels in developer experience
+        with its interactive test runner and time-travel debugging. Both are excellent tools.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Why is getByRole() preferred over CSS class selectors for Playwright locators?"
-        options={[
-          "getByRole() is significantly faster than CSS selectors at runtime",
-          "getByRole() tests accessibility semantics and is resilient to CSS refactoring — if the role exists, the element is accessible",
-          "CSS class selectors are not supported in Playwright's locator API",
-          "getByRole() works across all browsers while CSS selectors are browser-specific"
-        ]}
-        correctIndex={1}
-        explanation="getByRole() selects elements by their ARIA role — the same way screen readers navigate. A test using getByRole('button', {name: 'Submit'}) passes only if the element has the button role AND the accessible name 'Submit'. This means: (1) tests survive CSS refactoring and class renames, (2) tests verify accessibility — if the locator finds it, screen readers can too, (3) tests are more readable and intention-revealing."
-      />
+      <h2>E2E Testing Best Practices</h2>
+      <CodeBlock language="javascript" title="Test Isolation with API Seeding">
+{`import { test, expect } from '@playwright/test';
+
+// Each test seeds its own data via API — no shared state
+test.describe('Order Management', () => {
+  let orderId;
+
+  test.beforeEach(async ({ request }) => {
+    // Seed test data via API
+    const response = await request.post('/api/test/seed', {
+      data: {
+        users: [{ id: 'user-1', name: 'Alice' }],
+        orders: [{ id: 'order-1', userId: 'user-1', status: 'PENDING' }],
+      },
+    });
+    expect(response.ok()).toBeTruthy();
+  });
+
+  test.afterEach(async ({ request }) => {
+    // Clean up test data
+    await request.post('/api/test/cleanup');
+  });
+
+  test('should display order details', async ({ page }) => {
+    await page.goto('/orders/order-1');
+    await expect(page.getByText('PENDING')).toBeVisible();
+    await expect(page.getByText('Alice')).toBeVisible();
+  });
+});`}
+      </CodeBlock>
 
       <InteractiveChallenge
-        question="When should you use network interception in Playwright tests?"
+        question={"Which Playwright locator strategy should be your FIRST choice?"}
         options={[
-          "Always — intercept all API calls to make tests deterministic",
-          "For testing specific error states and third-party services that cannot be controlled in the test environment",
-          "Network interception is a code smell — E2E tests should always use real APIs",
-          "Only in CI environments, never locally"
+          "page.locator('.css-class')",
+          "page.getByTestId('element-id')",
+          "page.getByRole('button', { name: 'Submit' })",
+          "page.locator('#element-id')"
         ]}
-        correctIndex={1}
-        explanation="Network interception shines for testing conditions that are hard to reproduce with real APIs: payment declines, server errors, network timeouts, or third-party services (Stripe, SendGrid) that you cannot control. For your own API endpoints, use real requests against a test database when possible — intercepting everything makes E2E tests closer to integration tests and defeats the purpose of testing the full stack."
+        correctIndex={2}
+        explanation="getByRole is the preferred locator because it queries elements the way assistive technology and users find them. It also doubles as an accessibility check — if getByRole can't find your element, it may not be accessible."
+        language="javascript"
       />
+
+      <h2>Key Takeaways</h2>
+      <ul>
+        <li>Write E2E tests only for critical user journeys — quality over quantity</li>
+        <li>Playwright is the modern standard for E2E testing</li>
+        <li>Use semantic locators (getByRole, getByLabel) over CSS selectors</li>
+        <li>Encapsulate page interactions with the Page Object Model</li>
+        <li>Seed test data via APIs for reliable, isolated tests</li>
+        <li>Run E2E tests in CI with artifact collection on failure</li>
+        <li>Visual regression testing catches UI changes that other tests miss</li>
+      </ul>
     </LessonLayout>
   );
 }

@@ -4,190 +4,209 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function PatternsSingleton() {
+export default function Singleton() {
   return (
     <LessonLayout
-      title="Singleton Pattern"
+      title="Singleton & Factory Patterns"
       sectionId="patterns"
       lessonIndex={1}
-      prev={{ path: "/patterns/intro", label: "Patterns Overview" }}
-      next={{ path: "/patterns/strategy", label: "Strategy Pattern" }}
+      prev={{ path: '/patterns/intro', label: 'Patterns Overview' }}
+      next={{ path: '/patterns/strategy', label: 'Strategy & Observer' }}
     >
-      <p>The Singleton pattern ensures a class has exactly one instance and provides a global access point to it. It is used for resources that should be shared — configuration registries, connection pools, loggers, and caches — where multiple instances would cause bugs or waste resources.</p>
+      <h2>Singleton Pattern</h2>
+      <p>
+        Ensures a class has exactly one instance and provides a global point of access to it.
+        Common use cases: connection pools, thread pools, caches, configuration objects, and loggers.
+      </p>
 
-      <h2>Basic Singleton</h2>
+      <FlowChart
+        title="Singleton Pattern Structure"
+        chart={"graph TD\n  A[Client A] --> S[Singleton Instance]\n  B[Client B] --> S\n  C[Client C] --> S\n  S --> D[\"- instance: Singleton\\n- Singleton()\\n+ getInstance(): Singleton\"]"}
+      />
 
-      <CodeBlock language="java" title="Classic Singleton (not thread-safe)">
-{`public class Config {
-    private static Config instance;  // the single instance
+      <h3>Eager Initialization</h3>
+      <CodeBlock language="java" title="Eager Singleton (Thread-Safe)" showLineNumbers={true}>
+{`public class EagerSingleton {
+    // Instance created at class loading time - guaranteed thread-safe
+    private static final EagerSingleton INSTANCE = new EagerSingleton();
 
-    private final Map<String, String> props;
-
-    // Private constructor prevents external instantiation
-    private Config() {
-        props = new HashMap<>();
-        props.put("db.url", "jdbc:postgresql://localhost/mydb");
-        props.put("app.name", "MyApp");
+    private EagerSingleton() {
+        // Prevent reflection-based instantiation
+        if (INSTANCE != null) {
+            throw new IllegalStateException("Already initialized");
+        }
     }
 
-    // Global access point
-    public static Config getInstance() {
-        if (instance == null) {
-            instance = new Config();  // lazy initialization
+    public static EagerSingleton getInstance() {
+        return INSTANCE;
+    }
+}`}
+      </CodeBlock>
+
+      <h3>Double-Checked Locking</h3>
+      <CodeBlock language="java" title="Lazy Singleton with Double-Checked Locking" showLineNumbers={true}>
+{`public class LazySingleton {
+    // volatile prevents instruction reordering issues
+    private static volatile LazySingleton instance;
+
+    private LazySingleton() {}
+
+    public static LazySingleton getInstance() {
+        if (instance == null) {                 // First check (no lock)
+            synchronized (LazySingleton.class) {
+                if (instance == null) {         // Second check (with lock)
+                    instance = new LazySingleton();
+                }
+            }
         }
         return instance;
     }
+}`}
+      </CodeBlock>
 
-    public String get(String key) { return props.get(key); }
+      <h3>Enum Singleton (Recommended)</h3>
+      <CodeBlock language="java" title="Enum Singleton - Joshua Bloch's Recommendation" showLineNumbers={true}>
+{`// Effective Java Item 3: "A single-element enum is the best way
+// to implement a singleton"
+public enum DatabasePool {
+    INSTANCE;
+
+    private final HikariDataSource dataSource;
+
+    DatabasePool() {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:postgresql://localhost:5432/mydb");
+        config.setMaximumPoolSize(10);
+        this.dataSource = new HikariDataSource(config);
+    }
+
+    public Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
+    }
+}
+
+// Usage:
+Connection conn = DatabasePool.INSTANCE.getConnection();`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Why Enum Singleton is Best">
+        Enum singletons are inherently thread-safe, prevent reflection attacks, handle
+        serialization automatically, and are concise. The JVM guarantees exactly one instance.
+        This is the approach recommended by Joshua Bloch in Effective Java.
+      </InfoBox>
+
+      <h2>Factory Method Pattern</h2>
+      <p>
+        Defines an interface for creating objects but lets subclasses decide which class to instantiate.
+        It promotes loose coupling by eliminating the need to bind application-specific classes into your code.
+      </p>
+
+      <FlowChart
+        title="Factory Method Pattern Structure"
+        chart={"graph TD\n  A[Client] --> B[Creator]\n  B --> C[ConcreteCreatorA]\n  B --> D[ConcreteCreatorB]\n  C --> E[ProductA]\n  D --> F[ProductB]\n  E --> G[Product Interface]\n  F --> G"}
+      />
+
+      <CodeBlock language="java" title="Factory Method - Notification System" showLineNumbers={true}>
+{`// Product interface
+public interface Notification {
+    void send(String recipient, String message);
+}
+
+// Concrete products
+public class EmailNotification implements Notification {
+    public void send(String recipient, String message) {
+        System.out.println("Email to " + recipient + ": " + message);
+    }
+}
+
+public class SmsNotification implements Notification {
+    public void send(String recipient, String message) {
+        System.out.println("SMS to " + recipient + ": " + message);
+    }
+}
+
+public class PushNotification implements Notification {
+    public void send(String recipient, String message) {
+        System.out.println("Push to " + recipient + ": " + message);
+    }
+}
+
+// Factory
+public class NotificationFactory {
+    public static Notification create(String channel) {
+        return switch (channel.toUpperCase()) {
+            case "EMAIL" -> new EmailNotification();
+            case "SMS"   -> new SmsNotification();
+            case "PUSH"  -> new PushNotification();
+            default -> throw new IllegalArgumentException(
+                "Unknown channel: " + channel);
+        };
+    }
 }
 
 // Usage
-String url = Config.getInstance().get("db.url");`}
+Notification notif = NotificationFactory.create("EMAIL");
+notif.send("user@example.com", "Your order shipped!");`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="Thread Safety">
-        <p>The basic singleton is NOT thread-safe. Two threads could both see <code>instance == null</code> simultaneously and create two instances. Always use a thread-safe variant in multi-threaded applications.</p>
-      </InfoBox>
+      <h3>Abstract Factory</h3>
+      <CodeBlock language="java" title="Abstract Factory - Cross-Platform UI" showLineNumbers={true}>
+{`// Abstract products
+public interface Button { void render(); }
+public interface TextField { void render(); }
 
-      <h2>Thread-Safe Singleton Variants</h2>
-
-      <CodeBlock language="java" title="Thread-Safe Singleton Options">
-{`// Option 1: Eager initialization (simple, always creates instance)
-public class EagerSingleton {
-    private static final EagerSingleton INSTANCE = new EagerSingleton();
-    private EagerSingleton() {}
-    public static EagerSingleton getInstance() { return INSTANCE; }
+// Abstract factory
+public interface UIFactory {
+    Button createButton();
+    TextField createTextField();
 }
 
-// Option 2: Synchronized method (safe but slow — syncs on every call)
-public class SyncSingleton {
-    private static SyncSingleton instance;
-    private SyncSingleton() {}
-    public static synchronized SyncSingleton getInstance() {
-        if (instance == null) instance = new SyncSingleton();
-        return instance;
+// Concrete factory: Material Design
+public class MaterialUIFactory implements UIFactory {
+    public Button createButton() { return new MaterialButton(); }
+    public TextField createTextField() { return new MaterialTextField(); }
+}
+
+// Concrete factory: iOS style
+public class CupertinoUIFactory implements UIFactory {
+    public Button createButton() { return new CupertinoButton(); }
+    public TextField createTextField() { return new CupertinoTextField(); }
+}
+
+// Client code - works with ANY factory
+public class LoginForm {
+    private final Button submitBtn;
+    private final TextField emailField;
+
+    public LoginForm(UIFactory factory) {
+        this.submitBtn = factory.createButton();
+        this.emailField = factory.createTextField();
     }
-}
 
-// Option 3: Double-checked locking (fast after initialization)
-public class DCLSingleton {
-    private static volatile DCLSingleton instance;  // volatile is crucial!
-    private DCLSingleton() {}
-    public static DCLSingleton getInstance() {
-        if (instance == null) {                      // first check (no sync)
-            synchronized (DCLSingleton.class) {
-                if (instance == null) {              // second check (with sync)
-                    instance = new DCLSingleton();
-                }
-            }
-        }
-        return instance;
+    public void render() {
+        emailField.render();
+        submitBtn.render();
     }
-}
-
-// Option 4: Initialization-on-demand (best — lazy, thread-safe, no sync overhead)
-public class HolderSingleton {
-    private HolderSingleton() {}
-    private static class Holder {
-        static final HolderSingleton INSTANCE = new HolderSingleton();
-    }
-    public static HolderSingleton getInstance() { return Holder.INSTANCE; }
-}
-
-// Option 5: Enum singleton (Josh Bloch recommendation — handles serialization too)
-public enum EnumSingleton {
-    INSTANCE;
-    public void doWork() { /* ... */ }
 }`}
       </CodeBlock>
 
-      <FlowChart
-        title="Singleton Initialization Flow"
-        chart={"graph TD\n  A[getInstance called] --> B{instance == null?}\n  B -- No --> C[Return existing instance]\n  B -- Yes --> D[Acquire lock]\n  D --> E{Still null?}\n  E -- No --> F[Release lock]\n  F --> C\n  E -- Yes --> G[Create instance]\n  G --> H[Release lock]\n  H --> C"}
-      />
-
-      <h2>Real-World Singleton: Connection Pool</h2>
-
-      <CodeBlock language="java" title="Database Connection Pool Singleton">
-{`public class ConnectionPool {
-    private static volatile ConnectionPool instance;
-    private final BlockingQueue<Connection> pool;
-    private final int MAX_SIZE = 10;
-
-    private ConnectionPool() {
-        pool = new LinkedBlockingQueue<>(MAX_SIZE);
-        for (int i = 0; i < MAX_SIZE; i++) {
-            pool.offer(createConnection());
-        }
-    }
-
-    public static ConnectionPool getInstance() {
-        if (instance == null) {
-            synchronized (ConnectionPool.class) {
-                if (instance == null) {
-                    instance = new ConnectionPool();
-                }
-            }
-        }
-        return instance;
-    }
-
-    public Connection acquire() throws InterruptedException {
-        return pool.take();   // blocks if none available
-    }
-
-    public void release(Connection conn) {
-        pool.offer(conn);
-    }
-
-    private Connection createConnection() {
-        return DriverManager.getConnection("jdbc:postgresql://localhost/db",
-                                           "user", "pass");
-    }
-}
-
-// Usage — everyone shares the same pool
-Connection conn = ConnectionPool.getInstance().acquire();
-try {
-    // use connection
-} finally {
-    ConnectionPool.getInstance().release(conn);
-}`}
-      </CodeBlock>
-
-      <h2>Singleton in Spring</h2>
-      <p>Spring beans are Singleton-scoped by default — Spring manages exactly one instance per ApplicationContext. This is why constructor injection is preferred over field injection: it makes the dependency explicit and enables testing without the Spring container.</p>
-
-      <CodeBlock language="java" title="Spring Singleton Bean">
-{`@Service  // @Scope("singleton") is implicit
-public class CacheService {
-    private final Map<String, Object> cache = new ConcurrentHashMap<>();
-
-    public void put(String key, Object value) { cache.put(key, value); }
-    public Object get(String key) { return cache.get(key); }
-    public void evict(String key) { cache.remove(key); }
-}
-
-// Only ONE CacheService instance in the entire application context
-// All components that inject it get the SAME object
-@RestController
-public class ProductController {
-    private final CacheService cache;  // same instance as in OrderService
-    public ProductController(CacheService cache) { this.cache = cache; }
-}`}
-      </CodeBlock>
-
-      <InfoBox variant="note" title="Singleton vs Static">
-        <p>A Singleton is not the same as a static class. Singletons can implement interfaces, be injected, be mocked in tests, and support lazy initialization. Static classes cannot be easily tested, extended, or replaced. Prefer Singleton (especially via Spring DI) over static utility classes for shared state.</p>
+      <InfoBox variant="warning" title="When to Avoid Singleton">
+        Singletons make unit testing difficult (global state), hide dependencies, and
+        violate the Single Responsibility Principle. In modern Java, prefer dependency injection
+        (Spring @Component with default singleton scope) over hand-rolled Singletons.
       </InfoBox>
 
       <InteractiveChallenge
-        question="Why is the volatile keyword required for the double-checked locking singleton?"
-        options={["To make the field thread-local", "To prevent CPU caching of the instance reference across threads", "To make the assignment atomic", "To enable garbage collection"]}
+        question="What problem does the 'volatile' keyword solve in the double-checked locking singleton?"
+        options={[
+          "It makes the variable thread-local",
+          "It prevents instruction reordering that could expose a partially constructed object",
+          "It locks the variable so only one thread can read it at a time",
+          "It forces the variable to be stored on the heap instead of the stack"
+        ]}
         correctIndex={1}
-        explanation="Without volatile, the JVM or CPU may reorder instructions, causing a thread to see a partially constructed object. volatile ensures that the write to 'instance' is visible to all threads immediately and that the constructor completes before the reference is published."
+        explanation="Without volatile, the JVM may reorder instructions such that the reference is assigned before the constructor completes. Another thread could then see a non-null but partially constructed instance. The volatile keyword establishes a happens-before relationship preventing this reordering."
       />
-
     </LessonLayout>
   );
 }

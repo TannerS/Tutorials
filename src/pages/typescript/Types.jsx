@@ -4,390 +4,504 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function TsTypes() {
+export default function Types() {
   return (
     <LessonLayout
-      title="TypeScript Types"
+      title="Type System Fundamentals"
       sectionId="typescript"
       lessonIndex={1}
-      prev={{ path: "/typescript/intro", label: "Introduction" }}
-      next={{ path: "/typescript/interfaces", label: "Interfaces" }}
+      prev={{ path: '/typescript/intro', label: 'Intro & Setup' }}
+      next={{ path: '/typescript/interfaces', label: 'Interfaces & Type Aliases' }}
     >
+      {/* ── Primitive Types ── */}
+      <h2>Primitive Types</h2>
       <p>
-        TypeScript's type system is the foundation of everything else. It includes primitive types, literal types,
-        union and intersection types, tuples, enums, and special types like <code>any</code>, <code>unknown</code>,
-        and <code>never</code>. Understanding these thoroughly lets you model any domain accurately.
+        TypeScript&apos;s type system builds on JS primitives with compile-time annotations.
+      </p>
+      <CodeBlock language="typescript" title="Primitive type annotations">
+{`let name: string = "Alice";
+let age: number = 30;
+let active: boolean = true;
+let nothing: null = null;
+let notDefined: undefined = undefined;
+let id: symbol = Symbol("id");
+let huge: bigint = 9007199254740991n;
+
+// Type inference — skip annotations for initialized variables
+let inferred = "hello"; // TS infers: string
+let count = 42;         // TS infers: number`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Let inference do the work">
+        <p>
+          Skip annotations for initialized variables — TypeScript&apos;s inference is almost
+          always correct. Annotate function parameters, explicit return types, and
+          uninitialized variables.
+        </p>
+      </InfoBox>
+
+      {/* ── Arrays and Tuples ── */}
+      <h2>Arrays and Tuples</h2>
+      <p>Two equivalent syntaxes for typed arrays:</p>
+      <CodeBlock language="typescript" title="Arrays and tuples">
+{`// Shorthand (preferred)
+let ids: number[] = [1, 2, 3];
+// Generic form
+let names: Array<string> = ["Alice", "Bob"];
+// Readonly — prevents push, pop, splice
+let frozen: readonly number[] = [1, 2, 3];
+
+// Tuples — fixed-length, typed per position
+let pair: [string, number] = ["age", 30];
+type Point = [x: number, y: number, z: number];
+
+// Rest elements and readonly tuples
+type StringAndNumbers = [string, ...number[]];
+let data: StringAndNumbers = ["scores", 95, 87, 73];
+type Immutable = readonly [string, number];`}
+      </CodeBlock>
+
+      {/* ── Object Types ── */}
+      <h2>Object Types</h2>
+      <CodeBlock language="typescript" title="Inline object types">
+{`let user: { name: string; age: number; active?: boolean } = {
+  name: "Alice",
+  age: 30,
+};
+
+function greet(person: { name: string; title?: string }): string {
+  const prefix = person.title ? person.title + " " : "";
+  return "Hello, " + prefix + person.name;
+}`}
+      </CodeBlock>
+
+      {/* ── Union Types ── */}
+      <h2>Union Types</h2>
+      <CodeBlock language="typescript" title="Union types">
+{`type Id = string | number;
+
+function formatId(id: Id): string {
+  if (typeof id === "string") {
+    return id.toUpperCase(); // narrowed to string
+  }
+  return id.toFixed(2);      // narrowed to number
+}
+
+// Practical: discriminated API response
+type ApiResponse<T> =
+  | { status: "success"; data: T }
+  | { status: "error"; message: string };
+
+function handleResponse(res: ApiResponse<string[]>) {
+  if (res.status === "success") {
+    console.log(res.data.join(", "));
+  } else {
+    console.error(res.message);
+  }
+}`}
+      </CodeBlock>
+
+      {/* ── Intersection Types ── */}
+      <h2>Intersection Types</h2>
+      <CodeBlock language="typescript" title="Intersection types">
+{`type HasId = { id: number };
+type HasName = { name: string };
+type HasTimestamps = { createdAt: Date; updatedAt: Date };
+
+// Must satisfy ALL constituent types
+type Entity = HasId & HasName & HasTimestamps;
+
+// Practical: composing API response shapes
+type Paginated<T> = { items: T[]; total: number; page: number };
+type Sortable = { sortBy: string; sortOrder: "asc" | "desc" };
+type PaginatedAndSortable<T> = Paginated<T> & Sortable;`}
+      </CodeBlock>
+
+      {/* ── Literal Types ── */}
+      <h2>Literal Types</h2>
+      <CodeBlock language="typescript" title="Literal types">
+{`type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+
+function request(url: string, method: HttpMethod) { /* ... */ }
+request("/api/users", "GET");
+// request("/api/users", "GETS"); // Error
+
+type DiceRoll = 1 | 2 | 3 | 4 | 5 | 6;
+
+// Template literal types — compose string literals
+type EventName = "click" | "scroll" | "keypress";
+type Handler = \`on\${Capitalize<EventName>}\`;
+// "onClick" | "onScroll" | "onKeypress"`}
+      </CodeBlock>
+
+      {/* ── Type Narrowing and Type Guards ── */}
+      <h2>Type Narrowing and Type Guards</h2>
+      <p>
+        Narrowing is how TypeScript refines a broad type into something specific
+        inside a conditional block. Master this and you&apos;ll rarely fight the compiler.
       </p>
 
       <FlowChart
-        title="TypeScript Type Hierarchy"
-        chart={"graph TD\n  A[unknown] --> B[any]\n  B --> C[string]\n  B --> D[number]\n  B --> E[boolean]\n  B --> F[object]\n  B --> G[null]\n  B --> H[undefined]\n  F --> I[Array]\n  F --> J[Tuple]\n  F --> K[Interface / Type]\n  L[never] --> M[subtype of everything]"}
+        title="Narrowing decision tree"
+        chart={"graph TD\n  A[Broad type] --> B{Primitive?}\n  B -- Yes --> C[typeof]\n  B -- No --> D{Class instance?}\n  D -- Yes --> E[instanceof]\n  D -- No --> F{Tag/kind field?}\n  F -- Yes --> G[Discriminated union]\n  F -- No --> H[in operator or custom guard]"}
       />
 
-      <h2>Primitive Types</h2>
-      <p>
-        TypeScript has seven primitive types, matching JavaScript's primitives. Every other type is built on top of
-        these.
-      </p>
-
-      <CodeBlock language="typescript" title="All Seven Primitive Types">
-{`// string — text data
-let firstName: string = "Alice";
-let greeting: string = \`Hello, \${firstName}!\`;  // template literals work
-
-// number — all numeric values (integer and floating point)
-let age: number = 30;
-let price: number = 9.99;
-let hex: number = 0xff;
-let binary: number = 0b1010;
-let octal: number = 0o744;
-
-// boolean — true or false only
-let isActive: boolean = true;
-let hasPermission: boolean = false;
-
-// null — intentional absence of a value (must be explicit in strict mode)
-let selectedUser: string | null = null;   // will be set later
-
-// undefined — variable declared but not assigned
-let uninitializedConfig: string | undefined;  // may never be set
-
-// symbol — guaranteed unique value, used for object property keys
-const id: symbol = Symbol("userId");
-const anotherId: symbol = Symbol("userId");
-id === anotherId;  // false — every Symbol() is unique
-
-// bigint — integers larger than Number.MAX_SAFE_INTEGER (2^53 - 1)
-const maxSafeInt: number = Number.MAX_SAFE_INTEGER;  // 9007199254740991
-const bigNumber: bigint = 9007199254740993n;          // precise!
-const result: bigint = bigNumber * 2n;                // operations use 'n' suffix
-
-// Type inference — TypeScript infers from assignment, no annotation needed:
-const name = "Alice";   // inferred as string
-const count = 42;       // inferred as number
-const flag = true;      // inferred as boolean
-// Only annotate when inference can't figure it out`}
+      <h3>typeof narrowing</h3>
+      <CodeBlock language="typescript" title="typeof narrowing">
+{`function padLeft(value: string | number, padding: string | number): string {
+  if (typeof padding === "number") {
+    // padding is number here
+    return " ".repeat(padding) + value;
+  }
+  // padding is string here
+  return padding + value;
+}`}
       </CodeBlock>
 
-      <h2>Literal Types</h2>
-      <p>
-        Literal types narrow a type to a specific value rather than a general category. They are the building blocks
-        of union types and discriminated unions.
-      </p>
-
-      <CodeBlock language="typescript" title="Literal Types and Their Uses">
-{`// String literal types
-type Direction = "north" | "south" | "east" | "west";
-type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-type Status = "pending" | "active" | "suspended" | "deleted";
-
-// Numeric literal types
-type DiceRoll = 1 | 2 | 3 | 4 | 5 | 6;
-type HttpStatusCode = 200 | 201 | 204 | 400 | 401 | 403 | 404 | 500;
-type Port = 80 | 443 | 3000 | 8080;
-
-// Boolean literal types (less common but useful)
-type AlwaysTrue = true;
-type AlwaysFalse = false;
-
-// Where literal types shine: function parameters
-function move(direction: Direction, steps: number): void {
-  console.log(\`Moving \${steps} steps \${direction}\`);
-}
-move("north", 3);   // ✓ OK
-move("up", 3);      // Error: "up" is not assignable to Direction
-
-// Literal types + overloads: different return based on input
-function createElement(tag: "div"): HTMLDivElement;
-function createElement(tag: "span"): HTMLSpanElement;
-function createElement(tag: "input"): HTMLInputElement;
-function createElement(tag: string): HTMLElement {
-  return document.createElement(tag);
-}
-const div = createElement("div");     // TypeScript knows this is HTMLDivElement
-const span = createElement("span");   // TypeScript knows this is HTMLSpanElement
-
-// Type widening — watch out for this
-const method = "GET";          // inferred as string (widened!)
-const method2 = "GET" as const; // inferred as literal "GET"
-// or:
-const method3: HttpMethod = "GET";  // annotated as HttpMethod`}
-      </CodeBlock>
-
-      <h2>Union Types</h2>
-      <p>
-        A union type (<code>A | B</code>) means "this value can be either A or B". TypeScript enforces that you handle
-        all possibilities before using type-specific behavior — this is called type narrowing.
-      </p>
-
-      <CodeBlock language="typescript" title="Union Types and Type Narrowing">
-{`// Basic union type
-type StringOrNumber = string | number;
-let id: StringOrNumber = "user-42";
-id = 42;  // also valid — can be either
-
-// Union types require narrowing before type-specific operations
-function formatId(id: string | number): string {
-  // typeof narrowing
-  if (typeof id === "string") {
-    return id.toUpperCase();   // TypeScript knows: id is string here
+      <h3>instanceof narrowing</h3>
+      <CodeBlock language="typescript" title="instanceof narrowing">
+{`class ApiError extends Error {
+  constructor(message: string, public statusCode: number) {
+    super(message);
   }
-  return id.toFixed(0);        // TypeScript knows: id is number here
 }
 
-// instanceof narrowing
-function processError(err: Error | string): string {
-  if (err instanceof Error) {
-    return \`Error: \${err.message}\`;  // err is Error here
-  }
-  return \`String: \${err}\`;           // err is string here
-}
-
-// Equality narrowing
-function handleStatus(status: "loading" | "success" | "error") {
-  if (status === "loading") return <Spinner />;
-  if (status === "error")   return <ErrorMessage />;
-  return <Content />;  // TypeScript knows: only "success" remains
-}
-
-// 'in' narrowing — check for property existence
-interface Dog { breed: string; bark(): void; }
-interface Cat { indoor: boolean; meow(): void; }
-
-function makeSound(animal: Dog | Cat): void {
-  if ("bark" in animal) {
-    animal.bark();   // animal is Dog here
+function handleError(err: Error) {
+  if (err instanceof ApiError) {
+    console.log("API error:", err.statusCode); // statusCode accessible
   } else {
-    animal.meow();   // animal is Cat here
+    console.log("Generic error:", err.message);
   }
-}
+}`}
+      </CodeBlock>
 
-// Discriminated unions — the most powerful narrowing technique
-type Shape =
-  | { kind: "circle";    radius: number }
+      <h3>in operator narrowing</h3>
+      <CodeBlock language="typescript" title="'in' operator narrowing">
+{`type Fish = { swim: () => void };
+type Bird = { fly: () => void };
+
+function move(animal: Fish | Bird) {
+  if ("swim" in animal) {
+    animal.swim();
+  } else {
+    animal.fly();
+  }
+}`}
+      </CodeBlock>
+
+      <h3>Discriminated unions</h3>
+      <p>
+        The most powerful narrowing pattern. Add a literal &quot;tag&quot; field to each
+        variant, then switch on it.
+      </p>
+      <CodeBlock language="typescript" title="Discriminated unions">
+{`type Shape =
+  | { kind: "circle"; radius: number }
   | { kind: "rectangle"; width: number; height: number }
-  | { kind: "triangle";  base: number; height: number };
+  | { kind: "triangle"; base: number; height: number };
 
 function area(shape: Shape): number {
   switch (shape.kind) {
     case "circle":    return Math.PI * shape.radius ** 2;
     case "rectangle": return shape.width * shape.height;
     case "triangle":  return 0.5 * shape.base * shape.height;
-    // TypeScript knows all cases are handled — no default needed
+    default:
+      const _check: never = shape; // Error if a variant is unhandled
+      return _check;
   }
 }`}
       </CodeBlock>
 
-      <h2>Intersection Types</h2>
-      <p>
-        An intersection type (<code>A & B</code>) means "this value must satisfy both A AND B simultaneously". It
-        combines multiple types into one.
-      </p>
-
-      <CodeBlock language="typescript" title="Intersection Types">
-{`// Basic intersection: must have ALL properties from both
-type Named = { name: string };
-type Aged  = { age: number };
-type Person = Named & Aged;
-
-const alice: Person = { name: "Alice", age: 30 };  // ✓ must have both
-const invalid: Person = { name: "Bob" };  // Error: missing 'age'
-
-// Practical use: mixing in capabilities
-interface Serializable {
-  toJSON(): string;
-  fromJSON(json: string): void;
+      <h3>Custom type guard functions</h3>
+      <CodeBlock language="typescript" title="Custom type guards with 'is'">
+{`// The return type 'animal is Cat' is the type predicate
+function isCat(animal: Cat | Dog): animal is Cat {
+  return "meow" in animal;
 }
 
-interface Auditable {
-  createdAt: Date;
-  updatedAt: Date;
-  createdBy: string;
+function interact(animal: Cat | Dog) {
+  if (isCat(animal)) {
+    animal.purr();  // narrowed to Cat
+  } else {
+    animal.fetch(); // narrowed to Dog
+  }
 }
 
-// A User that is both serializable and auditable
-type AuditableUser = User & Serializable & Auditable;
+// Practical: type-safe array filtering
+type AdminUser = { role: "admin"; permissions: string[] };
+type BasicUser = { role: "basic" };
+type User = AdminUser | BasicUser;
 
-// Intersection with generics — very common pattern
-type WithId<T> = T & { id: number };
-type WithTimestamps<T> = T & { createdAt: Date; updatedAt: Date };
-
-interface CreateUserInput { name: string; email: string; }
-type User = WithId<WithTimestamps<CreateUserInput>>;
-// User has: id, name, email, createdAt, updatedAt
-
-// Intersection of functions (less common but valid)
-type StringToString = (s: string) => string;
-type NumberToNumber = (n: number) => number;
-// Intersection of function types creates an overloaded function type`}
+function isAdmin(user: User): user is AdminUser {
+  return user.role === "admin";
+}
+const admins: AdminUser[] = users.filter(isAdmin); // correctly typed!`}
       </CodeBlock>
 
-      <h2>any, unknown, and never</h2>
+      <h3>Truthiness narrowing</h3>
+      <CodeBlock language="typescript" title="Truthiness narrowing">
+{`function printName(name: string | null | undefined) {
+  if (name) {
+    console.log(name.toUpperCase()); // name is string
+  }
+}
 
-      <InfoBox variant="warning" title="The Three Special Types: Know When to Use Each">
-        <p><strong>any</strong> — opts out of all type checking. Avoid it. Anything you assign to any, and anything you try to do with any, TypeScript silently accepts. It's the escape hatch of last resort.</p>
-        <p><strong>unknown</strong> — the type-safe alternative to any. Like any, it can hold any value. Unlike any, TypeScript won't let you call methods or access properties on an unknown value without first proving what type it is. Use unknown for values you genuinely don't know the type of (API responses, catch clauses, dynamic data).</p>
-        <p><strong>never</strong> — a value that can never occur. A function that always throws has return type never. The bottom of a conditional type has type never. Use never for exhaustiveness checking.</p>
+// Caution: 0 and "" are falsy too — use explicit null checks for numbers
+function processValue(val: string | number | null) {
+  if (val !== null && val !== undefined) {
+    console.log(val); // val is string | number, including 0 and ""
+  }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Truthiness traps">
+        <p>
+          Truthiness narrowing excludes all falsy values: <code>0</code>, <code>&quot;&quot;</code>,
+          <code>null</code>, <code>undefined</code>. If your value could be <code>0</code> or empty
+          string, use explicit <code>!== null</code> checks.
+        </p>
       </InfoBox>
 
-      <CodeBlock language="typescript" title="any vs unknown vs never in Practice">
-{`// ─── any: avoid ────────────────────────────────────────────────────────────
-let data: any = fetchData();
-data.anyMethod();           // No error — TypeScript trusts you blindly
-data.nonExistentProp.foo;  // No error — will crash at runtime
-const num: number = data;  // No error — type safety abandoned
+      {/* ── any vs unknown vs never ── */}
+      <h2>any vs unknown vs never</h2>
+      <p>
+        These three types sit at the extremes of TypeScript&apos;s type system.
+      </p>
 
-// ─── unknown: use for untrusted data ───────────────────────────────────────
-let safeData: unknown = fetchData();
-safeData.anyMethod();           // Error! Must narrow first
-safeData.nonExistentProp;       // Error! Must narrow first
-const num2: number = safeData;  // Error! Must narrow first
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid #555' }}>
+            <th style={{ textAlign: 'left', padding: '0.5rem' }}>Type</th>
+            <th style={{ textAlign: 'left', padding: '0.5rem' }}>Assignability</th>
+            <th style={{ textAlign: 'left', padding: '0.5rem' }}>Use when</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom: '1px solid #444' }}>
+            <td style={{ padding: '0.5rem' }}><code>any</code></td>
+            <td style={{ padding: '0.5rem' }}>Everything to/from it, unchecked</td>
+            <td style={{ padding: '0.5rem' }}>JS migration, third-party escape hatch</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid #444' }}>
+            <td style={{ padding: '0.5rem' }}><code>unknown</code></td>
+            <td style={{ padding: '0.5rem' }}>Everything to it, must narrow to use</td>
+            <td style={{ padding: '0.5rem' }}>Untrusted sources, safe any alternative</td>
+          </tr>
+          <tr>
+            <td style={{ padding: '0.5rem' }}><code>never</code></td>
+            <td style={{ padding: '0.5rem' }}>Bottom type, nothing assigns to it</td>
+            <td style={{ padding: '0.5rem' }}>Exhaustiveness checks, impossible values</td>
+          </tr>
+        </tbody>
+      </table>
 
-// You MUST prove the type before using it:
-if (typeof safeData === "string") {
-  safeData.toUpperCase();  // ✓ OK — TypeScript knows it's string here
+      <CodeBlock language="typescript" title="any — the escape hatch">
+{`let danger: any = "hello";
+danger.nonExistentMethod(); // No error at compile time — crash at runtime!
+danger = 42;
+danger = { foo: "bar" };
+// any disables ALL type checking`}
+      </CodeBlock>
+
+      <CodeBlock language="typescript" title="unknown — the safe alternative">
+{`let safe: unknown = "hello";
+// safe.toUpperCase(); // Error: Object is of type 'unknown'
+
+// Must narrow first
+if (typeof safe === "string") {
+  console.log(safe.toUpperCase()); // OK
 }
 
-// Type guard for complex narrowing:
-function isUser(val: unknown): val is User {
-  return (
-    typeof val === "object" &&
-    val !== null &&
-    "id" in val &&
-    "name" in val &&
-    typeof (val as any).id === "number" &&
-    typeof (val as any).name === "string"
-  );
+// Practical: parsing JSON safely
+function parseJSON(raw: string): unknown {
+  return JSON.parse(raw);
+}
+const data = parseJSON('{"name":"Alice"}');
+// data.name; // Error — must narrow first`}
+      </CodeBlock>
+
+      <CodeBlock language="typescript" title="never — the impossible type">
+{`// Functions that never return
+function throwError(msg: string): never {
+  throw new Error(msg);
 }
 
-// Use in catch clauses (TypeScript 4.4+ default with useUnknownInCatchVariables):
-try {
-  await fetchUser(id);
-} catch (error) {
-  // error is unknown — must narrow
-  if (error instanceof Error) {
-    console.error(error.message);  // ✓ OK
-  }
-}
-
-// ─── never: exhaustiveness and impossible states ────────────────────────────
-// Functions that never return:
-function throwError(message: string): never {
-  throw new Error(message);
-}
-
-function infiniteLoop(): never {
-  while (true) { /* ... */ }
-}
-
-// Exhaustiveness checking:
+// Exhaustiveness checking
 type Color = "red" | "green" | "blue";
 
-function assertNever(x: never): never {
-  throw new Error("Unhandled case: " + x);
-}
-
-function describeColor(color: Color): string {
+function toHex(color: Color): string {
   switch (color) {
-    case "red":   return "warm";
-    case "green": return "natural";
-    case "blue":  return "cool";
-    default: return assertNever(color);
-    // If you add "purple" to Color and forget to handle it here,
-    // TypeScript gives a compile error: "purple" is not assignable to never
+    case "red":   return "#ff0000";
+    case "green": return "#00ff00";
+    case "blue":  return "#0000ff";
+    default:
+      const _exhaustive: never = color; // Errors if a variant is unhandled
+      return _exhaustive;
   }
 }`}
       </CodeBlock>
 
-      <h2>Tuples and Enums</h2>
+      <InfoBox variant="danger" title="Ban any from production code">
+        <p>
+          Enable <code>noImplicitAny</code> (on by default with <code>strict: true</code>).
+          Every <code>any</code> is a hole in your type safety. Prefer <code>unknown</code> and
+          narrow explicitly.
+        </p>
+      </InfoBox>
 
-      <CodeBlock language="typescript" title="Tuples, Enums, and as const Objects">
-{`// ─── TUPLES: fixed-length arrays with known types at each position ──────────
-type Pair = [string, number];
-const alice: Pair = ["Alice", 30];  // ✓ OK
-const bad: Pair = [30, "Alice"];    // Error: wrong order
+      {/* ── Type Assertions ── */}
+      <h2>Type Assertions</h2>
+      <CodeBlock language="typescript" title="Type assertions">
+{`// 'as' syntax (preferred in JSX/TSX)
+const input = document.getElementById("name") as HTMLInputElement;
+console.log(input.value);
 
-// Named tuple elements (TypeScript 4.0+) — much clearer
-type NameAge = [name: string, age: number];
-const [name, age] = alice;   // destructuring works
-
-// Tuple as function return (multiple values without object overhead)
-function divmod(a: number, b: number): [quotient: number, remainder: number] {
-  return [Math.floor(a / b), a % b];
-}
-const [q, r] = divmod(17, 5);  // q = 3, r = 2
-
-// Optional tuple elements
-type OptionalPair = [string, number?];
-
-// Rest elements in tuples
-type StringsAndNumber = [...string[], number];
-
-// ─── ENUMS: named constants (use sparingly) ──────────────────────────────────
-enum Direction {
-  North = "NORTH",
-  South = "SOUTH",
-  East  = "EAST",
-  West  = "WEST",
-}
-
-// Numeric enums (auto-increment from 0)
-enum StatusCode {
-  OK = 200,
-  Created = 201,
-  BadRequest = 400,
-  NotFound = 404,
-}
-
-// const enums — inlined at compile time, no runtime object generated
-const enum LogLevel { Debug, Info, Warn, Error }
-const level = LogLevel.Warn;  // compiles to: const level = 2;
-
-// ─── AS CONST OBJECTS: preferred over enums ──────────────────────────────────
-// More flexible, works with tree-shaking, debugger-friendly
-const DIRECTION = {
-  North: "NORTH",
-  South: "SOUTH",
-  East:  "EAST",
-  West:  "WEST",
-} as const;
-
-// Extract the union type of values:
-type Direction2 = typeof DIRECTION[keyof typeof DIRECTION];
-// "NORTH" | "SOUTH" | "EAST" | "WEST"
-
-// Why as const over enum?
-// 1. No special runtime object — enums generate an object + reverse mapping
-// 2. Works naturally with JSON serialization
-// 3. Intellisense shows actual values, not enum names
-// 4. Can use in both .ts and .js files (enums are TypeScript-only)
-
-const STATUS = { Pending: "pending", Active: "active", Deleted: "deleted" } as const;
-type Status = typeof STATUS[keyof typeof STATUS];  // "pending" | "active" | "deleted"`}
+// Double assertion via unknown — absolute last resort
+const mystery: string = "42";
+const num = (mystery as unknown) as number; // compiles, but nonsensical`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Assertions are not casts">
+        <p>
+          Unlike Java/C# casts, <code>x as number</code> performs zero runtime conversion.
+          If the runtime value doesn&apos;t match, you get a silent bug. Prefer type guards.
+        </p>
+      </InfoBox>
+
+      {/* ── Non-null Assertion ── */}
+      <h2>Non-null Assertion</h2>
+      <CodeBlock language="typescript" title="Non-null assertion operator">
+{`// The ! postfix removes null | undefined without a runtime check
+const button = document.getElementById("submit")!;
+
+// Prefer explicit checks over ! in application code:
+const user = getUser("123");
+if (user) {
+  console.log(user.name); // safe, no assertion needed
+}`}
+      </CodeBlock>
+
+      {/* ── const Assertions ── */}
+      <h2>const Assertions</h2>
+      <CodeBlock language="typescript" title="as const in practice">
+{`// Without as const — types are widened
+const config = { endpoint: "/api/v1", retries: 3 };
+// config.endpoint is string, config.retries is number
+
+// With as const — literal and readonly
+const configLocked = { endpoint: "/api/v1", retries: 3 } as const;
+// configLocked.endpoint is "/api/v1", configLocked.retries is 3
+
+// Arrays become readonly tuples
+const methods = ["GET", "POST", "PUT"] as const;
+// type: readonly ["GET", "POST", "PUT"]
+
+// Derive union types from const objects
+const STATUS = {
+  Active: "ACTIVE",
+  Inactive: "INACTIVE",
+  Pending: "PENDING",
+} as const;
+
+type StatusValue = typeof STATUS[keyof typeof STATUS];
+// StatusValue = "ACTIVE" | "INACTIVE" | "PENDING"`}
+      </CodeBlock>
+
+      {/* ── Enums ── */}
+      <h2>Enums</h2>
+      <p>
+        TypeScript enums emit runtime code. They work, but the community prefers alternatives.
+      </p>
+      <CodeBlock language="typescript" title="Numeric and string enums">
+{`// Numeric enum — auto-increments from 0
+enum Direction { Up, Down, Left, Right }
+
+// String enum — explicit values required
+enum LogLevel {
+  Debug = "DEBUG", Info = "INFO",
+  Warn = "WARN",  Error = "ERROR",
+}
+
+// Reverse mapping (numeric only)
+console.log(Direction[0]); // "Up"
+
+// const enum — inlined at compile time, no runtime object
+const enum Feature { DarkMode = "DARK_MODE", Beta = "BETA" }
+// let f = Feature.DarkMode; // compiles to: let f = "DARK_MODE";`}
+      </CodeBlock>
+
+      <CodeBlock language="typescript" title="Preferred alternative: union types + as const">
+{`const LogLevel = {
+  Debug: "DEBUG", Info: "INFO",
+  Warn: "WARN",  Error: "ERROR",
+} as const;
+
+type LogLevel = typeof LogLevel[keyof typeof LogLevel];
+// LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR"
+
+// Benefits: tree-shakeable, works with isolatedModules,
+// no special syntax, values are plain strings
+
+function log(level: LogLevel, message: string) {
+  console.log("[" + level + "]", message);
+}
+
+log(LogLevel.Info, "Server started"); // OK
+log("INFO", "Also works");           // OK
+// log("TRACE", "Nope");             // Error`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Skip enums — use union types">
+        <p>
+          Prefer the <code>as const</code> object + union type pattern. It produces
+          no runtime artifacts, plays well with bundlers, and works in both
+          <code> .ts</code> and <code>.js</code> files.
+        </p>
+      </InfoBox>
+
+      {/* ── Interactive Challenges ── */}
+      <h2>Test Your Knowledge</h2>
+
       <InteractiveChallenge
-        question={"What is the difference between unknown and any in TypeScript?"}
+        question={"What is the type of 'value' inside the if block?"}
+        code={`function process(input: string | number | boolean) {\n  if (typeof input === "string") {\n    // What is 'input' here?\n    console.log(input);\n  }\n}`}
+        language="typescript"
         options={[
-          "They are identical — both accept any value and allow any operation",
-          "unknown requires you to narrow the type before using it; any skips all type checking entirely",
-          "unknown is only for objects; any is for primitives",
-          "any is the newer, safer version that replaced unknown"
+          "string | number | boolean",
+          "string",
+          "string | number",
+          "unknown",
         ]}
         correctIndex={1}
-        explanation="Both unknown and any can hold any value. The critical difference is what TypeScript lets you do with that value. With any, TypeScript trusts you completely — you can call any method, access any property, assign it to any type, all without error. With unknown, TypeScript requires proof: you must use typeof, instanceof, a type guard, or an explicit assertion before accessing the value. Use unknown for API responses, catch clause variables, and dynamic data. Reserve any for genuinely unavoidable escape hatches."
+        explanation={"typeof narrowing reduces the union to only the branch that matches. Inside the if block, TypeScript knows input passed a typeof === 'string' check, so it narrows to just 'string'."}
       />
 
       <InteractiveChallenge
-        question="When should you prefer an as const object over a TypeScript enum?"
+        question={"Which type should you use for a value from an untrusted source like JSON.parse?"}
+        code={`const data = JSON.parse(rawInput);\n// What should 'data' be typed as?`}
+        language="typescript"
         options={[
-          "Never — enums are always the better choice for named constants",
-          "Always — as const objects are more flexible, tree-shakeable, and work in both JS and TS files",
-          "Only when the values are strings (enums are better for numbers)",
-          "Only in React components, not in utility files"
+          "any — so you can use it immediately",
+          "unknown — narrow it before use",
+          "never — because we don't know the shape",
+          "object — because JSON always returns objects",
         ]}
         correctIndex={1}
-        explanation="as const objects are generally preferred over enums for several reasons: they generate no extra runtime code (enums create an object with reverse mappings), they work identically in JavaScript files (enums are TypeScript-only syntax), they serialize to JSON naturally, debuggers show actual values instead of enum names, and they are simpler to understand. The only advantage enums have is slightly nicer syntax. Most TypeScript style guides now recommend as const objects."
+        explanation={"unknown is the correct choice for untrusted data. It forces you to narrow the type before accessing properties, preventing runtime errors. any would skip all checks, never represents impossible values, and object is too specific since JSON.parse can return primitives and arrays too."}
+      />
+
+      <InteractiveChallenge
+        question={"What happens if you add a new variant to a discriminated union but forget to handle it?"}
+        code={`type Shape =\n  | { kind: "circle"; radius: number }\n  | { kind: "square"; side: number }\n  | { kind: "triangle"; base: number };\n\nfunction area(s: Shape): number {\n  switch (s.kind) {\n    case "circle": return Math.PI * s.radius ** 2;\n    case "square": return s.side ** 2;\n    default:\n      const _check: never = s;\n      return _check;\n  }\n}`}
+        language="typescript"
+        options={[
+          "Runtime error only",
+          "Compile error — 'triangle' is not assignable to never",
+          "No error — default handles it",
+          "Warning only",
+        ]}
+        correctIndex={1}
+        explanation={"The never type in the default branch acts as an exhaustiveness check. The unhandled 'triangle' variant falls to default where TypeScript tries to assign it to never — which fails at compile time, catching the missing case."}
       />
     </LessonLayout>
   );

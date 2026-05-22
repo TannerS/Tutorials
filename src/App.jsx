@@ -94,7 +94,7 @@ import ApiErrors from './pages/apidesign/Errors'
 import ApiVersioning from './pages/apidesign/Versioning'
 import ApiAdvanced from './pages/apidesign/Advanced'
 
-// Auth
+// Auth & Security
 import AuthEncryption from './pages/auth/Encryption'
 import AuthTls from './pages/auth/Tls'
 import AuthCookies from './pages/auth/Cookies'
@@ -117,7 +117,7 @@ import RCState from './pages/react-cheatsheet/State'
 import RCStyling from './pages/react-cheatsheet/Styling'
 import RCRecipes from './pages/react-cheatsheet/Recipes'
 
-// Testing
+// Testing Strategies
 import TestIntro from './pages/testing/Intro'
 import TestUnit from './pages/testing/Unit'
 import TestMocking from './pages/testing/Mocking'
@@ -125,7 +125,7 @@ import TestIntegration from './pages/testing/Integration'
 import TestE2e from './pages/testing/E2e'
 import TestBestPractices from './pages/testing/BestPractices'
 
-// DevOps
+// Git & DevOps
 import DevGit from './pages/devops/Git'
 import DevBranching from './pages/devops/Branching'
 import DevCicd from './pages/devops/Cicd'
@@ -154,7 +154,7 @@ import TsBestPractices from './pages/typescript/BestPractices'
 import TsNewProject from './pages/typescript/NewProject'
 import TsTsconfig from './pages/typescript/Tsconfig'
 
-// React Router
+// React Router v7
 import RRIntro from './pages/react-router/Intro'
 import RRNested from './pages/react-router/Nested'
 import RRData from './pages/react-router/Data'
@@ -215,7 +215,7 @@ import NpmLockfile from './pages/npm-deep-dive/Lockfile'
 import NpmScripts from './pages/npm-deep-dive/Scripts'
 import NpmSecurity from './pages/npm-deep-dive/Security'
 
-// npm Packages
+// Building npm Packages
 import NpkgAnatomy from './pages/npm-packages/Anatomy'
 import NpkgPackageJson from './pages/npm-packages/PackageJson'
 import NpkgModules from './pages/npm-packages/Modules'
@@ -233,28 +233,40 @@ import WpAdvanced from './pages/webpack/Advanced'
 function NotFound() {
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', height: '100vh', gap: '1rem',
-      color: 'var(--text-secondary)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100vh',
+      background: 'var(--bg-primary)',
+      color: 'var(--text-primary)',
+      textAlign: 'center',
+      padding: '2rem',
     }}>
-      <span style={{ fontSize: '4rem' }}>🔍</span>
-      <h1 style={{ color: 'var(--text-primary)', fontSize: '1.5rem' }}>404 - Page Not Found</h1>
-      <p>The page you are looking for does not exist.</p>
+      <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔍</div>
+      <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>404 — Page Not Found</h1>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+        The page you're looking for doesn't exist or has been moved.
+      </p>
       <Link to="/" style={{
-        padding: '0.5rem 1.5rem', border: '1px solid var(--accent-blue)',
-        borderRadius: '8px', color: 'var(--accent-blue)',
-        textDecoration: 'none', transition: 'all 0.2s',
-      }}>← Back to Home</Link>
+        color: '#5b9cf6',
+        padding: '0.6rem 1.5rem',
+        border: '1px solid #5b9cf6',
+        borderRadius: '8px',
+        textDecoration: 'none',
+        fontSize: '0.9rem',
+      }}>
+        ← Back to Home
+      </Link>
     </div>
   );
 }
 
-export default function App() {
+function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={null} />
-
         {/* Java */}
         <Route path="java/intro" element={<JavaIntro />} />
         <Route path="java/syntax" element={<JavaSyntax />} />
@@ -266,7 +278,6 @@ export default function App() {
         <Route path="java/concurrency" element={<JavaConcurrency />} />
         <Route path="java/io" element={<JavaIo />} />
         <Route path="java/advanced" element={<JavaAdvanced />} />
-
         {/* Spring Boot */}
         <Route path="springboot/intro" element={<SpringIntro />} />
         <Route path="springboot/setup" element={<SpringSetup />} />
@@ -278,7 +289,6 @@ export default function App() {
         <Route path="springboot/config" element={<SpringConfig />} />
         <Route path="springboot/error" element={<SpringError />} />
         <Route path="springboot/advanced" element={<SpringAdvanced />} />
-
         {/* React 19 */}
         <Route path="react19/lifecycle" element={<ReactLifecycle />} />
         <Route path="react19/lifecycle-sim" element={<ReactLifecycleSim />} />
@@ -293,7 +303,6 @@ export default function App() {
         <Route path="react19/typescript" element={<ReactTypescript />} />
         <Route path="react19/build-toolchain" element={<ReactBuildToolchain />} />
         <Route path="react19/cheat-sheet" element={<ReactCheatSheet />} />
-
         {/* SQL */}
         <Route path="sql/quickstart" element={<SqlQuickstart />} />
         <Route path="sql/joins" element={<SqlJoins />} />
@@ -303,7 +312,6 @@ export default function App() {
         <Route path="sql/transactions" element={<SqlTransactions />} />
         <Route path="sql/cte" element={<SqlCte />} />
         <Route path="sql/advanced" element={<SqlAdvanced />} />
-
         {/* SOLID */}
         <Route path="solid/intro" element={<SolidIntro />} />
         <Route path="solid/srp" element={<SolidSrp />} />
@@ -311,7 +319,6 @@ export default function App() {
         <Route path="solid/lsp" element={<SolidLsp />} />
         <Route path="solid/isp" element={<SolidIsp />} />
         <Route path="solid/dip" element={<SolidDip />} />
-
         {/* Design Patterns */}
         <Route path="patterns/intro" element={<PatternsIntro />} />
         <Route path="patterns/singleton" element={<PatternsSingleton />} />
@@ -321,7 +328,6 @@ export default function App() {
         <Route path="patterns/composite" element={<PatternsComposite />} />
         <Route path="patterns/proxy" element={<PatternsProxy />} />
         <Route path="patterns/realworld" element={<PatternsRealworld />} />
-
         {/* React Anti-Patterns */}
         <Route path="react-antipatterns/intro" element={<AntiIntro />} />
         <Route path="react-antipatterns/state" element={<AntiState />} />
@@ -329,7 +335,6 @@ export default function App() {
         <Route path="react-antipatterns/performance" element={<AntiPerformance />} />
         <Route path="react-antipatterns/components" element={<AntiComponents />} />
         <Route path="react-antipatterns/bestpractices" element={<AntiBestPractices />} />
-
         {/* Microservices */}
         <Route path="microservices/intro" element={<MicroIntro />} />
         <Route path="microservices/patterns" element={<MicroPatterns />} />
@@ -339,7 +344,6 @@ export default function App() {
         <Route path="microservices/events" element={<MicroEvents />} />
         <Route path="microservices/containers" element={<MicroContainers />} />
         <Route path="microservices/migration" element={<MicroMigration />} />
-
         {/* API Design */}
         <Route path="apidesign/intro" element={<ApiIntro />} />
         <Route path="apidesign/methods" element={<ApiMethods />} />
@@ -347,8 +351,7 @@ export default function App() {
         <Route path="apidesign/errors" element={<ApiErrors />} />
         <Route path="apidesign/versioning" element={<ApiVersioning />} />
         <Route path="apidesign/advanced" element={<ApiAdvanced />} />
-
-        {/* Auth */}
+        {/* Auth & Security */}
         <Route path="auth/encryption" element={<AuthEncryption />} />
         <Route path="auth/tls" element={<AuthTls />} />
         <Route path="auth/cookies" element={<AuthCookies />} />
@@ -356,37 +359,32 @@ export default function App() {
         <Route path="auth/oauth" element={<AuthOauth />} />
         <Route path="auth/authz" element={<AuthAuthz />} />
         <Route path="auth/security" element={<AuthSecurity />} />
-
         {/* Java Cheat Sheet */}
         <Route path="java-cheatsheet/syntax" element={<JCSyntax />} />
         <Route path="java-cheatsheet/collections" element={<JCCollections />} />
         <Route path="java-cheatsheet/streams" element={<JCStreams />} />
         <Route path="java-cheatsheet/concurrency" element={<JCConcurrency />} />
         <Route path="java-cheatsheet/annotations" element={<JCAnnotations />} />
-
         {/* React Cheat Sheet */}
         <Route path="react-cheatsheet/hooks" element={<RCHooks />} />
         <Route path="react-cheatsheet/patterns" element={<RCPatterns />} />
         <Route path="react-cheatsheet/state" element={<RCState />} />
         <Route path="react-cheatsheet/styling" element={<RCStyling />} />
         <Route path="react-cheatsheet/recipes" element={<RCRecipes />} />
-
-        {/* Testing */}
+        {/* Testing Strategies */}
         <Route path="testing/intro" element={<TestIntro />} />
         <Route path="testing/unit" element={<TestUnit />} />
         <Route path="testing/mocking" element={<TestMocking />} />
         <Route path="testing/integration" element={<TestIntegration />} />
         <Route path="testing/e2e" element={<TestE2e />} />
         <Route path="testing/bestpractices" element={<TestBestPractices />} />
-
-        {/* DevOps */}
+        {/* Git & DevOps */}
         <Route path="devops/git" element={<DevGit />} />
         <Route path="devops/branching" element={<DevBranching />} />
         <Route path="devops/cicd" element={<DevCicd />} />
         <Route path="devops/docker" element={<DevDocker />} />
         <Route path="devops/cloud" element={<DevCloud />} />
         <Route path="devops/monitoring" element={<DevMonitoring />} />
-
         {/* System Design */}
         <Route path="systemdesign/intro" element={<SysIntro />} />
         <Route path="systemdesign/scaling" element={<SysScaling />} />
@@ -395,7 +393,6 @@ export default function App() {
         <Route path="systemdesign/distributed" element={<SysDistributed />} />
         <Route path="systemdesign/messaging" element={<SysMessaging />} />
         <Route path="systemdesign/interview" element={<SysInterview />} />
-
         {/* TypeScript */}
         <Route path="typescript/intro" element={<TsIntro />} />
         <Route path="typescript/types" element={<TsTypes />} />
@@ -407,8 +404,7 @@ export default function App() {
         <Route path="typescript/bestpractices" element={<TsBestPractices />} />
         <Route path="typescript/newproject" element={<TsNewProject />} />
         <Route path="typescript/tsconfig" element={<TsTsconfig />} />
-
-        {/* React Router */}
+        {/* React Router v7 */}
         <Route path="react-router/intro" element={<RRIntro />} />
         <Route path="react-router/nested" element={<RRNested />} />
         <Route path="react-router/data" element={<RRData />} />
@@ -417,21 +413,18 @@ export default function App() {
         <Route path="react-router/testing" element={<RRTesting />} />
         <Route path="react-router/fullapp" element={<RRFullapp />} />
         <Route path="react-router/migration" element={<RRMigration />} />
-
         {/* State Management */}
         <Route path="state-mgmt/intro" element={<SMIntro />} />
         <Route path="state-mgmt/redux" element={<SMRedux />} />
         <Route path="state-mgmt/zustand" element={<SMZustand />} />
         <Route path="state-mgmt/comparison" element={<SMComparison />} />
         <Route path="state-mgmt/patterns" element={<SMPatterns />} />
-
         {/* Accessibility */}
         <Route path="accessibility/intro" element={<A11yIntro />} />
         <Route path="accessibility/semantic" element={<A11ySemantic />} />
         <Route path="accessibility/aria" element={<A11yAria />} />
         <Route path="accessibility/keyboard" element={<A11yKeyboard />} />
         <Route path="accessibility/testing" element={<A11yTesting />} />
-
         {/* CSS Mastery */}
         <Route path="css-mastery/flexbox" element={<CSSFlexbox />} />
         <Route path="css-mastery/grid" element={<CSSGrid />} />
@@ -439,7 +432,6 @@ export default function App() {
         <Route path="css-mastery/animations" element={<CSSAnimations />} />
         <Route path="css-mastery/variables" element={<CSSVariables />} />
         <Route path="css-mastery/patterns" element={<CSSPatterns />} />
-
         {/* React Testing */}
         <Route path="react-testing/intro" element={<RTIntro />} />
         <Route path="react-testing/components" element={<RTComponents />} />
@@ -447,20 +439,17 @@ export default function App() {
         <Route path="react-testing/async" element={<RTAsync />} />
         <Route path="react-testing/forms" element={<RTForms />} />
         <Route path="react-testing/patterns" element={<RTPatterns />} />
-
         {/* Frontend Tooling */}
         <Route path="frontend-tooling/vite" element={<FTVite />} />
         <Route path="frontend-tooling/linting" element={<FTLinting />} />
         <Route path="frontend-tooling/packages" element={<FTPackages />} />
         <Route path="frontend-tooling/monorepos" element={<FTMonorepos />} />
         <Route path="frontend-tooling/performance" element={<FTPerformance />} />
-
         {/* Interview Prep */}
         <Route path="interview-prep/react" element={<IPReact />} />
         <Route path="interview-prep/typescript" element={<IPTypescript />} />
         <Route path="interview-prep/frontend" element={<IPFrontend />} />
         <Route path="interview-prep/coding" element={<IPCoding />} />
-
         {/* npm Deep Dive */}
         <Route path="npm-deep-dive/intro" element={<NpmIntro />} />
         <Route path="npm-deep-dive/resolution" element={<NpmResolution />} />
@@ -468,14 +457,12 @@ export default function App() {
         <Route path="npm-deep-dive/lockfile" element={<NpmLockfile />} />
         <Route path="npm-deep-dive/scripts" element={<NpmScripts />} />
         <Route path="npm-deep-dive/security" element={<NpmSecurity />} />
-
-        {/* npm Packages */}
+        {/* Building npm Packages */}
         <Route path="npm-packages/anatomy" element={<NpkgAnatomy />} />
         <Route path="npm-packages/package-json" element={<NpkgPackageJson />} />
         <Route path="npm-packages/modules" element={<NpkgModules />} />
         <Route path="npm-packages/publishing" element={<NpkgPublishing />} />
         <Route path="npm-packages/advanced" element={<NpkgAdvanced />} />
-
         {/* Webpack */}
         <Route path="webpack/intro" element={<WpIntro />} />
         <Route path="webpack/core" element={<WpCore />} />
@@ -483,9 +470,10 @@ export default function App() {
         <Route path="webpack/plugins" element={<WpPlugins />} />
         <Route path="webpack/devserver" element={<WpDevserver />} />
         <Route path="webpack/advanced" element={<WpAdvanced />} />
-
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )
 }
+
+export default App

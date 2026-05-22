@@ -4,7 +4,7 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function SolidIntro() {
+export default function Intro() {
   return (
     <LessonLayout
       title="SOLID Principles Overview"
@@ -13,239 +13,183 @@ export default function SolidIntro() {
       prev={null}
       next={{ path: '/solid/srp', label: 'Single Responsibility' }}
     >
-      <h2>Why SOLID?</h2>
+      <h2>What Are the SOLID Principles?</h2>
       <p>
-        SOLID is a set of five design principles that make object-oriented code maintainable,
-        flexible, and testable. Without them, code rots — it becomes harder to change over time.
-        SOLID describes the symptoms of that rot and how to avoid it.
+        SOLID is a mnemonic acronym introduced by Robert C. Martin (Uncle Bob)
+        that represents five fundamental design principles for writing
+        maintainable, flexible, and scalable object-oriented software. These
+        principles have become cornerstones of professional software
+        engineering.
       </p>
 
-      <FlowChart
-        title="SOLID at a Glance"
-        chart={"graph TD\n  A[SOLID] --> B[S - Single Responsibility]\n  A --> C[O - Open/Closed]\n  A --> D[L - Liskov Substitution]\n  A --> E[I - Interface Segregation]\n  A --> F[D - Dependency Inversion]\n  B --> G[One reason to change]\n  C --> H[Extend without modifying]\n  D --> I[Subtypes substitutable]\n  E --> J[No fat interfaces]\n  F --> K[Depend on abstractions]"}
-      />
-
-      <h2>The Four Symptoms of Bad Design</h2>
-
-      <CodeBlock language="java" title="Code Rot Symptoms">
-{`// RIGIDITY — one change requires many others
-// "Change the report format" touches 7 files because nothing is isolated
-
-// FRAGILITY — changes break unrelated things
-// Fix a payment bug → authentication breaks
-// Caused by hidden coupling between unrelated modules
-
-// IMMOBILITY — can't reuse code without copy-pasting
-// Email-sending logic buried inside OrderService
-// Can't use it in RegistrationService → copy-paste duplication
-
-// VISCOSITY — easier to do the wrong thing than the right thing
-// Clean solution: refactor first, then add feature (takes 4 hours)
-// Hacky solution: add another if-else (takes 30 minutes)
-// When viscosity is high, hacks accumulate and rot accelerates
-
-// Root cause of all four: HIGH COUPLING
-// Coupling = components depend on each other's implementation details
-// Low coupling = components depend on stable abstractions (interfaces)
-
-// SOLID addresses coupling:
-// SRP → one reason to change = fewer cascading changes
-// OCP → extend without modifying = existing code stays stable
-// LSP → substitutable types = polymorphism works reliably
-// ISP → focused interfaces = minimal unnecessary dependencies
-// DIP → abstractions not concretions = swap implementations freely`}
-      </CodeBlock>
-
-      <h2>Coupling vs Cohesion</h2>
-
-      <CodeBlock language="java" title="High Coupling (Bad) vs Low Coupling (Good)">
-{`// HIGH COUPLING — OrderService knows SMTP details (wrong abstraction level)
-public class OrderService {
-    public void placeOrder(Order order) {
-        orderRepo.save(order);
-
-        // EmailService's implementation leaks into OrderService
-        JavaMailSenderImpl sender = new JavaMailSenderImpl();
-        sender.setHost("smtp.gmail.com");
-        sender.setPort(587);
-        MimeMessage msg = sender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(msg);
-        helper.setTo(order.getEmail());
-        helper.setSubject("Order #" + order.getId() + " confirmed");
-        sender.send(msg);
-    }
-}
-// Problems: can't test without SMTP server, can't swap to SendGrid,
-// email logic is scattered across services
-
-// LOW COUPLING — depends on interface, not implementation
-public interface NotificationService {
-    void sendOrderConfirmation(Order order);
-}
-
-public class OrderService {
-    private final OrderRepository orderRepo;
-    private final NotificationService notifications;
-
-    public OrderService(OrderRepository repo, NotificationService notifications) {
-        this.orderRepo = repo;
-        this.notifications = notifications;
-    }
-
-    public void placeOrder(Order order) {
-        orderRepo.save(order);
-        notifications.sendOrderConfirmation(order);
-    }
-}
-
-// HIGH COHESION: each class has ONE clear purpose
-// LOW COUPLING: OrderService is unaware of SMTP, SendGrid, or Slack
-// TESTABLE: inject MockNotificationService in unit tests
-// FLEXIBLE: swap SmtpNotificationService → SendGridNotificationService freely`}
-      </CodeBlock>
-
-      <h2>SOLID One-Liners with Examples</h2>
-
-      <CodeBlock language="java" title="Each Principle in One Line">
-{`// S — Single Responsibility Principle
-// "A class should have only ONE reason to change."
-// Violation: UserService handles auth + profile updates + email sending
-// Fix:       AuthService, ProfileService, EmailService — separate classes
-
-// O — Open/Closed Principle
-// "Open for extension, closed for modification."
-// Violation: if (type == "PDF") ... else if (type == "CSV") ...
-// Fix:       interface Report { generate(); } → PdfReport, CsvReport
-
-// L — Liskov Substitution Principle
-// "Subtypes must be usable wherever their supertype is expected."
-// Violation: Square extends Rectangle — setWidth(5); setHeight(3); area != 15
-// Fix:       Shape interface, independent Square and Rectangle implementations
-
-// I — Interface Segregation Principle
-// "Clients should not depend on methods they don't use."
-// Violation: interface Worker { work(); eat(); sleep(); } — Robot can't eat()
-// Fix:       interface Workable { work(); } separate from interface Feedable
-
-// D — Dependency Inversion Principle
-// "Depend on abstractions, not on concretions."
-// Violation: OrderService creates new MySqlOrderRepository()
-// Fix:       OrderService depends on OrderRepository interface;
-//            MySqlOrderRepository implements OrderRepository (injected)`}
-      </CodeBlock>
-
-      <h2>Dependency Direction — The Key Insight</h2>
-
-      <CodeBlock language="java" title="Dependencies Should Point Inward">
-{`// WRONG: business logic depends on infrastructure
-package com.example.orders;
-import com.example.infrastructure.MySqlOrderRepository;  // BAD
-import javax.mail.JavaMailSender;                         // BAD
-import software.amazon.awssdk.services.s3.S3Client;       // BAD
-
-public class OrderService {
-    private MySqlOrderRepository repo;    // concrete DB class
-    private JavaMailSender mailer;        // concrete mail class
-    private S3Client storage;             // concrete AWS class
-}
-// Problem: business logic has AWS/MySQL/mail as compile dependencies
-// Can't test without real infrastructure
-// Can't swap MySQL for Postgres without changing business logic
-
-// CORRECT: infrastructure depends on business logic interfaces
-// business/OrderRepository.java (interface defined in business layer)
-public interface OrderRepository {
-    Order findById(Long id);
-    Order save(Order order);
-}
-
-// infrastructure/MySqlOrderRepository.java (lives in infrastructure layer)
-public class MySqlOrderRepository implements OrderRepository { ... }
-
-// business/OrderService.java (no infrastructure imports!)
-public class OrderService {
-    private final OrderRepository repo;  // depends on OWN interface
-
-    public OrderService(OrderRepository repo) {
-        this.repo = repo; // spring injects MySqlOrderRepository at runtime
-    }
-}
-
-// Clean Architecture arrows:
-// Infrastructure → Business Interfaces ← Business Logic
-// Infrastructure knows about business; business is unaware of infrastructure`}
-      </CodeBlock>
-
-      <InfoBox variant="note" title="SOLID + Design Patterns">
+      <InfoBox variant="info" title="Origin of SOLID">
         <p>
-          SOLID principles and design patterns are complementary. SOLID tells you <em>what
-          properties</em> good design has. Design patterns tell you <em>how</em> to achieve them.
-          The <strong>Strategy pattern</strong> achieves OCP.
-          The <strong>Repository pattern</strong> achieves DIP.
-          The <strong>Decorator pattern</strong> achieves SRP and OCP together.
-          Learn SOLID first — patterns become much easier to understand in context.
+          The SOLID principles were first compiled by Robert C. Martin in the
+          early 2000s, though the individual principles were formulated over
+          the preceding decades. Michael Feathers coined the SOLID mnemonic.
+          These principles guide developers toward designs that are easier to
+          understand, change, and test.
         </p>
       </InfoBox>
 
-      <CodeBlock language="java" title="SOLID in Practice — Spring Boot">
-{`// Spring Boot applications naturally follow SOLID through:
+      <h2>The Five Principles</h2>
 
-// S — @Service, @Repository, @Controller are separate concerns
-@Service public class OrderService { ... }
-@Repository public class OrderRepository { ... }
-
-// O — Spring uses @Bean configuration and polymorphism
-// Add a new PaymentProvider without modifying existing services
-
-// D — @Autowired injects interfaces, not concrete classes
-@Service
-public class OrderService {
-    private final OrderRepository orderRepo; // interface!
-    private final PaymentService paymentService; // interface!
-
-    public OrderService(OrderRepository orderRepo,
-                        PaymentService paymentService) {
-        this.orderRepo = orderRepo;
-        this.paymentService = paymentService;
-    }
-}
-// Spring resolves the concrete implementation at runtime
-// Test with @MockBean, production with real implementation
-
-// I — define focused interfaces
-public interface OrderQueryService {
-    Order findById(Long id);
-    Page<Order> findByUser(Long userId, Pageable pageable);
-}
-public interface OrderCommandService {
-    Order placeOrder(PlaceOrderRequest request);
-    void cancelOrder(Long orderId);
-}
-// Separate read and write interfaces — clients depend only on what they use`}
-      </CodeBlock>
-
-      <InteractiveChallenge
-        question="Which symptom of bad design occurs when changing one module unexpectedly breaks unrelated modules?"
-        options={[
-          "Rigidity — every change requires many other changes",
-          "Fragility — changes break unrelated things",
-          "Immobility — components can't be reused",
-          "Viscosity — the right way is harder than the wrong way"
-        ]}
-        correctIndex={1}
-        explanation="Fragility describes code where changes cause unexpected failures in unrelated areas — a result of hidden tight coupling. Rigidity is when a change requires many other changes (different symptom). Immobility is when you can't extract and reuse code. Viscosity is when hacks are easier than clean solutions. SOLID principles combat fragility by isolating responsibilities and reducing coupling."
+      <FlowChart
+        title="The SOLID Principles at a Glance"
+        chart={"graph TD\nS[S — Single Responsibility] --> GOAL[Clean, Maintainable Code]\nO[O — Open/Closed] --> GOAL\nL[L — Liskov Substitution] --> GOAL\nI[I — Interface Segregation] --> GOAL\nD[D — Dependency Inversion] --> GOAL\nGOAL --> BENEFITS[Flexible & Testable Systems]"}
       />
 
+      <h3>S — Single Responsibility Principle (SRP)</h3>
+      <p>
+        A class should have only one reason to change. Each class should
+        encapsulate a single responsibility or concern.
+      </p>
+
+      <h3>O — Open/Closed Principle (OCP)</h3>
+      <p>
+        Software entities should be open for extension but closed for
+        modification. You should be able to add new behavior without changing
+        existing code.
+      </p>
+
+      <h3>L — Liskov Substitution Principle (LSP)</h3>
+      <p>
+        Subtypes must be substitutable for their base types without altering
+        the correctness of the program.
+      </p>
+
+      <h3>I — Interface Segregation Principle (ISP)</h3>
+      <p>
+        Clients should not be forced to depend on interfaces they do not use.
+        Prefer many small, focused interfaces over one large interface.
+      </p>
+
+      <h3>D — Dependency Inversion Principle (DIP)</h3>
+      <p>
+        High-level modules should not depend on low-level modules. Both should
+        depend on abstractions. Abstractions should not depend on details;
+        details should depend on abstractions.
+      </p>
+
+      <h2>Why SOLID Matters</h2>
+      <p>
+        Without guiding principles, codebases become tangled and fragile over
+        time. Here is a typical example of code that violates multiple SOLID
+        principles at once:
+      </p>
+
+      <CodeBlock language="java" title="GodClass.java">
+{`// BAD — This class does everything: validation, persistence,
+// notification, and formatting. It violates SRP, OCP, and DIP.
+public class OrderProcessor {
+    public void processOrder(Order order) {
+        // Validate
+        if (order.getItems().isEmpty()) {
+            throw new RuntimeException("No items");
+        }
+
+        // Calculate total (hard-coded tax logic)
+        double total = 0;
+        for (Item item : order.getItems()) {
+            total += item.getPrice();
+        }
+        if (order.getCountry().equals("US")) {
+            total *= 1.07; // US tax
+        } else if (order.getCountry().equals("UK")) {
+            total *= 1.20; // UK VAT
+        }
+
+        // Save to database (direct JDBC)
+        Connection conn = DriverManager.getConnection("jdbc:mysql://...");
+        PreparedStatement ps = conn.prepareStatement(
+            "INSERT INTO orders VALUES (?, ?)");
+        ps.setInt(1, order.getId());
+        ps.setDouble(2, total);
+        ps.executeUpdate();
+
+        // Send email (hard-coded SMTP)
+        Transport.send(createMimeMessage(order));
+    }
+}`}
+      </CodeBlock>
+
+      <p>
+        Now compare that with a design that respects the SOLID principles.
+        Each concern lives in its own class, dependencies are injected, and
+        the system is open for extension:
+      </p>
+
+      <CodeBlock language="java" title="SolidOrderService.java">
+{`// GOOD — Responsibilities are separated and dependencies are abstracted.
+public class OrderService {
+    private final OrderValidator validator;
+    private final TaxCalculator taxCalculator;
+    private final OrderRepository repository;
+    private final NotificationService notifier;
+
+    public OrderService(OrderValidator validator,
+                        TaxCalculator taxCalculator,
+                        OrderRepository repository,
+                        NotificationService notifier) {
+        this.validator = validator;
+        this.taxCalculator = taxCalculator;
+        this.repository = repository;
+        this.notifier = notifier;
+    }
+
+    public void processOrder(Order order) {
+        validator.validate(order);
+        double total = taxCalculator.calculate(order);
+        repository.save(order, total);
+        notifier.notify(order);
+    }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="Abstractions.java">
+{`// Supporting interfaces — each defines a single responsibility.
+public interface OrderValidator {
+    void validate(Order order);
+}
+
+public interface TaxCalculator {
+    double calculate(Order order);
+}
+
+public interface OrderRepository {
+    void save(Order order, double total);
+}
+
+public interface NotificationService {
+    void notify(Order order);
+}`}
+      </CodeBlock>
+
+      <h2>How the Principles Relate</h2>
+
+      <FlowChart
+        title="How SOLID Principles Reinforce Each Other"
+        chart={"graph LR\nSRP[SRP: Focused Classes] --> OCP[OCP: Extensible Design]\nOCP --> LSP[LSP: Safe Substitution]\nLSP --> ISP[ISP: Lean Interfaces]\nISP --> DIP[DIP: Depend on Abstractions]\nDIP -->|enables| SRP"}
+      />
+
+      <p>
+        The principles are not isolated rules — they reinforce one another.
+        Following SRP makes classes small enough that OCP becomes natural.
+        LSP ensures your polymorphic extensions actually work. ISP keeps
+        interfaces focused so that DIP is practical. Together they form a
+        virtuous cycle.
+      </p>
+
       <InteractiveChallenge
-        question="What is the core benefit of depending on interfaces rather than concrete classes?"
+        question="What does the 'S' in SOLID stand for?"
         options={[
-          "Interfaces execute faster than concrete classes at runtime",
-          "You can swap implementations without modifying the dependent class",
-          "Interfaces automatically add caching to method calls",
-          "Concrete classes cannot be unit tested directly"
+          "Separation of Concerns",
+          "Single Responsibility Principle",
+          "Simple Design Principle",
+          "Structured Responsibility Pattern"
         ]}
         correctIndex={1}
-        explanation="Depending on interfaces (Dependency Inversion Principle) means the dependent class only knows about the contract (interface), not the implementation. This enables: (1) testing — inject a mock implementation in unit tests without real infrastructure, (2) flexibility — swap MySQL for PostgreSQL by changing a single Spring bean, (3) runtime polymorphism — different implementations per environment or configuration. Concrete dependencies lock you in; interface dependencies open your options."
+        explanation="The 'S' stands for the Single Responsibility Principle — a class should have only one reason to change. While 'Separation of Concerns' is a related concept, the specific acronym letter refers to SRP as defined by Robert C. Martin."
       />
     </LessonLayout>
   );

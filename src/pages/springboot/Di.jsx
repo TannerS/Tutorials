@@ -4,24 +4,42 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function SpringDi() {
+export default function Di() {
   return (
     <LessonLayout
-      title="Dependency Injection"
+      title="Dependency Injection & IoC"
       sectionId="springboot"
       lessonIndex={2}
-      prev={{ path: "/springboot/setup", label: "Project Setup" }}
-      next={{ path: "/springboot/rest", label: "Building REST APIs" }}
+      prev={{ path: '/springboot/setup', label: 'Project Setup & Structure' }}
+      next={{ path: '/springboot/rest', label: 'Building REST APIs' }}
     >
-      <p>Dependency Injection (DI) and Inversion of Control (IoC) are the foundation of Spring. Spring manages object creation and wiring — you declare what you need, Spring provides it.</p>
+      <h2>Inversion of Control (IoC) and Dependency Injection</h2>
+      <p>
+        Inversion of Control is a design principle where the control of object creation and
+        lifecycle management is transferred from your application code to a framework or
+        container. In Spring, the IoC container (also called the ApplicationContext) is
+        responsible for creating objects (called beans), wiring their dependencies together,
+        and managing their entire lifecycle.
+      </p>
+      <p>
+        Dependency Injection (DI) is the mechanism through which IoC is achieved. Instead of a
+        class creating its own dependencies with <code>new</code>, the container injects them
+        automatically — either through the constructor, a setter method, or a field.
+      </p>
 
       <FlowChart
-        title="IoC Container Flow"
-        chart={"graph TD\n  A[You declare beans] --> B[Spring IoC Container]\n  B --> C[Creates instances]\n  B --> D[Wires dependencies]\n  B --> E[Manages lifecycle]\n  C --> F[Your application]"}
+        title="Spring IoC Container Flow"
+        chart={"graph TD\nA[Application Starts] --> B[IoC Container Initializes]\nB --> C[Component Scan]\nC --> D[Discover @Component Classes]\nD --> E[Create Bean Instances]\nE --> F[Resolve Dependencies]\nF --> G[Inject Dependencies]\nG --> H[Call @PostConstruct]\nH --> I[Application Ready]\nI --> J[On Shutdown: @PreDestroy]"}
       />
 
-      <h2>Stereotype Annotations</h2>
-      <CodeBlock language="java" title="@Component, @Service, @Repository, @Controller">
+      <h3>Stereotype Annotations</h3>
+      <p>
+        Spring provides several stereotype annotations that mark classes as Spring-managed beans.
+        While they all register the class as a bean, they carry semantic meaning about the
+        role of the class in your architecture.
+      </p>
+
+      <CodeBlock language="java" title="StereotypeAnnotations.java">
 {`// @Component — generic Spring-managed bean
 @Component
 public class EmailValidator {
@@ -33,52 +51,85 @@ public class EmailValidator {
 // @Service — business logic layer
 @Service
 public class UserService {
-    // Spring will inject this automatically
-    private final UserRepository userRepo;
-    private final EmailValidator validator;
-
-    // Constructor injection (PREFERRED — explicit, testable)
-    public UserService(UserRepository userRepo, EmailValidator validator) {
-        this.userRepo = userRepo;
-        this.validator = validator;
-    }
-
-    public User createUser(String email, String name) {
-        if (!validator.isValid(email))
-            throw new IllegalArgumentException("Invalid email");
-        return userRepo.save(new User(email, name));
-    }
+    // Business logic goes here
 }
 
-// @Repository — data access layer
-// Spring adds exception translation (SQLException -> DataAccessException)
+// @Repository — data access layer (adds exception translation)
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {}
+public class UserRepository {
+    // Database operations go here
+}
 
-// @RestController — HTTP layer
+// @Controller / @RestController — web layer
 @RestController
 public class UserController {
-    private final UserService userService;
-    public UserController(UserService userService) {
-        this.userService = userService; // constructor injection
+    // HTTP endpoint handlers go here
+}`}
+      </CodeBlock>
+
+      <h3>Constructor Injection (Recommended)</h3>
+      <p>
+        Constructor injection is the recommended approach in Spring. It makes dependencies
+        explicit, supports immutability via <code>final</code> fields, and ensures the bean
+        is always in a valid state after construction.
+      </p>
+
+      <CodeBlock language="java" title="UserService.java">
+{`@Service
+public class UserService {
+
+    private final UserRepository userRepository;
+    private final EmailValidator emailValidator;
+    private final PasswordEncoder passwordEncoder;
+
+    // Constructor injection — Spring automatically injects dependencies.
+    // @Autowired is optional on constructors since Spring 4.3
+    // when there is only one constructor.
+    public UserService(UserRepository userRepository,
+                       EmailValidator emailValidator,
+                       PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.emailValidator = emailValidator;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    public User createUser(String email, String password) {
+        if (!emailValidator.isValid(email)) {
+            throw new IllegalArgumentException("Invalid email");
+        }
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        return userRepository.save(user);
     }
 }`}
       </CodeBlock>
 
-      <h2>@Bean and @Configuration</h2>
-      <CodeBlock language="java" title="Manual Bean Definition">
-{`@Configuration  // Marks this as a source of bean definitions
+      <InfoBox variant="warning" title="Avoid Field Injection">
+        <p>
+          While <code>@Autowired</code> on fields works, it is generally discouraged because
+          it hides dependencies, makes classes harder to test (you cannot easily pass mocks
+          without reflection), and prevents the use of <code>final</code> fields. Always
+          prefer constructor injection for production code.
+        </p>
+      </InfoBox>
+
+      <h3>@Bean and @Configuration</h3>
+      <p>
+        For beans that require custom instantiation logic, or for registering third-party classes
+        as beans (classes you cannot annotate with <code>@Component</code>), use
+        <code>@Bean</code> methods inside a <code>@Configuration</code> class.
+      </p>
+
+      <CodeBlock language="java" title="AppConfig.java">
+{`@Configuration
 public class AppConfig {
 
-    // @Bean — manually create and configure a bean
     @Bean
-    public ObjectMapper objectMapper() {
-        return JsonMapper.builder()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .build();
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
     }
 
-    // @Bean with dependency injection
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
         return builder
@@ -86,47 +137,66 @@ public class AppConfig {
             .setReadTimeout(Duration.ofSeconds(10))
             .build();
     }
-}`}
-      </CodeBlock>
 
-      <h2>Bean Scopes and @Qualifier</h2>
-      <CodeBlock language="java" title="Scopes and Qualifier">
-{`// Default scope is singleton — one instance per application context
-@Service
-@Scope("singleton") // default, not needed explicitly
-public class CacheService { ... }
-
-// Prototype — new instance every time it is requested
-@Component
-@Scope("prototype")
-public class RequestContext { ... }
-
-// @Qualifier — disambiguate when multiple beans match a type
-@Component("emailNotifier")
-public class EmailNotificationService implements NotificationService { ... }
-
-@Component("smsNotifier")
-public class SmsNotificationService implements NotificationService { ... }
-
-@Service
-public class AlertService {
-    private final NotificationService notifier;
-
-    public AlertService(@Qualifier("emailNotifier") NotificationService notifier) {
-        this.notifier = notifier;
+    @Bean
+    @Profile("dev")
+    public DataSource devDataSource() {
+        return new EmbeddedDatabaseBuilder()
+            .setType(EmbeddedDatabaseType.H2)
+            .addScript("schema.sql")
+            .build();
     }
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Constructor Injection is Best">
-        <p>Prefer constructor injection over @Autowired field injection. Constructor injection makes dependencies explicit, works without Spring in tests, prevents circular dependencies at startup, and lets you use final fields.</p>
-      </InfoBox>
+      <h3>Bean Scopes and Lifecycle</h3>
+      <p>
+        By default, Spring beans are singletons — one instance shared across the entire
+        application. Spring supports several other scopes for different use cases:
+      </p>
+      <ul>
+        <li><strong>singleton</strong> (default): One instance per ApplicationContext</li>
+        <li><strong>prototype</strong>: New instance each time the bean is requested</li>
+        <li><strong>request</strong>: One instance per HTTP request (web apps only)</li>
+        <li><strong>session</strong>: One instance per HTTP session (web apps only)</li>
+      </ul>
+
+      <CodeBlock language="java" title="BeanScopes.java">
+{`@Component
+@Scope("prototype")
+public class ShoppingCart {
+    private List<Item> items = new ArrayList<>();
+
+    public void addItem(Item item) {
+        items.add(item);
+    }
+}
+
+@Component
+public class AuditLogger {
+
+    @PostConstruct
+    public void init() {
+        System.out.println("AuditLogger bean initialized");
+    }
+
+    @PreDestroy
+    public void cleanup() {
+        System.out.println("AuditLogger bean destroyed");
+    }
+}`}
+      </CodeBlock>
 
       <InteractiveChallenge
-        question="Which injection style is preferred in modern Spring Boot applications?"
-        options={["Field injection with @Autowired", "Setter injection", "Constructor injection", "XML-based injection"]}
+        question="Which injection method is recommended in modern Spring applications?"
+        options={[
+          "Field injection with @Autowired",
+          "Setter injection with @Autowired",
+          "Constructor injection",
+          "Static factory methods"
+        ]}
         correctIndex={2}
-        explanation="Constructor injection is preferred. It makes dependencies explicit (visible in the constructor signature), allows fields to be final (immutable), works in unit tests without Spring context, and detects circular dependencies at startup."
+        explanation="Constructor injection is the recommended approach because it makes dependencies explicit, allows fields to be declared final (immutable), ensures the bean is never in a partially constructed state, and makes unit testing straightforward since you can simply pass mocks through the constructor."
       />
     </LessonLayout>
   );

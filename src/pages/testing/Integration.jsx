@@ -4,393 +4,444 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function TestingIntegration() {
+export default function Integration() {
   return (
     <LessonLayout
       title="Integration Testing"
       sectionId="testing"
       lessonIndex={3}
-      prev={{ path: '/testing/mocking', label: 'Mocking' }}
+      prev={{ path: '/testing/mocking', label: 'Mocking & Test Doubles' }}
       next={{ path: '/testing/e2e', label: 'End-to-End Testing' }}
     >
-      <h2>Why Integration Tests?</h2>
+      <h2>What Is Integration Testing?</h2>
       <p>
-        Unit tests verify logic in isolation. Integration tests verify that the components work
-        correctly <em>together</em> — your service with a real database, your controller with real
-        HTTP serialization, or your repository with an actual SQL query. Integration tests catch
-        problems that unit tests cannot: incorrect SQL, wrong JSON mapping, misconfigured
-        security, or database constraint violations.
+        Integration tests verify that multiple components work together correctly.
+        Unlike unit tests (which isolate a single class), integration tests exercise
+        real interactions — a controller calling a service calling a repository,
+        or a React component fetching data from an API.
       </p>
 
       <FlowChart
         title="Integration Test Scope"
-        chart={"graph LR\n  A[Controller test] --> B[HTTP serialization]\n  A --> C[Validation]\n  A --> D[Security]\n  E[Repository test] --> F[SQL queries]\n  E --> G[Schema constraints]\n  E --> H[Transactions]\n  I[Full stack test] --> J[All layers together]"}
+        chart={"graph LR\n  UT[\"Unit Test\\nSingle class, mocked deps\"] --> IT[\"Integration Test\\nMultiple classes, real interactions\"]\n  IT --> E2E[\"E2E Test\\nFull stack, real browser\"]"}
       />
 
-      <h2>Spring Boot Slice Tests</h2>
+      <InfoBox variant="info" title="The Integration Testing Sweet Spot">
+        Integration tests offer the best balance of confidence and speed. They catch
+        wiring bugs (misconfigured beans, wrong query, incorrect API contract) that
+        unit tests miss, while running much faster than E2E tests.
+      </InfoBox>
 
-      <CodeBlock language="java" title="@WebMvcTest — Controller Layer Only">
-{`// @WebMvcTest loads only the web layer: controllers, filters, security config.
-// Services and repositories are replaced with @MockBean.
-// Much faster than @SpringBootTest because 90% of the app is not loaded.
+      <h2>Spring Boot Integration Testing</h2>
 
-@WebMvcTest(ProductController.class)
+      <h3>@SpringBootTest — Full Context</h3>
+      <p>
+        <code>@SpringBootTest</code> loads the entire Spring application context.
+        Use it when you need all beans wired together.
+      </p>
+
+      <CodeBlock language="java" title="Full Integration Test">
+{`@SpringBootTest
 @AutoConfigureMockMvc
-class ProductControllerTest {
+class UserControllerIntegrationTest {
 
-    @Autowired MockMvc mvc;
-    @MockBean  ProductService productService;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @Test
-    void getProduct_returnsJsonWithCorrectFields() throws Exception {
-        Product product = new Product(1L, "Widget", new BigDecimal("29.99"), "Electronics");
-        when(productService.findById(1L)).thenReturn(Optional.of(product));
-
-        mvc.perform(get("/api/products/1")
-               .accept(MediaType.APPLICATION_JSON))
-           .andExpect(status().isOk())
-           .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-           .andExpect(jsonPath("$.id").value(1))
-           .andExpect(jsonPath("$.name").value("Widget"))
-           .andExpect(jsonPath("$.price").value(29.99))
-           .andExpect(jsonPath("$.category").value("Electronics"));
-    }
-
-    @Test
-    void getProduct_returns404_whenNotFound() throws Exception {
-        when(productService.findById(999L)).thenReturn(Optional.empty());
-
-        mvc.perform(get("/api/products/999"))
-           .andExpect(status().isNotFound())
-           .andExpect(jsonPath("$.error").value("Product not found"));
-    }
-
-    @Test
-    void createProduct_returns201_withLocationHeader() throws Exception {
-        Product created = new Product(5L, "Gadget", new BigDecimal("49.99"), "Electronics");
-        when(productService.create(any())).thenReturn(created);
-
-        String requestBody = """
-            { "name": "Gadget", "price": 49.99, "category": "Electronics" }
-            """;
-
-        mvc.perform(post("/api/products")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(requestBody))
-           .andExpect(status().isCreated())
-           .andExpect(header().string("Location", containsString("/api/products/5")));
-    }
-
-    @Test
-    void createProduct_returns400_forInvalidInput() throws Exception {
-        String invalidBody = """
-            { "name": "", "price": -10.0 }
-            """;
-
-        mvc.perform(post("/api/products")
-               .contentType(MediaType.APPLICATION_JSON)
-               .content(invalidBody))
-           .andExpect(status().isBadRequest())
-           .andExpect(jsonPath("$.errors[*].field",
-               containsInAnyOrder("name", "price")));
-    }
-
-    // ── SECURITY TESTING ─────────────────────────────────────────────
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void deleteProduct_succeeds_forAdmin() throws Exception {
-        mvc.perform(delete("/api/products/1"))
-           .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void deleteProduct_returns403_forRegularUser() throws Exception {
-        mvc.perform(delete("/api/products/1"))
-           .andExpect(status().isForbidden());
-    }
-}`}
-      </CodeBlock>
-
-      <CodeBlock language="java" title="@DataJpaTest — Repository Layer">
-{`// @DataJpaTest loads only JPA components: entities, repositories, Hibernate.
-// Auto-configures in-memory H2 database (or test-specific config).
-// Each test runs in a transaction that rolls back automatically.
-
-@DataJpaTest
-class OrderRepositoryTest {
-
-    @Autowired OrderRepository orderRepo;
-    @Autowired CustomerRepository customerRepo;
-    @Autowired TestEntityManager em;
-
-    private Customer savedCustomer;
+    @Autowired
+    private UserRepository userRepo;
 
     @BeforeEach
     void setUp() {
-        savedCustomer = customerRepo.save(new Customer("alice@example.com", "Alice"));
-        em.flush();
+        userRepo.deleteAll();
     }
 
     @Test
-    void findByCustomerId_returnsOnlyThatCustomersOrders() {
-        // Arrange: two customers with orders
-        Customer bob = customerRepo.save(new Customer("bob@example.com", "Bob"));
-        orderRepo.save(new Order(savedCustomer, new BigDecimal("100.00")));
-        orderRepo.save(new Order(savedCustomer, new BigDecimal("50.00")));
-        orderRepo.save(new Order(bob, new BigDecimal("75.00")));
-        em.flush();
-        em.clear();  // clear persistence context — forces fresh DB reads
+    @DisplayName("POST /api/users — should create a new user")
+    void createUser() throws Exception {
+        String requestBody = """
+            {
+                "name": "Alice",
+                "email": "alice@example.com"
+            }
+            """;
 
-        // Act
-        List<Order> aliceOrders = orderRepo.findByCustomerId(savedCustomer.getId());
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("Alice"))
+            .andExpect(jsonPath("$.email").value("alice@example.com"))
+            .andExpect(jsonPath("$.id").isNotEmpty());
 
-        // Assert
-        assertThat(aliceOrders).hasSize(2)
-            .extracting(Order::getTotal)
-            .containsExactlyInAnyOrder(
-                new BigDecimal("100.00"),
-                new BigDecimal("50.00")
-            );
+        assertEquals(1, userRepo.count());
     }
 
     @Test
-    void findTopOrdersByRevenue_returnsCorrectlyOrdered() {
-        orderRepo.save(new Order(savedCustomer, new BigDecimal("300.00")));
-        orderRepo.save(new Order(savedCustomer, new BigDecimal("100.00")));
-        orderRepo.save(new Order(savedCustomer, new BigDecimal("200.00")));
-        em.flush();
-        em.clear();
-
-        List<Order> top2 = orderRepo.findTopByRevenue(PageRequest.of(0, 2));
-
-        assertThat(top2).hasSize(2)
-            .extracting(o -> o.getTotal().intValue())
-            .containsExactly(300, 200);  // descending order
-    }
-
-    @Test
-    void save_enforces_positiveAmount_constraint() {
-        Order invalid = new Order(savedCustomer, new BigDecimal("-10.00"));
-
-        assertThatThrownBy(() -> {
-            orderRepo.save(invalid);
-            em.flush();  // flush triggers DB constraint check
-        }).hasCauseInstanceOf(ConstraintViolationException.class);
+    @DisplayName("GET /api/users/:id — should return 404 for missing user")
+    void getUserNotFound() throws Exception {
+        mockMvc.perform(get("/api/users/999"))
+            .andExpect(status().isNotFound());
     }
 }`}
       </CodeBlock>
 
-      <h2>Testcontainers — Real Database in Tests</h2>
+      <h3>@WebMvcTest — Controller Slice</h3>
+      <p>
+        <code>@WebMvcTest</code> loads only the web layer — controllers, filters,
+        and converters. Service and repository beans must be mocked.
+      </p>
 
-      <CodeBlock language="java" title="Testcontainers — Docker-Based Integration Tests">
-{`// Testcontainers starts real Docker containers for tests.
-// Use when: H2 doesn't fully match production DB (PostgreSQL-specific features,
-// JSON operators, generated columns, different NULL handling, etc.)
+      <CodeBlock language="java" title="Controller Slice Test">
+{`@WebMvcTest(OrderController.class)
+class OrderControllerTest {
 
-@SpringBootTest
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private OrderService orderService;
+
+    @Test
+    @DisplayName("should return orders for a customer")
+    void getOrdersByCustomer() throws Exception {
+        List<Order> orders = List.of(
+            new Order("ORD-1", "SHIPPED"),
+            new Order("ORD-2", "PENDING")
+        );
+        when(orderService.findByCustomerId("CUST-1")).thenReturn(orders);
+
+        mockMvc.perform(get("/api/orders")
+                .param("customerId", "CUST-1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].id").value("ORD-1"))
+            .andExpect(jsonPath("$[0].status").value("SHIPPED"));
+
+        verify(orderService).findByCustomerId("CUST-1");
+    }
+
+    @Test
+    @DisplayName("should return 400 for invalid request")
+    void createOrderInvalidRequest() throws Exception {
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors").isNotEmpty());
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="@WebMvcTest vs @SpringBootTest">
+        Use <code>@WebMvcTest</code> when you only need to test the controller layer
+        with mocked services. It&apos;s much faster because it doesn&apos;t load the full
+        context. Use <code>@SpringBootTest</code> when you need the complete wiring.
+      </InfoBox>
+
+      <h3>@DataJpaTest — Repository Slice</h3>
+      <CodeBlock language="java" title="Repository Integration Test">
+{`@DataJpaTest
+class UserRepositoryTest {
+
+    @Autowired
+    private UserRepository userRepo;
+
+    @Autowired
+    private TestEntityManager entityManager;
+
+    @Test
+    @DisplayName("should find users by email domain")
+    void findByEmailDomain() {
+        entityManager.persist(new User("Alice", "alice@company.com"));
+        entityManager.persist(new User("Bob", "bob@company.com"));
+        entityManager.persist(new User("Charlie", "charlie@gmail.com"));
+        entityManager.flush();
+
+        List<User> companyUsers = userRepo.findByEmailEndingWith("@company.com");
+
+        assertEquals(2, companyUsers.size());
+    }
+}`}
+      </CodeBlock>
+
+      <h3>Testcontainers — Real Database Testing</h3>
+      <p>
+        Testcontainers spins up real Docker containers (PostgreSQL, MySQL, Redis, etc.)
+        for your tests. This eliminates the gap between your test database and production.
+      </p>
+
+      <CodeBlock language="java" title="Testcontainers with PostgreSQL">
+{`@SpringBootTest
 @Testcontainers
-@ActiveProfiles("test")
-class OrderServiceIntegrationTest {
+class ProductServiceIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres =
-        new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+        .withDatabaseName("testdb")
+        .withUsername("test")
+        .withPassword("test");
 
     @DynamicPropertySource
-    static void configureDataSource(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url",      postgres::getJdbcUrl);
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
     }
 
-    @Autowired OrderService orderService;
-    @Autowired OrderRepository orderRepo;
-    @Autowired CustomerRepository customerRepo;
-
-    @BeforeEach
-    void cleanDatabase() {
-        orderRepo.deleteAll();
-        customerRepo.deleteAll();
-    }
+    @Autowired
+    private ProductService productService;
 
     @Test
-    void placeOrder_persistsAndReturnsOrderWithId() {
-        Customer customer = customerRepo.save(
-            new Customer("alice@example.com", "Alice")
-        );
+    @DisplayName("should persist and retrieve product from real PostgreSQL")
+    void createAndFindProduct() {
+        Product saved = productService.create(new Product("Widget", 9.99));
 
-        PlaceOrderRequest request = new PlaceOrderRequest(
-            customer.getId(),
-            List.of(new LineItem("PROD-1", 2, new BigDecimal("49.99")))
-        );
+        assertNotNull(saved.getId());
 
-        Order placed = orderService.placeOrder(request);
+        Optional<Product> found = productService.findById(saved.getId());
 
-        assertThat(placed.getId()).isNotNull();
-        assertThat(placed.getStatus()).isEqualTo(OrderStatus.PENDING);
-        assertThat(placed.getTotal()).isEqualByComparingTo(new BigDecimal("99.98"));
-
-        // Verify persistence — reload from DB
-        Order fromDb = orderRepo.findById(placed.getId()).orElseThrow();
-        assertThat(fromDb.getItems()).hasSize(1);
-    }
-
-    @Test
-    @Transactional
-    void concurrentOrderUpdates_handledCorrectly() throws InterruptedException {
-        // Test optimistic locking / concurrent access
-        Order order = orderRepo.save(new Order(customer, new BigDecimal("100.00")));
-
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        CountDownLatch latch = new CountDownLatch(2);
-        AtomicInteger successCount = new AtomicInteger(0);
-
-        Runnable updateTask = () -> {
-            try {
-                orderService.updateStatus(order.getId(), OrderStatus.PROCESSING);
-                successCount.incrementAndGet();
-            } catch (OptimisticLockException e) {
-                // Expected for one of the two concurrent updates
-            } finally {
-                latch.countDown();
-            }
-        };
-
-        executor.submit(updateTask);
-        executor.submit(updateTask);
-        latch.await(5, TimeUnit.SECONDS);
-
-        // Only one update should succeed
-        assertThat(successCount.get()).isEqualTo(1);
+        assertTrue(found.isPresent());
+        assertEquals("Widget", found.get().getName());
+        assertEquals(9.99, found.get().getPrice(), 0.01);
     }
 }`}
       </CodeBlock>
 
-      <h2>Integration Testing with React — MSW</h2>
+      <InfoBox variant="warning" title="Testcontainers Requires Docker">
+        Testcontainers needs Docker running on the machine executing tests. Make sure
+        your CI environment supports Docker-in-Docker or has Docker available.
+        Tests with Testcontainers are slower than H2 but much more realistic.
+      </InfoBox>
 
-      <CodeBlock language="javascript" title="Mock Service Worker for API Integration">
-{`// MSW (Mock Service Worker) intercepts HTTP requests at the network level.
-// Tests run against real API calls — just the server is mocked.
-// Much more realistic than mocking fetch/axios directly.
+      <h2>JavaScript Integration Testing</h2>
 
-// src/mocks/handlers.js
-import { http, HttpResponse } from 'msw';
+      <h3>API Integration Tests with Supertest</h3>
+      <CodeBlock language="javascript" title="Express API Integration Test">
+{`const request = require('supertest');
+const app = require('../app');
+const db = require('../db');
 
-export const handlers = [
-  http.get('/api/products', ({ request }) => {
-    const url = new URL(request.url);
-    const category = url.searchParams.get('category');
-
-    const products = [
-      { id: 1, name: 'Widget', price: 29.99, category: 'Electronics' },
-      { id: 2, name: 'Gadget', price: 49.99, category: 'Electronics' },
-      { id: 3, name: 'Book', price: 14.99, category: 'Books' },
-    ].filter(p => !category || p.category === category);
-
-    return HttpResponse.json(products);
-  }),
-
-  http.post('/api/orders', async ({ request }) => {
-    const body = await request.json();
-    return HttpResponse.json(
-      { id: 'ORDER-123', ...body, status: 'pending' },
-      { status: 201 }
-    );
-  }),
-
-  http.get('/api/products/:id', ({ params }) => {
-    if (params.id === '999') {
-      return HttpResponse.json({ error: 'Not found' }, { status: 404 });
-    }
-    return HttpResponse.json({ id: params.id, name: 'Widget', price: 29.99 });
-  }),
-];
-
-// src/mocks/server.js (Node — for tests)
-import { setupServer } from 'msw/node';
-import { handlers } from './handlers';
-export const server = setupServer(...handlers);
-
-// vitest.setup.js — run before all tests
-import { server } from './src/mocks/server';
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => server.resetHandlers());  // reset per-test overrides
-afterAll(() => server.close());
-
-// Integration test — component + real HTTP + MSW
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { server } from '../mocks/server';
-import { http, HttpResponse } from 'msw';
-import ProductList from './ProductList';
-
-describe('ProductList', () => {
-  it('displays products from API', async () => {
-    render(<ProductList />);
-
-    // Loading state
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
-
-    // Products appear after fetch
-    await waitFor(() => {
-      expect(screen.getByText('Widget')).toBeInTheDocument();
-      expect(screen.getByText('Gadget')).toBeInTheDocument();
-    });
+describe('POST /api/users', () => {
+  beforeEach(async () => {
+    await db.query('DELETE FROM users');
   });
 
-  it('shows error when API fails', async () => {
-    // Override default handler for this test only
-    server.use(
-      http.get('/api/products', () =>
-        HttpResponse.json({ error: 'Server error' }, { status: 500 })
-      )
-    );
+  afterAll(async () => {
+    await db.end();
+  });
 
-    render(<ProductList />);
+  it('should create a user and return 201', async () => {
+    const response = await request(app)
+      .post('/api/users')
+      .send({ name: 'Alice', email: 'alice@example.com' })
+      .expect('Content-Type', /json/)
+      .expect(201);
 
+    expect(response.body).toMatchObject({
+      name: 'Alice',
+      email: 'alice@example.com',
+    });
+    expect(response.body.id).toBeDefined();
+  });
+
+  it('should return 400 for missing email', async () => {
+    const response = await request(app)
+      .post('/api/users')
+      .send({ name: 'Alice' })
+      .expect(400);
+
+    expect(response.body.errors).toBeDefined();
+  });
+});`}
+      </CodeBlock>
+
+      <h3>React Integration Testing</h3>
+      <p>
+        React integration tests render multiple components together and verify
+        they interact correctly — data flows, callbacks fire, and state updates
+        propagate.
+      </p>
+
+      <CodeBlock language="jsx" title="Multi-Component Integration Test">
+{`import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { setupServer } from 'msw/node';
+import { http, HttpResponse } from 'msw';
+import App from './App';
+
+const server = setupServer(
+  http.get('/api/todos', () => {
+    return HttpResponse.json([
+      { id: 1, text: 'Buy groceries', completed: false },
+      { id: 2, text: 'Clean house', completed: true },
+    ]);
+  }),
+  http.post('/api/todos', async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({ id: 3, ...body, completed: false }, { status: 201 });
+  })
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+describe('Todo App Integration', () => {
+  it('should load, display, and add todos', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    // Wait for initial data to load
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(/failed to load/i);
+      expect(screen.getByText('Buy groceries')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Clean house')).toBeInTheDocument();
+
+    // Add a new todo
+    await user.type(screen.getByPlaceholderText(/add a todo/i), 'Walk the dog');
+    await user.click(screen.getByRole('button', { name: /add/i }));
+
+    // Verify the new todo appears
+    await waitFor(() => {
+      expect(screen.getByText('Walk the dog')).toBeInTheDocument();
     });
   });
 });`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Slice Tests vs Full Context">
-        <p>
-          Use the most focused test that catches the bug. For controller input validation: use
-          <code>@WebMvcTest</code>. For a custom JPQL query: use <code>@DataJpaTest</code>. For a
-          multi-service workflow involving transactions: use <code>@SpringBootTest</code> with
-          Testcontainers. Full context tests are slow (seconds each) while slice tests are fast
-          (milliseconds). Keep full-context tests rare and focused on high-value integration points.
-        </p>
-      </InfoBox>
+      <h2>Test Database Strategies</h2>
 
-      <InteractiveChallenge
-        question="What is the advantage of @DataJpaTest over @SpringBootTest for testing repositories?"
-        options={[
-          "@DataJpaTest uses a faster JVM process per test",
-          "@DataJpaTest loads only JPA-related beans, auto-configures an in-memory database, and rolls back each test in a transaction — much faster than full context",
-          "@DataJpaTest supports more database types than @SpringBootTest",
-          "@DataJpaTest automatically generates realistic test data from entity definitions"
-        ]}
-        correctIndex={1}
-        explanation="@DataJpaTest is a slice test that loads only the JPA layer — repositories, entities, Hibernate, and related config. It does not load web controllers, services, or security filters. This makes it much faster than @SpringBootTest. It auto-configures an in-memory H2 database (by default) and wraps each test in a transaction that rolls back after the test completes, so tests are isolated without needing manual cleanup."
+      <FlowChart
+        title="Test Database Approaches"
+        chart={"graph TD\n  A[\"Test Database Strategy\"] --> B[\"In-Memory DB\\n(H2, SQLite)\\nFast but may differ from prod\"]\n  A --> C[\"Testcontainers\\nReal DB in Docker\\nRealistic but slower\"]\n  A --> D[\"Shared Test DB\\nDedicated instance\\nRisk of test pollution\"]\n  A --> E[\"Transaction Rollback\\nRollback after each test\\nFast, isolated\"]"}
       />
 
+      <table>
+        <thead>
+          <tr>
+            <th>Strategy</th>
+            <th>Speed</th>
+            <th>Realism</th>
+            <th>Isolation</th>
+            <th>Best For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>In-Memory (H2/SQLite)</td>
+            <td>Fast</td>
+            <td>Low</td>
+            <td>High</td>
+            <td>Simple queries, rapid dev</td>
+          </tr>
+          <tr>
+            <td>Testcontainers</td>
+            <td>Medium</td>
+            <td>High</td>
+            <td>High</td>
+            <td>Complex queries, CI pipelines</td>
+          </tr>
+          <tr>
+            <td>Transaction Rollback</td>
+            <td>Fast</td>
+            <td>High</td>
+            <td>High</td>
+            <td>JPA repository tests</td>
+          </tr>
+          <tr>
+            <td>Shared Test DB</td>
+            <td>Fast</td>
+            <td>High</td>
+            <td>Low</td>
+            <td>Legacy projects (avoid if possible)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <CodeBlock language="java" title="Transaction Rollback Strategy">
+{`@DataJpaTest
+@Transactional  // Each test runs in a transaction that is rolled back
+class OrderRepositoryTest {
+
+    @Autowired
+    private OrderRepository orderRepo;
+
+    @Test
+    void testA() {
+        orderRepo.save(new Order("A"));
+        assertEquals(1, orderRepo.count());
+        // Transaction rolls back here — no data persists
+    }
+
+    @Test
+    void testB() {
+        // Starts clean — testA's data was rolled back
+        assertEquals(0, orderRepo.count());
+        orderRepo.save(new Order("B"));
+        assertEquals(1, orderRepo.count());
+    }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="javascript" title="JavaScript Test DB Setup">
+{`// jest.setup.js — per-test cleanup
+const db = require('./db');
+
+beforeEach(async () => {
+  // Truncate all tables before each test
+  await db.query('BEGIN');
+});
+
+afterEach(async () => {
+  await db.query('ROLLBACK');
+});
+
+afterAll(async () => {
+  await db.end();
+});`}
+      </CodeBlock>
+
+      <h2>MockMvc Patterns</h2>
+      <CodeBlock language="java" title="MockMvc Request Patterns">
+{`// GET with query parameters
+mockMvc.perform(get("/api/users")
+        .param("page", "0")
+        .param("size", "10"))
+    .andExpect(status().isOk())
+    .andExpect(jsonPath("$.content", hasSize(10)));
+
+// PUT with auth header
+mockMvc.perform(put("/api/users/{id}", userId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(updatedUserJson)
+        .header("Authorization", "Bearer " + token))
+    .andExpect(status().isOk());`}
+      </CodeBlock>
+
       <InteractiveChallenge
-        question="Why use Testcontainers (real Docker PostgreSQL) instead of H2 for integration tests?"
+        question={"When should you use @WebMvcTest instead of @SpringBootTest?"}
         options={[
-          "H2 is too slow; Docker containers are faster",
-          "H2 doesn't fully replicate PostgreSQL behavior — different SQL dialect, missing features like JSONB operators, different constraint handling",
-          "Testcontainers generates better test data automatically",
-          "H2 doesn't support JPA repositories, only raw SQL"
+          "When you need to test the full application stack with real database",
+          "When you only need to test the controller layer with mocked services",
+          "When you want to test JavaScript code",
+          "When you need to run E2E tests with a real browser"
         ]}
         correctIndex={1}
-        explanation="H2's in-memory mode is convenient but it's a different database than PostgreSQL. Problems H2 misses: PostgreSQL-specific JSON operators (@>, ?), generated columns, partial indexes, different NULL handling, full-text search syntax, and window functions. Tests using H2 may pass while the same queries fail in production. Testcontainers starts a real PostgreSQL in Docker — the test environment matches production perfectly."
+        explanation="@WebMvcTest loads only the web layer (controllers, filters, advice) and is much faster than @SpringBootTest. Services and repositories are provided as @MockBean. Use @SpringBootTest when you need the full context."
+        language="java"
       />
+
+      <h2>Key Takeaways</h2>
+      <ul>
+        <li>Integration tests verify multiple components working together</li>
+        <li>Use <code>@WebMvcTest</code> for fast controller tests with mocked services</li>
+        <li>Use <code>@SpringBootTest</code> when you need the full application context</li>
+        <li>Testcontainers provides real databases in Docker for realistic testing</li>
+        <li>Transaction rollback keeps tests isolated without manual cleanup</li>
+        <li>MSW + React Testing Library create realistic frontend integration tests</li>
+        <li>Supertest is the go-to tool for Node.js API integration testing</li>
+      </ul>
     </LessonLayout>
   );
 }

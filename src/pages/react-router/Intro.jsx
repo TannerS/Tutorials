@@ -4,296 +4,303 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function RRIntro() {
+export default function Intro() {
   return (
     <LessonLayout
-      title="React Router Introduction"
+      title="Setup & Core Concepts"
       sectionId="react-router"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/react-router/nested', label: 'Nested Routes' }}
+      next={{ path: '/react-router/nested', label: 'Nested Routes & Outlets' }}
     >
-      <h2>What Is Client-Side Routing?</h2>
       <p>
-        React Router enables navigation between pages without full browser reloads.
-        The URL changes, but only the components that need to change re-render — giving you
-        the speed of a single-page application with the UX of traditional multi-page navigation.
+        React Router v7 is a full-featured routing library for React that handles
+        URL-based navigation, nested layouts, data loading, and form handling. It
+        ships as <code>react-router</code> (core) and <code>react-router-dom</code>{' '}
+        (web bindings). v7 unifies the best ideas from Remix into the React Router
+        API, giving you loaders, actions, and framework-level conventions right out
+        of the box.
       </p>
 
-      <FlowChart
-        title="Routing Architecture"
-        chart={"graph LR\n  A[URL Change] --> B[React Router]\n  B --> C{Match route?}\n  C -- Yes --> D[Render matched component]\n  C -- No --> E[Render 404 component]\n  D --> F[Update browser history]\n  F --> G[Back/Forward works]"}
-      />
+      <h2>Installation</h2>
+      <CodeBlock language="bash" title="Install React Router v7">
+{`# New project — install the unified package
+npm install react-router react-router-dom
 
-      <h2>Setup and Basic Usage</h2>
+# If upgrading from v6
+npm install react-router@latest react-router-dom@latest`}
+      </CodeBlock>
 
-      <CodeBlock language="jsx" title="React Router v7 Setup">
-{`// Installation
-// npm install react-router-dom
+      <InfoBox variant="tip" title="v7 Package Structure">
+        In v7, <code>react-router-dom</code> re-exports everything from{' '}
+        <code>react-router</code>. You can import all hooks, components, and
+        utilities from <code>react-router-dom</code> directly — no need to import
+        from both packages.
+      </InfoBox>
 
-// main.jsx — wrap app in BrowserRouter
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App';
+      <h2>Two Ways to Define Routes</h2>
+      <p>
+        React Router v7 supports two routing styles: the classic JSX-based{' '}
+        <code>&lt;Routes&gt;</code> approach and the newer config-based{' '}
+        <code>createBrowserRouter</code> approach. The config-based API unlocks
+        loaders, actions, and error boundaries at the route level.
+      </p>
 
-createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
-);
-
-// App.jsx — define routes
-import { Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
-import About from './pages/About';
-import UserProfile from './pages/UserProfile';
-import NotFound from './pages/NotFound';
+      <h3>JSX-Based (Classic)</h3>
+      <CodeBlock language="jsx" title="BrowserRouter + Routes (basic)">
+{`import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/users/:userId" element={<UserProfile />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/users/:id" element={<UserProfile />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
   );
 }`}
       </CodeBlock>
 
-      <h2>Link, NavLink, and Navigation</h2>
+      <h3>Config-Based (Recommended for v7)</h3>
+      <CodeBlock language="jsx" title="createBrowserRouter + RouterProvider">
+{`import {
+  createBrowserRouter,
+  RouterProvider,
+} from 'react-router-dom';
 
-      <CodeBlock language="jsx" title="Navigation Components">
-{`import { Link, NavLink, useNavigate } from 'react-router-dom';
-
-// Link — basic navigation, replaces <a href>
-// Does NOT cause full page reload — uses History API
-function Navbar() {
-  return (
-    <nav>
-      <Link to="/">Home</Link>
-      <Link to="/about">About</Link>
-      <Link to="/users/123">User Profile</Link>
-
-      {/* Open in new tab */}
-      <Link to="/help" target="_blank" rel="noopener noreferrer">Help</Link>
-
-      {/* Relative link (from current route) */}
-      <Link to="../settings">Settings</Link>
-    </nav>
-  );
-}
-
-// NavLink — like Link but adds active class/style when route matches
-function Nav() {
-  return (
-    <nav>
-      <NavLink
-        to="/"
-        end             // 'end' means only match exact "/" not "/anything"
-        className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-      >
-        Home
-      </NavLink>
-
-      <NavLink
-        to="/dashboard"
-        style={({ isActive, isPending }) => ({
-          color: isActive ? '#3b82f6' : '#6b7280',
-          fontWeight: isActive ? 700 : 400,
-          opacity: isPending ? 0.7 : 1,   // during loading state
-        })}
-      >
-        Dashboard
-      </NavLink>
-    </nav>
-  );
-}
-
-// useNavigate — programmatic navigation (after form submit, etc.)
-function LoginForm() {
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await login(formData);
-    navigate('/dashboard');              // go to dashboard
-    navigate('/dashboard', { replace: true }); // no back button history
-    navigate(-1);                        // go back
-    navigate(2);                         // go forward 2
-  };
-}`}
-      </CodeBlock>
-
-      <h2>Reading URL Parameters</h2>
-
-      <CodeBlock language="jsx" title="URL Params, Location, and Search Params">
-{`import { useParams, useLocation, useSearchParams } from 'react-router-dom';
-
-// useParams — read dynamic segments from URL
-// Route: <Route path="/users/:userId/posts/:postId" element={<Post />} />
-function Post() {
-  const { userId, postId } = useParams();
-  // URL: /users/42/posts/99 → { userId: '42', postId: '99' }
-  // Note: params are always strings — parseInt() if you need numbers
-  return <div>User {userId}, Post {postId}</div>;
-}
-
-// useLocation — read current URL details
-function CurrentRoute() {
-  const location = useLocation();
-  // location.pathname = '/users/42'
-  // location.search   = '?tab=posts&page=2'
-  // location.hash     = '#comments'
-  // location.state    = data passed via navigate('/path', { state: {...} })
-  return <div>You are at: {location.pathname}</div>;
-}
-
-// useSearchParams — read/write query string (?key=value)
-// Best for: filters, search, pagination (URL = shareable/bookmarkable)
-function ProductList() {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const query = searchParams.get('q') ?? '';
-  const page = parseInt(searchParams.get('page') ?? '1');
-  const sort = searchParams.get('sort') ?? 'newest';
-
-  const updateFilter = (key, value) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      next.set(key, value);
-      if (key !== 'page') next.set('page', '1'); // reset page on filter change
-      return next;
-    });
-  };
-
-  return (
-    <div>
-      <input
-        value={query}
-        onChange={e => updateFilter('q', e.target.value)}
-        placeholder="Search products..."
-      />
-      <select value={sort} onChange={e => updateFilter('sort', e.target.value)}>
-        <option value="newest">Newest</option>
-        <option value="price">Price</option>
-      </select>
-      {/* URL updates: ?q=laptop&sort=price&page=1 */}
-    </div>
-  );
-}`}
-      </CodeBlock>
-
-      <h2>Router Types</h2>
-
-      <CodeBlock language="jsx" title="Which Router to Use">
-{`// BrowserRouter — uses HTML5 History API (most common)
-// URLs look like: /dashboard, /users/42
-// Requires server config: all paths must serve index.html
-// Apache: FallbackResource /index.html
-// Nginx:  try_files $uri /index.html;
-// Use: production web apps
-import { BrowserRouter } from 'react-router-dom';
-
-// HashRouter — uses URL hash (#) for routing
-// URLs look like: /#/dashboard, /#/users/42
-// Hash never sent to server — no server config needed
-// ✗ Worse SEO, ✗ can't use # for in-page anchors
-// Use: static file hosting without server config (GitHub Pages)
-import { HashRouter } from 'react-router-dom';
-
-// MemoryRouter — keeps history in memory (no URL)
-// Use: unit tests (jsdom has no real URL), non-browser environments
-import { MemoryRouter } from 'react-router-dom';
-// In tests:
-function renderWithRouter(ui, { initialEntries = ['/'] } = {}) {
-  return render(
-    <MemoryRouter initialEntries={initialEntries}>
-      {ui}
-    </MemoryRouter>
-  );
-}
-
-// createBrowserRouter (v6.4+) — enables data loading APIs
-// Needed for: loader, action, defer, errorElement features
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 const router = createBrowserRouter([
-  { path: '/', element: <Home />, loader: homeLoader },
-  { path: '/users/:id', element: <User />, loader: userLoader },
+  {
+    path: '/',
+    element: <RootLayout />,
+    errorElement: <ErrorPage />,
+    children: [
+      { index: true, element: <Home /> },
+      { path: 'about', element: <About /> },
+      {
+        path: 'users/:id',
+        element: <UserProfile />,
+        loader: userLoader,      // data loading!
+        errorElement: <UserError />,
+      },
+    ],
+  },
 ]);
+
 function App() {
   return <RouterProvider router={router} />;
 }`}
       </CodeBlock>
 
-      <h2>Index Routes and Catch-All</h2>
+      <InfoBox variant="info" title="When to Use Which?">
+        Use <code>createBrowserRouter</code> for new projects — it enables loaders,
+        actions, fetchers, and error boundaries at the route level.{' '}
+        <code>BrowserRouter</code> still works but cannot leverage v7&apos;s data APIs.
+      </InfoBox>
 
-      <CodeBlock language="jsx" title="Index and 404 Routes">
-{`// Index route — default child when parent path is matched exactly
-<Routes>
-  <Route path="/dashboard" element={<DashboardLayout />}>
-    <Route index element={<DashboardHome />} />        {/* /dashboard */}
-    <Route path="analytics" element={<Analytics />} /> {/* /dashboard/analytics */}
-    <Route path="settings" element={<Settings />} />   {/* /dashboard/settings */}
-  </Route>
-</Routes>
+      <FlowChart
+        title="How React Router Processes a URL"
+        chart={"graph TD\nA[User clicks Link or types URL] --> B[Router matches URL to route tree]\nB --> C{Config-based router?}\nC -->|Yes| D[Run loader functions]\nC -->|No| E[Render matched element directly]\nD --> F[Provide data via useLoaderData]\nF --> G[Render matched route element]\nE --> G\nG --> H[Nested Outlets render children]\nstyle A fill:#3b82f6,color:#fff\nstyle D fill:#8b5cf6,color:#fff\nstyle G fill:#10b981,color:#fff"}
+      />
 
-// Without index, navigating to /dashboard renders DashboardLayout
-// with an empty Outlet — no content visible.
-// With index, /dashboard shows DashboardHome inside the layout.
+      <h2>Navigation Components</h2>
 
-// Catch-all route for 404 pages (must be last)
-<Routes>
-  <Route path="/" element={<Home />} />
-  <Route path="/about" element={<About />} />
-  <Route path="*" element={<NotFound />} />  {/* matches everything else */}
-</Routes>
+      <h3>Link vs NavLink</h3>
+      <CodeBlock language="jsx" title="Link and NavLink">
+{`import { Link, NavLink } from 'react-router-dom';
 
-function NotFound() {
-  const location = useLocation();
+// Basic link — renders an <a> tag, prevents full-page reload
+<Link to="/dashboard">Dashboard</Link>
+
+// Relative link (relative to current route)
+<Link to="settings">Settings</Link>
+
+// Link with state
+<Link to="/login" state={{ from: '/dashboard' }}>Login</Link>
+
+// NavLink — adds active/pending class automatically
+<NavLink
+  to="/dashboard"
+  className={({ isActive, isPending }) =>
+    isActive ? 'nav-active' : isPending ? 'nav-pending' : ''
+  }
+>
+  Dashboard
+</NavLink>
+
+// NavLink with inline style
+<NavLink
+  to="/profile"
+  style={({ isActive }) => ({
+    fontWeight: isActive ? 'bold' : 'normal',
+    color: isActive ? '#3b82f6' : '#888',
+  })}
+>
+  Profile
+</NavLink>`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Never Use Anchor Tags for Internal Navigation">
+        Using <code>&lt;a href=&quot;/dashboard&quot;&gt;</code> causes a full page
+        reload, wiping all React state. Always use <code>&lt;Link&gt;</code> or{' '}
+        <code>&lt;NavLink&gt;</code> for internal routes.
+      </InfoBox>
+
+      <h2>Essential Hooks</h2>
+
+      <h3>useNavigate — Programmatic Navigation</h3>
+      <CodeBlock language="jsx" title="useNavigate">
+{`import { useNavigate } from 'react-router-dom';
+
+function LoginForm() {
+  const navigate = useNavigate();
+
+  const handleLogin = async (credentials) => {
+    await authService.login(credentials);
+
+    // Navigate to dashboard
+    navigate('/dashboard');
+
+    // Navigate with replace (no back-button entry)
+    navigate('/dashboard', { replace: true });
+
+    // Navigate with state
+    navigate('/dashboard', { state: { welcomeBack: true } });
+
+    // Go back
+    navigate(-1);
+
+    // Go forward
+    navigate(1);
+  };
+
+  return <form onSubmit={handleLogin}>...</form>;
+}`}
+      </CodeBlock>
+
+      <h3>useParams — Read URL Parameters</h3>
+      <CodeBlock language="jsx" title="useParams">
+{`import { useParams } from 'react-router-dom';
+
+// Route: /users/:userId/posts/:postId
+function PostDetail() {
+  const { userId, postId } = useParams();
+
+  return <h1>Post {postId} by User {userId}</h1>;
+}`}
+      </CodeBlock>
+
+      <h3>useSearchParams — Query String Management</h3>
+      <CodeBlock language="jsx" title="useSearchParams">
+{`import { useSearchParams } from 'react-router-dom';
+
+function ProductList() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const page = Number(searchParams.get('page')) || 1;
+  const sort = searchParams.get('sort') || 'name';
+  const filter = searchParams.get('filter') || '';
+
+  const goToPage = (n) => {
+    setSearchParams((prev) => {
+      prev.set('page', String(n));
+      return prev;
+    });
+  };
+
+  const toggleSort = () => {
+    setSearchParams({ page: '1', sort: sort === 'name' ? 'price' : 'name' });
+  };
+
   return (
-    <div style={{ textAlign: 'center', padding: '4rem' }}>
-      <h1>404 — Page Not Found</h1>
-      <p>No page found at: {location.pathname}</p>
-      <Link to="/">← Go Home</Link>
+    <div>
+      <p>Page {page}, sorted by {sort}</p>
+      <button onClick={() => goToPage(page + 1)}>Next Page</button>
+      <button onClick={toggleSort}>Toggle Sort</button>
     </div>
   );
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="React Router v7 vs v6">
-        <p>
-          React Router v7 merges with Remix. Key additions: <code>createBrowserRouter</code> for
-          data-loading APIs (loaders/actions), <code>defer</code> for streaming, and
-          <code>errorElement</code> for inline error boundaries per route. The JSX-based
-          <code>Routes + Route</code> API still works and is fine for most apps. Use the data API
-          when you want server-style data loading with Suspense and streaming.
-        </p>
-      </InfoBox>
+      <h3>useLocation — Access Current Location</h3>
+      <CodeBlock language="jsx" title="useLocation">
+{`import { useLocation } from 'react-router-dom';
+
+function Breadcrumb() {
+  const location = useLocation();
+  // location.pathname  => "/users/42/posts"
+  // location.search    => "?sort=date"
+  // location.hash      => "#comments"
+  // location.state     => { from: '/dashboard' }
+  // location.key       => unique key for this entry
+
+  return <span>You are at: {location.pathname}</span>;
+}`}
+      </CodeBlock>
+
+      <h2>Putting It All Together</h2>
+      <CodeBlock language="jsx" title="Complete App Setup (v7 Config-Based)">
+{`import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import RootLayout from './layouts/RootLayout';
+import Home from './pages/Home';
+import About from './pages/About';
+import UserProfile, { loader as userLoader } from './pages/UserProfile';
+import ErrorPage from './pages/ErrorPage';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootLayout />,
+    errorElement: <ErrorPage />,
+    children: [
+      { index: true, element: <Home /> },
+      { path: 'about', element: <About /> },
+      {
+        path: 'users/:id',
+        element: <UserProfile />,
+        loader: userLoader,
+      },
+    ],
+  },
+]);
+
+export default function App() {
+  return <RouterProvider router={router} />;
+}`}
+      </CodeBlock>
 
       <InteractiveChallenge
-        question="What is the difference between Link and a regular anchor tag in React Router?"
+        question={"Which API should you use in React Router v7 to unlock loaders, actions, and route-level error boundaries?"}
         options={[
-          "There is no difference — both cause a full page reload",
-          "Link uses the History API to navigate without a full page reload",
-          "Link only works for internal routes; anchors work for everything",
-          "Link automatically adds active CSS classes"
+          "BrowserRouter with <Routes>",
+          "createBrowserRouter with RouterProvider",
+          "HashRouter with <Routes>",
+          "StaticRouter with renderToString",
         ]}
         correctIndex={1}
-        explanation="React Router's Link component uses the HTML5 History API (pushState) to change the URL and render the matching component without a full page reload. A regular <a href> causes a full HTTP request, browser reload, and loss of application state. Link is essential for SPA navigation — it's what makes React Router fast. NavLink is Link + active class/style based on current route."
+        explanation={"createBrowserRouter is the config-based API that enables v7's data APIs — loaders, actions, fetchers, and errorElement. The classic BrowserRouter + <Routes> approach still works but cannot use these features."}
+        language="jsx"
       />
 
-      <InteractiveChallenge
-        question="When should you use useSearchParams vs useParams for reading URL data?"
-        options={[
-          "useParams for everything; useSearchParams is deprecated",
-          "useParams for dynamic segments (/users/:id); useSearchParams for query strings (?page=2)",
-          "useSearchParams for required values; useParams for optional values",
-          "They are identical — both read URL segments"
-        ]}
-        correctIndex={1}
-        explanation="useParams reads dynamic path segments defined in the Route path (/users/:userId → { userId: '42' }). useSearchParams reads query string parameters (?q=react&page=2). Use useParams when the segment is part of the resource identity (which user?). Use useSearchParams for filters, sorting, pagination, and anything that should be optional or bookmarkable. Search params don't affect which route matches — they're extra context."
-      />
+      <h2>Quick Reference</h2>
+      <CodeBlock language="jsx" title="Hook & Component Cheat Sheet">
+{`// Navigation
+<Link to="/path">Click</Link>           // declarative
+<NavLink to="/path">Click</NavLink>     // with active state
+navigate('/path')                         // imperative
+
+// Reading URL data
+const { id } = useParams();              // /users/:id
+const [params, setParams] = useSearchParams(); // ?key=val
+const location = useLocation();           // full location object
+
+// Router setup
+createBrowserRouter(routes)               // config-based (recommended)
+<BrowserRouter>                           // JSX-based (classic)
+<RouterProvider router={router} />        // mount config-based router`}
+      </CodeBlock>
     </LessonLayout>
   );
 }

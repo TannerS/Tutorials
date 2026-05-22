@@ -1,238 +1,442 @@
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function NpkgPackageJson() {
+export default function PackageJson() {
   return (
     <LessonLayout
       title="package.json Deep Dive"
       sectionId="npm-packages"
       lessonIndex={1}
-      prev={{ path: '/npm-packages/anatomy', label: 'Package Anatomy' }}
-      next={{ path: '/npm-packages/modules', label: 'CJS vs ESM' }}
+      prev={{ path: '/npm-packages/anatomy', label: 'Anatomy of a Package' }}
+      next={{ path: '/npm-packages/modules', label: 'CJS vs ESM & Dual Publishing' }}
     >
-      <h2>Complete package.json Reference</h2>
+      <h2>Every Field Explained</h2>
       <p>
-        <code>package.json</code> is the manifest for your package. Every field has a specific purpose.
-        This is the definitive reference for building publishable packages.
+        package.json is the heart of every npm package. Most developers only use a fraction of
+        its capabilities. Let's go through every important field, what it does, and when you
+        need it.
       </p>
 
-      <CodeBlock language="json" title="Complete package.json for a library">
+      <h3>Required Fields</h3>
+      <CodeBlock language="json" title="name and version (the only truly required fields)">
 {`{
-  // ── Identity ──────────────────────────────────────
-  "name": "@myorg/my-library",   // scoped: @org/name, unscoped: name
-  "version": "2.1.3",            // semver MAJOR.MINOR.PATCH
-  "description": "A helpful library for doing things",
-  "keywords": ["react", "hooks", "utilities"],
-  "homepage": "https://my-library.dev",
-  "bugs": {
-    "url": "https://github.com/myorg/my-library/issues",
-    "email": "bugs@myorg.com"
-  },
+  "name": "@myorg/string-utils",
+  "version": "2.1.0"
+}
+
+// Name rules:
+// - Must be lowercase
+// - Can contain hyphens and dots
+// - Max 214 characters
+// - Can't start with . or _
+// - Scoped: @scope/name (scope = org or username)
+// - Must be unique on the registry (or unique within scope)
+
+// Version rules:
+// - Must be valid semver: MAJOR.MINOR.PATCH
+// - Pre-release: 1.0.0-alpha.1, 1.0.0-beta.2
+// - Build metadata: 1.0.0+20231215 (ignored by semver comparison)`}
+      </CodeBlock>
+
+      <h3>Discovery Fields</h3>
+      <CodeBlock language="json" title="Fields for npmjs.com search and display">
+{`{
+  "description": "Fast, lightweight string manipulation utilities with zero dependencies",
+  "keywords": ["string", "utils", "manipulation", "slugify", "truncate", "case"],
+  "homepage": "https://github.com/myorg/string-utils#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/myorg/my-library.git",
-    "directory": "packages/my-library"  // monorepo subdirectory
+    "url": "https://github.com/myorg/string-utils.git"
   },
-  "license": "MIT",
-  "author": {
-    "name": "Alice Smith",
-    "email": "alice@myorg.com",
-    "url": "https://alice.dev"
+  "bugs": {
+    "url": "https://github.com/myorg/string-utils/issues"
+  },
+  "author": "Your Name <you@example.com> (https://yoursite.com)",
+  "license": "MIT"
+}`}
+      </CodeBlock>
+
+      <h3>Entry Point Fields</h3>
+      <CodeBlock language="json" title="How consumers find your code">
+{`{
+  "main": "./dist/index.cjs",
+
+  "module": "./dist/index.mjs",
+
+  "types": "./dist/index.d.ts",
+
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./utils": {
+      "types": "./dist/utils.d.ts",
+      "import": "./dist/utils.mjs",
+      "require": "./dist/utils.cjs"
+    },
+    "./package.json": "./package.json"
   },
 
-  // ── Entry Points ──────────────────────────────────
+  "typesVersions": {
+    "*": {
+      "utils": ["./dist/utils.d.ts"]
+    }
+  }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="exports Order Matters">
+        Within each exports condition, put <code>types</code> FIRST. TypeScript resolution
+        reads conditions top-to-bottom and uses the first match. If <code>import</code>
+        comes before <code>types</code>, TypeScript may not find your declarations.
+      </InfoBox>
+
+      <h3>CLI Executable Field</h3>
+      <CodeBlock language="json" title="bin — making CLI tools">
+{`{
+  "bin": {
+    "my-cli": "./bin/cli.js"
+  }
+}
+
+// Single binary shorthand:
+{
+  "name": "my-cli",
+  "bin": "./bin/cli.js"
+}
+// Creates executable named same as package name
+
+// The bin file needs a shebang line:
+// #!/usr/bin/env node
+// console.log('Hello from my-cli!');
+
+// After npm install, the binary is available at:
+// ./node_modules/.bin/my-cli (local install)
+// /usr/local/bin/my-cli (global install)`}
+      </CodeBlock>
+
+      <h3>Published Files Control</h3>
+      <CodeBlock language="json" title="files — whitelist what gets published">
+{`{
+  "files": [
+    "dist/",
+    "types/",
+    "bin/",
+    "!dist/**/*.map"
+  ]
+}
+
+// Supports glob patterns:
+// "dist/"         → entire directory
+// "dist/**/*.js"  → only .js files in dist
+// "!dist/test*"   → exclude files starting with "test"
+
+// Remember: package.json, README, LICENSE are ALWAYS included`}
+      </CodeBlock>
+
+      <h3>Dependency Fields</h3>
+      <CodeBlock language="json" title="The dependency categories">
+{`{
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "tsup": "^8.0.0",
+    "jest": "^29.7.0",
+    "eslint": "^8.50.0"
+  },
+
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0"
+  },
+
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": false
+    }
+  },
+
+  "optionalDependencies": {
+    "fsevents": "^2.3.0"
+  }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="bash" title="When each dependency type is installed">
+{`# dependencies:
+# - Installed when YOUR package is installed by a consumer
+# - Installed during npm install in your project
+# - These are your RUNTIME requirements
+
+# devDependencies:
+# - Only installed in YOUR project during development
+# - NOT installed when someone does: npm install your-package
+# - Build tools, test frameworks, linters go here
+
+# peerDependencies:
+# - NOT installed by your package
+# - Consumer MUST provide them
+# - npm 7+ auto-installs peers (npm 6 only warned)
+# - Use for: frameworks (React), runtimes your plugin extends
+
+# peerDependenciesMeta:
+# - Mark peer deps as optional
+# - If optional: true, no warning if consumer doesn't have it
+
+# optionalDependencies:
+# - Install is attempted but failure doesn't abort
+# - Use for: OS-specific packages (fsevents on macOS)
+# - Your code must handle the case where it's missing`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="The #1 Mistake: Wrong Dependency Category">
+        Putting build tools (TypeScript, webpack) in <code>dependencies</code> instead of
+        <code>devDependencies</code> means every consumer downloads your entire build toolchain.
+        If you don't need it at runtime, it's a devDependency. Conversely, putting runtime deps
+        in devDependencies means they won't be installed for consumers — instant breakage.
+      </InfoBox>
+
+      <h3>Module System Configuration</h3>
+      <CodeBlock language="json" title="type — CJS vs ESM default">
+{`{
+  "type": "module"
+}
+
+// "type": "module"
+// - .js files are treated as ES modules (import/export)
+// - Use .cjs extension for CommonJS files
+// - Default if omitted: "commonjs"
+
+// "type": "commonjs" (or omit the field)
+// - .js files are treated as CommonJS (require/module.exports)
+// - Use .mjs extension for ES module files`}
+      </CodeBlock>
+
+      <h3>Tree-Shaking Hint</h3>
+      <CodeBlock language="json" title="sideEffects — help bundlers optimize">
+{`{
+  "sideEffects": false
+}
+
+// sideEffects: false means:
+// "Every file in this package is pure — importing it without
+//  using the exports has no observable effect"
+// This lets bundlers safely remove unused exports (tree-shaking)
+
+// If SOME files have side effects:
+{
+  "sideEffects": [
+    "*.css",
+    "./src/polyfills.js"
+  ]
+}
+
+// Side effect examples:
+// - CSS imports (import './styles.css')
+// - Polyfills that modify globals
+// - Files that run code at import time`}
+      </CodeBlock>
+
+      <h3>Engine Requirements</h3>
+      <CodeBlock language="json" title="engines — specify Node.js version">
+{`{
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
+
+// By default, engines is advisory (just a warning)
+// To make it enforced:
+// .npmrc: engine-strict=true
+// Then npm install FAILS if engine requirements aren't met`}
+      </CodeBlock>
+
+      <h3>Publishing Configuration</h3>
+      <CodeBlock language="json" title="publishConfig — control how/where to publish">
+{`{
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "tag": "latest"
+  },
+
+  "private": true
+}
+
+// "private": true prevents accidental publishing
+// Use for: apps, internal tools, monorepo roots
+// npm publish will refuse if private is true
+
+// publishConfig.access: "public" or "restricted"
+// Scoped packages (@org/pkg) default to "restricted"
+// Set "public" to publish scoped packages publicly
+
+// publishConfig.registry: override where to publish
+// Useful for private registries`}
+      </CodeBlock>
+
+      <h2>Complete Annotated package.json</h2>
+      <p>
+        Here's a production-ready package.json for a TypeScript utility library:
+      </p>
+
+      <CodeBlock language="json" title="Real-world package.json">
+{`{
+  "name": "@myorg/string-utils",
+  "version": "2.1.0",
+  "description": "Fast string manipulation utilities with zero dependencies",
+  "keywords": ["string", "utils", "slugify", "truncate"],
+  "license": "MIT",
+  "author": "Your Name <you@example.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/myorg/string-utils.git"
+  },
+  "bugs": "https://github.com/myorg/string-utils/issues",
+  "homepage": "https://github.com/myorg/string-utils#readme",
+
+  "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
-    },
-    "./package.json": "./package.json"
+      "require": "./dist/index.cjs"
+    }
   },
 
-  // ── Files ─────────────────────────────────────────
-  "files": ["dist", "README.md"],  // published files whitelist
+  "files": ["dist/"],
+  "sideEffects": false,
 
-  // ── Scripts ───────────────────────────────────────
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts",
-    "test": "vitest run",
-    "lint": "eslint src",
-    "prepublishOnly": "npm run build && npm test"
-  },
-
-  // ── Dependencies ──────────────────────────────────
-  "dependencies": {},             // runtime deps (bundled or peer)
-  "devDependencies": {
-    "typescript": "^5.3.0",
-    "vitest": "^1.0.0",
-    "tsup": "^8.0.0"
-  },
-  "peerDependencies": {
-    "react": ">=18.0.0"           // host must provide
-  },
-  "peerDependenciesMeta": {
-    "react": { "optional": false }
-  },
-  "optionalDependencies": {},
-
-  // ── Constraints ───────────────────────────────────
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
-  "packageManager": "pnpm@9.0.0",
-
-  // ── Module System ─────────────────────────────────
-  "type": "module",               // treat .js as ESM (or "commonjs")
-  "sideEffects": false,           // safe to tree-shake
-
-  // ── Publishing ────────────────────────────────────
-  "private": false,               // allow publishing
-  "publishConfig": {
-    "access": "public",           // required for scoped public packages
-    "registry": "https://registry.npmjs.org"
-  },
-
-  // ── Workspace (monorepo) ──────────────────────────
-  "workspaces": ["packages/*", "apps/*"]
-}`}
-      </CodeBlock>
-
-      <h2>The 'type' Field</h2>
-
-      <CodeBlock language="json" title="module vs commonjs type">
-{`// "type": "module" → .js files are treated as ESM
-// "type": "commonjs" → .js files are treated as CJS (default)
-
-// Regardless of "type":
-// .mjs files → always ESM
-// .cjs files → always CJS
-
-// Example: type: "module" project
-// src/index.ts compiles to dist/index.js (ESM)
-// Must use import/export, not require()
-// Node.js treats all .js as ESM
-
-// Library publishing tip:
-// Don't set "type" in your dist files
-// Use explicit .mjs and .cjs extensions instead
-// This way consumers don't need a specific "type" setting`}
-      </CodeBlock>
-
-      <h2>The 'sideEffects' Field</h2>
-
-      <CodeBlock language="json" title="Tree shaking with sideEffects">
-{`// "sideEffects": false
-// Tells bundlers: ALL modules in this package are side-effect free
-// Bundlers can tree-shake ANY unused export
-
-// "sideEffects": ["*.css", "src/polyfills.js"]
-// Some files have side effects (CSS imports, polyfills)
-// Bundlers will keep these even if not explicitly imported
-
-// Example: a CSS-in-JS library
-{
-  "sideEffects": ["**/*.css", "src/global.ts"]
-}
-
-// Effect on bundling:
-// Without sideEffects: false, bundlers keep ALL imported modules
-// With sideEffects: false, unused named exports are eliminated
-// This can dramatically reduce bundle size for large libraries`}
-      </CodeBlock>
-
-      <h2>version and Versioning Workflow</h2>
-
-      <CodeBlock language="bash" title="npm version command">
-{`# Bump version automatically (also creates git tag)
-npm version patch    # 1.0.0 → 1.0.1
-npm version minor    # 1.0.0 → 1.1.0
-npm version major    # 1.0.0 → 2.0.0
-
-# Pre-release versions
-npm version prerelease --preid=alpha    # 1.0.0 → 1.0.1-alpha.0
-npm version prerelease --preid=beta     # 1.0.0 → 1.0.1-beta.0
-npm version 2.0.0-rc.1                  # set specific pre-release
-
-# Version + push workflow
-npm version minor && git push --follow-tags
-
-# What npm version does:
-# 1. Updates "version" in package.json
-# 2. Runs npm version scripts (preversion, version, postversion)
-# 3. Creates a git commit: "v1.1.0"
-# 4. Creates a git tag: v1.1.0`}
-      </CodeBlock>
-
-      <h2>scripts for Libraries</h2>
-
-      <CodeBlock language="json" title="Typical library scripts">
-{`{
-  "scripts": {
-    // Build with tsup (TypeScript → CJS + ESM + .d.ts)
-    "build": "tsup src/index.ts --format esm,cjs --dts",
-    "build:watch": "tsup src/index.ts --format esm,cjs --dts --watch",
-
-    // Test
+    "build": "tsup",
+    "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-
-    // Type checking
+    "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run test",
+    "clean": "rimraf dist"
+  },
 
-    // Lint
-    "lint": "eslint src --ext .ts,.tsx",
+  "engines": {
+    "node": ">=18.0.0"
+  },
 
-    // Publish lifecycle
-    "prepublishOnly": "npm run build && npm run test && npm run lint",
-    "prepack": "npm run build",
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "rimraf": "^5.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
 
-    // Release
-    "release": "changeset publish",
-    "version": "changeset version && npm install"
+  "publishConfig": {
+    "access": "public"
   }
 }`}
       </CodeBlock>
 
-      <InfoBox variant="note" title="publishConfig.access for Scoped Packages">
-        <p>
-          Scoped packages (<code>@myorg/my-lib</code>) are private by default on npm.
-          To publish them publicly, you must set <code>"publishConfig": {"{"}"access": "public"{"}"}</code>
-          in <code>package.json</code>. Without this, <code>npm publish</code> will fail with a
-          payment required error.
-        </p>
+      <FlowChart
+        title="Field Categories at a Glance"
+        chart={"graph TD\n  A[package.json fields] --> B[Identity]\n  A --> C[Entry Points]\n  A --> D[Dependencies]\n  A --> E[Publishing]\n  A --> F[Tooling]\n  B --> G[name, version, description, license]\n  C --> H[main, module, exports, types, bin]\n  D --> I[dependencies, devDependencies, peerDependencies]\n  E --> J[files, publishConfig, private, sideEffects]\n  F --> K[scripts, engines, type]"}
+      />
+
+      <h2>Common Mistakes</h2>
+
+      <CodeBlock language="json" title="Mistakes and their fixes">
+{`// MISTAKE 1: Build tools in dependencies
+{
+  "dependencies": {
+    "typescript": "^5.3.0",  // ❌ consumers don't need this
+    "tsup": "^8.0.0"         // ❌ move to devDependencies
+  }
+}
+
+// MISTAKE 2: Missing types field
+{
+  "main": "./dist/index.js"
+  // ❌ TypeScript users won't get type hints
+  // Fix: add "types": "./dist/index.d.ts"
+}
+
+// MISTAKE 3: Wrong main entry
+{
+  "main": "./src/index.ts"  // ❌ consumers can't run TypeScript!
+  // Fix: "main": "./dist/index.cjs"
+}
+
+// MISTAKE 4: No files field (shipping everything)
+{
+  // Without "files", npm publishes based on .gitignore
+  // This might include: src/, tests/, .env, docs/
+  // Fix: add "files": ["dist/"]
+}
+
+// MISTAKE 5: Missing sideEffects for tree-shaking
+{
+  // Without sideEffects: false, bundlers can't safely
+  // remove unused exports from your package
+}
+
+// MISTAKE 6: Forgetting "type" for ESM
+{
+  "main": "./dist/index.mjs"
+  // If "type" is missing, .js files default to CommonJS
+  // Use explicit .mjs/.cjs extensions OR set "type": "module"
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Validate Your package.json">
+        Use <code>npx publint</code> to check your package.json for common publishing mistakes.
+        It verifies entry points exist, exports are correct, and files are properly included.
+        Run it before every publish.
       </InfoBox>
 
       <InteractiveChallenge
-        question="What does 'sideEffects: false' in package.json tell bundlers?"
+        question="You're building a React component library. Where should 'react' be listed?"
         options={[
-          "The package has no security vulnerabilities",
-          "All modules in the package are safe to remove if their exports are not imported",
-          "The package does not modify global scope",
-          "The package is compatible with all JavaScript environments"
+          "dependencies — it's needed at runtime",
+          "devDependencies — you only need it for development",
+          "peerDependencies — consumers must provide their own React",
+          "optionalDependencies — React might not be available"
         ]}
-        correctIndex={1}
-        explanation="'sideEffects: false' is a hint to bundlers (Webpack, Rollup, esbuild) that every module in the package is side-effect free — importing a module only for its exports won't cause observable behavior. This enables aggressive tree shaking: if you import { add } from 'my-lib' but never use subtract, bundlers can safely exclude the subtract module entirely from the output bundle."
+        correctIndex={2}
+        explanation="React should be a peerDependency for a component library. If it were in dependencies, consumers would end up with two copies of React (yours and theirs), breaking hooks and context. As a peerDependency, you declare that you need React but expect the consuming application to provide it, ensuring everyone shares one instance."
       />
 
       <InteractiveChallenge
-        question="What does the 'prepublishOnly' lifecycle script do?"
+        question={"What does 'sideEffects: false' tell bundlers?"}
         options={[
-          "Runs before every npm install in the project",
-          "Runs only before npm publish, not before npm pack or npm install",
-          "Runs before publishing AND before installation as a dependency",
-          "Prevents publishing if the script exits with an error"
+          "The package has no bugs",
+          "The package doesn't use any dependencies",
+          "Every file can be safely removed if its exports aren't used (tree-shaking)",
+          "The package doesn't modify global state at install time"
         ]}
-        correctIndex={1}
-        explanation="'prepublishOnly' runs only before 'npm publish', not before 'npm pack' or 'npm install'. This makes it ideal for final checks: run build, tests, and lint. If any step fails (non-zero exit code), npm aborts the publish. Compare with 'prepare' which runs after install too — 'prepublishOnly' is more targeted for build/test gates before publishing."
+        correctIndex={2}
+        explanation="sideEffects: false is a hint to bundlers like Webpack and Rollup that importing a module from your package has no observable effect beyond providing exports. This means if a consumer imports { slugify } from your package but never uses it, the bundler can safely remove it from the final bundle (tree-shaking)."
       />
+
+      <h2>Key Takeaways</h2>
+      <ul>
+        <li>Only <code>name</code> and <code>version</code> are truly required; everything else improves discoverability and correctness</li>
+        <li>Use <code>exports</code> for modern entry points, keep <code>main</code> as fallback</li>
+        <li>Put <code>types</code> first in exports conditions for TypeScript</li>
+        <li>Runtime deps → dependencies, build tools → devDependencies, framework → peerDependencies</li>
+        <li><code>sideEffects: false</code> enables tree-shaking for your consumers</li>
+        <li><code>"files"</code> whitelist controls published content; always set it</li>
+        <li>Use <code>npx publint</code> to catch common mistakes before publishing</li>
+      </ul>
     </LessonLayout>
   );
 }

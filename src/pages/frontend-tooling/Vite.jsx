@@ -4,235 +4,313 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function FTVite() {
+export default function Vite() {
   return (
     <LessonLayout
-      title="Vite"
+      title="Vite Deep Dive"
       sectionId="frontend-tooling"
       lessonIndex={0}
       prev={null}
       next={{ path: '/frontend-tooling/linting', label: 'ESLint & Prettier' }}
     >
-      <h2>What is Vite?</h2>
+      <h2>Why Vite?</h2>
       <p>
-        Vite is a next-generation frontend build tool that dramatically improves the developer experience.
-        It uses native ES modules in development (no bundling) and Rollup for production builds.
+        If you've used Create React App or Webpack, you've felt the pain: slow cold starts,
+        sluggish HMR, and config files that rival War and Peace. Vite (French for "fast")
+        was created by Evan You to solve these problems by leveraging native ES modules
+        during development and Rollup for production builds.
+      </p>
+
+      <InfoBox variant="info" title="CRA Is Dead">
+        Create React App is no longer maintained. The React team officially recommends
+        framework-based setups (Next.js, Remix) or Vite for vanilla SPA projects.
+        If your new team is still on CRA, migrating to Vite is usually straightforward.
+      </InfoBox>
+
+      <h3>Vite vs Webpack vs CRA</h3>
+      <p>
+        Webpack bundles your entire app before serving it. Vite serves files individually
+        using native ESM — the browser requests modules on demand, so startup is nearly
+        instant regardless of app size.
       </p>
 
       <FlowChart
-        title="Vite Architecture"
-        chart={"graph LR\n  A[Dev Server Start] --> B[Pre-bundle Dependencies]\n  B --> C[esbuild - 100x faster than JS]\n  C --> D[Native ESM Dev Server]\n  D --> E[Browser requests file]\n  E --> F[Vite transforms on demand]\n  F --> G[HMR on file change]"}
+        title="Webpack vs Vite Dev Flow"
+        chart={"graph TD\n  A[Source Files] --> B{Dev Server}\n  B -->|Webpack| C[Bundle Everything]\n  C --> D[Serve Bundle]\n  B -->|Vite| E[Serve Native ESM]\n  E --> F[Transform On Request]\n  F --> G[Browser Loads Modules]"}
       />
 
-      <h2>Vite vs Webpack</h2>
+      <h2>How Vite Works Under the Hood</h2>
 
-      <CodeBlock language="bash" title="Key differences">
-{`# Webpack approach (traditional)
-# ─ Bundles ALL code upfront before serving
-# ─ Cold start: 30-60 seconds for large apps
-# ─ HMR: re-bundles affected modules (slow)
-# ─ Always fast in production (mature optimization)
+      <h3>Development: Native ESM + esbuild</h3>
+      <p>
+        In dev mode, Vite pre-bundles dependencies (node_modules) with esbuild for speed,
+        then serves your source code as native ES modules. The browser's import system
+        requests files individually, and Vite transforms them on the fly.
+      </p>
 
-# Vite approach
-# ─ Dev: serves files as-is (native ESM, no bundle)
-# ─ Cold start: < 1 second (only transforms requested files)
-# ─ HMR: only invalidates changed module (instant)
-# ─ Prod: uses Rollup (excellent tree-shaking)`}
-      </CodeBlock>
+      <FlowChart
+        title="Vite Dev Server Architecture"
+        chart={"graph TD\n  A[Browser Request] --> B[Vite Dev Server]\n  B --> C{File Type?}\n  C -->|node_modules| D[Pre-bundled with esbuild]\n  C -->|.tsx/.jsx| E[Transform with esbuild]\n  C -->|.css| F[Inject as JS module]\n  C -->|.svg| G[Transform via Plugin]\n  D --> H[Serve to Browser]\n  E --> H\n  F --> H\n  G --> H"}
+      />
 
-      <h2>Project Setup</h2>
+      <h3>Production: Rollup (or Rolldown)</h3>
+      <p>
+        For production, Vite uses Rollup to create optimized bundles with tree-shaking,
+        code splitting, and asset hashing. The Vite team is also building Rolldown — a
+        Rust-based bundler that will eventually replace both esbuild and Rollup in Vite.
+      </p>
 
-      <CodeBlock language="bash" title="Creating projects">
-{`# React + JS
-npm create vite@latest my-app -- --template react
+      <h2>vite.config.ts Deep Dive</h2>
 
-# React + TypeScript
-npm create vite@latest my-app -- --template react-ts
+      <CodeBlock language="javascript" title="Complete vite.config.ts">
+{`import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import svgr from 'vite-plugin-svgr';
+import path from 'path';
 
-# React + SWC (faster transforms)
-npm create vite@latest my-app -- --template react-swc-ts
-
-# Vue, Svelte, vanilla also available
-npm create vite@latest my-app -- --template vue-ts
-
-cd my-app && npm install && npm run dev`}
-      </CodeBlock>
-
-      <h2>vite.config.ts Reference</h2>
-
-      <CodeBlock language="typescript" title="Complete vite.config.ts">
-{`import { defineConfig, loadEnv } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
-
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
-
-  return {
-    plugins: [react()],
-
-    // Path aliases
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-      },
-    },
-
-    // Dev server config
-    server: {
-      port: 3000,
-      strictPort: true,        // fail if port is in use
-      host: true,              // expose to network (0.0.0.0)
-      open: '/dashboard',      // auto-open this path
-      proxy: {
-        '/api': {
-          target: 'http://localhost:8080',
-          changeOrigin: true,
-          secure: false,
-        },
-      },
-      cors: true,
-    },
-
-    // Build config
-    build: {
-      outDir: 'dist',
-      emptyOutDir: true,
-      sourcemap: mode !== 'production',
-      minify: 'esbuild',
-      target: 'es2020',
-      chunkSizeWarningLimit: 600,
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'react-vendor': ['react', 'react-dom'],
-            router: ['react-router-dom'],
-          },
-        },
-      },
-    },
-
-    // Preview server (vite preview)
-    preview: {
-      port: 4173,
-    },
-
-    // CSS config
-    css: {
-      modules: {
-        localsConvention: 'camelCase',
-      },
-      preprocessorOptions: {
-        scss: {
-          additionalData: '@import "./src/styles/variables.scss";',
-        },
-      },
-    },
-
-    // Dependency optimization
-    optimizeDeps: {
-      include: ['react', 'react-dom', 'react-router-dom'],
-      exclude: ['some-local-package'],
-    },
-
-    define: {
-      __APP_VERSION__: JSON.stringify(env.npm_package_version),
-    },
-  }
-})`}
-      </CodeBlock>
-
-      <h2>Plugins Ecosystem</h2>
-
-      <CodeBlock language="typescript" title="Common Vite plugins">
-{`// @vitejs/plugin-react (Babel) — default
-// @vitejs/plugin-react-swc (SWC) — faster HMR
-
-// vite-plugin-svgr — import SVGs as React components
-import svgr from 'vite-plugin-svgr'
-// Usage: import Logo from './logo.svg?react'
-
-// vite-tsconfig-paths — resolve TypeScript path aliases
-import tsconfigPaths from 'vite-tsconfig-paths'
-
-// rollup-plugin-visualizer — bundle analysis
-import { visualizer } from 'rollup-plugin-visualizer'
-
-// vite-plugin-pwa — Progressive Web App
-import { VitePWA } from 'vite-plugin-pwa'
-
-// vite-plugin-checker — TypeScript + ESLint in dev
-import checker from 'vite-plugin-checker'
-
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
-    tsconfigPaths(),
-    svgr(),
-    checker({ typescript: true }),
-    visualizer({ open: true }),  // runs on build
+    svgr({
+      svgrOptions: { icon: true },
+    }),
   ],
-})`}
-      </CodeBlock>
 
-      <h2>Library Mode</h2>
-
-      <CodeBlock language="typescript" title="Building a library with Vite">
-{`// vite.config.ts for library builds
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
-import dts from 'vite-plugin-dts'
-
-export default defineConfig({
-  plugins: [react(), dts()],
-  build: {
-    lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'MyLib',
-      formats: ['es', 'cjs'],
-      fileName: (format) => \`my-lib.\${format}.js\`,
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@hooks': path.resolve(__dirname, './src/hooks'),
+      '@utils': path.resolve(__dirname, './src/utils'),
     },
+  },
+
+  server: {
+    port: 3000,
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\\/api/, ''),
+      },
+    },
+  },
+
+  build: {
+    sourcemap: true,
     rollupOptions: {
-      // Externalize React — don't bundle it in library
-      external: ['react', 'react-dom'],
       output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['@mui/material', '@emotion/react'],
         },
       },
     },
   },
+
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+  },
+}))`}
+      </CodeBlock>
+
+      <h2>Essential Plugins</h2>
+
+      <CodeBlock language="bash" title="Install Common Plugins">
+{`npm install -D @vitejs/plugin-react vite-plugin-svgr vite-tsconfig-paths`}
+      </CodeBlock>
+
+      <p>
+        <strong>@vitejs/plugin-react</strong> — Adds Fast Refresh (HMR for React), JSX
+        runtime, and Babel/SWC integration. Use the SWC variant for even faster transforms:
+      </p>
+
+      <CodeBlock language="bash">
+{`npm install -D @vitejs/plugin-react-swc`}
+      </CodeBlock>
+
+      <p>
+        <strong>vite-plugin-svgr</strong> — Import SVGs as React components.
+        <strong> vite-tsconfig-paths</strong> — Reads path aliases from tsconfig.json
+        so you don't duplicate them in vite.config.
+      </p>
+
+      <h2>Environment Variables</h2>
+      <p>
+        Vite exposes env variables on <code>import.meta.env</code> instead of
+        <code>process.env</code>. Only variables prefixed with <code>VITE_</code>
+        are exposed to client code.
+      </p>
+
+      <CodeBlock language="bash" title=".env Files">
+{`# .env                  - loaded in all cases
+# .env.local            - loaded in all cases, git-ignored
+# .env.development      - loaded in dev mode
+# .env.production       - loaded in production build
+
+VITE_API_URL=https://api.example.com
+VITE_FEATURE_FLAG=true
+
+# NOT exposed to client (no VITE_ prefix)
+DATABASE_URL=postgres://localhost:5432/mydb`}
+      </CodeBlock>
+
+      <CodeBlock language="javascript" title="Using Env Variables">
+{`// Access in your code
+const apiUrl = import.meta.env.VITE_API_URL;
+const isDev = import.meta.env.DEV;   // true in dev
+const isProd = import.meta.env.PROD; // true in prod
+const mode = import.meta.env.MODE;   // 'development' | 'production'
+
+// TypeScript: create src/vite-env.d.ts
+/// <reference types="vite/client" />
+interface ImportMetaEnv {
+  readonly VITE_API_URL: string;
+  readonly VITE_FEATURE_FLAG: string;
+}
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Security: VITE_ Prefix">
+        Everything with the VITE_ prefix is embedded in your client bundle and visible
+        to anyone. Never put secrets, API keys with write access, or database credentials
+        in VITE_ variables. Those belong on your backend only.
+      </InfoBox>
+
+      <h2>Path Aliases with TypeScript</h2>
+
+      <CodeBlock language="json" title="tsconfig.json">
+{`{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@components/*": ["src/components/*"],
+      "@hooks/*": ["src/hooks/*"]
+    }
+  }
+}`}
+      </CodeBlock>
+
+      <h2>Dev Server: Proxy, HTTPS, and HMR</h2>
+
+      <CodeBlock language="javascript" title="Advanced Server Config">
+{`export default defineConfig({
+  server: {
+    // HTTPS with self-signed cert (install @vitejs/plugin-basic-ssl)
+    https: true,
+
+    // Custom HMR settings
+    hmr: {
+      overlay: true,   // show error overlay
+      port: 3001,      // separate HMR WebSocket port
+    },
+
+    // Watch options for network drives or containers
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
+
+    // Allow access from network (e.g., testing on phone)
+    host: '0.0.0.0',
+  },
 })`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Pre-bundling Dependencies">
-        <p>
-          On first startup, Vite pre-bundles <code>node_modules</code> with esbuild and caches them in
-          <code>.vite/deps/</code>. This converts CJS packages to ESM and bundles small packages
-          to reduce browser request counts. If a dependency changes, Vite re-bundles automatically.
-        </p>
-      </InfoBox>
+      <h2>Build Optimization</h2>
+
+      <CodeBlock language="javascript" title="Chunk Splitting Strategies">
+{`build: {
+  rollupOptions: {
+    output: {
+      manualChunks(id) {
+        // Split vendor code by package
+        if (id.includes('node_modules')) {
+          if (id.includes('react')) return 'vendor-react';
+          if (id.includes('@mui')) return 'vendor-mui';
+          if (id.includes('lodash')) return 'vendor-lodash';
+          return 'vendor'; // everything else
+        }
+      },
+    },
+  },
+  // Warn if a chunk exceeds 500kB
+  chunkSizeWarningLimit: 500,
+  // CSS code splitting (per-chunk CSS files)
+  cssCodeSplit: true,
+}`}
+      </CodeBlock>
+
+      <h2>Preview Mode</h2>
+      <p>
+        After building, use <code>vite preview</code> to locally serve the production
+        build. This catches issues that only appear in the built output.
+      </p>
+
+      <CodeBlock language="json" title="package.json Scripts">
+{`{
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview --port 4173",
+    "lint": "eslint . --ext .ts,.tsx"
+  }
+}`}
+      </CodeBlock>
+
+      <h2>Vite + React + TypeScript Starter</h2>
+
+      <CodeBlock language="bash" title="Scaffold a New Project">
+{`# Create a new Vite + React + TypeScript project
+npm create vite@latest my-app -- --template react-ts
+
+cd my-app
+npm install
+npm run dev`}
+      </CodeBlock>
 
       <InteractiveChallenge
-        question="Why is Vite's development server faster than Webpack's for large projects?"
+        question={"In Vite, which prefix must environment variables have to be exposed to client-side code?"}
         options={[
-          "Vite uses a faster programming language (Go) for all processing",
-          "Vite does not bundle files in development — it serves native ES modules and transforms only requested files",
-          "Vite only processes files in the current visible viewport",
-          "Vite skips TypeScript type checking entirely"
+          "REACT_APP_",
+          "VITE_",
+          "PUBLIC_",
+          "NEXT_PUBLIC_"
         ]}
         correctIndex={1}
-        explanation="Vite's key insight is that modern browsers support ES modules natively. In development, Vite serves source files directly as ESM without bundling. The browser requests each module it needs, and Vite transforms them on demand. This means startup time is constant regardless of project size — only the files requested for the current page are processed."
+        explanation={"Vite uses the VITE_ prefix. REACT_APP_ was CRA's convention, PUBLIC_ is SvelteKit, and NEXT_PUBLIC_ is Next.js. Only VITE_ variables are statically replaced in client code at build time."}
       />
 
-      <InteractiveChallenge
-        question="What does vite build use for bundling in production (as opposed to development)?"
-        options={["esbuild", "Webpack", "Rollup (or Rolldown in newer versions)", "Parcel"]}
-        correctIndex={2}
-        explanation="Vite uses Rollup for production builds. Rollup has excellent tree-shaking and code-splitting capabilities. esbuild is used in development for fast transforms and dependency pre-bundling. Vite 6+ is transitioning to Rolldown (a Rust-based Rollup replacement) for even faster production builds."
-      />
+      <h2>Common Configuration Patterns</h2>
+
+      <CodeBlock language="javascript" title="Conditional Config by Mode">
+{`export default defineConfig(({ command, mode }) => {
+  if (command === 'serve') {
+    // Dev-specific config
+    return {
+      plugins: [react()],
+      server: { port: 3000 },
+    };
+  } else {
+    // Build-specific config
+    return {
+      plugins: [react()],
+      build: { sourcemap: mode !== 'production' },
+    };
+  }
+})`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Speed Up Cold Starts">
+        If your app has many dependencies, add them to <code>optimizeDeps.include</code> in
+        your Vite config. This pre-bundles them on the first run so subsequent starts are
+        instant. Vite caches the result in <code>node_modules/.vite</code>.
+      </InfoBox>
     </LessonLayout>
   );
 }

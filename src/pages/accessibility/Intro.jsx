@@ -4,245 +4,254 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function A11yIntro() {
+function Intro() {
   return (
     <LessonLayout
-      title="Accessibility Introduction"
+      title="WCAG & Why It Matters"
       sectionId="accessibility"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/accessibility/semantic', label: 'Semantic HTML' }}
+      next={{ path: '/accessibility/semantic', label: 'Semantic HTML & Landmarks' }}
     >
-      <h2>Why Accessibility Matters</h2>
       <p>
-        Web accessibility (a11y) means building websites usable by people with disabilities.
-        ~15% of the world's population — over 1 billion people — live with some form of disability.
-        Accessibility also improves SEO, usability for everyone, and legal compliance.
+        Web accessibility (a11y) means designing and building websites so <strong>everyone</strong> can
+        perceive, understand, navigate, and interact with the web — including people with disabilities.
+        Over 1 billion people worldwide live with some form of disability. Building accessible products
+        isn't optional — it's a legal requirement, a business advantage, and the right thing to do.
+      </p>
+
+      <InfoBox variant="info" title={"Why \"a11y\"?"}>
+        The abbreviation <strong>a11y</strong> is a numeronym for "accessibility" — the letter "a",
+        then 11 letters, then "y". You'll see it everywhere in tooling, linting rules, and conference talks.
+      </InfoBox>
+
+      {/* ── Disability Categories ─────────────────────────── */}
+      <h2>Disability Categories</h2>
+      <p>
+        Accessibility addresses a wide spectrum of disabilities. Understanding these categories helps
+        you anticipate the barriers users face:
       </p>
 
       <FlowChart
-        title="WCAG Four Principles (POUR)"
-        chart={"graph TD\n  A[Accessible Web] --> B[Perceivable]\n  A --> C[Operable]\n  A --> D[Understandable]\n  A --> E[Robust]\n  B --> F[Alt text, captions, contrast ratio]\n  C --> G[Keyboard nav, no seizure triggers]\n  D --> H[Clear language, error messages]\n  E --> I[Works with screen readers and assistive tech]"}
+        title="Disability Categories Affecting Web Use"
+        chart={"graph LR\n  D[Disability Categories] --> V[Visual]\n  D --> A[Auditory]\n  D --> M[Motor / Physical]\n  D --> C[Cognitive / Neurological]\n  V --> V1[Blindness]\n  V --> V2[Low vision]\n  V --> V3[Color blindness]\n  A --> A1[Deafness]\n  A --> A2[Hard of hearing]\n  M --> M1[Limited fine motor]\n  M --> M2[Paralysis]\n  M --> M3[Tremors]\n  C --> C1[Dyslexia]\n  C --> C2[ADHD]\n  C --> C3[Epilepsy]"}
       />
 
-      <h2>WCAG 2.1 — The Standard</h2>
+      <p>
+        Disabilities can also be <strong>permanent</strong> (blind from birth),
+        <strong> temporary</strong> (broken arm), or <strong>situational</strong> (holding a baby,
+        bright sunlight on a screen). Accessible design benefits everyone.
+      </p>
 
-      <CodeBlock language="markdown" title="WCAG Conformance Levels">
-{`## Level A — Minimum (must fix, breaks basic access)
-# Examples:
-# - Images have alt text
-# - Form inputs have labels
-# - Content doesn't require color alone to understand
-# - Videos have captions (pre-recorded)
+      {/* ── WCAG Overview ─────────────────────────────────── */}
+      <h2>WCAG 2.1 AA — The Standard</h2>
+      <p>
+        The <strong>Web Content Accessibility Guidelines (WCAG)</strong> are published by the W3C's
+        Web Accessibility Initiative (WAI). WCAG 2.1 defines three conformance levels:
+      </p>
+      <ul>
+        <li><strong>Level A</strong> — Minimum accessibility. Removes the most severe barriers.</li>
+        <li><strong>Level AA</strong> — The target for most laws and policies. This is what you aim for.</li>
+        <li><strong>Level AAA</strong> — Highest level. Not required as a blanket target but useful for specific contexts.</li>
+      </ul>
 
-## Level AA — Standard (required by law in most countries)
-# Examples:
-# - Contrast ratio ≥ 4.5:1 for text, 3:1 for large text
-# - Keyboard accessible for all functionality
-# - Error messages identify the field and describe the error
-# - Page has meaningful title
-# - Headings describe the topic of each section
+      <InfoBox variant="warning" title="AA Is the Industry Target">
+        Nearly every legal framework references WCAG 2.1 Level AA. If your product doesn't meet AA,
+        you're exposed to lawsuits. In 2023, over 4,600 ADA web accessibility lawsuits were filed in
+        the US alone. Don't ship without an accessibility audit.
+      </InfoBox>
 
-## Level AAA — Enhanced (aspirational, not required for all)
-# Examples:
-# - Contrast ratio ≥ 7:1
-# - Sign language for pre-recorded video
-# - Reading level at lower secondary education
-# - No timing on any functionality
+      {/* ── POUR Principles ───────────────────────────────── */}
+      <h2>The Four POUR Principles</h2>
+      <p>
+        WCAG is organized around four foundational principles. Every success criterion falls under one
+        of these. Memorize them — they come up in interviews constantly.
+      </p>
 
-## Legal Requirements
-# USA: ADA (Americans with Disabilities Act) — applies to websites
-#      Section 508 — federal agencies MUST be AA compliant
-# EU:  European Accessibility Act — 2025, products/services must comply
-# UK:  Equality Act 2010
-# CA:  Accessibility for Ontarians with Disabilities Act (AODA)
-# Consequences: lawsuits, fines, reputational damage
-# Domino's was sued for inaccessible app — Supreme Court allowed case`}
+      <FlowChart
+        title="POUR Principles"
+        chart={"graph TD\n  POUR[WCAG POUR Principles] --> P[Perceivable]\n  POUR --> O[Operable]\n  POUR --> U[Understandable]\n  POUR --> R[Robust]\n  P --> P1[Text alternatives for images]\n  P --> P2[Captions for video/audio]\n  P --> P3[Color contrast 4.5:1 ratio]\n  P --> P4[Content adaptable to different presentations]\n  O --> O1[Keyboard accessible]\n  O --> O2[Enough time to read/use]\n  O --> O3[No seizure-inducing content]\n  O --> O4[Navigable with skip links and headings]\n  U --> U1[Readable text]\n  U --> U2[Predictable behavior]\n  U --> U3[Input assistance and error recovery]\n  R --> R1[Compatible with assistive tech]\n  R --> R2[Valid HTML semantics]\n  R --> R3[Name, role, value exposed]"}
+      />
+
+      <h3>Perceivable</h3>
+      <p>
+        Users must be able to perceive the content. This means providing text alternatives for
+        non-text content, captions for multimedia, and sufficient color contrast. If content is only
+        conveyed through color, some users will miss it entirely.
+      </p>
+
+      <h3>Operable</h3>
+      <p>
+        All functionality must be available from a keyboard. Users must have enough time to interact,
+        and content must not cause seizures. Navigation should be predictable with clear focus indicators.
+      </p>
+
+      <h3>Understandable</h3>
+      <p>
+        Text must be readable, the UI must behave predictably, and users must get help avoiding and
+        correcting errors. Think clear labels, consistent navigation, and descriptive error messages.
+      </p>
+
+      <h3>Robust</h3>
+      <p>
+        Content must be robust enough to work with current and future assistive technologies. This
+        means valid HTML, proper ARIA usage, and exposing name/role/value to the accessibility tree.
+      </p>
+
+      {/* ── Legal Requirements ────────────────────────────── */}
+      <h2>Legal Requirements</h2>
+      <p>Accessibility is legally mandated in many jurisdictions:</p>
+
+      <CodeBlock language="javascript" title="Major Accessibility Laws">
+{`// United States
+// ADA (Americans with Disabilities Act) — applies to public accommodations
+// Section 508 — federal agencies must meet WCAG 2.0 AA
+// State laws (e.g., California's Unruh Act)
+
+// European Union
+// European Accessibility Act (EAA) — enforcement begins June 2025
+// EN 301 549 — harmonized standard referencing WCAG 2.1 AA
+
+// Canada
+// Accessible Canada Act (ACA)
+// AODA (Ontario) — WCAG 2.0 AA required
+
+// Key takeaway: WCAG 2.1 AA is the de facto global standard.
+// When in doubt, target AA compliance.`}
       </CodeBlock>
 
-      <h2>Disability Categories and Assistive Technologies</h2>
+      <InfoBox variant="danger" title="Real Lawsuits Happen">
+        Domino's Pizza, Beyoncé's website, and thousands of e-commerce sites have faced ADA lawsuits.
+        The legal risk is not theoretical — plaintiffs' firms actively test sites with automated tools
+        and file complaints. Build accessibility in from the start; retrofitting is 10× more expensive.
+      </InfoBox>
 
-      <CodeBlock language="markdown" title="Who Benefits from Accessibility">
-{`## Visual Disabilities
-# - Blindness: uses screen readers (NVDA, JAWS, VoiceOver, TalkBack)
-# - Low vision: uses screen magnification (200-800%), high contrast
-# - Color blindness: 8% of men, 0.5% of women (red-green most common)
-# - What to do: alt text, proper contrast, don't use color alone
+      {/* ── Business Case ─────────────────────────────────── */}
+      <h2>The Business Case</h2>
+      <p>Beyond legal compliance, accessibility drives real business value:</p>
+      <ul>
+        <li><strong>Market reach</strong> — 15% of the global population has a disability</li>
+        <li><strong>SEO benefits</strong> — semantic HTML, alt text, and structured content improve search rankings</li>
+        <li><strong>Better UX for everyone</strong> — captions help in noisy environments, keyboard nav helps power users</li>
+        <li><strong>Brand reputation</strong> — inclusive design signals maturity and care</li>
+        <li><strong>Lower maintenance</strong> — accessible code is cleaner, more semantic, easier to test</li>
+      </ul>
 
-## Motor/Physical Disabilities
-# - Limited hand movement: uses keyboard-only navigation, switch access
-# - Tremors: needs large click targets, no hover-required interactions
-# - One-handed: keyboard shortcuts matter more
-# - What to do: full keyboard support, visible focus indicators, no time limits
+      {/* ── Assistive Technologies ─────────────────────────── */}
+      <h2>Assistive Technologies</h2>
+      <p>
+        Understanding the tools your users rely on helps you build for them:
+      </p>
 
-## Cognitive and Neurological Disabilities
-# - Dyslexia: benefits from plain language, good spacing, clear fonts
-# - ADHD: benefits from clear structure, predictable navigation
-# - Autism: benefits from literal language, no ambiguous icons
-# - Memory impairment: needs clear navigation, consistent layouts
-# - What to do: clear headings, simple language, consistent UI patterns
+      <CodeBlock language="html" title="Assistive Technologies Overview">
+{`<!-- Screen Readers — read page content aloud -->
+<!-- VoiceOver (macOS/iOS), NVDA (Windows, free), JAWS (Windows, paid) -->
+<!-- They navigate by headings, landmarks, links, and form controls -->
 
-## Auditory Disabilities
-# - Deafness: needs captions and transcripts for audio/video
-# - Hard of hearing: needs captions, visual alerts instead of only audio
-# - What to do: captions (CC) on all videos, never audio-only content
+<!-- Screen Magnifiers — ZoomText, built-in OS zoom -->
+<!-- Users may see only a small portion of the screen at once -->
 
-## Temporary and Situational Disabilities
-# - Broken arm (motor, temporary)
-# - Bright sun washing out screen (visual, situational)
-# - Loud environment (auditory, situational)
-# - Slow internet connection (cognitive load, situational)
-# Accessibility features help everyone in these situations`}
+<!-- Switch Devices — single or dual switches for users with limited mobility -->
+<!-- Users navigate sequentially; every interactive element must be focusable -->
+
+<!-- Voice Control — Dragon NaturallySpeaking, Voice Access (Android) -->
+<!-- Users say "click [label]" — elements MUST have visible, accessible names -->
+
+<!-- Alternative Keyboards — on-screen keyboards, sip-and-puff devices -->
+<!-- Keyboard accessibility is the foundation for all these tools -->`}
       </CodeBlock>
 
-      <h2>The Most Common Accessibility Failures</h2>
+      {/* ── The Accessibility Tree ─────────────────────────── */}
+      <h2>The Accessibility Tree</h2>
+      <p>
+        Browsers build a parallel representation of the DOM called the <strong>accessibility tree</strong>.
+        This is what assistive technologies actually read — not the visual layout, not the CSS.
+        Every node in the a11y tree has four key properties:
+      </p>
 
-      <CodeBlock language="jsx" title="Top 10 Accessibility Mistakes (and Fixes)">
-{`// 1. Missing alt text on images
-// ❌
-<img src="chart.png" />
-// ✅ Descriptive alt for informative images
-<img src="chart.png" alt="Q3 revenue increased 23% to $4.2M" />
-// ✅ Empty alt for decorative images (screen reader skips it)
-<img src="divider.svg" alt="" role="presentation" />
+      <FlowChart
+        title="DOM to Accessibility Tree"
+        chart={"graph TD\n  DOM[DOM Tree] --> AT[Accessibility Tree]\n  AT --> N[Name - what is it called?]\n  AT --> R[Role - what type of element?]\n  AT --> S[State - checked, expanded, disabled?]\n  AT --> V[Value - current value if applicable]\n  DOM2[HTML: button Submit] --> AT2[Role: button]\n  AT2 --> N2[Name: Submit]\n  AT2 --> S2[State: enabled, focusable]\n  DOM3[HTML: input type=checkbox checked] --> AT3[Role: checkbox]\n  AT3 --> N3[Name: from label]\n  AT3 --> S3[State: checked]"}
+      />
 
-// 2. Non-semantic clickable divs
-// ❌ Not keyboard accessible, no ARIA role, no accessible name
-<div onClick={handleClick} className="btn">Submit</div>
-// ✅ Native semantics: keyboard accessible, focusable, correct role
-<button onClick={handleClick}>Submit</button>
+      <CodeBlock language="html" title="How Elements Map to the Accessibility Tree">
+{`<!-- Good: native elements create proper a11y tree nodes automatically -->
+<button>Save</button>
+<!-- A11y tree: Role=button, Name="Save", Focusable=true -->
 
-// 3. Missing form labels
-// ❌ placeholder disappears when user types, screen readers may miss it
-<input type="email" placeholder="Email address" />
-// ✅ Associated label
-<label htmlFor="email">Email address</label>
-<input id="email" type="email" aria-describedby="email-hint" />
-<p id="email-hint" className="hint">We'll never share your email.</p>
+<label for="email">Email</label>
+<input type="email" id="email" required />
+<!-- A11y tree: Role=textbox, Name="Email", Required=true -->
 
-// 4. Color as the only indicator
-// ❌ Colorblind users can't distinguish
-<span style={{ color: 'red' }}>Error</span>
-// ✅ Icon + color + text
-<span role="img" aria-hidden="true">⚠️</span>
-<span style={{ color: '#dc2626' }}>Error: Invalid email address</span>
-
-// 5. Insufficient color contrast
-// ❌ Light gray on white (#999 on #fff = 2.85:1 — fails AA)
-<p style={{ color: '#999', background: '#fff' }}>Help text</p>
-// ✅ Meet 4.5:1 minimum for normal text
-<p style={{ color: '#6b7280', background: '#fff' }}>Help text</p>
-// Tools: WebAIM Contrast Checker, browser DevTools accessibility panel
-
-// 6. No keyboard focus indicators
-// ❌ Removing default focus ring with no replacement
-button:focus { outline: none; }
-// ✅ Custom focus style that's visible
-button:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-// 7. Missing page title and landmark structure
-// ❌ Generic title, no landmarks
-<title>Page</title>
-<div class="nav">...</div>
-// ✅ Descriptive title, semantic landmarks
-<title>Dashboard | Acme App</title>
-<nav aria-label="Main navigation">...</nav>
-<main>...</main>
-<footer>...</footer>
-
-// 8. Auto-playing media
-// ❌ Autoplaying video with sound (users can't stop it)
-<video src="promo.mp4" autoPlay />
-// ✅ No autoplay, or muted with controls
-<video src="promo.mp4" controls muted />
-
-// 9. Inaccessible modals
-// ❌ Focus not trapped inside modal, ESC doesn't close
-<div class="modal" tabIndex={-1}>...</div>
-// ✅ Use focus-trap-react or native <dialog> element
-<dialog ref={dialogRef} onClose={handleClose}>
-  {/* focus trapped automatically, ESC closes */}
-</dialog>
-
-// 10. Missing skip link
-// ❌ Every page load forces keyboard users through the entire nav
-// ✅ Skip to main content link (visible on focus)
-<a href="#main-content" className="skip-link">Skip to main content</a>
-<main id="main-content" tabIndex={-1}>...</main>`}
+<!-- Bad: div has no role, no keyboard support, no a11y tree entry -->
+<div class="btn" onclick="save()">Save</div>
+<!-- A11y tree: Role=generic, Name="", Focusable=false -->
+<!-- Screen reader users literally cannot find or activate this -->`}
       </CodeBlock>
 
-      <h2>Quick Wins — Fix 80% of Issues Fast</h2>
-
-      <CodeBlock language="jsx" title="Audit Checklist — Quick Wins">
-{`// Run this in your browser console to find some issues:
-// 1. Install axe DevTools Chrome extension → Run accessibility scan
-// 2. Tab through your entire page — can you use it without a mouse?
-// 3. Check contrast ratios with browser DevTools
-
-// AUTOMATED CHECKS (catches ~30% of issues):
-// eslint-plugin-jsx-a11y — lint rules in your editor
-import pluginJsxA11y from 'eslint-plugin-jsx-a11y';
-// Add to ESLint config — catches missing alts, labels, ARIA issues
-
-// jest-axe — accessibility testing in unit tests
-import { axe, toHaveNoViolations } from 'jest-axe';
-expect.extend(toHaveNoViolations);
-it('has no accessibility violations', async () => {
-  const { container } = render(<MyComponent />);
-  const results = await axe(container);
-  expect(results).toHaveNoViolations();
-});
-
-// MANUAL CHECKS (catches the other 70%):
-// 1. Keyboard test: tab through entire page without mouse
-//    - Can you reach every interactive element?
-//    - Is focus always visible?
-//    - Do modals trap focus?
-//    - Does ESC close modals?
-
-// 2. Screen reader test (Mac: Cmd+F5 for VoiceOver):
-//    - Navigate by headings (VoiceOver: Ctrl+Option+Cmd+H)
-//    - Are images described meaningfully?
-//    - Do form errors announce correctly?
-//    - Do live updates announce (aria-live)?
-
-// 3. Zoom test: zoom to 200% — does layout break?
-//    - No horizontal scrollbar (unless unavoidable)
-//    - No text overlap
-//    - All features still accessible`}
-      </CodeBlock>
-
-      <InfoBox variant="tip" title="Accessibility Is a Feature, Not a Checklist">
-        <p>
-          The best time to fix accessibility is when writing code, not in a separate audit phase.
-          Install <code>eslint-plugin-jsx-a11y</code> in your IDE to catch issues as you type.
-          Use semantic HTML by default — a <code>&lt;button&gt;</code> is always better than a
-          <code>&lt;div onClick&gt;</code>. Treat keyboard users as first-class: if you can't
-          use your app with Tab + Enter + Space + Arrow keys, it's not accessible.
-        </p>
+      <InfoBox variant="tip" title="Inspect the Accessibility Tree">
+        Chrome DevTools → Elements panel → Accessibility tab shows the a11y tree for any element.
+        Firefox also has an excellent Accessibility Inspector. Use these constantly during development
+        to verify your elements are exposed correctly.
       </InfoBox>
 
       <InteractiveChallenge
-        question={"What alt attribute should a purely decorative image have?"}
+        question={"Which WCAG principle requires that all functionality be available from a keyboard?"}
         options={[
-          "alt=\"decorative\"",
-          'alt="" (empty string)',
-          "No alt attribute at all",
-          "alt=\"image\""
+          "Perceivable",
+          "Operable",
+          "Understandable",
+          "Robust"
         ]}
         correctIndex={1}
-        explanation={'An empty alt="" is the correct signal for decorative images. It tells screen readers to skip the image entirely — it adds no information. Omitting alt entirely is wrong — screen readers may read the filename instead. alt="decorative" is wrong — screen readers will literally announce "decorative" which is unhelpful. Only use descriptive alt text when the image conveys information that\'s not available in surrounding text.'}
+        explanation={"The Operable principle states that all UI components and navigation must be operable via keyboard. This is WCAG Success Criterion 2.1.1. Users who cannot use a mouse must be able to access every interactive element."}
+        language="html"
       />
 
       <InteractiveChallenge
-        question="What is the minimum color contrast ratio required for normal body text under WCAG 2.1 Level AA?"
-        options={["2:1", "3:1", "4.5:1", "7:1"]}
-        correctIndex={2}
-        explanation="WCAG 2.1 Level AA requires a minimum 4.5:1 contrast ratio for normal text (body copy, labels). Large text (18pt+ or 14pt bold) has a lower requirement of 3:1. Level AAA raises the bar to 7:1 for normal text and 4.5:1 for large text. Use the WebAIM Contrast Checker or browser DevTools to measure. Common fails: light gray text on white (#999 on #fff = 2.85:1), or light blue on white for links."
+        question={"What is the minimum color contrast ratio required by WCAG 2.1 AA for normal text?"}
+        options={[
+          "3:1",
+          "4.5:1",
+          "7:1",
+          "2:1"
+        ]}
+        correctIndex={1}
+        explanation={"WCAG 2.1 AA requires a minimum contrast ratio of 4.5:1 for normal text (Success Criterion 1.4.3). Large text (18pt or 14pt bold) can use 3:1. Level AAA requires 7:1 for normal text."}
+        language="html"
       />
+
+      {/* ── Getting Started ───────────────────────────────── */}
+      <h2>Your Accessibility Mindset</h2>
+      <p>
+        Accessibility isn't a checklist you bolt on at the end — it's a mindset you apply from the
+        first line of code. In the upcoming lessons we'll cover semantic HTML, ARIA, keyboard
+        navigation, and testing. Together these form the foundation every senior developer needs
+        to build production-quality, inclusive applications.
+      </p>
+
+      <CodeBlock language="javascript" title="Quick A11y Wins You Can Do Today">
+{`// 1. Add lang attribute to <html>
+// <html lang="en">
+
+// 2. Ensure every image has meaningful alt text (or alt="" for decorative)
+// <img src="logo.png" alt="Acme Corp logo" />
+// <img src="divider.png" alt="" />  ← decorative, hidden from a11y tree
+
+// 3. Use native HTML elements instead of divs
+// <button> instead of <div onClick>
+// <a href> instead of <span onClick>
+
+// 4. Add visible focus styles
+// :focus-visible { outline: 2px solid #4A90D9; outline-offset: 2px; }
+
+// 5. Test with keyboard only — unplug your mouse for 10 minutes
+// Can you reach every interactive element? Can you see where focus is?`}
+      </CodeBlock>
     </LessonLayout>
   );
+}
+
+export default function IntroPage() {
+  return <Intro />;
 }

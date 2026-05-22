@@ -4,355 +4,387 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function A11ySemantic() {
+function Semantic() {
   return (
     <LessonLayout
-      title="Semantic HTML"
+      title="Semantic HTML & Landmarks"
       sectionId="accessibility"
       lessonIndex={1}
-      prev={{ path: '/accessibility/intro', label: 'Accessibility Introduction' }}
-      next={{ path: '/accessibility/aria', label: 'ARIA Attributes' }}
+      prev={{ path: '/accessibility/intro', label: 'WCAG & Why It Matters' }}
+      next={{ path: '/accessibility/aria', label: 'ARIA Roles & Attributes' }}
     >
-      <h2>What Is Semantic HTML?</h2>
       <p>
-        Semantic HTML uses elements that convey meaning — not just visual appearance. When you use
-        a <code>{'<nav>'}</code> instead of a <code>{'<div class="nav">'}</code>, screen readers,
-        search engines, and other tools understand the structure of your page. Semantics are the
-        foundation of accessibility: correct semantics often mean ARIA is unnecessary.
+        Semantic HTML is the single most impactful thing you can do for accessibility. Native HTML
+        elements carry built-in roles, keyboard behavior, and states that assistive technologies
+        understand automatically. A &lt;button&gt; is focusable, activatable with Enter/Space, and
+        announced as "button" — a &lt;div&gt; is none of these things.
+      </p>
+
+      <InfoBox variant="tip" title="The Golden Rule">
+        Use the correct HTML element for the job. If a native element does what you need, use it.
+        Only reach for ARIA when there is no native HTML equivalent. This is the{' '}
+        <strong>first rule of ARIA</strong> — and it starts here with semantic HTML.
+      </InfoBox>
+
+      {/* ── Semantic vs Non-Semantic ──────────────────────── */}
+      <h2>Semantic vs Non-Semantic Elements</h2>
+      <p>
+        Non-semantic elements like &lt;div&gt; and &lt;span&gt; are generic containers with no
+        meaning. Semantic elements communicate purpose to both the browser and assistive tech.
       </p>
 
       <FlowChart
-        title="Semantic vs Non-Semantic"
-        chart={"graph LR\n  A[div soup] --> B[No structure for AT]\n  C[Semantic HTML] --> D[Screen reader landmarks]\n  C --> E[SEO understanding]\n  C --> F[Keyboard navigation]\n  C --> G[No ARIA needed]"}
+        title="Semantic HTML Document Structure"
+        chart={"graph TD\n  PAGE[Document] --> HEADER[header - Site banner]\n  PAGE --> NAV[nav - Navigation]\n  PAGE --> MAIN[main - Primary content]\n  PAGE --> FOOTER[footer - Site footer]\n  MAIN --> SECTION[section - Thematic group]\n  MAIN --> ARTICLE[article - Self-contained content]\n  MAIN --> ASIDE[aside - Tangential content]\n  SECTION --> H2[h2 - Section heading]\n  ARTICLE --> H3[h3 - Article heading]"}
       />
 
-      <CodeBlock language="html" title="Landmark Elements — Page Structure">
-{`<!-- NON-SEMANTIC — screen readers see a wall of divs, no navigation aid -->
-<div class="header">
+      <CodeBlock language="html" title="❌ Non-Semantic (div soup)">
+{`<div class="header">
   <div class="nav">
-    <div onclick="go('/')">Home</div>
-    <div onclick="go('/about')">About</div>
+    <div class="nav-link" onclick="goto('/')">Home</div>
+    <div class="nav-link" onclick="goto('/about')">About</div>
   </div>
 </div>
 <div class="main">
-  <div class="article">
-    <div class="h1">Welcome</div>
-    <div class="p">Content here...</div>
+  <div class="section">
+    <div class="title">Welcome</div>
+    <div class="text">Content here...</div>
   </div>
 </div>
-<div class="footer">Copyright 2024</div>
+<div class="footer">© 2024</div>
 
-<!-- SEMANTIC — assistive technology can navigate by landmark -->
-<header>                            <!-- banner landmark -->
-  <nav aria-label="Main navigation">  <!-- navigation landmark -->
-    <ul>
-      <li><a href="/">Home</a></li>
-      <li><a href="/about">About</a></li>
-    </ul>
+<!-- Screen reader hears: "group, group, group, group..."
+     No landmarks, no headings, no navigation structure -->`}
+      </CodeBlock>
+
+      <CodeBlock language="html" title="✅ Semantic HTML">
+{`<header>
+  <nav aria-label="Main navigation">
+    <a href="/">Home</a>
+    <a href="/about">About</a>
   </nav>
 </header>
-
-<main>                              <!-- main landmark (one per page) -->
-  <article>                         <!-- self-contained content -->
-    <h1>Welcome</h1>
+<main>
+  <section aria-labelledby="welcome-heading">
+    <h1 id="welcome-heading">Welcome</h1>
     <p>Content here...</p>
-    <section aria-labelledby="features-heading">
-      <h2 id="features-heading">Features</h2>
-      <!-- section groups related content, labeled by heading -->
-    </section>
-  </article>
-
-  <aside aria-label="Related articles">  <!-- complementary landmark -->
-    <!-- sidebar content -->
-  </aside>
+  </section>
 </main>
+<footer>© 2024</footer>
 
-<footer>                            <!-- contentinfo landmark -->
-  <p>Copyright 2024</p>
-  <nav aria-label="Footer navigation">
-    <a href="/privacy">Privacy</a>
-    <a href="/terms">Terms</a>
-  </nav>
-</footer>
-
-<!-- Screen reader users press 'r' to jump between regions,
-     'h' to jump between headings, 'l' for lists —
-     semantic HTML makes all of this work automatically -->`}
+<!-- Screen reader: "banner landmark, navigation landmark,
+     main landmark, heading level 1 Welcome, contentinfo landmark"
+     Users can jump between landmarks instantly -->`}
       </CodeBlock>
 
-      <h2>Heading Hierarchy — Structure, Not Style</h2>
+      {/* ── Landmark Roles ────────────────────────────────── */}
+      <h2>Landmark Roles</h2>
+      <p>
+        Landmarks allow screen reader users to jump directly to major page sections — like a table
+        of contents for the page structure. Native HTML5 elements create implicit landmarks:
+      </p>
 
-      <CodeBlock language="html" title="Correct Heading Usage">
-{`<!-- Headings communicate document outline — never skip levels for style -->
+      <CodeBlock language="html" title="HTML Elements → Landmark Roles">
+{`<!-- Element          → Implicit ARIA Role    → Screen Reader Announcement -->
+<header>              <!-- banner              "banner landmark"           -->
+<nav>                 <!-- navigation          "navigation landmark"      -->
+<main>                <!-- main                "main landmark"            -->
+<aside>               <!-- complementary       "complementary landmark"   -->
+<footer>              <!-- contentinfo         "contentinfo landmark"     -->
+<section aria-label>  <!-- region              "region landmark"          -->
+<form aria-label>     <!-- form                "form landmark"            -->
+<search>              <!-- search (HTML5.2)    "search landmark"          -->
 
-<!-- ✗ Wrong: using headings for visual size, skipping levels -->
-<h1>Company Blog</h1>
-<h3>Latest Post</h3>          <!-- skipped h2! -->
-<h1>Popular Categories</h1>  <!-- wrong: second h1 breaks outline -->
-
-<!-- ✓ Correct: sequential hierarchy, one h1 per page -->
-<h1>Company Blog</h1>          <!-- page title — only one per page -->
-  <h2>Latest Post</h2>
-    <h3>Comments</h3>
-      <h4>Reply to Alice</h4>
-  <h2>Popular Categories</h2>
-    <h3>JavaScript</h3>
-    <h3>CSS</h3>
-
-<!-- If you want text styled like an h3 but it's logically an h2: -->
-<!-- Don't change the heading level — change the CSS class -->
-<h2 class="text-sm font-normal">Visual subtitle</h2>
-<!-- Still h2 in the outline, but styled however you want -->
-
-<!-- Screen readers let users list all headings on a page.
-     A broken hierarchy makes the document outline meaningless. -->
-
-<!-- React pattern for dynamic heading levels -->
-function Heading({ level = 2, children, ...props }) {
-  const Tag = 'h' + Math.min(6, Math.max(1, level));
-  return <Tag {...props}>{children}</Tag>;
-}
-
-// Adjust level based on context, not visual design
-<Section>
-  <Heading level={currentDepth + 1}>Section Title</Heading>
-</Section>`}
+<!-- Rules: -->
+<!-- • Only ONE <main> per page -->
+<!-- • <header> and <footer> are landmarks only at the top level -->
+<!-- • <section> needs aria-label or aria-labelledby to be a landmark -->
+<!-- • Multiple <nav> elements should have distinct aria-label values -->`}
       </CodeBlock>
 
-      <h2>Interactive Elements — Button vs Link</h2>
+      <InfoBox variant="warning" title="Label Your Landmarks">
+        When you have multiple landmarks of the same type (e.g., two &lt;nav&gt; elements), each must
+        have a unique accessible name via <code>aria-label</code> or <code>aria-labelledby</code>.
+        Otherwise screen reader users can't tell them apart: "navigation landmark... navigation landmark."
+      </InfoBox>
 
-      <CodeBlock language="jsx" title="Choosing the Right Interactive Element">
-{`// THE RULE:
-// <button> → triggers an action (submit form, open modal, toggle state)
-// <a href> → navigates to a URL or page section
+      {/* ── Heading Hierarchy ─────────────────────────────── */}
+      <h2>Heading Hierarchy (h1–h6)</h2>
+      <p>
+        Headings create an outline of the page content. Screen reader users navigate by headings
+        more than any other method. The rules are strict:
+      </p>
 
-// ✓ Correct button usage
-<button onClick={openModal}>Edit Profile</button>
-<button type="submit">Create Account</button>
-<button onClick={() => setMenuOpen(!menuOpen)}>Menu</button>
-<button onClick={deleteItem} aria-label={"Delete " + item.name}>
-  <TrashIcon />
-</button>
+      <CodeBlock language="html" title="❌ Bad Heading Hierarchy">
+{`<!-- Skipping levels — screen readers announce gaps, confusing users -->
+<h1>Dashboard</h1>
+<h4>Recent Activity</h4>  <!-- Skipped h2 and h3! -->
+<h2>Settings</h2>
+<h6>Theme</h6>            <!-- Skipped h3, h4, h5! -->
 
-// ✓ Correct link usage
-<a href="/about">About Us</a>
-<a href="#features">Jump to Features</a>
-<a href="https://example.com" target="_blank" rel="noopener noreferrer">
-  External Site
-</a>
-
-// ✗ Wrong — div/span for interactive actions (not keyboard accessible)
-<div onClick={openModal}>Edit</div>         // no keyboard, no role
-<span onClick={handleSort}>Sort</span>     // no Enter/Space support
-
-// ✗ Wrong — link that doesn't navigate
-<a href="#" onClick={openModal}>Edit</a>   // use button instead!
-<a href="javascript:void(0)">Click</a>    // definitely wrong
-
-// ✗ Wrong — button that navigates
-<button onClick={() => navigate('/about')}>About</button>
-// Use <Link to="/about"> instead — right semantics, right keyboard behavior
-
-// Keyboard expectations (enforced by browsers for semantic elements):
-// <a>:      Enter activates it
-// <button>: Enter AND Space activate it
-// Using wrong element breaks user expectations
-
-// When you must use a non-semantic element (e.g., third-party component),
-// add role and keyboard support:
-<div
-  role="button"
-  tabIndex={0}
-  onClick={handleClick}
-  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleClick()}
->
-  Custom Button
-</div>
-// But prefer native <button> — browsers handle this for free`}
+<!-- Using headings for styling — use CSS instead -->
+<h3>This text should just be bold, not a heading</h3>`}
       </CodeBlock>
 
-      <h2>Lists, Tables, and Forms</h2>
+      <CodeBlock language="html" title="✅ Correct Heading Hierarchy">
+{`<h1>Dashboard</h1>           <!-- One h1 per page -->
+  <h2>Recent Activity</h2>   <!-- h2 = major sections -->
+    <h3>Today</h3>            <!-- h3 = subsections -->
+    <h3>Yesterday</h3>
+  <h2>Settings</h2>
+    <h3>Theme</h3>
+    <h3>Notifications</h3>
+      <h4>Email</h4>          <!-- Never skip levels going down -->
+      <h4>Push</h4>
 
-      <CodeBlock language="html" title="Semantic Lists and Tables">
-{`<!-- Navigation menus should be lists -->
-<nav aria-label="Breadcrumb">
-  <ol>  <!-- ordered: position matters in breadcrumbs -->
-    <li><a href="/">Home</a></li>
-    <li><a href="/products">Products</a></li>
-    <li aria-current="page">Laptop Pro</li>
-  </ol>
-</nav>
+<!-- Screen reader users press 'H' to jump between headings.
+     A proper hierarchy lets them understand page structure instantly. -->`}
+      </CodeBlock>
 
-<!-- Definition lists for term-value pairs -->
+      {/* ── Lists ─────────────────────────────────────────── */}
+      <h2>Lists</h2>
+      <p>
+        Screen readers announce the number of items in a list and the current position. Using proper
+        list markup gives users spatial awareness they can't get from styled &lt;div&gt;s.
+      </p>
+
+      <CodeBlock language="html" title="Accessible Lists">
+{`<!-- Unordered list — screen reader: "list, 3 items" -->
+<ul>
+  <li>First item</li>     <!-- "bullet, First item, 1 of 3" -->
+  <li>Second item</li>
+  <li>Third item</li>
+</ul>
+
+<!-- Description list — great for key-value data -->
 <dl>
-  <dt>RAM</dt>         <dd>16 GB DDR5</dd>
-  <dt>Storage</dt>     <dd>512 GB NVMe SSD</dd>
-  <dt>Display</dt>     <dd>14" 2560×1600 120Hz</dd>
+  <dt>Name</dt>
+  <dd>Jane Smith</dd>
+  <dt>Role</dt>
+  <dd>Senior Engineer</dd>
 </dl>
 
-<!-- Tables for TABULAR DATA only (not layout!) -->
-<table>
-  <caption>Q4 Sales by Region</caption>  <!-- table title for AT -->
+<!-- Navigation as list — best practice -->
+<nav aria-label="Main">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>`}
+      </CodeBlock>
+
+      {/* ── Tables ────────────────────────────────────────── */}
+      <h2>Accessible Tables</h2>
+      <p>
+        Data tables must use proper &lt;th&gt; headers with <code>scope</code> attributes so screen
+        readers can associate data cells with their column/row headers.
+      </p>
+
+      <CodeBlock language="html" title="❌ Inaccessible Table">
+{`<!-- Divs pretending to be a table — no semantic meaning -->
+<div class="table">
+  <div class="row">
+    <div class="cell bold">Name</div>
+    <div class="cell bold">Role</div>
+  </div>
+  <div class="row">
+    <div class="cell">Jane</div>
+    <div class="cell">Engineer</div>
+  </div>
+</div>
+<!-- Screen reader: just reads text in sequence, no table navigation -->`}
+      </CodeBlock>
+
+      <CodeBlock language="html" title="✅ Accessible Table">
+{`<table>
+  <caption>Team Members</caption>
   <thead>
     <tr>
-      <th scope="col">Region</th>         <!-- scope tells AT: this is a column header -->
-      <th scope="col">Sales</th>
-      <th scope="col">Growth</th>
+      <th scope="col">Name</th>
+      <th scope="col">Role</th>
+      <th scope="col">Department</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th scope="row">North America</th>  <!-- row header -->
-      <td>$4.2M</td>
-      <td>+12%</td>
+      <th scope="row">Jane Smith</th>
+      <td>Senior Engineer</td>
+      <td>Platform</td>
     </tr>
     <tr>
-      <th scope="row">Europe</th>
-      <td>$2.8M</td>
-      <td>+8%</td>
+      <th scope="row">John Doe</th>
+      <td>Designer</td>
+      <td>Product</td>
     </tr>
   </tbody>
-  <tfoot>
-    <tr>
-      <th scope="row">Total</th>
-      <td>$7.0M</td>
-      <td>+10.5%</td>
-    </tr>
-  </tfoot>
 </table>
-<!-- Screen readers announce: "Q4 Sales by Region, Europe row, Sales column: $2.8M" -->`}
+<!-- Screen reader: "Table, Team Members, 3 columns, 2 rows.
+     Row 2: Name: Jane Smith, Role: Senior Engineer, Department: Platform" -->`}
       </CodeBlock>
 
-      <CodeBlock language="html" title="Accessible Form Patterns">
-{`<!-- Every input needs a visible label — never just placeholder -->
-<!-- Placeholder disappears when typing and has poor contrast -->
+      {/* ── Forms ─────────────────────────────────────────── */}
+      <h2>Forms: label, fieldset, legend</h2>
 
-<!-- ✓ Explicit label association -->
-<label for="email">Email address</label>
-<input id="email" type="email" name="email" autocomplete="email" required>
+      <CodeBlock language="html" title="❌ Inaccessible Form">
+{`<div>Name</div>
+<input type="text" />          <!-- No label association! -->
 
-<!-- ✓ Wrapping label (implicit association) -->
-<label>
-  Password
-  <input type="password" name="password" autocomplete="current-password">
-</label>
-
-<!-- ✓ Multiple inputs in a group — use fieldset + legend -->
-<fieldset>
-  <legend>Shipping address</legend>
-  <label for="street">Street</label>
-  <input id="street" type="text" autocomplete="street-address">
-  <label for="city">City</label>
-  <input id="city" type="text" autocomplete="address-level2">
-</fieldset>
-
-<!-- ✓ Radio button group — fieldset + legend required -->
-<fieldset>
-  <legend>Preferred contact method</legend>
-  <label><input type="radio" name="contact" value="email"> Email</label>
-  <label><input type="radio" name="contact" value="phone"> Phone</label>
-  <label><input type="radio" name="contact" value="text"> Text</label>
-</fieldset>
-
-<!-- ✓ Inline error with aria-describedby -->
-<label for="username">Username</label>
-<input
-  id="username"
-  type="text"
-  aria-describedby="username-error"
-  aria-invalid="true"
->
-<span id="username-error" role="alert">
-  Username must be at least 3 characters.
-</span>
-<!-- Screen reader: "Username, invalid, text field. Username must be at least 3 characters." -->
-
-<!-- ✓ Required fields — programmatic + visual -->
-<label for="phone">
-  Phone number
-  <span aria-hidden="true">*</span>  <!-- hide asterisk from AT -->
-</label>
-<input id="phone" type="tel" required aria-required="true" autocomplete="tel">`}
+<div>Choose a plan:</div>
+<input type="radio" name="plan" /> Free
+<input type="radio" name="plan" /> Pro
+<!-- Radio group has no fieldset/legend -->`}
       </CodeBlock>
 
-      <h2>Time, Address, and Inline Semantics</h2>
+      <CodeBlock language="html" title="✅ Accessible Form">
+{`<!-- Explicit label with for/id -->
+<label for="name">Full Name</label>
+<input type="text" id="name" autocomplete="name" required />
 
-      <CodeBlock language="html" title="Inline Semantic Elements">
-{`<!-- time — machine-readable datetime + human-readable text -->
-<p>Published <time datetime="2024-03-15">March 15, 2024</time></p>
-<p>Meeting at <time datetime="2024-03-15T14:00:00">2:00 PM</time></p>
-<p>Duration: <time datetime="PT2H30M">2 hours 30 minutes</time></p>
+<!-- Group related inputs with fieldset + legend -->
+<fieldset>
+  <legend>Choose a plan</legend>
+  <label>
+    <input type="radio" name="plan" value="free" />
+    Free
+  </label>
+  <label>
+    <input type="radio" name="plan" value="pro" />
+    Pro — $9/month
+  </label>
+</fieldset>
 
-<!-- address — contact information for nearest article/body ancestor -->
-<footer>
-  <address>
-    <a href="mailto:hello@example.com">hello@example.com</a><br>
-    123 Main St, Seattle, WA 98101
-  </address>
-</footer>
+<!-- Error messages linked with aria-describedby -->
+<label for="email">Email</label>
+<input type="email" id="email" aria-describedby="email-error" aria-invalid="true" />
+<span id="email-error" role="alert">Please enter a valid email address</span>`}
+      </CodeBlock>
 
-<!-- abbr — abbreviation with full expansion -->
-<p>The <abbr title="World Wide Web Consortium">W3C</abbr> publishes web standards.</p>
+      {/* ── Link vs Button ────────────────────────────────── */}
+      <h2>Link vs Button</h2>
+      <p>
+        This distinction trips up even experienced developers. The rule is simple:
+      </p>
 
-<!-- mark — highlighted/relevant text (like search result highlight) -->
-<p>Results for "semantic": The <mark>semantic</mark> web was Tim Berners-Lee's vision.</p>
+      <CodeBlock language="html" title="When to Use Link vs Button">
+{`<!-- LINK (<a>) — navigates to a new URL or location -->
+<a href="/settings">Go to Settings</a>
+<a href="#section-2">Jump to Section 2</a>
+<a href="https://example.com" target="_blank" rel="noopener noreferrer">
+  External Site (opens in new tab)
+</a>
 
-<!-- del / ins — editorial changes with optional datetime -->
-<p>Price: <del datetime="2024-01-01">$99</del> <ins datetime="2024-02-01">$79</ins></p>
+<!-- BUTTON (<button>) — triggers an action without navigation -->
+<button type="button" onclick="openModal()">Open Settings</button>
+<button type="submit">Save Changes</button>
+<button type="button" onclick="deleteItem()">Delete</button>
 
-<!-- cite — title of a creative work -->
-<blockquote>
-  <p>"First, solve the problem. Then, write the code."</p>
-  <footer>— <cite>John Johnson</cite></footer>
-</blockquote>
+<!-- NEVER do these: -->
+<!-- ❌ <a href="#" onclick="doAction()">   — use <button> -->
+<!-- ❌ <div onclick="navigate()">          — use <a> -->
+<!-- ❌ <a href="javascript:void(0)">       — use <button> -->
+<!-- ❌ <button onclick="goto('/page')">    — use <a> -->`}
+      </CodeBlock>
 
-<!-- code, kbd, samp — technical text -->
-<p>Press <kbd>Ctrl</kbd> + <kbd>C</kbd> to copy.</p>
-<p>The function returns <code>null</code> if not found.</p>
-<p>Output: <samp>Error: file not found</samp></p>
+      {/* ── Images and Alt Text ───────────────────────────── */}
+      <h2>Image Alt Text Guidelines</h2>
 
-<!-- figure + figcaption — image/diagram with caption -->
+      <CodeBlock language="html" title="Alt Text Rules">
+{`<!-- Informative images — describe the content -->
+<img src="chart.png" alt="Bar chart showing Q3 revenue up 15% over Q2" />
+
+<!-- Decorative images — empty alt to hide from a11y tree -->
+<img src="decorative-wave.svg" alt="" />
+
+<!-- Functional images (inside links/buttons) — describe the action -->
+<a href="/home">
+  <img src="logo.png" alt="Acme Corp - Go to homepage" />
+</a>
+
+<!-- Complex images — use figure + figcaption + longer description -->
 <figure>
-  <img src="architecture.svg" alt="Three-tier architecture: client, server, database">
-  <figcaption>
-    Figure 1: Three-tier architecture showing request flow from browser to database.
+  <img src="architecture.png"
+       alt="System architecture diagram"
+       aria-describedby="arch-desc" />
+  <figcaption id="arch-desc">
+    The system uses a microservices architecture with an API gateway
+    routing to auth, user, and payment services, each with their own database.
   </figcaption>
-</figure>`}
+</figure>
+
+<!-- Icon buttons — alt or aria-label is REQUIRED -->
+<button aria-label="Close dialog">
+  <img src="x-icon.svg" alt="" />   <!-- alt="" on icon, label on button -->
+</button>`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="The First Rule of ARIA">
-        <p>
-          The W3C's first rule of ARIA use: <em>don't use ARIA</em> — use the native HTML element
-          that already has the semantics and behavior you need. A <code>{'<button>'}</code> is
-          better than <code>{'<div role="button">'}</code> because the browser gives it keyboard
-          support, focus styles, and click handling for free. Semantic HTML is zero-effort
-          accessibility. ARIA is for filling gaps when no semantic element exists.
-        </p>
+      <InfoBox variant="info" title="Alt Text Decision Tree">
+        Ask yourself: (1) Is the image decorative? → <code>alt=""</code>.
+        (2) Is it informative? → Describe its content.
+        (3) Is it functional (inside a link/button)? → Describe the action.
+        (4) Is it complex (chart/diagram)? → Short alt + longer description via figcaption or aria-describedby.
       </InfoBox>
 
+      {/* ── Dialog Element ────────────────────────────────── */}
+      <h2>The &lt;dialog&gt; Element</h2>
+      <p>
+        HTML5's native &lt;dialog&gt; provides built-in modal behavior: focus trapping, Escape to
+        close, and proper role announcement. Prefer it over custom div-based modals.
+      </p>
+
+      <CodeBlock language="html" title="Native Dialog Element">
+{`<dialog id="confirm-dialog">
+  <h2>Confirm Deletion</h2>
+  <p>Are you sure you want to delete this item? This cannot be undone.</p>
+  <form method="dialog">
+    <button value="cancel">Cancel</button>
+    <button value="confirm" autofocus>Delete</button>
+  </form>
+</dialog>
+
+<button onclick="document.getElementById('confirm-dialog').showModal()">
+  Delete Item
+</button>
+
+<!-- Benefits of native <dialog>:
+     ✅ Automatic focus trapping (Tab stays inside)
+     ✅ Escape key closes it
+     ✅ ::backdrop pseudo-element for overlay
+     ✅ role="dialog" is implicit
+     ✅ Returns focus to trigger element on close
+     ✅ Inert attribute applied to background content -->`}
+      </CodeBlock>
+
       <InteractiveChallenge
-        question="When should you use a <button> versus an <a> tag for an interactive element?"
+        question={"Which HTML element should you use to group related radio buttons and give them a shared label?"}
         options={[
-          "They are interchangeable — use whichever looks better",
-          "<button> for actions that do something on the current page; <a href> for navigation to a URL or resource",
-          "<a> for everything clickable since it supports href",
-          "<button> only for form submissions inside <form> elements"
+          "<div> with a <span> label",
+          "<fieldset> with a <legend>",
+          "<section> with a <h2>",
+          "<label> wrapping all inputs"
         ]}
         correctIndex={1}
-        explanation="<button> is for actions: submit a form, open a modal, toggle a menu, delete an item. <a href> is for navigation: go to a URL, jump to an anchor. This matters for accessibility: keyboards expect Space to activate buttons but not links; screen readers announce them differently ('link' vs 'button'); browsers style them differently. Using the wrong element creates confusion for users who rely on keyboard or assistive technology."
+        explanation={"<fieldset> groups related form controls and <legend> provides the group label. Screen readers announce the legend text for each input in the group, so users understand the context. For example: \"Choose a plan, radio button, Free, 1 of 2\"."}
+        language="html"
       />
 
       <InteractiveChallenge
-        question="What is wrong with using heading elements (h1–h6) purely for their visual size?"
+        question={"An image is purely decorative (adds no information). What alt text should it have?"}
         options={[
-          "Nothing — heading levels are just CSS shortcuts for font sizes",
-          "Skipping heading levels or using multiple h1s breaks the document outline that screen readers use for navigation",
-          "Search engines penalize pages that use h2 before h3",
-          "Headings must always match the visual font hierarchy"
+          "alt=\"decorative image\"",
+          "No alt attribute at all",
+          "alt=\"\"",
+          "aria-hidden=\"true\" with no alt"
         ]}
-        correctIndex={1}
-        explanation="Screen reader users press 'h' to jump between headings and can list all headings to understand page structure. If you use h3 for visual style instead of structural meaning, or skip from h1 to h3, the document outline becomes meaningless — like a table of contents with missing chapters. Use CSS classes to control heading appearance; use heading levels to communicate hierarchy. One h1 per page (the main topic), h2 for major sections, h3 for subsections."
+        correctIndex={2}
+        explanation={"An empty alt attribute (alt=\"\") tells screen readers to skip the image entirely. Omitting alt altogether causes some screen readers to announce the filename, which is worse. For decorative images, alt=\"\" is the correct approach."}
+        language="html"
       />
+
     </LessonLayout>
   );
+}
+
+export default function SemanticPage() {
+  return <Semantic />;
 }

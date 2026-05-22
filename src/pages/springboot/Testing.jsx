@@ -4,112 +4,229 @@ import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function SpringTesting() {
+export default function Testing() {
   return (
     <LessonLayout
-      title="Testing Spring Apps"
+      title="Testing in Spring Boot"
       sectionId="springboot"
       lessonIndex={6}
-      prev={{ path: "/springboot/security", label: "Spring Security" }}
-      next={{ path: "/springboot/config", label: "Configuration" }}
+      prev={{ path: '/springboot/security', label: 'Spring Security & Auth' }}
+      next={{ path: '/springboot/config', label: 'Configuration & Profiles' }}
     >
-      <p>Spring Boot provides excellent testing support with sliced test annotations that load only relevant parts of the context, making tests fast and focused.</p>
+      <h2>Testing Strategies in Spring Boot</h2>
+      <p>
+        Spring Boot provides excellent testing support through <code>spring-boot-starter-test</code>,
+        which bundles JUnit 5, Mockito, AssertJ, Spring Test, and MockMvc. A good testing
+        strategy uses a pyramid approach — many fast unit tests, fewer integration tests, and
+        a small number of end-to-end tests.
+      </p>
 
-      <h2>Testing Layers</h2>
       <FlowChart
-        title="Spring Boot Test Slices"
-        chart={"graph TD\n  A[@SpringBootTest] --> B[Full context - slow]\n  C[@WebMvcTest] --> D[Web layer only - fast]\n  E[@DataJpaTest] --> F[JPA layer only - fast]\n  G[@JsonTest] --> H[JSON serialization only]\n  I[Unit Tests] --> J[No Spring context - fastest]"}
+        title="Testing Pyramid"
+        chart={"graph TD\nA[E2E Tests - Few, Slow, High Confidence] --> B[Integration Tests - @SpringBootTest, @WebMvcTest]\nB --> C[Unit Tests - Fast, Isolated, Many]\nC --> D[Foundation: Mocks and Stubs]"}
       />
 
-      <h2>Unit Tests (No Spring)</h2>
-      <CodeBlock language="java" title="Plain Unit Tests with Mockito">
-{`import org.junit.jupiter.api.*;
-import org.mockito.*;
-import static org.mockito.Mockito.*;
-import static org.assertj.core.api.Assertions.*;
+      <h3>Unit Testing Services</h3>
+      <p>
+        Unit tests for service classes should be fast and isolated. Use Mockito to mock
+        dependencies so you are testing only the logic within the service itself, not the
+        behavior of its collaborators.
+      </p>
 
-@ExtendWith(MockitoExtension.class)
+      <CodeBlock language="java" title="UserServiceTest.java">
+{`@ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
     @Mock
-    UserRepository userRepo;
+    private UserRepository userRepository;
 
     @Mock
-    EmailValidator validator;
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
-    UserService userService;
+    private UserService userService;
 
     @Test
-    void createUser_validInput_savesAndReturns() {
+    void createUser_WithValidData_ReturnsUserDTO() {
         // Arrange
-        var req = new CreateUserRequest("alice@example.com", "Alice", 25);
-        when(validator.isValid("alice@example.com")).thenReturn(true);
-        when(userRepo.existsByEmail(anyString())).thenReturn(false);
-        when(userRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        CreateUserRequest request = new CreateUserRequest(
+            "john@example.com", "password123", "John Doe");
+
+        when(userRepository.existsByEmail("john@example.com"))
+            .thenReturn(false);
+        when(passwordEncoder.encode("password123"))
+            .thenReturn("encoded_password");
+        when(userRepository.save(any(User.class)))
+            .thenAnswer(invocation -> {
+                User saved = invocation.getArgument(0);
+                saved.setId(1L);
+                return saved;
+            });
 
         // Act
-        User result = userService.create(req);
+        UserDTO result = userService.create(request);
 
         // Assert
-        assertThat(result.getEmail()).isEqualTo("alice@example.com");
-        verify(userRepo).save(any(User.class));
+        assertThat(result.email()).isEqualTo("john@example.com");
+        assertThat(result.displayName()).isEqualTo("John Doe");
+        verify(userRepository).save(any(User.class));
     }
 
     @Test
-    void createUser_duplicateEmail_throwsException() {
-        when(userRepo.existsByEmail("dup@test.com")).thenReturn(true);
-        assertThatThrownBy(() -> userService.create(new CreateUserRequest("dup@test.com","Name",20)))
-            .isInstanceOf(DuplicateEmailException.class);
+    void createUser_WithDuplicateEmail_ThrowsException() {
+        CreateUserRequest request = new CreateUserRequest(
+            "existing@example.com", "password123", "Jane");
+
+        when(userRepository.existsByEmail("existing@example.com"))
+            .thenReturn(true);
+
+        assertThatThrownBy(() -> userService.create(request))
+            .isInstanceOf(DuplicateEmailException.class)
+            .hasMessageContaining("existing@example.com");
+
+        verify(userRepository, never()).save(any());
     }
 }`}
       </CodeBlock>
 
-      <h2>@WebMvcTest — Controller Tests</h2>
-      <CodeBlock language="java" title="MockMvc Tests">
+      <h3>Testing Controllers with @WebMvcTest</h3>
+      <p>
+        <code>@WebMvcTest</code> loads only the web layer — your controller, filters, and
+        Spring MVC configuration — while mocking the service layer. This makes tests faster
+        than a full <code>@SpringBootTest</code> while still verifying HTTP behavior.
+      </p>
+
+      <CodeBlock language="java" title="UserControllerTest.java">
 {`@WebMvcTest(UserController.class)
 class UserControllerTest {
 
-    @Autowired MockMvc mockMvc;
-    @Autowired ObjectMapper objectMapper;
-    @MockBean  UserService userService; // @MockBean adds mock to Spring context
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private UserService userService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
-    void getUser_exists_returns200() throws Exception {
-        var dto = new UserDTO(1L, "alice@test.com", "Alice", 25);
-        when(userService.findById(1L)).thenReturn(Optional.of(dto));
+    void getAllUsers_ReturnsUserList() throws Exception {
+        List<UserDTO> users = List.of(
+            new UserDTO(1L, "john@test.com", "John",
+                        LocalDateTime.now()),
+            new UserDTO(2L, "jane@test.com", "Jane",
+                        LocalDateTime.now())
+        );
+        when(userService.findAll()).thenReturn(users);
 
-        mockMvc.perform(get("/api/users/1")
+        mockMvc.perform(get("/api/users")
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.email").value("alice@test.com"))
-            .andExpect(jsonPath("$.name").value("Alice"));
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].email").value("john@test.com"))
+            .andExpect(jsonPath("$[1].displayName").value("Jane"));
     }
 
     @Test
-    void createUser_validBody_returns201() throws Exception {
-        var req = new CreateUserRequest("new@test.com", "New User", 30);
-        var dto = new UserDTO(5L, "new@test.com", "New User", 30);
-        when(userService.create(any())).thenReturn(dto);
+    void createUser_WithValidData_Returns201() throws Exception {
+        CreateUserRequest request = new CreateUserRequest(
+            "new@test.com", "password123", "New User");
+        UserDTO response = new UserDTO(
+            3L, "new@test.com", "New User", LocalDateTime.now());
+
+        when(userService.create(any())).thenReturn(response);
 
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
+                .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
-            .andExpect(header().string("Location", containsString("/api/users/5")));
+            .andExpect(jsonPath("$.email").value("new@test.com"));
+    }
+
+    @Test
+    void getUserById_WhenNotFound_Returns404() throws Exception {
+        when(userService.findById(999L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/users/999"))
+            .andExpect(status().isNotFound());
     }
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="@DataJpaTest">
-        <p>Use @DataJpaTest for repository tests. It configures an in-memory H2 database, scans @Entity and @Repository classes only, and wraps each test in a transaction that rolls back automatically.</p>
+      <h3>Integration Tests with @SpringBootTest</h3>
+      <p>
+        Integration tests load the full application context and test multiple layers together.
+        Use <code>@SpringBootTest</code> with a test database (like H2) to verify that your
+        components work correctly when wired together.
+      </p>
+
+      <CodeBlock language="java" title="UserIntegrationTest.java">
+{`@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
+@Transactional
+class UserIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+        userRepository.deleteAll();
+    }
+
+    @Test
+    void fullUserLifecycle() throws Exception {
+        // Create
+        String createJson = objectMapper.writeValueAsString(
+            new CreateUserRequest("integration@test.com",
+                                  "password123", "Test User"));
+
+        String response = mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createJson))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
+
+        Long userId = objectMapper.readTree(response).get("id").asLong();
+
+        // Read
+        mockMvc.perform(get("/api/users/" + userId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value("integration@test.com"));
+
+        // Verify in database
+        assertThat(userRepository.findByEmail("integration@test.com"))
+            .isPresent();
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Testing Best Practices">
+        <p>
+          Use <code>@WebMvcTest</code> for controller tests (fast, focused on HTTP).
+          Use <code>@DataJpaTest</code> for repository tests (auto-configures an embedded DB).
+          Reserve <code>@SpringBootTest</code> for integration tests that need the full context.
+          Always use <code>@Transactional</code> in integration tests so each test gets a
+          clean database state through automatic rollback.
+        </p>
       </InfoBox>
 
       <InteractiveChallenge
-        question="What is the difference between @Mock and @MockBean?"
-        options={["They are identical", "@Mock is Mockito only; @MockBean creates a mock and registers it in the Spring ApplicationContext", "@MockBean is for integration tests only", "@Mock is for Spring, @MockBean is for Mockito"]}
+        question="What is the difference between @MockBean and @Mock?"
+        options={[
+          "They are identical and interchangeable",
+          "@MockBean is for Spring context (replaces a bean); @Mock is for plain Mockito unit tests",
+          "@Mock works with Spring; @MockBean does not",
+          "@MockBean creates real instances; @Mock creates fakes"
+        ]}
         correctIndex={1}
-        explanation="@Mock (Mockito) creates a mock but does not interact with Spring. @MockBean (Spring Boot Test) creates a mock AND replaces or adds a bean in the Spring ApplicationContext, allowing @Autowired components to receive the mock."
+        explanation="@MockBean is a Spring Boot test annotation that creates a Mockito mock and registers it in the Spring ApplicationContext, replacing any existing bean of that type. @Mock is a plain Mockito annotation for unit tests that don't load the Spring context at all. Use @MockBean with @WebMvcTest/@SpringBootTest and @Mock with @ExtendWith(MockitoExtension.class)."
       />
     </LessonLayout>
   );
