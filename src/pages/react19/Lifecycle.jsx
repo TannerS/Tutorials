@@ -436,18 +436,6 @@ All because {} created a new object. None of the auth data actually changed.`}
 // Total: 0 unnecessary re-renders. One line of useMemo saved the entire tree.`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question={"An AuthProvider wraps your app. A sibling component updates theme state, causing the AuthProvider to re-render. The auth data hasn't changed, but the context value is NOT memoized. The Navbar uses useContext(AuthContext) and has 5 child components. What happens?"}
-        options={[
-          "Nothing — auth data didn't change so no consumers re-render",
-          "Only the Navbar re-renders, its children are unaffected",
-          "The Navbar AND all 5 of its children re-render",
-          "Only components wrapped in React.memo re-render"
-        ]}
-        correctIndex={2}
-        explanation={"Without useMemo, the context value is a new object every render. Object.is fails, so the Navbar (a consumer) re-renders. Then React's default cascade kicks in — ALL children of the Navbar re-render too, regardless of whether their props changed. The fix: useMemo the context value so the same object reference is returned when the data hasn't changed."}
-      />
-
       <h2>🔑 What Does "Stable" and "Unstable" Actually Mean?</h2>
 
       <InfoBox variant="info" title="The Core Concept">
@@ -607,169 +595,6 @@ function AuthProvider({ children }) {
         </p>
       </InfoBox>
 
-      <hr style={{ borderColor: '#333', margin: '3rem 0 2rem' }} />
-      <h3>💡 Deep Dive: What does "stable reference" mean in React?</h3>
-
-      <InfoBox variant="info" title="Short Answer">
-        <p>A value has a <strong>stable reference</strong> when it's the <strong>same object in memory</strong> across renders. React uses <code>Object.is(oldValue, newValue)</code> to check — if it returns <code>true</code>, the value is stable.</p>
-      </InfoBox>
-
-      <h3>The Three Categories</h3>
-
-      <CodeBlock language="jsx" title="Intentionally Stable — React guarantees same reference" showLineNumbers>
-{`const [count, setCount] = useState(0);
-const [state, dispatch] = useReducer(reducer, init);
-const ref = useRef(null);
-
-// setCount, dispatch, and ref are the SAME object on every render.
-// React creates them once (on mount) and reuses them forever.
-// Why? They're bound to the component's fiber node, not to render values.
-
-// setCount on render 1 === setCount on render 50  (literally same function)
-// dispatch on render 1 === dispatch on render 50
-// ref on render 1 === ref on render 50`}
-      </CodeBlock>
-
-      <CodeBlock language="jsx" title="Accidentally Stable — Same value, different mechanism" showLineNumbers>
-{`const label = "Click me";
-const count = 42;
-const isOpen = true;
-
-// These ARE re-created every render (the line of code runs again).
-// But Object.is("Click me", "Click me") === true
-// because primitives are compared by VALUE, not reference.
-//
-// So they pass equality checks even though they're technically re-assigned.
-// "Accidentally stable" — the stability comes from how JS compares primitives,
-// not from React doing anything special.`}
-      </CodeBlock>
-
-      <CodeBlock language="jsx" title="Unstable — New reference every render" showLineNumbers>
-{`// Functions
-const handleClick = () => setCount(c => c + 1);  // new function object
-
-// Objects
-const style = { color: 'red' };  // new object
-
-// Arrays
-const items = [1, 2, 3];  // new array
-
-// Even if the CONTENT is identical every render,
-// Object.is({color:'red'}, {color:'red'}) === false
-// because they are different objects in memory.`}
-      </CodeBlock>
-
-      <h3>Why Does React Create Stable Setters?</h3>
-
-      <CodeBlock language="jsx" title="Simplified React Internals" showLineNumbers>
-{`// React's internal implementation (conceptual):
-
-// On FIRST render (mount):
-function mountState(initialValue) {
-  const hook = createHookOnFiber();
-  hook.state = initialValue;
-  hook.setter = (newVal) => {           // Created ONCE
-    hook.state = newVal;
-    scheduleRerender(currentFiber);
-  };
-  return [hook.state, hook.setter];
-}
-
-// On EVERY subsequent render (update):
-function updateState() {
-  const hook = getExistingHook();        // Reuses existing hook
-  return [hook.state, hook.setter];      // Returns SAME setter
-}
-
-// The setter doesn't close over any render-specific values —
-// it writes directly to the hook slot on the fiber node.
-// That's why it never needs to be recreated.`}
-      </CodeBlock>
-
-      <InfoBox variant="tip" title="Practical Rule of Thumb">
-        <p><strong>Safe to omit from dependency arrays (stable):</strong></p>
-        <ul>
-          <li><code>setState</code> from useState</li>
-          <li><code>dispatch</code> from useReducer</li>
-          <li><code>ref</code> from useRef</li>
-          <li>Functions returned from <code>useCallback</code> (stable until deps change)</li>
-        </ul>
-        <p><strong>Must include in dependency arrays (unstable):</strong></p>
-        <ul>
-          <li>Inline functions: <code>() =&gt; ...</code></li>
-          <li>Object/array literals: <code>{'{}'}</code>, <code>[]</code></li>
-          <li>Any value computed during render without <code>useMemo</code></li>
-        </ul>
-      </InfoBox>
-
-      <hr style={{ borderColor: '#333', margin: '3rem 0 2rem' }} />
-      <h3>💡 Deep Dive: Does "unstable" automatically cause re-renders?</h3>
-
-      <InfoBox variant="warning" title="Short Answer: No!">
-        <p>An unstable value only matters when <strong>something is checking it</strong>. If nothing checks it, it's harmless.</p>
-      </InfoBox>
-
-      <CodeBlock language="jsx" title="Three scenarios — only two matter" showLineNumbers>
-{`function Parent() {
-  const [count, setCount] = useState(0);
-
-  // UNSTABLE — new function every render
-  const handleClick = () => setCount(c => c + 1);
-
-  // ✅ SCENARIO 1: Normal child — instability is IRRELEVANT
-  // NormalChild re-renders anyway because Parent re-rendered.
-  // handleClick being a new reference changes nothing.
-  return <NormalChild onClick={handleClick} />;
-}
-
-function Parent2() {
-  const [count, setCount] = useState(0);
-  const handleClick = () => setCount(c => c + 1);
-
-  // ❌ SCENARIO 2: Memoized child — instability BREAKS memo
-  // React.memo compares props: old handleClick !== new handleClick
-  // → MemoChild re-renders even though nothing meaningful changed.
-  // Fix: wrap handleClick in useCallback.
-  return <MemoChild onClick={handleClick} />;
-}
-
-function Parent3() {
-  const [count, setCount] = useState(0);
-
-  // ❌ SCENARIO 3: Dependency array — instability causes re-runs
-  const style = { color: 'red' };
-  useEffect(() => {
-    console.log('style changed!');  // Fires EVERY render!
-  }, [style]);  // Object.is({}, {}) = false → effect always re-runs
-}`}
-      </CodeBlock>
-
-      <FlowChart title="Does Instability Matter Here?" chart={"graph TD\n  A[Is the value unstable?] -->|No| B[No problem]\n  A -->|Yes| C[Is anything checking this value?]\n  C -->|In a dependency array| D[Effect/memo/callback re-runs every render]\n  C -->|Passed to React.memo child| E[Child re-renders despite memo]\n  C -->|Just a local variable| F[Does not matter]\n  style B fill:#4caf50,color:#fff\n  style D fill:#f44336,color:#fff\n  style E fill:#f44336,color:#fff\n  style F fill:#4caf50,color:#fff"} />
-
-      <InteractiveChallenge
-        question={"Which of these values is NOT stable across renders?"}
-        options={[
-          "setState from useState",
-          "dispatch from useReducer",
-          "() => console.log('hello')",
-          "A ref from useRef"
-        ]}
-        correctIndex={2}
-        explanation={"An inline arrow function creates a new function object on every render. setState, dispatch, and refs are stable — React creates them once and reuses the same reference. To stabilize a function, wrap it in useCallback."}
-      />
-
-      <InteractiveChallenge
-        question={"You have an unstable function: const handleClick = () => doSomething(). You pass it to <NormalChild onClick={handleClick} />. NormalChild is NOT wrapped in React.memo. Does the instability of handleClick cause any extra re-renders?"}
-        options={[
-          "Yes — the new function reference forces NormalChild to re-render",
-          "No — NormalChild re-renders anyway because its parent re-rendered",
-          "It depends on whether handleClick is in a dependency array",
-          "Yes — but only if NormalChild has children"
-        ]}
-        correctIndex={1}
-        explanation={"Without React.memo, NormalChild re-renders whenever its parent re-renders — regardless of whether props changed. So the unstable function reference is irrelevant. Instability only matters when something is CHECKING the reference: React.memo comparisons or dependency arrays."}
-      />
-
       <h2>Why Not Wrap Everything in React.memo?</h2>
 
       <p>If <code>React.memo</code> prevents unnecessary re-renders, why not just wrap <em>every</em> component? This is a common question — and the answer is nuanced.</p>
@@ -883,22 +708,6 @@ export default MyComponent;
       <InfoBox variant="info" title="The React Compiler Will Handle This">
         <p>The upcoming <strong>React Compiler</strong> (previously React Forget) automatically adds memoization where beneficial. It analyzes your code at build time and inserts memo/useMemo/useCallback only where they help. This means manual React.memo will eventually become unnecessary for most cases. Until then, apply memo surgically — not everywhere.</p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question="You have a small Button component that just renders text and an onClick handler. The parent re-renders frequently. Should you wrap it in React.memo?"
-        options={[
-          "Yes — every component should be memoized to prevent unnecessary renders",
-          "Yes — it re-renders frequently so memo will help",
-          "No — unless the parent also wraps onClick in useCallback, memo will always find changed props and render anyway",
-          "No — React.memo only works with class components"
-        ]}
-        correctIndex={2}
-        explanation={"React.memo shallow-compares props. If the parent passes onClick={() => handleClick()} inline, that's a new function reference every render. Memo will compare, find it changed, and render anyway — making it SLOWER (comparison cost + render cost). You'd need the parent to useCallback the handler AND the Button to be expensive enough to justify the overhead."}
-      />
-
-      {/* ══════════════════════════════════════════════════════════════
-          SECTION: Hooks and the Render Cycle — Complete Reference
-          ══════════════════════════════════════════════════════════════ */}
 
       <h2>Hooks and the Render Cycle — Complete Reference</h2>
 
@@ -1016,35 +825,6 @@ function Parent() {
 }`}
       </CodeBlock>
 
-      {/* ══════════════════════════════════════════════════════════════
-          New Interactive Challenges
-          ══════════════════════════════════════════════════════════════ */}
-
-      <InteractiveChallenge
-        question="Which of these will trigger a re-render?"
-        options={[
-          "ref.current = 42",
-          "setState(currentValue)  // same value as current state",
-          "setState(newValue)  // different value from current state",
-          "Calling useMemo with new deps"
-        ]}
-        correctIndex={2}
-        explanation="Only calling a useState setter with a genuinely new value (where Object.is returns false) triggers a re-render. Updating a ref is silent. Setting state to the same value causes React to bail out. useMemo recomputes during an already-happening render — it doesn't trigger one."
-        language="jsx"
-      />
-
-      <InteractiveChallenge
-        question="A parent component re-renders. What happens to a child wrapped in React.memo whose props have NOT changed?"
-        options={[
-          "The child re-renders because the parent re-rendered",
-          "The child does NOT re-render — React.memo blocks the cascade",
-          "The child re-renders but skips the commit phase",
-          "The child only re-renders in development mode"
-        ]}
-        correctIndex={1}
-        explanation="React.memo performs a shallow comparison of the previous and next props. If all props are the same (via Object.is for each prop), React skips re-rendering the child entirely — the render function is never called. However, if the child uses useContext and the context value changed, it WILL still re-render regardless of memo."
-        language="jsx"
-      />
 
       <h2>useEffect Execution Timing</h2>
 
@@ -1114,18 +894,6 @@ function CorrectComponent() {
 }`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question="In React's concurrent mode, which phase can be interrupted and re-started?"
-        options={[
-          "The commit phase",
-          "The render phase",
-          "Both phases equally",
-          "Neither — concurrent mode only affects scheduling"
-        ]}
-        correctIndex={1}
-        explanation="The render phase is pure computation (calling your component functions, diffing) and can be safely interrupted, paused, or restarted by React's scheduler. The commit phase (DOM updates, effects) always runs synchronously to completion once started."
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

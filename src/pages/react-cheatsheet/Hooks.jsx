@@ -67,14 +67,13 @@ const theme = useContext(ThemeCtx); // returns current value`}
       </CodeBlock>
 
       {/* ── Effect Hooks ─────────────────────────────────── */}
-      <h2>Effect Hooks</h2>
-
-      <InfoBox variant="tip" title="Effect Timing">
-        <p><strong>useEffect</strong> — runs after paint (non-blocking). Most common.</p>
-        <p><strong>useLayoutEffect</strong> — runs before paint (blocking). Use for DOM measurements.</p>
-        <p><strong>useInsertionEffect</strong> — runs before DOM mutations. CSS-in-JS libraries only.</p>
+      <InfoBox variant="tip" title="Effect Timing — Three Hooks, Three Moments">
+        <p><strong>useEffect</strong> — runs after paint (non-blocking). Use for fetching, subscriptions, logging. This is the default.</p>
+        <p><strong>useLayoutEffect</strong> — runs before paint (blocking). Use only when you need to read or correct the DOM before the user sees it.</p>
+        <p><strong>useInsertionEffect</strong> — runs before DOM mutations. CSS-in-JS libraries only — you will almost never use this directly.</p>
       </InfoBox>
 
+      <h2>useEffect</h2>
       <CodeBlock language="jsx" title="useEffect Patterns">
 {`// Run on every render
 useEffect(() => { /* ... */ });
@@ -99,13 +98,49 @@ useEffect(() => {
 }, [url]);`}
       </CodeBlock>
 
-      <CodeBlock language="jsx" title="useLayoutEffect">
+      <h2>useLayoutEffect</h2>
+
+      <InfoBox variant="info" title='What "Synchronous" Actually Means Here'>
+        <p>React's render cycle is already synchronous — it diffs the tree and mutates the DOM in one JS execution block. The distinction is about <strong>when the browser gets control back</strong>.</p>
+        <p><code>useLayoutEffect</code> fires before the browser has a chance to paint — still inside that same JS block. <code>useEffect</code> is intentionally deferred: React schedules it to run <em>after</em> the browser has painted, in a later task. That's the "async" part — not async like a Promise, but the user has already seen the new render before it fires.</p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Render Cycle Sequence">
+{`// The actual sequence:
+// 1. React renders (diffs the tree)
+// 2. React mutates the DOM
+// 3. useLayoutEffect fires  ← same JS block, browser hasn't painted yet
+// 4. Browser paints         ← browser gets control back here
+// 5. useEffect fires        ← separate task, after the user sees the update
+
+// Why this matters — position/size corrections:
+// useEffect — user briefly sees the wrong state, then it jumps (flash)
+useEffect(() => {
+  ref.current.style.left = computePosition(); // runs after paint — visible flash!
+}, []);
+
+// useLayoutEffect — correction happens before paint, user never sees wrong state
+useLayoutEffect(() => {
+  ref.current.style.left = computePosition(); // runs before paint — no flash
+}, []);`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="useLayoutEffect — Common Patterns">
 {`// Measure DOM before browser paints
 useLayoutEffect(() => {
   const { height } = ref.current.getBoundingClientRect();
   setHeight(height);
-}, []);`}
+}, []);
+
+// Sync scroll position before paint
+useLayoutEffect(() => {
+  ref.current.scrollTop = savedScrollPosition;
+}, [savedScrollPosition]);`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Prefer useEffect by Default">
+        <p><code>useLayoutEffect</code> blocks the browser from painting until it finishes — use it only when you need to read or mutate the DOM before the user sees anything. For data fetching, subscriptions, logging, or anything that doesn't touch layout, stick with <code>useEffect</code>.</p>
+      </InfoBox>
 
       {/* ── Ref Hooks ────────────────────────────────────── */}
       <h2>useRef</h2>
@@ -129,18 +164,36 @@ function usePrevious(value) {
       </CodeBlock>
 
       <h2>useImperativeHandle</h2>
+
+      <InfoBox variant="info" title="What It Does">
+        <p>By default, a ref on a component gives the parent nothing — refs don't pierce component boundaries. <code>forwardRef</code> passes the ref through, but then the parent gets the raw DOM node. <code>useImperativeHandle</code> lets you replace that with a custom object of your choosing — the parent gets exactly the methods you expose and nothing else.</p>
+        <p>The methods work via <strong>closure</strong> — they close over the component's internal refs and state, so the parent is one step removed and never touches internals directly.</p>
+      </InfoBox>
+
       <CodeBlock language="jsx" title="useImperativeHandle">
 {`const FancyInput = forwardRef((props, ref) => {
-  const inputRef = useRef();
+  const inputRef = useRef();                     // internal ref — parent never sees this
+  const [isDisabled, setIsDisabled] = useState(false);
+
   useImperativeHandle(ref, () => ({
-    focus: () => inputRef.current.focus(),
-    scrollIntoView: () => inputRef.current.scrollIntoView(),
-  }));
-  return <input ref={inputRef} />;
+    focus: () => !isDisabled && inputRef.current.focus(), // closes over state
+    clear: () => { inputRef.current.value = ''; },
+    disable: () => setIsDisabled(true),                   // closes over setState
+  }), [isDisabled]); // re-run when deps change
+
+  return <input ref={inputRef} disabled={isDisabled} />;
 });
 
-// Parent: ref.current.focus()`}
+// Parent usage
+const ref = useRef();
+<FancyInput ref={ref} />
+ref.current.focus();   // ✅ works — calls the closure
+ref.current.value;     // undefined — deliberately hidden`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="When to Reach for It">
+        <p>It's a fairly rare hook. Best fits: design system components exposing <code>open()</code>/<code>close()</code>, focus management on complex input wrappers, animation controls (<code>play()</code>/<code>pause()</code>), and video/audio players. If you find yourself using it frequently, the component API could likely be redesigned with props instead.</p>
+      </InfoBox>
 
       {/* ── Performance Hooks ────────────────────────────── */}
       <h2>useMemo &amp; useCallback</h2>
@@ -157,40 +210,177 @@ const handleClick = useCallback((id) => {
       </CodeBlock>
 
       {/* ── Transition Hooks ─────────────────────────────── */}
-      <h2>useTransition &amp; useDeferredValue</h2>
+      <h2>useTransition</h2>
       <CodeBlock language="jsx" title="useTransition">
 {`const [isPending, startTransition] = useTransition();
 
 function handleSearch(e) {
   const value = e.target.value;
-  setInput(value);                     // urgent update
+  setInput(value);                          // urgent — updates immediately
   startTransition(() => {
-    setFilteredResults(filterData(value)); // low-priority
+    setFilteredResults(filterData(value));  // low-priority — React can interrupt this
   });
 }
 
-// useDeferredValue — defer a value
+// isPending is true while the transition is in progress
+{isPending && <Spinner />}`}
+      </CodeBlock>
+
+      <h2>useDeferredValue</h2>
+
+      <InfoBox variant="info" title="useDeferredValue vs usePrevious vs Debouncing">
+        <p><strong>usePrevious (useRef)</strong> — gives you the value from the last completed render. It's always one render stale, used to compare before/after.</p>
+        <p><strong>useDeferredValue</strong> — gives you the current value, but lets React lag behind rendering it. Not about the past — about rendering priority. Once React finishes the expensive work, the deferred value catches up.</p>
+        <p><strong>Debouncing</strong> — a plain JS pattern (not a React hook) that delays a function call until the user stops typing. Reduces how often work happens. You'd often combine debouncing (for the API call) with <code>useDeferredValue</code> (to keep the UI snappy while results render).</p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="useDeferredValue">
+{`const [query, setQuery] = useState('');
 const deferredQuery = useDeferredValue(query);
-// UI stays responsive; deferredQuery lags behind query`}
+
+// query updates immediately (input stays responsive)
+// deferredQuery catches up whenever React has spare time
+// ExpensiveList only re-renders at low priority
+return (
+  <>
+    <input value={query} onChange={e => setQuery(e.target.value)} />
+    <ExpensiveList filter={deferredQuery} />
+  </>
+);`}
       </CodeBlock>
 
       {/* ── Utility Hooks ────────────────────────────────── */}
-      <h2>useId &amp; useSyncExternalStore</h2>
-      <CodeBlock language="jsx" title="useId & useSyncExternalStore">
-{`// Unique ID for accessibility attributes
-const id = useId();
-<label htmlFor={id}>Email</label>
-<input id={id} type="email" />
+      <h2>useId</h2>
 
-// Subscribe to external store (Redux, Zustand, browser APIs)
-const width = useSyncExternalStore(
-  (callback) => {
-    window.addEventListener('resize', callback);
-    return () => window.removeEventListener('resize', callback);
-  },
-  () => window.innerWidth,           // getSnapshot (client)
-  () => 1024                          // getServerSnapshot (SSR)
+      <InfoBox variant="info" title="No Backend — Pure React Runtime">
+        <p><code>useId</code> has no database, no network, no external sync. It's a deterministic counter baked into React's rendering engine. The server and client both traverse the component tree in the same order, so they independently arrive at the same counter values — like two people counting on their fingers and always agreeing on what "5" means.</p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="useId — Accessibility & SSR-safe IDs">
+{`// IDs are GLOBALLY unique across the entire React tree — not just per component
+function PasswordField() {
+  const id = useId(); // e.g. ":r0:"
+  return (
+    <>
+      <label htmlFor={id}>Password</label>
+      <input id={id} type="password" />
+    </>
+  );
+}
+
+// Multiple calls in the same component each get their own unique ID
+function Form() {
+  const nameId  = useId(); // ":r0:"
+  const emailId = useId(); // ":r1:"
+  return (
+    <>
+      <label htmlFor={nameId}>Name</label>
+      <input id={nameId} />
+      <label htmlFor={emailId}>Email</label>
+      <input id={emailId} />
+    </>
+  );
+}
+
+// Two instances of the same component also get different IDs
+// <Form />  →  nameId: ":r0:", emailId: ":r1:"
+// <Form />  →  nameId: ":r2:", emailId: ":r3:"  (counter keeps incrementing)`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Multiple React Roots — Use identifierPrefix">
+        <p>If you have multiple independent React apps on the same page, each root starts its own counter from 0 and will generate conflicting IDs (<code>:r0:</code>, <code>:r1:</code>…). Fix this with <code>identifierPrefix</code>.</p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="identifierPrefix — Namespacing Multiple Roots">
+{`createRoot(container, { identifierPrefix: 'my-app' });
+// IDs become :my-app-r0:, :my-app-r1:, etc.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="What useId is NOT for">
+        <p>Don't use it for list <code>key</code> props, anything that needs to be globally unique across users/sessions, or IDs that must stay stable if the component moves position in the tree. For those, use your data's own ID from the database.</p>
+      </InfoBox>
+
+      <h2>useSyncExternalStore</h2>
+
+      <InfoBox variant="info" title="Why This Hook Exists">
+        <p>In React 18's concurrent rendering, React can render a component multiple times before committing. If an external store updates mid-render, different parts of the UI could read different values — a "tearing" problem. <code>useSyncExternalStore</code> tells React: after every render, verify <code>getSnapshot</code> still returns the same value. If not, throw out the render and try again.</p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="useSyncExternalStore — Signature">
+{`const snapshot = useSyncExternalStore(
+  subscribe,          // (callback) => unsubscribe — called when store changes
+  getSnapshot,        // () => currentValue — what to render
+  getServerSnapshot   // () => serverValue  — SSR fallback (optional)
 );`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="useSyncExternalStore — Window Width Example">
+{`function useWindowWidth() {
+  return useSyncExternalStore(
+    (callback) => {
+      window.addEventListener('resize', callback);
+      return () => window.removeEventListener('resize', callback);
+    },
+    () => window.innerWidth,  // client snapshot
+    () => 1024                // server fallback
+  );
+}
+
+function MyComponent() {
+  const width = useWindowWidth();
+  return <p>Window is {width}px wide</p>;
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="getSnapshot Must Be Referentially Stable">
+        <p>If <code>getSnapshot</code> returns a new object on every call, React sees the value as "always changed" and will loop infinitely. Return primitives or cache the reference.</p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="getSnapshot — Stable vs Unstable">
+{`// ❌ Bad — new object every call → infinite re-render loop
+getSnapshot = () => ({ count: store.count });
+
+// ✅ Good — primitive (stable by value)
+getSnapshot = () => store.count;
+
+// ✅ Good — same reference when data hasn't changed
+let lastSnapshot = null;
+getSnapshot = () => {
+  const next = store.getState();
+  if (!lastSnapshot || !shallowEqual(lastSnapshot, next)) lastSnapshot = next;
+  return lastSnapshot;
+};`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="When to Use It">
+        <p>Reach for this hook when data lives <strong>outside React</strong>, changes over time, and needs to trigger re-renders safely. Event listeners are the most common app-dev case — <code>resize</code>, <code>online</code>/<code>offline</code>, <code>storage</code>, media queries, WebSocket state. It also covers plain JS pub/sub objects and RxJS streams.</p>
+        <p>The practical signal: if you're writing <code>useEffect + useState</code> just to subscribe to something external, this is the cleaner replacement. Redux, Zustand, and Jotai all use it internally so you rarely wire it up yourself — but it's the right tool any time you're connecting a browser API directly to React.</p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Common Real-World Use Cases">
+{`// ✅ Online/offline status
+const isOnline = useSyncExternalStore(
+  (cb) => { window.addEventListener('online', cb); window.addEventListener('offline', cb); return () => { window.removeEventListener('online', cb); window.removeEventListener('offline', cb); }; },
+  () => navigator.onLine,
+  () => true
+);
+
+// ✅ localStorage value (synced across tabs)
+const theme = useSyncExternalStore(
+  (cb) => { window.addEventListener('storage', cb); return () => window.removeEventListener('storage', cb); },
+  () => localStorage.getItem('theme') ?? 'light',
+  () => 'light'
+);
+
+// ✅ Media query match
+const isMobile = useSyncExternalStore(
+  (cb) => { const mq = window.matchMedia('(max-width: 768px)'); mq.addEventListener('change', cb); return () => mq.removeEventListener('change', cb); },
+  () => window.matchMedia('(max-width: 768px)').matches,
+  () => false
+);
+
+// ❌ Don't reach for this when useState/useEffect is already clean enough
+// useEffect + useState is fine when tearing isn't a concern (non-concurrent)`}
       </CodeBlock>
 
       {/* ── React 19 Hooks ───────────────────────────────── */}

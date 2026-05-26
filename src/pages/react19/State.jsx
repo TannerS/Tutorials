@@ -63,6 +63,80 @@ function App() {
 
       <h2>useReducer + Context — Built-in Global State</h2>
 
+      <InfoBox variant="danger" title="The Problem: One Context Means Every Consumer Re-renders">
+        <p>
+          When state and dispatch share a single context, React compares the context
+          value by reference. Every time state changes, the provider creates a{' '}
+          <strong>new object</strong> — <code>{`{ todos, dispatch }`}</code> — even
+          though <code>dispatch</code> itself never changed. React sees a new reference
+          and re-renders <em>every</em> consumer, including components that only ever
+          call <code>dispatch</code> and never read the state.
+        </p>
+        <CodeBlock language="jsx" title="❌ Single combined context — all consumers re-render on every state change">
+          {`const TodoContext = createContext(null);
+
+function TodoProvider({ children }) {
+  const [todos, dispatch] = useReducer(todoReducer, []);
+
+  // NEW object created on every render → every consumer re-renders
+  return (
+    <TodoContext.Provider value={{ todos, dispatch }}>
+      {children}
+    </TodoContext.Provider>
+  );
+}
+
+function AddTodo() {
+  // This component only needs dispatch — it never reads todos.
+  // But it still re-renders every time a todo is added, toggled, or deleted
+  // because the context value object is brand new each time.
+  const { dispatch } = useContext(TodoContext);
+  ...
+}`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          In a small app this is harmless. At scale — dozens of consumers, frequent
+          updates — it becomes a source of wasted renders and laggy UIs.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="info" title="Does useMemo on the Value Help?">
+        <p>Wrapping the context value in <code>useMemo</code> is a partial fix — worth doing, but it only solves half the problem.</p>
+        <p><strong>What it fixes:</strong> without it, every time the Provider's parent re-renders, a new object is created even if state didn't change, triggering all consumers. <code>useMemo</code> gives you a stable reference when nothing has actually changed.</p>
+        <p><strong>What it doesn't fix:</strong> the moment any dep actually changes — say <code>todos</code> updates — <code>useMemo</code> returns a new object and every consumer still re-renders, including components that only call <code>dispatch</code> and never read <code>todos</code>.</p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="useMemo on context value — partial improvement only">
+{`// ⚠️ Better than nothing — prevents re-renders from parent re-rendering
+//    but does NOT prevent re-renders when todos actually changes
+function TodoProvider({ children }) {
+  const [todos, dispatch] = useReducer(todoReducer, []);
+
+  const value = useMemo(() => ({ todos, dispatch }), [todos]); // dispatch is stable
+
+  return (
+    <TodoContext.Provider value={value}>
+      {children}
+    </TodoContext.Provider>
+  );
+}
+
+// AddTodo still re-renders every time todos changes —
+// even though it only uses dispatch — because it subscribed to the combined object.
+// The real fix is splitting into separate contexts (see below).`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Why dispatch Is Safe to Isolate">
+        <code>dispatch</code> returned by <code>useReducer</code> is <strong>referentially
+        stable</strong> — React guarantees the same function reference across every
+        render of the same component. That means a context whose only value is{' '}
+        <code>dispatch</code> never produces a new reference, so its consumers{' '}
+        <strong>never re-render</strong> due to context changes. Splitting the two
+        contexts exploits this guarantee: read-only components subscribe to the state
+        context, action-only components subscribe to the dispatch context and are
+        permanently insulated from state changes.
+      </InfoBox>
+
       <CodeBlock language="jsx" title="Scalable Context + Reducer Pattern" showLineNumbers>
 {`// Split context into State and Dispatch for performance
 const TodoStateContext = createContext(null);
@@ -122,77 +196,83 @@ function AddTodo() {
 }`}
       </CodeBlock>
 
-      <h2>External Libraries — Zustand & Jotai</h2>
+      <h2>Nested Providers — Do Re-renders Cascade?</h2>
 
-      <CodeBlock language="jsx" title="Zustand — Minimal Global Store" showLineNumbers>
-{`import { create } from 'zustand';
+      <p>
+        A natural follow-on question: if you have many providers stacked at the app
+        root and one of them re-renders, does the entire app re-render? The answer
+        depends on <strong>where the children JSX is created</strong>.
+      </p>
 
-// Define store — plain function, no providers needed
-const useStore = create((set, get) => ({
-  bears: 0,
-  fish: [],
-  // Actions live alongside state
-  increasePopulation: () => set(state => ({ bears: state.bears + 1 })),
-  removeAllBears: () => set({ bears: 0 }),
-  addFish: (fish) => set(state => ({ fish: [...state.fish, fish] })),
-  // Async actions are just regular async functions
-  fetchFish: async () => {
-    const response = await fetch('/api/fish');
-    const fish = await response.json();
-    set({ fish });
-  },
-}));
+      <InfoBox variant="success" title="✅ Children as Props — Re-renders Stay Contained">
+        <p>
+          In the typical setup, children are written <em>outside</em> the provider and
+          passed in as a prop. The provider just renders what it was given — it does not
+          create that JSX itself.
+        </p>
+        <CodeBlock language="jsx" title="How you write providers at the app root (main.jsx)">
+          {`// main.jsx — JSX for AuthProvider, App, etc. is created HERE
+<ThemeProvider>
+  <AuthProvider>
+    <App />
+  </AuthProvider>
+</ThemeProvider>
 
-// Components subscribe to slices — only re-render when selected value changes
-function BearCounter() {
-  const bears = useStore(state => state.bears); // Selector!
-  return <h1>{bears} bears</h1>;
-}
-
-function Controls() {
-  const increase = useStore(state => state.increasePopulation);
-  return <button onClick={increase}>Add bear</button>;
-}
-
-// Zustand with immer for nested updates
-import { immer } from 'zustand/middleware/immer';
-
-const useNestedStore = create(immer((set) => ({
-  deeply: { nested: { value: 0 } },
-  increment: () => set(state => { state.deeply.nested.value += 1; }),
-})));`}
-      </CodeBlock>
-
-      <CodeBlock language="jsx" title="Jotai — Atomic State" showLineNumbers>
-{`import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
-
-// Atoms are minimal state units — like useState but shareable
-const countAtom = atom(0);
-const doubleCountAtom = atom(get => get(countAtom) * 2); // Derived atom
-
-// Async derived atom
-const userAtom = atom(async (get) => {
-  const id = get(userIdAtom);
-  const res = await fetch(\`/api/users/\${id}\`);
-  return res.json();
-});
-
-function Counter() {
-  const [count, setCount] = useAtom(countAtom);
-  const doubled = useAtomValue(doubleCountAtom); // Read-only
+// ThemeProvider.jsx
+function ThemeProvider({ children }) {   // children arrives as a prop
+  const [theme, setTheme] = useState('light');
   return (
-    <div>
-      <span>{count} (doubled: {doubled})</span>
-      <button onClick={() => setCount(c => c + 1)}>+</button>
-    </div>
+    <ThemeContext.Provider value={theme}>
+      {children}   {/* just renders what it was handed */}
+    </ThemeContext.Provider>
   );
-}
+}`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          When <code>theme</code> changes, <code>ThemeProvider</code> re-renders. But
+          its <code>children</code> prop is the same JSX reference that was created in{' '}
+          <code>main.jsx</code> — nothing there changed. React sees the same reference
+          and bails out. <strong>Only components that call{' '}
+          <code>useContext(ThemeContext)</code> re-render</strong>, wherever they are
+          in the tree.
+        </p>
+      </InfoBox>
 
-// When to choose Jotai over Zustand:
-// - Fine-grained reactivity (many independent pieces of state)
-// - Derived/computed state is central to your app
-// - You want React-like mental model (atoms ≈ useState that's global)`}
-      </CodeBlock>
+      <InfoBox variant="danger" title="❌ Children Defined Inline — Re-renders Do Cascade">
+        <p>
+          If a provider defines its subtree <em>inside its own function body</em> instead
+          of accepting children as a prop, every re-render creates brand-new JSX
+          references and React re-renders everything below it.
+        </p>
+        <CodeBlock language="jsx" title="Bad pattern — children created inside the provider">
+          {`// ThemeProvider.jsx — no children prop
+function ThemeProvider() {
+  const [theme, setTheme] = useState('light');
+  return (
+    <ThemeContext.Provider value={theme}>
+      <AuthProvider>   {/* created HERE on every render */}
+        <App />        {/* brand-new JSX reference each time */}
+      </AuthProvider>
+    </ThemeContext.Provider>
+  );
+}`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          Every time <code>theme</code> changes, <code>ThemeProvider</code> runs again
+          and produces new <code>&lt;AuthProvider&gt;</code> and <code>&lt;App /&gt;</code>{' '}
+          elements. React sees new references and re-renders both — even though neither
+          cares about <code>theme</code>. This is the cascade. You would rarely write
+          providers this way, but it explains <em>why</em> the children-as-props pattern
+          is not just convention — it is what keeps re-renders contained.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="info" title="One-Line Rule">
+        <strong>Who creates the children JSX determines who owns its re-render.</strong>
+        {' '}If the parent of the provider creates it, the provider re-rendering cannot
+        invalidate it. If the provider creates it, every re-render throws it away and
+        starts fresh.
+      </InfoBox>
 
       <h2>State Machines Concept</h2>
 
@@ -231,18 +311,6 @@ function reducer(state, event) {
 // Now it's IMPOSSIBLE to be in loading + error simultaneously`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question="Why split Context into separate State and Dispatch providers?"
-        options={[
-          "It reduces bundle size by tree-shaking unused context",
-          "Components that only dispatch actions won't re-render when state changes",
-          "React requires separate contexts for objects vs functions",
-          "It enables server-side rendering of the dispatch context"
-        ]}
-        correctIndex={1}
-        explanation="When state and dispatch share a context, every state change creates a new context value object, causing ALL consumers to re-render — even those that only call dispatch. Since dispatch from useReducer is referentially stable, putting it in its own context means action-only consumers never re-render from state changes."
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

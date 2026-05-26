@@ -22,6 +22,13 @@ function Recipes() {
 
       {/* ── 1. Debounced Search ──────────────────────────── */}
       <h2>Debounced Search Input</h2>
+
+      <InfoBox variant="info" title="What Is Debouncing?">
+        <p>Debouncing is a general programming pattern (not a React hook) that delays executing a function until a user has <strong>stopped doing something</strong> for a set amount of time. Without it, every keystroke in a search input fires an API call:</p>
+        <p>With a 300ms debounce, only one call fires — after the user pauses. Every keystroke resets the timer, so the function only runs when typing stops.</p>
+        <p><strong>Debouncing vs useDeferredValue:</strong> debouncing reduces <em>how often</em> work happens (suppresses the API call). <code>useDeferredValue</code> keeps the UI responsive <em>while</em> work is happening (deprioritizes the re-render). You often use both together — debounce the fetch, <code>useDeferredValue</code> for the results list.</p>
+      </InfoBox>
+
       <CodeBlock language="jsx" title="useDebounce + Search">
 {`function useDebounce(value, delay = 300) {
   const [debounced, setDebounced] = useState(value);

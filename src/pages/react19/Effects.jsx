@@ -68,6 +68,21 @@ function ChatRoom({ roomId }) {
 
       <h2>Race Conditions in Data Fetching</h2>
 
+      <InfoBox variant="info" title="Why This Happens">
+        <p>When a dep like <code>userId</code> changes, React starts a new effect — which fires a new fetch. But the <strong>old fetch is still in flight</strong>. It has no idea the component moved on. Whichever request lands last wins and calls <code>setUser</code>, even if it's carrying stale data from a previous <code>userId</code>.</p>
+        <p>This is easy to miss in development because localhost requests are fast and almost always resolve in order. In production, unpredictable network latency means the order is never guaranteed.</p>
+      </InfoBox>
+
+      <InfoBox variant="info" title="What the Cleanup Actually Does">
+        <p>The <code>return</code> in a <code>useEffect</code> is the cleanup — it runs when the dep changes, targeting the <strong>previous</strong> effect's scope, not the new one. So when <code>userId</code> changes:</p>
+        <ul>
+          <li>The old fetch is still alive in memory, its <code>.then()</code> will still fire when it resolves</li>
+          <li>The cleanup runs immediately and either kills the old request (<code>AbortController</code>) or flags its result to be ignored (boolean)</li>
+          <li>The new effect starts fresh with its own fetch</li>
+        </ul>
+        <p>The two solutions below both solve the same problem — they just differ in <em>when</em> they stop the old request from affecting state.</p>
+      </InfoBox>
+
       <CodeBlock language="jsx" title="Handling Race Conditions" showLineNumbers>
 {`// PROBLEM: Fast prop changes cause stale responses
 function UserProfile({ userId }) {
@@ -127,11 +142,52 @@ function UserProfile({ userId }) {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="tip" title="Boolean vs AbortController — What's the Difference?">
+        <p><strong>Boolean flag:</strong> the old request still completes on the network. When <code>.then()</code> fires, it checks the flag and skips <code>setUser</code>. The request was wasted but the UI is correct.</p>
+        <p><strong>AbortController:</strong> the browser kills the request mid-flight. The fetch promise rejects with an <code>AbortError</code>, so <code>.then(setUser)</code> never fires at all. More efficient — nothing to ignore because the request never comes back.</p>
+        <p>In both cases the cleanup is reaching backwards into the <em>previous</em> effect's closure — not setting up anything for the new one.</p>
+      </InfoBox>
+
       <h2>Stale Closures — The Most Common Hook Bug</h2>
 
       <p>A <strong>stale closure</strong> occurs when a callback or effect captures a variable from a previous render and continues using the old value, even though the component has re-rendered with a new value. This is the #1 source of subtle bugs in React hook code.</p>
 
-      <p>Every time React renders your component, it calls your function again. Each call creates a <strong>brand new closure</strong> — a snapshot of all local variables (state, props, handlers) at that moment. If a timer, event listener, or async operation holds a reference to a closure from a <em>previous</em> render, it will see the old values forever.</p>
+      <InfoBox variant="info" title="Why Component Functions Are Different From Normal Functions">
+        <p>
+          There is nothing special about a component function at the JavaScript level.
+          The only things that make it a component are that it <strong>returns JSX</strong>{' '}
+          and <strong>React calls it</strong> — not you. That second part is what causes stale closures.
+        </p>
+        <p>
+          Every time React calls your component function it creates a <strong>brand new
+          scope</strong> with brand new variables. Any closure created during that call —
+          an event handler, a <code>setTimeout</code> callback, an effect — captures that
+          render's variables and can never see a newer render's copies.
+        </p>
+        <CodeBlock language="js" title="Outside a component — no stale closure problem">
+          {`// Module-level variable — created once, never recreated
+let count = 0;
+function logLater() {
+  setTimeout(() => console.log(count), 3000);
+}
+count = 5;
+logLater(); // logs 5 — one scope, one shared binding`}
+        </CodeBlock>
+        <CodeBlock language="js" title="Inside a component — new scope on every render">
+          {`function MyComponent() {
+  // React calls this again on every render — fresh scope each time
+  const [count, setCount] = useState(0);
+  // This closure captures THIS render's count only
+  const handleClick = () => setTimeout(() => alert(count), 3000);
+}`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          <strong>The rule:</strong> a variable goes stale when the function that <em>created</em> it
+          gets called again, producing a new copy. React does this on every render.
+          <code> useRef</code> is the escape hatch — a single shared object that lives outside
+          the render cycle, so every closure always reads the same <code>.current</code>.
+        </p>
+      </InfoBox>
 
       <FlowChart
         title="How Stale Closures Form"
@@ -312,6 +368,46 @@ useEffect(() => {
 
       <p>When you need to read the latest value of state or props inside a callback without causing re-renders or re-registering listeners, <code>useRef</code> is your escape hatch. Refs are mutable containers that persist across renders and are <strong>not</strong> part of the render cycle.</p>
 
+      <InfoBox variant="info" title="How useLatest Actually Works — useRef Is Never Recreated">
+        <p>
+          You might expect that calling <code>useLatest(value)</code> on every render
+          recreates the ref with a new value — but that is not what happens.{' '}
+          <code>useRef</code> has a specific guarantee: <strong>the initial value is
+          only used on the very first call</strong>. Every subsequent render, React
+          ignores the argument entirely and returns the exact same ref object it
+          created on mount.
+        </p>
+        <CodeBlock language="js" title="useRef ignores its argument after the first render">
+          {`// React only uses the initial value ONCE
+Render 1: useRef(0)  →  creates { current: 0 }   ← initialValue used here
+Render 2: useRef(1)  →  returns { current: 0 }   ← argument ignored
+Render 3: useRef(2)  →  returns { current: 0 }   ← argument ignored`}
+        </CodeBlock>
+        <p>
+          The ref object itself is stored on the component instance and handed back
+          every render. It is never recreated. So the line doing the real work in{' '}
+          <code>useLatest</code> is not the <code>useRef</code> call — it is the
+          direct mutation on the next line:
+        </p>
+        <CodeBlock language="js" title="The mutation is what keeps it current">
+          {`const ref = useRef(value); // after render 1, this argument is ignored
+ref.current = value;       // THIS runs every render and updates the shared object
+
+// Render 1: ref created → { current: 0 },  then ref.current = 0  → { current: 0 }
+// Render 2: same ref    → { current: 0 },  then ref.current = 1  → { current: 1 }
+// Render 3: same ref    → { current: 1 },  then ref.current = 2  → { current: 2 }`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          Any closure that holds a reference to this ref object — whether it was
+          created on render 1 or render 10 — reads <code>.current</code> off the
+          same object and always gets the latest value. The closure is no longer
+          frozen because it is not holding a primitive snapshot — it is holding a
+          <strong> pointer to a mutable object</strong>. That is the same reason a
+          plain module-level variable does not go stale: one shared binding, not a
+          per-render copy.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="jsx" title="The useLatest Custom Hook Pattern" showLineNumbers>
 {`// A reusable hook that always gives you a ref to the latest value
 function useLatest(value) {
@@ -336,25 +432,17 @@ function ChatRoom({ roomId, onMessage }) {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Decision Tree: How to Fix Stale State">
-        <p><strong>1. Are you calling a state setter?</strong> → Use a functional update: <code>{"setState(prev => prev + 1)"}</code></p>
-        <p><strong>2. Are you reading state inside a timer or event listener?</strong> → Use a ref: <code>{"ref.current = state"}</code> on every render, read <code>{"ref.current"}</code> in the callback.</p>
-        <p><strong>3. Is your effect missing a dependency?</strong> → Add the dependency to the array. The effect will re-run and capture fresh values.</p>
-        <p><strong>4. Is a callback prop going stale?</strong> → Use the <code>useLatest</code> ref pattern to avoid adding the callback to deps.</p>
-        <p><strong>5. Do you need the value at the time of an event, not the latest?</strong> → Capture it in a local variable before the async gap: <code>{"const snapshot = count;"}</code></p>
-      </InfoBox>
-
       <FlowChart
         title="Which Stale State Fix Should I Use?"
-        chart={"graph TD\n  A[I have stale state] --> B{Am I calling setState?}\n  B -->|Yes| C[Use functional update: setState prev => ...]\n  B -->|No, I am reading state| D{Where am I reading it?}\n  D -->|In a timer or event listener| E[Store in a ref, read ref.current]\n  D -->|In an effect body| F{Is the dep array correct?}\n  F -->|Missing dep| G[Add the missing dependency]\n  F -->|Deps correct but still stale| H[Use a ref for the value]\n  D -->|In an async function after await| I[Capture value before await or use ref]"}
+        chart={"graph TD\n  A[I have stale state] --> B{Am I calling setState?}\n  B -->|Yes| C[Use functional update: setState prev => ...]\n  B -->|No, I am reading state| D{Where am I reading it?}\n  D -->|In a timer or event listener| E[Store in a ref, read ref.current]\n  D -->|In an effect body| F{Is the dep array correct?}\n  F -->|Missing dep| G[Add the missing dependency]\n  F -->|Deps correct but still stale| H[Use a ref for the value]\n  D -->|In an async function after await| I[Use a ref — read ref.current after the await]"}
       />
 
       <h2>Stale State in Async Operations</h2>
 
       <p>Any time you use <code>async/await</code>, there is a gap between the <code>await</code> and the code that follows. During that gap, the component may re-render multiple times. The state variables in your closure are frozen at the values they had when the function started.</p>
 
-      <CodeBlock language="jsx" title="Async Stale State Bug and Fixes" showLineNumbers>
-{`// BUG: formData may have changed during the await
+      <CodeBlock language="jsx" title="Async Stale State Bug" showLineNumbers>
+{`// BUG: formData after the await is the frozen snapshot from when handleSubmit started
 function SubmitForm() {
   const [formData, setFormData] = useState({ name: '', email: '' });
   const [status, setStatus] = useState('idle');
@@ -376,61 +464,73 @@ function SubmitForm() {
       />
     </form>
   );
-}
-
-// FIX 1: Capture the value before the await (intentional snapshot)
-const handleSubmit = async () => {
-  const dataToSubmit = formData; // Snapshot is intentional now
-  setStatus('submitting');
-  await submitToAPI(dataToSubmit);
-  console.log('Submitted:', dataToSubmit.name); // Clear intent: we wanted this snapshot
-};
-
-// FIX 2: Use a ref when you need the absolute latest value
-function SubmitForm() {
-  const [formData, setFormData] = useState({ name: '', email: '' });
-  const formDataRef = useRef(formData);
-  formDataRef.current = formData;
-
-  const handleSubmit = async () => {
-    setStatus('submitting');
-    await submitToAPI(formDataRef.current); // Always latest
-    console.log('Submitted:', formDataRef.current.name); // Fresh
-  };
 }`}
       </CodeBlock>
 
-      <InfoBox variant="note" title="Snapshot vs Latest — Be Intentional">
-        <p>Sometimes the stale value is actually what you want. For example, if a user clicks "Submit", you probably want to submit the data as it was when they clicked — not whatever it changed to 2 seconds later. The key is to be <strong>intentional</strong> about which behavior you need, rather than getting stale values by accident.</p>
+      <InfoBox variant="warning" title="Is This Actually a Problem for a Form Submit?">
+        <p>
+          For a button-triggered submit, probably not. The user has to click Submit
+          to call <code>handleSubmit</code>, so <code>formData</code> at click time
+          is exactly what you want to send. The staleness after the <code>await</code>{' '}
+          only matters if you read <code>formData</code> <em>after</em> the call and
+          expect it to reflect changes made during the network request.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          The pattern genuinely matters in cases where the async operation fires
+          automatically rather than from a click — autosave on a timer, a debounced
+          live preview, or a continuously running message handler. In those cases the
+          function is set up once and fires repeatedly, so the closure can become
+          genuinely stale between calls.
+        </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"What will this counter display after 5 seconds?\n\nconst [count, setCount] = useState(0);\nuseEffect(() => {\n  const id = setInterval(() => {\n    setCount(count + 1);\n  }, 1000);\n  return () => clearInterval(id);\n}, []);"}
-        options={[
-          "5 — it increments every second",
-          "1 — it sets count to 0 + 1 every tick, staying at 1",
-          "0 — setCount does nothing inside setInterval",
-          "Error — you cannot use setCount inside setInterval"
-        ]}
-        correctIndex={1}
-        explanation={"The effect runs once on mount, capturing count = 0 in its closure. Every second, setInterval calls setCount(0 + 1), which always sets count to 1. The count variable inside the closure never updates — it is a stale closure. The fix is to use a functional update: setCount(prev => prev + 1)."}
-        language="jsx"
-        code={"// Stale closure in setInterval\nconst [count, setCount] = useState(0);\nuseEffect(() => {\n  const id = setInterval(() => {\n    setCount(count + 1); // count is always 0 here\n  }, 1000);\n  return () => clearInterval(id);\n}, []);\n// After 5 seconds, count = 1 (not 5)"}
-      />
+      <InfoBox variant="info" title="Fix: Line-by-Line — How the Ref Pattern Solves It">
+        <CodeBlock language="jsx" title="Fix — ref keeps .current live across the await gap">
+          {`function SubmitForm() {
+  const [formData, setFormData] = useState({ name: '', email: '' });
 
-      <InteractiveChallenge
-        question={"You have an event listener registered in a useEffect with an empty dependency array. The listener needs to read the latest value of a state variable. Which fix is most appropriate?"}
-        options={[
-          "Add the state variable to the dependency array so the effect re-runs",
-          "Store the state in a ref and read ref.current in the listener",
-          "Use a functional update inside the listener",
-          "Move the listener registration outside of useEffect"
-        ]}
-        correctIndex={1}
-        explanation={"While adding the state to the dependency array works, it means the listener is removed and re-added on every state change — which can be expensive and cause missed events. A ref lets you keep a single stable listener that always reads the latest value via ref.current. Functional updates only help when you are calling setState, not when you need to read state. Moving the listener outside useEffect would cause it to be registered on every render without cleanup."}
-        language="jsx"
-        code={"// Best fix: ref pattern for event listeners\nconst [count, setCount] = useState(0);\nconst countRef = useRef(count);\ncountRef.current = count; // Sync ref every render\n\nuseEffect(() => {\n  const handler = () => {\n    console.log(countRef.current); // Always fresh\n  };\n  window.addEventListener('scroll', handler);\n  return () => window.removeEventListener('scroll', handler);\n}, []); // Stable listener, no stale reads"}
-      />
+  // 1. Create the ref once on mount. initialValue only used this one time.
+  const formDataRef = useRef(formData);
+
+  // 2. This line runs on EVERY render, synchronously, in the component body.
+  //    Every keystroke → setFormData → re-render → this line fires → ref is current.
+  formDataRef.current = formData;
+
+  const handleSubmit = async () => {
+    // 3. The closure captures formDataRef — the ref OBJECT, not .current.
+    //    A ref object is one shared pointer, never recreated across renders.
+    await submitToAPI(formDataRef.current); // reads live .current at call time
+
+    // 4. Reading .current here only makes sense if you need to compare
+    //    what was submitted vs what the user may have changed during the await.
+    const submittedData = formDataRef.current; // snapshot at submit time
+    await submitToAPI(submittedData);
+
+    if (formDataRef.current !== submittedData) {
+      // Form changed while request was in flight — handle accordingly
+    }
+  };
+}`}
+        </CodeBlock>
+        <p>
+          Reading <code>formDataRef.current</code> <em>after</em> the <code>await</code>{' '}
+          is only useful if you need to react to changes that happened during the
+          network request. If you just need to send the data and move on, reading{' '}
+          <code>.current</code> once before the <code>await</code> and storing it in
+          a local variable is cleaner and communicates intent.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          <strong>What's the point of updating <code>.current</code> after the async
+          call if the call already used the value?</strong> There isn't one — by the
+          time the <code>await</code> resolves, the API call has already fired with
+          whatever <code>.current</code> held at that moment. Updating <code>.current</code>{' '}
+          after the call does nothing useful for that request. The ref stays current
+          because <code>formDataRef.current = formData</code> runs on every render
+          automatically — that line is what keeps it live, not anything you do inside
+          the handler. Inside the handler you are only ever <em>reading</em> the ref,
+          never writing it.
+        </p>
+      </InfoBox>
 
       <h2>Avoiding Infinite Loops</h2>
 
@@ -511,19 +611,6 @@ useEffect(() => {
         <p>React 19 introduces the <code>use()</code> hook and Server Components which eliminate many data-fetching effects entirely. For new code, consider whether your fetch belongs in a Server Component or can use Suspense + the <code>use()</code> hook instead of useEffect.</p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What does the cleanup function returned from useEffect do when the component re-renders with new dependencies?"
-        options={[
-          "It runs immediately when the new props arrive",
-          "It runs after the new effect executes",
-          "It runs before the new effect, after the DOM update",
-          "It runs during the render phase before DOM commit"
-        ]}
-        correctIndex={2}
-        explanation="On re-render with changed deps: React commits DOM changes first, then runs the previous effect's cleanup, then runs the new effect. This ensures cleanup has access to the previous render's values (via closure) and the new effect sees the updated DOM."
-        language="jsx"
-        code={"useEffect(() => {\n  console.log('effect runs with', dep);\n  return () => console.log('cleanup runs with', dep);\n}, [dep]);\n// dep: A → B\n// Output: 'cleanup runs with A', 'effect runs with B'"}
-      />
     </LessonLayout>
   );
 }

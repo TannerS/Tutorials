@@ -220,18 +220,6 @@ const [items, setItems] = useState([]);`}</CodeBlock>
         <p>Lazy initialization runs <strong>synchronously during the first render</strong> — it blocks painting. If your initialization is truly slow (e.g., heavy computation), the user may see a delay on mount. For <em>async</em> work (API calls), use <code>useEffect</code> instead — never put async logic in the lazy initializer.</p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"What's the difference between useState(getValue()) and useState(() => getValue())?"}
-        options={[
-          "No difference — both only run getValue on the first render",
-          "The first runs getValue every render but only uses it once; the second only runs it once",
-          "The first is faster because there's no wrapper function overhead",
-          "The second is only needed for async initialization"
-        ]}
-        correctIndex={1}
-        explanation={"useState(getValue()) evaluates getValue() on every render as a regular function argument — useState just ignores the result after mount. useState(() => getValue()) passes a function that React only invokes on the first render, avoiding unnecessary computation on re-renders."}
-      />
-
       <h3>💡 "But wait — isn't the arrow function a new reference each render?"</h3>
 
       <p>
@@ -398,18 +386,6 @@ function MyComponent() {
   // On NEXT render, a NEW closure is created with count = 1
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"If count is 5, what is the result of calling setCount(count + 1) three times in the same handler?"}
-        options={[
-          "8 — it increments three times",
-          "6 — all three calls use the same snapshot of count (5), so they all set state to 6",
-          "7 — the first one works, the others are ignored",
-          "It throws an error — you can't call setState multiple times"
-        ]}
-        correctIndex={1}
-        explanation={"All three calls capture count = 5 from the closure. Each call evaluates to setCount(5 + 1) = setCount(6). React batches them and the final state is 6, not 8. Use setCount(prev => prev + 1) three times to get 8."}
-      />
 
       <hr />
       <h3>💡 Deep Dive: How does React chain functional updates internally?</h3>
@@ -694,18 +670,6 @@ function Parent() {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"In usePrevious, why does useEffect (not useLayoutEffect) matter?"}
-        options={[
-          "useEffect is faster than useLayoutEffect",
-          "useEffect runs AFTER the return, so ref.current still holds the previous value when read",
-          "useLayoutEffect would cause an infinite loop",
-          "useEffect batches multiple updates together"
-        ]}
-        correctIndex={1}
-        explanation={"useEffect runs after render completes. So when the component reads ref.current during render, the effect hasn't updated it yet — it still holds the value from the PREVIOUS render's effect. That's the whole trick."}
-      />
-
       <h2>useReducer — When useState Isn't Enough</h2>
 
       <CodeBlock language="jsx" title="useReducer for Complex State Logic" showLineNumbers>
@@ -920,18 +884,6 @@ fetch('/api')
       <InfoBox variant="tip" title="Pro Tip: dispatch is Stable">
         <p><code>dispatch</code> from <code>useReducer</code> has a stable identity — it never changes between renders. This means you can pass it to child components without wrapping in <code>useCallback</code>, and it won't break <code>React.memo</code>. This is one of the biggest practical advantages over <code>useState</code> setters when combined with context.</p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question="You have a component with 4 related state values (status, data, error, retryCount) that all change together based on fetch outcomes. What's the best approach?"
-        options={[
-          "Four separate useState calls with careful coordination",
-          "One useState with an object and spread updates",
-          "useReducer with named action types for each transition",
-          "useRef to avoid re-renders"
-        ]}
-        correctIndex={2}
-        explanation="useReducer is ideal here: the state values are related and change together based on distinct events (fetch start, success, error, retry). A reducer centralizes all transition logic, prevents impossible states (e.g., loading=true + error=true), and the dispatch function is stable for passing to children."
-      />
 
       <h2>useMemo &amp; useCallback — Referential Stability</h2>
 
@@ -1216,18 +1168,6 @@ const filtered = useMemo(() => data.filter(predicate), [data, predicate]);
 //   2. It's passed to something that checks references (memo, deps, context)
 //   3. Its deps DON'T change on most renders`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="You have a function handleSave passed as a prop to a React.memo child. The function uses 'formData' from state which changes on every keystroke. What should you do?"
-        options={[
-          "Wrap handleSave in useCallback with [formData] as a dep",
-          "Use useCallback with [] deps and access formData via a ref",
-          "Skip useCallback — the dep changes every render so it's pointless",
-          "Remove React.memo from the child instead"
-        ]}
-        correctIndex={1}
-        explanation={"Option A creates a new ref on every keystroke (dep changes), so it's useless. Option C means the child re-renders every time. Option D works but sacrifices optimization. Option B is the correct pattern: store formData in a ref, then useCallback with [] deps reads ref.current at call-time — stable function that always uses the latest data (the useStableCallback pattern we covered earlier)."}
-      />
 
       <h2>Lesser-Known Hooks</h2>
 
@@ -1550,47 +1490,6 @@ function SearchPage() {
 //   It is also interruptible — new input cancels stale renders`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question="What happens if you call useState inside a conditional?"
-        options={[
-          "It works fine but may cause extra re-renders",
-          "React throws an error at runtime on the second render if hook order changes",
-          "It always throws immediately on first render",
-          "It works but DevTools shows a warning"
-        ]}
-        correctIndex={1}
-        explanation="React identifies hooks by their call order (position in the linked list). If a conditional causes a hook to be skipped on a subsequent render, React will try to match hook N with the wrong stored state, resulting in a runtime error: 'Rendered fewer/more hooks than during the previous render.'"
-        language="jsx"
-        code={"// This will crash on re-render if 'show' changes:\nfunction Bad({ show }) {\n  if (show) {\n    const [val, setVal] = useState(0); // Hook order changes!\n  }\n  const [name, setName] = useState('');\n}"}
-      />
-
-      <InteractiveChallenge
-        question="You have a tooltip that measures its own width to avoid going off-screen. Which hook should you use?"
-        options={[
-          "useEffect — it runs after render and can measure the DOM",
-          "useLayoutEffect — it measures before paint so the tooltip never flashes in the wrong position",
-          "useMemo — memoize the position calculation for performance",
-          "useInsertionEffect — it runs earliest so you get the first measurement"
-        ]}
-        correctIndex={1}
-        explanation="useLayoutEffect runs synchronously after DOM mutations but before the browser paints. This lets you measure the tooltip dimensions and reposition it so the user never sees it in the wrong spot. useEffect would cause a visible flash because the browser paints the wrong position first. useInsertionEffect runs before DOM mutations so refs are not yet attached."
-        language="jsx"
-        code={"useLayoutEffect(() => {\n  const rect = tooltipRef.current.getBoundingClientRect();\n  // Reposition based on measurement — happens before paint\n  setPosition(calculateSafePosition(rect));\n});"}
-      />
-
-      <InteractiveChallenge
-        question="When should you use useTransition instead of just calling setState directly?"
-        options={[
-          "Always — it makes every state update faster",
-          "When you need to fetch data from an API",
-          "When a state update triggers expensive re-rendering and you want to keep the UI responsive to urgent updates like typing",
-          "When you want to delay a state update by a fixed number of milliseconds"
-        ]}
-        correctIndex={2}
-        explanation="useTransition marks a state update as non-urgent. React will prioritize urgent updates like typing and render the transition in the background. It is not a general performance tool — it is specifically for keeping the UI responsive when a state update causes expensive rendering. It does not use fixed time delays like debouncing."
-        language="jsx"
-        code={"const [isPending, startTransition] = useTransition();\n\nconst handleInput = (e) => {\n  setQuery(e.target.value);        // Urgent: input stays snappy\n  startTransition(() => {\n    setFilteredList(filterBigList(e.target.value)); // Non-urgent\n  });\n};"}
-      />
     </LessonLayout>
   );
 }

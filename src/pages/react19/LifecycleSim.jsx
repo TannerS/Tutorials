@@ -248,75 +248,11 @@ export default function LifecycleSim() {
         </ul>
       </InfoBox>
 
-      {/* ── Exercises ── */}
-      <h2>Exercises</h2>
-      <p>Try these with the simulator above and observe the log output:</p>
-      <ol>
-        <li>
-          <strong>Mount a child, then update parent state</strong> — notice the
-          child re-renders too, even if its props haven&apos;t changed.
-        </li>
-        <li>
-          <strong>Unmount the child</strong> — watch the cleanup order.
-          useEffect cleanup runs before useLayoutEffect cleanup.
-        </li>
-        <li>
-          <strong>Mount two children, update parent</strong> — see how both
-          children re-render and their effects interleave.
-        </li>
-        <li>
-          <strong>Update child props</strong> — compare the log output with a
-          parent state update to see what differs.
-        </li>
-        <li>
-          <strong>Watch the timestamps</strong> — notice the gap between
-          useLayoutEffect and useEffect. That gap is the browser paint.
-        </li>
-      </ol>
-
       <InfoBox variant="note" title="Next Steps">
         Once you&apos;re comfortable with the lifecycle order, move on to the{' '}
         <strong>Hooks Deep Dive</strong> to understand how each hook leverages
         these phases internally.
       </InfoBox>
-
-      <h2>Test Your Understanding</h2>
-
-      <InteractiveChallenge
-        question={"What is the correct order of operations when a React component mounts for the first time?"}
-        options={[
-          "useEffect fires → Component renders → DOM updated → Browser paints",
-          "Component renders → DOM updated → Browser paints → useEffect fires",
-          "Component renders → useEffect fires → DOM updated → Browser paints",
-          "DOM updated → Component renders → useEffect fires → Browser paints"
-        ]}
-        correctIndex={1}
-        explanation={"On mount: the component function runs (render phase), React commits changes to the DOM, the browser paints the screen, and THEN useEffect fires. This is why useEffect is safe for side effects — the user already sees the UI before your effect runs."}
-      />
-
-      <InteractiveChallenge
-        question={"When does a useEffect cleanup function run?"}
-        options={[
-          "Only when the component unmounts",
-          "Before every re-render of the component",
-          "Before the next execution of the same effect AND on unmount",
-          "Immediately after the effect function completes"
-        ]}
-        correctIndex={2}
-        explanation={"The cleanup function runs in two scenarios: (1) before the effect re-executes due to dependency changes, and (2) when the component unmounts. This ensures the previous effect is properly torn down before the next one runs — critical for subscriptions, timers, and event listeners."}
-      />
-
-      <InteractiveChallenge
-        question={"A Parent component re-renders due to a state change. It has three children: ChildA, ChildB (wrapped in React.memo with unchanged props), and ChildC. Which children will re-render?"}
-        options={[
-          "All three children — React always re-renders the entire subtree",
-          "Only ChildA and ChildC — React.memo prevents ChildB from re-rendering",
-          "None of them — children only re-render when their own props change",
-          "Only the child whose props changed"
-        ]}
-        correctIndex={1}
-        explanation={"By default, ALL children re-render when a parent re-renders, regardless of whether their props changed. React.memo is an opt-in optimization that performs a shallow comparison of props and skips re-rendering if they are the same. So ChildA and ChildC re-render (no memo protection), while ChildB is skipped because React.memo detects that its props have not changed."}
-      />
     </LessonLayout>
   );
 }
