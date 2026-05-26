@@ -121,6 +121,29 @@ export default function State() {
         <code> useMemo</code> is perfectly fine and keeps the code simpler.
       </InfoBox>
 
+      <InfoBox variant="warning" title="Lazy Initialization — useState(fn) vs useState(fn())">
+        If you ever legitimately need to compute an initial value for{' '}
+        <code>useState</code>, always pass a <em>function</em>, not a function call.
+        <br /><br />
+        <strong>Why it matters:</strong> JavaScript evaluates arguments before calling
+        a function. So <code>useState(expensiveComputation())</code> runs the computation
+        on <em>every render</em> — React just throws the result away after mount.
+        With <code>useState(() =&gt; expensiveComputation())</code>, React checks{' '}
+        <code>typeof initialValue === 'function'</code>, calls it once on mount, and
+        discards the new function reference on every re-render without ever invoking it.
+        <br /><br />
+        <strong>The new arrow function reference created each render is essentially
+        free</strong> — the savings come from the function body never executing.
+
+        <CodeBlock language="jsx" title="Lazy initialization">
+          {`// ❌ expensiveComputation() runs on every render
+const [data] = useState(expensiveComputation());
+
+// ✅ expensiveComputation() runs once — React controls the call
+const [data] = useState(() => expensiveComputation());`}
+        </CodeBlock>
+      </InfoBox>
+
       {/* ---- 3. Prop Drilling ---- */}
       <h2>3. Prop Drilling Instead of Context or Composition</h2>
 
@@ -251,6 +274,82 @@ function ThemeToggle() {
         Use <code>useRef</code> for timer IDs, previous prop/state snapshots, DOM
         element references, render counters, and any mutable value that should persist
         across renders without triggering them.
+      </InfoBox>
+
+      <InfoBox variant="warning" title="Timing Trap: useEffect Runs After the Render Returns">
+        <p>
+          React's render cycle has a specific order:
+        </p>
+        <ol>
+          <li>Your component function runs top-to-bottom</li>
+          <li>The function <strong>returns</strong> its JSX (the render is done)</li>
+          <li>React commits changes to the DOM</li>
+          <li><code>useEffect</code> fires — only now does <code>ref.current</code> update</li>
+        </ol>
+        <p>
+          This means any value you read from <code>ref.current</code> during the render
+          (steps 1–2) reflects the <em>previous</em> render's effect, not the current one.
+          On the very first render, <code>ref.current</code> is still the initial value
+          when the function returns.
+        </p>
+        <CodeBlock language="jsx" title="Timing trap — ref.current lags one render behind">
+          {`function useSomeHook(value) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    ref.current = value; // ← runs AFTER the render returns
+  });
+
+  return ref.current; // ← runs DURING render — always one render behind
+}
+// First render:  value = "hello", but ref.current is still null
+// Second render: value = "world", but ref.current is still "hello"`}
+        </CodeBlock>
+        <p>
+          Think of <code>useEffect</code> as a postcard sent after the fact — the
+          render already finished and handed back its result before the postcard arrives.
+          If you need a value to be current <em>during</em> render, compute it inline or
+          store it in state rather than relying on a ref updated by an effect.
+        </p>
+      </InfoBox>
+
+      <FlowChart
+        title="React Render Lifecycle — When Each Hook Fires"
+        chart={"graph TD\nA[\"Trigger: mount, state change, or prop change\"] --> B[\"① Render Phase — component function runs\"]\nB --> C[\"useState / useReducer — read current state\"]\nC --> D[\"useContext — read subscribed context value\"]\nD --> E[\"useMemo / useCallback — recompute if deps changed\"]\nE --> F[\"useRef — .current is readable, but effect-updates from\\nthe previous render only\"]\nF --> G[\"Component returns JSX\"]\nG --> H[\"② Commit Phase — React patches the DOM\"]\nH --> I[\"useLayoutEffect cleanup from previous render\"]\nI --> J[\"③ useLayoutEffect fires — synchronous, before paint\"]\nJ --> K[\"Browser paints the screen\"]\nK --> L[\"useEffect cleanup from previous render\"]\nL --> M[\"④ useEffect fires — asynchronous, after paint\"]"}
+      />
+
+      <InfoBox variant="info" title="Hook Timing Cheat Sheet">
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9em' }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid currentColor', textAlign: 'left' }}>
+              <th style={{ paddingBottom: '0.5rem', paddingRight: '1rem' }}>Hook</th>
+              <th style={{ paddingBottom: '0.5rem', paddingRight: '1rem' }}>When it runs</th>
+              <th style={{ paddingBottom: '0.5rem' }}>Key behaviour</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              ['useState / useReducer', 'During render', 'Reads current state. Setter calls are batched and schedule a re-render — they do not mutate immediately.'],
+              ['useContext', 'During render', 'Reads the nearest provider value. Component re-renders whenever that value changes.'],
+              ['useMemo / useCallback', 'During render', 'Recomputes only when dependencies change. Skipped entirely on re-renders where deps are unchanged.'],
+              ['useRef', 'During render', '.current is readable, but any value written by a useEffect won\'t appear until the next render.'],
+              ['useLayoutEffect', 'After commit, before paint', 'Synchronous. Runs after React updates the DOM but before the browser draws. Use for DOM measurements or mutations that need to be invisible to the user.'],
+              ['useEffect', 'After paint', 'Asynchronous. Runs after the browser has painted. The safe default for data fetching, subscriptions, and side effects.'],
+            ].map(([hook, when, behaviour]) => (
+              <tr key={hook} style={{ borderBottom: '1px solid rgba(128,128,128,0.2)', verticalAlign: 'top' }}>
+                <td style={{ padding: '0.5rem 1rem 0.5rem 0', whiteSpace: 'nowrap' }}><code>{hook}</code></td>
+                <td style={{ padding: '0.5rem 1rem 0.5rem 0', whiteSpace: 'nowrap' }}>{when}</td>
+                <td style={{ padding: '0.5rem 0' }}>{behaviour}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p style={{ marginTop: '0.75rem', marginBottom: 0 }}>
+          <strong>Cleanup order on re-render:</strong> React runs the <em>previous</em> render's
+          cleanup (<code>return () =&gt; ...</code>) before firing the new effect — first{' '}
+          <code>useLayoutEffect</code> cleanup, then <code>useEffect</code> cleanup.
+          On unmount, both cleanups run in that same order with no new effect following.
+        </p>
       </InfoBox>
 
       {/* ---- 5. Mutating State Directly ---- */}

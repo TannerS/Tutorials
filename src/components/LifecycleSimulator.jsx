@@ -144,16 +144,18 @@ function ParentDemo({ childMounted, childProp, secondChildMounted, count, log })
    LogPanel
    ──────────────────────────────────────────── */
 const LogPanel = memo(function LogPanel({ entries }) {
-  const endRef = useRef(null);
+  const scrollRef = useRef(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [entries.length]);
 
   return (
     <div style={styles.logPanel}>
       <div style={styles.logHeader}>📋 Event Log ({entries.length})</div>
-      <div style={styles.logScroll}>
+      <div style={styles.logScroll} ref={scrollRef}>
         {entries.length === 0 && (
           <p style={{ color: '#555b72', textAlign: 'center', padding: '2rem 0' }}>
             Interact with the controls to see lifecycle events…
@@ -164,7 +166,6 @@ const LogPanel = memo(function LogPanel({ entries }) {
             <span style={styles.logTs}>{e.time}</span> {e.msg}
           </div>
         ))}
-        <div ref={endRef} />
       </div>
     </div>
   );
