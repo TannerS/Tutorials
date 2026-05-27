@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Migration() {
@@ -405,8 +404,310 @@ export default function Migration() {
         for maximum coverage.
       </InfoBox>
 
-      {/* ── 11. Migration Checklist ── */}
-      <h2>Migration Checklist</h2>      <InfoBox variant="success" title="Migration Complete Checklist">
+      {/* ── 12. Large-Scale Migration Strategy ── */}
+      <h2>Large-Scale Migration at Team Scale</h2>
+      <p>
+        Migrating a large codebase is as much a <strong>team coordination problem</strong> as it
+        is a technical one. The best technical strategy fails if developers are converting files
+        inconsistently, reintroducing <code>any</code> types, or working against each other.
+      </p>
+
+      <InfoBox variant="info" title="The Four-Phase Approach for Large Codebases">
+        <ol style={{marginBottom: 0}}>
+          <li><strong>Phase 1 — Infrastructure</strong>: Install TypeScript, set up tsconfig with <code>allowJs: true</code>, configure ESLint, add <code>tsc --noEmit</code> to CI. Zero files converted yet, but the toolchain is ready.</li>
+          <li><strong>Phase 2 — Shared types and utilities</strong>: Convert API types, shared utilities, and constants first. These flow upward — every component that consumes them immediately gets benefit.</li>
+          <li><strong>Phase 3 — Bottom-up component conversion</strong>: Convert leaf components (no dependencies) first, then move inward. Use the <code>@typescript-eslint/no-explicit-any</code> warning to track progress.</li>
+          <li><strong>Phase 4 — Enforce and tighten</strong>: Flip <code>allowJs: false</code>, enable <code>strict: true</code>, promote <code>any</code> warnings to errors. No new JS files allowed.</li>
+        </ol>
+      </InfoBox>
+
+      <CodeBlock
+        language="json"
+        title={"Phase 1 vs Phase 4 tsconfig.json"}
+        code={
+          '{\n' +
+          '  "compilerOptions": {\n' +
+          '    "allowJs": true,        // Phase 1: JS files still work\n' +
+          '    "checkJs": false,       // Don\'t typecheck JS files yet\n' +
+          '    "strict": false,        // Relax strictness during migration\n' +
+          '    "noImplicitAny": false  // Allow implicit any temporarily\n' +
+          '  }\n' +
+          '}\n\n' +
+          '// Phase 4 — full strictness\n' +
+          '{\n' +
+          '  "compilerOptions": {\n' +
+          '    "allowJs": false,    // No JS files allowed anymore\n' +
+          '    "strict": true,      // All strict checks enabled\n' +
+          '    "noImplicitAny": true,\n' +
+          '    "strictNullChecks": true,\n' +
+          '    "noUncheckedIndexedAccess": true\n' +
+          '  }\n' +
+          '}'
+        }
+      />
+
+      <h2>Tracking Migration Progress</h2>
+
+      <InfoBox variant="tip" title="Ratchet Strategy — Never Go Backward">
+        <p>
+          Set a CI check that counts <code>any</code> usages or unconverted files and{' '}
+          <strong>fails if the count increases</strong>. You don&apos;t have to reduce the count every
+          PR — but you can never make it worse. This prevents regression while giving developers
+          freedom to work on features without being blocked by unrelated migration work.
+        </p>
+      </InfoBox>
+
+      <CodeBlock
+        language="bash"
+        title="Measure Migration Debt"
+        code={
+          '# Count remaining .js/.jsx files\n' +
+          'find src -name "*.js" -o -name "*.jsx" | wc -l\n\n' +
+          '# Count remaining "any" usages\n' +
+          'grep -r ": any" src --include="*.ts" --include="*.tsx" | wc -l\n\n' +
+          '# package.json scripts:\n' +
+          '"type:check": "tsc --noEmit",\n' +
+          '"type:count-any": "grep -r \': any\' src | wc -l"'
+        }
+      />
+
+      {/* ── 13. Creating a Common TypeScript Component Library ── */}
+      <h2>Creating a Common TypeScript Component Library</h2>
+      <p>
+        A shared component library gives your team a typed, versioned foundation — design system
+        components, hooks, utilities, and API types shared across multiple apps. TypeScript makes
+        this dramatically safer: callers get autocomplete, prop validation, and change detection
+        when the library updates.
+      </p>
+
+      <CodeBlock
+        language="bash"
+        title="Shared Library Package Structure"
+        code={
+          'packages/\n' +
+          '  ui/                    # Shared component library\n' +
+          '    src/\n' +
+          '      components/\n' +
+          '        Button/\n' +
+          '          Button.tsx\n' +
+          '          Button.types.ts\n' +
+          '          index.ts\n' +
+          '      hooks/\n' +
+          '        useDebounce.ts\n' +
+          '      types/\n' +
+          '        api.types.ts      # Shared API response types\n' +
+          '      index.ts            # Root barrel export\n' +
+          '    package.json\n' +
+          '    tsconfig.json'
+        }
+      />
+
+      <CodeBlock
+        language="typescript"
+        title="Library Component — Button.tsx with Full Types"
+        code={
+          "// Button.types.ts\n" +
+          "export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';\n" +
+          "export type ButtonSize = 'sm' | 'md' | 'lg';\n\n" +
+          "export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {\n" +
+          "  variant?: ButtonVariant;\n" +
+          "  size?: ButtonSize;\n" +
+          "  isLoading?: boolean;\n" +
+          "  leftIcon?: React.ReactNode;\n" +
+          "}\n\n" +
+          "// Button.tsx\n" +
+          "export function Button({\n" +
+          "  variant = 'primary',\n" +
+          "  size = 'md',\n" +
+          "  isLoading = false,\n" +
+          "  leftIcon,\n" +
+          "  children,\n" +
+          "  disabled,\n" +
+          "  ...rest\n" +
+          "}: ButtonProps) {\n" +
+          "  return (\n" +
+          "    <button {...rest} disabled={disabled || isLoading}\n" +
+          "      data-variant={variant} data-size={size}>\n" +
+          "      {leftIcon && <span>{leftIcon}</span>}\n" +
+          "      {isLoading ? 'Loading...' : children}\n" +
+          "    </button>\n" +
+          "  );\n" +
+          "}\n\n" +
+          "// index.ts — barrel export\n" +
+          "export { Button } from './components/Button/Button';\n" +
+          "export type { ButtonProps, ButtonVariant } from './components/Button/Button.types';"
+        }
+      />
+
+      <CodeBlock
+        language="json"
+        title="packages/ui/package.json — Library Package Config"
+        code={
+          '{\n' +
+          '  "name": "@mycompany/ui",\n' +
+          '  "main": "./dist/index.cjs",\n' +
+          '  "module": "./dist/index.js",\n' +
+          '  "types": "./dist/index.d.ts",\n' +
+          '  "exports": {\n' +
+          '    ".": {\n' +
+          '      "import": "./dist/index.js",\n' +
+          '      "require": "./dist/index.cjs",\n' +
+          '      "types": "./dist/index.d.ts"\n' +
+          '    }\n' +
+          '  },\n' +
+          '  "scripts": {\n' +
+          '    "build": "tsup src/index.ts --format esm,cjs --dts"\n' +
+          '  },\n' +
+          '  "peerDependencies": { "react": ">=18" }\n' +
+          '}'
+        }
+      />
+
+      <h2>Sharing API Types Across the Stack</h2>
+
+      <p>
+        The highest-value use of a common library is sharing the <strong>API contract</strong> —
+        the types that describe what the server sends and the client receives. When your Java
+        backend&apos;s DTOs are mirrored as TypeScript types, both sides of the stack are type-safe
+        and stay in sync.
+      </p>
+
+      <CodeBlock
+        language="typescript"
+        title="Shared API Contract Types"
+        code={
+          "// packages/ui/src/types/api.types.ts\n" +
+          "export interface User {\n" +
+          "  id: string;\n" +
+          "  name: string;\n" +
+          "  email: string;\n" +
+          "  role: 'admin' | 'user' | 'viewer';\n" +
+          "  createdAt: string;\n" +
+          "}\n\n" +
+          "export interface PaginatedResponse<T> {\n" +
+          "  data: T[];\n" +
+          "  total: number;\n" +
+          "  page: number;\n" +
+          "  pageSize: number;\n" +
+          "  totalPages: number;\n" +
+          "}\n\n" +
+          "export interface ApiError {\n" +
+          "  code: string;\n" +
+          "  message: string;\n" +
+          "  fields?: Record<string, string>;\n" +
+          "}\n\n" +
+          "export type ApiResult<T> =\n" +
+          "  | { success: true; data: T }\n" +
+          "  | { success: false; error: ApiError };"
+        }
+      />
+
+      <h2>Monorepo Setup with Turborepo + TypeScript</h2>
+
+      <CodeBlock
+        language="bash"
+        title="Create a TypeScript Monorepo"
+        code={
+          'npx create-turbo@latest my-workspace\n\n' +
+          'my-workspace/\n' +
+          '  apps/\n' +
+          '    web/           # Main React app\n' +
+          '    admin/         # Admin React app\n' +
+          '  packages/\n' +
+          '    ui/            # Shared component library\n' +
+          '    api-types/     # Shared API types\n' +
+          '    eslint-config/ # Shared ESLint config\n' +
+          '    tsconfig/      # Shared tsconfig bases\n' +
+          '  turbo.json'
+        }
+      />
+
+      <CodeBlock
+        language="json"
+        title="packages/tsconfig/base.json — Shared TypeScript Base"
+        code={
+          '{\n' +
+          '  "compilerOptions": {\n' +
+          '    "target": "ES2020",\n' +
+          '    "module": "ESNext",\n' +
+          '    "moduleResolution": "bundler",\n' +
+          '    "strict": true,\n' +
+          '    "esModuleInterop": true,\n' +
+          '    "skipLibCheck": true\n' +
+          '  }\n' +
+          '}\n\n' +
+          '// packages/ui/tsconfig.json\n' +
+          '{\n' +
+          '  "extends": "@mycompany/tsconfig/base.json",\n' +
+          '  "compilerOptions": {\n' +
+          '    "jsx": "react-jsx",\n' +
+          '    "declaration": true,\n' +
+          '    "declarationDir": "./dist"\n' +
+          '  },\n' +
+          '  "include": ["src"]\n' +
+          '}'
+        }
+      />
+
+      <h2>Team Adoption Strategy</h2>
+
+      <InfoBox variant="success" title="Making TypeScript Stick Across a Team">
+        <ul style={{marginBottom: 0}}>
+          <li>
+            <strong>Start with types-only files</strong> — create <code>src/types/</code> with
+            shared interfaces before converting components. Developers immediately see value with
+            zero disruption.
+          </li>
+          <li>
+            <strong>Designate TypeScript champions</strong> — one or two developers who review TS
+            PRs for quality and mentor others. Prevents <code>any</code>-type sprawl from developers
+            unfamiliar with TypeScript.
+          </li>
+          <li>
+            <strong>Block new JS files in CI</strong> — once Phase 2 is done, add a CI check that
+            fails if any <code>.js/.jsx</code> files are added. New code must be TypeScript.
+          </li>
+          <li>
+            <strong>Use path aliases</strong> — configure <code>@/components</code>,{' '}
+            <code>@/types</code>, <code>@/hooks</code> in tsconfig for cleaner imports.
+          </li>
+          <li>
+            <strong>Write a <code>TYPESCRIPT.md</code></strong> — document team conventions: when
+            to use <code>interface</code> vs <code>type</code>, how to handle API responses, how
+            to type event handlers.
+          </li>
+        </ul>
+      </InfoBox>
+
+      <CodeBlock
+        language="json"
+        title="tsconfig.json — Path Aliases"
+        code={
+          '{\n' +
+          '  "compilerOptions": {\n' +
+          '    "baseUrl": ".",\n' +
+          '    "paths": {\n' +
+          '      "@/*": ["./src/*"],\n' +
+          '      "@/components/*": ["./src/components/*"],\n' +
+          '      "@/hooks/*": ["./src/hooks/*"],\n' +
+          '      "@/types/*": ["./src/types/*"],\n' +
+          '      "@/utils/*": ["./src/utils/*"]\n' +
+          '    }\n' +
+          '  }\n' +
+          '}\n\n' +
+          '// vite.config.ts — mirror aliases in the bundler\n' +
+          'import path from \'path\';\n' +
+          'export default defineConfig({\n' +
+          '  resolve: {\n' +
+          "    alias: { '@': path.resolve(__dirname, './src') },\n" +
+          '  },\n' +
+          '});'
+        }
+      />
+
+      {/* ── 14. Migration Checklist ── */}
+      <h2>Migration Checklist</h2>
+      <InfoBox variant="success" title="Migration Complete Checklist">
         <ul>
           <li>All <code>.js</code> / <code>.jsx</code> files renamed to <code>.ts</code> / <code>.tsx</code></li>
           <li><code>allowJs</code> set to <code>false</code> in tsconfig</li>
@@ -416,35 +717,13 @@ export default function Migration() {
           <li><code>tsc --noEmit</code> passes in CI</li>
           <li>ESLint TypeScript rules enabled and passing</li>
           <li>Custom <code>.d.ts</code> shims reviewed for accuracy</li>
+          <li>Shared API types extracted to common library</li>
+          <li>Path aliases configured in tsconfig and bundler</li>
+          <li>CI blocks new <code>.js</code> / <code>.jsx</code> files</li>
           <li>Team trained on TypeScript patterns and conventions</li>
-          <li>Documentation updated to reflect TypeScript usage</li>
+          <li><code>TYPESCRIPT.md</code> conventions doc written</li>
         </ul>
       </InfoBox>
-
-      {/* ── 12. Interactive Challenges ── */}
-      <h2>Test Your Knowledge</h2>
-      <InteractiveChallenge
-        question={"When migrating a large React app from JavaScript to TypeScript, which files should you convert FIRST?"}
-        options={[
-          "The App.tsx root component",
-          "Leaf components with no child dependencies",
-          "The most complex component with the most logic",
-          "All test files at once",
-        ]}
-        correctIndex={1}
-        explanation={"Start with leaf components \u2014 small files that don't import other project files. They have the fewest dependencies, so converting them won't trigger cascading type errors. Work inward toward the root of your component tree."}
-      />
-      <InteractiveChallenge
-        question={"You encounter a third-party library with no @types package. What is the recommended approach?"}
-        options={[
-          "Use require instead of import to bypass type checking",
-          "Add skipLibCheck: true and ignore the issue",
-          "Create a custom .d.ts declaration file with declare module",
-          "Cast every usage to any",
-        ]}
-        correctIndex={2}
-        explanation={"Create a .d.ts file using declare module to provide type information for untyped libraries. This gives you type safety at call sites without modifying the library. The types can start minimal and be refined over time."}
-      />
     </LessonLayout>
   );
 }

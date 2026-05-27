@@ -170,6 +170,7 @@ import SMRedux from './pages/state-mgmt/Redux'
 import SMZustand from './pages/state-mgmt/Zustand'
 import SMComparison from './pages/state-mgmt/Comparison'
 import SMPatterns from './pages/state-mgmt/Patterns'
+import SMReactQuery from './pages/state-mgmt/ReactQuery'
 
 // Accessibility
 import A11yIntro from './pages/accessibility/Intro'
@@ -419,6 +420,7 @@ function App() {
         <Route path="state-mgmt/zustand" element={<SMZustand />} />
         <Route path="state-mgmt/comparison" element={<SMComparison />} />
         <Route path="state-mgmt/patterns" element={<SMPatterns />} />
+        <Route path="state-mgmt/react-query" element={<SMReactQuery />} />
         {/* Accessibility */}
         <Route path="accessibility/intro" element={<A11yIntro />} />
         <Route path="accessibility/semantic" element={<A11ySemantic />} />
