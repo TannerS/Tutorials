@@ -11,7 +11,7 @@ export default function Patterns() {
       sectionId="state-mgmt"
       lessonIndex={4}
       prev={{ path: '/state-mgmt/comparison', label: 'Library Comparison' }}
-      next={null}
+      next={{ path: '/state-mgmt/react-query', label: 'TanStack Query' }}
     >
       <h2>Feature-Based State Organization</h2>
       <p>

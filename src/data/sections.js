@@ -275,6 +275,7 @@ export const sections = [
       { id: 'zustand', title: 'Zustand', path: '/state-mgmt/zustand' },
       { id: 'comparison', title: 'Library Comparison', path: '/state-mgmt/comparison' },
       { id: 'patterns', title: 'Real-World Patterns', path: '/state-mgmt/patterns' },
+      { id: 'react-query', title: 'TanStack Query (React Query)', path: '/state-mgmt/react-query' },
     ],
   },
   {

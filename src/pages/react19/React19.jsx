@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function React19() {
@@ -58,6 +57,173 @@ function TodoList({ todos, filter }) {
 }
 // The compiler figures out what to memoize automatically!`}
       </CodeBlock>
+
+      <h2>How the Compiler Actually Works</h2>
+
+      <p>
+        The compiler is a <strong>build-time Babel/SWC plugin</strong>. It runs on your source code
+        and outputs transformed JavaScript — you never see the output, but it wraps values in
+        internal memoization primitives equivalent to <code>useMemo</code> and <code>useCallback</code>.
+      </p>
+
+      <InfoBox variant="info" title="Static Analysis — What the Compiler Tracks">
+        <p>The compiler reads your component function and traces every value:</p>
+        <ul>
+          <li><strong>Props and state</strong> are the "roots" — they change when React says they change</li>
+          <li><strong>Derived values</strong> (like <code>filteredTodos</code>) are only recomputed when their inputs change</li>
+          <li><strong>Callbacks</strong> passed as props get stable references automatically — no manual <code>useCallback</code></li>
+          <li><strong>Child components</strong> are only re-rendered if their props actually change</li>
+        </ul>
+        <p style={{marginBottom: 0}}>It does this entirely statically — no runtime cost, no additional JavaScript sent to the browser.</p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="What the Compiler Generates (Conceptual — You Never Write This)" showLineNumbers>
+{`// Your code:
+function Greeting({ name }) {
+  const message = "Hello, " + name;
+  return <h1>{message}</h1>;
+}
+
+// What the compiler produces (simplified):
+function Greeting({ name }) {
+  const $ = useMemoCache(2); // compiler's internal cache
+
+  let message;
+  if ($[0] !== name) {
+    // Only recompute when name changes
+    message = "Hello, " + name;
+    $[0] = name;
+    $[1] = message;
+  } else {
+    message = $[1]; // Return cached value
+  }
+
+  return <h1>{message}</h1>;
+}
+
+// You write the simple version — the compiler adds the caching.`}
+      </CodeBlock>
+
+      <h2>What the Compiler Can and Cannot Handle</h2>
+
+      <InfoBox variant="warning" title="The Compiler Requires Rules of React Compliance">
+        <p>
+          The compiler only works on code that follows the <strong>Rules of React</strong> — the
+          same rules the linter already enforces. If you violate them, the compiler either opts that
+          component out of optimization silently, or (in strict mode) errors at build time.
+        </p>
+        <ul style={{marginBottom: 0}}>
+          <li>No mutation of props or state during render</li>
+          <li>No side effects during render (no <code>fetch</code>, no <code>console.log</code> that matters, no DOM reads)</li>
+          <li>Hooks called unconditionally and in the same order every render</li>
+          <li>Component functions are pure given the same props/state</li>
+        </ul>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Cases Where the Compiler Opts Out" showLineNumbers>
+{`// ✅ SAFE — compiler optimizes this
+function SafeComponent({ items }) {
+  const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
+  return sorted.map(item => <Item key={item.id} item={item} />);
+}
+
+// ❌ BREAKS COMPILER — mutating props
+function BadComponent({ items }) {
+  items.sort(); // Mutates the prop array in place — compiler opts out
+  return items.map(item => <Item key={item.id} item={item} />);
+}
+
+// ❌ BREAKS COMPILER — reading external mutable state during render
+let externalCounter = 0;
+function AlsoBreaks() {
+  externalCounter++; // Side effect during render — compiler opts out
+  return <div>{externalCounter}</div>;
+}
+
+// ✅ SAFE — refs are fine, they're an intentional escape hatch
+function WithRef({ value }) {
+  const ref = useRef(null);
+  const handleClick = () => { ref.current?.focus(); }; // Event handler, not render
+  return <input ref={ref} value={value} onChange={() => {}} />;
+}`}
+      </CodeBlock>
+
+      <h2>Enabling the Compiler</h2>
+
+      <InfoBox variant="note" title="Current Status — Stable but Opt-In">
+        <p>
+          As of React 19, the compiler is <strong>stable and production-ready</strong> but
+          opt-in. It ships as a separate package. Meta uses it across their entire
+          codebase. Many violations are surfaced by the{' '}
+          <code>eslint-plugin-react-compiler</code> linter rule, which you should enable
+          first to catch issues before enabling compilation.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="bash" title="Install the Compiler">
+{`npm install --save-dev babel-plugin-react-compiler
+# or for Next.js:
+npm install --save-dev babel-plugin-react-compiler@rc`}
+      </CodeBlock>
+
+      <CodeBlock language="javascript" title="Enable in Vite (babel.config.js or vite.config.js)" showLineNumbers>
+{`// vite.config.js
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [
+    react({
+      babel: {
+        plugins: [
+          ['babel-plugin-react-compiler', {
+            // Optional: only compile specific directories during rollout
+            // sources: (filename) => filename.includes('src/components'),
+          }],
+        ],
+      },
+    }),
+  ],
+});
+
+// Next.js (next.config.js)
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    reactCompiler: true,
+  },
+};
+module.exports = nextConfig;`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="Opt Out Individual Components With a Directive" showLineNumbers>
+{`// If a specific component doesn't play well with the compiler,
+// opt it out with the 'use no memo' directive:
+function ProblematicComponent() {
+  'use no memo'; // Compiler skips this component entirely
+
+  // This component might use an external library that mutates objects,
+  // or has intentional side effects during render for legacy reasons.
+  return <div />;
+}
+
+// Check whether the compiler is transforming a component:
+// Look for _c() calls in your compiled bundle, or use React DevTools
+// which shows "Memo ✓" in the component tree for compiled components.`}
+      </CodeBlock>
+
+      <h2>What Still Requires Manual Work</h2>
+
+      <InfoBox variant="info" title="The Compiler Doesn't Replace Everything">
+        <ul style={{marginBottom: 0}}>
+          <li><strong>useRef</strong> — still required for DOM access and mutable values that don't trigger re-renders</li>
+          <li><strong>useLayoutEffect</strong> — still required for synchronous DOM measurements before paint</li>
+          <li><strong>Context splitting</strong> — the compiler doesn't split contexts; split State/Dispatch contexts still gives better performance than a single combined context</li>
+          <li><strong>Key props</strong> — still required to help React identify list items</li>
+          <li><strong>Virtualization</strong> — still required for very long lists (thousands of items)</li>
+          <li><strong>Code splitting / lazy()</strong> — still required for bundle optimization</li>
+        </ul>
+      </InfoBox>
 
       <h2>Actions & useActionState</h2>
 
@@ -271,18 +437,6 @@ createRoot(document.getElementById('root'), {
 });`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question="What makes the use() hook unique compared to other React hooks?"
-        options={[
-          "It can only be used in Server Components",
-          "It can be called inside conditionals, loops, and after early returns",
-          "It automatically caches the resolved value forever",
-          "It replaces both useState and useEffect completely"
-        ]}
-        correctIndex={1}
-        explanation="Unlike all other hooks which must be called at the top level unconditionally, use() can be called conditionally. This is because use() integrates with React's Suspense mechanism rather than the hook linked-list. It suspends the component until the promise resolves, working with Suspense boundaries for loading states."
-        language="jsx"
-      />
     </LessonLayout>
   );
 }
