@@ -181,6 +181,49 @@ function ChatRoom({ roomId }) {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="info" title="Why does useRef fix the stale closure?">
+        <p>
+          The stale closure happens because <code>useEffect</code> with <code>[]</code> runs once on
+          mount. The handler it creates closes over the <em>value</em> of <code>roomId</code> at that
+          moment — and since the effect never re-runs, the handler never sees updates.
+        </p>
+        <p>
+          <code>useRef</code> works because a closure captures a <strong>reference to an object</strong>,
+          not a snapshot of a primitive. React guarantees that <code>useRef</code> returns the{' '}
+          <strong>same object in memory</strong> across every render. So the old closure still points
+          to it — and <code>.current</code> on that same object has already been updated.
+        </p>
+        <p>
+          You might wonder: <em>what if I used a plain state object instead of a primitive?</em> It
+          still would not work. <code>useState</code> deliberately creates a <strong>new object reference</strong>{' '}
+          on each update to trigger re-renders. The old closure would still hold a reference to the
+          original object. <code>useRef</code> is specifically designed to give you a stable, mutable
+          container — one object that never moves, so any closure can always find it and read the
+          current value.
+        </p>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0.75rem', fontSize: '0.9rem' }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', padding: '6px 12px', borderBottom: '1px solid #444' }}></th>
+              <th style={{ textAlign: 'left', padding: '6px 12px', borderBottom: '1px solid #444' }}>Same object across renders?</th>
+              <th style={{ textAlign: 'left', padding: '6px 12px', borderBottom: '1px solid #444' }}>Triggers re-render on change?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style={{ padding: '6px 12px' }}><code>useState</code></td>
+              <td style={{ padding: '6px 12px' }}>No — new reference each update</td>
+              <td style={{ padding: '6px 12px' }}>Yes</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '6px 12px' }}><code>useRef</code></td>
+              <td style={{ padding: '6px 12px' }}>Yes — always the same reference</td>
+              <td style={{ padding: '6px 12px' }}>No</td>
+            </tr>
+          </tbody>
+        </table>
+      </InfoBox>
+
       <h2>Anti-Pattern 4: Race Conditions in Data Fetching</h2>
 
       <CodeBlock language="jsx" title="Data Fetching Race Condition">

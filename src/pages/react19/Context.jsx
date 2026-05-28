@@ -121,6 +121,38 @@ function AuthGate({ children, fallback }) {
 
       <h2>Provider Pattern with TypeScript</h2>
 
+      <InfoBox variant="info" title="What the Provider Pattern actually is">
+        <p>
+          The Provider Pattern is just a convention for packaging context properly. Instead of
+          scattering <code>createContext</code>, <code>useState</code>, and <code>useContext</code>
+          calls across your app, you bundle them into three things that live in one file:
+        </p>
+        <ol style={{ marginTop: '0.5rem', paddingLeft: '1.25rem', lineHeight: 2 }}>
+          <li>A <strong>context object</strong> (created with <code>createContext</code>, kept private)</li>
+          <li>A <strong>Provider component</strong> that owns the state and wraps children</li>
+          <li><strong>Custom hooks</strong> (<code>useAuth</code>, etc.) that are the only public API</li>
+        </ol>
+        <p style={{ marginTop: '0.75rem' }}>
+          Consumers never touch the context object directly — they call the hook. This means you
+          can change the internals later without breaking anything that uses it.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="note" title="Why undefined instead of null as the default?">
+        <p>
+          <code>createContext&lt;AuthState | undefined&gt;(undefined)</code> is a deliberate trick.
+          If you pass a real default value, <code>useContext</code> will silently return it when
+          called outside a Provider — your component appears to work, but it's reading stale dummy
+          data with no error.
+        </p>
+        <p style={{ marginTop: '0.5rem' }}>
+          With <code>undefined</code> as the default, the custom hook can check{' '}
+          <code>if (ctx === undefined)</code> and throw immediately with a clear message:{' '}
+          <em>"useAuthState must be used within AuthProvider."</em> You get a loud, obvious crash
+          at the call site instead of a silent data bug far from the root cause.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="typescript" title="Type-Safe Context Pattern" showLineNumbers>
 {`// The definitive pattern for type-safe context in production
 
@@ -135,14 +167,19 @@ interface AuthActions {
   refresh: () => Promise<void>;
 }
 
-// Separate state from actions (different update frequencies)
+// ─── Step 1: create two separate contexts ────────────────────────────────────
+// State and actions are split because they update at different rates.
+// A component that only dispatches actions (a button) subscribes to
+// AuthActionsContext — it never re-renders when state changes.
 const AuthStateContext = createContext<AuthState | undefined>(undefined);
 const AuthActionsContext = createContext<AuthActions | undefined>(undefined);
 
+// ─── Step 2: one Provider component owns all the state ───────────────────────
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ user: null, isLoading: true });
 
-  // Actions are stable — memoize once
+  // Actions never change — useMemo with empty deps creates them once.
+  // This is what keeps AuthActionsContext stable (no re-renders for action consumers).
   const actions = useMemo<AuthActions>(() => ({
     login: async (credentials) => {
       setState(s => ({ ...s, isLoading: true }));
@@ -157,7 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = await authApi.refresh();
       setState({ user, isLoading: false });
     },
-  }), []);
+  }), []); // ← no deps: actions are created once and never replaced
 
   return (
     <AuthStateContext.Provider value={state}>
@@ -168,10 +205,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hook with runtime safety check
+// ─── Step 3: export hooks, NOT the context objects ───────────────────────────
+// Consumers call useAuthState() or useAuthActions() — they never import
+// AuthStateContext directly. If you ever swap the internals, the hook API stays.
 export function useAuthState(): AuthState {
   const ctx = useContext(AuthStateContext);
   if (ctx === undefined) {
+    // undefined = called outside a Provider. Give a clear error immediately.
     throw new Error('useAuthState must be used within AuthProvider');
   }
   return ctx;
@@ -183,8 +223,28 @@ export function useAuthActions(): AuthActions {
     throw new Error('useAuthActions must be used within AuthProvider');
   }
   return ctx;
+}
+
+// ─── Usage ────────────────────────────────────────────────────────────────────
+// Wrap once at the app root:
+// <AuthProvider><App /></AuthProvider>
+
+// In any component below it:
+function Avatar() {
+  const { user } = useAuthState();       // re-renders when state changes
+  return <img src={user?.avatar} />;
+}
+
+function LogoutButton() {
+  const { logout } = useAuthActions();   // never re-renders when state changes
+  return <button onClick={logout}>Log out</button>;
 }`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="The TypeScript generics at a glance">
+        <p><code>createContext&lt;AuthState | undefined&gt;(undefined)</code> — the generic tells TypeScript what type consumers will receive. Without it, TypeScript infers <code>undefined</code> as the only possible value and will complain every time you try to use the context.</p>
+        <p style={{ marginTop: '0.5rem' }}><code>useState&lt;AuthState&gt;(...)</code> and <code>useMemo&lt;AuthActions&gt;(...)</code> are optional here because TypeScript can infer them from the initial value — but writing them explicitly documents intent and catches mistakes when the shape changes.</p>
+      </InfoBox>
 
       <h2>React 19 Context Changes</h2>
 

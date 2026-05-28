@@ -510,6 +510,14 @@ THE STALE CLOSURE TRAP:
     setInterval(() => setCount(countRef.current + 1), 1000);  // ✅
   }
 
+WHY useRef FIXES IT (but a state object doesn't):
+  Closures capture REFERENCES to objects, not value snapshots.
+  useRef   → same object every render; .current is always fresh ✅
+  useState → NEW object on each update; old closure holds old object ❌
+                                Same ref?  Triggers re-render?
+  useRef                          ✅ Yes        ❌ No
+  useState                        ❌ No         ✅ Yes
+
 WHEN IS STATE ACTUALLY "UPDATED"?
   1. You call setState(newValue)
   2. React schedules a re-render (batches with other setState calls)

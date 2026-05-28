@@ -81,6 +81,28 @@ Tabs.Content = TabContent;
 
       <h2>Render Props (Still Useful)</h2>
 
+      <InfoBox variant="info" title="The Core Idea">
+        <p>
+          A render prop is a <strong>function prop</strong> that a component calls to produce its output.
+          Instead of deciding what to render itself, the component hands state or logic back to the
+          caller and says <em>"here's what I know — you decide what to show."</em>
+        </p>
+        <p>
+          The name is a bit misleading. It doesn't have to be a prop called <code>render</code>.
+          The pattern is just: <strong>pass a function, receive data, return JSX.</strong>
+        </p>
+        <CodeBlock language="jsx" title="The anatomy of a render prop">
+{`// The component owns the STATE/LOGIC
+function DataProvider({ render }) {
+  const data = useSomeLogic();
+  return render(data);       // calls YOUR function with its data
+}
+
+// YOU own the UI
+<DataProvider render={(data) => <MyUI value={data} />} />`}
+        </CodeBlock>
+      </InfoBox>
+
       <CodeBlock language="jsx" title="Render Props for Flexible Rendering" showLineNumbers>
 {`// Render prop: component delegates rendering to the consumer
 function MouseTracker({ render }) {
@@ -95,25 +117,93 @@ function MouseTracker({ render }) {
   return render(position); // Consumer decides what to render
 }
 
-// Usage — different UIs, same logic
+// Usage — same tracking logic, completely different UIs
 <MouseTracker render={({ x, y }) => <Crosshair x={x} y={y} />} />
 <MouseTracker render={({ x, y }) => <Tooltip x={x} y={y} text="Follow me" />} />
+<MouseTracker render={({ x, y }) => <p>Mouse is at {x}, {y}</p>} />`}
+      </CodeBlock>
 
-// Modern equivalent: custom hook (usually preferred)
-function useMousePosition() {
+      <InfoBox variant="tip" title="children as a function — the most common form">
+        <p>
+          You'll often see render props written using <code>children</code> instead of a named prop.
+          It's the same pattern — <code>children</code> is just a function instead of JSX.
+        </p>
+        <CodeBlock language="jsx" title="children-as-function variant">
+{`// Same MouseTracker, but using children instead of render={}
+function MouseTracker({ children }) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  useEffect(() => {
-    const handler = (e) => setPosition({ x: e.clientX, y: e.clientY });
-    window.addEventListener('mousemove', handler);
-    return () => window.removeEventListener('mousemove', handler);
-  }, []);
-  return position;
+  // ...same effect...
+  return children(position);  // call children like a function
 }
 
-// When render props still win over hooks:
-// 1. You need to prevent rendering when not visible (hooks always run)
-// 2. Library provides render prop API (e.g., Downshift, React Spring)
-// 3. You want to scope logic to a subtree without a wrapper component`}
+// Usage looks cleaner — no extra prop name needed
+<MouseTracker>
+  {({ x, y }) => <Crosshair x={x} y={y} />}
+</MouseTracker>
+
+// Both are identical in behaviour. "children as a function"
+// is just render props with a nicer syntax.`}
+        </CodeBlock>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Real-world example: a data-fetching component" showLineNumbers>
+{`// The component owns fetching + loading/error state
+function Fetch({ url, children }) {
+  const [state, setState] = useState({ data: null, loading: true, error: null });
+
+  useEffect(() => {
+    setState({ data: null, loading: true, error: null });
+    fetch(url)
+      .then(r => r.json())
+      .then(data => setState({ data, loading: false, error: null }))
+      .catch(error => setState({ data: null, loading: false, error }));
+  }, [url]);
+
+  return children(state); // hand everything back to caller
+}
+
+// Caller decides what all three states look like
+<Fetch url="/api/user/42">
+  {({ data, loading, error }) => {
+    if (loading) return <Spinner />;
+    if (error)   return <ErrorMessage error={error} />;
+    return <UserCard user={data} />;
+  }}
+</Fetch>
+
+// Same <Fetch> component, completely different UI
+<Fetch url="/api/posts">
+  {({ data, loading }) => loading ? <SkeletonList /> : <PostList posts={data} />}
+</Fetch>`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="Custom hook equivalent — and why render props still matter" showLineNumbers>
+{`// Modern equivalent: custom hook (usually preferred)
+function useFetch(url) {
+  const [state, setState] = useState({ data: null, loading: true, error: null });
+  useEffect(() => {
+    fetch(url).then(r => r.json())
+      .then(data => setState({ data, loading: false, error: null }))
+      .catch(error => setState({ data: null, loading: false, error }));
+  }, [url]);
+  return state;
+}
+
+// Hook usage — cleaner for most cases
+function UserPage({ id }) {
+  const { data, loading, error } = useFetch(\`/api/user/\${id}\`);
+  if (loading) return <Spinner />;
+  if (error)   return <ErrorMessage error={error} />;
+  return <UserCard user={data} />;
+}
+
+// When render props still beat hooks:
+// 1. Conditional rendering: the <Fetch> component only mounts children
+//    when data is ready — hooks always run (you can't call a hook inside an if).
+// 2. Library APIs: Downshift, React Hook Form <Controller />, React Spring
+//    all use render props because they control the wrapper component.
+// 3. Scoping: the logic + its UI are co-located at one call site,
+//    rather than splitting into a hook call + JSX block further down.`}
       </CodeBlock>
 
       <h2>Controlled vs Uncontrolled — The Hybrid Pattern</h2>

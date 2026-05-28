@@ -1,30 +1,55 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { sections } from '../data/sections';
+import { sections, groups } from '../data/sections';
 import { useProgress } from './ProgressTracker';
+
+// Build a map of sectionId → group for fast lookup
+const sectionGroupMap = {};
+groups.forEach(g => g.sectionIds.forEach(id => { sectionGroupMap[id] = g.id; }));
 
 export default function Sidebar() {
   const location = useLocation();
-  const [expanded, setExpanded] = useState(() => {
-    const current = sections.find(s => location.pathname.startsWith(`/${s.id}`));
-    return current ? current.id : sections[0].id;
-  });
-  const [search, setSearch] = useState('');
   const { getSectionProgress } = useProgress();
+  const [search, setSearch] = useState('');
 
-  // Auto-expand current section on route change
+  // Which section is open (one at a time)
+  const [expandedSection, setExpandedSection] = useState(() => {
+    const current = sections.find(s => location.pathname.startsWith(`/${s.id}`));
+    return current ? current.id : null;
+  });
+
+  // Which groups are open (all open by default)
+  const [expandedGroups, setExpandedGroups] = useState(
+    () => new Set(groups.map(g => g.id))
+  );
+
+  // Auto-expand current section + its group on navigation
   useEffect(() => {
     const current = sections.find(s => location.pathname.startsWith(`/${s.id}`));
     if (current) {
-      setExpanded(current.id);
+      setExpandedSection(current.id);
+      const groupId = sectionGroupMap[current.id];
+      if (groupId) {
+        setExpandedGroups(prev => {
+          if (prev.has(groupId)) return prev;
+          return new Set([...prev, groupId]);
+        });
+      }
     }
   }, [location.pathname]);
 
-  const toggleSection = (id) => {
-    setExpanded(prev => prev === id ? null : id);
+  const toggleGroup = (groupId) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      next.has(groupId) ? next.delete(groupId) : next.add(groupId);
+      return next;
+    });
   };
 
-  // Filter lessons for search
+  const toggleSection = (sectionId) => {
+    setExpandedSection(prev => prev === sectionId ? null : sectionId);
+  };
+
   const searchResults = search.trim()
     ? sections.flatMap(section =>
         section.lessons
@@ -44,10 +69,10 @@ export default function Sidebar() {
       flexDirection: 'column',
       overflow: 'hidden',
     }}>
-      {/* Logo / Header */}
+      {/* Logo */}
       <NavLink to="/" style={{ textDecoration: 'none' }}>
         <div style={{
-          padding: '1.25rem 1.25rem',
+          padding: '1.25rem',
           borderBottom: '1px solid var(--border-color)',
           display: 'flex',
           alignItems: 'center',
@@ -87,12 +112,13 @@ export default function Sidebar() {
             color: 'var(--text-primary)',
             fontSize: '0.82rem',
             outline: 'none',
+            boxSizing: 'border-box',
           }}
         />
       </div>
 
-      {/* Sections */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '0.5rem 0' }}>
+      {/* Content */}
+      <div style={{ flex: 1, overflow: 'auto', padding: '0.25rem 0' }}>
         {search.trim() ? (
           <div>
             {searchResults.length === 0 && (
@@ -113,7 +139,6 @@ export default function Sidebar() {
                   fontSize: '0.82rem',
                   color: isActive ? lesson.sectionColor : 'var(--text-secondary)',
                   textDecoration: 'none',
-                  transition: 'all var(--transition)',
                 })}
                 onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'none'}
@@ -124,98 +149,149 @@ export default function Sidebar() {
             ))}
           </div>
         ) : (
-          sections.map(section => {
-          const isExpanded = expanded === section.id;
-          const completedCount = getSectionProgress(section.id, section.lessons.length);
-          const totalCount = section.lessons.length;
+          groups.map(group => {
+            const isGroupOpen = expandedGroups.has(group.id);
+            const groupSections = group.sectionIds
+              .map(id => sections.find(s => s.id === id))
+              .filter(Boolean);
 
-          return (
-            <div key={section.id}>
-              <button
-                onClick={() => toggleSection(section.id)}
-                style={{
-                  width: '100%',
-                  background: 'none',
-                  border: 'none',
-                  padding: '0.75rem 1.25rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  color: 'var(--text-primary)',
-                  transition: 'background var(--transition)',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'none'}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ fontSize: '1.1rem' }}>{section.icon}</span>
-                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{section.label}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  {completedCount > 0 && (
+            return (
+              <div key={group.id}>
+                {/* Group header */}
+                <button
+                  onClick={() => toggleGroup(group.id)}
+                  style={{
+                    width: '100%',
+                    background: 'none',
+                    border: 'none',
+                    padding: '0.65rem 1rem 0.4rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    color: group.color,
+                    borderTop: '1px solid var(--border-color)',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.85rem' }}>{group.icon}</span>
                     <span style={{
-                      fontSize: '0.7rem',
-                      color: section.color,
-                      background: `${section.color}15`,
-                      padding: '2px 6px',
-                      borderRadius: '4px',
+                      fontWeight: 700,
+                      fontSize: '0.72rem',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
                     }}>
-                      {completedCount}/{totalCount}
+                      {group.label}
                     </span>
-                  )}
+                  </div>
                   <span style={{
-                    fontSize: '0.7rem',
+                    fontSize: '0.65rem',
                     color: 'var(--text-muted)',
-                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                    transform: isGroupOpen ? 'rotate(90deg)' : 'rotate(0deg)',
                     transition: 'transform 0.2s ease',
                   }}>▶</span>
-                </div>
-              </button>
+                </button>
 
-              {isExpanded && (
-                <div style={{ paddingBottom: '0.5rem' }}>
-                  {section.lessons.map((lesson, idx) => (
-                    <NavLink
-                      key={lesson.id}
-                      to={lesson.path}
-                      style={({ isActive }) => ({
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.45rem 1.25rem 0.45rem 3rem',
-                        fontSize: '0.82rem',
-                        color: isActive ? section.color : 'var(--text-secondary)',
-                        background: isActive ? 'var(--bg-active)' : 'none',
-                        borderRight: isActive ? `2px solid ${section.color}` : '2px solid transparent',
-                        textDecoration: 'none',
-                        transition: 'all var(--transition)',
-                      })}
-                      onMouseEnter={e => {
-                        if (!e.currentTarget.classList.contains('active'))
-                          e.currentTarget.style.background = 'var(--bg-hover)';
-                      }}
-                      onMouseLeave={e => {
-                        if (!e.currentTarget.classList.contains('active'))
-                          e.currentTarget.style.background = 'none';
-                      }}
-                    >
-                      <span style={{ 
-                        fontSize: '0.65rem', 
-                        color: 'var(--text-muted)',
-                        width: '1.25rem',
-                      }}>
-                        {String(idx + 1).padStart(2, '0')}
-                      </span>
-                      {lesson.title}
-                    </NavLink>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        }))
-        }
+                {/* Sections within group */}
+                {isGroupOpen && groupSections.map(section => {
+                  const isSectionOpen = expandedSection === section.id;
+                  const completedCount = getSectionProgress(section.id, section.lessons.length);
+                  const totalCount = section.lessons.length;
+
+                  return (
+                    <div key={section.id}>
+                      <button
+                        onClick={() => toggleSection(section.id)}
+                        style={{
+                          width: '100%',
+                          background: 'none',
+                          border: 'none',
+                          padding: '0.6rem 1rem 0.6rem 1.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          color: 'var(--text-primary)',
+                          transition: 'background var(--transition)',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <span style={{ fontSize: '1rem' }}>{section.icon}</span>
+                          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{section.label}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          {completedCount > 0 && (
+                            <span style={{
+                              fontSize: '0.65rem',
+                              color: section.color,
+                              background: `${section.color}18`,
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                            }}>
+                              {completedCount}/{totalCount}
+                            </span>
+                          )}
+                          <span style={{
+                            fontSize: '0.65rem',
+                            color: 'var(--text-muted)',
+                            transform: isSectionOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s ease',
+                          }}>▶</span>
+                        </div>
+                      </button>
+
+                      {/* Lessons */}
+                      {isSectionOpen && (
+                        <div style={{ paddingBottom: '0.25rem' }}>
+                          {section.lessons.map((lesson, idx) => (
+                            <NavLink
+                              key={lesson.id}
+                              to={lesson.path}
+                              style={({ isActive }) => ({
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.4rem 1rem 0.4rem 3.25rem',
+                                fontSize: '0.8rem',
+                                color: isActive ? section.color : 'var(--text-secondary)',
+                                background: isActive ? 'var(--bg-active)' : 'none',
+                                borderRight: isActive ? `2px solid ${section.color}` : '2px solid transparent',
+                                textDecoration: 'none',
+                                transition: 'all var(--transition)',
+                              })}
+                              onMouseEnter={e => {
+                                if (!e.currentTarget.getAttribute('aria-current'))
+                                  e.currentTarget.style.background = 'var(--bg-hover)';
+                              }}
+                              onMouseLeave={e => {
+                                if (!e.currentTarget.getAttribute('aria-current'))
+                                  e.currentTarget.style.background = 'none';
+                              }}
+                            >
+                              <span style={{
+                                fontSize: '0.62rem',
+                                color: 'var(--text-muted)',
+                                width: '1.1rem',
+                                flexShrink: 0,
+                              }}>
+                                {String(idx + 1).padStart(2, '0')}
+                              </span>
+                              {lesson.title}
+                            </NavLink>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Footer */}

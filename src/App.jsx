@@ -202,11 +202,6 @@ import FTPackages from './pages/frontend-tooling/Packages'
 import FTMonorepos from './pages/frontend-tooling/Monorepos'
 import FTPerformance from './pages/frontend-tooling/Performance'
 
-// Interview Prep
-import IPReact from './pages/interview-prep/React'
-import IPTypescript from './pages/interview-prep/Typescript'
-import IPFrontend from './pages/interview-prep/Frontend'
-import IPCoding from './pages/interview-prep/Coding'
 
 // npm Deep Dive
 import NpmIntro from './pages/npm-deep-dive/Intro'
@@ -447,11 +442,7 @@ function App() {
         <Route path="frontend-tooling/packages" element={<FTPackages />} />
         <Route path="frontend-tooling/monorepos" element={<FTMonorepos />} />
         <Route path="frontend-tooling/performance" element={<FTPerformance />} />
-        {/* Interview Prep */}
-        <Route path="interview-prep/react" element={<IPReact />} />
-        <Route path="interview-prep/typescript" element={<IPTypescript />} />
-        <Route path="interview-prep/frontend" element={<IPFrontend />} />
-        <Route path="interview-prep/coding" element={<IPCoding />} />
+
         {/* npm Deep Dive */}
         <Route path="npm-deep-dive/intro" element={<NpmIntro />} />
         <Route path="npm-deep-dive/resolution" element={<NpmResolution />} />
