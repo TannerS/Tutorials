@@ -332,18 +332,7 @@ export const sections = [
       { id: 'performance', title: 'Bundle Analysis & Performance', path: '/frontend-tooling/performance' },
     ],
   },
-  {
-    id: 'interview-prep',
-    label: 'Interview Prep',
-    icon: '💼',
-    color: '#10b981',
-    lessons: [
-      { id: 'react', title: 'React Interview Questions', path: '/interview-prep/react' },
-      { id: 'typescript', title: 'TypeScript Interview Questions', path: '/interview-prep/typescript' },
-      { id: 'frontend', title: 'Frontend System Design', path: '/interview-prep/frontend' },
-      { id: 'coding', title: 'Live Coding Challenges', path: '/interview-prep/coding' },
-    ],
-  },
+  
   {
     id: 'npm-deep-dive',
     label: 'npm Deep Dive',
@@ -384,5 +373,36 @@ export const sections = [
       { id: 'devserver', title: 'Dev Server & HMR', path: '/webpack/devserver' },
       { id: 'advanced', title: 'Advanced Config & Migration', path: '/webpack/advanced' },
     ],
+  },
+];
+
+export const groups = [
+  {
+    id: 'backend',
+    label: 'Backend',
+    icon: '🖥️',
+    color: '#fb923c',
+    sectionIds: ['java', 'java-cheatsheet', 'springboot', 'sql', 'apidesign', 'auth', 'microservices'],
+  },
+  {
+    id: 'frontend',
+    label: 'Frontend',
+    icon: '⚛️',
+    color: '#22d3ee',
+    sectionIds: ['css-mastery', 'typescript', 'react19', 'react-antipatterns', 'react-cheatsheet', 'state-mgmt', 'react-testing', 'react-router'],
+  },
+  {
+    id: 'architecture',
+    label: 'Architecture & Design',
+    icon: '🏗️',
+    color: '#a78bfa',
+    sectionIds: ['solid', 'patterns', 'systemdesign', 'accessibility', 'testing'],
+  },
+  {
+    id: 'tooling',
+    label: 'Tooling & DevOps',
+    icon: '🔧',
+    color: '#f59e0b',
+    sectionIds: ['devops', 'frontend-tooling', 'webpack', 'npm-deep-dive', 'npm-packages'],
   },
 ];
