@@ -1,0 +1,224 @@
+:root {
+  --bg: #0f1117;
+  --bg-card: #161822;
+  --border: #2a2e42;
+  --text: #e4e6f0;
+  --text-muted: #9399b2;
+  --accent: #5b9cf6;
+  --accent-2: #a78bfa;
+  --danger: #f87171;
+  --success: #4ade80;
+}
+
+body.theme-light {
+  --bg: #ffffff;
+  --bg-card: #f4f5fb;
+  --border: #d8dceb;
+  --text: #1a1d2e;
+  --text-muted: #5a6080;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+.shell {
+  max-width: 780px;
+  margin: 2rem auto;
+  padding: 0 1.25rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.search {
+  flex: 1;
+  padding: 0.55rem 0.85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.filter-bar button,
+.theme-btn,
+.add-form button {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.filter-bar button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.add-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.add-form input {
+  flex: 1;
+  padding: 0.55rem 0.85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.task-item.done .title {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.task-item .checkbox {
+  cursor: pointer;
+  font-size: 1.1rem;
+  user-select: none;
+}
+
+.task-item .title {
+  flex: 1;
+  cursor: text;
+}
+
+.task-item input {
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+}
+
+.pill {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pill.priority-high   { background: rgba(248, 113, 113, 0.18); color: #f87171; }
+.pill.priority-medium { background: rgba(251, 146, 60, 0.18);  color: #fb923c; }
+.pill.priority-low    { background: rgba(74, 222, 128, 0.18); color: #4ade80; }
+.pill.overdue         { background: rgba(248, 113, 113, 0.18); color: #f87171; }
+
+.task-item button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--danger);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.empty {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.user-profile {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.form-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin-left: 0.5rem;
+}
+
+.stats {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0;
+}
+
+.tag-filter {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.8rem;
+}
+
+.tag-filter-label {
+  color: var(--text-muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

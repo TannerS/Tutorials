@@ -1,0 +1,26 @@
+{
+  "name": "@tutorials/demo-react",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5174 --strictPort",
+    "build": "tsc -b && vite build",
+    "lint": "echo 'no lint configured'",
+    "preview": "vite preview --port 5174",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "@tutorials/ui": "*",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@tutorials/tsconfig": "*",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14"
+  }
+}

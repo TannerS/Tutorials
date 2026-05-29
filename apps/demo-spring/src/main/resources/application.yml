@@ -1,0 +1,36 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: broken-shop
+
+  datasource:
+    url: jdbc:h2:mem:brokenshop;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      # FIXME: SEC-1 — H2 console exposed with no auth on a real port.
+      # In a real app this should be disabled in production or guarded.
+      settings:
+        web-allow-others: true   # FIXME: SEC-2 — allows remote access. Should be false.
+
+  jpa:
+    hibernate:
+      ddl-auto: update           # FIXME: CONFIG-1 — never use 'update' in production.
+                                  # Use Flyway/Liquibase migrations.
+    show-sql: true                # FIXME: CONFIG-2 — leaks SQL to logs. Disable in prod.
+    properties:
+      hibernate:
+        format_sql: true
+
+# FIXME: CONFIG-3 — no profiles. There's no dev/prod separation. Add application-dev.yml
+# and application-prod.yml with profile-specific overrides.
+
+# FIXME: CONFIG-4 — secrets hardcoded (none yet, but when you add JWT secret / DB password
+# in a real DB, never put them here — use env vars, vault, or Spring Cloud Config).
