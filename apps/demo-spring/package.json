@@ -1,0 +1,12 @@
+{
+  "name": "@tutorials/demo-spring",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "mvn -q spring-boot:run",
+    "build": "mvn -q -DskipTests package",
+    "lint": "echo 'no JS lint — use maven verify'",
+    "typecheck": "echo 'Java is the type check'",
+    "test": "mvn -q test"
+  }
+}

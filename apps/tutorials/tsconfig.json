@@ -1,0 +1,10 @@
+{
+  "extends": "@tutorials/tsconfig/react.json",
+  "compilerOptions": {
+    "paths": {
+      "@tutorials/ui": ["../../packages/ui/src/index.ts"],
+      "@tutorials/ui/*": ["../../packages/ui/src/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

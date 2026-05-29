@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Monorepo / build
+.turbo
+*.tsbuildinfo
+
+# Maven
+target/
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
