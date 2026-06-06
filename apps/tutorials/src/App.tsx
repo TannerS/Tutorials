@@ -153,6 +153,7 @@ import TsMigration from './pages/typescript/Migration'
 import TsBestPractices from './pages/typescript/BestPractices'
 import TsNewProject from './pages/typescript/NewProject'
 import TsTsconfig from './pages/typescript/Tsconfig'
+import TsInteractive from './pages/typescript/Interactive'
 
 // React Router v7
 import RRIntro from './pages/react-router/Intro'
@@ -400,6 +401,7 @@ function App() {
         <Route path="typescript/bestpractices" element={<TsBestPractices />} />
         <Route path="typescript/newproject" element={<TsNewProject />} />
         <Route path="typescript/tsconfig" element={<TsTsconfig />} />
+        <Route path="typescript/interactive" element={<TsInteractive />} />
         {/* React Router v7 */}
         <Route path="react-router/intro" element={<RRIntro />} />
         <Route path="react-router/nested" element={<RRNested />} />

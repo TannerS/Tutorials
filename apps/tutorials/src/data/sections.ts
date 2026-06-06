@@ -248,6 +248,7 @@ export const sections: Section[] = [
       { id: 'bestpractices', title: 'Best Practices & Pitfalls', path: '/typescript/bestpractices' },
       { id: 'newproject', title: 'New Project from Scratch', path: '/typescript/newproject' },
       { id: 'tsconfig', title: 'tsconfig Mastery', path: '/typescript/tsconfig' },
+      { id: 'interactive', title: '🧪 Interactive Challenges', path: '/typescript/interactive' },
     ],
   },
   {
