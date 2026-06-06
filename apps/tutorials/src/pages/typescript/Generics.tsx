@@ -685,7 +685,162 @@ uniqueIds.add("1"); // ❌ Error: string not assignable to number
         chart={"graph TD\n  A[\"See: Map&lt;K, V&gt;\"] --> B[\"K = type of keys\"]\n  A --> C[\"V = type of values\"]\n  B --> D[\"Map&lt;string, User&gt;\"]\n  C --> D\n  D --> E[\"Keys are strings\"]\n  D --> F[\"Values are Users\"]\n  style A fill:#5b9cf6,color:#fff\n  style D fill:#10b981,color:#fff"}
       />
 
-      {/* ── Section 13: Interactive Challenges ── */}
+      {/* ── Section 13: Envelope Generics ── */}
+      <h2>Envelope Generics — Wrapping API Responses</h2>
+
+      <p>
+        One of the highest-leverage generic patterns in real production code: the <strong>API response envelope</strong>.
+        Instead of every endpoint returning its own ad-hoc shape, all responses go through a single generic wrapper that
+        carries success/failure information alongside the typed payload.
+      </p>
+
+      <CodeBlock language="ts" title="The canonical envelope" showLineNumbers>
+{`// The default 'T = unknown' is doing real work here — read on for why.
+export interface ApiResponse<T = unknown> {
+  ok: boolean;
+  data: T | null;
+  error?: string | null;
+}`}
+      </CodeBlock>
+
+      <p>
+        Three properties, one generic. That single interface types every API call in the app.
+      </p>
+
+      <h3>Why default to <code>T = unknown</code> instead of <code>T = any</code>?</h3>
+
+      <p>
+        The default type parameter is the most under-appreciated part of this pattern. The choice between <code>unknown</code>{' '}
+        and <code>any</code> changes how callers behave at call sites that <em>don't specify</em> the generic argument:
+      </p>
+
+      <CodeBlock language="ts" title="unknown forces narrowing; any silently lets everything through" showLineNumbers>
+{`// With T = unknown (recommended)
+function genericFetch(url: string): Promise<ApiResponse> { /* ... */ }
+const res = await genericFetch('/health');
+res.data.foo;       // ❌ TS error: data is 'unknown | null', no '.foo' access
+res.data?.foo;      // ❌ still 'unknown', can't access properties
+
+// You're forced to narrow or assert:
+if (res.ok && res.data) {
+  const checked = res.data as { foo: string };
+  console.log(checked.foo);
+}
+
+// ─────────────────────────────────────────────────────────────
+
+// With T = any (anti-pattern)
+function looseFetch(url: string): Promise<ApiResponse<any>> { /* ... */ }
+const res2 = await looseFetch('/health');
+res2.data.foo.bar.baz;  // ✅ TS happy — but ZERO actual safety. Crashes at runtime.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The rule">
+        <p>
+          <code>unknown</code> as default means "you must specify the type or narrow it." <code>any</code> as default
+          means "I give up on type safety." Always prefer <code>unknown</code> for envelope generics — it forces every
+          call site to either declare its expected shape or handle the loose data explicitly.
+        </p>
+      </InfoBox>
+
+      <h3>Specifying the payload type at call sites</h3>
+
+      <CodeBlock language="ts" title="The envelope unlocks typed endpoints" showLineNumbers>
+{`interface Recipe {
+  id: number;
+  title: string;
+  author: string;
+}
+
+interface Cookbook {
+  recipes: Recipe[];
+  count: number;
+}
+
+async function fetchRecipe(id: number): Promise<ApiResponse<Recipe>> {
+  const raw = await fetch(\`/api/recipes/\${id}\`);
+  if (!raw.ok) return { ok: false, data: null, error: raw.statusText };
+  return { ok: true, data: await raw.json(), error: null };
+}
+
+async function fetchCookbook(): Promise<ApiResponse<Cookbook>> { /* ... */ }
+
+// Call sites get full type safety:
+const recipeRes = await fetchRecipe(42);
+if (recipeRes.ok && recipeRes.data) {
+  recipeRes.data.title;  // ✅ string — inferred from ApiResponse<Recipe>
+  recipeRes.data.cookbook; // ❌ TS error: cookbook doesn't exist on Recipe
+}`}
+      </CodeBlock>
+
+      <h3>Pairing with discriminated unions for stricter null handling</h3>
+
+      <p>
+        The envelope above has a small weakness: <code>ok: true</code> doesn't <em>guarantee</em>{' '}
+        <code>data !== null</code> in TypeScript's eyes — they're independent fields. A more sophisticated version
+        uses a discriminated union to tie them together at the type level:
+      </p>
+
+      <CodeBlock language="ts" title="Discriminated envelope — ok narrows data" showLineNumbers>
+{`type ApiResponse<T> =
+  | { ok: true;  data: T;    error?: never }
+  | { ok: false; data: null; error: string };
+
+const res = await fetchRecipe(42);
+if (res.ok) {
+  res.data.title;  // ✅ T is narrowed — TS now KNOWS data is not null
+  res.error;       // ❌ TS error: error doesn't exist on the 'ok: true' branch
+} else {
+  res.error;       // ✅ string — required on the failure branch
+  res.data;        // ✅ null — narrowed
+}`}
+      </CodeBlock>
+
+      <p>
+        Same pattern as the discriminated union you've seen for events, reducers, etc. — applied to API responses.
+        The <code>error?: never</code> on the success branch is what makes TS reject <code>res.error</code> when{' '}
+        <code>res.ok</code> is true.
+      </p>
+
+      <h3>Typed errors with a second generic</h3>
+
+      <CodeBlock language="ts" title="ApiResponse<T, E> — generic data AND error" showLineNumbers>
+{`interface ApiError {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
+type ApiResponse<T, E = ApiError> =
+  | { ok: true;  data: T;    error?: never }
+  | { ok: false; data: null; error: E };
+
+// Most call sites use the default error type:
+const res = await fetchRecipe(42);
+if (!res.ok) {
+  res.error.code;         // ✅ ApiError shape
+}
+
+// Specialize when an endpoint has its own error shape:
+type ValidationErrors = { fields: Record<string, string[]> };
+async function submitForm(): Promise<ApiResponse<{ id: number }, ValidationErrors>> { /* ... */ }
+
+const form = await submitForm();
+if (!form.ok) {
+  form.error.fields;      // ✅ typed as Record<string, string[]>
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="Why this is so common in production">
+        <p>
+          One generic interface = one place to evolve the response contract. Add a <code>requestId</code> for tracing?
+          Add a <code>warnings</code> array? Add pagination meta? You change <code>ApiResponse&lt;T&gt;</code> in one
+          file and every consumer either keeps working (additive fields) or gets a type error pointing at exactly
+          what needs updating (breaking changes). Without the envelope, that change is a multi-day grep-and-update.
+        </p>
+      </InfoBox>
+
+      {/* ── Section 14: Interactive Challenges ── */}
       <h2>Test Your Knowledge</h2>
 
       <InteractiveChallenge

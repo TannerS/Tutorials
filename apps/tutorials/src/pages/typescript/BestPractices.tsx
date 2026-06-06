@@ -441,8 +441,215 @@ expectTypeOf<Admin>().toMatchTypeOf<User>();`}
         tests to guard against regressions across TypeScript upgrades.
       </InfoBox>
 
-      {/* ── Section 13: Interactive Challenges ───────────────────── */}
-      <h2>13. Test Your Knowledge</h2>
+      {/* ── Section 13: Adapter Functions at the DTO Boundary ───────────────────── */}
+      <h2>13. DO: Use Adapter Functions at the DTO Boundary</h2>
+
+      <p>
+        APIs almost never return the shape your application actually wants to work with. Server fields are{' '}
+        <code>snake_case</code>, dates are strings, optional fields land as <code>null</code>, sometimes nested
+        objects come back flattened. The biggest mistake a TypeScript codebase makes is leaking that API shape into
+        every component, hook, and selector.
+      </p>
+
+      <InfoBox variant="danger" title="The anti-pattern: leaking API shapes into the app">
+        <p>
+          When the API's DTO type is what your components consume, every component implicitly knows about{' '}
+          <code>created_at</code> vs <code>createdAt</code>, about <code>null</code> vs <code>undefined</code>,
+          about whether <code>display_title</code> exists. A field rename on the server breaks 50 files. A new optional
+          field forces every consumer to handle the case. The boundary is everywhere.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="ts" title="Without adapters: API shape leaks everywhere" showLineNumbers>
+{`// ❌ The API DTO is what consumers see
+interface RecipeApi {
+  recipe_id: number;
+  display_title: string;
+  author_handle: string;
+  created_at: string;             // ISO string from the server
+  last_cooked_at: string | null;  // null when never cooked
+}
+
+async function fetchRecipe(id: number): Promise<RecipeApi> {
+  return (await fetch(\`/api/recipes/\${id}\`)).json();
+}
+
+// Now every consumer deals with snake_case, string dates, and null:
+function RecipeCard({ recipe }: { recipe: RecipeApi }) {
+  return (
+    <div>
+      <h2>{recipe.display_title}</h2>           {/* snake_case in JSX, ugly */}
+      <p>By @{recipe.author_handle}</p>
+      <p>Posted: {new Date(recipe.created_at).toLocaleDateString()}</p>
+      {recipe.last_cooked_at !== null && (     {/* every consumer null-checks */}
+        <p>Last cooked: {new Date(recipe.last_cooked_at).toLocaleDateString()}</p>
+      )}
+    </div>
+  );
+}`}
+      </CodeBlock>
+
+      <h3>The pattern: type the boundary, transform once, app sees clean types</h3>
+
+      <CodeBlock language="ts" title="The adapter function pattern" showLineNumbers>
+{`// 1. Type the API shape EXACTLY as the server sends it.
+//    This type lives next to the fetch call and is NOT exported beyond.
+interface RecipeApi {
+  recipe_id: number;
+  display_title: string;
+  author_handle: string;
+  created_at: string;
+  last_cooked_at: string | null;
+}
+
+// 2. Type the domain shape the way YOUR APP wants to work.
+//    This is what every consumer imports — camelCase, real Dates, undefined.
+export interface Recipe {
+  id: number;
+  title: string;
+  author: string;
+  createdAt: Date;
+  lastCookedAt: Date | undefined;
+}
+
+// 3. The adapter — the ONLY place that knows about both shapes.
+export function adaptRecipe(api: RecipeApi): Recipe {
+  return {
+    id: api.recipe_id,
+    title: api.display_title,
+    author: api.author_handle,
+    createdAt: new Date(api.created_at),
+    lastCookedAt: api.last_cooked_at ? new Date(api.last_cooked_at) : undefined,
+  };
+}
+
+// 4. Wrap the fetch so callers never see the DTO type.
+export async function fetchRecipe(id: number): Promise<Recipe> {
+  const raw: RecipeApi = await (await fetch(\`/api/recipes/\${id}\`)).json();
+  return adaptRecipe(raw);
+}
+
+// Now consumers only see the clean Recipe type:
+function RecipeCard({ recipe }: { recipe: Recipe }) {
+  return (
+    <div>
+      <h2>{recipe.title}</h2>
+      <p>By @{recipe.author}</p>
+      <p>Posted: {recipe.createdAt.toLocaleDateString()}</p>
+      {recipe.lastCookedAt && (
+        <p>Last cooked: {recipe.lastCookedAt.toLocaleDateString()}</p>
+      )}
+    </div>
+  );
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="success" title="What you get from this boundary">
+        <ul>
+          <li><strong>API drift is contained.</strong> Server renames <code>display_title</code> → <code>headline</code>? You change <em>one line in <code>adaptRecipe</code></em>. Zero changes to UI code.</li>
+          <li><strong>Null/undefined are normalized.</strong> The app picks one convention (usually <code>undefined</code> for missing in TypeScript) and the adapter does the mapping.</li>
+          <li><strong>Type conversions happen once.</strong> String dates become real <code>Date</code> objects at the boundary. UI code never re-parses them.</li>
+          <li><strong>Defensive logic has a home.</strong> Missing fields, malformed values, version differences — all handled in the adapter, not scattered across the UI.</li>
+          <li><strong>Domain types are searchable.</strong> Find every place a <code>Recipe</code> is used → no false matches from <code>RecipeApi</code>, <code>RecipeDTO</code>, <code>RecipeResponse</code>, etc.</li>
+        </ul>
+      </InfoBox>
+
+      <h3>Arrays and nested adapters</h3>
+
+      <CodeBlock language="ts" title="Composing adapters" showLineNumbers>
+{`interface IngredientApi {
+  ingredient_id: number;
+  display_name: string;
+  quantity_grams: number | null;
+}
+
+export interface Ingredient {
+  id: number;
+  name: string;
+  quantityGrams?: number;
+}
+
+export function adaptIngredient(api: IngredientApi): Ingredient {
+  return {
+    id: api.ingredient_id,
+    name: api.display_name,
+    quantityGrams: api.quantity_grams ?? undefined,
+  };
+}
+
+// Composition — nested adapters
+interface RecipeApi {
+  recipe_id: number;
+  display_title: string;
+  ingredients: IngredientApi[];   // ← nested DTO
+}
+
+export interface Recipe {
+  id: number;
+  title: string;
+  ingredients: Ingredient[];      // ← nested domain type
+}
+
+export function adaptRecipe(api: RecipeApi): Recipe {
+  return {
+    id: api.recipe_id,
+    title: api.display_title,
+    ingredients: api.ingredients.map(adaptIngredient),  // delegate to nested adapter
+  };
+}
+
+// For lists, a tiny helper avoids repetition:
+export const adaptRecipes = (items: RecipeApi[]): Recipe[] => items.map(adaptRecipe);`}
+      </CodeBlock>
+
+      <h3>Pairing with the API response envelope</h3>
+
+      <CodeBlock language="ts" title="Adapter + ApiResponse<T> — the full boundary pattern" showLineNumbers>
+{`import type { ApiResponse } from './types/api';   // the envelope from earlier
+
+export async function fetchRecipe(id: number): Promise<ApiResponse<Recipe>> {
+  try {
+    const raw = await fetch(\`/api/recipes/\${id}\`);
+    if (!raw.ok) {
+      return { ok: false, data: null, error: raw.statusText };
+    }
+    const apiRecipe: RecipeApi = await raw.json();
+    return { ok: true, data: adaptRecipe(apiRecipe), error: null };
+  } catch (err) {
+    return { ok: false, data: null, error: (err as Error).message };
+  }
+}
+
+// Consumers see a clean, type-safe contract:
+const res = await fetchRecipe(42);
+if (res.ok && res.data) {
+  res.data.title;             // ✅ string (camelCase, clean)
+  res.data.createdAt;         // ✅ Date object
+} else {
+  showError(res.error);
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Naming conventions for the pattern">
+        <ul>
+          <li><code>adapt<strong>Foo</strong>(api: FooApi): Foo</code> — one-direction, API → domain. Most common.</li>
+          <li><code>serialize<strong>Foo</strong>(foo: Foo): FooApi</code> — domain → API. Used for outgoing payloads (POST/PUT bodies).</li>
+          <li><code>FooApi</code> / <code>Foo<strong>DTO</strong></code> / <code>Foo<strong>Response</strong></code> — pick one suffix for "the API shape" and use it consistently across the codebase.</li>
+          <li>Adapter files often live in <code>src/adapters/</code> or alongside the service files that call them.</li>
+        </ul>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="When NOT to adapt">
+        <p>
+          If the API shape is already exactly what your app wants — same casing, same types, same null semantics —
+          adding an adapter is pure ceremony. The pattern earns its keep when there's a <em>real impedance mismatch</em>{' '}
+          between server and client conventions. Small toy apps with a single Express backend you control don't need
+          adapters; large apps consuming third-party APIs almost always do.
+        </p>
+      </InfoBox>
+
+      {/* ── Section 14: Interactive Challenges ───────────────────── */}
+      <h2>14. Test Your Knowledge</h2>
 
       <InteractiveChallenge
         question={"What is the anti-pattern in this code?"}

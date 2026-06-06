@@ -596,7 +596,244 @@ function Chat({ messages }: { messages: Message[] }) {
         </table>
       </div>
 
-      <h2>14. Interactive Challenges</h2>
+      <h2>14. Typing Hook Returns — The <code>Use&lt;Hook&gt;Result</code> Convention</h2>
+
+      <p>
+        Section 7 covered the mechanics of typing a custom hook. This section is about the <strong>naming convention</strong>{' '}
+        for hook input and output types — a small habit that pays huge dividends across a codebase.
+      </p>
+
+      <h3>The convention</h3>
+
+      <CodeBlock language="ts" title="Named interfaces for hook inputs and outputs" showLineNumbers>
+{`// Convention: export NAMED interfaces for what goes in and what comes out.
+//
+//   Use<HookName>Params  / Use<HookName>Options  → for the argument
+//   Use<HookName>Result  / Use<HookName>Return   → for the return value
+
+export interface UsePaginationOptions {
+  initialPage?: number;
+  pageSize?: number;
+  totalItems: number;
+}
+
+export interface UsePaginationResult {
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  goToPage: (n: number) => void;
+  nextPage: () => void;
+  prevPage: () => void;
+  canGoNext: boolean;
+  canGoPrev: boolean;
+}
+
+export function usePagination(options: UsePaginationOptions): UsePaginationResult {
+  // ... implementation
+  return {
+    page: /* ... */ 1,
+    pageSize: options.pageSize ?? 10,
+    totalPages: 0,
+    goToPage: () => {},
+    nextPage: () => {},
+    prevPage: () => {},
+    canGoNext: false,
+    canGoPrev: false,
+  };
+}`}
+      </CodeBlock>
+
+      <h3>Why named types beat anonymous returns</h3>
+
+      <CodeBlock language="ts" title="Anonymous vs named return type" showLineNumbers>
+{`// ❌ Anonymous inline return — works, but…
+export function usePagination(opts: { totalItems: number }) {
+  return {
+    page: 1,
+    nextPage: () => {},
+    /* ... */
+  };
+}
+
+// Problems:
+//   1. Consumers can't reference the return type by name in their own props.
+//   2. Mocking in tests requires re-inferring the shape every time.
+//   3. JSDoc / API docs have nothing to anchor to.
+//   4. Renaming a field shows up in 100 'Property X does not exist' errors
+//      with no obvious source-of-truth file to fix.
+
+// ─────────────────────────────────────────────────────────────
+
+// ✅ Named result interface
+export interface UsePaginationResult { /* ... */ }
+export function usePagination(opts: UsePaginationOptions): UsePaginationResult { /* ... */ }
+
+// Now callers can:
+function Toolbar(props: { pagination: UsePaginationResult }) {
+  /* explicitly typed against the hook's contract */
+}
+
+// And tests can mock easily:
+const mockPagination: UsePaginationResult = {
+  page: 1, pageSize: 10, totalPages: 5,
+  goToPage: jest.fn(), nextPage: jest.fn(), prevPage: jest.fn(),
+  canGoNext: true, canGoPrev: false,
+};`}
+      </CodeBlock>
+
+      <h3>Generic hooks return generic result types</h3>
+
+      <CodeBlock language="ts" title="Generics flow through the naming convention" showLineNumbers>
+{`// When the hook is generic, its result type is generic too.
+// Same naming convention, with the type parameter threaded through.
+
+export interface UsePaginatedItemsOptions<T> {
+  items: T[];
+  pageSize?: number;
+}
+
+export interface UsePaginatedItemsResult<T> {
+  page: number;
+  pageItems: T[];
+  totalPages: number;
+  goToPage: (n: number) => void;
+}
+
+export function usePaginatedItems<T>(
+  opts: UsePaginatedItemsOptions<T>
+): UsePaginatedItemsResult<T> {
+  // ... implementation
+  return {
+    page: 1,
+    pageItems: opts.items.slice(0, opts.pageSize ?? 10),
+    totalPages: Math.ceil(opts.items.length / (opts.pageSize ?? 10)),
+    goToPage: () => {},
+  };
+}
+
+// Consumer:
+const { pageItems } = usePaginatedItems({ items: products });
+//      ^ inferred as Product[]`}
+      </CodeBlock>
+
+      <h3>When to return a tuple instead of an object</h3>
+
+      <p>
+        React itself uses tuples (<code>const [state, setState] = useState(0)</code>) for two-element returns. For
+        custom hooks, follow the same rule: <strong>tuples are great for exactly two values where the order is
+        intuitive</strong> — typically <code>[value, setter]</code>. For three or more values, switch to an object so
+        consumers don't have to memorize positions.
+      </p>
+
+      <CodeBlock language="ts" title="Tuple vs object — when each fits" showLineNumbers>
+{`// ✅ Two values, obvious order — tuple is idiomatic
+export function useToggle(initial = false): [boolean, () => void] {
+  const [value, setValue] = useState(initial);
+  const toggle = useCallback(() => setValue((v) => !v), []);
+  return [value, toggle];
+}
+const [isOpen, toggleOpen] = useToggle();
+
+// ❌ Three+ values as a tuple — order is arbitrary, hard to read at call site
+export function useFetchBad(): [Data | null, boolean, string | null, () => void] {
+  /* ... */
+  return [null, false, null, () => {}];
+}
+const [data, loading, error, refetch] = useFetchBad();
+//     ^ what order? readers can't tell without checking the source
+
+// ✅ Three+ values as a named object — self-documenting
+export interface UseFetchResult<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+export function useFetch<T>(url: string): UseFetchResult<T> {
+  /* ... */
+  return { data: null, loading: false, error: null, refetch: () => {} };
+}
+const { data, loading, error, refetch } = useFetch<Recipe>('/recipes/me');
+//      ^ order doesn't matter; destructuring is self-documenting`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Concrete rule">
+        <p>
+          <strong>2 values, obvious order:</strong> tuple — <code>[value, setter]</code>, <code>[isOpen, toggle]</code>.<br />
+          <strong>3+ values, or any non-obvious order:</strong> named-object return with an exported{' '}
+          <code>Use&lt;Hook&gt;Result</code> interface.
+        </p>
+      </InfoBox>
+
+      <h3>Putting it all together</h3>
+
+      <CodeBlock language="ts" title="One file per hook — the full convention" showLineNumbers>
+{`// hooks/useShoppingCart.ts
+
+import { useState, useCallback, useMemo } from 'react';
+
+// ── 1. Domain types (often imported from a shared types file) ────────────────
+export interface CartItem {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+// ── 2. Hook input contract ───────────────────────────────────────────────────
+export interface UseShoppingCartOptions {
+  initialItems?: CartItem[];
+  taxRate?: number;
+}
+
+// ── 3. Hook output contract ──────────────────────────────────────────────────
+export interface UseShoppingCartResult {
+  items: ReadonlyArray<CartItem>;
+  addItem: (item: CartItem) => void;
+  removeItem: (productId: string) => void;
+  clear: () => void;
+  subtotal: number;
+  tax: number;
+  total: number;
+}
+
+// ── 4. Hook implementation, fully typed against 2 and 3 ──────────────────────
+export function useShoppingCart(
+  options: UseShoppingCartOptions = {}
+): UseShoppingCartResult {
+  const { initialItems = [], taxRate = 0 } = options;
+  const [items, setItems] = useState<CartItem[]>(initialItems);
+
+  const addItem = useCallback((item: CartItem) => {
+    setItems((curr) => [...curr, item]);
+  }, []);
+
+  const removeItem = useCallback((productId: string) => {
+    setItems((curr) => curr.filter((i) => i.productId !== productId));
+  }, []);
+
+  const clear = useCallback(() => setItems([]), []);
+
+  const subtotal = useMemo(
+    () => items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0),
+    [items]
+  );
+  const tax = subtotal * taxRate;
+  const total = subtotal + tax;
+
+  return { items, addItem, removeItem, clear, subtotal, tax, total };
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="success" title="Why this pays off">
+        <p>
+          Three exported interfaces (<code>CartItem</code>, <code>UseShoppingCartOptions</code>,{' '}
+          <code>UseShoppingCartResult</code>) give every consumer something to import, every test something to mock
+          against, and every refactor a clear blast radius. The hook's <em>contract</em> is now searchable, type-safe,
+          and stable — independent of its <em>implementation</em>.
+        </p>
+      </InfoBox>
+
+      <h2>15. Interactive Challenges</h2>
 
       <InteractiveChallenge
         question={"You want to create a ref for an <input> that React manages. Which is correct?"}
