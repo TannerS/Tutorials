@@ -23,7 +23,7 @@ export default function Monorepos() {
 
       <FlowChart
         title="Monorepo vs Polyrepo"
-        chart={"graph TD\n  subgraph Polyrepo\n    A[web-app repo] -->|npm publish| D[shared-ui v1.2.3]\n    B[mobile-app repo] -->|npm install| D\n    C[admin-app repo] -->|npm install| D\n  end\n  subgraph Monorepo\n    E[apps/web-app] -->|direct import| H[libs/shared-ui]\n    F[apps/mobile-app] -->|direct import| H\n    G[apps/admin-app] -->|direct import| H\n  end"}
+        chart={"graph TD\n  subgraph Polyrepo\n    A[web-app repo] -->|npm publish| D[shared-ui v1.2.3]\n    B[mobile-app repo] -->|npm install| D\n    C[dashboard-app repo] -->|npm install| D\n  end\n  subgraph Monorepo\n    E[apps/web-app] -->|direct import| H[libs/shared-ui]\n    F[apps/mobile-app] -->|direct import| H\n    G[apps/dashboard-app] -->|direct import| H\n  end"}
       />
 
       <h3>Why Monorepos?</h3>
@@ -59,7 +59,7 @@ export default function Monorepos() {
 {`# Run a target for a specific project
 npx nx build my-app
 npx nx test shared-ui
-npx nx lint admin-app
+npx nx lint dashboard-app
 
 # Run only affected projects (based on git diff)
 npx nx affected -t build
@@ -235,7 +235,7 @@ npx turbo link`}
 │   │   ├── src/
 │   │   ├── vite.config.ts
 │   │   └── package.json
-│   ├── admin-app/         # Admin dashboard
+│   ├── dashboard-app/         # Admin dashboard
 │   │   ├── src/
 │   │   └── package.json
 │   └── api-server/        # Express/Fastify backend
