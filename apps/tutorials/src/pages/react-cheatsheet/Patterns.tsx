@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Patterns() {
@@ -316,18 +315,6 @@ function useAuth() {
 const { user, logout } = useAuth();`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question={"Which pattern lets a component render as different HTML elements or other components via a prop?"}
-        options={[
-          "Compound Components",
-          "Render Props",
-          "Polymorphic Components (as prop)",
-          "Higher-Order Components"
-        ]}
-        correctIndex={2}
-        explanation={"The polymorphic pattern uses an 'as' prop to let the consumer control what element or component is rendered, while the component provides consistent styling and behavior."}
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

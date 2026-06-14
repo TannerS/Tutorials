@@ -397,6 +397,113 @@ function Parent({ children }) {
 // React sees same reference → skips re-rendering those children.`}
       </CodeBlock>
 
+      <h3>The Three Scenarios That Break Children-as-Props Bailout</h3>
+
+      <CodeBlock language="jsx" title="When children-as-props stops working">
+{`// ✅ WORKS — App owns the JSX, Parent never recreates it
+function App() {
+  return <Parent><ExpensiveTree /></Parent>;
+}
+function Parent({ children }) {
+  const [count, setCount] = useState(0);
+  return <div><button onClick={() => setCount(c => c + 1)}>{count}</button>{children}</div>;
+}
+// ExpensiveTree does NOT re-render when count changes ✅
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ❌ BREAKS SCENARIO 1: App (the owner) re-renders
+function App() {
+  const [appState, setAppState] = useState(0);  // App has state too
+  return <Parent><ExpensiveTree /></Parent>;     // App re-renders → recreates JSX → new ref
+}
+// When App re-renders, it recreates <ExpensiveTree /> → ExpensiveTree re-renders ❌
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ❌ BREAKS SCENARIO 2: Parent is also a context consumer
+const ThemeCtx = createContext('light');
+function Parent({ children }) {
+  const theme = useContext(ThemeCtx);  // Parent subscribes to context
+  const [count, setCount] = useState(0);
+  return <div>{children}</div>;
+}
+// When ThemeCtx changes → Parent re-renders (subscription) →
+// children is re-rendered as part of Parent's output → ExpensiveTree re-renders ❌
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ❌ BREAKS SCENARIO 3: Parent renders a Provider that wraps children directly
+function Parent({ children }) {
+  const [count, setCount] = useState(0);
+  return (
+    <SomeContext.Provider value={count}>
+      {children}   {/* Provider re-renders → children re-renders as Provider's output */}
+    </SomeContext.Provider>
+  );
+}
+// Even though children came from App, Provider is now the structural parent.
+// When Provider re-renders, it re-renders its output — which includes children ❌
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ✅ FIX for Scenario 3: move children OUTSIDE the Provider wrapper
+function Parent({ children }) {
+  const [count, setCount] = useState(0);
+  return (
+    <Wrapper count={count}>
+      {children}   {/* children is a prop of Wrapper, not rendered by Provider */}
+    </Wrapper>
+  );
+}
+function Wrapper({ count, children }) {
+  return (
+    <SomeContext.Provider value={count}>
+      <div>{children}</div>   {/* Provider owns <div>, Wrapper owns children */}
+    </SomeContext.Provider>
+  );
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="Two Independent Re-render Mechanisms">
+        <p>React has <strong>two completely separate</strong> mechanisms that can cause a component to re-render:</p>
+        <ol>
+          <li><strong>Structural cascade</strong> — parent re-renders → all children in its JSX output re-render. Stops at <code>React.memo</code> (if props are stable).</li>
+          <li><strong>Context subscription</strong> — context value changes → all consumers re-render. Bypasses <code>React.memo</code> entirely.</li>
+        </ol>
+        <p>These are <em>additive</em>: a component can be hit by both at once, or just one, or neither. The children-as-props pattern only protects against #1 (structural cascade). It does nothing for context subscriptions.</p>
+      </InfoBox>
+
+      <h3>Pure Components</h3>
+
+      <CodeBlock language="text" title="What 'pure' means for a component">
+{`A PURE COMPONENT:
+  • Output depends ONLY on its props
+  • Same props → same JSX output, every time
+  • No side effects during render (no mutations, no API calls, no random values)
+
+PURE:
+  function InfoBox({ title, text }) {
+    return <div><h3>{title}</h3><p>{text}</p></div>;
+  }
+  // Call it with title="Hello", text="World" → always renders the same thing ✅
+
+NOT PURE:
+  function Counter({ initialCount }) {
+    const [count, setCount] = useState(initialCount);  // internal state = not pure
+    return <button onClick={() => setCount(c => c + 1)}>{count}</button>;
+  }
+  // Same props, but output changes over time (state changes it) ❌
+
+WHY IT MATTERS FOR PERFORMANCE:
+  A pure component is safe to skip re-rendering when its props haven't changed.
+  This is exactly what React.memo does — it wraps a component and says:
+  "This is pure. Skip re-rendering if all props pass Object.is."
+
+  React.memo on a stateful component is WRONG — it will still bail out
+  on prop checks, but the component has its own state that can change
+  independently of props. React.memo can't detect that.
+
+RULE:
+  Candidate for React.memo  ←→  Component is pure (no internal state, no side effects)`}
+      </CodeBlock>
+
       <InfoBox variant="note" title="📝 Same Position in Tree = Same Instance">
         <p>React identifies component instances by their <strong>position in the render tree</strong> + their <strong>type</strong>. If a component appears at the same position with the same type, React reuses the instance (preserves state). If the type changes at that position, or you give it a different <code>key</code>, React destroys the old instance and creates a new one.</p>
       </InfoBox>

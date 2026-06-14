@@ -187,6 +187,7 @@ export const sections: Section[] = [
       { id: 'state', title: 'State & Forms', path: '/react-cheatsheet/state' },
       { id: 'styling', title: 'Styling Approaches', path: '/react-cheatsheet/styling' },
       { id: 'recipes', title: 'Common Recipes', path: '/react-cheatsheet/recipes' },
+      { id: 'antipatterns', title: 'Anti-Patterns Quick Reference', path: '/react-cheatsheet/antipatterns' },
     ],
   },
   {
@@ -265,6 +266,7 @@ export const sections: Section[] = [
       { id: 'testing', title: 'Testing Routes', path: '/react-router/testing' },
       { id: 'fullapp', title: 'Complete App Routing', path: '/react-router/fullapp' },
       { id: 'migration', title: 'Migration Guide (v5→v7)', path: '/react-router/migration' },
+      { id: 'cheatsheet', title: 'Cheat Sheet', path: '/react-router/cheatsheet' },
     ],
   },
   {

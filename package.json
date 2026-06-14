@@ -7,13 +7,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev --parallel",
-    "dev:tutorials": "turbo run dev --filter=@tutorials/site",
-    "dev:react": "turbo run dev --filter=@tutorials/demo-react",
-    "dev:spring": "turbo run dev --filter=@tutorials/demo-spring",
-    "build": "turbo run build",
-    "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
+    "dev": "turbo run dev --filter=@tutorials/site",
+    "build": "turbo run build --filter=@tutorials/site",
+    "lint": "turbo run lint --filter=@tutorials/site",
+    "typecheck": "turbo run typecheck --filter=@tutorials/site",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {

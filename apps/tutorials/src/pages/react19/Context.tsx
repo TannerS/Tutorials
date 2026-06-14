@@ -74,49 +74,263 @@ function AppProvider({ children }) {
 
       <h2>Composition Over Context</h2>
 
-      <p>Before reaching for Context, consider whether component composition solves the problem more simply:</p>
+      <p>Before reaching for Context, consider whether component composition solves the problem more simply.</p>
 
-      <CodeBlock language="jsx" title="Composition Patterns That Replace Context" showLineNumbers>
-{`// SCENARIO: Dashboard needs user data in deeply nested components
+      <h3>Approach 1 — Context (common but often wrong for this scenario)</h3>
+      <p>
+        The code works, but it gives every component a <strong>hidden dependency</strong>.{' '}
+        <code>Header</code> looks like a simple component with no props, but it secretly
+        requires <code>UserContext</code> to exist somewhere above it in the tree. Nothing
+        at the call site signals this — a teammate has to open every child and trace what
+        context each one reads.
+      </p>
+      <CodeBlock language="jsx" title="Approach 1 — Context scattered into every child">
+{`const UserContext = createContext(null);
 
-// APPROACH 1 (Common but often wrong): Context
-// Creates coupling — every component implicitly depends on UserContext
-
-// APPROACH 2 (Often better): Compose at the top, pass assembled components
 function Dashboard() {
-  const user = useUser(); // Only ONE component reads context
-
+  const [user, setUser] = useState(null);
   return (
-    <DashboardLayout
-      header={<Header userName={user.name} avatar={user.avatar} />}
-      sidebar={<Sidebar permissions={user.permissions} />}
-      content={<MainContent userId={user.id} />}
-    />
+    <UserContext.Provider value={user}>
+      <DashboardLayout />  {/* no props — children grab from context themselves */}
+    </UserContext.Provider>
   );
 }
 
-// DashboardLayout knows nothing about users — pure layout component
-function DashboardLayout({ header, sidebar, content }) {
+function DashboardLayout() {
   return (
     <div className="dashboard">
-      <nav>{header}</nav>
-      <aside>{sidebar}</aside>
-      <main>{content}</main>
+      <Header />      {/* looks harmless — secretly requires UserContext above it */}
+      <Sidebar />     {/* looks harmless — secretly requires UserContext above it */}
+      <MainContent /> {/* looks harmless — secretly requires UserContext above it */}
     </div>
   );
 }
 
-// APPROACH 3: Render props for dynamic composition
-function AuthGate({ children, fallback }) {
-  const user = useUser();
-  if (!user) return fallback;
-  return children(user); // Pass user to render function
+function Header() {
+  const user = useContext(UserContext); // hidden dependency
+  return <nav>{user.name}</nav>;
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Why the hidden dependency hurts">
+        <p><strong>Reuse breaks silently.</strong> Want to use <code>Header</code> in a modal?
+        You must also provide <code>UserContext</code> above that modal or it crashes — and
+        nothing in the JSX warns you.</p>
+        <p><strong>Testing needs a wrapper.</strong> You can't render <code>Header</code> in
+        isolation — every test must wrap it in the provider just to pass it a name.</p>
+        <p style={{ marginBottom: 0 }}><strong>The rule:</strong> Context is worth the hidden
+        dependency cost when <em>many unrelated components across the whole app</em> need the
+        same data (theme, locale, auth state). It's the wrong tool when only one subtree needs
+        it — that's just prop drilling avoidance, and composition handles it better.</p>
+      </InfoBox>
+
+      <h3>Approach 2 — Compose at the top, pass assembled JSX down</h3>
+      <p>
+        Only <code>Dashboard</code> reads the user data. It assembles the fully-configured
+        child components and passes them as props. <code>DashboardLayout</code> is now a
+        <strong> pure component</strong> — it knows nothing about users and can be reused anywhere.
+      </p>
+
+      <InfoBox variant="info" title="What is a pure component?">
+        A component whose output depends <strong>only on its props</strong> — same props in,
+        same output every time, no side effects, no reading from context or globals.
+        You can look at the props and know exactly what it renders.
+        <br /><br />
+        <code>DashboardLayout</code> below is pure: pass it any JSX as <code>header</code>,{' '}
+        <code>sidebar</code>, and <code>content</code> and it places them in a layout — nothing
+        more. It doesn't know or care what those slots contain.
+        <br /><br />
+        <code>Header</code> from Approach 1 is <em>not</em> pure — its output depends on{' '}
+        <code>UserContext</code>, which is outside its props. Same props (none), but a different
+        context value produces different output.
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Approach 2 — One component owns the data, passes it down">
+{`function Dashboard() {
+  const userData = useUser(); // only ONE component reads context/data
+
+  // Assemble children here, fully configured with the data they need
+  return (
+    <DashboardLayout
+      headerSlot={<Header userName={userData.name} avatar={userData.avatar} />}
+      sidebarSlot={<Sidebar permissions={userData.permissions} />}
+      contentSlot={<MainContent userId={userData.id} />}
+    />
+  );
 }
 
-// Usage:
-<AuthGate fallback={<LoginPage />}>
-  {(user) => <Dashboard user={user} />}
-</AuthGate>`}
+// Pure component — output depends only on props, no hidden dependencies
+function DashboardLayout({ headerSlot, sidebarSlot, contentSlot }) {
+  return (
+    <div className="dashboard">
+      <nav>{headerSlot}</nav>
+      <aside>{sidebarSlot}</aside>
+      <main>{contentSlot}</main>
+    </div>
+  );
+}
+
+// Also pure — takes exactly what it needs as explicit props
+function Header({ userName, avatar }) {
+  return <nav>{userName}</nav>;
+}`}
+      </CodeBlock>
+
+      <h3>Approach 3 — Render props for dynamic composition</h3>
+      <p>
+        A render prop is when you pass a <strong>function as a prop</strong> (or as{' '}
+        <code>children</code>) and the component calls that function, passing it data.
+        It lets the parent decide what to render while the child decides <em>when</em> to
+        render it and what data to give it.
+      </p>
+      <CodeBlock language="jsx" title="Approach 3 — Render props, variable names made explicit">
+{`// AuthGate owns the auth check. It doesn't know what to render — the caller decides.
+// 'renderContent' is a function the caller passes in via the children slot.
+// 'unauthenticatedFallback' is what to show if there's no user.
+function AuthGate({ children: renderContent, fallback: unauthenticatedFallback }) {
+  const currentUser = useUser();
+
+  if (!currentUser) return unauthenticatedFallback; // not logged in — show fallback
+
+  // Call the function the caller passed in, giving it the user data.
+  // Whatever that function returns is what gets rendered.
+  return renderContent(currentUser);
+}
+
+// Usage — broken down to show what each piece is:
+<AuthGate
+  fallback={<LoginPage />}           // shown when currentUser is null
+>
+  {(loggedInUser) =>                 // this function IS 'renderContent' above
+    <Dashboard user={loggedInUser} />{/* called with currentUser once logged in */}
+  }
+</AuthGate>
+
+// Step by step:
+// 1. AuthGate calls useUser() → gets currentUser
+// 2. If null → renders <LoginPage />
+// 3. If logged in → calls renderContent(currentUser)
+// 4. renderContent is (loggedInUser) => <Dashboard user={loggedInUser} />
+// 5. That function runs with currentUser as loggedInUser → renders <Dashboard />`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Why children as a function?">
+        JSX lets you put anything between opening and closing tags — including a function.
+        That value becomes the <code>children</code> prop. Writing{' '}
+        <code>{`{(loggedInUser) => <Dashboard user={loggedInUser} />}`}</code> between the tags
+        is identical to passing <code>{`children={(loggedInUser) => <Dashboard user={loggedInUser} />}`}</code>{' '}
+        as a prop. The component then calls <code>children(currentUser)</code> like any
+        normal function — React renders whatever it returns.
+      </InfoBox>
+
+      <InfoBox variant="info" title="How a component tells JSX and a render prop apart">
+        <p>
+          A component can support both styles by checking <code>typeof children</code> at runtime:
+        </p>
+        <pre style={{ margin: '0.5rem 0 0.75rem', fontSize: '0.82rem', overflowX: 'auto' }}>{
+`function AuthGate({ children, fallback }) {
+  const currentUser = useUser();
+  if (!currentUser) return fallback;
+
+  if (typeof children === 'function') {
+    return children(currentUser);  // render prop — call it with data
+  }
+  return children;                 // plain JSX — just render it
+}`
+        }</pre>
+        <p style={{ marginBottom: 0 }}>
+          JSX elements are plain objects under the hood —{' '}
+          <code>{'<Dashboard />'}</code> compiles to{' '}
+          <code>{'React.createElement(Dashboard, null)'}</code> which returns{' '}
+          <code>{'{ type: Dashboard, props: {} }'}</code>. A render prop is literally
+          just a function, so <code>typeof</code> cleanly tells them apart.
+          React itself and libraries like React Router use this same check internally.
+        </p>
+      </InfoBox>
+
+      <h2>Stateful Providers — The Standard Shape</h2>
+
+      <p>The "raw" form — <code>{'<Context.Provider value={staticValue}>'}</code> — is rare in production. Most providers you'll see in real apps own state, fetch data, expose actions, and bundle everything into the context value. That's not a code smell, that's the norm.</p>
+
+      <InfoBox variant="info" title="Why providers own state">
+        <p>If a provider just exposed a static value, you wouldn't need a provider at all — you could just <code>import</code> it. The reason a provider exists is to <strong>own dynamic state and expose it tree-wide</strong>. That naturally means it does the work of fetching, storing, mutating, and computing that state.</p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="The Canonical Stateful Provider" showLineNumbers>
+{`function AuthProvider({ children }) {
+  // 1. State the provider owns
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 2. Initial load — fetch current user once
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const me = await api.fetchCurrentUser();
+        if (!cancelled) setUser(me);
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // 3. Action handlers — stable references via useCallback
+  const login = useCallback(async (credentials) => { /* ... */ }, []);
+  const logout = useCallback(async () => { /* ... */ }, []);
+  const refresh = useCallback(async () => { /* ... */ }, []);
+
+  // 4. Derived values — recomputed only when their deps change
+  const isAdmin = useMemo(
+    () => user?.roles?.includes('admin') ?? false,
+    [user]
+  );
+
+  // 5. Bundle into a memoized value — same reference until contents change
+  const value = useMemo(
+    () => ({ user, loading, error, login, logout, refresh, isAdmin }),
+    [user, loading, error, login, logout, refresh, isAdmin]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}`}
+      </CodeBlock>
+
+      <p>Five pieces that appear in nearly every production provider: <strong>state</strong> (1) → <strong>side effects</strong> (2) → <strong>action handlers</strong> (3) → <strong>derived values</strong> (4) → <strong>memoized value bundle</strong> (5). Every <code>useCallback</code> stabilizes a callback so its reference doesn't churn. The final <code>useMemo</code> stabilizes the whole bundle so consumers don't re-render when the parent re-renders for unrelated reasons.</p>
+
+      <InfoBox variant="warning" title="When a stateful provider becomes a smell">
+        <ul>
+          <li><strong>Hundreds of lines</strong> — multiple concerns crammed into one provider. Split it: <code>AuthProvider</code>, <code>UserProfileProvider</code>, <code>PermissionsProvider</code>.</li>
+          <li><strong>Touches unrelated APIs</strong> — if <code>UserProvider</code> is also fetching feature flags, that's two contexts pretending to be one.</li>
+          <li><strong>Most consumers only need 1 of 12 fields</strong> — context's all-or-nothing re-render model bites hardest here. Either split contexts or move that data to a state-management library with selector subscriptions.</li>
+          <li><strong>Logic so complex you can't unit-test it</strong> — extract custom hooks (<code>useAuthData</code>, <code>useAuthActions</code>) that the provider just composes together. Each hook becomes testable; the provider becomes thin glue.</li>
+        </ul>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Refactor: provider as glue, hooks as logic" showLineNumbers>
+{`// Before: 200-line god provider
+function AuthProvider({ children }) {
+  // useState x5, useEffect x3, useCallback x6, useMemo x4...
+  return <AuthContext.Provider value={...}>{children}</AuthContext.Provider>;
+}
+
+// After: hooks own logic, provider owns composition
+function AuthProvider({ children }) {
+  const authState = useAuthData();         // fetch + cache user
+  const authActions = useAuthActions();    // login/logout/refresh
+  const perms = useAuthPermissions(authState.user);
+
+  const value = useMemo(
+    () => ({ ...authState, ...authActions, ...perms }),
+    [authState, authActions, perms]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}`}
       </CodeBlock>
 
       <h2>Provider Pattern with TypeScript</h2>
@@ -245,91 +459,6 @@ function LogoutButton() {
         <p><code>createContext&lt;AuthState | undefined&gt;(undefined)</code> — the generic tells TypeScript what type consumers will receive. Without it, TypeScript infers <code>undefined</code> as the only possible value and will complain every time you try to use the context.</p>
         <p style={{ marginTop: '0.5rem' }}><code>useState&lt;AuthState&gt;(...)</code> and <code>useMemo&lt;AuthActions&gt;(...)</code> are optional here because TypeScript can infer them from the initial value — but writing them explicitly documents intent and catches mistakes when the shape changes.</p>
       </InfoBox>
-
-      <h2>Stateful Providers — The Standard Shape</h2>
-
-      <p>The "raw" form — <code>{'<Context.Provider value={staticValue}>'}</code> — is rare in production. Most providers you'll see in real apps own state, fetch data, expose actions, and bundle everything into the context value. That's not a code smell, that's the norm.</p>
-
-      <InfoBox variant="info" title="Why providers own state">
-        <p>If a provider just exposed a static value, you wouldn't need a provider at all — you could just <code>import</code> it. The reason a provider exists is to <strong>own dynamic state and expose it tree-wide</strong>. That naturally means it does the work of fetching, storing, mutating, and computing that state.</p>
-      </InfoBox>
-
-      <CodeBlock language="jsx" title="The Canonical Stateful Provider" showLineNumbers>
-{`function AuthProvider({ children }) {
-  // 1. State the provider owns
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // 2. Initial load — fetch current user once
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const me = await api.fetchCurrentUser();
-        if (!cancelled) setUser(me);
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  // 3. Action handlers — stable references via useCallback
-  const login = useCallback(async (credentials) => { /* ... */ }, []);
-  const logout = useCallback(async () => { /* ... */ }, []);
-  const refresh = useCallback(async () => { /* ... */ }, []);
-
-  // 4. Derived values — recomputed only when their deps change
-  const isAdmin = useMemo(
-    () => user?.roles?.includes('admin') ?? false,
-    [user]
-  );
-
-  // 5. Bundle into a memoized value — same reference until contents change
-  const value = useMemo(
-    () => ({ user, loading, error, login, logout, refresh, isAdmin }),
-    [user, loading, error, login, logout, refresh, isAdmin]
-  );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}`}
-      </CodeBlock>
-
-      <p>Five pieces that appear in nearly every production provider: <strong>state</strong> (1) → <strong>side effects</strong> (2) → <strong>action handlers</strong> (3) → <strong>derived values</strong> (4) → <strong>memoized value bundle</strong> (5). Every <code>useCallback</code> stabilizes a callback so its reference doesn't churn. The final <code>useMemo</code> stabilizes the whole bundle so consumers don't re-render when the parent re-renders for unrelated reasons.</p>
-
-      <InfoBox variant="warning" title="When a stateful provider becomes a smell">
-        <ul>
-          <li><strong>Hundreds of lines</strong> — multiple concerns crammed into one provider. Split it: <code>AuthProvider</code>, <code>UserProfileProvider</code>, <code>PermissionsProvider</code>.</li>
-          <li><strong>Touches unrelated APIs</strong> — if <code>UserProvider</code> is also fetching feature flags, that's two contexts pretending to be one.</li>
-          <li><strong>Most consumers only need 1 of 12 fields</strong> — context's all-or-nothing re-render model bites hardest here. Either split contexts or move that data to a state-management library with selector subscriptions.</li>
-          <li><strong>Logic so complex you can't unit-test it</strong> — extract custom hooks (<code>useAuthData</code>, <code>useAuthActions</code>) that the provider just composes together. Each hook becomes testable; the provider becomes thin glue.</li>
-        </ul>
-      </InfoBox>
-
-      <CodeBlock language="jsx" title="Refactor: provider as glue, hooks as logic" showLineNumbers>
-{`// Before: 200-line god provider
-function AuthProvider({ children }) {
-  // useState x5, useEffect x3, useCallback x6, useMemo x4...
-  return <AuthContext.Provider value={...}>{children}</AuthContext.Provider>;
-}
-
-// After: hooks own logic, provider owns composition
-function AuthProvider({ children }) {
-  const authState = useAuthData();         // fetch + cache user
-  const authActions = useAuthActions();    // login/logout/refresh
-  const perms = useAuthPermissions(authState.user);
-
-  const value = useMemo(
-    () => ({ ...authState, ...authActions, ...perms }),
-    [authState, authActions, perms]
-  );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}`}
-      </CodeBlock>
 
       <h2>Two Mechanisms: Cascade vs Broadcast</h2>
 
@@ -611,6 +740,161 @@ User clicks "Toggle Theme":
         title="Decision Tree: What Re-renders When a Provider Re-renders"
         chart={"graph TD\n  Start[Provider re-renders] --> Q1{Did the parent re-render?}\n  Q1 -->|Yes - Case A| Cascade[children is a new reference]\n  Cascade --> CascadeResult[Whole subtree re-renders<br/>PLUS useContext consumers re-render]\n  Q1 -->|No - Case B| Stable[children reference unchanged]\n  Stable --> StableResult[Subtree is NOT re-rendered<br/>ONLY useContext consumers re-render]\n  style CascadeResult fill:#d32f2f,color:#fff\n  style StableResult fill:#388e3c,color:#fff\n  style Cascade fill:#7b1fa2,color:#fff\n  style Stable fill:#1976d2,color:#fff"}
       />
+
+      <hr style={{ borderColor: '#333', margin: '3rem 0 2rem' }} />
+      <h3>💡 Deep Dive: Children as props vs rendered directly — what's the actual difference?</h3>
+
+      <InfoBox variant="info" title="Short Answer: Who owns the JSX object determines whether React re-creates it">
+        <p>
+          JSX elements are plain JS objects — <code>{'<ExpensiveComponent />'}</code> compiles to{' '}
+          <code>{'React.createElement(ExpensiveComponent, null)'}</code> which returns{' '}
+          <code>{'{ type: ExpensiveComponent, props: {} }'}</code>.
+          React bails out of re-rendering a child if that object reference is the same as last render.
+          The question is: <strong>who creates the object, and when?</strong>
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Component A — children passed as props (reference is stable)">
+{`function Layout({ children }) {
+  const [count, setCount] = useState(0);
+  return (
+    <MyContext.Provider value={count}>
+      {children}
+    </MyContext.Provider>
+  );
+}
+
+// Usage — the parent owns the JSX object
+<Layout>
+  <ExpensiveComponent />   {/* created by Layout's PARENT, not by Layout */}
+</Layout>
+
+// When Layout re-renders (count changes):
+//   children is a PROP — it was created by Layout's parent
+//   Layout's parent did NOT re-render → same object reference as before
+//   React sees: Object.is(prevChildren, nextChildren) === true
+//   → ExpensiveComponent does NOT re-render (bails out)
+//   → Only useContext(MyContext) consumers re-render`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="Component B — children rendered directly (new reference every time)">
+{`function Layout() {
+  const [count, setCount] = useState(0);
+  return (
+    <MyContext.Provider value={count}>
+      <ExpensiveComponent />   {/* created INSIDE Layout's render */}
+    </MyContext.Provider>
+  );
+}
+
+// When Layout re-renders (count changes):
+//   <ExpensiveComponent /> is created fresh inside this render call
+//   React sees: Object.is(prevElement, nextElement) === false (new object)
+//   → ExpensiveComponent DOES re-render (unless wrapped in React.memo)
+//   → AND useContext(MyContext) consumers re-render`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="This applies to both re-render triggers — not just parent re-renders">
+        <p>
+          It doesn't matter <em>why</em> the provider re-rendered — whether its own state changed
+          or its parent triggered it. The children-as-prop bailout works the same way in both cases.
+          The only thing React checks is whether the JSX reference is stable, not what caused the re-render.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="text" title="Full summary — four component scenarios × two mechanisms">
+{`Component type                     Structural re-render    Context subscription
+─────────────────────────────────  ──────────────────────  ──────────────────────
+Child passed as prop,              ✅ bails out             ✅ no subscription
+  no useContext                       (stable reference)       stays quiet
+
+Child passed as prop,              ✅ bails out             ❌ re-renders
+  uses useContext                     (stable reference)       (subscribed)
+
+Child rendered directly inside,    ❌ re-renders            ✅ no subscription
+  no useContext                       (new reference)          but already re-rendered
+
+Child rendered directly inside,    ❌ re-renders            ❌ re-renders
+  uses useContext                     (new reference)          (both reasons)`}
+      </CodeBlock>
+
+      <h4>Three scenarios where the children-as-props bailout breaks down</h4>
+
+      <CodeBlock language="jsx" title="Scenario 1 — The root owner re-renders">
+{`// App creates the JSX for all providers.
+// If App re-renders, it creates NEW references for every provider's children.
+// The bailout is gone — every provider re-renders structurally.
+
+function App() {
+  const [theme, setTheme] = useState('dark'); // unrelated state
+  return (
+    <AuthProvider>         {/* ← new JSX reference if App re-renders */}
+      <ThemeProvider>      {/* ← new JSX reference */}
+        <UserProvider>     {/* ← new JSX reference */}
+          <Page />
+        </UserProvider>
+      </ThemeProvider>
+    </AuthProvider>
+  );
+}
+
+// Fix: move the provider tree into its own component or into main.tsx
+// — somewhere that never re-renders`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="Scenario 2 — A nested provider consumes a parent context">
+{`// ThemeProvider subscribes to AuthContext.
+// When AuthContext value changes, ThemeProvider re-renders via subscription.
+// ThemeProvider then produces a new ThemeContext value.
+// All ThemeContext consumers re-render — a cascade triggered by auth.
+
+function ThemeProvider({ children }) {
+  const { user } = useContext(AuthContext); // ← now subscribed to AuthContext
+  const theme = user?.preferences?.theme ?? 'dark';
+
+  return (
+    <ThemeContext.Provider value={theme}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+// Auth changes → ThemeProvider re-renders → new theme value
+// → all ThemeContext consumers re-render
+// Even though the theme data didn't logically change.`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="Scenario 3 — A provider renders its child provider directly (not via children prop)">
+{`// AuthProvider renders ThemeProvider directly inside its return.
+// ThemeProvider is now owned by AuthProvider — loses the bailout.
+
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  return (
+    <AuthContext.Provider value={user}>
+      <ThemeProvider>      {/* ← rendered directly, not passed as prop */}
+        {children}
+      </ThemeProvider>
+    </AuthContext.Provider>
+  );
+}
+
+// When AuthProvider re-renders → ThemeProvider re-renders structurally
+// Fix: keep providers as siblings, not parents of each other`}
+      </CodeBlock>
+
+      <InfoBox variant="success" title="When the cascade genuinely cannot happen">
+        <p>If all three conditions hold, a re-render inside one provider is completely contained:</p>
+        <ol style={{ marginTop: '0.5rem', lineHeight: 2 }}>
+          <li>The root owner component (App / main.tsx) <strong>never re-renders</strong></li>
+          <li>No nested provider <strong>consumes a parent context</strong></li>
+          <li>Every provider <strong>uses the children-as-props pattern</strong></li>
+        </ol>
+        <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+          In that case, a state change in one provider only notifies that context's direct consumers.
+          No structural re-renders propagate, and no other provider is touched.
+        </p>
+      </InfoBox>
 
       <hr style={{ borderColor: '#333', margin: '3rem 0 2rem' }} />
       <h3>💡 Deep Dive: Is the wrapper hook pattern worth the boilerplate (and does it hold up without TypeScript)?</h3>

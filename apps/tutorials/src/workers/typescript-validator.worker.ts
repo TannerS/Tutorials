@@ -75,7 +75,7 @@ function getLibMap(): Promise<Map<string, string>> {
       ts,
     );
   }
-  return libMapPromise;
+  return libMapPromise!;
 }
 
 // ─── Main message handler ──────────────────────────────────────────────────
