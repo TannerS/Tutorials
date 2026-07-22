@@ -35,6 +35,12 @@ export const sections: Section[] = [
       { id: 'config', title: 'Configuration & Profiles', path: '/springboot/config' },
       { id: 'error', title: 'Error Handling & Validation', path: '/springboot/error' },
       { id: 'advanced', title: 'Advanced Topics', path: '/springboot/advanced' },
+      { id: 'transactions', title: 'Transactions Deep-Dive', path: '/springboot/transactions' },
+      { id: 'kafka', title: 'Kafka in Spring', path: '/springboot/kafka' },
+      { id: 'aop', title: 'AOP & Interceptors', path: '/springboot/aop' },
+      { id: 'boot4', title: 'Boot 4 Novelties', path: '/springboot/boot4' },
+      { id: 'observability', title: 'Observability', path: '/springboot/observability' },
+      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/springboot/cheatsheet' },
     ],
   },
   {

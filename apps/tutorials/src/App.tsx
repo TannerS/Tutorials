@@ -24,6 +24,12 @@ import SpringTesting from './pages/springboot/Testing'
 import SpringConfig from './pages/springboot/Config'
 import SpringError from './pages/springboot/Error'
 import SpringAdvanced from './pages/springboot/Advanced'
+import SpringTransactions from './pages/springboot/Transactions'
+import SpringKafka from './pages/springboot/Kafka'
+import SpringAop from './pages/springboot/Aop'
+import SpringBoot4 from './pages/springboot/Boot4'
+import SpringObservability from './pages/springboot/Observability'
+import SpringCheatsheet from './pages/springboot/Cheatsheet'
 
 // React 19
 import ReactLifecycle from './pages/react19/Lifecycle'
@@ -286,6 +292,12 @@ function App() {
         <Route path="springboot/config" element={<SpringConfig />} />
         <Route path="springboot/error" element={<SpringError />} />
         <Route path="springboot/advanced" element={<SpringAdvanced />} />
+        <Route path="springboot/transactions" element={<SpringTransactions />} />
+        <Route path="springboot/kafka" element={<SpringKafka />} />
+        <Route path="springboot/aop" element={<SpringAop />} />
+        <Route path="springboot/boot4" element={<SpringBoot4 />} />
+        <Route path="springboot/observability" element={<SpringObservability />} />
+        <Route path="springboot/cheatsheet" element={<SpringCheatsheet />} />
         {/* React 19 */}
         <Route path="react19/lifecycle" element={<ReactLifecycle />} />
         <Route path="react19/lifecycle-sim" element={<ReactLifecycleSim />} />
