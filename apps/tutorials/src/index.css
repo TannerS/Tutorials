@@ -109,3 +109,174 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* ============================================================
+   Print styles — hide navigation, reflow to single-column, force
+   light theme, break between lessons. Triggered by @media print
+   in the browser and by Playwright when generating PDFs. Also
+   activated by adding the 'print-mode' class to <html> (which
+   the PDF script does before capturing).
+   ============================================================ */
+
+@media print {
+  html, body {
+    color-scheme: light !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt !important;
+  }
+
+  /* Reset custom-property overrides so text/backgrounds are print-safe */
+  :root {
+    --text: #000 !important;
+    --text-h: #000 !important;
+    --bg: #fff !important;
+    --border: #999 !important;
+    --code-bg: #f3f3f3 !important;
+    --accent: #000 !important;
+    --accent-bg: #f3f3f3 !important;
+    --accent-border: #666 !important;
+  }
+
+  /* Hide site chrome: sidebar, mobile menu button, command palette,
+     TOC (aside), progress tracker, and the prev/next lesson footer. */
+  .sidebar-container,
+  .mobile-backdrop,
+  aside,
+  .command-palette,
+  [class*="commandPalette"],
+  [role="dialog"],
+  button[aria-label="Open menu"] {
+    display: none !important;
+  }
+
+  /* Progress tracker + lesson pager sit as direct children of the
+     lesson content — we detect them by the label text via CSS selectors
+     in the layout component. As a fallback, mark them with data-print-hide. */
+  [data-print-hide],
+  .progress-tracker,
+  .lesson-nav {
+    display: none !important;
+  }
+
+  /* Let the main content fill the page.
+     LessonLayout wraps content in a flex row (content + TOC aside);
+     collapse the flex to block so the browser paginates naturally.
+     Targeted overrides only — avoid a universal main * selector, which
+     stomps on flex/grid children and often forces content into a single page. */
+  main {
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+  }
+  /* The LessonLayout flex container */
+  main > div {
+    display: block !important;
+    overflow: visible !important;
+    max-width: none !important;
+    width: 100% !important;
+    height: auto !important;
+    gap: 0 !important;
+  }
+  /* The inner content column that has inline maxWidth: 900px */
+  main > div > div:first-child {
+    max-width: none !important;
+    width: 100% !important;
+    flex: initial !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Heading colors default to accent gradients — kill the gradient trick */
+  h1, h2, h3, h4 {
+    background: none !important;
+    -webkit-text-fill-color: inherit !important;
+    color: #000 !important;
+  }
+
+  h1 { font-size: 22pt; margin: 0 0 12pt; }
+  h2 { font-size: 16pt; margin: 18pt 0 8pt; page-break-before: always; }
+  h3 { font-size: 13pt; margin: 12pt 0 6pt; }
+  h1:first-of-type,
+  h2:first-of-type { page-break-before: avoid; }
+  h2, h3, h4 { page-break-after: avoid; }
+
+  /* Paragraphs and lists — keep short blocks together */
+  p, li { orphans: 3; widows: 3; }
+
+  /* Code blocks — wrap, keep on one page when short, tighter font */
+  pre, code {
+    background: #f3f3f3 !important;
+    color: #000 !important;
+    font-size: 9pt !important;
+    line-height: 130% !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    page-break-inside: avoid;
+  }
+  pre {
+    padding: 6pt 8pt !important;
+    border: 1pt solid #ccc !important;
+    border-radius: 3pt;
+  }
+
+  /* Info boxes stay recognizable in print without color reliance */
+  [class*="InfoBox"],
+  [style*="border-left"] {
+    background: #fafafa !important;
+    color: #000 !important;
+    border: 1pt solid #999 !important;
+    border-left: 3pt solid #000 !important;
+    padding: 6pt 10pt !important;
+    page-break-inside: avoid;
+  }
+
+  /* Flow charts (mermaid) render as SVG — keep them inline, don't break */
+  svg { max-width: 100% !important; height: auto !important; page-break-inside: avoid; }
+
+  /* Links — show URLs so paper readers know the reference */
+  a[href^="http"]:after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #555;
+    word-break: break-all;
+  }
+
+  /* Interactive challenges — keep the question + options together */
+  [class*="Challenge"],
+  [class*="challenge"] {
+    page-break-inside: avoid;
+    border: 1pt dashed #999 !important;
+    padding: 6pt !important;
+    background: #fafafa !important;
+  }
+
+  /* Buttons and interactive controls are useless on paper */
+  button {
+    background: transparent !important;
+    border: none !important;
+    color: #000 !important;
+    padding: 0 !important;
+  }
+}
+
+/* An additional 'print-mode' class the PDF exporter can toggle on
+   the HTML root to force these styles even in screen media contexts
+   (Playwright's page.pdf() respects @media print by default, but this
+   gives us belt-and-suspenders control). */
+html.print-mode {
+  color-scheme: light !important;
+  background: #fff !important;
+}
+html.print-mode aside,
+html.print-mode .sidebar-container,
+html.print-mode .mobile-backdrop,
+html.print-mode button[aria-label="Open menu"] {
+  display: none !important;
+}
+html.print-mode main {
+  padding: 0 !important;
+}
