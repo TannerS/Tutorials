@@ -260,6 +260,8 @@ export const sections: Section[] = [
       { id: 'newproject', title: 'New Project from Scratch', path: '/typescript/newproject' },
       { id: 'tsconfig', title: 'tsconfig Mastery', path: '/typescript/tsconfig' },
       { id: 'interactive', title: '🧪 Interactive Challenges', path: '/typescript/interactive' },
+      { id: 'enterprise', title: 'Enterprise Patterns', path: '/typescript/enterprise' },
+      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/typescript/cheatsheet' },
     ],
   },
   {
