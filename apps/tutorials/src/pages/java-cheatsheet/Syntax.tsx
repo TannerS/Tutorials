@@ -257,6 +257,53 @@ double area(Shape s) {
 }`
       }</CodeBlock>
 
+      {/* ───── PATTERN MATCHING FOR SWITCH ───── */}
+      <h2>Pattern Matching for Switch (Java 21)</h2>
+      <CodeBlock language="java" title="Type patterns, guards, and record deconstruction">{
+`// Type patterns with binding
+String describe(Object o) {
+    return switch (o) {
+        case null           -> "null";
+        case Integer i when i < 0 -> "negative int: " + i;
+        case Integer i      -> "int: " + i;
+        case String s       -> "string: " + s;
+        case int[] a        -> "int[] of length " + a.length;
+        default             -> o.getClass().getSimpleName();
+    };
+}
+
+// Record patterns — deconstruct in place
+record Point(double x, double y) {}
+record Line(Point start, Point end) {}
+
+double lengthOf(Line line) {
+    return switch (line) {
+        case Line(Point(var x1, var y1), Point(var x2, var y2)) ->
+            Math.hypot(x2 - x1, y2 - y1);
+    };
+}
+
+// Exhaustive over a sealed type — no default needed, compiler enforced.`
+      }</CodeBlock>
+
+      {/* ───── SEQUENCED COLLECTIONS ───── */}
+      <h2>Sequenced Collections (Java 21)</h2>
+      <CodeBlock language="java" title="One vocabulary for every ordered collection">{
+`// SequencedCollection<E>, SequencedSet<E>, SequencedMap<K,V>
+
+list.getFirst();     list.getLast();
+deque.getFirst();    deque.getLast();
+sortedSet.getFirst();sortedSet.getLast();
+map.firstEntry();    map.lastEntry();
+
+list.addFirst(x);    list.addLast(y);
+list.removeFirst();  list.removeLast();
+
+// Reverse view — no copy, live over the same data
+SequencedCollection<Integer> rev = list.reversed();
+for (int x : rev) { /* ... */ }`
+      }</CodeBlock>
+
       {/* ───── CHALLENGE ───── */}
       <InteractiveChallenge
         question={"What does `var x = 10;` infer the type as?"}

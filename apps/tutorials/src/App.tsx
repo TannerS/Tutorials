@@ -12,6 +12,7 @@ import JavaStreams from './pages/java/Streams'
 import JavaConcurrency from './pages/java/Concurrency'
 import JavaIo from './pages/java/Io'
 import JavaAdvanced from './pages/java/Advanced'
+import JavaOptional from './pages/java/Optional'
 
 // Spring Boot
 import SpringIntro from './pages/springboot/Intro'
@@ -285,6 +286,7 @@ function App() {
         <Route path="java/concurrency" element={<JavaConcurrency />} />
         <Route path="java/io" element={<JavaIo />} />
         <Route path="java/advanced" element={<JavaAdvanced />} />
+        <Route path="java/optional" element={<JavaOptional />} />
         {/* Spring Boot */}
         <Route path="springboot/intro" element={<SpringIntro />} />
         <Route path="springboot/setup" element={<SpringSetup />} />

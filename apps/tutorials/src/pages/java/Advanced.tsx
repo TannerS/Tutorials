@@ -327,6 +327,63 @@ public class SealedDemo {
 }`}
       </CodeBlock>
 
+      <h3>Exhaustive Switch Over Sealed Hierarchies</h3>
+      <p>
+        The most powerful use of pattern matching for switch is over a sealed type. The
+        compiler knows every possible subtype, so it can prove the switch is
+        <em>exhaustive</em> — you don't need a <code>default</code> branch, and adding a
+        new subtype forces every switch to be updated. This is the Java equivalent of
+        TypeScript's discriminated-union exhaustiveness check.
+      </p>
+      <CodeBlock language="java" title="Sealed + switch = compile-checked exhaustiveness">
+{`public sealed interface Shape permits Circle, Rectangle, Triangle {}
+
+public record Circle(double radius)                       implements Shape {}
+public record Rectangle(double width, double height)      implements Shape {}
+public record Triangle(double base, double height)        implements Shape {}
+
+// No default branch needed — the compiler proves every case is covered.
+public static double area(Shape s) {
+    return switch (s) {
+        case Circle(double r)              -> Math.PI * r * r;
+        case Rectangle(double w, double h) -> w * h;
+        case Triangle(double b, double h)  -> 0.5 * b * h;
+    };
+}
+
+// Add a new subtype:
+// public record Ellipse(double a, double b) implements Shape {}
+// ...and the switch above becomes a COMPILE ERROR until you handle Ellipse.
+// The compiler is your regression net.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="This is the modern Visitor pattern">
+        <p>
+          Before sealed types + pattern matching, adding a "compute X for every shape"
+          operation either violated the open-closed principle (edit every subclass) or
+          required a Visitor. Sealed hierarchies + pattern matching give you the
+          Visitor's benefits without the boilerplate — and the compiler tells you
+          exactly which switches need updating when the hierarchy changes.
+        </p>
+      </InfoBox>
+
+      <h3>When ordering matters — guarded patterns</h3>
+      <CodeBlock language="java" title="Order-sensitive matching with 'when'">
+{`public static String describe(Shape s) {
+    return switch (s) {
+        case Circle c when c.radius() == 0        -> "point";
+        case Circle c when c.radius() < 1         -> "small circle";
+        case Circle c                             -> "circle of radius " + c.radius();
+        case Rectangle r when r.width() == r.height() -> "square";
+        case Rectangle r                          -> "rectangle";
+        case Triangle t                           -> "triangle";
+    };
+}
+
+// Guarded patterns are tested in order. The compiler still requires
+// exhaustiveness — every subtype must eventually be matched somewhere.`}
+      </CodeBlock>
+
       <InfoBox variant="info" title="Java Module System (JPMS)">
         <p>
           Introduced in Java 9, the Java Platform Module System (JPMS) lets you organize code
@@ -413,6 +470,62 @@ public class VirtualThreads {
           security updates and bug fixes.
         </p>
       </InfoBox>
+
+      <h2>Sequenced Collections (Java 21)</h2>
+      <p>
+        Before Java 21, "get the first element" had a different method on every ordered
+        collection: <code>list.get(0)</code>, <code>deque.getFirst()</code>,
+        <code>sortedSet.first()</code>. Same for last, and neither had a clean reverse
+        view. Java 21 introduced <code>SequencedCollection</code>,
+        <code>SequencedSet</code>, and <code>SequencedMap</code> interfaces that unify
+        this vocabulary across every ordered type.
+      </p>
+      <CodeBlock language="java" title="One vocabulary for every ordered collection">
+{`// Before Java 21 — different method names, same idea
+list.get(0);                    list.get(list.size() - 1);
+deque.getFirst();               deque.getLast();
+sortedSet.first();              sortedSet.last();
+linkedHashMap.entrySet().iterator().next();   // no clean "last" at all
+
+// Java 21 — one method name across all sequenced types
+list.getFirst();                list.getLast();
+deque.getFirst();               deque.getLast();
+sortedSet.getFirst();           sortedSet.getLast();
+linkedHashMap.firstEntry();     linkedHashMap.lastEntry();
+
+// Add or remove from either end
+list.addFirst(x);               list.addLast(y);
+list.removeFirst();             list.removeLast();
+
+// Reverse view — no copy, just a view onto the same data
+SequencedCollection<Integer> reversed = list.reversed();
+for (int x : reversed) { /* ... */ }`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Small feature, big cleanup">
+        <p>
+          The reason this matters isn't performance — it's the collapse of many
+          collection-specific idioms into a single vocabulary. Streams, method
+          references, and generic helper methods that operate on "an ordered
+          collection" become simpler because <code>SequencedCollection</code> is the
+          type you accept.
+        </p>
+      </InfoBox>
+
+      <h2>Java Version Recap</h2>
+      <CodeBlock language="text" title="LTS versions and their signature features">
+{`Java 8   (2014, still LTS) — lambdas, streams, Optional, java.time
+Java 11  (2018, LTS)       — var (local vars), String::lines, HTTP client
+Java 17  (2021, LTS)       — records, sealed types, pattern matching instanceof,
+                             text blocks, switch expressions
+Java 21  (2023, LTS)       — virtual threads, pattern matching for switch,
+                             record patterns, sequenced collections, ScopedValue (preview)
+Java 25  (2025, LTS)       — refined structured concurrency, stable ScopedValue,
+                             module import declarations, more pattern-matching depth
+
+For any new codebase in 2026, target Java 21 or newer. Java 17 remains a safe
+choice for existing services that don't need virtual threads yet.`}
+      </CodeBlock>
 
       <h2>Test Your Knowledge</h2>
 

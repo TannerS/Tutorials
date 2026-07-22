@@ -17,6 +17,7 @@ export const sections: Section[] = [
       { id: 'concurrency', title: 'Concurrency & Threads', path: '/java/concurrency' },
       { id: 'io', title: 'I/O & File Handling', path: '/java/io' },
       { id: 'advanced', title: 'Advanced Java Features', path: '/java/advanced' },
+      { id: 'optional', title: 'Optional — Best & Worst Practices', path: '/java/optional' },
     ],
   },
   {
