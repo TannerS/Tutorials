@@ -45,6 +45,10 @@ import ReactPatterns from './pages/react19/Patterns'
 import ReactTypescript from './pages/react19/Typescript'
 import ReactBuildToolchain from './pages/react19/BuildToolchain'
 import ReactCheatSheet from './pages/react19/CheatSheet'
+import ReactAdapters from './pages/react19/Adapters'
+import ReactImperativeBridge from './pages/react19/ImperativeBridge'
+import ReactModuleFederation from './pages/react19/ModuleFederation'
+import ReactFeatureFolder from './pages/react19/FeatureFolder'
 
 // SQL
 import SqlQuickstart from './pages/sql/Quickstart'
@@ -312,6 +316,10 @@ function App() {
         <Route path="react19/typescript" element={<ReactTypescript />} />
         <Route path="react19/build-toolchain" element={<ReactBuildToolchain />} />
         <Route path="react19/cheat-sheet" element={<ReactCheatSheet />} />
+        <Route path="react19/adapters" element={<ReactAdapters />} />
+        <Route path="react19/imperative-bridge" element={<ReactImperativeBridge />} />
+        <Route path="react19/module-federation" element={<ReactModuleFederation />} />
+        <Route path="react19/feature-folder" element={<ReactFeatureFolder />} />
         {/* SQL */}
         <Route path="sql/quickstart" element={<SqlQuickstart />} />
         <Route path="sql/joins" element={<SqlJoins />} />

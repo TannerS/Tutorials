@@ -588,6 +588,121 @@ KEY RULE FOR LISTS:
         <p><strong>Re-render = your function runs again.</strong> Everything not wrapped in useState/useRef/useMemo/useCallback is brand new. Hooks are the "memory" that persists across renders. The DOM only updates where the output actually differs. State only resets when the component <em>unmounts</em> (position changes, type changes, or key changes).</p>
       </InfoBox>
 
+      <h2>🏗️ Enterprise Patterns — Advanced Reference</h2>
+
+      <h3>API Adapter Layer</h3>
+      <CodeBlock language="ts" title="Wire shape ↔ UI shape at one seam">
+{`interface Adapter<TWire, TModel> {
+  toModel(row: TWire): TModel;
+  toWire(model: TModel): TWire;
+}
+
+// Fetch layer converts once; components see only TModel.
+async function apiFetch<W, M>(url: string, init: RequestInit, adapter: Adapter<W, M>): Promise<M> {
+  const res = await fetch(url, init);
+  if (!res.ok) throw await parseApiError(res);
+  const body = (await res.json()) as { data: W };
+  return adapter.toModel(body.data);
+}`}
+      </CodeBlock>
+
+      <h3>Error Envelope Normalization</h3>
+      <CodeBlock language="ts" title="Discriminated union — every error kind handled once">
+{`type ApiError =
+  | { kind: 'validation'; fieldErrors: Record<string,string>; message: string }
+  | { kind: 'business'; code: string; message: string }
+  | { kind: 'auth'; message: string }
+  | { kind: 'notFound'; message: string }
+  | { kind: 'server'; message: string }
+  | { kind: 'network'; message: string }
+  | { kind: 'unknown'; message: string };
+
+// Handle every case in a switch; use 'const _: never = error' to catch missing cases.`}
+      </CodeBlock>
+
+      <h3>Promise-Bridged Imperative Dialog</h3>
+      <CodeBlock language="tsx" title="await confirm() from any component">
+{`// Provider: resolver in a ref (not state) so Strict Mode doesn't lose it
+const resolveRef = useRef<((v: boolean) => void) | null>(null);
+const [current, setCurrent] = useState<ConfirmOptions | null>(null);
+
+const confirm = useCallback((opts: ConfirmOptions) => {
+  if (resolveRef.current) resolveRef.current(false); // supersede previous
+  return new Promise<boolean>((resolve) => {
+    resolveRef.current = resolve;
+    setCurrent(opts);
+  });
+}, []);
+
+// Caller
+const ok = await confirm({ title: 'Delete?', danger: true });
+if (ok) doDelete();`}
+      </CodeBlock>
+
+      <h3>Dual-Context Split</h3>
+      <CodeBlock language="tsx" title="Read-many, write-rarely — split into two contexts">
+{`// Auth as a canonical example
+const AuthStateContext   = createContext<AuthState | null>(null);
+const AuthActionsContext = createContext<AuthActions | null>(null);
+
+// Header reads state; re-renders only when state changes
+const { user } = useAuthState();
+
+// Login button reads actions; never re-renders (stable identity)
+const { login } = useAuthActions();
+
+// Split only when: state changes on a schedule AND many consumers read AND few write.`}
+      </CodeBlock>
+
+      <h3>Module Federation Cheat Rules</h3>
+      <CodeBlock language="text" title="MFE non-negotiables">
+{`Singletons: react, react-dom, @mui/material, @emotion/react, @emotion/styled
+            in every remote AND the shell.
+
+Webpack:    optimization.concatenateModules: false (MUI + MF incompatibility)
+
+Bootstrap:  main.ts → dynamic import('./bootstrap') so MF resolves shared deps
+            before app code runs.
+
+Remote URLs: fetched from a per-env overlay (remotePaths.json) at boot, not
+             baked into the manifest at build time.
+
+Isolation:   RemoteErrorBoundary per remote so one failed load doesn't
+             crash the shell.
+
+Contract:    shell exposes a small stable API; remotes never reach into
+             shell internals.`}
+      </CodeBlock>
+
+      <h3>Feature-Based Folder Boundary</h3>
+      <CodeBlock language="text" title="One rule to keep boundaries alive">
+{`src/features/orders/
+  ├─ components/, hooks/, api/, types.ts
+  └─ index.ts        <-- ONLY exports here are reachable from outside
+
+Enforce with ESLint:
+  'no-restricted-imports': ['error', {
+    patterns: [{ group: ['**/features/*/**'],
+                 message: 'Import from features/<name> only.' }],
+  }]
+
+If a business-domain component ends up in shared/, the boundary is dead.`}
+      </CodeBlock>
+
+      <h3>The Enterprise Anti-Pattern Sweep</h3>
+      <InfoBox variant="danger" title="Habits that quietly kill a large React codebase">
+        <ul>
+          <li>Wire shape leaking into components (no adapter layer).</li>
+          <li>Error handling as string-checks on the response body.</li>
+          <li>Confirm dialog with a hand-rolled open/close state per button.</li>
+          <li>Single auth context that re-renders every consumer on token refresh.</li>
+          <li>MFE built without singleton libs → mysterious "Invalid hook call" in prod.</li>
+          <li>MFE deploy that points at localhost URLs in production.</li>
+          <li>Layer-based folders past ~50 files (find-and-replace becomes archaeology).</li>
+          <li>Business-domain components in <code>shared/</code>.</li>
+        </ul>
+      </InfoBox>
+
     </LessonLayout>
   );
 }

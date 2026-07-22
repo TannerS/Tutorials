@@ -62,6 +62,10 @@ export const sections: Section[] = [
       { id: 'typescript', title: 'React + TypeScript', path: '/react19/typescript' },
       { id: 'build-toolchain', title: '🔧 Build Toolchain', path: '/react19/build-toolchain' },
       { id: 'cheat-sheet', title: '📋 Cheat Sheet', path: '/react19/cheat-sheet' },
+      { id: 'adapters', title: 'API Adapters & Envelopes', path: '/react19/adapters' },
+      { id: 'imperative-bridge', title: 'Imperative Bridge Patterns', path: '/react19/imperative-bridge' },
+      { id: 'module-federation', title: 'Module Federation & MFEs', path: '/react19/module-federation' },
+      { id: 'feature-folder', title: 'Feature-Based Architecture', path: '/react19/feature-folder' },
     ],
   },
   {
