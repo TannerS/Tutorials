@@ -240,6 +240,12 @@ import WpPlugins from './pages/webpack/Plugins'
 import WpDevserver from './pages/webpack/Devserver'
 import WpAdvanced from './pages/webpack/Advanced'
 
+// Interview Prep
+import IPReact from './pages/interview-prep/React'
+import IPTypescript from './pages/interview-prep/Typescript'
+import IPFrontend from './pages/interview-prep/Frontend'
+import IPCoding from './pages/interview-prep/Coding'
+
 function NotFound() {
   return (
     <div style={{
@@ -491,6 +497,11 @@ function App() {
         <Route path="webpack/plugins" element={<WpPlugins />} />
         <Route path="webpack/devserver" element={<WpDevserver />} />
         <Route path="webpack/advanced" element={<WpAdvanced />} />
+        {/* Interview Prep */}
+        <Route path="interview-prep/react" element={<IPReact />} />
+        <Route path="interview-prep/typescript" element={<IPTypescript />} />
+        <Route path="interview-prep/frontend" element={<IPFrontend />} />
+        <Route path="interview-prep/coding" element={<IPCoding />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

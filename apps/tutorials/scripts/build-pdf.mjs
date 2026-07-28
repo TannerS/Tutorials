@@ -237,12 +237,6 @@ async function main() {
   console.log(`[pdf] Done. PDFs in ${OUT_DIR}`);
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}
-
 /**
  * PDF concatenation via pdf-lib — pure JS, no external binaries needed.
  */

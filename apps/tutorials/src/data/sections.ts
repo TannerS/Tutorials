@@ -390,6 +390,18 @@ export const sections: Section[] = [
       { id: 'advanced', title: 'Advanced Config & Migration', path: '/webpack/advanced' },
     ],
   },
+  {
+    id: 'interview-prep',
+    label: 'Interview Prep',
+    icon: '🎯',
+    color: '#facc15',
+    lessons: [
+      { id: 'react', title: 'React Interview Questions', path: '/interview-prep/react' },
+      { id: 'typescript', title: 'TypeScript Interview Questions', path: '/interview-prep/typescript' },
+      { id: 'frontend', title: 'Frontend System Design', path: '/interview-prep/frontend' },
+      { id: 'coding', title: 'Live Coding Challenges', path: '/interview-prep/coding' },
+    ],
+  },
 ];
 
 export const groups: Group[] = [
@@ -412,7 +424,7 @@ export const groups: Group[] = [
     label: 'Architecture & Design',
     icon: '🏗️',
     color: '#a78bfa',
-    sectionIds: ['solid', 'patterns', 'systemdesign', 'accessibility', 'testing'],
+    sectionIds: ['solid', 'patterns', 'systemdesign', 'accessibility', 'testing', 'interview-prep'],
   },
   {
     id: 'tooling',
