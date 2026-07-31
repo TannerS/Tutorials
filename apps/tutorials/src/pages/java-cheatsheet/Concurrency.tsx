@@ -304,7 +304,55 @@ try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
 }
 // Key: virtual threads are cheap (millions possible)
 // Best for: I/O-bound tasks. NOT for CPU-bound computation.
-// Don't pool virtual threads — just create new ones.`
+// Don't pool virtual threads — just create new ones.
+
+// GOTCHA: 'synchronized' pins a virtual thread to its carrier.
+// Prefer ReentrantLock around I/O to avoid pinning.
+// Diagnose with -Djdk.tracePinnedThreads=full`
+      }</CodeBlock>
+
+      {/* ───── STRUCTURED CONCURRENCY ───── */}
+      <h2>Structured Concurrency (Java 21+ preview)</h2>
+      <CodeBlock language="java" title="Fork subtasks in a scope; auto-cancel siblings on failure">{
+`// All must succeed
+try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+    var a = scope.fork(() -> serviceA.call());
+    var b = scope.fork(() -> serviceB.call());
+    scope.join();
+    scope.throwIfFailed();
+    return combine(a.get(), b.get());
+}
+
+// First success wins (race)
+try (var scope = new StructuredTaskScope.ShutdownOnSuccess<Result>()) {
+    scope.fork(() -> primaryMirror.get());
+    scope.fork(() -> secondaryMirror.get());
+    scope.join();
+    return scope.result();
+}
+
+// Replaces manual CompletableFuture juggling for related tasks.
+// Scope close guarantees no leaked background work.`
+      }</CodeBlock>
+
+      {/* ───── SCOPED VALUE ───── */}
+      <h2>ScopedValue (Java 21+ preview)</h2>
+      <CodeBlock language="java" title="Immutable per-scope context — the ThreadLocal successor">{
+`public static final ScopedValue<String> REQUEST_ID = ScopedValue.newInstance();
+
+// Bind values for a scope
+ScopedValue.where(REQUEST_ID, req.header("X-Request-Id"))
+           .run(() -> serviceLayer.handle(req));
+// After run() returns, the binding is gone. No leaks like ThreadLocal.
+
+// Read anywhere downstream
+String reqId = REQUEST_ID.get();
+
+// vs ThreadLocal:
+//  - Immutable within scope (safer)
+//  - Lexical ownership (clearer)
+//  - No leak-until-thread-dies problem
+//  - Structured concurrency children inherit automatically`
       }</CodeBlock>
 
       {/* ───── CHALLENGES ───── */}

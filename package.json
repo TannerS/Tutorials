@@ -11,7 +11,11 @@
     "build": "turbo run build --filter=@tutorials/site",
     "lint": "turbo run lint --filter=@tutorials/site",
     "typecheck": "turbo run typecheck --filter=@tutorials/site",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "dev:tutorials": "turbo run dev --filter=@tutorials/site",
+    "dev:react": "turbo run dev --filter=@tutorials/demo-react",
+    "dev:spring": "turbo run dev --filter=@tutorials/demo-spring",
+    "build:pdf": "turbo run build:pdf --filter=@tutorials/site"
   },
   "devDependencies": {
     "turbo": "^2.9.16",

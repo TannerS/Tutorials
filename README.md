@@ -84,6 +84,37 @@ npm run clean
 
 ---
 
+## Printable PDFs
+
+The tutorials site produces **one PDF per section** for offline reading — useful if you're going somewhere without internet access or where the browser isn't available.
+
+```bash
+# One-time setup — install Chromium and (optionally) Ghostscript for merging.
+cd apps/tutorials && npx playwright install chromium
+brew install ghostscript          # macOS; on Linux use apt/yum
+
+# Generate every section
+npm run build:pdf
+
+# Or specific sections
+cd apps/tutorials && node scripts/build-pdf.mjs java
+cd apps/tutorials && node scripts/build-pdf.mjs springboot react19 typescript
+```
+
+Output goes to `apps/tutorials/dist-pdf/*.pdf` — one file per section (`java.pdf`, `springboot.pdf`, `react19.pdf`, `typescript.pdf`, …). The generator:
+
+- Builds the site (`vite build`) and serves it via `vite preview`
+- Uses Playwright + headless Chromium to visit every lesson URL
+- Strips site chrome (sidebar, TOC, mobile menu) so only lesson content remains
+- Applies the `@media print` stylesheet (light theme, wrap code, keep blocks together)
+- Renders each lesson as one continuous **tall PDF page** at Letter width, then concatenates all a section's lessons via `pdf-lib`
+
+**Printing the PDFs:** each lesson is one variable-height page (612 pt wide × 3000–10000 pt tall). Open in Preview.app or Adobe Acrobat and print with **"Scale to fit paper"** — the printer splits each tall page into physical Letter sheets automatically. This is the same pattern web browsers use when you print a long web page: one virtual page, many physical pages.
+
+Print CSS lives at the end of `apps/tutorials/src/index.css`. The `html.print-mode` class is added by the PDF script but the plain `@media print` block also fires from the browser's built-in Print → Save as PDF flow if you want to print a single lesson directly.
+
+---
+
 ## Spring Boot demo cheats
 
 ```bash

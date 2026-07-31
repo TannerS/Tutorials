@@ -12,6 +12,7 @@ import JavaStreams from './pages/java/Streams'
 import JavaConcurrency from './pages/java/Concurrency'
 import JavaIo from './pages/java/Io'
 import JavaAdvanced from './pages/java/Advanced'
+import JavaOptional from './pages/java/Optional'
 
 // Spring Boot
 import SpringIntro from './pages/springboot/Intro'
@@ -24,6 +25,12 @@ import SpringTesting from './pages/springboot/Testing'
 import SpringConfig from './pages/springboot/Config'
 import SpringError from './pages/springboot/Error'
 import SpringAdvanced from './pages/springboot/Advanced'
+import SpringTransactions from './pages/springboot/Transactions'
+import SpringKafka from './pages/springboot/Kafka'
+import SpringAop from './pages/springboot/Aop'
+import SpringBoot4 from './pages/springboot/Boot4'
+import SpringObservability from './pages/springboot/Observability'
+import SpringCheatsheet from './pages/springboot/Cheatsheet'
 
 // React 19
 import ReactLifecycle from './pages/react19/Lifecycle'
@@ -39,6 +46,10 @@ import ReactPatterns from './pages/react19/Patterns'
 import ReactTypescript from './pages/react19/Typescript'
 import ReactBuildToolchain from './pages/react19/BuildToolchain'
 import ReactCheatSheet from './pages/react19/CheatSheet'
+import ReactAdapters from './pages/react19/Adapters'
+import ReactImperativeBridge from './pages/react19/ImperativeBridge'
+import ReactModuleFederation from './pages/react19/ModuleFederation'
+import ReactFeatureFolder from './pages/react19/FeatureFolder'
 
 // SQL
 import SqlQuickstart from './pages/sql/Quickstart'
@@ -154,6 +165,8 @@ import TsBestPractices from './pages/typescript/BestPractices'
 import TsNewProject from './pages/typescript/NewProject'
 import TsTsconfig from './pages/typescript/Tsconfig'
 import TsInteractive from './pages/typescript/Interactive'
+import TsEnterprise from './pages/typescript/EnterprisePatterns'
+import TsCheatsheet from './pages/typescript/Cheatsheet'
 
 // React Router v7
 import RRIntro from './pages/react-router/Intro'
@@ -227,6 +240,12 @@ import WpPlugins from './pages/webpack/Plugins'
 import WpDevserver from './pages/webpack/Devserver'
 import WpAdvanced from './pages/webpack/Advanced'
 
+// Interview Prep
+import IPReact from './pages/interview-prep/React'
+import IPTypescript from './pages/interview-prep/Typescript'
+import IPFrontend from './pages/interview-prep/Frontend'
+import IPCoding from './pages/interview-prep/Coding'
+
 function NotFound() {
   return (
     <div style={{
@@ -275,6 +294,7 @@ function App() {
         <Route path="java/concurrency" element={<JavaConcurrency />} />
         <Route path="java/io" element={<JavaIo />} />
         <Route path="java/advanced" element={<JavaAdvanced />} />
+        <Route path="java/optional" element={<JavaOptional />} />
         {/* Spring Boot */}
         <Route path="springboot/intro" element={<SpringIntro />} />
         <Route path="springboot/setup" element={<SpringSetup />} />
@@ -286,6 +306,12 @@ function App() {
         <Route path="springboot/config" element={<SpringConfig />} />
         <Route path="springboot/error" element={<SpringError />} />
         <Route path="springboot/advanced" element={<SpringAdvanced />} />
+        <Route path="springboot/transactions" element={<SpringTransactions />} />
+        <Route path="springboot/kafka" element={<SpringKafka />} />
+        <Route path="springboot/aop" element={<SpringAop />} />
+        <Route path="springboot/boot4" element={<SpringBoot4 />} />
+        <Route path="springboot/observability" element={<SpringObservability />} />
+        <Route path="springboot/cheatsheet" element={<SpringCheatsheet />} />
         {/* React 19 */}
         <Route path="react19/lifecycle" element={<ReactLifecycle />} />
         <Route path="react19/lifecycle-sim" element={<ReactLifecycleSim />} />
@@ -300,6 +326,10 @@ function App() {
         <Route path="react19/typescript" element={<ReactTypescript />} />
         <Route path="react19/build-toolchain" element={<ReactBuildToolchain />} />
         <Route path="react19/cheat-sheet" element={<ReactCheatSheet />} />
+        <Route path="react19/adapters" element={<ReactAdapters />} />
+        <Route path="react19/imperative-bridge" element={<ReactImperativeBridge />} />
+        <Route path="react19/module-federation" element={<ReactModuleFederation />} />
+        <Route path="react19/feature-folder" element={<ReactFeatureFolder />} />
         {/* SQL */}
         <Route path="sql/quickstart" element={<SqlQuickstart />} />
         <Route path="sql/joins" element={<SqlJoins />} />
@@ -402,6 +432,8 @@ function App() {
         <Route path="typescript/newproject" element={<TsNewProject />} />
         <Route path="typescript/tsconfig" element={<TsTsconfig />} />
         <Route path="typescript/interactive" element={<TsInteractive />} />
+        <Route path="typescript/enterprise" element={<TsEnterprise />} />
+        <Route path="typescript/cheatsheet" element={<TsCheatsheet />} />
         {/* React Router v7 */}
         <Route path="react-router/intro" element={<RRIntro />} />
         <Route path="react-router/nested" element={<RRNested />} />
@@ -465,6 +497,11 @@ function App() {
         <Route path="webpack/plugins" element={<WpPlugins />} />
         <Route path="webpack/devserver" element={<WpDevserver />} />
         <Route path="webpack/advanced" element={<WpAdvanced />} />
+        {/* Interview Prep */}
+        <Route path="interview-prep/react" element={<IPReact />} />
+        <Route path="interview-prep/typescript" element={<IPTypescript />} />
+        <Route path="interview-prep/frontend" element={<IPFrontend />} />
+        <Route path="interview-prep/coding" element={<IPCoding />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

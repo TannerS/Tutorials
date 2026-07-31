@@ -17,6 +17,7 @@ export const sections: Section[] = [
       { id: 'concurrency', title: 'Concurrency & Threads', path: '/java/concurrency' },
       { id: 'io', title: 'I/O & File Handling', path: '/java/io' },
       { id: 'advanced', title: 'Advanced Java Features', path: '/java/advanced' },
+      { id: 'optional', title: 'Optional — Best & Worst Practices', path: '/java/optional' },
     ],
   },
   {
@@ -35,6 +36,12 @@ export const sections: Section[] = [
       { id: 'config', title: 'Configuration & Profiles', path: '/springboot/config' },
       { id: 'error', title: 'Error Handling & Validation', path: '/springboot/error' },
       { id: 'advanced', title: 'Advanced Topics', path: '/springboot/advanced' },
+      { id: 'transactions', title: 'Transactions Deep-Dive', path: '/springboot/transactions' },
+      { id: 'kafka', title: 'Kafka in Spring', path: '/springboot/kafka' },
+      { id: 'aop', title: 'AOP & Interceptors', path: '/springboot/aop' },
+      { id: 'boot4', title: 'Boot 4 Novelties', path: '/springboot/boot4' },
+      { id: 'observability', title: 'Observability', path: '/springboot/observability' },
+      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/springboot/cheatsheet' },
     ],
   },
   {
@@ -56,6 +63,10 @@ export const sections: Section[] = [
       { id: 'typescript', title: 'React + TypeScript', path: '/react19/typescript' },
       { id: 'build-toolchain', title: '🔧 Build Toolchain', path: '/react19/build-toolchain' },
       { id: 'cheat-sheet', title: '📋 Cheat Sheet', path: '/react19/cheat-sheet' },
+      { id: 'adapters', title: 'API Adapters & Envelopes', path: '/react19/adapters' },
+      { id: 'imperative-bridge', title: 'Imperative Bridge Patterns', path: '/react19/imperative-bridge' },
+      { id: 'module-federation', title: 'Module Federation & MFEs', path: '/react19/module-federation' },
+      { id: 'feature-folder', title: 'Feature-Based Architecture', path: '/react19/feature-folder' },
     ],
   },
   {
@@ -250,6 +261,8 @@ export const sections: Section[] = [
       { id: 'newproject', title: 'New Project from Scratch', path: '/typescript/newproject' },
       { id: 'tsconfig', title: 'tsconfig Mastery', path: '/typescript/tsconfig' },
       { id: 'interactive', title: '🧪 Interactive Challenges', path: '/typescript/interactive' },
+      { id: 'enterprise', title: 'Enterprise Patterns', path: '/typescript/enterprise' },
+      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/typescript/cheatsheet' },
     ],
   },
   {
@@ -379,6 +392,18 @@ export const sections: Section[] = [
       { id: 'advanced', title: 'Advanced Config & Migration', path: '/webpack/advanced' },
     ],
   },
+  {
+    id: 'interview-prep',
+    label: 'Interview Prep',
+    icon: '🎯',
+    color: '#facc15',
+    lessons: [
+      { id: 'react', title: 'React Interview Questions', path: '/interview-prep/react' },
+      { id: 'typescript', title: 'TypeScript Interview Questions', path: '/interview-prep/typescript' },
+      { id: 'frontend', title: 'Frontend System Design', path: '/interview-prep/frontend' },
+      { id: 'coding', title: 'Live Coding Challenges', path: '/interview-prep/coding' },
+    ],
+  },
 ];
 
 export const groups: Group[] = [
@@ -401,7 +426,7 @@ export const groups: Group[] = [
     label: 'Architecture & Design',
     icon: '🏗️',
     color: '#a78bfa',
-    sectionIds: ['solid', 'patterns', 'systemdesign', 'accessibility', 'testing'],
+    sectionIds: ['solid', 'patterns', 'systemdesign', 'accessibility', 'testing', 'interview-prep'],
   },
   {
     id: 'tooling',
