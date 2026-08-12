@@ -6,115 +6,15 @@ export default function FieldGuideJavaGotchas() {
   return (
     <PosterLayout
       accent="amber"
-      eyebrow="Java + Spring Boot 4 · Field Reference"
+      eyebrow="Java · Field Reference"
       title="Gotchas & Pitfalls"
       tagline="The got-ya moments — things that compile clean, pass code review, and still silently break in production."
-      meta={['Java + Spring', '13 gotchas']}
+      meta={['Java 21+', '7 gotchas']}
       footerLabel="Personal study reference — Java Gotchas"
-      pageLabel="Java + Spring Field Guide · Gotchas"
-      prev={{ path: '/java-field-guide/boot4', label: 'Spring Boot 4 Novelties' }}
+      pageLabel="Java Field Guide · Gotchas"
+      prev={{ path: '/java-field-guide/concurrency', label: 'Concurrency & Virtual Threads' }}
       next={null}
     >
-      <PosterCard
-        glyph="!"
-        title={<>Self-invocation<span className="dim"> breaks every proxy annotation</span></>}
-        language="java"
-        code={`@Service
-public class ReportService {
-    @Transactional
-    public void generateBatch(List<ReportRequest> requests) {
-        // this.generateOne() skips the proxy — annotation ignored!
-        for (var req : requests) this.generateOne(req);
-    }
-
-    @Transactional(propagation = REQUIRES_NEW)
-    public void generateOne(ReportRequest req) { /* ... */ }
-}`}
-        caption="Spring adds @Transactional, @Async, @Cacheable, and @PreAuthorize via a proxy wrapping your bean. Calling this.method() goes straight to the target, bypassing the proxy — the annotation silently does nothing. Fix: extract to another bean, or inject yourself with @Lazy."
-      />
-
-      <PosterCard
-        glyph="Pv"
-        title={<>Private / final methods<span className="dim"> — AOP never fires</span></>}
-        language="text"
-        code={`Spring AOP only weaves PUBLIC methods on beans obtained
-through the proxy. A private @Transactional or @Cacheable
-method compiles fine and does nothing at runtime — no
-error, no warning, just silently ignored behavior.`}
-        caption="Unlike self-invocation, this one gives you nothing to grep for — the pointcut 'matches' at compile time but Spring's proxy-based AOP can never intercept a private or final method call."
-      />
-
-      <PosterCard
-        glyph="N+1"
-        title={<>N+1 queries<span className="dim"> from lazy associations</span></>}
-        language="java"
-        code={`List<Order> orders = orderRepository.findByStatus(OPEN); // 1 query
-for (Order o : orders) {
-    log.info("{} items", o.getItems().size()); // +N queries!
-}
-// 1000 orders -> 1001 queries just to log them.
-
-// Fix: @EntityGraph(attributePaths = {"items"}) on the repo method
-// or a JOIN FETCH in JPQL.`}
-        caption="A loop that looks like it runs one query actually runs N+1 because JPA lazily loads each row's association on first access. Always check SHOW SQL in dev — one method logging eight queries when you expected one is the tell."
-      />
-
-      <PosterCard
-        glyph="En"
-        title={<>Enum ORDINAL mapping<span className="dim"> — silent data corruption</span></>}
-        language="java"
-        code={`// WRONG — default. Stores the enum's integer position.
-@Enumerated
-private CustomerStatus status;
-
-// RIGHT — always.
-@Enumerated(EnumType.STRING)
-private CustomerStatus status;`}
-        caption="Default JPA enum mapping is ORDINAL — a plain integer. Reorder or insert a new enum constant later and every existing row silently means something different. Always use EnumType.STRING; costs a few bytes, prevents a catastrophic bug."
-      />
-
-      <PosterCard
-        glyph="Tx"
-        title={<>HTTP calls inside @Transactional<span className="dim"></span></>}
-        language="java"
-        code={`@Transactional
-public Order place(NewOrderRequest req) {
-    Order order = orders.save(Order.from(req));
-    inventory.reserve(order.items()); // network call — holds the
-                                       // DB connection for its duration!
-    return order;
-}`}
-        caption="Any I/O inside a transaction holds a DB connection open for the length of that call. A slow downstream service starves your connection pool. Keep transactions to pure DB work; do the HTTP/Kafka call before or after the boundary."
-      />
-
-      <PosterCard
-        glyph="Ex"
-        title={<>Checked exceptions<span className="dim"> don't roll back by default</span></>}
-        language="java"
-        code={`@Transactional
-public void process() throws IOException {
-    // ... work ...
-    throw new IOException("boom"); // COMMITS anyway!
-}
-
-// Fix: be explicit.
-@Transactional(rollbackFor = IOException.class)`}
-        caption="@Transactional only rolls back on unchecked (RuntimeException) by default — a thrown checked exception commits whatever happened before it. Use rollbackFor when a checked exception should undo the transaction."
-      />
-
-      <PosterCard
-        glyph="H2"
-        title={<>H2 lies<span className="dim"> about production behavior</span></>}
-        language="text"
-        code={`H2 differs from Postgres in: case-insensitive collations,
-array/JSON columns, window functions, CTE semantics.
-
-A @DataJpaTest can pass on H2 and fail in prod.
-spring.jpa.database=POSTGRESQL only changes Hibernate's
-SQL dialect — H2's ENGINE still runs H2 SQL underneath.`}
-        caption="Anything beyond trivial CRUD deserves a TestContainers test against the real engine — setting the dialect property does not make H2 behave like Postgres."
-      />
-
       <PosterCard
         glyph="Op"
         title={<>Optional misuse<span className="dim"> — fields, params, get()</span></>}
@@ -173,47 +73,59 @@ try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
       />
 
       <PosterCard
-        glyph="Sc"
-        title={<>@Scheduled<span className="dim"> runs once per replica</span></>}
+        glyph="Oc"
+        title={<>Optional&lt;Collection&gt;<span className="dim"> — two empty states</span></>}
         language="java"
-        code={`@Scheduled(cron = "0 15 3 * * *")
-public void nightlyReindex() { /* ... */ }
+        code={`// WRONG — caller now has TWO empty states to check: empty Optional
+// AND a present-but-empty List.
+public Optional<List<Order>> findByCustomer(UUID id) { ... }
 
-// 5 replicas in production = this runs 5 times, not once.
-// Fix: distributed lock (Shedlock) or move the job to a
-// real external scheduler (K8s CronJob) calling your API.`}
-        caption="Every replica of a horizontally-scaled service runs its own copy of every @Scheduled method — there is no built-in coordination. A job assumed to run once nightly can quietly run N times and double-process data."
+// RIGHT — an empty list already IS the empty state.
+public List<Order> findByCustomer(UUID id) {
+    return orders.findByCustomerId(id);   // possibly empty, never null
+}`}
+        caption="For any type that already has a natural empty value — List, Set, Map, String, arrays — return that empty value instead of wrapping it in Optional. Optional-of-a-collection just makes callers unwrap twice for the same information."
       />
 
       <PosterCard
-        glyph="Cf"
-        title={<>@ConfigurationProperties<span className="dim"> without validation</span></>}
+        glyph="Of"
+        title={<>Optional.of()<span className="dim"> throws on null</span></>}
         language="java"
-        code={`// WRONG — a missing/malformed property fails at first USE,
-// deep in a request, hours after deploy.
-@ConfigurationProperties(prefix = "app.catalog")
-public record CatalogApiProperties(String baseUrl) { }
+        code={`String maybeEmpty = lookupThatMightReturnNull();
 
-// RIGHT — fails fast at STARTUP instead.
-@ConfigurationProperties(prefix = "app.catalog")
-@Validated
-public record CatalogApiProperties(@NotBlank String baseUrl) { }`}
-        caption="Skipping @Validated on a properties class turns a bad config value into a runtime NullPointerException in production instead of a startup failure your deploy pipeline would have caught immediately."
+// WRONG — throws NullPointerException immediately if maybeEmpty is null.
+Optional<String> opt = Optional.of(maybeEmpty);
+
+// RIGHT — ofNullable is the safe wrap for anything that might be null.
+Optional<String> opt = Optional.ofNullable(maybeEmpty);`}
+        caption="Optional.of() is not a safe wrapper — it's an assertion that the value is already known non-null, and it NPEs immediately if you're wrong. Reserve Optional.of() for values you've already verified; use ofNullable everywhere else."
+      />
+
+      <PosterCard
+        glyph="Sm"
+        title={<>Sealed subtypes<span className="dim"> need a modifier</span></>}
+        language="java"
+        code={`public sealed class Shape permits Circle, Rectangle, Triangle {}
+
+// Every direct subtype MUST declare exactly one of:
+public final class Circle extends Shape { ... }        // closed for good
+public non-sealed class Triangle extends Shape { ... }   // reopens the hierarchy
+// sealed class Rectangle extends Shape permits ... {}    // re-restricts further
+
+// omitting final/sealed/non-sealed on a permitted subtype = COMPILE ERROR`}
+        caption="A sealed type only controls its own direct subclasses — each one must explicitly pick final, sealed, or non-sealed, or the compiler rejects it. Forgetting this modifier (easy to do when adding a new permitted class) is a compile-time gotcha, not a runtime one, but it trips people up constantly."
       />
 
       <PosterQuickRef
         title="Gotcha -> fix, fast lookup"
         rows={[
-          { need: '@Transactional silently no-ops', answer: 'Called via this. — extract to another bean' },
-          { need: 'Private method annotation ignored', answer: 'Spring AOP only weaves public methods' },
-          { need: '1000+ queries for a list endpoint', answer: 'N+1 — add @EntityGraph or JOIN FETCH' },
-          { need: 'Old rows change meaning after a deploy', answer: 'Enum ORDINAL mapping — always use STRING' },
-          { need: 'Checked exception but no rollback', answer: '@Transactional(rollbackFor = ...)' },
-          { need: 'JPA test passes, prod query fails', answer: 'H2 lies — retest on TestContainers' },
           { need: 'NoSuchElementException from Optional', answer: 'Use orElseThrow, never bare .get()' },
           { need: 'Default object built on every call', answer: 'orElseGet(Supplier), not orElse(value)' },
           { need: 'Vthreads throttling under load', answer: 'Pinning — swap synchronized for ReentrantLock' },
-          { need: 'Nightly job runs N times', answer: 'Shedlock or move it to an external scheduler' },
+          { need: 'Manually sizing a thread pool for tasks', answer: 'Use newVirtualThreadPerTaskExecutor instead' },
+          { need: 'Two empty states to check on a lookup', answer: 'Return empty collection, not Optional<Collection>' },
+          { need: 'NPE from Optional.of(value)', answer: 'Use Optional.ofNullable for anything that might be null' },
+          { need: 'Compile error adding a sealed subtype', answer: 'Declare it final, sealed, or non-sealed' },
         ]}
       />
     </PosterLayout>

@@ -6,14 +6,14 @@ export default function FieldGuideJavaSyntax() {
   return (
     <PosterLayout
       accent="amber"
-      eyebrow="Java + Spring Boot 4 · Field Reference"
+      eyebrow="Java · Field Reference"
       title="Modern Java Syntax"
       tagline="Records, sealed types, and pattern matching condensed for offline study — Java 21+ idioms, not the Java 8 you remember."
       meta={['Java 21+', '13 features']}
       footerLabel="Personal study reference — Java"
-      pageLabel="Java + Spring Field Guide · Syntax"
+      pageLabel="Java Field Guide · Syntax"
       prev={null}
-      next={{ path: '/java-field-guide/collections-streams', label: 'Collections & Streams' }}
+      next={{ path: '/java-field-guide/oop-generics', label: 'OOP & Generics' }}
     >
       <PosterCard
         glyph="var"
@@ -198,6 +198,74 @@ public class UserDto {
 
 UserDto u = UserDto.builder().id(1L).name("Alice").build();`}
         caption="Generates getters/setters/equals/hashCode/toString/builder at compile time. Avoid @Data on JPA @Entity classes — equals/hashCode over lazy-loaded fields can trigger unwanted fetches."
+      />
+
+      <PosterCard
+        glyph="Str"
+        title={<>String<span className="dim"> — immutable, and StringBuilder</span></>}
+        language="java"
+        code={`s.toUpperCase();          // returns a NEW string — s is unchanged
+a == b                    // compares REFERENCES (true only via interning)
+a.equals(b)               // compares CONTENTS — always use this
+"java".equals(input)      // constant first = null-safe
+
+"  x  ".strip()           // Unicode-aware (Java 11+); prefer over trim()
+"   ".isBlank()           // Java 11+   |   "ab".repeat(3)   |   s.lines()
+"Hi %s, %d".formatted(n, age)          // Java 15+ instance form
+String.join("-", parts)   |   stream.collect(joining(", ", "[", "]"))
+
+// WRONG in a loop — new String every iteration, O(n^2)
+for (var w : words) result += w;
+// RIGHT — one mutable buffer, O(n)
+var sb = new StringBuilder(); for (var w : words) sb.append(w);`}
+        caption={<>The compiler already optimises concatenation within a <em>single</em> expression, so <code>StringBuilder</code> is only needed for loops and conditional building. <code>StringBuffer</code> is the synchronized legacy version — you almost never want it.</>}
+      />
+
+      <PosterCard
+        glyph="0.1"
+        title={<>Numeric traps<span className="dim"> — overflow &amp; BigDecimal</span></>}
+        language="java"
+        code={`Integer.MAX_VALUE + 1     // silently wraps to Integer.MIN_VALUE
+Math.addExact(a, b)       // throws ArithmeticException instead of wrapping
+int ms = days*24*60*60*1000;   // overflows past 24 days — use long
+
+0.1 + 0.2                 // 0.30000000000000004 — never use double for money
+
+new BigDecimal("0.1")     // String constructor — ALWAYS
+new BigDecimal(0.1)       // captures the same inaccurate binary value
+
+total.add(x);             // IMMUTABLE — result discarded, no-op bug
+total = total.add(x);     // correct
+total.divide(d, 2, RoundingMode.HALF_UP);   // division NEEDS a rounding mode
+
+new BigDecimal("2.0").equals(new BigDecimal("2.00"))    // false — scale differs
+new BigDecimal("2.0").compareTo(new BigDecimal("2.00")) // 0 — use this`}
+        caption="Integer overflow is silent and floating point cannot represent most decimal fractions. Both produce bugs that pass every test with small numbers."
+      />
+
+      <PosterCard
+        glyph="yld"
+        title={<>switch expression<span className="dim"> — yield &amp; multi-label</span></>}
+        language="java"
+        code={`// Arrow form: no fall-through, produces a value, must be EXHAUSTIVE.
+int days = switch (month) {
+    case JAN, MAR, MAY, JUL, AUG, OCT, DEC -> 31;
+    case APR, JUN, SEP, NOV                -> 30;
+    case FEB                               -> isLeap ? 29 : 28;
+};   // no default needed — every enum constant is covered
+
+// Multi-statement branch: block + 'yield' (not 'return')
+String s = switch (status) {
+    case FAILED -> {
+        log.error("failed");
+        yield "failed: " + lastError;
+    }
+    default -> "unknown";
+};
+
+// Statement form with arrows — no value, no break
+switch (cmd) { case START -> svc.start(); default -> log.warn("?"); }`}
+        caption="Add an enum constant and every exhaustive switch over it becomes a compile error until you handle it — the compiler becomes your regression net."
       />
 
       <PosterQuickRef

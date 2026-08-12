@@ -6,14 +6,14 @@ export default function FieldGuideJavaConcurrency() {
   return (
     <PosterLayout
       accent="amber"
-      eyebrow="Java + Spring Boot 4 · Field Reference"
+      eyebrow="Java · Field Reference"
       title="Concurrency & Virtual Threads"
       tagline="Threads, locks, virtual threads, and the pitfalls that actually bite in production — condensed for offline study."
       meta={['Java 21+', '14 patterns']}
       footerLabel="Personal study reference — Java"
-      pageLabel="Java + Spring Field Guide · Concurrency"
-      prev={{ path: '/java-field-guide/collections-streams', label: 'Collections & Streams' }}
-      next={{ path: '/java-field-guide/spring-di', label: 'Spring DI & Beans' }}
+      pageLabel="Java Field Guide · Concurrency"
+      prev={{ path: '/java-field-guide/exceptions-io', label: 'Exceptions & I/O' }}
+      next={{ path: '/java-field-guide/gotchas', label: 'Gotchas & Pitfalls' }}
     >
       <PosterCard
         glyph="Th"
@@ -208,6 +208,95 @@ Task t = queue.take();   // consumer — blocks if empty
 
 queue.offer(task, 1, TimeUnit.SECONDS);  // bounded wait instead of forever`}
         caption="put/take block indefinitely by design — that's what makes them the standard building block for producer-consumer pipelines without manual wait/notify."
+      />
+
+      <PosterCard
+        glyph="hb"
+        title={<>happens-before<span className="dim"> — the memory model</span></>}
+        language="java"
+        code={`// BROKEN — the loop may never terminate. The JIT can hoist the read.
+private boolean running = true;
+while (running) { work(); }          // no synchronization = no guarantee
+
+private volatile boolean running = true;   // FIXED: visibility + ordering
+
+// volatile does NOT give atomicity — count++ is read-modify-write.
+private volatile int count;  count++;      // STILL a race
+private final AtomicInteger count;  count.incrementAndGet();   // correct
+
+// The edges worth memorising:
+//   unlock(m)         happens-before  the next lock(m)
+//   volatile write    happens-before  every later read of that field
+//   t.start()         happens-before  everything t does
+//   everything t does happens-before  t.join() returning
+//   final fields of a properly-constructed object: visible with NO sync
+//   put to a BlockingQueue / submit to an Executor happens-before the take/run`}
+        caption="Stale reads, not deadlocks, are the concurrency bugs that survive for months. Every rule here exists to manage shared MUTABLE state — immutable objects and records sidestep all of it."
+      />
+
+      <PosterCard
+        glyph="Ltc"
+        title={<>Latches, semaphores, barriers</>}
+        language="java"
+        code={`// CountDownLatch — one-shot gate. "Wait until N things happened."
+CountDownLatch ready = new CountDownLatch(3);
+ready.countDown();                       // never resets — single use
+ready.await(30, TimeUnit.SECONDS);       // ALWAYS use the timeout overload
+
+// Semaphore — bound concurrency against a fragile downstream.
+// This is how you protect an API while still using unlimited vthreads.
+Semaphore permits = new Semaphore(10);
+permits.acquire();
+try { legacyApi.send(r); } finally { permits.release(); }   // release in finally
+
+// CyclicBarrier — reusable rendezvous; resets for the next phase.
+CyclicBarrier barrier = new CyclicBarrier(workers, () -> mergeResults());
+barrier.await();`}
+        caption="Locks protect state; these protect sequencing. A latch counts down once and stays down — use a CyclicBarrier when the rendezvous repeats."
+      />
+
+      <PosterCard
+        glyph="STS"
+        title={<>StructuredTaskScope<span className="dim"> — API changed in Java 25</span></>}
+        language="java"
+        code={`// Java 21-24 (preview, needs --enable-preview)
+try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+    var a = scope.fork(() -> svcA.get());
+    var b = scope.fork(() -> svcB.get());
+    scope.join();
+    scope.throwIfFailed();
+    return new Result(a.get(), b.get());
+}
+
+// Java 25 (final) — policy moved into a Joiner passed to open()
+try (var scope = StructuredTaskScope.open(Joiner.<Object>allSuccessfulOrThrow())) {
+    var a = scope.fork(() -> svcA.get());
+    var b = scope.fork(() -> svcB.get());
+    scope.join();                    // throws if any subtask failed
+    return new Result(a.get(), b.get());
+}
+// First-success race: Joiner.anySuccessfulResultOrThrow() — join() returns it.`}
+        caption="Same concept in both: fork in a lexical scope, siblings cancelled on failure, deterministic close, no leaked tasks. Check which JDK your project targets before writing either form."
+      />
+
+      <PosterCard
+        glyph="Lk!"
+        title={<>Deadlock<span className="dim"> — and the near misses</span></>}
+        language="java"
+        code={`// A holds lock1 wants lock2; B holds lock2 wants lock1. Both wait forever.
+// FIX: a global lock ORDER — always acquire by id ascending.
+var first  = a.id() < b.id() ? a : b;
+var second = a.id() < b.id() ? b : a;
+synchronized (first) { synchronized (second) { transfer(a, b); } }
+
+// Or back off instead of blocking:
+if (!lock.tryLock(2, TimeUnit.SECONDS)) throw new BusyException();
+
+// Related traps:
+//   calling a callback / overridable method WHILE holding a lock
+//   double-checked locking without volatile (partially-constructed object)
+//   jstack detects and reports Java-level deadlocks explicitly`}
+        caption="Compute inside the lock, notify outside it. For lazy singletons, a static holder class or an enum sidesteps double-checked locking entirely."
       />
 
       <PosterQuickRef
