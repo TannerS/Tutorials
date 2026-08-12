@@ -112,6 +112,160 @@ JwtAuthenticationConverter jwtAuthConverter() {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="danger" title="Signature verification is not validation">
+        <p>
+          A <code>JwtDecoder</code> built as above verifies the signature and the{' '}
+          <code>exp</code> claim. It does <strong>not</strong>, by default, check who issued the
+          token or who it was meant for. If two services trust the same issuer, a token minted for
+          service A will sail straight through service B&apos;s authentication. Always validate{' '}
+          <code>iss</code> and <code>aud</code>.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="java" title="Validating issuer, audience, and clock skew">
+{`@Bean
+JwtDecoder jwtDecoder(@Value("\${security.issuer-uri}") String issuerUri,
+                      @Value("\${security.audience}") String audience) {
+
+    // withIssuerLocation performs OIDC discovery: it fetches
+    // /.well-known/openid-configuration and derives the JWKS URI for you.
+    NimbusJwtDecoder decoder = JwtDecoders.fromIssuerLocation(issuerUri);
+
+    OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri);
+    OAuth2TokenValidator<Jwt> withAudience = jwt ->
+        jwt.getAudience().contains(audience)
+            ? OAuth2TokenValidatorResult.success()
+            : OAuth2TokenValidatorResult.failure(
+                new OAuth2Error("invalid_token", "Required audience missing", null));
+
+    decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(withIssuer, withAudience));
+    return decoder;
+}
+
+// Clock skew: JwtTimestampValidator allows 60 seconds by default. If your
+// services' clocks drift more than that you will see sporadic 401s — fix the
+// clocks rather than widening the window.`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="hasRole vs hasAuthority — the ROLE_ prefix trap">
+        <p>
+          Spring Security has exactly one concept, <code>GrantedAuthority</code>, and a naming
+          convention layered on top. <code>hasRole(&quot;ADMIN&quot;)</code> is literally{' '}
+          <code>hasAuthority(&quot;ROLE_ADMIN&quot;)</code> — it prepends the prefix for you.
+          The failure mode: your JWT converter maps a <code>roles</code> claim of{' '}
+          <code>[&quot;ADMIN&quot;]</code> without a prefix, so the authority is{' '}
+          <code>ADMIN</code>, and <code>hasRole(&quot;ADMIN&quot;)</code> looks for{' '}
+          <code>ROLE_ADMIN</code> and silently denies every request with a 403.
+        </p>
+        <p>
+          Pick one convention and be consistent. Either set{' '}
+          <code>setAuthorityPrefix(&quot;ROLE_&quot;)</code> on the converter (as the example
+          above does) and use <code>hasRole</code>, or set the prefix to <code>&quot;&quot;</code>{' '}
+          and use <code>hasAuthority</code> everywhere. When debugging a mysterious 403, print{' '}
+          <code>authentication.getAuthorities()</code> — the answer is almost always visible
+          there.
+        </p>
+      </InfoBox>
+
+      <h2>The Other Path: Sessions, Form Login, and UserDetailsService</h2>
+      <p>
+        Not every application is a stateless token API. Server-rendered applications and internal
+        tools commonly authenticate against a database and keep a session cookie. The moving parts
+        are a <code>UserDetailsService</code> (loads the user), a{' '}
+        <code>PasswordEncoder</code> (verifies the hash), and <code>formLogin</code>.
+      </p>
+
+      <CodeBlock language="java" title="Database-backed form login">
+{`@Service
+public class DatabaseUserDetailsService implements UserDetailsService {
+
+    private final UserRepository users;
+    public DatabaseUserDetailsService(UserRepository users) { this.users = users; }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) {
+        var user = users.findByUsernameIgnoreCase(username)
+            // Throw the SAME exception for "no such user" and "wrong password"
+            // upstream, so the response cannot be used to enumerate accounts.
+            .orElseThrow(() -> new UsernameNotFoundException("bad credentials"));
+
+        return User.withUsername(user.getUsername())
+            .password(user.getPasswordHash())        // already encoded, with {bcrypt} prefix
+            .authorities(user.getRoles().stream()
+                .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
+                .toList())
+            .accountLocked(user.isLocked())
+            .disabled(!user.isEnabled())
+            .build();
+    }
+}
+
+@Bean
+SecurityFilterChain browserChain(HttpSecurity http) throws Exception {
+    return http
+        .authorizeHttpRequests(a -> a
+            .requestMatchers("/", "/login", "/css/**").permitAll()
+            .anyRequest().authenticated())
+        .formLogin(f -> f
+            .loginPage("/login")
+            .defaultSuccessUrl("/dashboard", true)
+            .failureUrl("/login?error"))
+        .logout(l -> l
+            .logoutSuccessUrl("/login?logout")
+            .invalidateHttpSession(true)
+            .deleteCookies("JSESSIONID"))
+        .sessionManagement(s -> s
+            // Rotate the session id on login — defeats session fixation.
+            // This is the DEFAULT; the point is not to turn it off.
+            .sessionFixation(SessionFixationConfigurer::changeSessionId)
+            .maximumSessions(1).maxSessionsPreventsLogin(false))
+        .build();
+}
+
+// Spring Boot auto-wires a DaoAuthenticationProvider as soon as it finds a
+// UserDetailsService bean and a PasswordEncoder bean. You rarely declare it
+// by hand.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Sessions in a multi-instance deployment">
+        <p>
+          The default <code>HttpSession</code> lives in the memory of a single JVM, so a rolling
+          deploy or a load balancer without sticky sessions logs everyone out. Add{' '}
+          <strong>Spring Session</strong> (backed by Redis or JDBC) to externalise it —{' '}
+          <code>spring-session-data-redis</code> plus a Redis connection is essentially the whole
+          configuration, and it makes the session survive instance restarts.
+        </p>
+      </InfoBox>
+
+      <h2>Security Response Headers</h2>
+      <p>
+        Spring Security sends a sensible set of defence-in-depth headers by default. Knowing which
+        are on — and which you must add yourself — is worth thirty seconds.
+      </p>
+
+      <CodeBlock language="java" title="Headers: defaults and the ones you should add">
+{`// ON by default:
+//   Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+//   X-Content-Type-Options: nosniff        (stops MIME sniffing)
+//   X-Frame-Options: DENY                  (clickjacking protection)
+//   Strict-Transport-Security               (only on HTTPS requests)
+
+// NOT on by default and worth adding:
+http.headers(h -> h
+    .contentSecurityPolicy(csp -> csp
+        .policyDirectives("default-src 'self'; frame-ancestors 'none'; object-src 'none'"))
+    .referrerPolicy(r -> r.policy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+    .httpStrictTransportSecurity(hsts -> hsts
+        .includeSubDomains(true)
+        .maxAgeInSeconds(31536000))
+);
+
+// Behind a reverse proxy or load balancer, tell Boot to trust the
+// X-Forwarded-* headers, or every redirect it generates will be http://
+// and HSTS will never be applied:
+//   server.forward-headers-strategy: framework`}
+      </CodeBlock>
+
       <h2>Method-Level Authorization</h2>
       <p>
         With <code>@EnableMethodSecurity</code>, you can annotate service methods with

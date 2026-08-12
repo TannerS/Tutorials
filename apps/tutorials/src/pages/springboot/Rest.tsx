@@ -233,6 +233,76 @@ public ResponseEntity<ReportDto> get(@PathVariable UUID id,
 }`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Don't serialize Page&lt;T&gt; directly">
+        <p>
+          Returning <code>Page&lt;T&gt;</code> from a controller works, but the JSON it produces is
+          Spring&apos;s internal <code>PageImpl</code> structure — which the Spring Data team
+          explicitly does not treat as a stable contract. Since Spring Data 3.3 it logs a warning
+          telling you so. Two supported fixes: return <code>PagedModel&lt;T&gt;</code> (wrap with{' '}
+          <code>new PagedModel&lt;&gt;(page)</code>), or set{' '}
+          <code>spring.data.web.pageable.serialization-mode: VIA_DTO</code> to opt into the stable
+          representation globally. Either way, your API stops being coupled to a Spring internal.
+        </p>
+      </InfoBox>
+
+      <h2>PUT vs PATCH, and Idempotency</h2>
+      <p>
+        The <code>@PatchMapping</code> shown earlier hides a real design question. HTTP defines PUT
+        as a full replacement and PATCH as a partial modification — and the naive Jackson approach
+        to PATCH cannot tell &quot;field omitted&quot; from &quot;field explicitly set to
+        null&quot;, because both deserialize to <code>null</code>.
+      </p>
+
+      <CodeBlock language="java" title="Making PATCH unambiguous">
+{`// THE BUG: was 'nickname' omitted (leave it alone) or sent as null (clear it)?
+public record UpdateUser(String email, String nickname) { }
+// Both requests deserialize identically:
+//   {"email":"a@b.com"}
+//   {"email":"a@b.com","nickname":null}
+
+// FIX 1 — JsonNullable (from the openapi-jackson-nullable library).
+// Three distinguishable states: absent, present-and-null, present-with-value.
+public record UpdateUser(
+        JsonNullable<String> email,
+        JsonNullable<String> nickname) { }
+
+public void apply(User user, UpdateUser patch) {
+    if (patch.email().isPresent())    user.setEmail(patch.email().get());
+    if (patch.nickname().isPresent()) user.setNickname(patch.nickname().get());
+}
+
+// FIX 2 — JSON Merge Patch (RFC 7386), applied against the serialized entity.
+// null means "delete this field", which is exactly the semantics you want.
+@PatchMapping(value = "/{id}", consumes = "application/merge-patch+json")
+public UserDto patch(@PathVariable UUID id, @RequestBody JsonNode mergePatch) {
+    User existing = users.require(id);
+    JsonNode patched = JsonMergePatch.fromJson(mergePatch)
+                                     .apply(mapper.valueToTree(existing));
+    return users.save(mapper.treeToValue(patched, User.class));
+}
+
+// FIX 3 — the pragmatic one: don't use generic PATCH at all. Expose small,
+// explicit sub-resource endpoints where the intent is unambiguous:
+//   PUT /users/{id}/status      PUT /users/{id}/email`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Idempotency keys for unsafe operations">
+        <p>
+          GET, PUT, and DELETE are idempotent by definition — repeating them has the same effect as
+          doing them once. POST is not, which means a client that retries after a network timeout
+          can create two orders. The standard remedy is an{' '}
+          <code>Idempotency-Key</code> header: the client generates a UUID per logical operation,
+          and the server stores the key with the response. A repeat of the same key returns the
+          stored response instead of executing again.
+        </p>
+        <p>
+          Store the key in the same database transaction as the operation, with a unique
+          constraint, so a concurrent duplicate loses on insert rather than racing through. Give
+          the records a TTL (24 hours is typical) so the table does not grow forever. Any API that
+          takes money or sends messages needs this.
+        </p>
+      </InfoBox>
+
       <h2>Content Negotiation</h2>
       <p>
         By default, Spring produces JSON. You can declare produced/consumed content types
@@ -456,6 +526,60 @@ public class WebConfig implements WebMvcConfigurer {
 
 In practice: /api/v1 in the path is the most-battle-tested choice.`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="Spring Framework 7 makes this first-class">
+        <p>
+          Historically all four strategies above were hand-rolled. Spring Framework 7 (Boot 4) adds
+          a <code>version</code> attribute to the mapping annotations plus an{' '}
+          <code>ApiVersionConfigurer</code> that resolves the version from a header, query
+          parameter, media type, or path — so you declare the strategy once and write{' '}
+          <code>@GetMapping(value = &quot;/{'{'}id{'}'}&quot;, version = &quot;1.1+&quot;)</code>{' '}
+          on the handler. See the <strong>Boot 4 Novelties</strong> lesson. On Boot 3, the path
+          strategy above remains the pragmatic choice.
+        </p>
+      </InfoBox>
+
+      <h2>Documenting the API — springdoc-openapi</h2>
+      <p>
+        The checklist below asks for generated OpenAPI docs. <code>springdoc-openapi</code> scans
+        your controllers, DTOs, and validation annotations at startup and serves both the spec and
+        a Swagger UI — no hand-maintained YAML.
+      </p>
+      <CodeBlock language="text" title="Dependency and endpoints">
+{`<!-- Boot 3/4, Spring MVC -->
+<dependency>
+  <groupId>org.springdoc</groupId>
+  <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+</dependency>
+
+Serves:
+  /v3/api-docs          the OpenAPI 3 JSON spec
+  /swagger-ui.html      interactive UI
+
+Most of the spec comes for free: @GetMapping becomes a path + method,
+record components become schema properties, and Jakarta validation
+annotations (@NotBlank, @Size, @Min) become schema constraints.`}
+      </CodeBlock>
+      <CodeBlock language="java" title="Filling in what annotations can't infer">
+{`@Operation(summary = "Place a new order",
+           description = "Reserves inventory and returns the created order.")
+@ApiResponses({
+    @ApiResponse(responseCode = "201", description = "Order created"),
+    @ApiResponse(responseCode = "409", description = "Insufficient inventory",
+                 content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+})
+@PostMapping
+public ResponseEntity<OrderDto> place(@Valid @RequestBody PlaceOrderRequest req) { ... }`}
+      </CodeBlock>
+      <InfoBox variant="warning" title="Lock the UI down outside development">
+        <p>
+          Swagger UI on a public production endpoint hands an attacker a complete, accurate map of
+          your API surface. Either disable it per-environment
+          (<code>springdoc.swagger-ui.enabled: false</code>) or put{' '}
+          <code>/swagger-ui/**</code> and <code>/v3/api-docs/**</code> behind authentication in
+          your <code>SecurityFilterChain</code>.
+        </p>
+      </InfoBox>
 
       <h2>Testing Controllers</h2>
       <p>
