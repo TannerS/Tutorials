@@ -25,9 +25,14 @@ All queued work from this session is complete. Nothing has been committed to git
 
 **Final verification**: `npx tsc --noEmit` and `npx vite build` both clean; scripted consistency check confirms all sections are referenced exactly once across groups with zero orphans/duplicates, zero orphaned page directories.
 
-## Nothing left in the original queue
+## Monorepo flatten (Task #12) — done
 
-Everything from both rounds of user-requested fixes is done, except:
-- **Task #12 (monorepo flatten)** — was explicitly paused by the user mid-session ("lets do smaller changes first... ill come back when to flatten") and was never part of the autonomous work grant. Not resumed. Still pending if/when the user wants to revisit it.
+User confirmed demo-react/demo-spring (referenced in the old README/package.json but never actually built) are dead — just collapse to a single flat repo. Moved `apps/tutorials/*` up to repo root; folded `packages/ui`'s 5 genuinely-used exports (CodeBlock, TableOfContents, CommandPalette, LiveExample, useCommandPaletteShortcut) into `src/components/`, dropping `packages/ui/InfoBox.tsx` which was dead code (shadowed everywhere by the app's own theme-aware `InfoBox`); inlined `packages/tsconfig`'s base+react config into one root `tsconfig.json`; removed Turborepo entirely (turbo.json, the devDependency, npm workspaces); rewrote root `package.json`/`README.md` to describe the site as it now exists. Verified clean: `tsc --noEmit`, `vite build`, dev-server smoke test. Committed and pushed (`343f194`).
+
+Found and reverted one thing along the way: `eslint.config.js` only lints `.js`/`.jsx` files, never `.tsx` — confirmed by testing that widening the glob throws parser errors across the codebase, since there's no `typescript-eslint` parser/plugin installed. Left as-is; fixing it properly means adding a new dependency and is a separate task, not part of the flatten.
+
+## Nothing left in the queue
+
+Both rounds of user-requested fixes, the full-repo audit, and the monorepo flatten are all done, committed, and pushed. Only open item is the `typescript-eslint` gap noted above, if ever wanted.
 
 Use `TaskList` for the structured tracker; this file is the narrative version.
