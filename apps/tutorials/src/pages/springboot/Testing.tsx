@@ -232,6 +232,74 @@ class ApplicationSmokeTest {
 }`}
       </CodeBlock>
 
+      <h2>Context Caching — Why Your Suite Is Slow</h2>
+      <p>
+        &quot;5&ndash;15 seconds per class&quot; is only true if every class builds its own
+        context. Spring&apos;s <code>TestContext</code> framework caches contexts across the whole
+        test run and reuses one whenever a later test asks for an <em>identical</em>
+        configuration. Understanding what makes two configurations identical is the single
+        highest-leverage thing you can know about Spring test performance — it is routinely the
+        difference between a two-minute build and a twenty-minute one.
+      </p>
+
+      <CodeBlock language="text" title="The cache key">
+{`Two tests share a cached context only if ALL of these match:
+  - the set of @ContextConfiguration classes/locations
+  - active profiles (@ActiveProfiles)
+  - property sources (@TestPropertySource, properties = {...})
+  - context initializers
+  - the web environment type (MOCK / RANDOM_PORT / NONE)
+  - the set of @MockitoBean / @MockitoSpyBean definitions
+
+Change ANY of them and you get a brand-new context: a fresh JVM-wide
+ApplicationContext, a fresh connection pool, a fresh Hibernate bootstrap.
+
+The default cache holds 32 contexts, evicted least-recently-used.`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="The pattern that keeps the cache hot">
+{`// EXPENSIVE — every one of these creates a SEPARATE context, because the
+// inline properties differ per class.
+@SpringBootTest(properties = "feature.x.enabled=true")   class ATest { }
+@SpringBootTest(properties = "feature.y.enabled=true")   class BTest { }
+@SpringBootTest(properties = "feature.z.enabled=true")   class CTest { }
+
+// CHEAP — one shared base class, one context, reused by every subclass.
+@SpringBootTest
+@ActiveProfiles("test")
+@Testcontainers
+abstract class IntegrationTestBase {
+
+    @Container
+    @ServiceConnection
+    // static + declared once here => ONE Postgres for the entire suite.
+    static final PostgreSQLContainer<?> POSTGRES =
+        new PostgreSQLContainer<>("postgres:17-alpine");
+}
+
+class OrderFlowTest    extends IntegrationTestBase { }
+class PaymentFlowTest  extends IntegrationTestBase { }
+// Both hit the same cached context. Second class starts in milliseconds.`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="@DirtiesContext is a cache bomb">
+        <p>
+          <code>@DirtiesContext</code> evicts the context and forces a full rebuild for the next
+          test that needs it. Occasionally that is genuinely necessary — you mutated a singleton
+          bean&apos;s internal state in a way nothing can undo — but it is usually reached for to
+          paper over test pollution that has a cheaper fix. Roll back the database instead
+          (<code>@Transactional</code> on the test class does this automatically), reset mocks in
+          an <code>@AfterEach</code>, and keep beans stateless. One{' '}
+          <code>@DirtiesContext</code> in a heavily-used base class can add minutes to a build.
+        </p>
+        <p>
+          To see what is actually happening, turn on{' '}
+          <code>logging.level.org.springframework.test.context.cache: DEBUG</code>. It logs every
+          cache hit and miss with the current size — if you see misses where you expected hits, the
+          cache key above tells you which attribute diverged.
+        </p>
+      </InfoBox>
+
       <h2>Serialization Slice (@JsonTest)</h2>
       <p>
         Cheap and useful. Verifies your DTOs round-trip correctly.
