@@ -148,6 +148,120 @@ function Syntax() {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="danger" title="Two numeric traps that bite everyone once">
+        <p>
+          <strong>Integer overflow is silent.</strong> <code>int</code> wraps around at
+          2,147,483,647 with no error — <code>Integer.MAX_VALUE + 1</code> is{' '}
+          <code>Integer.MIN_VALUE</code>. A classic instance is{' '}
+          <code>int millis = days * 24 * 60 * 60 * 1000</code>, which overflows past 24 days. Use{' '}
+          <code>long</code>, or <code>Math.addExact()</code> / <code>Math.multiplyExact()</code>{' '}
+          which throw <code>ArithmeticException</code> instead of wrapping.
+        </p>
+        <p>
+          <strong><code>double</code> cannot represent money.</strong>{' '}
+          <code>0.1 + 0.2</code> evaluates to <code>0.30000000000000004</code>, because binary
+          floating point has no exact representation for most decimal fractions. Never use{' '}
+          <code>float</code> or <code>double</code> for currency. Use{' '}
+          <code>BigDecimal</code> — and construct it from a <em>String</em>, since{' '}
+          <code>new BigDecimal(0.1)</code> just captures the same inaccurate binary value.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="java" title="BigDecimalForMoney.java">
+{`import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+// WRONG
+double price = 0.1 + 0.2;            // 0.30000000000000004
+System.out.println(1.03 - 0.42);     // 0.6100000000000001
+
+// RIGHT — String constructor, never the double constructor
+BigDecimal a = new BigDecimal("0.1");
+BigDecimal b = new BigDecimal("0.2");
+System.out.println(a.add(b));                  // 0.3 exactly
+
+// BigDecimal is IMMUTABLE — every operation returns a new value.
+BigDecimal total = new BigDecimal("19.99");
+total.add(new BigDecimal("5.00"));             // result discarded — no-op bug!
+total = total.add(new BigDecimal("5.00"));     // correct
+
+// Division REQUIRES a rounding mode, or it throws ArithmeticException
+// for any non-terminating result (e.g. 1/3).
+BigDecimal share = total.divide(new BigDecimal("3"), 2, RoundingMode.HALF_UP);
+
+// equals() compares SCALE too: 2.0 does not equal 2.00.
+new BigDecimal("2.0").equals(new BigDecimal("2.00"));      // false
+new BigDecimal("2.0").compareTo(new BigDecimal("2.00"));   // 0 — use this`}
+      </CodeBlock>
+
+      <h2>Strings</h2>
+      <p>
+        <code>String</code> is a reference type, not a primitive, and it is{' '}
+        <strong>immutable</strong>: every method that appears to modify a string actually returns
+        a new one. That single fact explains most String behaviour, including why building a
+        string in a loop needs a different tool.
+      </p>
+
+      <CodeBlock language="java" title="Strings.java">
+{`String s = "Hello";
+s.toUpperCase();              // returns "HELLO" — s is UNCHANGED
+s = s.toUpperCase();          // correct: reassign the result
+
+// Comparison: == compares references, equals() compares contents.
+String a = "java";
+String b = "java";            // same interned literal
+String c = new String("java");// explicit new object
+a == b;                       // true  — but only because of literal interning
+a == c;                       // false — different objects
+a.equals(c);                  // true  — ALWAYS use equals for strings
+"java".equals(userInput);     // null-safe order: constant first
+
+// Everyday methods
+"  padded  ".trim();          // "padded"   — removes ASCII whitespace only
+"  padded  ".strip();         // "padded"   — Unicode-aware (Java 11+), prefer this
+"abc".isEmpty();              // length == 0
+"   ".isBlank();              // true (Java 11+) — empty or whitespace only
+"a,b,c".split(",");           // ["a","b","c"]
+String.join("-", "a", "b");   // "a-b"
+"ab".repeat(3);               // "ababab" (Java 11+)
+"line1\\nline2".lines();       // Stream<String> (Java 11+)
+"Hi %s, you are %d".formatted("Ann", 30);   // Java 15+, instance-method form
+
+// Text blocks (Java 15+) for multi-line content — no escaping, no concatenation
+String json = """
+        {
+          "name": "Ann",
+          "age": 30
+        }
+        """;`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="StringBuilder.java">
+{`// WRONG — creates a new String on EVERY iteration. O(n^2) work and garbage.
+String result = "";
+for (String word : words) {
+    result += word + " ";
+}
+
+// RIGHT — StringBuilder mutates one buffer. O(n).
+StringBuilder sb = new StringBuilder();
+for (String word : words) {
+    sb.append(word).append(' ');
+}
+String result = sb.toString();
+
+// Even better when you're joining a collection:
+String result = String.join(" ", words);
+String csv    = words.stream().collect(Collectors.joining(", ", "[", "]"));
+
+// Note: the compiler already optimises simple concatenation in a SINGLE
+// expression ("a" + b + "c"), so StringBuilder is only needed for LOOPS
+// or conditional building.
+
+// StringBuffer is the legacy synchronized version. You almost never want it —
+// a locally-scoped builder isn't shared across threads, so the locking is pure cost.`}
+      </CodeBlock>
+
       <h2>Control Flow</h2>
       <h3>If/Else Statements</h3>
 
@@ -192,6 +306,51 @@ function Syntax() {
         System.out.println("Day: " + dayName);
     }
 }`}
+      </CodeBlock>
+
+      <h3>Switch Expressions in Detail</h3>
+      <p>
+        The arrow form of <code>switch</code> (Java 14+) is not just nicer syntax — it changes the
+        semantics in three ways that remove the classic bugs of the old statement form.
+      </p>
+
+      <CodeBlock language="java" title="SwitchExpressions.java">
+{`// 1. NO FALL-THROUGH. Arrow branches never leak into the next case,
+//    so a forgotten 'break' is no longer possible.
+// 2. It's an EXPRESSION — it produces a value you can assign or return.
+// 3. It must be EXHAUSTIVE when used as an expression: every possible
+//    value must be covered, or the code does not compile.
+
+// Multiple labels per branch — comma-separated, no repetition.
+int daysInMonth = switch (month) {
+    case JANUARY, MARCH, MAY, JULY, AUGUST, OCTOBER, DECEMBER -> 31;
+    case APRIL, JUNE, SEPTEMBER, NOVEMBER                     -> 30;
+    case FEBRUARY                                             -> isLeap ? 29 : 28;
+};
+// No default needed: 'month' is an enum and every constant is covered.
+// Add a constant to the enum and this switch becomes a compile error.
+
+// Multi-statement branches use a block plus 'yield' to produce the value.
+String summary = switch (status) {
+    case ACTIVE -> "running";
+    case FAILED -> {
+        log.error("job {} failed", jobId);
+        metrics.increment("job.failure");
+        yield "failed: " + lastError;      // 'yield', not 'return'
+    }
+    default -> "unknown";
+};
+
+// switch can still be used as a STATEMENT with arrows — no value, no break.
+switch (command) {
+    case START -> service.start();
+    case STOP  -> service.stop();
+    default    -> log.warn("unrecognised command {}", command);
+}
+
+// Switching on String works (since Java 7) but throws NullPointerException
+// on a null selector in the classic form. The pattern-matching form
+// (Java 21) lets you write 'case null ->' explicitly — see Advanced Java.`}
       </CodeBlock>
 
       <h3>Loops</h3>

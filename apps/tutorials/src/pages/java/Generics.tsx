@@ -182,7 +182,7 @@ public class GenericMethods {
         return total;
     }
 
-    // Multiple bounds: T must extend Comparable AND implement Serializable
+    // Self-referential bound: T must be comparable to its own type
     public static <T extends Comparable<T>> T findMax(List<T> list) {
         if (list.isEmpty()) throw new IllegalArgumentException("Empty list");
         T max = list.get(0);
@@ -207,15 +207,159 @@ public class GenericMethods {
 }`}
       </CodeBlock>
 
+      <h3>Intersection Bounds — Requiring Several Types at Once</h3>
+      <p>
+        A type parameter can have <em>multiple</em> bounds joined with <code>&amp;</code>. At most
+        one may be a class, and if there is one it must come first; the rest are interfaces. The
+        type parameter then has every member of every bound available.
+      </p>
+
+      <CodeBlock language="java" title="IntersectionBounds.java">
+{`// T must be BOTH Comparable AND Serializable.
+public static <T extends Comparable<T> & Serializable> T maxAndPersist(List<T> items) {
+    T max = items.get(0);
+    for (T item : items) {
+        if (item.compareTo(max) > 0) max = item;   // from Comparable
+    }
+    serialize(max);                                 // legal because T is Serializable
+    return max;
+}
+
+// Class bound first, then interfaces.
+public static <T extends Number & Comparable<T> & Serializable> void audit(T value) { }
+
+// A common real-world shape: "anything that is both a source and closeable"
+public static <T extends Iterable<String> & AutoCloseable> void drain(T source)
+        throws Exception {
+    try (source) {
+        for (String line : source) process(line);
+    }
+}`}
+      </CodeBlock>
+
       <InfoBox variant="info" title="Type Erasure">
         <p>
           Java generics use <strong>type erasure</strong> — the compiler enforces type constraints
           at compile time, then removes all generic type information from the bytecode. At
           runtime, a <code>List&lt;String&gt;</code> and a <code>List&lt;Integer&gt;</code> are
-          both just <code>List</code>. This means you cannot use <code>instanceof</code> with
-          generic types or create arrays of generic types directly.
+          both just <code>List</code>. The compiler replaces each type variable with its leftmost
+          bound (<code>Object</code> if unbounded) and inserts casts at the call sites.
         </p>
       </InfoBox>
+
+      <h3>What Erasure Actually Costs You</h3>
+      <p>
+        Erasure is not an academic footnote — it produces a specific list of things the compiler
+        will refuse to let you write. Knowing them saves hours of confusion.
+      </p>
+
+      <CodeBlock language="java" title="ErasureConsequences.java">
+{`public class ErasureConsequences<T> {
+
+    // 1. Cannot instantiate a type parameter.
+    // T value = new T();                 // COMPILE ERROR
+    // Workaround: pass a factory.
+    public T create(Supplier<T> factory) { return factory.get(); }
+
+    // 2. Cannot create an array of a parameterized type.
+    // List<String>[] arrays = new List<String>[10];   // COMPILE ERROR
+    // Workaround: use a List<List<String>> instead.
+
+    // 3. Cannot use instanceof with a parameterized type.
+    // if (obj instanceof List<String>) { }            // COMPILE ERROR
+    if (obj instanceof List<?> list) { }               // OK — unbounded wildcard
+
+    // 4. Cannot overload on erased signatures — both erase to process(List).
+    // void process(List<String> l) { }
+    // void process(List<Integer> l) { }               // COMPILE ERROR: same erasure
+
+    // 5. Cannot have a static field of the type parameter's type.
+    // private static T shared;                        // COMPILE ERROR
+
+    // 6. Cannot catch or throw a generic exception type.
+    // catch (T e) { }                                 // COMPILE ERROR
+    // ...but you CAN declare "throws T" on a method.
+}`}
+      </CodeBlock>
+
+      <h3>Class Literals as Type Tokens</h3>
+      <p>
+        Because the type is gone at runtime, APIs that genuinely need it (deserializers, DI
+        containers, JDBC mappers) ask you to hand it over explicitly as a{' '}
+        <code>Class&lt;T&gt;</code>. This is the <strong>type token</strong> idiom, and you will
+        see it constantly in Spring and Jackson.
+      </p>
+
+      <CodeBlock language="java" title="TypeTokens.java">
+{`// The type token carries T into runtime, where erasure removed it.
+public <T> T readJson(String json, Class<T> type) {
+    return objectMapper.readValue(json, type);
+}
+
+Customer c = readJson(body, Customer.class);
+
+// A heterogeneous container: each key's type guarantees its value's type.
+public class TypeSafeRegistry {
+    private final Map<Class<?>, Object> store = new HashMap<>();
+
+    public <T> void put(Class<T> type, T instance) {
+        store.put(type, type.cast(instance));   // cast() re-checks at runtime
+    }
+
+    public <T> T get(Class<T> type) {
+        return type.cast(store.get(type));      // safe unchecked-free retrieval
+    }
+}
+
+// Class<T> can't express nested generics (there is no List<String>.class).
+// Jackson solves that with a "super type token" — an anonymous subclass whose
+// generic superclass IS reachable by reflection:
+List<Customer> customers =
+    objectMapper.readValue(json, new TypeReference<List<Customer>>() {});`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Heap pollution and @SafeVarargs">
+        <p>
+          A generic varargs parameter (<code>T... items</code>) is compiled to an array of the
+          erased type, so the compiler cannot guarantee it holds only <code>T</code> values — this
+          is called <strong>heap pollution</strong>, and it produces an &quot;unchecked generic
+          array creation&quot; warning at every call site. If your method only <em>reads</em> the
+          varargs array and never stores it or exposes it, annotate it with{' '}
+          <code>@SafeVarargs</code> to assert that and silence the warning. The annotation is only
+          legal on methods that cannot be overridden: <code>static</code>, <code>final</code>, or{' '}
+          <code>private</code> methods, and constructors.
+        </p>
+      </InfoBox>
+
+      <h2>Invariance — Why Wildcards Exist At All</h2>
+      <p>
+        Arrays in Java are <strong>covariant</strong>: a <code>String[]</code> is usable as an{' '}
+        <code>Object[]</code>. That was a deliberate but unsound choice — it lets you write code
+        that compiles and then fails at runtime. Generics fixed it by being{' '}
+        <strong>invariant</strong>: a <code>List&lt;String&gt;</code> is <em>not</em> a{' '}
+        <code>List&lt;Object&gt;</code>, even though <code>String</code> is an{' '}
+        <code>Object</code>.
+      </p>
+
+      <CodeBlock language="java" title="Invariance.java">
+{`// Arrays are covariant — and unsound.
+Object[] objects = new String[3];    // compiles fine
+objects[0] = 42;                     // ArrayStoreException at RUNTIME
+
+// Generics are invariant — the same mistake is caught at compile time.
+List<Object> list = new ArrayList<String>();   // COMPILE ERROR
+// If this were allowed, list.add(42) would corrupt a List<String>.
+
+// Invariance is safe but rigid: this method only accepts List<Number>,
+// not List<Integer> or List<Double>, even though both hold Numbers.
+void sumStrict(List<Number> numbers) { }
+// sumStrict(List.of(1, 2, 3));       // COMPILE ERROR — List<Integer> != List<Number>
+
+// Wildcards are the release valve that restores the flexibility
+// WITHOUT giving up the safety.
+void sumFlexible(List<? extends Number> numbers) { }
+sumFlexible(List.of(1, 2, 3));        // OK`}
+      </CodeBlock>
 
       <h2>Wildcards and PECS</h2>
       <p>

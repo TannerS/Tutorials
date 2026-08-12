@@ -262,7 +262,308 @@ public class IterationPatterns {
         </p>
       </InfoBox>
 
+      <h2>Queue and Deque</h2>
+      <p>
+        A <code>Queue</code> models FIFO (first-in, first-out) access; a <code>Deque</code>{' '}
+        (&quot;double-ended queue&quot;) allows adds and removes at both ends, so it works as
+        both a queue and a stack. <code>ArrayDeque</code> is the default choice for both —
+        it is faster than <code>LinkedList</code> and faster than the legacy{' '}
+        <code>Stack</code> class.
+      </p>
+
+      <CodeBlock language="java" title="QueueAndDeque.java">
+{`import java.util.*;
+
+public class QueueAndDeque {
+    public static void main(String[] args) {
+        // Queue — FIFO. Prefer the offer/poll/peek family: they return a
+        // sentinel instead of throwing when the queue is empty or full.
+        Queue<String> queue = new ArrayDeque<>();
+        queue.offer("first");
+        queue.offer("second");
+        System.out.println(queue.peek());  // "first" — look, don't remove
+        System.out.println(queue.poll());  // "first" — remove and return
+        System.out.println(queue.poll());  // "second"
+        System.out.println(queue.poll());  // null — empty, no exception
+
+        // add/remove/element throw instead of returning null:
+        // queue.remove();  // NoSuchElementException on an empty queue
+
+        // Deque as a stack — LIFO. Use this, NOT java.util.Stack.
+        Deque<Integer> stack = new ArrayDeque<>();
+        stack.push(1);      // == addFirst
+        stack.push(2);
+        System.out.println(stack.pop());   // 2 == removeFirst
+
+        // PriorityQueue — always polls the "smallest" element by the comparator.
+        // NOT sorted when you iterate or print it; only poll() order is ordered.
+        Queue<Task> byPriority = new PriorityQueue<>(
+            Comparator.comparingInt(Task::priority));
+        byPriority.offer(new Task("low", 10));
+        byPriority.offer(new Task("urgent", 1));
+        System.out.println(byPriority.poll().name());  // "urgent"
+    }
+
+    record Task(String name, int priority) {}
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Stack and Vector are legacy">
+        <p>
+          <code>java.util.Stack</code> extends <code>Vector</code>, which synchronizes every
+          method — you pay for locking you almost never need, and its iteration order is
+          bottom-to-top, which surprises everyone. Use <code>ArrayDeque</code> for stacks and{' '}
+          <code>ArrayList</code> instead of <code>Vector</code>. Same for{' '}
+          <code>Hashtable</code>: use <code>HashMap</code>, or{' '}
+          <code>ConcurrentHashMap</code> if you genuinely need thread safety.
+        </p>
+      </InfoBox>
+
+      <h2>equals() and hashCode() — The Contract</h2>
+      <p>
+        <code>HashMap</code>, <code>HashSet</code>, and <code>LinkedHashSet</code> locate
+        elements by hash code first and only then compare with <code>equals()</code>. If your
+        class breaks the contract between those two methods, hash-based collections silently
+        lose your data — <code>contains()</code> returns false for an object that is
+        &quot;in&quot; the set. This is one of the most common real-world Java bugs and a
+        near-guaranteed interview question.
+      </p>
+      <InfoBox variant="danger" title="The contract, in three rules">
+        <ul>
+          <li>If <code>a.equals(b)</code>, then <code>a.hashCode() == b.hashCode()</code>{' '}
+              — <strong>always</strong>.</li>
+          <li>Equal hash codes do <em>not</em> imply equality (collisions are legal and
+              normal).</li>
+          <li>Both must be computed from fields that <strong>do not change</strong> while the
+              object is in a hash-based collection.</li>
+        </ul>
+      </InfoBox>
+
+      <CodeBlock language="java" title="EqualsHashCode.java">
+{`import java.util.*;
+
+public class EqualsHashCode {
+
+    // BROKEN — equals overridden, hashCode not. Compiles fine, fails at runtime.
+    static class BadPoint {
+        final int x, y;
+        BadPoint(int x, int y) { this.x = x; this.y = y; }
+
+        @Override public boolean equals(Object o) {
+            return o instanceof BadPoint p && p.x == x && p.y == y;
+        }
+        // no hashCode() — inherits Object's identity hash
+    }
+
+    // CORRECT — both overridden, from the same fields.
+    static final class GoodPoint {
+        private final int x, y;
+        GoodPoint(int x, int y) { this.x = x; this.y = y; }
+
+        @Override public boolean equals(Object o) {
+            if (this == o) return true;
+            // Pattern matching for instanceof (Java 16+) handles null AND the cast.
+            return o instanceof GoodPoint p && p.x == x && p.y == y;
+        }
+
+        @Override public int hashCode() {
+            return Objects.hash(x, y);   // varargs helper; handles nulls
+        }
+
+        @Override public String toString() {
+            return "GoodPoint[" + x + ", " + y + "]";
+        }
+    }
+
+    // BEST — a record generates equals, hashCode, and toString from its
+    // components, correctly and consistently. Reach for this first.
+    record BestPoint(int x, int y) {}
+
+    public static void main(String[] args) {
+        Set<BadPoint> bad = new HashSet<>();
+        bad.add(new BadPoint(1, 2));
+        System.out.println(bad.contains(new BadPoint(1, 2)));  // false !!
+
+        Set<GoodPoint> good = new HashSet<>();
+        good.add(new GoodPoint(1, 2));
+        System.out.println(good.contains(new GoodPoint(1, 2))); // true
+
+        Set<BestPoint> best = new HashSet<>();
+        best.add(new BestPoint(1, 2));
+        System.out.println(best.contains(new BestPoint(1, 2))); // true
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="Mutable keys are a data-loss bug">
+        <p>
+          If you put an object into a <code>HashSet</code> or use it as a{' '}
+          <code>HashMap</code> key and then mutate a field that <code>hashCode()</code>{' '}
+          depends on, the object lands in the wrong bucket. It becomes unreachable — you
+          cannot find it, and you cannot remove it, but it still occupies memory and still
+          shows up when you iterate. <strong>Keys should be immutable.</strong> Records are
+          ideal keys for exactly this reason.
+        </p>
+      </InfoBox>
+
+      <h2>Sorting with Comparator</h2>
+      <p>
+        <code>Comparable</code> defines a type&apos;s single <em>natural</em> ordering
+        (implemented on the class itself). <code>Comparator</code> defines any number of
+        external orderings, and since Java 8 you build them by composition rather than by
+        writing <code>compare()</code> by hand.
+      </p>
+
+      <CodeBlock language="java" title="Comparators.java">
+{`import java.util.*;
+
+record Employee(String name, String dept, int salary, LocalDate hiredOn) {}
+
+List<Employee> staff = new ArrayList<>(...);
+
+// Single key
+staff.sort(Comparator.comparing(Employee::name));
+
+// Descending
+staff.sort(Comparator.comparing(Employee::salary).reversed());
+
+// Multi-key: department ascending, then salary descending, then name
+staff.sort(Comparator.comparing(Employee::dept)
+                     .thenComparing(Employee::salary, Comparator.reverseOrder())
+                     .thenComparing(Employee::name));
+
+// Primitive-specialized variants avoid boxing on every comparison
+staff.sort(Comparator.comparingInt(Employee::salary));
+
+// Null-safe: decide whether nulls sort first or last
+staff.sort(Comparator.comparing(Employee::name,
+        Comparator.nullsLast(Comparator.naturalOrder())));
+
+// Case-insensitive strings
+names.sort(String.CASE_INSENSITIVE_ORDER);
+
+// Natural ordering comes from Comparable
+record Version(int major, int minor) implements Comparable<Version> {
+    @Override public int compareTo(Version o) {
+        return Comparator.comparingInt(Version::major)
+                         .thenComparingInt(Version::minor)
+                         .compare(this, o);
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Never subtract to compare">
+        <p>
+          <code>(a, b) -&gt; a.value() - b.value()</code> looks harmless and is a real bug:
+          subtracting two large ints overflows and flips the sign, so the sort silently
+          produces wrong order (and can throw{' '}
+          <code>&quot;Comparison method violates its general contract!&quot;</code>). Always
+          use <code>Integer.compare(a, b)</code> or{' '}
+          <code>Comparator.comparingInt(...)</code>.
+        </p>
+      </InfoBox>
+
+      <h2>Immutable and Unmodifiable Collections</h2>
+      <p>
+        Three different things are easy to confuse here, and the differences bite in real
+        code:
+      </p>
+
+      <CodeBlock language="java" title="Immutability.java">
+{`// 1. List.of / Set.of / Map.of (Java 9+) — truly IMMUTABLE.
+//    Also: null-hostile (throws NPE on a null element) and Set.of/Map.of
+//    throw IllegalArgumentException on duplicate keys.
+List<String> immutable = List.of("a", "b");
+// immutable.add("c");        // UnsupportedOperationException
+// List.of("a", null);        // NullPointerException
+
+// 2. Arrays.asList — FIXED-SIZE VIEW backed by the array. You can set(),
+//    you cannot add() or remove(), and writes pass through to the array.
+String[] arr = {"a", "b"};
+List<String> view = Arrays.asList(arr);
+view.set(0, "z");             // legal — and arr[0] is now "z" too
+// view.add("c");             // UnsupportedOperationException
+
+// 3. Collections.unmodifiableList — an UNMODIFIABLE VIEW of a mutable list.
+//    The view rejects writes, but the underlying list can still change
+//    underneath you. This is a wrapper, not a copy.
+List<String> backing = new ArrayList<>(List.of("a"));
+List<String> ro = Collections.unmodifiableList(backing);
+backing.add("b");
+System.out.println(ro);       // [a, b] — the "unmodifiable" view changed!
+
+// Defensive copy — the safe way to hand out internal state.
+List<String> safe = List.copyOf(backing);   // Java 10+, real copy, immutable
+
+// Collecting a stream to an immutable list (Java 16+)
+List<String> collected = stream.toList();          // immutable
+List<String> mutableResult = stream.collect(Collectors.toCollection(ArrayList::new));`}
+      </CodeBlock>
+
+      <h2>Choosing an Implementation</h2>
+      <CodeBlock language="text" title="Complexity and when to reach for what">
+{`ArrayList            get O(1)   add-at-end amortized O(1)   insert/remove-middle O(n)
+                     Default List. Contiguous memory, cache-friendly iteration.
+
+LinkedList           get O(n)   addFirst/addLast O(1)       remove-via-iterator O(1)
+                     Rarely the right answer. Use ArrayDeque for queue/stack work.
+
+ArrayDeque           addFirst/addLast/pollFirst/pollLast O(1)   no index access
+                     Default Queue AND default Stack.
+
+HashMap / HashSet    get/put/contains O(1) average, O(log n) worst (treeified bins)
+                     No ordering. Default Map/Set. Requires correct equals+hashCode.
+
+LinkedHashMap/Set    Same as Hash*, plus predictable insertion order (small extra cost).
+                     Also does LRU caches via accessOrder + removeEldestEntry.
+
+TreeMap / TreeSet    get/put/contains O(log n), sorted, needs Comparable or Comparator.
+                     Gives you range queries: headMap, tailMap, subMap, floor, ceiling.
+
+PriorityQueue        offer/poll O(log n), peek O(1). Heap — iteration order is NOT sorted.
+
+EnumMap / EnumSet    Array/bitset backed. Dramatically faster than HashMap/HashSet when
+                     the key is an enum. Always prefer these for enum keys.
+
+ConcurrentHashMap    Thread-safe, lock-striped. Use computeIfAbsent/merge for atomic
+                     read-modify-write instead of get-then-put.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Sizing matters more than you'd think">
+        <p>
+          <code>new ArrayList&lt;&gt;()</code> and <code>new HashMap&lt;&gt;()</code> start
+          small and rehash/regrow as they fill. If you know roughly how many elements you
+          will add, pass the capacity: <code>new ArrayList&lt;&gt;(expectedSize)</code> or{' '}
+          <code>HashMap.newHashMap(expectedSize)</code> (Java 19+, which accounts for the
+          load factor so you don&apos;t have to compute{' '}
+          <code>size / 0.75 + 1</code> yourself).
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="note" title="Java 21 unified the &quot;first/last&quot; vocabulary">
+        <p>
+          Sequenced collections (<code>SequencedCollection</code>,{' '}
+          <code>SequencedSet</code>, <code>SequencedMap</code>) give every ordered type the
+          same <code>getFirst()</code>, <code>getLast()</code>, <code>addFirst()</code>,{' '}
+          <code>addLast()</code>, and <code>reversed()</code> methods — so{' '}
+          <code>list.getFirst()</code> replaces <code>list.get(0)</code>. See the{' '}
+          <em>Advanced Java Features</em> lesson for the full picture.
+        </p>
+      </InfoBox>
+
       <h2>Test Your Knowledge</h2>
+
+      <InteractiveChallenge
+        question="You add an object to a HashSet, then change a field that its hashCode() is computed from. What happens?"
+        options={[
+          "The set automatically rehashes the object into the correct bucket",
+          "The object becomes unreachable — contains() and remove() fail, but it still appears when you iterate",
+          "The set throws ConcurrentModificationException on the next operation",
+          "Nothing — HashSet caches the hash code at insertion time and keeps using it"
+        ]}
+        correctIndex={1}
+        explanation="HashSet places the object in a bucket derived from its hash code at insertion time. Mutating a hash-relevant field changes what hashCode() returns, so lookups now probe a different bucket than the one holding the object. contains() and remove() both fail, yet iteration still walks every bucket and finds it — a genuinely confusing bug. The rule: keys and set elements must be immutable in their hash-relevant fields. Records are ideal here because their components are final."
+      />
 
       <InteractiveChallenge
         question="Which collection should you use if you need unique elements stored in sorted order?"

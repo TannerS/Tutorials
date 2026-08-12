@@ -242,6 +242,117 @@ public class FileSystemOps {
 }`}
       </CodeBlock>
 
+      <h2>Character Encoding</h2>
+      <p>
+        Encoding bugs are the most common source of &quot;it worked on my machine&quot; in file
+        handling: text written on a developer&apos;s laptop reads back as mojibake on a Linux
+        server. Java 18 removed most of this class of bug by changing a two-decade-old default.
+      </p>
+
+      <InfoBox variant="info" title="UTF-8 is the default since Java 18 (JEP 400)">
+        <p>
+          Before Java 18, APIs that took no explicit charset — <code>new FileReader(f)</code>,{' '}
+          <code>new FileWriter(f)</code>, <code>new String(bytes)</code>,{' '}
+          <code>String.getBytes()</code> — used the platform default charset, which was{' '}
+          <code>windows-1252</code> on a US Windows machine and <code>UTF-8</code> on Linux. The
+          same code produced different bytes on different machines. Since Java 18 the default is{' '}
+          <strong>UTF-8 everywhere</strong>, regardless of OS or locale.
+        </p>
+        <p>
+          Two caveats. <code>System.out</code> / <code>System.err</code> still follow the console
+          encoding, not the file default (tune with{' '}
+          <code>-Dstdout.encoding</code>). And if you are on Java 17 or older — or maintaining code
+          that must behave identically on both — pass the charset explicitly. Doing so is still the
+          most defensive habit.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="java" title="Encoding.java">
+{`// Explicit is always safe, on every Java version.
+String content = Files.readString(path, StandardCharsets.UTF_8);
+Files.writeString(path, content, StandardCharsets.UTF_8);
+byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+String back  = new String(bytes, StandardCharsets.UTF_8);
+
+// Buffered readers/writers with an explicit charset — prefer these
+// over new FileReader/FileWriter, which had no charset parameter at all
+// until Java 11.
+try (BufferedReader r = Files.newBufferedReader(path, StandardCharsets.UTF_8)) { }
+try (BufferedWriter w = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) { }
+
+// Inspect what the JVM is actually using
+System.out.println(Charset.defaultCharset());          // UTF-8 on Java 18+
+System.out.println(System.getProperty("file.encoding"));
+
+// Force the old behaviour for a legacy app during migration:
+//   java -Dfile.encoding=COMPAT -jar app.jar`}
+      </CodeBlock>
+
+      <h2>The HTTP Client (Java 11+)</h2>
+      <p>
+        Network I/O is I/O, and since Java 11 the JDK ships a modern HTTP client that supports
+        HTTP/2, synchronous and asynchronous calls, and WebSocket — replacing the ancient{' '}
+        <code>HttpURLConnection</code> and removing the reflex to pull in a third-party library for
+        a single call.
+      </p>
+
+      <CodeBlock language="java" title="HttpClientExample.java">
+{`import java.net.URI;
+import java.net.http.*;
+import java.time.Duration;
+
+// The client is immutable and thread-safe — create ONE and reuse it.
+HttpClient client = HttpClient.newBuilder()
+    .version(HttpClient.Version.HTTP_2)
+    .connectTimeout(Duration.ofSeconds(5))
+    .followRedirects(HttpClient.Redirect.NORMAL)
+    .build();
+
+// GET — synchronous
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("https://api.example.com/orders/42"))
+    .header("Accept", "application/json")
+    .timeout(Duration.ofSeconds(10))     // per-request, separate from connect timeout
+    .GET()
+    .build();
+
+HttpResponse<String> response =
+    client.send(request, HttpResponse.BodyHandlers.ofString());
+
+System.out.println(response.statusCode());   // note: 4xx/5xx do NOT throw
+System.out.println(response.body());
+
+// POST with a JSON body
+HttpRequest post = HttpRequest.newBuilder()
+    .uri(URI.create("https://api.example.com/orders"))
+    .header("Content-Type", "application/json")
+    .POST(HttpRequest.BodyPublishers.ofString(json))
+    .build();
+
+// Asynchronous — returns immediately with a CompletableFuture
+client.sendAsync(post, HttpResponse.BodyHandlers.ofString())
+      .thenApply(HttpResponse::body)
+      .thenAccept(System.out::println);
+
+// Stream a large response straight to a file, never holding it in memory
+client.send(request, HttpResponse.BodyHandlers.ofFile(Path.of("download.bin")));`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="On Java 21+, prefer blocking calls on virtual threads">
+        <p>
+          <code>sendAsync</code> exists because blocking a platform thread per request was
+          expensive. With virtual threads that constraint is gone: the simple, readable{' '}
+          <code>client.send(...)</code> form running on a virtual thread scales to tens of
+          thousands of concurrent requests, and it gives you real stack traces and ordinary{' '}
+          <code>try/catch</code>. Reach for <code>sendAsync</code> only when you genuinely want
+          non-blocking composition. See the Concurrency lesson.
+        </p>
+        <p>
+          Also note that a non-2xx status does <strong>not</strong> throw — always check{' '}
+          <code>response.statusCode()</code> yourself.
+        </p>
+      </InfoBox>
+
       <h2>Serialization</h2>
       <p>
         Serialization converts an object into a byte stream that can be saved to a file or sent

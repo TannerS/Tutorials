@@ -206,8 +206,10 @@ public class RecordDemo {
       </p>
 
       <CodeBlock language="java" title="SealedClasses.java">
-{`// Only Circle, Rectangle, and Triangle can extend Shape
-public sealed class Shape permits Circle, Rectangle, Triangle {
+{`// Only Circle, Rectangle, and Triangle can extend Shape.
+// Note 'abstract': a class that declares abstract methods must itself be
+// abstract — 'sealed' controls WHO may extend, not whether it's instantiable.
+public sealed abstract class Shape permits Circle, Rectangle, Triangle {
     public abstract double area();
 }
 
@@ -258,6 +260,29 @@ public class SealedDemo {
     }
 }`}
       </CodeBlock>
+
+      <InfoBox variant="info" title="The three rules the compiler enforces on a sealed hierarchy">
+        <ul>
+          <li>
+            Every permitted subtype must be <code>final</code>, <code>sealed</code>, or{' '}
+            <code>non-sealed</code>. There is no fourth option — you must explicitly say
+            whether the hierarchy stops here, continues under control, or reopens.
+          </li>
+          <li>
+            Every permitted subtype must be in the same module (or, for unnamed modules, the
+            same package). Sealing cannot cross a module boundary.
+          </li>
+          <li>
+            The <code>permits</code> clause can be omitted if all subtypes are declared in the
+            same source file — the compiler infers it.
+          </li>
+        </ul>
+        <p>
+          <code>non-sealed</code> is the escape hatch: it reopens that branch to arbitrary
+          subclasses, which means switches over the hierarchy still need a branch for it but
+          lose the guarantee that they have seen every concrete type.
+        </p>
+      </InfoBox>
 
       <h2>Pattern Matching</h2>
       <p>

@@ -152,6 +152,38 @@ public InventoryDto anyMirror(String sku) throws InterruptedException {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="The API changed in Java 25 — know both shapes">
+        <p>
+          <code>StructuredTaskScope</code> spent several releases in preview and was
+          restructured before finalising in Java 25. The <code>ShutdownOnFailure</code> /{' '}
+          <code>ShutdownOnSuccess</code> subclasses shown above are the Java 21&ndash;24 preview
+          form. In Java 25 the policy moved into a <code>Joiner</code> passed to a static{' '}
+          <code>open()</code> factory, and <code>join()</code> itself returns the result and
+          throws on failure:
+        </p>
+        <CodeBlock language="java" title="Java 25 form">
+{`// All must succeed — replaces ShutdownOnFailure
+try (var scope = StructuredTaskScope.open(Joiner.<Object>allSuccessfulOrThrow())) {
+    var order    = scope.fork(() -> orderService.find(orderId));
+    var customer = scope.fork(() -> customerService.forOrder(orderId));
+    scope.join();                      // throws if any subtask failed
+    return new EnrichedOrder(order.get(), customer.get());
+}
+
+// First success wins — replaces ShutdownOnSuccess
+try (var scope = StructuredTaskScope.open(Joiner.<InventoryDto>anySuccessfulResultOrThrow())) {
+    scope.fork(() -> primaryClient.get(sku));
+    scope.fork(() -> secondaryClient.get(sku));
+    return scope.join();               // returns the winning result directly
+}`}
+        </CodeBlock>
+        <p>
+          The concept is identical — fork in a scope, siblings cancelled on failure, deterministic
+          close. Check which JDK your project targets before writing either form, and remember
+          that on Java 21&ndash;24 this API needs <code>--enable-preview</code>.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="tip" title="Why structured concurrency matters">
         <p>
           Before, coordinating multiple async operations meant tracking
@@ -311,6 +343,120 @@ totalBytes.add(n);
 long snapshot = totalBytes.sum();`}
       </CodeBlock>
 
+      <h3>Coordination primitives</h3>
+      <p>
+        Locks protect state. These protect <em>sequencing</em> — one thread waiting until others
+        reach a point, or limiting how many run at once.
+      </p>
+      <CodeBlock language="java" title="Latches, semaphores, barriers">
+{`// CountDownLatch — one-shot gate. "Wait until N things have happened."
+CountDownLatch ready = new CountDownLatch(3);
+for (var service : services) {
+    Thread.startVirtualThread(() -> {
+        service.warmUp();
+        ready.countDown();          // never resets — a latch is single-use
+    });
+}
+ready.await(30, TimeUnit.SECONDS);  // ALWAYS use the timeout overload
+log.info("all services warm");
+
+// Semaphore — bound concurrency against a resource that can't take unlimited load.
+// This is how you protect a downstream API even while using unlimited vthreads.
+Semaphore permits = new Semaphore(10);
+public Response call(Request r) throws InterruptedException {
+    permits.acquire();
+    try {
+        return legacyApi.send(r);   // at most 10 concurrent calls
+    } finally {
+        permits.release();          // release in finally, always
+    }
+}
+
+// CyclicBarrier — reusable rendezvous. All parties wait for each other, then
+// all proceed; the barrier resets for the next round. Useful for phased
+// simulations and parallel iterative algorithms.
+CyclicBarrier barrier = new CyclicBarrier(workerCount, () -> mergeResults());
+// each worker: compute(); barrier.await();  // resumes when the last one arrives
+
+// Phaser — a CyclicBarrier whose party count can change between phases.
+// Rarely needed; reach for it only when workers join or drop out dynamically.`}
+      </CodeBlock>
+
+      <h2>The Java Memory Model — Why Bugs Are Invisible</h2>
+      <p>
+        The hardest concurrency bugs are not deadlocks; they are threads reading{' '}
+        <em>stale</em> values and the program appearing to run fine for months. This happens
+        because both the compiler and the CPU are allowed to reorder and cache your reads and
+        writes. The Java Memory Model defines the exact rules for when one thread is guaranteed to
+        see another thread&apos;s writes — the <strong>happens-before</strong> relationship.
+      </p>
+      <CodeBlock language="java" title="The classic visibility bug">
+{`// BROKEN — this loop may never terminate, even after stop() is called.
+public class Worker implements Runnable {
+    private boolean running = true;      // no synchronization of any kind
+
+    public void run() {
+        while (running) { doWork(); }    // JIT may hoist the read out of the loop
+    }
+    public void stop() { running = false; }
+}
+
+// FIXED — volatile establishes happens-before between the write and the read.
+private volatile boolean running = true;
+
+// What volatile guarantees:
+//   - Every read sees the most recent write (VISIBILITY)
+//   - Reads/writes are not reordered across it (ORDERING)
+// What volatile does NOT guarantee:
+//   - ATOMICITY of compound actions. 'count++' is read-modify-write:
+//     three steps, and volatile does not make them one.
+private volatile int count;
+count++;                                 // STILL a race condition
+
+// For a counter, use an atomic type (single CAS instruction):
+private final AtomicInteger count = new AtomicInteger();
+count.incrementAndGet();`}
+      </CodeBlock>
+      <InfoBox variant="info" title="The happens-before edges worth memorising">
+        <ul>
+          <li>
+            <strong>Monitor lock:</strong> unlocking a monitor happens-before any later lock of the
+            same monitor. Everything written inside a <code>synchronized</code> block is visible to
+            the next thread that enters it.
+          </li>
+          <li>
+            <strong>Volatile:</strong> a write to a volatile field happens-before every subsequent
+            read of that field — <em>and</em> it publishes everything written before it.
+          </li>
+          <li>
+            <strong>Thread start / join:</strong> everything a thread did before calling{' '}
+            <code>t.start()</code> is visible to <code>t</code>; everything <code>t</code> did is
+            visible after <code>t.join()</code> returns.
+          </li>
+          <li>
+            <strong>Final fields:</strong> a properly-constructed object&apos;s <code>final</code>{' '}
+            fields are visible to all threads without synchronization — which is why immutable
+            objects are automatically thread-safe, and the strongest argument for records.
+          </li>
+          <li>
+            <strong>Concurrent collections and executors:</strong> putting into a{' '}
+            <code>BlockingQueue</code> or submitting to an <code>ExecutorService</code>{' '}
+            happens-before the task takes/runs it. You do not need extra synchronization to hand
+            data across these.
+          </li>
+        </ul>
+      </InfoBox>
+      <InfoBox variant="tip" title="The shortcut that avoids all of this">
+        <p>
+          Every rule above exists to manage <em>shared mutable</em> state. Remove the mutability
+          and the rules stop applying: immutable objects (records, <code>List.of</code>,{' '}
+          <code>final</code> fields) can be shared freely with zero synchronization and zero
+          visibility risk. In practice, the most reliable concurrent Java is not clever locking —
+          it is confining mutable state to a single thread and passing immutable snapshots between
+          threads.
+        </p>
+      </InfoBox>
+
       <h2>Thread-Safe Collections</h2>
       <CodeBlock language="java" title="What to use instead of a synchronized ArrayList">
 {`// Concurrent map — the workhorse
@@ -361,6 +507,25 @@ List<Listener> listeners = new CopyOnWriteArrayList<>();
             <strong>Ignoring <code>InterruptedException</code>.</strong> Catching and
             swallowing loses cancellation semantics. Always restore the interrupt with
             <code>Thread.currentThread().interrupt()</code>.
+          </li>
+          <li>
+            <strong>Lock-ordering deadlock.</strong> Thread A holds lock 1 and wants lock 2 while
+            thread B holds lock 2 and wants lock 1 — both wait forever. The fix is a global
+            ordering: every code path acquires locks in the same sequence (e.g. always by account
+            id ascending). Where that is impractical, use{' '}
+            <code>tryLock(timeout)</code> and back off. Diagnose with a thread dump —{' '}
+            <code>jstack</code> detects and reports Java-level deadlocks explicitly.
+          </li>
+          <li>
+            <strong>Calling out to unknown code while holding a lock.</strong> A callback,
+            listener, or overridable method invoked inside a <code>synchronized</code> block can
+            acquire another lock and deadlock you. Compute inside the lock, notify outside it.
+          </li>
+          <li>
+            <strong>Double-checked locking without <code>volatile</code>.</strong> The classic
+            lazy-init idiom is broken unless the field is <code>volatile</code>, because another
+            thread can see a non-null but partially-constructed object. Prefer a static holder
+            class or an <code>enum</code> singleton and skip the problem entirely.
           </li>
         </ul>
       </InfoBox>

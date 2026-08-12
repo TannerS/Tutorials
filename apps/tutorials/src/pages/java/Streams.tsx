@@ -182,6 +182,98 @@ public class StreamBasics {
 }`}
       </CodeBlock>
 
+      <h2>Laziness and Short-Circuiting</h2>
+      <p>
+        A stream pipeline is built from <strong>intermediate</strong> operations (which return
+        another stream and do nothing on their own) and exactly one{' '}
+        <strong>terminal</strong> operation (which triggers the work). Nothing runs until the
+        terminal operation is called, and elements flow through the whole pipeline one at a time
+        rather than stage by stage. This is why <code>filter().map().findFirst()</code> over a
+        million-element list can touch only a handful of elements.
+      </p>
+
+      <CodeBlock language="java" title="Laziness.java">
+{`// Nothing prints. No terminal operation, so nothing runs at all.
+Stream<String> lazy = names.stream()
+    .filter(n -> { System.out.println("filter " + n); return n.length() > 3; })
+    .map(n -> { System.out.println("map " + n); return n.toUpperCase(); });
+
+// Add a terminal operation and the pipeline executes — element by element.
+lazy.findFirst();
+// Output:
+//   filter Alice
+//   map Alice          <- "Alice" passes filter, is mapped, findFirst is satisfied
+// "Bob", "Charlie", ... are never examined at all.
+
+// Short-circuiting terminal operations stop early:
+boolean any   = numbers.stream().anyMatch(n -> n > 100);   // stops at first match
+boolean all   = numbers.stream().allMatch(n -> n > 0);     // stops at first failure
+boolean none  = numbers.stream().noneMatch(String::isBlank);
+Optional<Integer> first = numbers.stream().filter(n -> n > 5).findFirst();
+
+// Short-circuiting INTERMEDIATE operations bound the work:
+List<Integer> page = numbers.stream().skip(20).limit(10).toList();`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="A stream can only be consumed once">
+        <p>
+          Calling a second terminal operation on the same stream throws{' '}
+          <code>IllegalStateException: stream has already been operated upon or closed</code>. A
+          stream is a pipeline over a source, not a collection — if you need to traverse twice,
+          keep the source collection and call <code>.stream()</code> again. This is also why{' '}
+          <code>peek()</code> is a debugging tool, not a general-purpose &quot;do something to
+          each element&quot; operation: it is intermediate, so it may not run at all if the
+          pipeline short-circuits, and the JDK is explicitly allowed to elide it.
+        </p>
+      </InfoBox>
+
+      <h2>flatMap — Flattening Nested Structures</h2>
+      <p>
+        <code>map</code> converts each element into exactly one output element.{' '}
+        <code>flatMap</code> converts each element into a <em>stream</em> of output elements and
+        splices them all into one flat stream. Whenever you find yourself with a{' '}
+        <code>Stream&lt;List&lt;T&gt;&gt;</code> or nested loops, <code>flatMap</code> is the
+        operation you want.
+      </p>
+
+      <CodeBlock language="java" title="FlatMap.java">
+{`record LineItem(String sku, int quantity) {}
+record Order(String id, List<LineItem> items) {}
+
+List<Order> orders = loadOrders();
+
+// map gives you a Stream<List<LineItem>> — still nested, rarely what you want.
+Stream<List<LineItem>> nested = orders.stream().map(Order::items);
+
+// flatMap splices the inner streams into one flat Stream<LineItem>.
+List<LineItem> allItems = orders.stream()
+    .flatMap(order -> order.items().stream())
+    .toList();
+
+// Now aggregation across ALL orders is a one-liner.
+int totalUnits = orders.stream()
+    .flatMap(order -> order.items().stream())
+    .mapToInt(LineItem::quantity)
+    .sum();
+
+// Splitting text into words — the classic case.
+List<String> words = lines.stream()
+    .flatMap(line -> Arrays.stream(line.split("\\\\s+")))
+    .filter(w -> !w.isBlank())
+    .toList();
+
+// Dropping empties from a Stream<Optional<T>> (Java 9+).
+List<Customer> found = ids.stream()
+    .map(repository::findById)      // Stream<Optional<Customer>>
+    .flatMap(Optional::stream)      // Stream<Customer>, empties dropped
+    .toList();
+
+// Cartesian product — flatMap replaces the nested for loop.
+List<String> pairs = suits.stream()
+    .flatMap(suit -> ranks.stream().map(rank -> rank + " of " + suit))
+    .toList();`}
+      </CodeBlock>
+
       <h2>Reduce and Collect</h2>
 
       <CodeBlock language="java" title="ReduceAndCollect.java">
@@ -237,12 +329,212 @@ public class ReduceAndCollect {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="tip" title="Prefer .toList() over .collect(Collectors.toList())">
+        <p>
+          Since Java 16, <code>stream.toList()</code> is the shortest way to finish a pipeline.
+          There is one behavioural difference worth knowing:{' '}
+          <code>toList()</code> returns an <strong>unmodifiable</strong> list (and permits nulls),
+          while <code>Collectors.toList()</code> makes no guarantee about mutability — in practice
+          it hands you an <code>ArrayList</code>. If you need a list you will mutate afterwards,
+          ask for it explicitly with <code>Collectors.toCollection(ArrayList::new)</code> rather
+          than relying on the unspecified behaviour.
+        </p>
+      </InfoBox>
+
+      <h2>The Collector Toolkit</h2>
+      <p>
+        <code>groupingBy</code> and <code>partitioningBy</code> both accept a second{' '}
+        <em>downstream</em> collector that decides what to do with each group, instead of
+        defaulting to &quot;collect into a list&quot;. Composing collectors this way replaces most
+        of the manual map-building code you would otherwise write.
+      </p>
+
+      <CodeBlock language="java" title="Collectors.java">
+{`record Employee(String name, String department, String city, double salary) {}
+
+List<Employee> staff = loadStaff();
+
+// toMap — key mapper, value mapper. Throws on duplicate keys!
+Map<String, Double> salaryByName = staff.stream()
+    .collect(Collectors.toMap(Employee::name, Employee::salary));
+
+// toMap with a merge function — required whenever keys can collide.
+Map<String, Double> totalByDept = staff.stream()
+    .collect(Collectors.toMap(Employee::department, Employee::salary, Double::sum));
+
+// groupingBy with a DOWNSTREAM collector: count per group.
+Map<String, Long> headcount = staff.stream()
+    .collect(Collectors.groupingBy(Employee::department, Collectors.counting()));
+
+// Sum / average per group.
+Map<String, Double> payroll = staff.stream()
+    .collect(Collectors.groupingBy(Employee::department,
+             Collectors.summingDouble(Employee::salary)));
+
+// mapping — transform elements before they land in the group.
+Map<String, List<String>> namesByDept = staff.stream()
+    .collect(Collectors.groupingBy(Employee::department,
+             Collectors.mapping(Employee::name, Collectors.toList())));
+
+// Multi-level grouping — the downstream collector is another groupingBy.
+Map<String, Map<String, List<Employee>>> byDeptThenCity = staff.stream()
+    .collect(Collectors.groupingBy(Employee::department,
+             Collectors.groupingBy(Employee::city)));
+
+// Pick the top earner per department. maxBy returns Optional, so the value
+// type is Optional<Employee>; collectingAndThen unwraps it.
+Map<String, Employee> topEarner = staff.stream()
+    .collect(Collectors.groupingBy(Employee::department,
+             Collectors.collectingAndThen(
+                 Collectors.maxBy(Comparator.comparingDouble(Employee::salary)),
+                 Optional::orElseThrow)));
+
+// Preserve group order with a TreeMap (groupingBy uses HashMap by default).
+Map<String, List<Employee>> ordered = staff.stream()
+    .collect(Collectors.groupingBy(Employee::department, TreeMap::new,
+             Collectors.toList()));
+
+// teeing (Java 12+) — run TWO collectors over one pass and merge the results.
+record PayrollSummary(double total, long count) {}
+PayrollSummary summary = staff.stream()
+    .collect(Collectors.teeing(
+        Collectors.summingDouble(Employee::salary),
+        Collectors.counting(),
+        PayrollSummary::new));`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="Collectors.toMap throws on duplicate keys">
+        <p>
+          The two-argument <code>Collectors.toMap</code> throws{' '}
+          <code>IllegalStateException: Duplicate key</code> the moment two elements produce the
+          same key — a failure that typically shows up in production rather than in tests, because
+          test fixtures rarely contain collisions. Unless the key is a proven unique identifier,
+          always supply the third merge-function argument. A second trap: the value mapper must
+          not return <code>null</code>, or <code>toMap</code> throws{' '}
+          <code>NullPointerException</code> even though <code>HashMap</code> itself allows null
+          values.
+        </p>
+      </InfoBox>
+
+      <h2>Primitive Streams</h2>
+      <p>
+        <code>Stream&lt;Integer&gt;</code> boxes every element. For numeric work, the primitive
+        specialisations <code>IntStream</code>, <code>LongStream</code>, and{' '}
+        <code>DoubleStream</code> avoid that cost and add numeric terminal operations that the
+        generic <code>Stream</code> does not have.
+      </p>
+
+      <CodeBlock language="java" title="PrimitiveStreams.java">
+{`// Ranges — the idiomatic replacement for an index-based for loop.
+IntStream.range(0, 5).forEach(System.out::println);        // 0,1,2,3,4
+IntStream.rangeClosed(1, 5).forEach(System.out::println);  // 1,2,3,4,5
+
+// Numeric terminals that only exist on primitive streams.
+int sum          = IntStream.rangeClosed(1, 100).sum();
+OptionalDouble avg = IntStream.of(3, 1, 4, 1, 5).average();
+OptionalInt max    = IntStream.of(3, 1, 4, 1, 5).max();
+
+// Crossing between object and primitive streams.
+int totalLength = words.stream().mapToInt(String::length).sum();   // object -> int
+List<Integer> boxed = IntStream.range(0, 5).boxed().toList();      // int -> object
+IntStream chars = "hello".chars();                                 // String -> int stream
+
+// Careful: "hello".chars() yields int code points, not chars.
+String upper = "hello".chars()
+    .mapToObj(c -> String.valueOf((char) c))
+    .map(String::toUpperCase)
+    .collect(Collectors.joining());`}
+      </CodeBlock>
+
+      <h2>Creating Streams</h2>
+
+      <CodeBlock language="java" title="StreamSources.java">
+{`// From known values or a collection
+Stream<String> a = Stream.of("x", "y", "z");
+Stream<String> b = list.stream();
+Stream<String> c = Arrays.stream(array);
+
+// From a single possibly-null value (Java 9+) — 0 or 1 element
+Stream<String> d = Stream.ofNullable(maybeNull);
+
+// Empty
+Stream<String> e = Stream.empty();
+
+// INFINITE streams — must be bounded with limit() or takeWhile()
+Stream.iterate(1, n -> n * 2).limit(10).forEach(System.out::println);   // powers of 2
+Stream.generate(Math::random).limit(5).forEach(System.out::println);
+
+// Three-argument iterate (Java 9+) — a for loop as a stream, self-bounding
+Stream.iterate(1, n -> n < 100, n -> n * 3).forEach(System.out::println);
+
+// takeWhile / dropWhile (Java 9+) — stop or skip based on a predicate
+// rather than a fixed count. Both assume the stream is ORDERED.
+List<Integer> ascending = numbers.stream().takeWhile(n -> n < 50).toList();
+List<Integer> rest      = numbers.stream().dropWhile(n -> n < 50).toList();
+
+// From a file, lazily — closes the underlying handle via try-with-resources
+try (Stream<String> lines = Files.lines(Path.of("data.txt"))) {
+    lines.filter(l -> !l.isBlank()).forEach(System.out::println);
+}`}
+      </CodeBlock>
+
+      <h2>Parallel Streams — Use Sparingly</h2>
+      <p>
+        Adding <code>.parallel()</code> (or calling <code>.parallelStream()</code>) splits the
+        work across the common <code>ForkJoinPool</code>. It is a single-word change that can
+        speed a pipeline up — or silently make it slower and less correct.
+      </p>
+
+      <CodeBlock language="java" title="ParallelStreams.java">
+{`// Reasonable use: large dataset, CPU-bound work, no shared mutable state.
+double total = hugeList.parallelStream()
+    .mapToDouble(this::expensivePureComputation)
+    .sum();
+
+// WRONG — the shared ArrayList is not thread-safe. Results are corrupted
+// or an exception is thrown, non-deterministically.
+List<String> results = new ArrayList<>();
+items.parallelStream().forEach(results::add);       // race condition
+
+// RIGHT — let the collector handle the merging.
+List<String> results = items.parallelStream().map(this::render).toList();
+
+// WRONG — forEach gives no ordering guarantee in parallel.
+items.parallelStream().forEach(System.out::println);
+// RIGHT — forEachOrdered preserves encounter order (at a cost).
+items.parallelStream().forEachOrdered(System.out::println);`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="When NOT to go parallel">
+        <p>
+          Parallel streams run on the shared common <code>ForkJoinPool</code>, sized to
+          &quot;available processors minus one&quot;. Putting <strong>blocking I/O</strong> in a
+          parallel stream starves that pool for every other parallel stream in the JVM — including
+          ones inside libraries you did not write. Parallelism also loses money on small
+          collections (the split/merge overhead dominates), on sources that split poorly
+          (<code>LinkedList</code>, <code>Stream.iterate</code>), and on any pipeline whose
+          operations are order-dependent or stateful. The rule of thumb: measure first, and for
+          I/O-bound fan-out use virtual threads or <code>StructuredTaskScope</code> instead — see
+          the Concurrency lesson.
+        </p>
+      </InfoBox>
+
       <h2>Optional</h2>
       <p>
         <code>Optional&lt;T&gt;</code> is a container that may or may not hold a value. It was
         introduced to help eliminate <code>NullPointerException</code> and make APIs more
-        explicit about when a value might be absent.
+        explicit about when a value might be absent. It shows up here because stream terminals
+        like <code>findFirst</code>, <code>max</code>, and <code>reduce</code> all return one.
       </p>
+      <InfoBox variant="note" title="Optional has a dedicated lesson">
+        <p>
+          What follows is the API tour you need to read stream results. The rules for{' '}
+          <em>designing</em> with Optional — where it belongs in a signature, the six anti-patterns
+          that show up in real codebases, and how it interacts with records and JPA — are covered
+          in depth in the <strong>Optional — Best and Worst Practices</strong> lesson at the end
+          of this section.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="java" title="OptionalExamples.java">
 {`import java.util.Optional;
