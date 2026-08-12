@@ -1,4 +1,4 @@
-import { CodeBlock as UiCodeBlock, type CodeBlockProps as UiCodeBlockProps } from '@tutorials/ui';
+import { CodeBlock as UiCodeBlock, type CodeBlockProps as UiCodeBlockProps } from './CodeBlockBase';
 
 type CodeBlockProps =
   | UiCodeBlockProps

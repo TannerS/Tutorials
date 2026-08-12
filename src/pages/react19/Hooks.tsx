@@ -3,7 +3,7 @@ import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
-import { LiveExample } from '@tutorials/ui';
+import { LiveExample } from '../../components/LiveExample';
 
 export default function Hooks() {
   return (

@@ -2,7 +2,8 @@ import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import Sidebar from './Sidebar';
 import { sections } from '../data/sections';
-import { CommandPalette, useCommandPaletteShortcut, type CommandItem } from '@tutorials/ui';
+import { CommandPalette, type CommandItem } from './CommandPalette';
+import { useCommandPaletteShortcut } from './useCommandPaletteShortcut';
 
 function HomePage() {
   return (

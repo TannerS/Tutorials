@@ -12,16 +12,7 @@ dist
 dist-ssr
 dist-pdf
 *.local
-
-# Monorepo / build
-.turbo
 *.tsbuildinfo
-
-# Maven
-target/
-.mvn/
-!.mvn/wrapper/maven-wrapper.jar
-
 
 # Editor directories and files
 .vscode/*
