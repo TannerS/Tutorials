@@ -13,16 +13,16 @@ export default function Patterns() {
       prev={{ path: '/microservices/intro', label: 'Monolith vs Microservices' }}
       next={{ path: '/microservices/communication', label: 'Service Communication' }}
     >
-      <h2>The 10 Essential Patterns</h2>
+      <h2>The 11 Essential Patterns</h2>
       <p>
-        These 10 design patterns form the backbone of every production microservices architecture.
+        These 11 design patterns form the backbone of every production microservices architecture.
         Understanding when and why to apply each pattern is critical for building reliable
         distributed systems.
       </p>
 
       <FlowChart
         title="Microservices Pattern Map"
-        chart={"graph TD\n  A[Microservices Patterns] --> B[Communication]\n  A --> C[Resilience]\n  A --> D[Data]\n  A --> E[Migration]\n  A --> F[Infrastructure]\n  B --> B1[API Gateway]\n  B --> B2[Sync - REST/gRPC]\n  B --> B3[Async - MQ/Events]\n  C --> C1[Circuit Breaker]\n  D --> D1[Database per Service]\n  D --> D2[Saga Pattern]\n  D --> D3[Event Sourcing]\n  D --> D4[CQRS]\n  E --> E1[Strangler Fig]\n  F --> F1[Sidecar / Service Mesh]"}
+        chart={"graph TD\n  A[Microservices Patterns] --> B[Communication]\n  A --> C[Resilience]\n  A --> D[Data]\n  A --> E[Migration]\n  A --> F[Infrastructure]\n  B --> B1[API Gateway]\n  B --> B2[Sync - REST/gRPC]\n  B --> B3[Async - MQ/Events]\n  C --> C1[Circuit Breaker]\n  D --> D1[Database per Service]\n  D --> D2[Saga Pattern]\n  D --> D3[Event Sourcing]\n  D --> D4[CQRS]\n  E --> E1[Strangler Fig]\n  F --> F1[Sidecar / Service Mesh]\n  F --> F2[Distributed Tracing]"}
       />
 
       <h2>1. API Gateway</h2>
@@ -294,6 +294,132 @@ function replay(events: DomainEvent[]): AccountState {
           <li><strong>Observability</strong> — distributed tracing, metrics, and access logs</li>
           <li><strong>Traffic Management</strong> — canary deploys, A/B testing, blue-green</li>
         </ul>
+      </InfoBox>
+
+      <h2>11. Distributed Tracing</h2>
+      <p>
+        Every pattern above makes a single user action span more machines. That
+        creates a debugging problem monoliths never had: a checkout request
+        touches six services, one of them is slow, and no single log file shows
+        you which. Distributed tracing is the pattern that answers{' '}
+        <em>&quot;where did the time actually go?&quot;</em>
+      </p>
+
+      <h3>Traces, Spans, and Context Propagation</h3>
+      <ul>
+        <li>
+          <strong>Trace</strong> — one end-to-end request through the whole
+          system, identified by a <code>trace_id</code> shared by every hop.
+        </li>
+        <li>
+          <strong>Span</strong> — one unit of work within that trace (an HTTP
+          handler, a DB query, a Kafka publish). Each has a{' '}
+          <code>span_id</code>, a duration, and a{' '}
+          <code>parent_span_id</code> — which is what lets the collector
+          rebuild the call tree.
+        </li>
+        <li>
+          <strong>Context propagation</strong> — the mechanism that carries the
+          trace ID across a process boundary. This is the part teams get wrong:
+          if any service fails to forward the header, the trace breaks in two
+          and the downstream work becomes an orphan.
+        </li>
+      </ul>
+
+      <FlowChart
+        title="A Trace Across Services"
+        chart={"graph TD\n  A[\"Span 1: API Gateway (240ms)\"] --> B[\"Span 2: Order Service (215ms)\"]\n  B --> C[\"Span 3: Postgres query (12ms)\"]\n  B --> D[\"Span 4: Payment Service (190ms)\"]\n  D --> E[\"Span 5: Stripe API call (185ms) - THE BOTTLENECK\"]\n  B --> F[\"Span 6: Kafka publish (3ms)\"]\n  style E fill:#3b1a1a,stroke:#dc2626"}
+      />
+
+      <InfoBox variant="tip" title="W3C Trace Context — the Header That Ties It Together">
+        <p>
+          Propagation is standardised as the <code>traceparent</code> header,
+          which every modern tracing tool understands. This is what replaced
+          the old vendor-specific headers (Zipkin&apos;s{' '}
+          <code>X-B3-*</code>, Jaeger&apos;s <code>uber-trace-id</code>):
+        </p>
+        <p>
+          <code>traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01</code>
+        </p>
+        <p>
+          Reading left to right: version, <strong>trace ID</strong> (constant
+          for the whole request), <strong>parent span ID</strong>, and flags
+          (<code>01</code> = sampled).
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="java" title="OpenTelemetry — Auto and Manual Instrumentation">
+{`// Most instrumentation is automatic. The OpenTelemetry Java agent
+// patches Spring MVC, RestTemplate, JDBC, and Kafka at startup, so
+// context propagation across HTTP and Kafka works with zero code:
+//
+//   java -javaagent:opentelemetry-javaagent.jar \\
+//        -Dotel.service.name=order-service \\
+//        -Dotel.exporter.otlp.endpoint=http://collector:4317 \\
+//        -jar order-service.jar
+
+@Service
+public class OrderService {
+
+    private final Tracer tracer;
+
+    @Transactional
+    public Order placeOrder(PlaceOrderRequest request) {
+        // Add a manual span only where business meaning helps —
+        // auto-instrumentation already covers the HTTP and DB layers.
+        Span span = tracer.spanBuilder("validate-inventory")
+            .setAttribute("order.item_count", request.getItems().size())
+            .setAttribute("customer.tier", request.getCustomerTier())
+            .startSpan();
+
+        try (Scope scope = span.makeCurrent()) {
+            inventoryClient.reserve(request.getItems());
+            return orderRepository.save(Order.from(request));
+        } catch (Exception e) {
+            // Record the failure ON the span so it shows red in the UI
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            throw e;
+        } finally {
+            span.end();   // ALWAYS end the span or the trace leaks
+        }
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Sampling — You Cannot Trace Everything">
+        <p>
+          Storing a span for every request at scale costs more than the
+          services being traced. Sampling is mandatory, and the choice matters:
+        </p>
+        <p>
+          <strong>Head-based sampling</strong> decides at the first service
+          (&quot;keep 1%&quot;) and is cheap, but it throws away 99% of your
+          errors along with 99% of your successes — and the rare failure is
+          exactly what you wanted.
+        </p>
+        <p>
+          <strong>Tail-based sampling</strong> buffers all spans in the
+          collector until the trace finishes, then decides — keep everything
+          that errored or exceeded a latency threshold, plus a small
+          random sample of healthy traces. Far more useful, at the cost of
+          collector memory. This is the usual production choice.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="tip" title="Put the Trace ID in Your Logs and Your Errors">
+        <p>
+          The highest-value, lowest-effort win in observability: inject the
+          trace ID into every log line (via MDC in Java, or an async-local
+          store in Node) and return it in your API error responses.
+        </p>
+        <p>
+          A support ticket then carries the exact identifier that pulls up the
+          full cross-service story of that one failed request — turning
+          &quot;it was broken around 3pm&quot; into a single lookup. Traces,
+          metrics, and logs are only genuinely useful when you can pivot
+          between them on a shared ID.
+        </p>
       </InfoBox>
 
       <h2>Quick Reference — When to Use Each Pattern</h2>

@@ -72,24 +72,11 @@ export default tseslint.config(
     },
   },
 
-  // React Hooks rules
-  {
-    plugins: { 'react-hooks': reactHooks },
-    rules: {
-      ...reactHooks.configs.recommended.rules,
-    },
-  },
-
-  // React Refresh (for Vite HMR)
-  {
-    plugins: { 'react-refresh': reactRefresh },
-    rules: {
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
-    },
-  },
+  // React Hooks + React Refresh — modern plugins ship ready-made flat
+  // presets, so you no longer register the plugin and spread its rules
+  // by hand. Prefer these over the manual form you'll see in older docs.
+  reactHooks.configs.flat.recommended,
+  reactRefresh.configs.vite,   // presets also exist for .browser / .next
 
   // Accessibility
   {
@@ -123,6 +110,52 @@ export default tseslint.config(
         <code>@typescript-eslint/eslint-plugin</code>. Use the combined package for
         flat config — it exports a <code>config()</code> helper that merges everything
         cleanly.
+      </InfoBox>
+
+      <h3>defineConfig, globalIgnores, and extends</h3>
+      <p>
+        ESLint itself now ships helpers from <code>eslint/config</code> that do the same job as
+        <code>tseslint.config()</code> for non-TS projects, plus flat config regained an
+        <code> extends</code> key — this time as a plain array of config objects rather than the
+        old string-based resolution.
+      </p>
+
+      <CodeBlock language="javascript" title="eslint.config.js — Current Idiomatic Shape">
+{`import js from '@eslint/js';
+import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import { defineConfig, globalIgnores } from 'eslint/config';
+
+export default defineConfig([
+  // Applies everywhere, regardless of position in the array
+  globalIgnores(['dist', 'coverage']),
+
+  {
+    files: ['**/*.{ts,tsx}'],
+    // 'extends' composes presets INTO this block, so the files/ignores
+    // above scope them — no need to repeat the glob on every preset.
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      globals: globals.browser,
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+]);`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="A Bare Object vs an extends Block">
+        This is the distinction that trips people up when reading two different flat configs.
+        A config object with <strong>no <code>files</code> key applies to everything</strong> —
+        that's why spreading <code>...tseslint.configs.recommended</code> at the top level lints
+        your config files and scripts too, often unintentionally. Putting presets inside
+        <code> extends</code> on an object that <em>does</em> have <code>files</code> scopes them
+        to exactly that glob. Both forms are valid and you'll see both in the wild; reach for
+        <code> extends</code> when you want the scoping.
       </InfoBox>
 
       <h3>Key Plugins Explained</h3>
@@ -237,7 +270,9 @@ echo "npx lint-staged" > .husky/pre-commit`}
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "eslint.useFlatConfig": true,
+  // "eslint.useFlatConfig": true  — no longer needed; flat config is
+  // the default and auto-detected. Only set it (to false) if you are
+  // pinned to a legacy .eslintrc project.
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "editor.rulers": [100]
 }`}

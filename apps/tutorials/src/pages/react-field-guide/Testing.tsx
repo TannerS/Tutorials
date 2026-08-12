@@ -6,12 +6,12 @@ export default function FieldGuideTesting() {
   return (
     <PosterLayout
       accent="sky"
-      eyebrow="React + TypeScript · Field Reference"
+      eyebrow="React 19 · Field Reference"
       title="Testing Quick Reference"
       tagline="React Testing Library + Vitest — queries, user-event, hooks, async, and the test smells to avoid."
       meta={['RTL · Vitest', '12 patterns']}
       footerLabel="Personal study reference — React Testing"
-      pageLabel="React + TS Field Guide · Testing"
+      pageLabel="React 19 Field Guide · Testing"
       prev={{ path: '/react-field-guide/gotchas', label: 'Gotchas & Anti-Patterns' }}
       next={null}
     >

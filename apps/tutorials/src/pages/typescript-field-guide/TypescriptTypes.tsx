@@ -5,27 +5,37 @@ import PosterQuickRef from '../../components/PosterQuickRef';
 export default function FieldGuideTypescriptTypes() {
   return (
     <PosterLayout
-      accent="sky"
-      eyebrow="React + TypeScript · Field Reference"
+      accent="blue"
+      eyebrow="TypeScript · Field Reference"
       title="TypeScript Types & Generics"
       tagline="The type-level tools that make illegal states unrepresentable — condensed for offline study."
-      meta={['TS 5+', '10 concepts']}
+      meta={['TS 5+', '12 concepts']}
       footerLabel="Personal study reference — TypeScript"
-      pageLabel="React + TS Field Guide · TypeScript Types"
-      prev={{ path: '/react-field-guide/component-patterns', label: 'Component Patterns' }}
-      next={{ path: '/react-field-guide/typing-react', label: 'Typing React' }}
+      pageLabel="TypeScript Field Guide · TypeScript Types"
+      prev={{ path: '/typescript-field-guide/fundamentals', label: 'TypeScript Fundamentals' }}
+      next={{ path: '/typescript-field-guide/typing-react', label: 'Typing React' }}
     >
       <PosterCard
         glyph="U"
         title={<>Utility <span className="dim">Types</span></>}
         language="typescript"
-        code={`Partial<T>      // all props optional
-Pick<T, K>      // keep listed keys
-Omit<T, K>      // drop listed keys
-Record<K, V>    // { [key: K]: V }
-ReturnType<F>   // infer function return type
-Awaited<P>      // unwrap Promise (deeply)`}
-        caption="The built-ins you'll reach for constantly — memorize these before writing a custom mapped type for the same job."
+        code={`// shape
+Partial<T>  Required<T>  Readonly<T>
+Pick<T, K>  Omit<T, K>   Record<K, V>
+
+// union filtering
+Exclude<T, U>  Extract<T, U>  NonNullable<T>
+
+// functions & classes
+ReturnType<F>  Parameters<F>  InstanceType<C>
+ConstructorParameters<C>
+ThisParameterType<F>  OmitThisParameter<F>  ThisType<T>
+
+// async / strings / inference
+Awaited<P>   // unwraps Promise recursively
+Uppercase<S> Lowercase<S> Capitalize<S> Uncapitalize<S>
+NoInfer<T>   // TS 5.4+ — exclude from inference`}
+        caption="That is the complete built-in set. All of them except the four string types are a few lines of mapped/conditional type in lib.es5.d.ts — e.g. Exclude<T,U> = T extends U ? never : T. The string ones are compiler intrinsics and cannot be written in TS source."
       />
 
       <PosterCard
@@ -153,6 +163,65 @@ config.retries; // 3, not number`}
         caption="Freezes literal types instead of widening them to string/number — pairs with `typeof x[number]` to turn an array literal into a union type."
       />
 
+      <PosterCard
+        glyph="@"
+        title={<>Decorators <span className="dim">— Stage 3 vs Legacy</span></>}
+        language="typescript"
+        code={`// STAGE 3 (TS 5+, no flag): (value, context)
+function log<T extends (...a: any[]) => any>(
+  method: T, ctx: ClassMethodDecoratorContext,
+): T {
+  return function (this: any, ...args: any[]) {
+    console.log(String(ctx.name), args);
+    return method.apply(this, args);
+  } as T;
+}
+
+// A FACTORY is a decorator that takes arguments
+function retry(times: number) {
+  return (m: any, c: ClassMethodDecoratorContext) => m;
+}
+
+class Api {
+  @log        // applied LAST — outermost, so its code runs first
+  @retry(3)   // applied FIRST — innermost
+  async fetch() {}
+}
+
+// LEGACY (Angular/Nest/TypeORM): (target, key, descriptor)
+// tsconfig: experimentalDecorators + emitDecoratorMetadata`}
+        caption="Decorator expressions evaluate top-to-bottom but apply bottom-to-top — log(retry(3)(fetch)). Stage 3 has NO parameter decorators, which is exactly why constructor-injection DI frameworks still require experimentalDecorators. The flag is project-wide: you cannot mix the two systems."
+      />
+
+      <PosterCard
+        glyph="ctx"
+        title={<>Decorator <span className="dim">Kinds &amp; Context</span></>}
+        language="typescript"
+        code={`// ctx.kind: 'class' | 'method' | 'getter' | 'setter' | 'field' | 'accessor'
+// ctx also has: name, static, private, access, addInitializer, metadata
+
+// CLASS decorator — return a subclass to replace the class
+function withTimestamp<T extends new (...a: any[]) => object>(t: T) {
+  return class extends t { createdAt = new Date(); };
+}
+
+// Per-INSTANCE work (class decorators fire only once)
+function sealed(t: Function, ctx: ClassDecoratorContext) {
+  ctx.addInitializer(function () { Object.seal(this); });
+}
+
+// FIELD decorator — returns an initializer transforming the initial value
+function uppercase(_: undefined, ctx: ClassFieldDecoratorContext<any, string>) {
+  return (initial: string) => initial.toUpperCase();
+}
+
+class Product {
+  @uppercase sku = 'abc';        // stored as 'ABC'
+  @observable accessor price = 0; // 'accessor' => hooks on read AND write
+}`}
+        caption="A class decorator runs once, when the class statement is evaluated — use ctx.addInitializer() for anything per-instance. A plain field decorator only sees the initial value; the `accessor` keyword generates a getter/setter pair so a decorator can intercept every read and write."
+      />
+
       <PosterQuickRef
         title="Which type tool do I need?"
         rows={[
@@ -166,6 +235,9 @@ config.retries; // 3, not number`}
           { need: 'Extract a piece of another type', answer: 'Conditional type + infer' },
           { need: 'Build string unions', answer: 'Template literal type' },
           { need: 'Lock in literal values', answer: 'as const' },
+          { need: 'Add cross-cutting behaviour to a method', answer: 'Decorator (or a factory, if it needs args)' },
+          { need: 'Run setup per instance from a class decorator', answer: 'ctx.addInitializer()' },
+          { need: 'Intercept reads AND writes of a field', answer: 'accessor + auto-accessor decorator' },
         ]}
       />
     </PosterLayout>

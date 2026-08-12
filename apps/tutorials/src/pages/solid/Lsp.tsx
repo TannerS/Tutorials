@@ -39,6 +39,111 @@ export default function Lsp() {
         chart={"graph TD\nSHAPE[Shape interface] --> RECT[Rectangle]\nSHAPE --> SQUARE[Square]\nSHAPE --> CIRCLE[Circle]\nRECT -.->|NOT a parent of| SQUARE\nstyle SQUARE fill:#ff9800,color:#fff\nstyle RECT fill:#2196f3,color:#fff"}
       />
 
+      <h2>The Contract Rules — How to Check LSP Mechanically</h2>
+      <p>
+        &quot;Substitutable&quot; sounds subjective, but LSP is actually a
+        precise set of rules borrowed from design by contract. A subtype is
+        substitutable only if it obeys all four:
+      </p>
+
+      <ol>
+        <li>
+          <strong>Preconditions cannot be strengthened.</strong> A subclass may
+          not demand <em>more</em> from callers than the parent did. If{' '}
+          <code>Account.withdraw(amount)</code> accepts any positive amount, a{' '}
+          <code>SavingsAccount</code> that rejects amounts under $100 has
+          strengthened the precondition — existing callers now break.
+        </li>
+        <li>
+          <strong>Postconditions cannot be weakened.</strong> A subclass must
+          deliver <em>at least</em> what the parent promised. If the parent
+          guarantees the returned list is sorted, the subclass cannot return
+          an unsorted list.
+        </li>
+        <li>
+          <strong>Invariants must be preserved.</strong> Anything that was
+          always true of the parent must stay true of the subclass. The
+          Rectangle/Square problem below is really an invariant violation:{' '}
+          <code>Rectangle</code> has the invariant &quot;width and height vary
+          independently,&quot; and <code>Square</code> destroys it.
+        </li>
+        <li>
+          <strong>The history constraint must hold.</strong> A subclass may not
+          allow state changes that the parent forbade. Subclassing an
+          immutable <code>Point</code> and adding a <code>setX()</code>{' '}
+          breaks every caller that assumed points never change.
+        </li>
+      </ol>
+
+      <p>
+        There is also a typing rule that most languages enforce for you:
+        overridden methods may return a <em>narrower</em> type (covariant
+        returns, which Java allows) and may accept <em>wider</em> parameter
+        types (contravariant parameters, which Java does not support for
+        overriding — declaring a wider parameter creates an overload, not an
+        override).
+      </p>
+
+      <CodeBlock language="java" title="ContractViolations.java">
+{`// BAD — strengthened precondition.
+public class Account {
+    // Contract: accepts any amount > 0
+    public void withdraw(double amount) {
+        if (amount <= 0) throw new IllegalArgumentException();
+        balance -= amount;
+    }
+}
+
+public class SavingsAccount extends Account {
+    @Override
+    public void withdraw(double amount) {
+        // Demands MORE than the parent — callers that legally
+        // passed 50.0 now blow up. LSP violation.
+        if (amount < 100) {
+            throw new IllegalArgumentException("Minimum withdrawal is 100");
+        }
+        super.withdraw(amount);
+    }
+}
+
+// BAD — weakened postcondition.
+public class SearchService {
+    // Contract: returns results sorted by relevance, never null
+    public List<Result> search(String q) { ... }
+}
+
+public class CachedSearchService extends SearchService {
+    @Override
+    public List<Result> search(String q) {
+        // Returns null on a cache miss — parent promised "never null".
+        return cache.get(q); // LSP violation
+    }
+}
+
+// GOOD — covariant return type is allowed and does NOT break LSP,
+// because a narrower return still satisfies the parent's promise.
+public class AccountRepository {
+    public Account findById(long id) { ... }
+}
+
+public class SavingsRepository extends AccountRepository {
+    @Override
+    public SavingsAccount findById(long id) { ... } // legal & safe
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The Practical Test">
+        <p>
+          When reviewing a subclass, ask: <em>could I hand this object to code
+          written against the parent, that has never heard of this subclass,
+          and have it still behave correctly?</em> If you find yourself wanting
+          to write documentation like &quot;but if it&apos;s actually a{' '}
+          <code>Square</code>, callers should...&quot; — you have already
+          violated LSP. A contract that needs per-subclass caveats is not a
+          contract.
+        </p>
+      </InfoBox>
+
       <h2>Bad Example — Rectangle / Square Problem</h2>
       <p>
         The classic LSP violation: making <code>Square</code> extend{' '}

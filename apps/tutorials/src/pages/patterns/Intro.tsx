@@ -98,6 +98,125 @@ export default function Intro() {
         <li><strong>Visitor:</strong> Add operations to objects without modifying their classes</li>
       </ul>
 
+      <h2>Beyond the GoF 23 — Null Object</h2>
+      <p>
+        The GoF book is not the whole catalog. The most useful pattern it{' '}
+        <em>omits</em> — and one that comes up regularly in interviews as a
+        &quot;how would you get rid of these null checks?&quot; question — is{' '}
+        <strong>Null Object</strong> (named by Bobby Woolf, and later folded
+        into Martin Fowler&apos;s <em>Refactoring</em> as &quot;Introduce
+        Special Case&quot;).
+      </p>
+      <p>
+        The idea: instead of returning <code>null</code> to mean &quot;nothing
+        here&quot; and forcing every caller to guard against it, return a real
+        object that implements the same interface and does nothing harmless.
+        Callers stop branching entirely.
+      </p>
+
+      <CodeBlock language="java" title="Null Object Pattern" showLineNumbers={true}>
+{`// BEFORE — every caller must remember the null check.
+public interface AuditLogger {
+    void log(String action, String userId);
+}
+
+public class AuditService {
+    private final AuditLogger logger; // may be null if auditing is off
+
+    public void deleteAccount(String userId) {
+        accountRepo.delete(userId);
+        if (logger != null) {          // repeated at EVERY call site
+            logger.log("DELETE_ACCOUNT", userId);
+        }
+    }
+}
+
+// AFTER — a Null Object makes the absence case a real, safe object.
+public class NoOpAuditLogger implements AuditLogger {
+    public static final AuditLogger INSTANCE = new NoOpAuditLogger();
+
+    @Override
+    public void log(String action, String userId) {
+        // intentionally does nothing
+    }
+}
+
+@Configuration
+public class AuditConfig {
+    @Bean
+    public AuditLogger auditLogger(@Value("\${audit.enabled}") boolean enabled) {
+        return enabled ? new DatabaseAuditLogger() : NoOpAuditLogger.INSTANCE;
+    }
+}
+
+public class AuditService {
+    private final AuditLogger logger; // NEVER null
+
+    public void deleteAccount(String userId) {
+        accountRepo.delete(userId);
+        logger.log("DELETE_ACCOUNT", userId); // no branch, ever
+    }
+}`}
+      </CodeBlock>
+
+      <p>
+        The pattern also works for query results, where the &quot;null&quot;
+        object carries sensible neutral values rather than doing nothing:
+      </p>
+
+      <CodeBlock language="java" title="Null Object with Neutral Behavior" showLineNumbers={true}>
+{`public interface Customer {
+    String getName();
+    BigDecimal discountRate();
+    boolean isNull();
+}
+
+public class RegisteredCustomer implements Customer {
+    public String getName() { return name; }
+    public BigDecimal discountRate() { return tier.rate(); }
+    public boolean isNull() { return false; }
+}
+
+// The special case: an unknown/guest customer.
+public class GuestCustomer implements Customer {
+    public String getName() { return "Guest"; }
+    public BigDecimal discountRate() { return BigDecimal.ZERO; }
+    public boolean isNull() { return true; }
+}
+
+// Client code has no branching — the guest simply gets no discount.
+BigDecimal total = subtotal.subtract(
+    subtotal.multiply(customer.discountRate()));`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="When to Reach for Null Object">
+        <p>
+          Reach for it when the same null check is repeated across many call
+          sites and the &quot;missing&quot; case has an obvious do-nothing or
+          neutral behavior — optional collaborators (loggers, metrics
+          recorders, notification senders) that can be switched off by config
+          are the sweet spot, as is a guest/anonymous user standing in for a
+          logged-in one.
+        </p>
+        <p>
+          <strong>Do not</strong> use it when absence is genuinely
+          exceptional and the caller must react — silently swallowing a
+          missing payment method is far worse than a{' '}
+          <code>NullPointerException</code>. For a single &quot;might not be
+          there&quot; return value, Java&apos;s <code>Optional</code> is the
+          simpler tool; Null Object earns its keep when it replaces{' '}
+          <em>behavior</em>, not just a value.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="info" title="Other Non-GoF Patterns Worth Knowing">
+        <p><strong>Repository:</strong> collection-like interface over data access — covered in the Real-World lesson.</p>
+        <p><strong>DTO:</strong> a flat data carrier that decouples your API contract from your entities — also in the Real-World lesson.</p>
+        <p><strong>Object Pool:</strong> reuse expensive-to-create instances instead of allocating (HikariCP connection pools, thread pools).</p>
+        <p><strong>Specification:</strong> compose business rules as combinable predicate objects (Spring Data&apos;s <code>Specification</code> API).</p>
+        <p><strong>Dependency Injection:</strong> supply collaborators from outside rather than constructing them — the technique behind the Dependency Inversion Principle.</p>
+      </InfoBox>
+
       <h2>Which Pattern Should I Use?</h2>
 
       <FlowChart

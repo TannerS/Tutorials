@@ -1235,16 +1235,20 @@ function useOnlineStatus() {
   return isOnline;
 }
 
-// useImperativeHandle — customize ref exposed to parent
-const FancyInput = forwardRef((props, ref) => {
+// useImperativeHandle — customize the ref exposed to the parent
+// React 19: ref is a plain prop, so NO forwardRef wrapper is needed.
+function FancyInput({ ref, ...props }) {
   const inputRef = useRef();
   useImperativeHandle(ref, () => ({
     focus: () => inputRef.current.focus(),
     scrollIntoView: () => inputRef.current.scrollIntoView(),
-    // Don't expose the full DOM node — only what parent needs
-  }));
+    // Don't expose the full DOM node — only what the parent needs
+  }), []);   // deps array: without it, the handle is rebuilt every render
   return <input ref={inputRef} {...props} />;
-});`}
+}
+
+// Pre-19 form you'll still see everywhere (forwardRef is now deprecated):
+// const FancyInput = forwardRef((props, ref) => { ... });`}
       </CodeBlock>
 
       <h2>Custom Hooks — Composition Pattern</h2>

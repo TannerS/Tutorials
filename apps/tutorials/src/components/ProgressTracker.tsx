@@ -56,22 +56,22 @@ export default function ProgressTracker({ sectionId, lessonIndex, onComplete }: 
     <div style={{
       margin: '2rem 0',
       padding: '1rem',
-      background: done ? '#1a3329' : '#1a1d2e',
-      border: `1px solid ${done ? '#4ade8040' : '#2a2e42'}`,
+      background: done ? 'var(--accent-green-bg)' : 'var(--bg-secondary)',
+      border: `1px solid ${done ? 'var(--accent-green)' : 'var(--border-color)'}`,
       borderRadius: '8px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
     }}>
-      <span style={{ color: done ? '#4ade80' : '#9399b2', fontSize: '0.9rem' }}>
+      <span style={{ color: done ? 'var(--accent-green)' : 'var(--text-secondary)', fontSize: '0.9rem' }}>
         {done ? '✅ Lesson completed!' : "Mark this lesson as complete when you're done:"}
       </span>
       {!done && (
         <button
           onClick={handleClick}
           style={{
-            background: '#5b9cf6',
-            color: '#0f1117',
+            background: 'var(--accent-blue)',
+            color: 'var(--bg-primary)',
             border: 'none',
             borderRadius: '6px',
             padding: '0.5rem 1.25rem',

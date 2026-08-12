@@ -6,14 +6,14 @@ export default function FieldGuideComponentPatterns() {
   return (
     <PosterLayout
       accent="sky"
-      eyebrow="React + TypeScript · Field Reference"
+      eyebrow="React 19 · Field Reference"
       title="Component Patterns"
       tagline="The reusable shapes for structuring components — composition, state ownership, and API design — condensed for offline study."
       meta={['React 19', '11 patterns']}
       footerLabel="Personal study reference — React 19"
-      pageLabel="React + TS Field Guide · Component Patterns"
-      prev={{ path: '/react-field-guide/hooks', label: 'Hooks' }}
-      next={{ path: '/react-field-guide/typescript-types', label: 'TypeScript Types & Generics' }}
+      pageLabel="React 19 Field Guide · Component Patterns"
+      prev={{ path: '/react-field-guide/server-components', label: 'Server Components & Actions' }}
+      next={{ path: '/react-field-guide/styling', label: 'Styling Approaches' }}
     >
       <PosterCard
         glyph="Co"

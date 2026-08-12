@@ -5,15 +5,15 @@ import PosterQuickRef from '../../components/PosterQuickRef';
 export default function FieldGuideSpringData() {
   return (
     <PosterLayout
-      accent="amber"
-      eyebrow="Java + Spring Boot 4 · Field Reference"
+      accent="emerald"
+      eyebrow="Spring Boot 4 · Field Reference"
       title="Spring Data & JPA"
       tagline="Repositories, derived queries, the N+1 trap, and @Transactional boundaries — condensed for offline study."
       meta={['Spring Boot 4', '13 patterns']}
       footerLabel="Personal study reference — Spring Boot"
-      pageLabel="Java + Spring Field Guide · Data & JPA"
-      prev={{ path: '/java-field-guide/spring-rest', label: 'Spring REST & Validation' }}
-      next={{ path: '/java-field-guide/spring-security', label: 'Spring Security' }}
+      pageLabel="Spring Field Guide · Data & JPA"
+      prev={{ path: '/spring-field-guide/error-handling', label: 'Error Handling & Validation' }}
+      next={{ path: '/spring-field-guide/config-transactions', label: 'Config & Transactions' }}
     >
       <PosterCard
         glyph="En"

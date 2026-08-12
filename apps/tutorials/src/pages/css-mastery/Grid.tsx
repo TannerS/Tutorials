@@ -365,9 +365,17 @@ export default function Grid() {
 /* GOTCHA: z-index works on grid items WITHOUT position: relative */
 .grid-item { z-index: 1; }  /* grid items create a stacking context */
 
-/* GOTCHA: auto-fit with minmax(0, 1fr) makes all cols equal always */
-.grid { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
-/* Use minmax(200px, 1fr) if you want a minimum column size */`}
+/* GOTCHA: minmax(0, 1fr) is how you get TRULY equal columns.
+   Plain 1fr means minmax(auto, 1fr) — the auto floor is the item's
+   min-content size, so a long unbreakable word blows the track out. */
+.equal { grid-template-columns: repeat(3, minmax(0, 1fr)); }  /* ✅ */
+.uneven { grid-template-columns: repeat(3, 1fr); }             /* can drift wider */
+
+/* GOTCHA: never combine auto-fit/auto-fill with a 0 minimum.
+   The repeat count is derived from the track's MIN size, so a 0 floor
+   is degenerate — browsers collapse it to a single column. */
+.broken { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }  /* ❌ 1 col */
+.works  { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } /* ✅ */`}
       </CodeBlock>
 
       <InteractiveChallenge

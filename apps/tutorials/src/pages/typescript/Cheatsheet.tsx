@@ -51,21 +51,111 @@ interface Fn2 { (x: number): number }
 type Handler<T> = (event: T) => Promise<void>;`}
       </CodeBlock>
 
+      <h2>Classes</h2>
+      <CodeBlock language="ts" title="Modifiers, accessors, statics, abstract">
+{`class Account {
+  static readonly VERSION = '2.0';   // on the class, not instances
+  static { /* static init block — runs once */ }
+
+  #secret = 'runtime-private';       // ES private — truly inaccessible outside
+  private pin = '1234';              // TS private — compile-time check ONLY
+  protected balance = 0;             // this class + subclasses
+  readonly id: string;               // assign once, in the constructor
+  ready!: string;                    // definite assignment — "trust me"
+
+  // Parameter properties: modifier => declares AND assigns the field
+  constructor(public owner: string, private rate = 0.05) {
+    this.id = crypto.randomUUID();
+  }
+
+  get formatted(): string { return \`$\${this.balance}\`; }  // getter
+  set deposit(n: number) { this.balance += n; }            // setter
+  accessor live = 0;   // auto-accessor — decoratable getter/setter pair
+}
+
+abstract class Shape {
+  abstract area(): number;                    // subclass MUST implement
+  summary() { return this.area().toFixed(2); } // inherited implementation
+}
+
+class Circle extends Shape implements Serializable {
+  constructor(private r: number) { super(); }
+  override area() { return Math.PI * this.r ** 2; }  // 'override' required
+}                                                     // under noImplicitOverride
+
+// Singleton — private constructor blocks 'new' from outside
+class Db {
+  private static instance: Db | null = null;
+  private constructor() {}
+  static get(): Db { return (Db.instance ??= new Db()); }
+}`}
+      </CodeBlock>
+
+      <h2>Decorators</h2>
+      <CodeBlock language="ts" title="Stage 3 (TS 5+, no flag) vs legacy">
+{`// ── Stage 3 standard: (value, context) ──
+function log<T extends (...a: any[]) => any>(m: T, c: ClassMethodDecoratorContext): T {
+  return function (this: any, ...args: any[]) {
+    console.log(String(c.name), args);
+    return m.apply(this, args);
+  } as T;
+}
+
+// Decorator FACTORY — a decorator that takes arguments
+function retry(times: number) {
+  return function <T extends (...a: any[]) => Promise<any>>(m: T, c: ClassMethodDecoratorContext): T {
+    /* wrap and re-invoke m */ return m;
+  };
+}
+
+class Api {
+  @log            // applied LAST  (outermost — its code runs first)
+  @retry(3)       // applied FIRST (innermost)
+  async fetch() {}
+}
+
+// context: { kind, name, static, private, access, addInitializer, metadata }
+// kinds: class | method | getter | setter | field | accessor
+// class decorator: return a subclass to replace the class; addInitializer for per-instance
+
+// ── Legacy (Angular / NestJS / TypeORM): (target, key, descriptor) ──
+// tsconfig: "experimentalDecorators": true, "emitDecoratorMetadata": true
+// Only the legacy system has PARAMETER decorators — which is why
+// constructor-injection DI still requires the flag. All-or-nothing per project.`}
+      </CodeBlock>
+
       <h2>Utility Types</h2>
-      <CodeBlock language="ts" title="Built-in utility types worth memorizing">
-{`Partial<T>          all props optional
-Required<T>         all props required
-Readonly<T>         all props readonly
-Pick<T, K>          keep the listed keys
-Omit<T, K>          drop the listed keys
-Record<K, V>        { [key: K]: V }
-NonNullable<T>      strip null and undefined
-ReturnType<F>       infer function return type
-Parameters<F>       tuple of function param types
-Awaited<P>          unwrap Promise (deeply)
-Exclude<T, U>       union minus U
-Extract<T, U>       union intersected with U
-InstanceType<C>     instance type of a class constructor`}
+      <CodeBlock language="ts" title="Every built-in utility type">
+{`// ── Object shape ──
+Partial<T>              all props optional
+Required<T>             all props required
+Readonly<T>             all props readonly
+Pick<T, K>              keep the listed keys
+Omit<T, K>              drop the listed keys
+Record<K, V>            { [key: K]: V }
+
+// ── Union filtering ──
+Exclude<T, U>           union minus U
+Extract<T, U>           union intersected with U
+NonNullable<T>          strip null and undefined
+
+// ── Functions & classes ──
+ReturnType<F>           infer function return type
+Parameters<F>           tuple of function param types
+ConstructorParameters<C> tuple of constructor param types
+InstanceType<C>         instance type of a class constructor
+ThisParameterType<F>    the declared 'this' param
+OmitThisParameter<F>    same function, 'this' removed
+ThisType<T>             types 'this' inside an object literal's methods
+
+// ── Async ──
+Awaited<P>              unwrap Promise (recursively)
+
+// ── Strings (compiler intrinsics) ──
+Uppercase<S>  Lowercase<S>  Capitalize<S>  Uncapitalize<S>
+
+// ── Inference control ──
+NoInfer<T>              (TS 5.4+) exclude this position from inference`}
       </CodeBlock>
 
       <h2>Generics</h2>
@@ -231,8 +321,14 @@ export function useCounter(initial = 0) {
 onChange={(e: ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
 onClick={(e: MouseEvent<HTMLButtonElement>) => {}}
 
-// forwardRef
-const Input = forwardRef<HTMLInputElement, InputProps>((props, ref) => <input ref={ref} {...props} />);
+// ref — React 19: just another prop. forwardRef is deprecated.
+interface InputProps extends ComponentPropsWithRef<'input'> { label: string }
+function Input({ label, ref, ...rest }: InputProps) { return <input ref={ref} {...rest} />; }
+// legacy: const Input = forwardRef<HTMLInputElement, InputProps>((props, ref) => ...)
+//         note the BACKWARDS generic order: <RefType, PropsType>
+
+// Context — React 19 renders the context itself as the provider
+<ThemeContext value={theme}>{children}</ThemeContext>   // not .Provider
 
 // useReducer typed
 type Action = { type: 'inc' } | { type: 'set'; value: number };
@@ -252,6 +348,27 @@ function parseEmail(raw: unknown): Result<string, string> {
 }`}
       </CodeBlock>
 
+      <h2>Modules &amp; Type-Only Imports</h2>
+      <CodeBlock language="ts" title="Erased at compile time — required by esbuild/SWC">
+{`import type { User } from './models';          // whole import is erased
+import { type Config, createClient } from './client';  // inline type modifier
+export type { User };
+
+// declare module — augment a third-party package's types
+declare module 'express' {
+  interface Request { userId?: string }
+}
+
+// declare global — augment globals (file must have a top-level import/export)
+declare global {
+  interface Window { analytics: { track(e: string): void } }
+}
+
+// namespace — LEGACY. Do not write new ones in app code.
+// Still correct inside .d.ts files describing script-tag globals.
+declare namespace Express { interface Request { user?: User } }`}
+      </CodeBlock>
+
       <h2>tsconfig Essentials</h2>
       <CodeBlock language="json" title="Strictness dial — turn it up">
 {`{
@@ -268,8 +385,9 @@ function parseEmail(raw: unknown): Result<string, string> {
     "noImplicitThis": true,
     "alwaysStrict": true,
     "noUncheckedIndexedAccess": true,   // arr[i] is T | undefined
-    "noImplicitOverride": true,
+    "noImplicitOverride": true,         // 'override' keyword required
     "isolatedModules": true,
+    "verbatimModuleSyntax": true,       // import type is erased, plain import is not
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "skipLibCheck": true

@@ -30,39 +30,39 @@ export default function Authz() {
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Method</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>How It Works</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Common Use</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Method</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>How It Works</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Common Use</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Password</strong></td>
             <td style={{ padding: '0.75rem' }}>Something you know — hashed and compared</td>
             <td style={{ padding: '0.75rem' }}>Most web apps</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Biometric</strong></td>
             <td style={{ padding: '0.75rem' }}>Something you are — fingerprint, face, iris</td>
             <td style={{ padding: '0.75rem' }}>Mobile devices, physical access</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Certificate</strong></td>
             <td style={{ padding: '0.75rem' }}>Something you have — X.509 client cert (mTLS)</td>
             <td style={{ padding: '0.75rem' }}>Microservices, IoT, enterprise</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Magic Link</strong></td>
             <td style={{ padding: '0.75rem' }}>One-time link sent to email</td>
             <td style={{ padding: '0.75rem' }}>Slack, Notion, many SaaS</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>OTP (TOTP/HOTP)</strong></td>
             <td style={{ padding: '0.75rem' }}>Time-based one-time password from authenticator app</td>
             <td style={{ padding: '0.75rem' }}>2FA, MFA</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>SSO (OAuth/OIDC)</strong></td>
             <td style={{ padding: '0.75rem' }}>Delegated auth via identity provider</td>
             <td style={{ padding: '0.75rem' }}>Enterprise, &quot;Login with Google&quot;</td>
@@ -251,39 +251,39 @@ Phase 6: Logout
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Pattern</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>AuthN</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Token</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>AuthZ</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Pattern</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>AuthN</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Token</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>AuthZ</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Traditional Web App</strong></td>
             <td style={{ padding: '0.75rem' }}>Password login</td>
             <td style={{ padding: '0.75rem' }}>Server session + cookie</td>
             <td style={{ padding: '0.75rem' }}>RBAC</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Modern SPA + REST API</strong></td>
             <td style={{ padding: '0.75rem' }}>Password or OAuth</td>
             <td style={{ padding: '0.75rem' }}>JWT in HttpOnly cookie</td>
             <td style={{ padding: '0.75rem' }}>JWT claims</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Enterprise SSO</strong></td>
             <td style={{ padding: '0.75rem' }}>OAuth 2.0 + OIDC</td>
             <td style={{ padding: '0.75rem' }}>ID Token JWT + app session</td>
             <td style={{ padding: '0.75rem' }}>RBAC</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Microservices</strong></td>
             <td style={{ padding: '0.75rem' }}>OAuth/OIDC at gateway</td>
             <td style={{ padding: '0.75rem' }}>JWT passed between services</td>
             <td style={{ padding: '0.75rem' }}>Per-service AuthZ</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Gateway-Validated Session</strong></td>
             <td style={{ padding: '0.75rem' }}>OAuth/OIDC or password</td>
             <td style={{ padding: '0.75rem' }}>Opaque token + Redis session, validated once at the edge</td>

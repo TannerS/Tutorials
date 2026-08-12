@@ -224,33 +224,33 @@ console.log(aliceSecret.equals(bobSecret)); // true!
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Algorithm</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Type</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Speed</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Use Case</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Algorithm</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Type</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Speed</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Use Case</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>AES-256</td>
             <td style={{ padding: '0.75rem' }}>Symmetric</td>
             <td style={{ padding: '0.75rem' }}>Very Fast</td>
             <td style={{ padding: '0.75rem' }}>Bulk data encryption</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>RSA-2048</td>
             <td style={{ padding: '0.75rem' }}>Asymmetric</td>
             <td style={{ padding: '0.75rem' }}>1000x slower</td>
             <td style={{ padding: '0.75rem' }}>Legacy key exchange</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>ECDH-256</td>
             <td style={{ padding: '0.75rem' }}>Asymmetric</td>
             <td style={{ padding: '0.75rem' }}>Fast</td>
             <td style={{ padding: '0.75rem' }}>Key exchange (TLS 1.3)</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>ECDSA-256</td>
             <td style={{ padding: '0.75rem' }}>Asymmetric</td>
             <td style={{ padding: '0.75rem' }}>Fast</td>
@@ -321,6 +321,139 @@ console.log('Tampered message valid:', isTampered); // false!`}
           <strong> key distribution problem</strong> (no need to pre-share secrets), while symmetric encryption
           handles the <strong>performance problem</strong> (fast bulk encryption for all data). This is why every
           HTTPS connection on the internet uses this exact pattern.
+        </p>
+      </InfoBox>
+
+      <h2>Password Hashing — Deliberately Slow Is the Point</h2>
+
+      <p>
+        Everything above is designed to be <em>fast</em>. Password storage is
+        the one place where that instinct is exactly backwards, and it is the
+        most common crypto mistake in real codebases.
+      </p>
+
+      <InfoBox variant="danger" title="Passwords Are Not Encrypted — They Are Hashed">
+        <p>
+          Encryption is reversible by design; if you can decrypt a password,
+          so can whoever steals your database and your key. Passwords must be
+          run through a <strong>one-way password hashing function</strong>{' '}
+          instead, so that verification means re-hashing the input and
+          comparing, never recovering the original.
+        </p>
+        <p>
+          And not just any hash. <strong>MD5, SHA-1, SHA-256, and SHA-512 are
+          all wrong for passwords</strong> — not because they are broken as
+          hashes (SHA-256 is fine), but because they are{' '}
+          <em>fast</em>. A modern GPU computes billions of SHA-256 hashes per
+          second, so a stolen table of SHA-256 password hashes is cracked at
+          enormous speed. Password hashing functions are deliberately
+          engineered to be slow and memory-hungry to destroy that economics.
+        </p>
+      </InfoBox>
+
+      <h3>Choosing an Algorithm</h3>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Algorithm</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Verdict</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Argon2id</strong></td>
+            <td style={{ padding: '0.75rem', color: 'var(--accent-green, #4ade80)' }}>First choice</td>
+            <td style={{ padding: '0.75rem' }}>Winner of the Password Hashing Competition; OWASP&apos;s current top recommendation. Memory-hard, so GPU/ASIC attacks lose their advantage. The <code>id</code> variant resists both side-channel and GPU attacks.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>scrypt</strong></td>
+            <td style={{ padding: '0.75rem', color: 'var(--accent-green, #4ade80)' }}>Good</td>
+            <td style={{ padding: '0.75rem' }}>Also memory-hard. A reasonable choice when Argon2 is unavailable.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>bcrypt</strong></td>
+            <td style={{ padding: '0.75rem' }}>Acceptable</td>
+            <td style={{ padding: '0.75rem' }}>Battle-tested and still perfectly usable — the pragmatic default in the Java/Spring world. Two caveats: it is CPU-hard but not memory-hard, and it <strong>silently truncates input at 72 bytes</strong>.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>PBKDF2</strong></td>
+            <td style={{ padding: '0.75rem' }}>Legacy / compliance</td>
+            <td style={{ padding: '0.75rem' }}>Use when FIPS certification requires it. Weakest of the four against GPUs — needs a very high iteration count.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>SHA-256 / MD5 / SHA-1</strong></td>
+            <td style={{ padding: '0.75rem', color: 'var(--accent-red-deep)' }}>Never</td>
+            <td style={{ padding: '0.75rem' }}>Far too fast. Salting helps against rainbow tables but does nothing against a GPU brute-forcing each hash individually.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <CodeBlock language="javascript" title="Password Hashing with Argon2id (Node.js)">
+{`const argon2 = require('argon2');
+
+// Register — hash the password before storing it.
+// The salt is generated automatically and embedded in the output,
+// so you do NOT need a separate salt column.
+async function hashPassword(plaintext) {
+  return argon2.hash(plaintext, {
+    type: argon2.argon2id,
+    memoryCost: 19456,  // 19 MiB — OWASP baseline
+    timeCost: 2,        // iterations
+    parallelism: 1,
+  });
+}
+
+// Login — re-hash the candidate and compare in constant time.
+// argon2.verify() reads the parameters back out of the stored hash,
+// so old hashes keep verifying after you raise the cost settings.
+async function checkPassword(plaintext, storedHash) {
+  return argon2.verify(storedHash, plaintext);
+}
+
+// Stored value encodes algorithm, parameters, salt, and hash:
+// $argon2id$v=19$m=19456,t=2,p=1$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Three Mistakes That Survive Code Review">
+        <p>
+          <strong>1. Comparing hashes with <code>==</code>.</strong> A normal
+          string comparison returns early on the first differing byte, leaking
+          timing information. Always use the library&apos;s{' '}
+          <code>verify()</code>, or a constant-time comparison like Node&apos;s{' '}
+          <code>crypto.timingSafeEqual()</code>.
+        </p>
+        <p>
+          <strong>2. Rolling your own salt.</strong> Every algorithm above
+          generates a cryptographically random salt per password and embeds it
+          in the output string. A hand-rolled salt column is a chance to get it
+          wrong — and reusing one salt across all users defeats its purpose
+          entirely.
+        </p>
+        <p>
+          <strong>3. Not capping the input length.</strong> Because these
+          functions are intentionally expensive, accepting a 10 MB
+          &quot;password&quot; hands an attacker a cheap CPU-exhaustion DoS.
+          Reject anything over ~128 characters before hashing.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="tip" title="Upgrading Cost Factors Over Time">
+        <p>
+          Cost parameters must rise as hardware improves, but you cannot re-hash
+          passwords you do not have in plaintext. The standard approach is to
+          upgrade opportunistically: on each successful login, check whether the
+          stored hash used outdated parameters and, if so, re-hash the
+          plaintext you just verified and overwrite the stored value.
+        </p>
+        <p>
+          Spring Security automates exactly this with{' '}
+          <code>DelegatingPasswordEncoder</code>, which prefixes stored hashes
+          with an algorithm tag (<code>{'{bcrypt}'}</code>,{' '}
+          <code>{'{argon2}'}</code>) so several algorithms can coexist during a
+          migration — see the <strong>Spring Boot → Security</strong> lesson for
+          the framework-specific setup.
         </p>
       </InfoBox>
 

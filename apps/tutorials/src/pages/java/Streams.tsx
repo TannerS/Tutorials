@@ -416,6 +416,109 @@ PayrollSummary summary = staff.stream()
         </p>
       </InfoBox>
 
+      <h2>Gatherers — Custom Intermediate Operations (Java 24)</h2>
+      <p>
+        For a decade the Stream API had an asymmetry: <code>Collector</code> let you write your
+        own <em>terminal</em> operation, but there was no way to write your own{' '}
+        <em>intermediate</em> one. If you wanted a sliding window, a running total, or
+        &ldquo;take elements until the sum exceeds N,&rdquo; you dropped out of the stream and
+        wrote a loop. <code>Gatherer</code> (JEP 485, preview in 22&ndash;23,{' '}
+        <strong>final in Java 24</strong>) closes that gap: <code>gather()</code> is to
+        intermediate operations what <code>collect()</code> is to terminal ones.
+      </p>
+
+      <CodeBlock language="java" title="The five built-in gatherers">
+{`import java.util.stream.Gatherers;
+
+// windowFixed — batch into non-overlapping chunks of N.
+// The classic use: chunk records for a batched DB write or API call.
+List<List<Order>> batches = orders.stream()
+    .gather(Gatherers.windowFixed(500))
+    .toList();
+
+// windowSliding — overlapping windows of N. Moving averages, trend detection.
+List<Double> movingAvg = prices.stream()
+    .gather(Gatherers.windowSliding(7))
+    .map(w -> w.stream().mapToDouble(Double::doubleValue).average().orElse(0))
+    .toList();
+
+// fold — a running reduction to a single value (terminal-like, but lazy).
+Optional<String> joined = Stream.of("a", "b", "c")
+    .gather(Gatherers.fold(() -> "", (acc, s) -> acc + s))
+    .findFirst();                                  // "abc"
+
+// scan — like fold, but EMITS each intermediate result.
+List<Integer> runningTotal = Stream.of(1, 2, 3, 4)
+    .gather(Gatherers.scan(() -> 0, Integer::sum))
+    .toList();                                     // [1, 3, 6, 10]
+
+// mapConcurrent — run N mappings in parallel on virtual threads,
+// preserving encounter order. Ideal for fan-out I/O.
+List<ProductDto> products = ids.stream()
+    .gather(Gatherers.mapConcurrent(10, id -> catalogClient.fetch(id)))
+    .toList();`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="mapConcurrent is the one you'll reach for at work">
+        <p>
+          Fanning out 200 HTTP calls with bounded concurrency used to mean an{' '}
+          <code>ExecutorService</code>, a list of <code>Future</code>s, and manual result
+          ordering. <code>Gatherers.mapConcurrent(10, fn)</code> does it in one line: it runs at
+          most 10 tasks at a time on <em>virtual threads</em>, preserves encounter order, and
+          propagates the first exception while cancelling the rest. Note it is a{' '}
+          <strong>sequential</strong> stream operation — the concurrency comes from the gatherer,
+          not from <code>parallel()</code>, so you keep deterministic ordering.
+        </p>
+      </InfoBox>
+
+      <p>
+        Writing your own is worth seeing once, because it explains the shape. A gatherer is an
+        initializer (optional state), an integrator (called per element, returns{' '}
+        <code>false</code> to short-circuit), and an optional finisher:
+      </p>
+
+      <CodeBlock language="java" title="A custom gatherer: distinctBy(keyExtractor)">
+{`// Stream has distinct() (uses equals) but no distinctBy(). Now you can add it.
+static <T, K> Gatherer<T, ?, T> distinctBy(Function<? super T, ? extends K> key) {
+    return Gatherer.ofSequential(
+        HashSet::new,                              // initializer: the state
+        (seen, element, downstream) -> {           // integrator: per element
+            if (seen.add(key.apply(element))) {
+                return downstream.push(element);   // false => downstream is done
+            }
+            return true;                           // keep going
+        });
+}
+
+List<Employee> onePerDept = staff.stream()
+    .gather(distinctBy(Employee::department))
+    .toList();
+
+// takeWhileCumulativeSum — genuinely impossible with plain takeWhile,
+// because takeWhile's predicate is stateless by contract.
+static Gatherer<Integer, ?, Integer> takeUntilSumExceeds(int limit) {
+    return Gatherer.ofSequential(
+        () -> new int[1],
+        (total, element, downstream) -> {
+            total[0] += element;
+            if (total[0] > limit) return false;    // short-circuit the stream
+            return downstream.push(element);
+        });
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="When NOT to bother">
+        <p>
+          Most pipelines never need a custom gatherer — <code>map</code>/<code>filter</code>/
+          <code>flatMap</code> cover the ordinary cases, and a plain loop is clearer than a
+          gatherer you wrote for one call site. Reach for <code>Gatherer</code> when the
+          operation is genuinely <em>stateful across elements</em> (windowing, running totals,
+          dedupe-by-key) and you want it reusable across pipelines. Reach for the built-in{' '}
+          <code>Gatherers</code> factories freely — those are just better than the loops they
+          replace.
+        </p>
+      </InfoBox>
+
       <h2>Primitive Streams</h2>
       <p>
         <code>Stream&lt;Integer&gt;</code> boxes every element. For numeric work, the primitive
@@ -601,7 +704,7 @@ public class OptionalExamples {
       <h2>Test Your Knowledge</h2>
 
       <InteractiveChallenge
-        question="What does the following stream expression return?\n\nList.of(1,2,3,4,5).stream()\n  .filter(n -> n > 2)\n  .map(n -> n * 10)\n  .reduce(0, Integer::sum)"
+        question="What does the following stream expression return?"
         options={[
           "15",
           "120",

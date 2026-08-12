@@ -695,6 +695,93 @@ KEY RULE FOR LISTS:
         <p><strong>Re-render = your function runs again.</strong> Everything not wrapped in useState/useRef/useMemo/useCallback is brand new. Hooks are the "memory" that persists across renders. The DOM only updates where the output actually differs. State only resets when the component <em>unmounts</em> (position changes, type changes, or key changes).</p>
       </InfoBox>
 
+      <h2>⚛️ React 19 API Quick Reference</h2>
+
+      <CodeBlock language="jsx" title="The new hooks — signature and when to reach for each" showLineNumbers>
+{`// use() — read a Promise or Context. The ONLY hook allowed in a
+// conditional or loop. Suspends the component until the promise resolves.
+const user  = use(userPromise);   // parent creates the promise, child reads it
+const theme = use(ThemeContext);  // conditional context read is legal
+
+// useActionState(action, initialState) => [state, formAction, isPending]
+// Wraps an async action; React tracks pending + result state for you.
+const [state, formAction, isPending] = useActionState(updateProfile, { errors: null });
+<form action={formAction}>...</form>          // no onSubmit, no preventDefault
+
+// useFormStatus() => { pending, data, method, action }   — from 'react-dom'
+// Any DESCENDANT of a <form action={...}> can read its pending state.
+// Returns pending: false if the component is not inside such a form.
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return <button disabled={pending}>Save</button>;
+}
+
+// useOptimistic(actualState, reducer) => [optimisticState, addOptimistic]
+// Shows a value immediately; snaps back to actualState when the action ends.
+const [optimistic, addOptimistic] = useOptimistic(messages, (cur, msg) => [...cur, msg]);
+
+// useDeferredValue(value, initialValue?)  — 2nd arg is new in 19
+const deferred = useDeferredValue(query, '');   // first render uses '' , not query
+const isStale  = query !== deferred;            // the standard "dim it" signal`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="Syntax that changed in React 19" showLineNumbers>
+{`// ── ref is a normal prop; forwardRef is no longer needed ──
+function MyInput({ ref, ...props }) { return <input ref={ref} {...props} />; }
+// forwardRef still works but is DEPRECATED.
+
+// ── ref callbacks can return a cleanup function ──
+<div ref={(node) => {
+  const obs = new ResizeObserver(fn); obs.observe(node);
+  return () => obs.disconnect();          // called on unmount
+}} />
+// GOTCHA: (node) => (ref.current = node) now returns the node, which React
+// tries to call as cleanup. Always use a braced body: (node) => { ... }
+
+// ── render the Context itself as the provider ──
+<ThemeContext value="dark">{children}</ThemeContext>
+// <ThemeContext.Provider> and <Context.Consumer> are DEPRECATED.
+
+// ── document metadata hoists to <head> from anywhere ──
+<title>{post.title}</title>
+<meta name="description" content={post.summary} />
+<link rel="stylesheet" href="/w.css" precedence="default" />  // deduped + ordered
+<script async src="/sdk.js" />                                 // deduped + hoisted
+
+// ── resource hints, from 'react-dom' ──
+prefetchDNS(host)  preconnect(host)
+preload(href, { as: 'font' | 'image' | 'script' | 'style' | 'fetch' })  // fetch only
+preinit(href, { as: 'script' | 'style' })                                // fetch + run
+
+// ── root-level error hooks ──
+createRoot(el, { onCaughtError, onUncaughtError, onRecoverableError })`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Removed in React 19 — hard failures on upgrade">
+{`propTypes / defaultProps on FUNCTION components  →  TypeScript + default params
+Legacy Context (contextTypes/getChildContext)    →  createContext
+String refs (ref="input")                        →  useRef or a callback ref
+ReactDOM.render / .hydrate / unmountComponentAtNode → createRoot / hydrateRoot / root.unmount()
+ReactDOM.findDOMNode                             →  refs
+react-test-renderer/shallow                      →  React Testing Library
+
+Deprecated but still working (migrate at leisure):
+forwardRef            →  ref as a plain prop
+<Context.Provider>    →  <Context>
+<Context.Consumer>    →  useContext() / use()`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="Compiler vs. Manual Memoization — the short version">
+        <p>
+          With the React Compiler enabled, <code>useMemo</code>, <code>useCallback</code>, and{' '}
+          <code>React.memo</code> are mostly unnecessary — it inserts equivalent caching at build
+          time. It still cannot help you with: <code>useRef</code>, <code>useLayoutEffect</code>,
+          context splitting, <code>key</code> props, list virtualization, or code splitting.
+          And it silently opts out of any component that breaks the Rules of React, so run{' '}
+          <code>eslint-plugin-react-compiler</code> before you turn compilation on.
+        </p>
+      </InfoBox>
+
       <h2>🏗️ Enterprise Patterns — Advanced Reference</h2>
 
       <h3>API Adapter Layer</h3>

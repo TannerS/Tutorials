@@ -12,12 +12,12 @@ import {
 
 /* ─── colour palette ─── */
 const COLORS = {
-  render:  '#22d3ee',
-  mount:   '#4ade80',
-  update:  '#5b9cf6',
-  layout:  '#a78bfa',
-  memo:    '#fbbf24',
-  cleanup: '#f87171',
+  render:  'var(--accent-cyan)',
+  mount:   'var(--accent-green)',
+  update:  'var(--accent-blue)',
+  layout:  'var(--accent-purple)',
+  memo:    'var(--accent-amber)',
+  cleanup: 'var(--accent-red)',
 };
 
 const LEGEND = [
@@ -98,14 +98,14 @@ function ChildDemo({ label, value }: { label: string; value: number }) {
         {' · '}Renders: <strong style={{ color: COLORS.render }}>{renderCount.current}</strong>
       </p>
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-        <label style={{ fontSize: '0.8rem', color: '#8b8fa3' }}>Local state:</label>
+        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Local state:</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="type here…"
           style={styles.input}
         />
-        {name && <span style={{ color: '#e4e6f0', fontSize: '0.85rem' }}>→ {name}</span>}
+        {name && <span style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>→ {name}</span>}
       </div>
     </div>
   );
@@ -148,7 +148,7 @@ function ParentDemo({ childMounted, childProp, secondChildMounted, count, log }:
       {childMounted && <ChildDemo label="Child A" value={childProp} />}
       {secondChildMounted && <ChildDemo label="Child B" value={childProp + 10} />}
       {!childMounted && !secondChildMounted && (
-        <p style={{ color: '#555b72', fontStyle: 'italic', margin: '1rem 0' }}>
+        <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', margin: '1rem 0' }}>
           No children mounted — click "Mount Child" to begin.
         </p>
       )}
@@ -173,7 +173,7 @@ const LogPanel = memo(function LogPanel({ entries }: { entries: LogEntry[] }) {
       <div style={styles.logHeader}>📋 Event Log ({entries.length})</div>
       <div style={styles.logScroll} ref={scrollRef}>
         {entries.length === 0 && (
-          <p style={{ color: '#555b72', textAlign: 'center', padding: '2rem 0' }}>
+          <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem 0' }}>
             Interact with the controls to see lifecycle events…
           </p>
         )}
@@ -320,23 +320,24 @@ export default function LifecycleSimulator() {
    ──────────────────────────────────────────── */
 const styles: Record<string, import('react').CSSProperties> = {
   wrapper: {
-    background: '#0f1117',
-    color: '#e4e6f0',
+    background: 'var(--bg-primary)',
+    color: 'var(--text-primary)',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     padding: '1.5rem',
     borderRadius: '12px',
     maxWidth: '1200px',
     margin: '0 auto',
+    border: '1px solid var(--border-color)',
   },
   title: {
     margin: '0 0 0.25rem',
     fontSize: '1.5rem',
-    color: '#e4e6f0',
+    color: 'var(--text-primary)',
   },
   subtitle: {
     margin: '0 0 0.75rem',
     fontSize: '0.9rem',
-    color: '#8b8fa3',
+    color: 'var(--text-muted)',
   },
 
   /* legend */
@@ -346,9 +347,9 @@ const styles: Record<string, import('react').CSSProperties> = {
     gap: '0.75rem',
     marginBottom: '1rem',
     padding: '0.5rem 0.75rem',
-    background: '#161824',
+    background: 'var(--bg-secondary)',
     borderRadius: '8px',
-    border: '1px solid #2a2e42',
+    border: '1px solid var(--border-color)',
     fontSize: '0.8rem',
   },
   legendItem: {
@@ -363,9 +364,9 @@ const styles: Record<string, import('react').CSSProperties> = {
     marginBottom: '1rem',
   },
   btn: {
-    background: '#252a3f',
-    color: '#e4e6f0',
-    border: '1px solid #2a2e42',
+    background: 'var(--bg-active)',
+    color: 'var(--text-primary)',
+    border: '1px solid var(--border-color)',
     borderRadius: '6px',
     padding: '0.45rem 0.85rem',
     fontSize: '0.82rem',
@@ -387,22 +388,22 @@ const styles: Record<string, import('react').CSSProperties> = {
   liveArea: {
     flex: '1 1 340px',
     minWidth: 0,
-    background: '#161824',
+    background: 'var(--bg-secondary)',
     borderRadius: '10px',
-    border: '1px solid #2a2e42',
+    border: '1px solid var(--border-color)',
     padding: '1rem',
   },
   liveHeader: {
     fontWeight: 600,
     fontSize: '0.95rem',
     marginBottom: '0.75rem',
-    color: '#c0c3d4',
+    color: 'var(--text-secondary)',
   },
 
   /* parent / child cards */
   parentCard: {
-    background: '#1c1f30',
-    border: '1px solid #2a2e42',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border-color)',
     borderRadius: '8px',
     padding: '0.75rem',
   },
@@ -415,8 +416,8 @@ const styles: Record<string, import('react').CSSProperties> = {
     alignItems: 'center',
   },
   childCard: {
-    background: '#22253a',
-    border: '1px solid #2f3350',
+    background: 'var(--bg-hover)',
+    border: '1px solid var(--border-color)',
     borderRadius: '8px',
     padding: '0.6rem 0.75rem',
     marginTop: '0.5rem',
@@ -424,18 +425,18 @@ const styles: Record<string, import('react').CSSProperties> = {
   childHeader: {
     fontWeight: 600,
     fontSize: '0.85rem',
-    color: '#a78bfa',
+    color: 'var(--accent-purple)',
     marginBottom: '0.35rem',
   },
   childText: {
     margin: '0 0 0.4rem',
     fontSize: '0.82rem',
-    color: '#c0c3d4',
+    color: 'var(--text-secondary)',
   },
   input: {
-    background: '#161824',
-    color: '#e4e6f0',
-    border: '1px solid #2a2e42',
+    background: 'var(--bg-secondary)',
+    color: 'var(--text-primary)',
+    border: '1px solid var(--border-color)',
     borderRadius: '4px',
     padding: '0.25rem 0.5rem',
     fontSize: '0.82rem',
@@ -447,9 +448,9 @@ const styles: Record<string, import('react').CSSProperties> = {
   logPanel: {
     flex: '1 1 380px',
     minWidth: 0,
-    background: '#0d0f16',
+    background: 'var(--bg-primary)',
     borderRadius: '10px',
-    border: '1px solid #2a2e42',
+    border: '1px solid var(--border-color)',
     display: 'flex',
     flexDirection: 'column',
     maxHeight: '520px',
@@ -458,8 +459,8 @@ const styles: Record<string, import('react').CSSProperties> = {
     fontWeight: 600,
     fontSize: '0.95rem',
     padding: '0.75rem 1rem',
-    borderBottom: '1px solid #2a2e42',
-    color: '#c0c3d4',
+    borderBottom: '1px solid var(--border-color)',
+    color: 'var(--text-secondary)',
     flexShrink: 0,
   },
   logScroll: {
@@ -475,7 +476,7 @@ const styles: Record<string, import('react').CSSProperties> = {
     wordBreak: 'break-word',
   },
   logTs: {
-    color: '#555b72',
+    color: 'var(--text-muted)',
     marginRight: '0.5rem',
   },
 };

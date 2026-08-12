@@ -180,6 +180,27 @@ SequencedCollection<Integer> rev = list.reversed();`}
       />
 
       <PosterCard
+        glyph="Gth"
+        title={<>Gatherers<span className="dim"> — custom intermediate ops, Java 24</span></>}
+        language="java"
+        code={`import java.util.stream.Gatherers;
+
+// batch into chunks of 500 (bulk DB writes / API calls)
+.gather(Gatherers.windowFixed(500))
+
+// overlapping windows — moving averages
+.gather(Gatherers.windowSliding(7))
+
+// running total: [1,2,3,4] -> [1,3,6,10]
+.gather(Gatherers.scan(() -> 0, Integer::sum))
+
+// bounded parallel I/O on virtual threads,
+// encounter order preserved
+.gather(Gatherers.mapConcurrent(10, id -> client.fetch(id)))`}
+        caption="gather() is to intermediate operations what collect() is to terminal ones — finally a supported way to write stateful steps like windowing and running totals. mapConcurrent is the standout: bounded fan-out I/O on virtual threads, in order, in one line."
+      />
+
+      <PosterCard
         glyph="Rcp"
         title={<>Common Patterns<span className="dim"> — frequency & flatten</span></>}
         language="java"

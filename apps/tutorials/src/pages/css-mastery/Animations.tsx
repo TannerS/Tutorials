@@ -268,6 +268,63 @@ export default function Animations() {
 /* Named values: top, right, bottom, left, center
    Or precise: transform-origin: 20px 80%; */`}</CodeBlock>
 
+      <h3>Individual Transform Properties</h3>
+      <p>
+        <code>translate</code>, <code>rotate</code>, and <code>scale</code> are now standalone
+        properties, not just functions inside <code>transform</code>. This solves the single most
+        annoying limitation of the shorthand: you could never change one part of a transform
+        without restating all of it, so a hover that scales would wipe out a base translate.
+      </p>
+      <CodeBlock language="css" title="Standalone vs Shorthand">{`/* ❌ THE OLD PROBLEM — :hover must repeat translate or it's lost */
+.badge        { transform: translateY(-50%); }
+.badge:hover  { transform: translateY(-50%) scale(1.1); } /* must restate */
+
+/* ✅ Independent properties — each composes, none clobbers the others */
+.badge        { translate: 0 -50%; scale: 1; }
+.badge:hover  { scale: 1.1; }   /* translate is untouched */
+
+/* They can be transitioned independently, too */
+.badge {
+  transition: scale 200ms ease-out, rotate 400ms ease;
+}
+
+/* Note the value syntax differs from the transform functions:
+   translate: 10px 20px;    (space-separated, not translate(10px, 20px))
+   rotate:    45deg;         (or an axis: rotate: y 45deg)
+   scale:     1.2;           (or per-axis: scale: 0.8 1.2) */`}</CodeBlock>
+
+      <InfoBox variant="info" title="Application Order Is Fixed">
+        When you use the individual properties, the browser always applies them in the order
+        <strong> translate → rotate → scale</strong>, then any <code>transform</code> shorthand on
+        top of that. You give up the arbitrary ordering the shorthand allowed, and in exchange you
+        get composability. If you genuinely need a different order (rotate before translate, say),
+        keep using the <code>transform</code> shorthand for that element.
+      </InfoBox>
+
+      <h3>linear() — Springs and Bounces Without JavaScript</h3>
+      <p>
+        <code>cubic-bezier()</code> can only describe a curve with one hump, so a true bounce or
+        multi-oscillation spring was impossible in pure CSS. <code>linear()</code> approximates any
+        arbitrary easing curve as a series of points, which is how spring physics finally arrived
+        in CSS.
+      </p>
+      <CodeBlock language="css" title="linear() Easing">{`/* Bounce — output overshoots and settles across several stops */
+.drop {
+  transition: translate 600ms linear(
+    0, 0.063, 0.25, 0.563, 1, 0.813, 0.75, 0.813, 1, 0.938, 1
+  );
+}
+
+/* Spring-like settle */
+.spring {
+  transition: scale 500ms linear(
+    0, 0.4 12%, 0.9 24%, 1.08 36%, 1.02 55%, 0.99 75%, 1
+  );
+}
+/* Percentages pin a stop to a point in the timeline; omit them
+   and the stops are distributed evenly. Generate these curves with
+   a spring-to-linear() tool rather than hand-tuning them. */`}</CodeBlock>
+
       <InteractiveChallenge
         question={"What does animation-fill-mode: backwards do during the animation-delay period?"}
         options={[
@@ -355,6 +412,168 @@ export default function Animations() {
         (Success Criterion 2.3.3). Auto-playing animations that cannot be paused or disabled are
         an accessibility failure. The opt-in strategy (Strategy 2 above) is the most robust
         approach — animations are a progressive enhancement, not a baseline.
+      </InfoBox>
+
+      <h2>Entry Animations: @starting-style &amp; allow-discrete</h2>
+      <p>
+        Animating an element <em>in</em> used to be genuinely impossible in pure CSS. Transitions
+        need a previous value to interpolate from, and an element going from
+        <code> display: none</code> to <code>display: block</code> has no previous rendered state —
+        so it just appeared, instantly. Every fade-in on a dropdown, toast, modal, or tooltip was
+        a JavaScript double-<code>requestAnimationFrame</code> dance or a &quot;visibility +
+        opacity + a wrapper&quot; workaround. Two features fixed this.
+      </p>
+
+      <h3>transition-behavior: allow-discrete</h3>
+      <p>
+        Discrete properties (<code>display</code>, <code>overlay</code>,
+        <code>content-visibility</code>) normally flip instantly and can&apos;t be transitioned.
+        <code> allow-discrete</code> makes the browser defer the flip so your other transitions
+        finish first — <code>display</code> waits until the fade-out completes instead of yanking
+        the element out from under it.
+      </p>
+
+      <h3>@starting-style</h3>
+      <p>
+        <code>@starting-style</code> supplies the &quot;before it existed&quot; values a transition
+        needs, giving the browser a state to interpolate <em>from</em> on that very first frame.
+      </p>
+
+      <CodeBlock language="css" title="A Popover That Actually Fades Both Ways">{`.popover {
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity 250ms ease,
+    scale 250ms ease,
+    display 250ms allow-discrete;   /* ← hold display until the rest finish */
+}
+
+/* The state it animates FROM on first paint */
+@starting-style {
+  .popover { opacity: 0; scale: 0.95; }
+}
+
+/* The state it animates TO when closing */
+.popover[hidden] {
+  opacity: 0;
+  scale: 0.95;
+  display: none;
+}`}</CodeBlock>
+
+      <CodeBlock language="css" title="Native <dialog> and popover: the ::backdrop too">{`dialog {
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity 200ms ease,
+    translate 200ms ease,
+    display 200ms allow-discrete,
+    overlay 200ms allow-discrete;  /* overlay = the top-layer promotion */
+}
+dialog:not([open]) { opacity: 0; translate: 0 -1rem; }
+@starting-style {
+  dialog[open] { opacity: 0; translate: 0 -1rem; }
+}
+
+/* ::backdrop needs its own rules — it is NOT a descendant of dialog */
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.5);
+  transition: background 200ms ease, display 200ms allow-discrete;
+}
+dialog:not([open])::backdrop { background: rgb(0 0 0 / 0); }
+@starting-style {
+  dialog[open]::backdrop { background: rgb(0 0 0 / 0); }
+}`}</CodeBlock>
+
+      <InfoBox variant="warning" title="Order Matters Inside @starting-style">
+        <code>@starting-style</code> rules lose to normal rules of the same specificity, so a
+        <code> @starting-style</code> block placed <em>before</em> the rule it targets can be
+        silently overridden. Declare it after — or nest it inside — the rule whose starting state
+        it describes. Also remember <code>overlay</code>: without transitioning it with
+        <code> allow-discrete</code>, a <code>dialog</code> or popover drops out of the browser&apos;s
+        top layer immediately and appears to vanish behind other content mid-exit.
+      </InfoBox>
+
+      <h2>Scroll-Driven Animations</h2>
+      <p>
+        <code>animation-timeline</code> re-drives an existing <code>@keyframes</code> animation off
+        scroll position instead of elapsed time. The keyframes are unchanged — only what advances
+        them differs. This runs off the main thread, so it replaces the scroll-listener +
+        <code> getBoundingClientRect()</code> pattern (and the jank that comes with it) entirely.
+      </p>
+      <CodeBlock language="css" title="scroll() and view() Timelines">{`/* 1. Reading-progress bar — driven by the ROOT scroller's progress */
+@keyframes grow-progress { from { scale: 0 1; } to { scale: 1 1; } }
+
+.progress-bar {
+  position: fixed; inset-block-start: 0; inset-inline: 0;
+  block-size: 4px; background: var(--color-primary);
+  transform-origin: left center;
+  animation: grow-progress linear both;
+  animation-timeline: scroll(root block);   /* ← time replaced by scroll */
+}
+
+/* 2. Reveal-on-scroll — driven by the ELEMENT's own trip through
+      the viewport, via a view() timeline. No IntersectionObserver. */
+@keyframes reveal {
+  from { opacity: 0; translate: 0 2rem; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+.card {
+  animation: reveal linear both;
+  animation-timeline: view();
+  /* Run the animation only across the first 40% of its pass through
+     the viewport, so it finishes as the card settles into view */
+  animation-range: entry 0% cover 40%;
+}
+
+/* Named timelines let a child animate off an ancestor's scroller */
+.gallery { scroll-timeline: --gallery inline; overflow-x: auto; }
+.indicator { animation-timeline: --gallery; }`}</CodeBlock>
+
+      <InfoBox variant="tip" title="Always Pair With prefers-reduced-motion">
+        Scroll-driven effects are exactly the category that triggers vestibular discomfort —
+        parallax, content flying in on every scroll tick. Wrap them in
+        <code> @media (prefers-reduced-motion: no-preference)</code> so the page renders as calm
+        static content for users who asked for that, rather than relying on the blanket
+        duration-override reset (which does nothing to a scroll timeline — there is no duration
+        to shorten).
+      </InfoBox>
+
+      <h2>View Transitions</h2>
+      <p>
+        The View Transitions API animates between two <em>DOM states</em> — the browser snapshots
+        the old page, applies your change, snapshots the new one, and cross-fades between them. It
+        gets you app-like page and state transitions with no shared animation library and no
+        keeping both UI states alive in the DOM simultaneously.
+      </p>
+      <CodeBlock language="css" title="Same-Document Transitions">{`/* JS side — wrap the DOM mutation, the browser handles the rest:
+     document.startViewTransition(() => { setState(next); });          */
+
+/* CSS side. Default is a cross-fade; customize the generated
+   pseudo-elements the browser creates for the snapshots: */
+::view-transition-old(root) { animation: 200ms ease-out both fade-out; }
+::view-transition-new(root) { animation: 300ms ease-in  both slide-up; }
+
+/* Name an element to make it MORPH between states rather than
+   cross-fade — the browser tweens position, size, and content
+   between the old and new element sharing this name. */
+.hero-image { view-transition-name: hero; }
+/* Each name must be unique per snapshot — two visible elements
+   sharing a name aborts the whole transition. */`}</CodeBlock>
+
+      <CodeBlock language="css" title="Cross-Document Transitions (MPA)">{`/* Opt in from BOTH pages — same-origin navigations only */
+@view-transition { navigation: auto; }
+
+/* Then name matching elements on each page and the browser morphs
+   them across the navigation — a thumbnail in a list growing into
+   the hero image of the detail page, with zero JavaScript. */`}</CodeBlock>
+
+      <InfoBox variant="warning" title="Treat It as Progressive Enhancement">
+        <code>document.startViewTransition</code> is not universally available yet — feature-detect
+        it (<code>if (!document.startViewTransition) return update();</code>) and fall back to
+        applying the change directly. The un-transitioned result is a perfectly usable instant
+        update, which is exactly what you want a fallback to be. And as with scroll-driven
+        animations, gate the flashier morphs behind <code>prefers-reduced-motion</code>.
       </InfoBox>
 
       <h2>Practical Animation Recipes</h2>

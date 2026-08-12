@@ -341,6 +341,17 @@ const result = await job.run('customers.csv');`}
         <code>RowMapper</code> callback for the part that's actually different each time.
       </InfoBox>
 
+      <InfoBox variant="tip" title="When to Reach for Template Method">
+        Reach for it when several variants of a process share the exact same sequence of steps but
+        differ in how one or two of those steps are done — every import job reads, validates,
+        transforms, and persists in that order, but CSV vs. JSON parsing differs, above. It keeps
+        the sequence itself (and its "shared step every subclass gets for free" behavior) defined
+        in exactly one place. Avoid it if different variants genuinely need to run steps in a
+        different order, skip steps, or run them conditionally — a fixed template can't express
+        that, and you'll end up fighting the base class instead of extending it. Strategy, which
+        swaps the whole algorithm rather than individual steps, usually fits better there.
+      </InfoBox>
+
       <InteractiveChallenge
         question="A base class's run() method calls step1(), step2(), then step3() in that exact order every time, but lets subclasses override step1() and step3() individually. Which pattern is this?"
         options={[

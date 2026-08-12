@@ -193,6 +193,83 @@ public class AreaCalculator {
 }`}
       </CodeBlock>
 
+      <h2>Where Does &quot;Closed&quot; Actually End?</h2>
+      <p>
+        A fair objection to the example above: <em>somebody</em> still has to
+        register <code>EmployeeDiscount</code> in that map. Did we really
+        achieve OCP, or did we just move the if-chain somewhere else?
+      </p>
+      <p>
+        This is the most important nuance of OCP, and it is worth being honest
+        about it in an interview. OCP does not eliminate the point of change —
+        it <strong>relocates</strong> it out of the logic you care about and
+        into a composition root: a configuration file, a DI container, or a
+        factory. The valuable property is that <code>DiscountCalculator</code>{' '}
+        — the class holding the business rule — never changes, so its tests
+        never need to be re-run or re-written. The wiring code that does change
+        is trivial and has no branching logic to get wrong.
+      </p>
+
+      <CodeBlock language="java" title="OcpWithSpring.java">
+{`// GOOD — with a DI container, the registration point disappears too.
+// Spring injects every DiscountStrategy bean it can find, so adding a
+// new @Component is the ONLY change needed to add a customer type.
+public interface DiscountStrategy {
+    boolean appliesTo(Order order);
+    double calculateDiscount(Order order);
+}
+
+@Component
+public class VipDiscount implements DiscountStrategy {
+    @Override
+    public boolean appliesTo(Order order) {
+        return "VIP".equals(order.getCustomerType());
+    }
+
+    @Override
+    public double calculateDiscount(Order order) {
+        return order.getTotal() * 0.20;
+    }
+}
+
+@Service
+public class DiscountCalculator {
+    private final List<DiscountStrategy> strategies;
+
+    // Spring injects ALL DiscountStrategy beans into this list.
+    public DiscountCalculator(List<DiscountStrategy> strategies) {
+        this.strategies = strategies;
+    }
+
+    public double calculateDiscount(Order order) {
+        return strategies.stream()
+            .filter(s -> s.appliesTo(order))
+            .findFirst()
+            .map(s -> s.calculateDiscount(order))
+            .orElse(0.0);
+    }
+}
+
+// Adding an employee discount = adding one new @Component class.
+// No existing file is edited. That is OCP end-to-end.`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Do Not Over-Apply OCP">
+        <p>
+          OCP has a real cost: every extension point is an extra interface, an
+          extra layer of indirection, and one more hop when reading a stack
+          trace. Speculative abstractions built for extensions that never
+          arrive are a classic source of over-engineering — the abstraction
+          usually turns out to be the wrong shape anyway.
+        </p>
+        <p>
+          The pragmatic rule is to write the if-chain first. When you edit it
+          the second or third time for the same <em>kind</em> of reason, you
+          now know the real axis of variation, and that is the moment to
+          introduce the abstraction.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="tip" title="When to Apply OCP">
         <p>
           You do not need to anticipate every future extension up front. Apply

@@ -244,6 +244,47 @@ public class CatalogClient {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="On Spring Boot 4, retry is built in — no spring-retry dependency">
+        <p>
+          The snippet above is the <code>spring-retry</code> form, which is what you will find
+          in every existing Boot 2/3 codebase. Spring Framework 7 (Boot 4) absorbed this into
+          core as the <code>org.springframework.resilience</code> package, so a new project
+          gets <code>@Retryable</code> without an extra dependency. The annotation is the same
+          idea with a flatter attribute set, and it ships with a companion for bounding
+          concurrency:
+        </p>
+        <CodeBlock language="java" title="Core Spring resilience (Boot 4)">
+{`@EnableResilientMethods          // replaces @EnableRetry
+@Configuration
+class ResilienceConfig { }
+
+@Service
+public class CatalogClient {
+
+    // Backoff attributes are inline rather than a nested @Backoff.
+    @Retryable(includes = { RemoteApiException.class, SocketTimeoutException.class },
+               maxAttempts = 4,
+               delay = 200, multiplier = 2.0, maxDelay = 5000)
+    public ProductDto get(String id) { ... }
+
+    @Recover                     // unchanged
+    public ProductDto recoverGet(RemoteApiException e, String id) { ... }
+
+    // No spring-retry equivalent — caps in-flight calls to a fragile
+    // downstream without dedicating a thread pool to it.
+    @ConcurrencyLimit(10)
+    public Report generate(ReportRequest req) { ... }
+}`}
+        </CodeBlock>
+        <p style={{ marginTop: '0.5rem' }}>
+          Both are AOP proxies, so <strong>every caveat on this page still applies</strong> —
+          most importantly self-invocation: calling a <code>@Retryable</code> method from
+          another method of the same bean bypasses the proxy and silently gives you zero
+          retries. Neither is a circuit breaker; when you need bulkheads and open/closed state,
+          reach for Resilience4j.
+        </p>
+      </InfoBox>
+
       <h2>HandlerInterceptors — AOP for HTTP</h2>
       <p>
         <code>HandlerInterceptor</code> is Spring MVC's built-in interception mechanism.

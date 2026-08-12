@@ -6,13 +6,13 @@ export default function FieldGuideStateManagement() {
   return (
     <PosterLayout
       accent="sky"
-      eyebrow="React + TypeScript · Field Reference"
+      eyebrow="React 19 · Field Reference"
       title="State Management"
       tagline="Redux Toolkit, Zustand, TanStack Query, and Jotai side by side — the setup, the gotcha, and when to reach for each."
       meta={['Redux · Zustand · Query', '12 patterns']}
       footerLabel="Personal study reference — State Management"
-      pageLabel="React + TS Field Guide · State Management"
-      prev={{ path: '/react-field-guide/typing-react', label: 'Typing React' }}
+      pageLabel="React 19 Field Guide · State Management"
+      prev={{ path: '/react-field-guide/styling', label: 'Styling Approaches' }}
       next={{ path: '/react-field-guide/router', label: 'React Router v7' }}
     >
       <PosterCard

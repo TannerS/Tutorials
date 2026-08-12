@@ -49,39 +49,39 @@ Cookie: sessionId=abc123; theme=dark`}
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Attribute</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Purpose</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Example</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Attribute</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Purpose</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Example</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Domain</strong></td>
             <td style={{ padding: '0.75rem' }}>Which domain(s) receive the cookie</td>
             <td style={{ padding: '0.75rem' }}><code>Domain=.example.com</code></td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Path</strong></td>
             <td style={{ padding: '0.75rem' }}>URL path that must exist for cookie to be sent</td>
             <td style={{ padding: '0.75rem' }}><code>Path=/api</code></td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Max-Age / Expires</strong></td>
             <td style={{ padding: '0.75rem' }}>How long the cookie lives</td>
             <td style={{ padding: '0.75rem' }}><code>Max-Age=3600</code> (1 hour)</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Secure</strong></td>
             <td style={{ padding: '0.75rem' }}>Only send over HTTPS</td>
             <td style={{ padding: '0.75rem' }}><code>Secure</code></td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>HttpOnly</strong></td>
             <td style={{ padding: '0.75rem' }}>Inaccessible to JavaScript — critical for security</td>
             <td style={{ padding: '0.75rem' }}><code>HttpOnly</code></td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>SameSite</strong></td>
             <td style={{ padding: '0.75rem' }}>Controls cross-site sending behavior</td>
             <td style={{ padding: '0.75rem' }}><code>SameSite=Lax</code></td>
@@ -325,24 +325,24 @@ res.cookie('sessionId', sessionId, {
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Attack</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>What Happens</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Cookie Defense</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Attack</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>What Happens</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Cookie Defense</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>XSS</td>
             <td style={{ padding: '0.75rem' }}>Malicious JS reads <code>document.cookie</code></td>
             <td style={{ padding: '0.75rem' }}><code>HttpOnly</code></td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>CSRF</td>
             <td style={{ padding: '0.75rem' }}>Forged cross-site request with auto-sent cookies</td>
             <td style={{ padding: '0.75rem' }}><code>SameSite=Lax/Strict</code></td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Theft</td>
             <td style={{ padding: '0.75rem' }}>Network interception over HTTP</td>
             <td style={{ padding: '0.75rem' }}><code>Secure</code></td>

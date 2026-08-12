@@ -5,15 +5,15 @@ import PosterQuickRef from '../../components/PosterQuickRef';
 export default function FieldGuideSpringDi() {
   return (
     <PosterLayout
-      accent="amber"
-      eyebrow="Java + Spring Boot 4 · Field Reference"
+      accent="emerald"
+      eyebrow="Spring Boot 4 · Field Reference"
       title="Spring DI & Beans"
       tagline="Stereotypes, constructor injection, bean wiring, and the proxy gotcha that bites everyone once — condensed for offline study."
       meta={['Spring Boot 4', '13 patterns']}
       footerLabel="Personal study reference — Spring Boot"
-      pageLabel="Java + Spring Field Guide · DI & Beans"
-      prev={{ path: '/java-field-guide/concurrency', label: 'Concurrency & Virtual Threads' }}
-      next={{ path: '/java-field-guide/spring-rest', label: 'Spring REST & Validation' }}
+      pageLabel="Spring Field Guide · DI & Beans"
+      prev={null}
+      next={{ path: '/spring-field-guide/spring-rest', label: 'Spring REST & Validation' }}
     >
       <PosterCard
         glyph="St"

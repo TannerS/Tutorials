@@ -170,29 +170,29 @@ Step 7: Encrypted Communication
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Method</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>How It Works</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Pros/Cons</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Method</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>How It Works</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Pros/Cons</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>CRL</strong></td>
             <td style={{ padding: '0.75rem' }}>CA publishes a list of revoked serial numbers</td>
             <td style={{ padding: '0.75rem' }}>Simple but can be large and stale</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>OCSP</strong></td>
             <td style={{ padding: '0.75rem' }}>Client asks CA in real-time if cert is revoked</td>
             <td style={{ padding: '0.75rem' }}>Real-time but adds latency and privacy concern</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>OCSP Stapling</strong></td>
             <td style={{ padding: '0.75rem' }}>Server pre-fetches OCSP response and includes it in TLS handshake</td>
             <td style={{ padding: '0.75rem' }}>Best approach — fast, private, no extra round trips</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>CT Logs</strong></td>
             <td style={{ padding: '0.75rem' }}>Public append-only log of all issued certificates</td>
             <td style={{ padding: '0.75rem' }}>Audit trail — detect misissued certs</td>
@@ -251,41 +251,41 @@ https.get(options, (res) => {
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Concept</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Description</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Concept</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Description</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>TLS 1.3</strong></td>
             <td style={{ padding: '0.75rem' }}>Current version. 1-RTT handshake. Removed legacy ciphers.</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>X.509</strong></td>
             <td style={{ padding: '0.75rem' }}>Certificate format binding public key to domain.</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>PKI</strong></td>
             <td style={{ padding: '0.75rem' }}>Public Key Infrastructure — the chain of trust system.</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>ECDH</strong></td>
             <td style={{ padding: '0.75rem' }}>Elliptic Curve Diffie-Hellman key exchange.</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>HKDF</strong></td>
             <td style={{ padding: '0.75rem' }}>Derives session keys from shared secret.</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>OCSP Stapling</strong></td>
             <td style={{ padding: '0.75rem' }}>Server-side revocation check, included in handshake.</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>mTLS</strong></td>
             <td style={{ padding: '0.75rem' }}>Both client and server present certificates.</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>SNI</strong></td>
             <td style={{ padding: '0.75rem' }}>Server Name Indication — client specifies domain in ClientHello so one IP can host multiple HTTPS sites.</td>
           </tr>

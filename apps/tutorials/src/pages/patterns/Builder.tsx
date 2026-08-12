@@ -148,6 +148,17 @@ UserDto deactivated = admin.toBuilder()
     .build();`}
       </CodeBlock>
 
+      <InfoBox variant="tip" title="When to Reach for Builder">
+        Reach for Builder once a constructor collects roughly four or more parameters, or once
+        some of them are optional — like <code>HttpRequest</code> above, where <code>method</code>{' '}
+        and <code>url</code> are required but headers, body, timeout, and retries aren't. Without
+        it you end up with "telescoping constructors" (five overloaded constructors covering every
+        combination of optional args) or callers passing <code>null, null, false, 0, null</code>{' '}
+        and hoping they got the positions right. If a type has two or three fields and no optional
+        ones, a constructor or a Lombok <code>@Value</code> record is simpler — Builder is solving
+        a readability/validation problem that doesn't exist yet at that size.
+      </InfoBox>
+
       <h2>Prototype Pattern</h2>
       <p>
         Creates new objects by cloning an existing instance (prototype) rather than
@@ -215,6 +226,17 @@ myInvoice.customize(Map.of("customer", "Acme Corp", "amount", "$5,000"));`}
         Java's Object.clone() performs a shallow copy by default. If your object contains mutable
         references (lists, maps, other objects), you MUST deep-copy them manually. Otherwise,
         clones will share mutable state — a common source of subtle bugs.
+      </InfoBox>
+
+      <InfoBox variant="tip" title="When to Reach for Prototype">
+        Prototype is worth it when building an object from scratch is expensive — it needs a
+        database read, a network call, or heavy computation to reach its default state — but you
+        need many slightly-different copies of it. The <code>TemplateRegistry</code> above is the
+        classic shape: load each document template once, then clone-and-customize per request
+        instead of re-fetching it every time. It's also common for spawning near-identical game
+        entities from a preconfigured prototype. If construction is cheap (a handful of field
+        assignments), just call <code>new</code> again — cloning adds the shallow-vs-deep-copy
+        risk above for no real savings.
       </InfoBox>
 
       <InteractiveChallenge

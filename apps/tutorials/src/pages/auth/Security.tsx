@@ -110,6 +110,37 @@ public class UserController {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="What CORS Is Not">
+        <p>
+          CORS is the most widely misunderstood browser mechanism, and
+          interviewers probe it for exactly that reason.
+        </p>
+        <p>
+          <strong>It is not server-side access control.</strong> A restrictive
+          CORS policy does not stop the request reaching your server — for a
+          simple request the server has already executed it, and the browser
+          merely refuses to hand the <em>response</em> back to the calling
+          JavaScript. Any non-browser client (curl, Postman, a backend service,
+          a script) ignores CORS entirely. Authorization must be enforced on
+          the server, always.
+        </p>
+        <p>
+          <strong>It does not prevent CSRF.</strong> The classic CSRF attack is
+          a form POST or image load, which the same-origin policy permits
+          cross-origin without any CORS involvement. Loosening CORS can{' '}
+          <em>enable</em> attacks, but tightening it is not a CSRF defence.
+        </p>
+        <p>
+          <strong>Reflecting the Origin header is the same as{' '}
+          <code>*</code>.</strong> Reading <code>req.headers.origin</code> and
+          echoing it back into{' '}
+          <code>Access-Control-Allow-Origin</code> — often done to &quot;fix&quot;
+          the fact that <code>*</code> is incompatible with{' '}
+          <code>credentials: true</code> — allows every origin while also
+          permitting cookies. Validate against an allowlist instead.
+        </p>
+      </InfoBox>
+
       <h2>CSRF (Cross-Site Request Forgery)</h2>
 
       <p>
@@ -128,48 +159,175 @@ public class UserController {
       <h3>CSRF Defenses</h3>
 
       <InfoBox variant="tip" title="Defense Strategies">
-        <p><strong>SameSite Cookies (Primary)</strong> — Set <code>SameSite=Lax</code> or <code>Strict</code>. The browser will not send the cookie with cross-site POST requests, blocking CSRF entirely.</p>
-        <p><strong>CSRF Tokens (Legacy)</strong> — Server generates a random token per session, embeds it in forms and AJAX requests. Server validates the token on every state-changing request. Attacker cannot guess the token.</p>
-        <p><strong>Double Submit Cookie</strong> — Set a random value in both a cookie and a request header. Server checks that they match. Works because the attacker can send the cookie (automatic) but cannot read it to set the header (same-origin policy).</p>
+        <p><strong>SameSite Cookies (necessary, not sufficient)</strong> — Set <code>SameSite=Lax</code> or <code>Strict</code>. This stops the browser attaching the cookie to cross-site POSTs, which kills the classic attack. Treat it as your baseline layer, but see the caveats below — it is not a complete defence on its own.</p>
+        <p><strong>Synchronizer Token Pattern (the strong default)</strong> — Server generates a random token bound to the session, embeds it in forms and AJAX requests, and validates it on every state-changing request. The attacker&apos;s site cannot read the token, so it cannot forge a valid request. This is what Spring Security does out of the box.</p>
+        <p><strong>Signed Double Submit Cookie</strong> — Useful when you have no server-side session to bind a token to. Send a random value in both a cookie and a header, and check they match. Critically, the value must be <strong>signed or bound to the session</strong> — see the warning below.</p>
+        <p><strong>Origin / Sec-Fetch-Site header check</strong> — Reject state-changing requests whose <code>Origin</code> does not match your own, or whose <code>Sec-Fetch-Site</code> is <code>cross-site</code>. Cheap, stateless, and well-supported in current browsers; excellent as a second layer.</p>
       </InfoBox>
 
-      <CodeBlock language="javascript" title="CSRF Protection (Express.js)">
-{`const csrf = require('csurf');
+      <InfoBox variant="warning" title="Why SameSite Alone Is Not Enough">
+        <p>
+          <strong>SameSite is site-scoped, not origin-scoped.</strong> A
+          compromised or attacker-controlled subdomain
+          (<code>blog.example.com</code>) counts as the <em>same site</em> as{' '}
+          <code>app.example.com</code>, so <code>Lax</code> and{' '}
+          <code>Strict</code> cookies are still sent. Subdomain takeover
+          therefore reopens CSRF completely.
+        </p>
+        <p>
+          <strong><code>Lax</code> still allows top-level GET
+          navigations.</strong> Harmless if you follow the rule that GET must
+          never change state — but any state-changing GET endpoint is
+          immediately exploitable.
+        </p>
+        <p>
+          <strong>You do not control the browser.</strong> Enforcement depends
+          entirely on the client, so an outdated or non-standard browser gets
+          no protection at all. Defence in depth means pairing SameSite with a
+          token or Origin check, not choosing between them.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="danger" title="Naive Double Submit Is Breakable">
+        <p>
+          The plain version — &quot;generate a random value, put it in a cookie
+          and a header, check they match&quot; — assumes an attacker cannot{' '}
+          <em>set</em> your cookies. That assumption fails: cookies ignore the
+          origin boundary, so an attacker controlling any subdomain (or able to
+          MITM a plain-HTTP subdomain) can write a cookie scoped to your parent
+          domain and then submit a matching header. Both sides match and the
+          check passes.
+        </p>
+        <p>
+          The fix is to make the value unforgeable: use an HMAC of the session
+          ID rather than a bare random value, so the server can verify the
+          token actually belongs to <em>this</em> session. Use the{' '}
+          <code>__Host-</code> cookie prefix as well, which forbids a{' '}
+          <code>Domain</code> attribute and so blocks subdomain injection.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="info" title="Bearer Tokens Are Naturally CSRF-Immune">
+        <p>
+          CSRF exists because browsers attach <strong>cookies</strong>{' '}
+          automatically. A token sent in an <code>Authorization: Bearer</code>{' '}
+          header is not attached automatically — the attacker&apos;s page would
+          have to read your token and set the header itself, which the
+          same-origin policy prevents.
+        </p>
+        <p>
+          So a pure header-based API genuinely does not need CSRF tokens, and
+          this is why Spring Security lets you disable CSRF for stateless JWT
+          APIs. The trade-off is the one from the JWT lesson: storing that
+          token somewhere JavaScript can reach it trades a CSRF problem for an
+          XSS problem. If you store tokens in cookies — the safer choice
+          against XSS — CSRF protection is back on the table and you need it.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="Do Not Use csurf">
+        <p>
+          Most Express CSRF tutorials still reach for the <code>csurf</code>{' '}
+          package. It was <strong>deprecated and archived by its maintainers
+          in 2022</strong> and shipped a broken default double-submit
+          implementation. If you find it in an existing codebase, replace it —{' '}
+          <code>csrf-csrf</code> implements the signed double-submit pattern
+          correctly, and <code>@fastify/csrf-protection</code> is the Fastify
+          equivalent.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="javascript" title="CSRF Protection (Express.js, signed double submit)">
+{`const { doubleCsrf } = require('csrf-csrf');
 const cookieParser = require('cookie-parser');
 
 app.use(cookieParser());
 
-// CSRF token middleware
-const csrfProtection = csrf({
-  cookie: {
+const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
+  // Secret used to HMAC the token — this is what makes the token
+  // unforgeable and fixes the naive double-submit weakness.
+  getSecret: () => process.env.CSRF_SECRET,
+
+  // Bind the token to the session so a token minted for one user
+  // cannot be replayed against another.
+  getSessionIdentifier: (req) => req.session.id,
+
+  cookieName: '__Host-psifi.x-csrf-token', // __Host- blocks subdomain injection
+  cookieOptions: {
     httpOnly: true,
-    secure: true,
-    sameSite: 'strict',
+    secure: true,      // required by the __Host- prefix
+    sameSite: 'lax',   // layered defence, not the only one
+    path: '/',         // required by the __Host- prefix
   },
+
+  // GET/HEAD/OPTIONS are safe and skipped — which is only true
+  // if you never change state in a GET handler.
+  ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
 });
 
-// Generate token for forms
-app.get('/form', csrfProtection, (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
+// Hand the token to the SPA.
+app.get('/api/csrf-token', (req, res) => {
+  res.json({ csrfToken: generateCsrfToken(req, res) });
 });
 
-// Validate token on state-changing requests
-app.post('/transfer', csrfProtection, (req, res) => {
-  // If CSRF token is missing or invalid, csurf throws an error
+// Protect every state-changing route.
+app.use(doubleCsrfProtection);
+
+app.post('/transfer', (req, res) => {
   processTransfer(req.body);
   res.json({ success: true });
+});
+
+// Belt-and-braces: reject cross-site requests outright.
+app.use((req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  if (req.get('sec-fetch-site') === 'cross-site') {
+    return res.status(403).json({ error: 'Cross-site request rejected' });
+  }
+  next();
 });
 
 // In your SPA, include the token in requests:
 // fetch('/transfer', {
 //   method: 'POST',
 //   headers: {
-//     'CSRF-Token': csrfToken,     // From the /form endpoint
+//     'x-csrf-token': csrfToken,   // From /api/csrf-token
 //     'Content-Type': 'application/json',
 //   },
 //   body: JSON.stringify({ to: 'alice', amount: 100 }),
 //   credentials: 'include',
 // });`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="CSRF Protection (Spring Security)">
+{`@Configuration
+@EnableWebSecurity
+public class CsrfConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+            // CSRF protection is ON by default — you configure it,
+            // you do not enable it.
+            .csrf(csrf -> csrf
+                // Token in a JS-readable cookie so a SPA can echo it back
+                // in a header. The cookie is NOT the credential here, so
+                // httpOnly=false is correct for this specific cookie.
+                .csrfTokenRepository(
+                    CookieCsrfTokenRepository.withHttpOnlyFalse())
+                // Spring Security 6 defers token loading; this handler
+                // restores the plain-text token needed by SPAs.
+                .csrfTokenRequestHandler(
+                    new CsrfTokenRequestAttributeHandler())
+            )
+            .build();
+    }
+}
+
+// Stateless JWT API using ONLY the Authorization header?
+// Then and only then is disabling CSRF correct:
+//     .csrf(AbstractHttpConfigurer::disable)
+// If your JWT lives in a cookie, you still need CSRF protection.`}
       </CodeBlock>
 
       <h2>XSS (Cross-Site Scripting)</h2>
@@ -184,24 +342,24 @@ app.post('/transfer', csrfProtection, (req, res) => {
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Type</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>How It Works</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Example</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Type</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>How It Works</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Example</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Stored XSS</strong></td>
             <td style={{ padding: '0.75rem' }}>Malicious script saved in database, served to all users</td>
             <td style={{ padding: '0.75rem' }}>Comment field with injected script tag</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Reflected XSS</strong></td>
             <td style={{ padding: '0.75rem' }}>Script included in URL, reflected in page response</td>
             <td style={{ padding: '0.75rem' }}>Search query echoed in results page</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>DOM-based XSS</strong></td>
             <td style={{ padding: '0.75rem' }}>Client-side JS inserts untrusted data into DOM unsafely</td>
             <td style={{ padding: '0.75rem' }}>Using innerHTML with user input</td>
@@ -278,39 +436,39 @@ app.use(helmet.hsts({
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Header</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Purpose</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Value</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Header</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Purpose</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Value</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Content-Security-Policy</strong></td>
             <td style={{ padding: '0.75rem' }}>Whitelist allowed sources for scripts, styles, images, etc. Primary XSS defense.</td>
             <td style={{ padding: '0.75rem' }}><code>default-src &#39;self&#39;</code></td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>X-Frame-Options</strong></td>
             <td style={{ padding: '0.75rem' }}>Prevents clickjacking by controlling if page can be framed</td>
             <td style={{ padding: '0.75rem' }}><code>DENY</code> or <code>SAMEORIGIN</code></td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>X-Content-Type-Options</strong></td>
             <td style={{ padding: '0.75rem' }}>Prevents MIME-type sniffing</td>
             <td style={{ padding: '0.75rem' }}><code>nosniff</code></td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Strict-Transport-Security</strong></td>
             <td style={{ padding: '0.75rem' }}>Forces HTTPS — browser refuses HTTP connections</td>
             <td style={{ padding: '0.75rem' }}><code>max-age=31536000; includeSubDomains; preload</code></td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Referrer-Policy</strong></td>
             <td style={{ padding: '0.75rem' }}>Controls how much referrer info is sent</td>
             <td style={{ padding: '0.75rem' }}><code>strict-origin-when-cross-origin</code></td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Permissions-Policy</strong></td>
             <td style={{ padding: '0.75rem' }}>Controls browser features (camera, mic, geolocation)</td>
             <td style={{ padding: '0.75rem' }}><code>camera=(), microphone=(), geolocation=()</code></td>
@@ -366,49 +524,49 @@ app.post('/register',
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#4ade80' }}>DO</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#dc2626' }}>DON&#39;T</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-green)' }}>DO</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-red-deep)' }}>DON&#39;T</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>HttpOnly on session/token cookies</td>
             <td style={{ padding: '0.75rem' }}>Store JWTs in localStorage (XSS risk)</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Secure flag on all auth cookies</td>
             <td style={{ padding: '0.75rem' }}>Send cookies over HTTP</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>SameSite=Lax or Strict</td>
             <td style={{ padding: '0.75rem' }}>Use SameSite=None without Secure</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Short JWT expiry (15-60 min)</td>
             <td style={{ padding: '0.75rem' }}>Create JWTs that never expire</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>PKCE for SPAs and mobile apps</td>
             <td style={{ padding: '0.75rem' }}>Use the OAuth implicit flow</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Validate iss/aud/exp on every JWT</td>
             <td style={{ padding: '0.75rem' }}>Trust JWTs without verification</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Invalidate sessions on logout (server-side)</td>
             <td style={{ padding: '0.75rem' }}>Just clear the cookie without server invalidation</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Rotate refresh tokens on use</td>
             <td style={{ padding: '0.75rem' }}>Reuse refresh tokens indefinitely</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Use Content-Security-Policy header</td>
             <td style={{ padding: '0.75rem' }}>Allow inline scripts without nonces</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Rate limit authentication endpoints</td>
             <td style={{ padding: '0.75rem' }}>Allow unlimited login attempts</td>
           </tr>

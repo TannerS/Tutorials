@@ -458,7 +458,7 @@ public class ArrayExamples {
       <h2>Test Your Knowledge</h2>
 
       <InteractiveChallenge
-        question="What is the output of the following code?\n\nint x = 10;\nint y = 3;\nSystem.out.println(x / y);"
+        question="What is the output of the following code?"
         options={[
           "3.33",
           "3",

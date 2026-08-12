@@ -50,7 +50,7 @@ export default function LessonLayout({
           fontSize: '2rem',
           fontWeight: 700,
           marginBottom: '0.25rem',
-          background: 'linear-gradient(135deg, #5b9cf6, #a78bfa)',
+          background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
         }}>
@@ -59,7 +59,7 @@ export default function LessonLayout({
         <div style={{
           height: '3px',
           width: '60px',
-          background: 'linear-gradient(135deg, #5b9cf6, #a78bfa)',
+          background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
           borderRadius: '2px',
           marginBottom: '2rem',
         }} />
@@ -73,11 +73,11 @@ export default function LessonLayout({
           justifyContent: 'space-between',
           marginTop: '1rem',
           paddingTop: '1rem',
-          borderTop: '1px solid #2a2e42',
+          borderTop: '1px solid var(--border-color)',
         }}>
           {prev ? (
             <Link to={prev.path} style={{
-              color: '#5b9cf6',
+              color: 'var(--accent-blue)',
               fontSize: '0.9rem',
               display: 'flex',
               alignItems: 'center',
@@ -86,7 +86,7 @@ export default function LessonLayout({
           ) : <div />}
           {next ? (
             <Link to={next.path} style={{
-              color: '#5b9cf6',
+              color: 'var(--accent-blue)',
               fontSize: '0.9rem',
               display: 'flex',
               alignItems: 'center',

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { sections, groups } from '../data/sections';
 import type { Section } from '../data/types';
 import { useProgress } from './ProgressTracker';
+import { useTheme } from './ThemeProvider';
 
 // Build a map of sectionId → group for fast lookup
 const sectionGroupMap: Record<string, string> = {};
@@ -11,6 +12,7 @@ groups.forEach((g) => g.sectionIds.forEach((id) => { sectionGroupMap[id] = g.id;
 export default function Sidebar() {
   const location = useLocation();
   const { getSectionProgress } = useProgress();
+  const { theme, toggleTheme } = useTheme();
   const [search, setSearch] = useState('');
 
   // Which section is open (one at a time)
@@ -72,20 +74,21 @@ export default function Sidebar() {
       overflow: 'hidden',
     }}>
       {/* Logo */}
-      <NavLink to="/" style={{ textDecoration: 'none' }}>
-        <div style={{
-          padding: '1.25rem',
-          borderBottom: '1px solid var(--border-color)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-        }}>
+      <div style={{
+        padding: '1.25rem',
+        borderBottom: '1px solid var(--border-color)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.5rem',
+      }}>
+        <NavLink to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
           <span style={{ fontSize: '1.5rem' }}>📚</span>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div style={{
               fontWeight: 700,
               fontSize: '1rem',
-              background: 'linear-gradient(135deg, #5b9cf6, #a78bfa)',
+              background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}>
@@ -95,8 +98,30 @@ export default function Sidebar() {
               Learn • Practice • Master
             </div>
           </div>
-        </div>
-      </NavLink>
+        </NavLink>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to day theme' : 'Switch to night theme'}
+          title={theme === 'dark' ? 'Day theme' : 'Night theme'}
+          style={{
+            flexShrink: 0,
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--bg-hover)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            color: 'var(--text-primary)',
+          }}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
+      </div>
 
       {/* Search */}
       <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border-color)' }}>

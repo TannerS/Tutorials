@@ -528,6 +528,37 @@ server {
         <li>Used by AWS API Gateway, Stripe, and many others</li>
       </ul>
 
+      <h3>Leaky Bucket Algorithm</h3>
+      <p>
+        Often confused with token bucket, and the distinction is a favourite
+        interview follow-up. Picture a bucket with a hole in the bottom:
+        requests pour in at any rate and <em>drain out at a strictly constant
+        rate</em>. If the bucket overflows, new requests are dropped.
+      </p>
+      <p>
+        The key difference: <strong>token bucket permits bursts, leaky bucket
+        does not.</strong> Token bucket lets a client that has been idle spend
+        accumulated tokens all at once; leaky bucket smooths output to a
+        perfectly even rate no matter how bursty the input. Choose leaky bucket
+        when the thing you are protecting cannot absorb spikes at all — a
+        downstream legacy system, a payment provider with a hard per-second
+        cap, or an outbound queue you want to drain predictably.
+      </p>
+
+      <h3>Fixed Window Counter</h3>
+      <p>
+        The simplest approach: keep one counter per client per fixed interval
+        (<code>user123:12:05</code>), increment it, and reject once it exceeds
+        the limit. It uses almost no memory and is trivially implemented in
+        Redis with <code>INCR</code> plus <code>EXPIRE</code>.
+      </p>
+      <p>
+        Its flaw is the <strong>boundary burst</strong>: a client sending the
+        full limit at 12:05:59 and again at 12:06:00 gets double the intended
+        rate in a one-second span. Acceptable for coarse quotas, dangerous when
+        the limit exists to protect capacity.
+      </p>
+
       <h3>Sliding Window Algorithm</h3>
       <p>
         Tracks requests in a rolling time window. Unlike a fixed window (which
@@ -536,6 +567,60 @@ server {
         the max requests at the end of one window and the start of the next,
         effectively doubling their rate.
       </p>
+      <p>
+        There are two variants worth naming. The <strong>sliding window
+        log</strong> stores a timestamp for every request and counts those
+        inside the window — exact, but memory grows with request volume. The{' '}
+        <strong>sliding window counter</strong> keeps only the current and
+        previous fixed-window counts and interpolates between them, which is a
+        close approximation at a fraction of the memory. Production systems
+        almost always use the counter variant.
+      </p>
+
+      <h3>Choosing an Algorithm</h3>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Algorithm</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Bursts</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Memory</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Use When</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Token Bucket</strong></td>
+            <td style={{ padding: '0.75rem' }}>Allowed, up to capacity</td>
+            <td style={{ padding: '0.75rem' }}>O(1) per client</td>
+            <td style={{ padding: '0.75rem' }}>General-purpose API limiting. The default choice.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Leaky Bucket</strong></td>
+            <td style={{ padding: '0.75rem' }}>Never — output is constant</td>
+            <td style={{ padding: '0.75rem' }}>O(queue size)</td>
+            <td style={{ padding: '0.75rem' }}>Protecting a downstream that cannot absorb spikes.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Fixed Window</strong></td>
+            <td style={{ padding: '0.75rem' }}>2x at boundaries</td>
+            <td style={{ padding: '0.75rem' }}>O(1) per client</td>
+            <td style={{ padding: '0.75rem' }}>Coarse billing quotas where precision does not matter.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Sliding Window Log</strong></td>
+            <td style={{ padding: '0.75rem' }}>Exactly enforced</td>
+            <td style={{ padding: '0.75rem' }}>O(requests in window)</td>
+            <td style={{ padding: '0.75rem' }}>Low-volume, high-value endpoints needing exactness.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Sliding Window Counter</strong></td>
+            <td style={{ padding: '0.75rem' }}>Smoothed approximation</td>
+            <td style={{ padding: '0.75rem' }}>O(1) per client</td>
+            <td style={{ padding: '0.75rem' }}>High-scale limiting. Best accuracy-to-cost ratio.</td>
+          </tr>
+        </tbody>
+      </table>
 
       <h3>Rate Limiter Implementation</h3>
 
@@ -578,6 +663,98 @@ for i in range(200):
     else:
         print(f"Request {i}: rate limited")`}
       />
+
+      <h3>Distributed Rate Limiting</h3>
+      <p>
+        The in-memory limiter above has a fatal flaw at scale: with 10 app
+        instances behind a load balancer, each keeps its own bucket, so a
+        &quot;100 req/s&quot; limit actually permits 1,000. The counter must
+        live in shared storage, and the check-and-increment must be{' '}
+        <strong>atomic</strong> — a read-then-write round trip lets concurrent
+        requests both see a count under the limit and both pass.
+      </p>
+      <p>
+        A Lua script solves this, because Redis executes it atomically on the
+        server:
+      </p>
+
+      <CodeBlock
+        language="lua"
+        title="Atomic Sliding Window Counter (Redis Lua)"
+        code={`-- KEYS[1]: rate limit key, e.g. "rl:user123"
+-- ARGV[1]: window size in seconds
+-- ARGV[2]: max requests per window
+-- ARGV[3]: current unix time (ms) — passed in, never read from the
+--          Redis node, so all instances agree on "now"
+
+local window  = tonumber(ARGV[1])
+local limit   = tonumber(ARGV[2])
+local now     = tonumber(ARGV[3])
+
+local current_window  = math.floor(now / 1000 / window)
+local previous_window = current_window - 1
+
+local cur_key  = KEYS[1] .. ":" .. current_window
+local prev_key = KEYS[1] .. ":" .. previous_window
+
+local cur_count  = tonumber(redis.call("GET", cur_key))  or 0
+local prev_count = tonumber(redis.call("GET", prev_key)) or 0
+
+-- How far into the current window are we (0.0 to 1.0)?
+local elapsed = (now / 1000) % window / window
+
+-- Weighted estimate: the tail of the previous window still counts,
+-- decaying as the current window advances.
+local estimated = prev_count * (1 - elapsed) + cur_count
+
+if estimated >= limit then
+  return {0, limit, 0}                -- denied
+end
+
+redis.call("INCR", cur_key)
+redis.call("EXPIRE", cur_key, window * 2)
+
+return {1, limit, limit - estimated - 1}  -- allowed, limit, remaining`}
+      />
+
+      <InfoBox variant="warning" title="Tell the Client What Happened">
+        <p>
+          A rate limiter that returns a bare <code>429</code> forces clients
+          into blind retry loops, which makes overload worse. Always return{' '}
+          <strong><code>Retry-After</code></strong> (seconds, or an HTTP date)
+          so a well-behaved client knows exactly when to come back.
+        </p>
+        <p>
+          Alongside it, the IETF <code>RateLimit</code> header fields let
+          clients self-throttle <em>before</em> being rejected:
+        </p>
+        <p>
+          <code>RateLimit-Limit: 100</code> ·{' '}
+          <code>RateLimit-Remaining: 12</code> ·{' '}
+          <code>RateLimit-Reset: 30</code>
+        </p>
+        <p>
+          You will also see the older <code>X-RateLimit-*</code> spelling of
+          the same three fields, which many large APIs still emit. Pick one
+          convention and apply it consistently.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="tip" title="Where to Put the Limiter">
+        <p>
+          Rate limit as far <em>out</em> as you can. A limiter at the API
+          gateway, CDN, or load balancer rejects abuse before it consumes an
+          application thread, a database connection, or any of the capacity you
+          are trying to protect. A limiter inside your service has already paid
+          most of the cost of the request by the time it says no.
+        </p>
+        <p>
+          Application-level limiting still earns its place for rules that need
+          business context — per-plan quotas, per-endpoint costs, per-tenant
+          fairness — that a gateway cannot evaluate. Most mature systems run
+          both layers.
+        </p>
+      </InfoBox>
 
       <InfoBox variant="tip" title="Distributed Rate Limiting">
         When running multiple application instances, each instance needs access to a

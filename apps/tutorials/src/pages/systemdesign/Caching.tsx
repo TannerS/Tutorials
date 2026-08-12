@@ -524,19 +524,64 @@ SCAN 0 MATCH user:* COUNT 100             # Safe iteration`}
         <li>Other requests either wait and retry, or return a stale value</li>
       </ul>
 
-      <h4>2. Probabilistic Early Expiration</h4>
+      <h4>2. Request Coalescing (Single-Flight)</h4>
+      <p>
+        Similar to locking, but enforced in-process rather than via a distributed lock. When a
+        cache miss occurs, the application checks whether a fetch for that exact key is already
+        in flight. If so, it attaches to the existing in-flight request&apos;s result instead of
+        issuing a duplicate database query. Libraries like Go&apos;s <code>singleflight</code> or a
+        simple in-memory <code>Map&lt;key, Promise&gt;</code> implement this. It collapses N
+        concurrent callers on one instance into a single database call, and pairs well with
+        distributed locking (coalesce locally, lock across instances).
+      </p>
+
+      <h4>3. TTL Jitter</h4>
+      <p>
+        When many keys are written at the same time with the same TTL (a common side effect of a
+        cache warm-up, a deploy, or a bulk backfill), they all expire at the same instant — turning
+        an ordinary TTL expiration into a synchronized stampede across many keys at once. Adding a
+        small random offset (jitter) to each TTL spreads expirations out over a window instead of a
+        single moment.
+      </p>
+      <CodeBlock language="javascript" title="TTL Jitter">
+{`function ttlWithJitter(baseSeconds, jitterPercent = 0.1) {
+  const jitter = baseSeconds * jitterPercent;
+  const offset = Math.floor(Math.random() * jitter * 2) - jitter;
+  return Math.max(1, Math.floor(baseSeconds + offset));
+}
+
+// Instead of every key expiring at exactly 300s, spread across 270-330s
+await redis.setex(key, ttlWithJitter(300), JSON.stringify(data));`}
+      </CodeBlock>
+
+      <h4>4. Probabilistic Early Expiration (XFetch)</h4>
       <p>
         Instead of all entries expiring at the exact same time, each request has a small probability
         of refreshing the cache before the TTL actually expires. As the TTL approaches expiration,
         the probability increases. This spreads out cache refreshes over time, preventing a stampede.
+        The best-known algorithm for this is <strong>XFetch</strong> (from Vattani, Chierichetti &amp;
+        Lowenstein&apos;s 2015 paper): each cached value stores its computation delta (how long it
+        took to generate) alongside the value, and a request proactively recomputes early when
+        <code>now - delta * beta * log(random()) &gt;= expiry</code>, where <code>beta</code> tunes
+        how aggressively to recompute early. Values that are expensive to recompute (large delta)
+        get refreshed earlier and with more spread than cheap ones.
       </p>
 
-      <h4>3. Background Refresh</h4>
+      <h4>5. Background Refresh</h4>
       <p>
         A background worker proactively refreshes popular cache entries before they expire. The
         cache never actually goes empty for hot keys — the worker repopulates them ahead of time.
         This ensures cache hits for the most critical data at all times.
       </p>
+
+      <InfoBox variant="info" title="Which Mitigation to Reach For">
+        <ul>
+          <li><strong>Single hot key, occasional miss:</strong> mutex locking or request coalescing</li>
+          <li><strong>Many keys sharing one TTL:</strong> TTL jitter</li>
+          <li><strong>Expensive-to-compute values, want zero cache-miss latency for users:</strong> XFetch / probabilistic early expiration</li>
+          <li><strong>Known hot keys, predictable traffic:</strong> background refresh</li>
+        </ul>
+      </InfoBox>
 
       <CodeBlock language="javascript" title="Cache Stampede Prevention with Locking">
 {`async function getWithLock(key, fetchFn, ttl = 300) {
@@ -597,6 +642,44 @@ const user = await getWithLock(
         <li><strong>Database Query Cache:</strong> Built-in query result caching in the database engine. Transparent to the application but limited in scope.</li>
       </ul>
 
+      <h3>Database Query Cache vs. Materialized Views</h3>
+      <p>
+        Both live at the database layer and both exist to avoid recomputing expensive queries, but
+        they differ in when the work happens and how fresh the result is.
+      </p>
+      <ul>
+        <li>
+          <strong>Query cache (e.g., PostgreSQL shared buffers, MySQL query cache historically):</strong> Caches
+          the result of a specific query <em>after</em> it runs once. Populated lazily on read — same
+          cache-aside idea, just implemented inside the database engine. Invalidated automatically
+          when underlying rows change. Cheap to enable, but scope is limited to exact repeated
+          queries and offers no control over TTL or eviction.
+        </li>
+        <li>
+          <strong>Materialized view:</strong> A query&apos;s result set is computed once and physically
+          stored as a table, then <em>explicitly</em> refreshed (<code>REFRESH MATERIALIZED VIEW</code>,
+          on a schedule, or triggered by writes) rather than recomputed on read. Reads are as fast as
+          reading any table — including indexes on the view itself — but the data is only as fresh
+          as the last refresh. This makes materialized views closer to write-through/write-behind
+          caching applied to an entire aggregate query (dashboards, reporting rollups, leaderboards)
+          than to a per-row cache-aside lookup.
+        </li>
+      </ul>
+
+      <CodeBlock language="sql" title="Materialized View — Precomputed Aggregate">
+{`CREATE MATERIALIZED VIEW daily_revenue AS
+  SELECT date_trunc('day', created_at) AS day, SUM(amount) AS total
+  FROM orders
+  GROUP BY 1;
+
+-- Reads are instant — just a table scan of the precomputed result
+SELECT * FROM daily_revenue WHERE day = CURRENT_DATE;
+
+-- Refresh on a schedule (cron) or after a batch load — this is the
+-- "invalidation" step, analogous to a write-through cache flush
+REFRESH MATERIALIZED VIEW CONCURRENTLY daily_revenue;`}
+      </CodeBlock>
+
       <CodeBlock language="http" title="Cache-Control Headers">
 {`# Browser should cache for 1 hour, CDN for 1 day
 Cache-Control: public, max-age=3600, s-maxage=86400
@@ -633,6 +716,93 @@ ETag: "abc123"
         correctIndex={1}
         explanation={"Cache-aside with a short TTL ensures feeds are never more than 30 seconds stale. Event-based invalidation (when a new post is created, invalidate the feed caches of all followers) provides near-real-time updates for active users. Write-through would be wasteful since feeds are computed, not directly written. CDN caching won't work because each user's feed is unique (private data). Write-behind doesn't apply to reads."}
       />
+
+      {/* ================================================================
+          SECTION 13: WORKED EXAMPLE — REDIS SESSION CACHE AT THE AUTH GATEWAY
+          ================================================================ */}
+
+      <h2>Worked Example: Redis Session Cache at the Auth Gateway</h2>
+      <p>
+        The patterns above are not just theory — one of the most common production uses of Redis is
+        exactly the session-lookup architecture covered in{' '}
+        <strong>Auth &amp; Security → Gateway Auth: Envoy, Redis &amp; the Auth Wall</strong>. See that
+        lesson for the full walkthrough of the Envoy <code>ext_authz</code> config, the auth service,
+        and login/logout flows — this section only covers the caching-specific angle: which pattern
+        it is, and the TTL/invalidation/stampede decisions baked into it.
+      </p>
+
+      <h3>Which Pattern Is This?</h3>
+      <p>
+        Every request hitting the gateway triggers an <code>ext_authz</code> call to the auth
+        service, which does an <code>HGETALL session:&lt;token&gt;</code> against Redis before the
+        request is allowed to proceed. From a caching-pattern perspective, this is a{' '}
+        <strong>read-through cache</strong> sitting directly on the request&apos;s critical path: the
+        gateway never talks to a slower fallback itself — it only ever talks to the auth service,
+        which is the layer responsible for the lookup. There is a twist compared to the classic
+        cache-aside/read-through examples earlier in this lesson, though: in most of those examples
+        the cache fronts a slower, durable source of truth (a database). Here, Redis <em>is</em> the
+        source of truth for session state — there is no slower backing store behind it, because
+        sessions are ephemeral and do not need one. That is precisely why Redis was chosen over a
+        relational <code>sessions</code> table: the whole point is sub-millisecond lookups on a path
+        that executes on every single request, which a database round-trip could not sustain at that
+        volume.
+      </p>
+
+      <h3>TTL Choice for Session Data</h3>
+      <p>
+        Gateway.tsx uses a 15-minute (<code>900</code> second) sliding TTL — every successful
+        authorized request calls <code>redis.expire(sessionKey, SESSION_TTL_SECONDS)</code>,
+        resetting the countdown. This is a deliberate trade-off from the TTL guidance earlier in this
+        lesson: short enough that an idle, abandoned session (stolen cookie, shared machine) stops
+        being valid soon after activity stops, long enough that an active user is never logged out
+        mid-session. A longer TTL would reduce the <code>EXPIRE</code> write volume against Redis but
+        widen the window an idle stolen credential stays valid; a shorter TTL tightens that window at
+        the cost of more frequent writes and, for a fixed-TTL (non-sliding) design, more frequent
+        cache misses for genuinely active users.
+      </p>
+
+      <h3>Invalidation on Logout</h3>
+      <p>
+        Logout in Gateway.tsx is a single <code>redis.del(session:token)</code> call —
+        this is explicit event-based invalidation, the same category covered earlier in this lesson,
+        applied at the most direct possible granularity: one event (logout), one key deleted, one
+        <code>DEL</code>. There is no TTL to wait out and no version bump to propagate. It is also why
+        the &quot;revoke all sessions for a user&quot; and &quot;force logout a compromised account&quot;
+        operations in that lesson are cheap and immediate — they are the same invalidation primitive
+        applied to a set of keys instead of one.
+      </p>
+
+      <h3>Stampede Risk on a Popular Session Key</h3>
+      <p>
+        Individual per-user sessions rarely become a stampede risk — each key has exactly one owner,
+        so its expiration only affects that one user&apos;s next request. The risk reappears in two
+        situations the earlier stampede section already gives you tools for:
+      </p>
+      <ul>
+        <li>
+          <strong>A single shared key with many callers:</strong> service-account or machine-to-machine
+          credentials are often modeled as one Redis session shared by a whole fleet of workers. When
+          that key expires, every worker&apos;s next <code>ext_authz</code> call misses simultaneously
+          and all of them attempt to re-authenticate against the identity provider at once — a
+          textbook thundering herd. Apply <strong>request coalescing</strong> in the auth service (one
+          in-flight re-auth per expired key, others wait on it) rather than letting every worker hit
+          the identity provider independently.
+        </li>
+        <li>
+          <strong>Synchronized expiration across many sessions:</strong> a mass-login event (a
+          scheduled outage recovery, a marketing push right at 9am) creates thousands of sessions
+          within the same few seconds, all with the same TTL. Fifteen minutes later they expire in
+          that same narrow window, producing a burst of simultaneous cache misses and re-logins.
+          <strong> TTL jitter</strong> on session creation (vary the TTL by a few percent per session)
+          smooths that burst out instead of concentrating it.
+        </li>
+      </ul>
+      <p>
+        Because <code>failure_mode_allow: false</code> means Redis sits on the availability-critical
+        path for <em>every</em> request (as called out in the Gateway lesson), these are not
+        theoretical concerns — a stampede against the session store is a stampede against your
+        entire edge, not just one slow page.
+      </p>
 
       {/* ================================================================
           SUMMARY

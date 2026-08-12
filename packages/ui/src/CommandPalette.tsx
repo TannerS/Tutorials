@@ -137,8 +137,8 @@ export function CommandPalette({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 'min(620px, 92vw)',
-          background: '#161822',
-          border: '1px solid #2a2e42',
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border-color)',
           borderRadius: '12px',
           boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
           overflow: 'hidden',
@@ -157,8 +157,8 @@ export function CommandPalette({
           style={{
             background: 'transparent',
             border: 'none',
-            borderBottom: '1px solid #2a2e42',
-            color: '#e4e6f0',
+            borderBottom: '1px solid var(--border-color)',
+            color: 'var(--text-primary)',
             fontSize: '1rem',
             padding: '1rem 1.25rem',
             outline: 'none',
@@ -177,13 +177,13 @@ export function CommandPalette({
           }}
         >
           {results.length === 0 && (
-            <li style={{ padding: '1.5rem', textAlign: 'center', color: '#6b7090', fontSize: '0.85rem' }}>
+            <li style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
               No matches
             </li>
           )}
           {results.map((item, idx) => {
             const isActive = idx === active;
-            const color = item.color ?? '#5b9cf6';
+            const color = item.color ?? 'var(--accent-blue)';
             return (
               <li
                 key={item.id}
@@ -200,10 +200,10 @@ export function CommandPalette({
                   gap: '0.75rem',
                   padding: '0.55rem 1.25rem',
                   cursor: 'pointer',
-                  background: isActive ? '#1a1d2e' : 'transparent',
+                  background: isActive ? 'var(--bg-hover)' : 'transparent',
                   borderLeft: isActive ? `2px solid ${color}` : '2px solid transparent',
                   fontSize: '0.88rem',
-                  color: '#e4e6f0',
+                  color: 'var(--text-primary)',
                 }}
               >
                 {item.icon && <span style={{ fontSize: '1rem' }}>{item.icon}</span>}
@@ -211,7 +211,7 @@ export function CommandPalette({
                 {item.group && (
                   <span style={{
                     fontSize: '0.7rem',
-                    color: '#6b7090',
+                    color: 'var(--text-muted)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                   }}>
@@ -224,10 +224,10 @@ export function CommandPalette({
         </ul>
 
         <div style={{
-          borderTop: '1px solid #2a2e42',
+          borderTop: '1px solid var(--border-color)',
           padding: '0.5rem 1.25rem',
           fontSize: '0.7rem',
-          color: '#6b7090',
+          color: 'var(--text-muted)',
           display: 'flex',
           gap: '1rem',
         }}>

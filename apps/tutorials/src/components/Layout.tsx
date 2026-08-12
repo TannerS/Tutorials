@@ -11,7 +11,7 @@ function HomePage() {
         fontSize: '2.5rem',
         fontWeight: 700,
         marginBottom: '0.5rem',
-        background: 'linear-gradient(135deg, #5b9cf6, #a78bfa, #f472b6)',
+        background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-pink))',
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
       }}>

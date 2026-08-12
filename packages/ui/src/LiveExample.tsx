@@ -32,14 +32,14 @@ export function LiveExample({
       {title && (
         <div style={{
           fontSize: '0.78rem',
-          color: '#9399b2',
+          color: 'var(--text-secondary)',
           fontFamily: "'JetBrains Mono', monospace",
           marginBottom: '0.4rem',
           display: 'flex',
           alignItems: 'center',
           gap: '0.4rem',
         }}>
-          <span style={{ color: '#a78bfa' }}>▶</span> {title} <span style={{ color: '#6b7090' }}>· live, editable</span>
+          <span style={{ color: 'var(--accent-purple)' }}>▶</span> {title} <span style={{ color: 'var(--text-muted)' }}>· live, editable</span>
         </div>
       )}
       <Sandpack

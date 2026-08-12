@@ -44,10 +44,10 @@ function Intro() {
       </p>
 
       {/* ── WCAG Overview ─────────────────────────────────── */}
-      <h2>WCAG 2.1 AA — The Standard</h2>
+      <h2>WCAG AA — The Standard</h2>
       <p>
         The <strong>Web Content Accessibility Guidelines (WCAG)</strong> are published by the W3C's
-        Web Accessibility Initiative (WAI). WCAG 2.1 defines three conformance levels:
+        Web Accessibility Initiative (WAI). WCAG defines three conformance levels:
       </p>
       <ul>
         <li><strong>Level A</strong> — Minimum accessibility. Removes the most severe barriers.</li>
@@ -56,9 +56,70 @@ function Intro() {
       </ul>
 
       <InfoBox variant="warning" title="AA Is the Industry Target">
-        Nearly every legal framework references WCAG 2.1 Level AA. If your product doesn't meet AA,
+        Nearly every legal framework references WCAG Level AA. If your product doesn't meet AA,
         you're exposed to lawsuits. In 2023, over 4,600 ADA web accessibility lawsuits were filed in
         the US alone. Don't ship without an accessibility audit.
+      </InfoBox>
+
+      <h3>Which Version? 2.0 vs 2.1 vs 2.2</h3>
+      <p>
+        <strong>WCAG 2.2 has been the current W3C Recommendation since October
+        2023.</strong> The versions are strictly additive — 2.2 contains
+        everything in 2.1, which contains everything in 2.0 — so meeting 2.2 AA
+        automatically means meeting 2.1 AA and 2.0 AA. (One exception: 4.1.1
+        Parsing was removed as obsolete, since modern browsers and assistive
+        tech handle malformed markup consistently.)
+      </p>
+      <p>
+        In practice most legislation still <em>names</em> 2.0 or 2.1 simply
+        because laws lag standards. Build to <strong>2.2 AA</strong> anyway: it
+        satisfies every one of those older references, and the new criteria are
+        mostly things a careful team would do regardless.
+      </p>
+
+      <InfoBox variant="info" title="What WCAG 2.2 Added (9 New Criteria)">
+        <p>
+          These are worth knowing by name — they are recent enough that
+          mentioning them signals genuinely current knowledge.
+        </p>
+        <p>
+          <strong>2.4.11 Focus Not Obscured (AA)</strong> — the focused element
+          must not be hidden behind a sticky header, cookie banner, or floating
+          chat widget. Very commonly violated.
+        </p>
+        <p>
+          <strong>2.5.7 Dragging Movements (AA)</strong> — anything draggable
+          (sliders, kanban cards, sortable lists) needs a single-pointer
+          alternative such as tap-to-select-then-tap-to-place.
+        </p>
+        <p>
+          <strong>2.5.8 Target Size Minimum (AA)</strong> — interactive targets
+          must be at least 24×24 CSS pixels, or have equivalent spacing around
+          them. Catches cramped icon buttons and tight pagination links.
+        </p>
+        <p>
+          <strong>3.2.6 Consistent Help (A)</strong> — if help (contact link,
+          chat, FAQ) appears on multiple pages, it must sit in the same relative
+          place each time.
+        </p>
+        <p>
+          <strong>3.3.7 Redundant Entry (A)</strong> — do not make users re-type
+          information they already gave you in the same process; auto-populate
+          it or let them select it.
+        </p>
+        <p>
+          <strong>3.3.8 Accessible Authentication (AA)</strong> — login must not
+          require a cognitive function test (remembering a password,
+          transcribing a code, solving a puzzle CAPTCHA) without an
+          alternative. Crucially, this means <strong>you must not block
+          paste</strong> into password fields, since that breaks password
+          managers.
+        </p>
+        <p>
+          Plus <strong>2.4.12 Focus Not Obscured (Enhanced, AAA)</strong>,{' '}
+          <strong>2.4.13 Focus Appearance (AAA)</strong>, and{' '}
+          <strong>3.3.9 Accessible Authentication (Enhanced, AAA)</strong>.
+        </p>
       </InfoBox>
 
       {/* ── POUR Principles ───────────────────────────────── */}
@@ -116,8 +177,12 @@ function Intro() {
 // Accessible Canada Act (ACA)
 // AODA (Ontario) — WCAG 2.0 AA required
 
-// Key takeaway: WCAG 2.1 AA is the de facto global standard.
-// When in doubt, target AA compliance.`}
+// Note: these laws name older WCAG versions because legislation
+// lags the standard. WCAG 2.2 (Oct 2023) is the current W3C
+// Recommendation and is backward-compatible with all of them.
+
+// Key takeaway: build to WCAG 2.2 AA. It satisfies every legal
+// reference above, and AA is the target in all of them.`}
       </CodeBlock>
 
       <InfoBox variant="danger" title="Real Lawsuits Happen">

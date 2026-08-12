@@ -208,6 +208,16 @@ console.log(doc.content); // "Hello, World!"`}
         </p>
       </InfoBox>
 
+      <InfoBox variant="tip" title="When to Reach for Command">
+        Reach for Command when an action needs to outlive the moment it was triggered — it must be
+        queued for later, retried, logged for audit, or reversed, like the undo/redo stack above.
+        The tell is needing to treat "do this thing" as data you can store in a list, pass to
+        another thread, or serialize to Redis/a database, not just a function you call once and
+        forget. If a button click just needs to call one method right now with no history, no
+        queueing, and no undo requirement, wrapping it in a Command object only adds a class and
+        an interface for something a direct method call already does fine.
+      </InfoBox>
+
       <h2>Iterator Pattern</h2>
       <p>
         Provides a way to access the elements of a collection sequentially without exposing its
@@ -347,6 +357,16 @@ console.log([...recentEvents]); // ['click', 'purchase', 'logout']`}
         (<code>function*</code>) are effectively syntactic sugar for hand-writing the ConcreteIterator
         class: <code>yield</code> pauses execution and returns the next value, exactly like a manual
         <code>next()</code> call would.
+      </InfoBox>
+
+      <InfoBox variant="tip" title="When to Write a Custom Iterator">
+        You need this when you're building a custom data structure — a ring buffer, a tree, a
+        paginated API client wrapping repeated network calls — and you want callers to walk it
+        with a plain <code>for...of</code>/for-each loop instead of learning your structure's
+        internal layout. It also lets you swap that internal layout later (array to linked list,
+        eager to lazy) without breaking every caller. If you're just working with a built-in array
+        or <code>List</code>, don't write one — Java's collections and JavaScript's arrays already
+        implement this pattern for you.
       </InfoBox>
 
       <InteractiveChallenge

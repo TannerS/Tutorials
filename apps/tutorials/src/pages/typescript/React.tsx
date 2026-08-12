@@ -431,32 +431,86 @@ function MouseTracker({ children }: MouseTrackerProps) {
 <MouseTracker>{({ x, y }) => <p>Mouse at {x}, {y}</p>}</MouseTracker>`
       }</CodeBlock>
 
-      <h2>9. Typing forwardRef</h2>
+      <h2>9. Typing Refs on Components</h2>
 
-      <CodeBlock language="tsx" title="forwardRef input component">{
-`import { forwardRef } from 'react';
+      <p>
+        In React 19, <code>ref</code> is an ordinary prop on function components.
+        You type it like any other prop &mdash; no wrapper function, no reversed
+        generic order to memorise.
+      </p>
 
-interface TextInputProps { label: string; error?: string; name: string; }
+      <CodeBlock language="tsx" title="React 19 — ref as a plain prop">{
+`import type { ComponentPropsWithRef, Ref } from 'react';
 
-const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
-  ({ label, error, name, ...rest }, ref) => (
+interface TextInputProps {
+  label: string;
+  error?: string;
+  name: string;
+  ref?: Ref<HTMLInputElement>;   // just another optional prop
+}
+
+function TextInput({ label, error, name, ref, ...rest }: TextInputProps) {
+  return (
     <div>
       <label htmlFor={name}>{label}</label>
       <input ref={ref} id={name} name={name} {...rest} />
       {error && <span className="error">{error}</span>}
     </div>
-  )
-);
-TextInput.displayName = 'TextInput';
+  );
+}
+
+// Even less typing: ComponentPropsWithRef pulls in ref AND every native
+// <input> attribute, so callers get placeholder, disabled, onChange, etc.
+interface BetterInputProps extends ComponentPropsWithRef<'input'> {
+  label: string;
+  error?: string;
+}
+
+function BetterInput({ label, error, ref, ...rest }: BetterInputProps) {
+  return (
+    <div>
+      <label>{label}</label>
+      <input ref={ref} {...rest} />
+    </div>
+  );
+}
 
 // Parent — ref is typed as HTMLInputElement
 const inputRef = useRef<HTMLInputElement>(null);
 <TextInput ref={inputRef} label="Name" name="name" />`
       }</CodeBlock>
 
-      <InfoBox variant="info" title="forwardRef generic order">
-        The order is <code>forwardRef&lt;RefType, PropsType&gt;</code> — the ref element type
-        comes <strong>first</strong>, then props. This is the opposite of what you might expect.
+      <InfoBox variant="tip" title="useRef Typing Cheat Sheet">
+        <p>
+          <code>useRef&lt;HTMLInputElement&gt;(null)</code> gives{' '}
+          <code>RefObject&lt;HTMLInputElement | null&gt;</code> &mdash; the right choice for a DOM
+          ref you hand to JSX. Use <code>useRef&lt;number&gt;(0)</code> when you want a
+          mutable box you write to yourself. In React 19 the two-overload distinction
+          from earlier versions is gone: <code>ref.current</code> is always writable, and
+          you always null-check before touching a DOM node.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="tsx" title="Legacy — forwardRef (deprecated in React 19)">{
+`import { forwardRef } from 'react';
+
+// Still works, but no longer necessary. You will see this everywhere in
+// code written before React 19, and in most component libraries.
+const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
+  ({ label, name, ...rest }, ref) => (
+    <input ref={ref} id={name} name={name} {...rest} />
+  )
+);
+TextInput.displayName = 'TextInput';   // forwardRef components need this`
+      }</CodeBlock>
+
+      <InfoBox variant="warning" title="forwardRef Generic Order Is Backwards">
+        <p>
+          If you are reading or maintaining legacy code, note the order is{' '}
+          <code>forwardRef&lt;RefType, PropsType&gt;</code> &mdash; the <em>ref element type comes
+          first</em>, then props. This trips up almost everyone. It is one more reason to
+          migrate to the plain-prop form, where the ref is typed inline with everything else.
+        </p>
       </InfoBox>
 
       <h2>10. React.lazy and Suspense</h2>

@@ -5,15 +5,15 @@ import PosterQuickRef from '../../components/PosterQuickRef';
 export default function FieldGuideBoot4() {
   return (
     <PosterLayout
-      accent="amber"
-      eyebrow="Java + Spring Boot 4 · Field Reference"
+      accent="emerald"
+      eyebrow="Spring Boot 4 · Field Reference"
       title="Spring Boot 4 Novelties"
       tagline="RestClient, declarative HTTP clients, virtual threads, and everything renamed since Boot 2 — condensed for offline study."
       meta={['Boot 4', '11 features']}
       footerLabel="Personal study reference — Spring Boot 4"
-      pageLabel="Java + Spring Field Guide · Boot 4 Novelties"
-      prev={{ path: '/java-field-guide/spring-testing', label: 'Spring Testing' }}
-      next={{ path: '/java-field-guide/gotchas', label: 'Gotchas & Pitfalls' }}
+      pageLabel="Spring Field Guide · Boot 4 Novelties"
+      prev={{ path: '/spring-field-guide/kafka-observability', label: 'Kafka & Observability' }}
+      next={{ path: '/spring-field-guide/gotchas', label: 'Gotchas & Pitfalls' }}
     >
       <PosterCard
         glyph="Rc"
@@ -83,18 +83,21 @@ CatalogApi api = HttpServiceProxyFactory
 
       <PosterCard
         glyph="Pn"
-        title={<>Virtual thread pinning<span className="dim"></span></>}
+        title={<>Virtual thread pinning<span className="dim"> — JDK-dependent</span></>}
         language="java"
-        code={`// synchronized pins the vthread to its carrier during I/O.
+        code={`// Java 21-23: synchronized pins the vthread during I/O.
 public synchronized void inc() {
     externalCall();   // pinned — carrier can't be reused
     count++;
 }
 
-// Fix: ReentrantLock allows unmounting across the I/O call.
-lock.lock();
-try { externalCall(); count++; } finally { lock.unlock(); }`}
-        caption="synchronized blocks and native calls pin a virtual thread to its OS carrier, defeating the point. Replace with ReentrantLock anywhere I/O happens under a lock."
+// Java 24+ (JEP 491): synchronized unmounts fine.
+// Remaining pin sites: native/JNI, class initializers.
+
+// Portable fix — keep I/O outside the lock entirely.
+externalCall();
+count.incrementAndGet();`}
+        caption="The familiar 'replace synchronized with ReentrantLock' rule applies to Java 21-23; JEP 491 removed monitor pinning in Java 24. Check your target JDK before citing it — and note that holding a lock across a downstream call is a throughput problem either way."
       />
 
       <PosterCard
@@ -184,9 +187,10 @@ Biggest release since Spring 3.`}
           { need: '3+ endpoint external API', answer: '@HttpExchange declarative interface' },
           { need: 'Standard error body', answer: 'spring.mvc.problemdetails.enabled: true' },
           { need: 'Scale I/O-bound MVC app', answer: 'spring.threads.virtual.enabled: true' },
-          { need: 'Avoid vthread pinning', answer: 'ReentrantLock instead of synchronized' },
+          { need: 'Avoid vthread pinning (Java 21-23)', answer: 'Keep I/O outside the lock; ReentrantLock over synchronized' },
+          { need: 'Avoid vthread pinning (Java 24+)', answer: 'Mostly solved by JEP 491 — only native/JNI frames pin' },
           { need: 'One call, metrics + tracing', answer: 'Observation API' },
-          { need: 'Fork/join with auto-cancel', answer: 'StructuredTaskScope (preview)' },
+          { need: 'Fork/join with auto-cancel', answer: 'StructuredTaskScope (final in Java 25; preview 21-24)' },
           { need: 'Fast cold start', answer: 'GraalVM native image via ./mvnw -Pnative' },
           { need: 'Test double bean', answer: '@MockitoBean, not deprecated @MockBean' },
         ]}

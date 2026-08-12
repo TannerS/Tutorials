@@ -545,11 +545,21 @@ Java 17  (2021, LTS)       — records, sealed types, pattern matching instanceo
                              text blocks, switch expressions
 Java 21  (2023, LTS)       — virtual threads, pattern matching for switch,
                              record patterns, sequenced collections, ScopedValue (preview)
+Java 24  (2025, non-LTS)   — Stream Gatherers final (custom intermediate ops),
+                             and JEP 491: synchronized no longer pins virtual
+                             threads. Both roll forward into 25.
 Java 25  (2025, LTS)       — refined structured concurrency, stable ScopedValue,
-                             module import declarations, more pattern-matching depth
+                             module import declarations, compact source files,
+                             more pattern-matching depth
 
-For any new codebase in 2026, target Java 21 or newer. Java 17 remains a safe
-choice for existing services that don't need virtual threads yet.`}
+For any new codebase in 2026, target Java 25 (the newest LTS) or Java 21 if
+your platform hasn't certified 25 yet. Java 17 remains a safe choice for
+existing services that don't need virtual threads.
+
+Two features above are worth knowing even though they landed in a non-LTS
+release, because 25 inherited them and interview answers written for 21 are
+now wrong: Gatherers (see the Streams lesson) and the end of synchronized
+pinning (see the Concurrency lesson).`}
       </CodeBlock>
 
       <h2>Test Your Knowledge</h2>

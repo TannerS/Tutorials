@@ -565,6 +565,44 @@ Media bandwidth (reads):          Dominated by CDN`}
         think social media feeds or product catalogs.
       </p>
 
+      <InfoBox variant="warning" title="&quot;Pick Two&quot; Is a Useful Slogan, Not the Real Theorem">
+        <p>
+          The three-way Venn diagram above is how CAP is always taught, and it
+          is subtly wrong in a way interviewers notice.
+        </p>
+        <p>
+          <strong>&quot;CA&quot; is not a real option for a distributed
+          system.</strong> Partitions are a property of the network, not a
+          design choice — you cannot decline to tolerate them any more than you
+          can decline to tolerate hardware failure. A system labelled CA is
+          simply one that has not decided what it will do when a partition
+          happens, and it will behave badly when one does. In practice CA means
+          &quot;single node&quot; (a lone Postgres instance), where the question
+          never arises.
+        </p>
+        <p>
+          <strong>The choice is only made during a partition.</strong> CAP says
+          nothing about normal operation. A CP system is not perpetually
+          unavailable and an AP system is not perpetually inconsistent — both
+          run happily consistent and available when the network is healthy. The
+          label describes only the behaviour at the moment connectivity breaks.
+        </p>
+        <p>
+          <strong>The categories are not absolute.</strong> Real databases are
+          configurable rather than fixed: Cassandra with{' '}
+          <code>QUORUM</code> reads and writes behaves like a CP system, while
+          MongoDB reading from secondaries behaves like an AP one. The right
+          interview answer is usually &quot;it depends on how it is
+          tuned.&quot;
+        </p>
+        <p>
+          The more useful model is <strong>PACELC</strong> — covered in the
+          Distributed Systems lesson — which adds the question CAP leaves out:
+          what does the system trade <em>when there is no partition?</em>{' '}
+          (Answer: latency against consistency.)
+        </p>
+      </InfoBox>
+
       <h3>Real-World Examples</h3>
 
       <p><strong>CP Systems (Consistency + Partition Tolerance):</strong></p>

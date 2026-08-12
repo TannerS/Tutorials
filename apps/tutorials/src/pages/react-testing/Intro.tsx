@@ -34,29 +34,69 @@ export default function Intro() {
 
       <h2>Project Setup</h2>
       <p>
-        If you're using Create React App or Vite with the React template, most of
-        this is preconfigured. Here's what you need:
+        Vite's React template does <em>not</em> ship a test runner — you add one yourself, and
+        on a Vite project that runner is <strong>Vitest</strong>. It reuses your existing
+        <code> vite.config.ts</code>, so your aliases, plugins, and TS transform apply to tests
+        for free, with no second Babel/transform config to keep in sync.
       </p>
 
-      <CodeBlock language="jsx" title="Install Dependencies">
-{`# Core testing stack
-npm install --save-dev @testing-library/react @testing-library/jest-dom @testing-library/user-event
+      <CodeBlock language="bash" title="Install Dependencies">
+{`# The runner + a DOM implementation for it to render into
+npm install -D vitest jsdom
 
-# If using Vite, you'll also need:
-npm install --save-dev vitest jsdom @testing-library/jest-dom
-
-# jest.config.js (CRA) or vitest.config.ts (Vite)
-# Make sure testEnvironment is set to 'jsdom'`}
+# Testing Library: renderer, custom matchers, interaction simulation
+npm install -D @testing-library/react \\
+               @testing-library/jest-dom \\
+               @testing-library/user-event`}
       </CodeBlock>
 
-      <CodeBlock language="jsx" title="Test Setup File (setupTests.js)">
-{`// This runs before every test file
-import '@testing-library/jest-dom';
+      <CodeBlock language="javascript" title="vite.config.ts">
+{`import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// Optional: clean up after each test (RTL does this automatically)
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',       // give tests a DOM (default is 'node')
+    globals: true,              // describe/test/expect without importing them
+    setupFiles: './src/setupTests.ts',
+    css: true,                  // process CSS imports instead of erroring
+  },
+});`}
+      </CodeBlock>
+
+      <CodeBlock language="javascript" title="src/setupTests.ts">
+{`// Runs once before every test file.
+// Registers toBeInTheDocument(), toHaveValue(), toBeDisabled(), etc.
+import '@testing-library/jest-dom/vitest';
+
+// RTL auto-cleans between tests when globals: true.
+// Without globals, do it manually:
 // import { cleanup } from '@testing-library/react';
 // afterEach(cleanup);`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Reading the jest.* Calls in This Section">
+        The examples throughout these lessons use <code>jest.fn()</code>,
+        <code> jest.mock()</code>, and <code>jest.useFakeTimers()</code> — Jest is still what
+        you'll meet in most existing codebases, and it's what the majority of RTL documentation
+        and Stack Overflow answers are written against. <strong>On Vitest, the API is the same
+        shape with a different namespace</strong>, so every example translates mechanically:
+        <br /><br />
+        <code>jest.fn</code> → <code>vi.fn</code> &nbsp;·&nbsp;
+        <code>jest.mock</code> → <code>vi.mock</code> &nbsp;·&nbsp;
+        <code>jest.spyOn</code> → <code>vi.spyOn</code> &nbsp;·&nbsp;
+        <code>jest.useFakeTimers</code> → <code>vi.useFakeTimers</code> &nbsp;·&nbsp;
+        <code>jest.clearAllMocks</code> → <code>vi.clearAllMocks</code>
+        <br /><br />
+        Import it with <code>{'import { vi } from \'vitest\''}</code> (or enable
+        <code> globals: true</code> as above). The three real differences worth knowing:
+        Vitest's <code>vi.mock</code> factory is hoisted the same way but must use
+        <code> vi.hoisted()</code> for shared variables; ES module mocking is native rather than
+        transform-based; and jest-dom is imported from
+        <code> @testing-library/jest-dom/vitest</code>. Everything else in these lessons —
+        which is nearly all of it, since RTL itself is runner-agnostic — is identical either way.
+      </InfoBox>
 
       <h2>The render Function</h2>
       <p>

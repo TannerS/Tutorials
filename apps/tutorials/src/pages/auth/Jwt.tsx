@@ -65,49 +65,49 @@ RSASHA256(
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Claim</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Type</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Description</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Claim</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Type</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Description</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><code>sub</code></td>
             <td style={{ padding: '0.75rem' }}>Registered</td>
             <td style={{ padding: '0.75rem' }}>Subject — the user ID</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><code>iss</code></td>
             <td style={{ padding: '0.75rem' }}>Registered</td>
             <td style={{ padding: '0.75rem' }}>Issuer — who created this token</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><code>aud</code></td>
             <td style={{ padding: '0.75rem' }}>Registered</td>
             <td style={{ padding: '0.75rem' }}>Audience — intended recipient</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><code>exp</code></td>
             <td style={{ padding: '0.75rem' }}>Registered</td>
             <td style={{ padding: '0.75rem' }}>Expiration time (Unix timestamp)</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><code>iat</code></td>
             <td style={{ padding: '0.75rem' }}>Registered</td>
             <td style={{ padding: '0.75rem' }}>Issued at time</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><code>jti</code></td>
             <td style={{ padding: '0.75rem' }}>Registered</td>
             <td style={{ padding: '0.75rem' }}>JWT ID — unique token identifier</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><code>roles</code></td>
             <td style={{ padding: '0.75rem' }}>Private</td>
             <td style={{ padding: '0.75rem' }}>Application-specific roles</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><code>email</code></td>
             <td style={{ padding: '0.75rem' }}>Public (OIDC)</td>
             <td style={{ padding: '0.75rem' }}>User email address</td>
@@ -276,39 +276,39 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Aspect</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>JWT</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Server Sessions</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Aspect</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>JWT</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Server Sessions</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Storage</td>
             <td style={{ padding: '0.75rem' }}>Client-side (cookie or header)</td>
             <td style={{ padding: '0.75rem' }}>Server-side (Redis/DB)</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>DB Lookup</td>
             <td style={{ padding: '0.75rem' }}>Not required — self-contained</td>
             <td style={{ padding: '0.75rem' }}>Required on every request</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Revocation</td>
             <td style={{ padding: '0.75rem' }}>Hard — needs blocklist or short expiry</td>
             <td style={{ padding: '0.75rem' }}>Easy — delete session from store</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Size</td>
             <td style={{ padding: '0.75rem' }}>Larger (encoded claims)</td>
             <td style={{ padding: '0.75rem' }}>Small (just session ID)</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Scaling</td>
             <td style={{ padding: '0.75rem' }}>Stateless — scales easily</td>
             <td style={{ padding: '0.75rem' }}>Needs shared session store</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Best For</td>
             <td style={{ padding: '0.75rem' }}>Microservices, APIs, SPAs</td>
             <td style={{ padding: '0.75rem' }}>Traditional web apps</td>
@@ -325,6 +325,95 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         <p><strong>Always validate iss, aud, exp, and alg</strong> — Never trust a JWT without checking these claims. Whitelist allowed algorithms to prevent algorithm confusion attacks.</p>
         <p><strong>Use RS256 or ES256 over HS256</strong> — Asymmetric signing is more secure for distributed systems. The private key stays on the auth server.</p>
       </InfoBox>
+
+      <h2>Algorithm Confusion Attacks</h2>
+
+      <p>
+        &quot;Whitelist the algorithm&quot; is the single most repeated piece of
+        JWT advice, and it is worth understanding exactly which attacks it
+        stops — this is a very common interview follow-up.
+      </p>
+
+      <h3>1. The <code>alg: none</code> Attack</h3>
+      <p>
+        The JWT spec includes an <code>none</code> algorithm meaning
+        &quot;unsecured token.&quot; An attacker takes a valid token, edits the
+        payload to <code>&quot;roles&quot;: [&quot;admin&quot;]</code>, sets
+        the header to <code>&quot;alg&quot;: &quot;none&quot;</code>, and drops
+        the signature entirely. A naive library that reads <code>alg</code>{' '}
+        from the token and dispatches on it will happily accept it.
+      </p>
+
+      <h3>2. RS256 → HS256 Confusion</h3>
+      <p>
+        Subtler and more dangerous. The server verifies with an RSA{' '}
+        <em>public</em> key — which is, by definition, public. The attacker
+        changes the header to <code>&quot;alg&quot;: &quot;HS256&quot;</code>{' '}
+        and signs the tampered token using the <strong>public key bytes as
+        the HMAC secret</strong>. If the server picks its verification
+        algorithm from the token&apos;s own header, it will run HMAC-SHA256
+        with that same public key, recompute the identical signature, and
+        accept a forged admin token.
+      </p>
+
+      <CodeBlock language="javascript" title="Algorithm Confusion — Vulnerable vs Safe">
+{`// VULNERABLE — the token decides how it gets verified.
+// jwt.verify() without an algorithms option will trust the header's alg.
+const decoded = jwt.verify(token, publicKey);   // NEVER do this
+
+// SAFE — the SERVER decides. The header's alg is only a hint,
+// and a mismatch is rejected before any crypto runs.
+const decoded = jwt.verify(token, publicKey, {
+  algorithms: ['RS256'],   // an HS256 or "none" token is rejected outright
+  issuer: 'https://auth.example.com',
+  audience: 'https://api.example.com',
+  clockTolerance: 30,      // seconds of allowed clock skew between servers
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="The Rule Behind the Rule">
+        <p>
+          The underlying principle: <strong>never let attacker-controlled data
+          choose your verification strategy.</strong> The <code>alg</code> and{' '}
+          <code>kid</code> fields live in the unsigned header, so they are
+          fully attacker-controlled until the signature checks out.
+        </p>
+        <p>
+          <code>kid</code> deserves the same suspicion. If you use it to look
+          up a key, treat it as an opaque lookup key against a known set —
+          never as a file path or a SQL fragment. Attackers have used{' '}
+          <code>kid</code> for path traversal
+          (<code>../../dev/null</code>, giving an empty key) and SQL injection
+          to control the verification key.
+        </p>
+      </InfoBox>
+
+      <h2>Revoking JWTs</h2>
+      <p>
+        The honest answer to &quot;how do you revoke a JWT?&quot; is that you
+        cannot — a signed token stays valid until it expires. What you can do
+        is add back just enough state to cover the cases that matter:
+      </p>
+      <ul>
+        <li>
+          <strong>Short expiry (the main defence).</strong> A 15-minute access
+          token bounds the damage without any infrastructure. Revocation
+          effectively happens by refusing to refresh.
+        </li>
+        <li>
+          <strong>A denylist keyed on <code>jti</code>.</strong> Store revoked
+          token IDs in Redis with a TTL equal to the token&apos;s remaining
+          lifetime, so the list stays small and self-cleaning. Costs one fast
+          lookup per request.
+        </li>
+        <li>
+          <strong>A per-user token version.</strong> Put a{' '}
+          <code>tokenVersion</code> claim in the JWT and a matching column on
+          the user. &quot;Log out everywhere&quot; and password changes simply
+          increment the column, invalidating every outstanding token for that
+          user at once.
+        </li>
+      </ul>
 
       <h2>Refresh Token Pattern</h2>
 
@@ -345,10 +434,15 @@ app.post('/login', async (req, res) => {
 
   const refreshToken = crypto.randomBytes(64).toString('hex');
 
-  // Store refresh token in DB (server-side, for revocation)
+  // Store refresh token in DB (server-side, for revocation).
+  // Never store the raw token — hash it, exactly like a password,
+  // so a database leak does not hand out live sessions.
   await db.refreshTokens.create({
     token: hashToken(refreshToken),
     userId: user.id,
+    familyId: crypto.randomUUID(), // new login = new token family
+    usedAt: null,
+    revoked: false,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 
@@ -363,21 +457,38 @@ app.post('/login', async (req, res) => {
   res.json({ message: 'Logged in' });
 });
 
-// Refresh: exchange refresh token for new access token
+// Refresh: exchange refresh token for new access token.
+// Rotation with REUSE DETECTION — note that used tokens are marked,
+// not deleted, so that a replay can be recognised rather than just
+// looking like an unknown token.
 app.post('/auth/refresh', async (req, res) => {
   const { refreshToken } = req.cookies;
 
   const stored = await db.refreshTokens.findOne({
     token: hashToken(refreshToken),
-    expiresAt: { $gt: new Date() },
   });
 
-  if (!stored) {
+  if (!stored || stored.expiresAt < new Date()) {
     return res.status(401).json({ error: 'Invalid refresh token' });
   }
 
-  // Rotate refresh token (invalidate old, issue new)
-  await db.refreshTokens.delete({ id: stored.id });
+  // REUSE DETECTED: this token was already rotated away. Either the
+  // user replayed it, or it was stolen and one of the two parties has
+  // now used it twice. We cannot tell which — so revoke the whole
+  // family and force a fresh login.
+  if (stored.usedAt !== null) {
+    await db.refreshTokens.revokeFamily({ familyId: stored.familyId });
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken', { path: '/auth/refresh' });
+    return res.status(401).json({ error: 'Token reuse detected — re-authenticate' });
+  }
+
+  if (stored.revoked) {
+    return res.status(401).json({ error: 'Token family revoked' });
+  }
+
+  // Mark this token as spent (keep the row for reuse detection).
+  await db.refreshTokens.update({ id: stored.id }, { usedAt: new Date() });
 
   const user = await db.users.findById(stored.userId);
   const newAccessToken = jwt.sign(
@@ -390,7 +501,10 @@ app.post('/auth/refresh', async (req, res) => {
   await db.refreshTokens.create({
     token: hashToken(newRefreshToken),
     userId: user.id,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    familyId: stored.familyId,  // same family as the token it replaces
+    usedAt: null,
+    revoked: false,
+    expiresAt: stored.expiresAt, // family has an absolute lifetime cap
   });
 
   res.cookie('accessToken', newAccessToken, {
@@ -404,12 +518,40 @@ app.post('/auth/refresh', async (req, res) => {
 });`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Refresh Token Rotation">
+      <InfoBox variant="tip" title="Rotation Alone Is Not Enough — You Need Reuse Detection">
         <p>
-          Always rotate refresh tokens: when a refresh token is used, invalidate it and issue a new one.
-          This way, if a refresh token is stolen, the legitimate user&#39;s next refresh attempt will fail
-          (because the old token was already used), alerting the system to potential compromise. This is
-          called <strong>refresh token rotation</strong> and is a critical security pattern.
+          <strong>Rotation</strong> means every refresh spends the old token
+          and issues a new one. That alone limits a stolen token&apos;s
+          usefulness, but it does not tell you a theft happened.
+        </p>
+        <p>
+          <strong>Reuse detection</strong> is what closes the loop, and it
+          depends on one implementation detail people usually get wrong:{' '}
+          <em>mark spent tokens as used rather than deleting them.</em> If you
+          delete, a replayed token is indistinguishable from a garbage token —
+          both are simply &quot;not found.&quot; If you keep the row, a second
+          presentation is unambiguous proof that two parties hold the same
+          token, and the only safe response is to revoke the entire{' '}
+          <strong>token family</strong> (every descendant of that login) and
+          force re-authentication.
+        </p>
+        <p>
+          This costs the legitimate user a login in the false-positive case —
+          a dropped response causing a client retry — but that is the correct
+          trade, and it is exactly what the OAuth 2.1 draft recommends for
+          public clients that cannot keep a secret.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="Give the Family an Absolute Lifetime">
+        <p>
+          Note that the rotated token above inherits{' '}
+          <code>stored.expiresAt</code> rather than getting a fresh 7 days.
+          Without this, a token that is refreshed every few days never expires
+          — an attacker with a stolen token who keeps quietly rotating it
+          holds a permanent session. Give each family a hard cap (say 7 days
+          idle, 30 days absolute), after which the user logs in again no
+          matter how recently the token was used.
         </p>
       </InfoBox>
 

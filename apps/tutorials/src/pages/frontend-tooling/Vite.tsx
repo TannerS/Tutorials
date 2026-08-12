@@ -13,18 +13,28 @@ export default function Vite() {
       prev={null}
       next={{ path: '/frontend-tooling/linting', label: 'ESLint & Prettier' }}
     >
+      <InfoBox variant="info" title="This Is the Toolchain-Level Tour">
+        This lesson covers Vite as <em>one tool in your frontend toolchain</em> — enough to read
+        and modify a <code>vite.config.ts</code>, wire up env vars, and ship a build. The
+        dedicated <strong>Vite</strong> section goes considerably deeper on the same ground:
+        the two-pipeline architecture, dependency pre-bundling internals, the plugin hook system,
+        the HMR API, SSR primitives, library mode, and a full Webpack/CRA migration checklist.
+        Read this page for the working knowledge; go there when you need the mechanism.
+      </InfoBox>
+
       <h2>Why Vite?</h2>
       <p>
         If you've used Create React App or Webpack, you've felt the pain: slow cold starts,
         sluggish HMR, and config files that rival War and Peace. Vite (French for "fast")
         was created by Evan You to solve these problems by leveraging native ES modules
-        during development and Rollup for production builds.
+        during development and a Rollup-compatible bundler for production builds.
       </p>
 
       <InfoBox variant="info" title="CRA Is Dead">
-        Create React App is no longer maintained. The React team officially recommends
-        framework-based setups (Next.js, Remix) or Vite for vanilla SPA projects.
-        If your new team is still on CRA, migrating to Vite is usually straightforward.
+        Create React App is no longer maintained — the React team formally deprecated it in
+        2025. The official recommendation is a framework (Next.js, React Router in framework
+        mode, TanStack Start) or Vite for a plain SPA. If your new team is still on CRA,
+        migrating to Vite is usually straightforward.
       </InfoBox>
 
       <h3>Vite vs Webpack vs CRA</h3>
@@ -53,12 +63,22 @@ export default function Vite() {
         chart={"graph TD\n  A[Browser Request] --> B[Vite Dev Server]\n  B --> C{File Type?}\n  C -->|node_modules| D[Pre-bundled with esbuild]\n  C -->|.tsx/.jsx| E[Transform with esbuild]\n  C -->|.css| F[Inject as JS module]\n  C -->|.svg| G[Transform via Plugin]\n  D --> H[Serve to Browser]\n  E --> H\n  F --> H\n  G --> H"}
       />
 
-      <h3>Production: Rollup (or Rolldown)</h3>
+      <h3>Production: Rollup, Now Rolldown</h3>
       <p>
-        For production, Vite uses Rollup to create optimized bundles with tree-shaking,
-        code splitting, and asset hashing. The Vite team is also building Rolldown — a
-        Rust-based bundler that will eventually replace both esbuild and Rollup in Vite.
+        For production, Vite creates optimized bundles with tree-shaking, code splitting, and
+        asset hashing. Historically that was Rollup. Rolldown — the Rust-based bundler the Vite
+        team built to unify esbuild's pre-bundling role and Rollup's build role in one engine —
+        shipped as opt-in <code>rolldown-vite</code> during the Vite 6/7 era and became the
+        default bundler in Vite 8.
       </p>
+
+      <InfoBox variant="tip" title="Why the Config Barely Changed">
+        Rolldown is deliberately Rollup-API-compatible, so <code>build.rollupOptions</code>,
+        <code> manualChunks</code>, and the vast majority of Rollup plugins keep working across
+        the switch. That compatibility is the whole point — you get the Rust speedup without
+        rewriting your build config. Expect differences mainly in exotic plugins and in exact
+        chunk-hash output, not in the options you write day to day.
+      </InfoBox>
 
       <h2>vite.config.ts Deep Dive</h2>
 
@@ -115,6 +135,16 @@ export default defineConfig(({ mode }) => ({
   },
 }))`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="__dirname Is Not Defined in an ESM Config">
+        The alias block above uses <code>__dirname</code>, which you'll see in most Vite
+        tutorials — but <code>__dirname</code> is a CommonJS global. In a project with
+        <code> "type": "module"</code> (which every scaffolded Vite project has), referencing it
+        in <code>vite.config.ts</code> throws <em>__dirname is not defined</em>. Use
+        <code> import.meta.dirname</code> on Node 20.11+, or derive it:
+        <code> fileURLToPath(new URL('.', import.meta.url))</code>. Better still, install
+        <code> vite-tsconfig-paths</code> and skip the manual alias block entirely.
+      </InfoBox>
 
       <h2>Essential Plugins</h2>
 
@@ -199,10 +229,18 @@ interface ImportMeta {
       <h2>Dev Server: Proxy, HTTPS, and HMR</h2>
 
       <CodeBlock language="javascript" title="Advanced Server Config">
-{`export default defineConfig({
+{`import basicSsl from '@vitejs/plugin-basic-ssl';
+
+export default defineConfig({
+  // HTTPS: server.https no longer accepts a boolean — it takes real
+  // https.ServerOptions (key/cert). For a throwaway self-signed cert
+  // in dev, use the plugin instead of hand-rolling one.
+  plugins: [basicSsl()],
+
   server: {
-    // HTTPS with self-signed cert (install @vitejs/plugin-basic-ssl)
-    https: true,
+    // Or supply your own certs explicitly:
+    // https: { key: fs.readFileSync('./key.pem'),
+    //          cert: fs.readFileSync('./cert.pem') },
 
     // Custom HMR settings
     hmr: {
@@ -256,12 +294,20 @@ interface ImportMeta {
 {`{
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -b && vite build",
     "preview": "vite preview --port 4173",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint ."
   }
 }`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="No --ext Flag Anymore">
+        Older tutorials show <code>eslint . --ext .ts,.tsx</code>. Flat config
+        (<code>eslint.config.js</code>, the default since ESLint 9) removed
+        <code> --ext</code> entirely — which files get linted is now decided by the
+        <code> files</code>/<code>ignores</code> globs inside the config itself. Passing the flag
+        is an error, not a no-op. See the ESLint lesson next for the full flat-config setup.
+      </InfoBox>
 
       <h2>Vite + React + TypeScript Starter</h2>
 

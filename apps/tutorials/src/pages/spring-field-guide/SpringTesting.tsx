@@ -5,15 +5,15 @@ import PosterQuickRef from '../../components/PosterQuickRef';
 export default function FieldGuideSpringTesting() {
   return (
     <PosterLayout
-      accent="amber"
-      eyebrow="Java + Spring Boot 4 · Field Reference"
+      accent="emerald"
+      eyebrow="Spring Boot 4 · Field Reference"
       title="Spring Testing"
       tagline="Unit tests, slice tests, and TestContainers — which level to reach for and the annotation that gets you there."
       meta={['JUnit 5', '12 patterns']}
       footerLabel="Personal study reference — Spring Boot"
-      pageLabel="Java + Spring Field Guide · Testing"
-      prev={{ path: '/java-field-guide/spring-security', label: 'Spring Security' }}
-      next={{ path: '/java-field-guide/boot4', label: 'Spring Boot 4 Novelties' }}
+      pageLabel="Spring Field Guide · Testing"
+      prev={{ path: '/spring-field-guide/aop-events', label: 'AOP & Async Events' }}
+      next={{ path: '/spring-field-guide/kafka-observability', label: 'Kafka & Observability' }}
     >
       <PosterCard
         glyph="U"

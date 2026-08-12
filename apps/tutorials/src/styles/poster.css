@@ -51,6 +51,16 @@
   --accent-ink: #fcd34d;
   --accent-dim: #3d2f14;
 }
+.poster-sheet[data-accent="blue"] {
+  --accent: #3178c6;
+  --accent-ink: #7db8f0;
+  --accent-dim: #14263d;
+}
+.poster-sheet[data-accent="emerald"] {
+  --accent: #22c55e;
+  --accent-ink: #6ee7a0;
+  --accent-dim: #123420;
+}
 
 /* ---- Light mode: the ink-minimal preview — matches print ---- */
 .poster-sheet[data-mode="light"] {
@@ -58,7 +68,8 @@
   --ink: #14161f;
   --ink-soft: #52586b;
   --ink-faint: #82869c;
-  --panel: #12141c;
+  --panel: #ffffff;
+  --panel-border: #dde2ec;
   --code-bg: #f8f8fa;
   --code-rule: #dfe2ea;
   --border: #dde2ec;
@@ -73,6 +84,8 @@
 }
 .poster-sheet[data-mode="light"][data-accent="sky"] { --accent-ink: #0a75ab; --accent-dim: #d7edfb; }
 .poster-sheet[data-mode="light"][data-accent="amber"] { --accent-ink: #92400e; --accent-dim: #fef3c7; }
+.poster-sheet[data-mode="light"][data-accent="blue"] { --accent-ink: #1d4ed8; --accent-dim: #dce8fb; }
+.poster-sheet[data-mode="light"][data-accent="emerald"] { --accent-ink: #15803d; --accent-dim: #dcfce7; }
 
 .poster-sheet[data-mode="light"] .poster-code .token.keyword,
 .poster-sheet[data-mode="light"] .poster-code .token.boolean,
@@ -105,7 +118,7 @@
 /* ---- Header band ---- */
 .poster-band {
   background: var(--panel);
-  color: #f2f4fb;
+  color: var(--ink);
   padding: 2rem 1.75rem 1.75rem;
   display: flex; justify-content: space-between; align-items: flex-end;
   gap: 1.5rem; flex-wrap: wrap;
@@ -117,13 +130,13 @@
 }
 .poster-band h2.poster-title {
   margin: 0; font-size: 2.15rem; font-weight: 800; letter-spacing: -0.02em;
-  text-wrap: balance; line-height: 1.05; color: #fff;
+  text-wrap: balance; line-height: 1.05; color: var(--ink);
   background: none; -webkit-text-fill-color: initial;
 }
-.poster-band p.poster-tag { margin: 0.6rem 0 0; color: #b7bcd4; font-size: 0.92rem; max-width: 46ch; }
+.poster-band p.poster-tag { margin: 0.6rem 0 0; color: var(--ink-soft); font-size: 0.92rem; max-width: 46ch; }
 .poster-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .poster-chip {
-  border: 1px solid #2a2f48; background: #12162490; color: #cfd3e8;
+  border: 1px solid var(--panel-border); background: var(--code-bg); color: var(--ink-soft);
   font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em;
   padding: 0.3rem 0.65rem; border-radius: 999px; white-space: nowrap;
 }
@@ -131,7 +144,7 @@
 
 /* ---- Card grid ---- */
 .poster-main { padding: 1.5rem 1.5rem 2rem; }
-.poster-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+.poster-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.1rem; }
 @media (max-width: 680px) { .poster-grid { grid-template-columns: 1fr; } }
 
 .poster-card {
@@ -193,13 +206,13 @@
 .poster-code .token.maybe-class-name { color: var(--syn-prop); }
 
 /* ---- Wide quick-reference card ---- */
-.poster-wide { grid-column: 1 / -1; background: var(--panel); border-radius: 10px; padding: 1.15rem 1.3rem 1.3rem; color: #eef0fa; }
+.poster-wide { grid-column: 1 / -1; background: var(--panel); border-radius: 10px; padding: 1.15rem 1.3rem 1.3rem; color: var(--ink); }
 .poster-wide h3 { margin: 0 0 0.8rem; font-size: 0.95rem; font-weight: 700; color: var(--accent-ink); text-transform: uppercase; letter-spacing: 0.06em; }
-.poster-wide-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.45rem 1.4rem; }
+.poster-wide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem 1.4rem; }
 @media (max-width: 680px) { .poster-wide-grid { grid-template-columns: 1fr; } }
-.poster-wide-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid #232841; font-size: 0.82rem; }
-.poster-wide-row .need { color: #9aa0bd; }
-.poster-wide-row .ans { color: #f2f4fb; font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: right; }
+.poster-wide-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+.poster-wide-row .need { color: var(--ink-soft); }
+.poster-wide-row .ans { color: var(--ink); font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: right; }
 
 .poster-foot { padding: 1rem 1.5rem 1.4rem; color: var(--ink-faint); font-size: 0.74rem; display: flex; justify-content: space-between; border-top: 1px solid var(--border); }
 

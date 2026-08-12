@@ -172,9 +172,13 @@ public AsyncTaskExecutor applicationTaskExecutor() {
           platform threads or the ForkJoin pool for parallel compute.
         </p>
         <p style={{ marginTop: '0.5rem' }}>
-          Watch out for <em>pinning</em>: <code>synchronized</code> blocks and native
-          calls pin the virtual thread to its carrier and defeat the point. Replace with
-          <code>ReentrantLock</code> where it matters.
+          <em>Pinning</em> advice depends on your JDK. Through Java 23,{' '}
+          <code>synchronized</code> held across a blocking call pinned the virtual thread to
+          its carrier — the origin of the &ldquo;replace <code>synchronized</code> with{' '}
+          <code>ReentrantLock</code>&rdquo; rule. <strong>Java 24&apos;s JEP 491 removed
+          that limitation</strong>, so on Java 24/25 only native (JNI) frames and class
+          initializers still pin. Either way, don&apos;t hold a lock across a downstream
+          call: it serialises every caller regardless of pinning.
         </p>
       </InfoBox>
 
@@ -256,7 +260,7 @@ public class OrderEnrichmentService {
 
 # When to use it
 - Serverless / lambda deployment where startup latency matters
-- Container density: 100x memory reduction per instance
+- Container density: roughly 5-10x lower resident memory per instance
 - Command-line utilities where JVM warmup is a tax
 
 # When not to
@@ -501,7 +505,7 @@ class HttpClientConfig { }`}
           "management.metrics.enable.jvm: true"
         ]}
         correctIndex={2}
-        explanation="Enabling virtual threads (Java 21 + Boot 3.2+) lets the servlet container spin up a fresh virtual thread per request. Because virtual threads are cheap and scheduler-multiplexed onto a small number of carrier threads, waiting on I/O costs almost nothing. Bumping the platform-thread pool works up to ~500 threads; virtual threads scale into the tens of thousands. Just remember to replace 'synchronized' blocks with 'ReentrantLock' to avoid pinning."
+        explanation="Enabling virtual threads (Java 21 + Boot 3.2+) lets the servlet container spin up a fresh virtual thread per request. Because virtual threads are cheap and scheduler-multiplexed onto a small number of carrier threads, waiting on I/O costs almost nothing. Bumping the platform-thread pool works up to ~500 threads; virtual threads scale into the tens of thousands. One caveat worth stating precisely: on Java 21-23 a 'synchronized' block held across I/O pins the virtual thread to its carrier, so prefer 'ReentrantLock' there; Java 24's JEP 491 removed that restriction, leaving only native/JNI and class-initializer frames as pin sites."
       />
     </LessonLayout>
   );

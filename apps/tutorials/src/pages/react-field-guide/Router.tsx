@@ -6,14 +6,14 @@ export default function FieldGuideRouter() {
   return (
     <PosterLayout
       accent="sky"
-      eyebrow="React + TypeScript · Field Reference"
+      eyebrow="React 19 · Field Reference"
       title="React Router v7"
       tagline="Route config, loaders, actions, and guards — the config-based API that replaced fetch-in-useEffect."
       meta={['v7', '13 patterns']}
       footerLabel="Personal study reference — React Router v7"
-      pageLabel="React + TS Field Guide · Router"
+      pageLabel="React 19 Field Guide · Router"
       prev={{ path: '/react-field-guide/state-management', label: 'State Management' }}
-      next={{ path: '/react-field-guide/gotchas', label: 'Gotchas & Anti-Patterns' }}
+      next={{ path: '/react-field-guide/recipes', label: 'Common Recipes' }}
     >
       <PosterCard
         glyph="R7"

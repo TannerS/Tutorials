@@ -5,15 +5,15 @@ import PosterQuickRef from '../../components/PosterQuickRef';
 export default function FieldGuideTypingReact() {
   return (
     <PosterLayout
-      accent="sky"
-      eyebrow="React + TypeScript · Field Reference"
+      accent="blue"
+      eyebrow="TypeScript · Field Reference"
       title="Typing React"
       tagline="Every hook, prop, and event typed correctly on the first try — condensed for offline study."
       meta={['React 19', '13 patterns']}
       footerLabel="Personal study reference — React + TypeScript"
-      pageLabel="React + TS Field Guide · Typing React"
-      prev={{ path: '/react-field-guide/typescript-types', label: 'TypeScript Types & Generics' }}
-      next={{ path: '/react-field-guide/state-management', label: 'State Management' }}
+      pageLabel="TypeScript Field Guide · Typing React"
+      prev={{ path: '/typescript-field-guide/typescript-types', label: 'TypeScript Types & Generics' }}
+      next={{ path: '/typescript-field-guide/project-setup', label: 'Project Setup & tsconfig' }}
     >
       <PosterCard
         glyph="FC"

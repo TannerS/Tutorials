@@ -6,14 +6,14 @@ export default function FieldGuideHooks() {
   return (
     <PosterLayout
       accent="sky"
-      eyebrow="React + TypeScript · Field Reference"
+      eyebrow="React 19 · Field Reference"
       title="Hooks Cheat Sheet"
       tagline="Every hook's signature and the one thing that trips people up — condensed for offline study."
-      meta={['React 19', '12 hooks']}
+      meta={['React 19', '16 hooks & APIs']}
       footerLabel="Personal study reference — React 19"
-      pageLabel="React + TS Field Guide · Hooks"
+      pageLabel="React 19 Field Guide · Hooks"
       prev={null}
-      next={{ path: '/react-field-guide/component-patterns', label: 'Component Patterns' }}
+      next={{ path: '/react-field-guide/stability', label: 'Re-Renders, Memo & Stability' }}
     >
       <PosterCard
         glyph="S"
@@ -47,12 +47,13 @@ function reducer(state, action) {
         title={<>useContext<span className="dim">()</span></>}
         code={`const ThemeCtx = createContext('light');
 
-// provider — anywhere above the reader
-<ThemeCtx.Provider value={theme}>{children}</ThemeCtx.Provider>
+// provider — React 19: render the context itself
+<ThemeCtx value={theme}>{children}</ThemeCtx>
+// <ThemeCtx.Provider> still works but is DEPRECATED
 
 // reader — anywhere below, no prop drilling
 const theme = useContext(ThemeCtx);`}
-        caption="Reads the nearest Provider's value. Skips passing props down through every level in between."
+        caption="Reads the nearest provider's value, skipping every level in between. React 19 lets you render the context object directly as the provider; Context.Provider and Context.Consumer are both deprecated."
       />
 
       <PosterCard
@@ -166,6 +167,71 @@ await saveToServer(draft);`}
         caption="Renders the expected result immediately, then swaps in the real server state once the request actually resolves."
       />
 
+      <PosterCard
+        glyph="19"
+        title={<>use<span className="dim">()</span></>}
+        badge="R19"
+        code={`// Reads a Promise — suspends until it resolves
+function Profile({ userPromise }) {
+  const user = use(userPromise);   // parent created the promise
+  return <h1>{user.name}</h1>;
+}
+<Suspense fallback={<Skeleton />}><Profile ... /></Suspense>
+
+// Reads Context — and this one may be CONDITIONAL
+if (showAdmin) {
+  const cfg = use(AdminContext);   // legal — use() is not a normal hook
+}`}
+        caption="The only hook you may call inside a condition or loop. Create the promise in the parent (or a cache) — creating it during the child's own render restarts the fetch on every attempt and loops forever."
+      />
+
+      <PosterCard
+        glyph="19"
+        title={<>useFormStatus<span className="dim">()</span></>}
+        badge="R19"
+        code={`import { useFormStatus } from 'react-dom';
+
+function SubmitButton() {          // must be a DESCENDANT of the <form>
+  const { pending, data, method, action } = useFormStatus();
+  return <button disabled={pending}>{pending ? 'Saving…' : 'Save'}</button>;
+}
+
+<form action={formAction}>
+  <input name="title" />
+  <SubmitButton />                 // reads the parent form's state
+</form>`}
+        caption="Lets a reusable button or progress bar read its form's pending state with no prop drilling. It reads the NEAREST ANCESTOR form — calling it in the same component that renders the <form> always returns pending: false."
+      />
+
+      <PosterCard
+        glyph="Df"
+        title={<>useDeferredValue<span className="dim">()</span></>}
+        code={`const deferred = useDeferredValue(query, '');  // 2nd arg new in R19
+const isStale = query !== deferred;
+
+<div style={{ opacity: isStale ? 0.6 : 1 }}>
+  <ExpensiveList query={deferred} />
+</div>`}
+        caption="Lets an expensive subtree lag behind a fast-changing value instead of blocking it. The optional initial value is what the first render sees — without it, the initial mount is NOT deferred and renders synchronously."
+      />
+
+      <PosterCard
+        glyph="R"
+        title={<>Ref <span className="dim">Cleanup &amp; ref-as-prop</span></>}
+        badge="R19"
+        code={`// ref is a plain prop now — forwardRef is deprecated
+function MyInput({ ref, ...props }) {
+  return <input ref={ref} {...props} />;
+}
+
+// ref callbacks can return a cleanup function
+<div ref={(node) => {
+  const obs = new ResizeObserver(fn); obs.observe(node);
+  return () => obs.disconnect();   // runs on unmount
+}} />`}
+        caption="Because React now USES the return value, the concise form (node) => (myRef.current = node) returns the node and React calls it as cleanup. Always use a braced body. TypeScript catches this; plain JS does not."
+      />
+
       <PosterQuickRef
         title="Which hook do I need?"
         rows={[
@@ -179,6 +245,9 @@ await saveToServer(draft);`}
           { need: 'External store', answer: 'useSyncExternalStore' },
           { need: 'Form + action', answer: 'useActionState + useFormStatus' },
           { need: 'Instant UI feedback', answer: 'useOptimistic' },
+          { need: 'Read a promise / conditional context', answer: 'use()' },
+          { need: 'Pending state in a child of a form', answer: 'useFormStatus()' },
+          { need: 'Forward a ref to a function component', answer: 'Just accept `ref` as a prop (R19)' },
         ]}
       />
     </PosterLayout>

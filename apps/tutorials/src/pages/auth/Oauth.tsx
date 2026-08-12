@@ -24,29 +24,29 @@ export default function Oauth() {
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Role</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Who</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Example</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Role</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Who</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Example</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Resource Owner</strong></td>
             <td style={{ padding: '0.75rem' }}>The user who owns the data</td>
             <td style={{ padding: '0.75rem' }}>You (the Google user)</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Client</strong></td>
             <td style={{ padding: '0.75rem' }}>The application requesting access</td>
             <td style={{ padding: '0.75rem' }}>Your web app (example.com)</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Authorization Server</strong></td>
             <td style={{ padding: '0.75rem' }}>Issues tokens after user consent</td>
             <td style={{ padding: '0.75rem' }}>Google Auth (accounts.google.com)</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Resource Server</strong></td>
             <td style={{ padding: '0.75rem' }}>Hosts protected resources / APIs</td>
             <td style={{ padding: '0.75rem' }}>Google API (googleapis.com)</td>
@@ -180,10 +180,10 @@ app.get('/auth/callback', async (req, res) => {
 
   const { access_token, id_token, refresh_token } = tokenResponse.data;
 
-  // Decode ID token to get user info (verify signature in production!)
-  const userInfo = JSON.parse(
-    Buffer.from(id_token.split('.')[1], 'base64url').toString()
-  );
+  // VERIFY the ID token — never just base64-decode it. An unverified
+  // decode trusts whatever the token says, which is exactly the bug
+  // that lets a forged token log an attacker in as anyone.
+  const userInfo = await verifyIdToken(id_token);
 
   // Create session or JWT for your app
   req.session.user = {
@@ -193,7 +193,36 @@ app.get('/auth/callback', async (req, res) => {
   };
 
   res.redirect('/dashboard');
-});`}
+});
+
+// ID token verification using the provider's published JWKS.
+const { createRemoteJWKSet, jwtVerify } = require('jose');
+
+const JWKS = createRemoteJWKSet(
+  new URL('https://www.googleapis.com/oauth2/v3/certs')
+);
+
+async function verifyIdToken(idToken, expectedNonce) {
+  const { payload } = await jwtVerify(idToken, JWKS, {
+    issuer: 'https://accounts.google.com',  // must match exactly
+    audience: GOOGLE_CLIENT_ID,             // token was minted for US
+    algorithms: ['RS256'],
+    clockTolerance: 30,
+  });
+
+  // The nonce binds this ID token to THIS login attempt — replaying an
+  // old, still-valid ID token from another session will not match.
+  if (payload.nonce !== expectedNonce) {
+    throw new Error('Nonce mismatch — possible token replay');
+  }
+
+  // Do not trust an unverified email as an account identifier.
+  if (!payload.email_verified) {
+    throw new Error('Email not verified by provider');
+  }
+
+  return payload;
+}`}
       </CodeBlock>
 
       <h2>PKCE (Proof Key for Code Exchange)</h2>
@@ -250,33 +279,33 @@ app.get('/auth/callback', async (req, res) => {
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Token</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Lifetime</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Purpose</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Format</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Token</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Lifetime</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Purpose</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Format</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Authorization Code</strong></td>
             <td style={{ padding: '0.75rem' }}>One-time use</td>
             <td style={{ padding: '0.75rem' }}>Exchanged for tokens</td>
             <td style={{ padding: '0.75rem' }}>Opaque string</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Access Token</strong></td>
             <td style={{ padding: '0.75rem' }}>15 min — 1 hour</td>
             <td style={{ padding: '0.75rem' }}>Call resource server APIs</td>
             <td style={{ padding: '0.75rem' }}>Opaque or JWT</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Refresh Token</strong></td>
             <td style={{ padding: '0.75rem' }}>Days to weeks</td>
             <td style={{ padding: '0.75rem' }}>Get new access tokens</td>
             <td style={{ padding: '0.75rem' }}>Opaque string</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>ID Token</strong></td>
             <td style={{ padding: '0.75rem' }}>Short-lived</td>
             <td style={{ padding: '0.75rem' }}>User identity (OIDC)</td>
@@ -289,10 +318,100 @@ app.get('/auth/callback', async (req, res) => {
 
       <InfoBox variant="tip" title="Which Flow Should You Use?">
         <p><strong>Authorization Code + PKCE</strong> — Use for SPAs, mobile apps, and server-side apps. The most secure flow. Always use this.</p>
-        <p><strong>Authorization Code (no PKCE)</strong> — Legacy server-side apps with a client secret. Still acceptable for confidential clients.</p>
+        <p><strong>Authorization Code (no PKCE)</strong> — Legacy server-side apps with a client secret. Tolerated under OAuth 2.0, but OAuth 2.1 makes PKCE mandatory here too — add it.</p>
         <p><strong>Client Credentials</strong> — Machine-to-machine (M2M) communication. No user involved. Service A calls Service B.</p>
         <p><strong>Device Code</strong> — For devices with limited input (smart TVs, CLI tools). User authorizes on a separate device.</p>
-        <p style={{ color: '#dc2626' }}><strong>Implicit Flow — DEPRECATED!</strong> Do not use. Tokens exposed in URL fragment. Replaced by Authorization Code + PKCE.</p>
+        <p><strong>Refresh Token</strong> — Exchanges a refresh token for a new access token. Rotate on every use for public clients.</p>
+        <p style={{ color: 'var(--accent-red-deep)' }}><strong>Implicit Flow — REMOVED in OAuth 2.1!</strong> Do not use. Tokens exposed in URL fragment. Replaced by Authorization Code + PKCE.</p>
+        <p style={{ color: 'var(--accent-red-deep)' }}><strong>Password Grant (ROPC) — REMOVED in OAuth 2.1!</strong> Requires your app to collect the user&apos;s password directly, defeating the purpose of OAuth and breaking MFA/SSO. Never use it for new work.</p>
+      </InfoBox>
+
+      <h2>OAuth 2.1 — What Actually Changed</h2>
+
+      <p>
+        OAuth 2.1 is a consolidation, not a redesign. It folds fifteen years of
+        security best-practice RFCs and errata into a single document and{' '}
+        <strong>removes the options that kept going wrong</strong>. If you have
+        been following current guidance, you are already writing OAuth 2.1.
+        Interviewers like this question because the answer shows whether you
+        know <em>why</em> each thing was removed.
+      </p>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Change</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>OAuth 2.0</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>OAuth 2.1</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>PKCE</strong></td>
+            <td style={{ padding: '0.75rem' }}>Optional; recommended for public clients</td>
+            <td style={{ padding: '0.75rem' }}><strong>Mandatory</strong> for all clients using the authorization code flow — including confidential ones</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Implicit flow</strong></td>
+            <td style={{ padding: '0.75rem' }}>Defined (<code>response_type=token</code>)</td>
+            <td style={{ padding: '0.75rem' }}><strong>Removed.</strong> Tokens in URL fragments leak via history, referrers, and logs</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Password grant (ROPC)</strong></td>
+            <td style={{ padding: '0.75rem' }}>Defined</td>
+            <td style={{ padding: '0.75rem' }}><strong>Removed.</strong> Requires the app to handle raw passwords — the exact thing OAuth exists to avoid, and incompatible with MFA and federation</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Redirect URI matching</strong></td>
+            <td style={{ padding: '0.75rem' }}>Allowed partial/prefix matching</td>
+            <td style={{ padding: '0.75rem' }}><strong>Exact string comparison</strong> required — wildcard matching enabled open-redirect code theft</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Refresh tokens (public clients)</strong></td>
+            <td style={{ padding: '0.75rem' }}>Long-lived, reusable</td>
+            <td style={{ padding: '0.75rem' }}>Must be <strong>sender-constrained or one-time-use with rotation</strong></td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Bearer tokens in URLs</strong></td>
+            <td style={{ padding: '0.75rem' }}>Query-string tokens permitted</td>
+            <td style={{ padding: '0.75rem' }}><strong>Prohibited.</strong> Authorization header only</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <InfoBox variant="tip" title="The One-Sentence Answer">
+        <p>
+          If asked to summarise it: <em>&quot;OAuth 2.1 doesn&apos;t add
+          features — it deletes the insecure ones. PKCE becomes mandatory
+          everywhere, the implicit and password grants are gone, redirect URIs
+          must match exactly, and refresh tokens for public clients must
+          rotate.&quot;</em>
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="info" title="state vs. nonce — a Frequently Confused Pair">
+        <p>
+          Both are random values you generate and check on return, but they
+          defend different things:
+        </p>
+        <p>
+          <strong><code>state</code></strong> protects the{' '}
+          <em>authorization request</em>. It is a CSRF token proving the
+          callback belongs to a flow this browser actually started — stopping
+          an attacker from injecting their own authorization code into your
+          session (session fixation).
+        </p>
+        <p>
+          <strong><code>nonce</code></strong> protects the{' '}
+          <em>ID token</em>. You send it in the authorization request; the
+          provider embeds it in the ID token it mints. Checking it on return
+          proves the token was issued for this specific login rather than
+          replayed from an older one.
+        </p>
+        <p>
+          PKCE overlaps with <code>state</code>&apos;s protection but does not
+          replace it, and neither replaces <code>nonce</code>. Send all three.
+        </p>
       </InfoBox>
 
       <CodeBlock language="java" title="Spring Boot OAuth 2.0 / OIDC Configuration">

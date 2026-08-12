@@ -111,6 +111,16 @@ root.print("");  // Recursively prints tree`}
         structures, and organizational hierarchies.
       </InfoBox>
 
+      <InfoBox variant="tip" title="When to Reach for Composite">
+        Use Composite when clients need to run the same operation over a single item and an
+        entire subtree without caring which they've got — <code>getSize()</code> on a lone file
+        vs. a directory containing thousands of nested files, above. The signal you need it is
+        code that special-cases "is this a leaf or a container?" with an <code>instanceof</code>{' '}
+        check before deciding how to recurse. If your hierarchy is always exactly one level deep
+        (a flat list of items with no nesting), you don't need Composite — a plain
+        <code>List</code> and a loop does the same job with less structure.
+      </InfoBox>
+
       <h2>Facade Pattern</h2>
       <p>
         Provides a unified, simplified interface to a set of interfaces in a subsystem.
@@ -207,6 +217,17 @@ public class OrderFacade {
         In Spring Boot applications, your @Service classes often act as facades. The Controller
         calls one service method, which orchestrates multiple repositories and other services.
         This is the Facade pattern applied at the architectural level.
+      </InfoBox>
+
+      <InfoBox variant="tip" title="When to Reach for Facade">
+        Reach for Facade when a caller would otherwise need to know the correct order to call
+        several subsystems and handle the failure/rollback logic between them — checking stock,
+        reserving it, authorizing payment, releasing stock on decline, and only then confirming
+        the order, as <code>OrderFacade</code> does above. Without it, that sequencing knowledge
+        either lives in the controller (fragile, duplicated across every entry point) or gets
+        skipped by mistake. Skip Facade if the "subsystem" is really just one service with one
+        method — wrapping a single call in another single call adds a layer without simplifying
+        anything.
       </InfoBox>
 
       <InteractiveChallenge

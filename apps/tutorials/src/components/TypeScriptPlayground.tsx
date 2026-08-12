@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Sandpack } from '@codesandbox/sandpack-react';
+import { useTheme } from './ThemeProvider';
 
 interface Challenge {
   id: number;
@@ -428,6 +429,7 @@ function saveCompleted(done: Set<number>) {
 }
 
 export default function TypeScriptPlayground() {
+  const { theme } = useTheme();
   const [index, setIndex] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [completed, setCompleted] = useState<Set<number>>(loadCompleted);
@@ -459,11 +461,11 @@ export default function TypeScriptPlayground() {
     <div style={{ margin: '2rem 0' }}>
       {/* Header */}
       <div style={{
-        background: '#161822',
-        border: '1px solid #2a2e42',
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border-color)',
         borderRadius: '12px 12px 0 0',
         padding: '1rem 1.25rem',
-        borderBottom: '1px solid #2a2e42',
+        borderBottom: '1px solid var(--border-color)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -472,7 +474,7 @@ export default function TypeScriptPlayground() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span style={{ fontSize: '1.1rem' }}>⌨️</span>
-          <span style={{ fontWeight: 700, color: '#e4e6f0', fontSize: '0.95rem' }}>
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
             TypeScript Challenges
           </span>
           <span style={{
@@ -501,16 +503,16 @@ export default function TypeScriptPlayground() {
                 border: 'none',
                 cursor: 'pointer',
                 background: completed.has(c.id)
-                  ? '#4ade80'
+                  ? 'var(--accent-green)'
                   : i === index
-                  ? '#a78bfa'
-                  : '#2a2e42',
+                  ? 'var(--accent-purple)'
+                  : 'var(--border-color)',
                 transition: 'all 0.2s ease',
                 padding: 0,
               }}
             />
           ))}
-          <span style={{ color: '#6b7090', fontSize: '0.8rem', marginLeft: '4px' }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginLeft: '4px' }}>
             {completed.size}/{CHALLENGES.length}
           </span>
         </div>
@@ -518,32 +520,32 @@ export default function TypeScriptPlayground() {
 
       {/* Challenge body */}
       <div style={{
-        background: '#161822',
-        border: '1px solid #2a2e42',
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border-color)',
         borderTop: 'none',
         padding: '1.25rem',
       }}>
         {/* Title + challenge number */}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.75rem' }}>
-          <span style={{ color: '#5b9cf6', fontWeight: 700, fontSize: '0.8rem', fontFamily: 'monospace' }}>
+          <span style={{ color: 'var(--accent-blue)', fontWeight: 700, fontSize: '0.8rem', fontFamily: 'monospace' }}>
             #{challenge.id.toString().padStart(2, '0')}
           </span>
-          <h3 style={{ margin: 0, color: '#e4e6f0', fontSize: '1.05rem', fontWeight: 700 }}>
+          <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.05rem', fontWeight: 700 }}>
             {challenge.title}
           </h3>
           {isDone && (
-            <span style={{ color: '#4ade80', fontSize: '0.85rem' }}>✅ completed</span>
+            <span style={{ color: 'var(--accent-green)', fontSize: '0.85rem' }}>✅ completed</span>
           )}
         </div>
 
         {/* Description */}
         <div style={{
-          background: '#1a1d2e',
-          border: '1px solid #2a2e42',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
           borderRadius: '8px',
           padding: '0.9rem 1rem',
           marginBottom: '0.75rem',
-          color: '#c4c8db',
+          color: 'var(--text-secondary)',
           fontSize: '0.88rem',
           lineHeight: 1.75,
           whiteSpace: 'pre-line',
@@ -556,10 +558,10 @@ export default function TypeScriptPlayground() {
           onClick={() => setShowHint(h => !h)}
           style={{
             background: 'transparent',
-            border: '1px solid #2a2e42',
+            border: '1px solid var(--border-color)',
             borderRadius: '6px',
             padding: '4px 12px',
-            color: '#9399b2',
+            color: 'var(--text-secondary)',
             fontSize: '0.8rem',
             cursor: 'pointer',
             marginBottom: showHint ? '0.5rem' : '1rem',
@@ -571,12 +573,12 @@ export default function TypeScriptPlayground() {
 
         {showHint && (
           <div style={{
-            background: '#1a2640',
-            border: '1px solid #3b5269',
+            background: 'var(--accent-blue-bg)',
+            border: '1px solid var(--accent-blue)',
             borderRadius: '8px',
             padding: '0.75rem 1rem',
             marginBottom: '1rem',
-            color: '#93c5fd',
+            color: 'var(--accent-blue)',
             fontSize: '0.85rem',
             lineHeight: 1.7,
             fontFamily: "'JetBrains Mono', monospace",
@@ -587,12 +589,12 @@ export default function TypeScriptPlayground() {
       </div>
 
       {/* Sandpack editor */}
-      <div style={{ border: '1px solid #2a2e42', borderTop: 'none' }}>
+      <div style={{ border: '1px solid var(--border-color)', borderTop: 'none' }}>
         <Sandpack
-          key={challenge.id}
+          key={`${challenge.id}-${theme}`}
           template={challenge.template}
           files={challenge.files}
-          theme="dark"
+          theme={theme}
           options={{
             editorHeight: challenge.height ?? 400,
             showLineNumbers: true,
@@ -606,8 +608,8 @@ export default function TypeScriptPlayground() {
 
       {/* Footer nav */}
       <div style={{
-        background: '#161822',
-        border: '1px solid #2a2e42',
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border-color)',
         borderTop: 'none',
         borderRadius: '0 0 12px 12px',
         padding: '0.9rem 1.25rem',
@@ -622,10 +624,10 @@ export default function TypeScriptPlayground() {
           disabled={index === 0}
           style={{
             background: 'transparent',
-            border: '1px solid #2a2e42',
+            border: '1px solid var(--border-color)',
             borderRadius: '8px',
             padding: '6px 16px',
-            color: index === 0 ? '#3b3f55' : '#c4c8db',
+            color: index === 0 ? 'var(--text-muted)' : 'var(--text-secondary)',
             cursor: index === 0 ? 'default' : 'pointer',
             fontSize: '0.85rem',
           }}
@@ -636,11 +638,11 @@ export default function TypeScriptPlayground() {
         <button
           onClick={isDone ? markUndone : markDone}
           style={{
-            background: isDone ? '#1a3329' : '#1a1d2e',
-            border: `1px solid ${isDone ? '#4ade80' : '#a78bfa'}`,
+            background: isDone ? 'var(--accent-green-bg)' : 'var(--bg-card)',
+            border: `1px solid ${isDone ? 'var(--accent-green)' : 'var(--accent-purple)'}`,
             borderRadius: '8px',
             padding: '6px 20px',
-            color: isDone ? '#4ade80' : '#a78bfa',
+            color: isDone ? 'var(--accent-green)' : 'var(--accent-purple)',
             cursor: 'pointer',
             fontSize: '0.85rem',
             fontWeight: 600,
@@ -655,10 +657,10 @@ export default function TypeScriptPlayground() {
           disabled={index === CHALLENGES.length - 1}
           style={{
             background: 'transparent',
-            border: '1px solid #2a2e42',
+            border: '1px solid var(--border-color)',
             borderRadius: '8px',
             padding: '6px 16px',
-            color: index === CHALLENGES.length - 1 ? '#3b3f55' : '#c4c8db',
+            color: index === CHALLENGES.length - 1 ? 'var(--text-muted)' : 'var(--text-secondary)',
             cursor: index === CHALLENGES.length - 1 ? 'default' : 'pointer',
             fontSize: '0.85rem',
           }}

@@ -267,6 +267,54 @@ log.atInfo()
 POST /actuator/loggers/com.example.orders  {"configuredLevel":"DEBUG"}`}
       </CodeBlock>
 
+      <h2>Spring Boot 4 Deltas</h2>
+      <CodeBlock language="text" title="What changes vs Boot 3">
+{`Baseline    Java 17 min (21+ recommended) · Jakarta EE 11 · Framework 7
+            Jackson 3: com.fasterxml.jackson -> tools.jackson,
+            ObjectMapper immutable, built via JsonMapper.builder()
+
+Modules     spring-boot-autoconfigure split per technology
+            (spring-boot-webmvc, spring-boot-data-jpa, ...)
+            spring.factories auto-config mechanism removed
+
+Null-safety org.springframework.lang.Nullable -> JSpecify
+            packages @NullMarked: non-null unless @Nullable`}
+      </CodeBlock>
+      <CodeBlock language="java" title="The four Boot 4 APIs worth memorising">
+{`// 1. API versioning is first-class (no hand-rolled RequestCondition)
+configurer.useRequestHeader("X-API-Version").addSupportedVersions("1.0","2.0");
+
+@GetMapping(value = "/{id}", version = "1.1+")   // 1.1 and later
+OrderV2 get(@PathVariable UUID id) { ... }
+
+// 2. Retry/resilience moved into core — drop the spring-retry dependency
+@EnableResilientMethods                       // replaces @EnableRetry
+@Retryable(includes = ApiException.class, maxAttempts = 4,
+           delay = 200, multiplier = 2.0)     // backoff attrs inline
+@ConcurrencyLimit(10)                         // cap in-flight calls
+
+// 3. Declarative clients auto-register — no HttpServiceProxyFactory @Bean
+@ImportHttpServices(group = "catalog", types = CatalogApi.class)
+// spring.http.client.service.group.catalog.base-url: https://...
+
+// 4. Programmatic, AOT-friendly bean registration
+class TenantRegistrar implements BeanRegistrar {
+    public void register(BeanRegistry registry, Environment env) {
+        registry.registerBean("ds-" + t, DataSource.class,
+            spec -> spec.supplier(ctx -> build(t)));
+    }
+}`}
+      </CodeBlock>
+      <InfoBox variant="tip" title="Upgrade effort, ranked">
+        <p>
+          Only two things actually cost time: the <strong>Jackson 3 package rename</strong>{' '}
+          (find-and-replace, plus any code mutating a shared <code>ObjectMapper</code> after
+          construction) and the <strong>module split</strong> if you maintain a custom starter.
+          JSpecify, API versioning, <code>@Retryable</code>, and <code>BeanRegistrar</code> are
+          all opt-in — upgrade first, adopt incrementally.
+        </p>
+      </InfoBox>
+
       <h2>The Self-Invocation Rule (One More Time)</h2>
       <InfoBox variant="danger" title="Applies to @Transactional, @Async, @Cacheable, @Retryable, @Timed, custom @Aspects">
         <p>

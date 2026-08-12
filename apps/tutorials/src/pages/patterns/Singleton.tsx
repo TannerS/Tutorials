@@ -95,6 +95,17 @@ Connection conn = DatabasePool.INSTANCE.getConnection();`}
         This is the approach recommended by Joshua Bloch in Effective Java.
       </InfoBox>
 
+      <InfoBox variant="tip" title="When to Reach for Singleton">
+        Reach for Singleton when a resource is genuinely expensive to create and must be
+        coordinated across the whole process — a HikariCP connection pool, a thread pool, or an
+        in-memory cache of reference data loaded once at startup. The test: would creating a
+        second instance be wasteful or actively wrong (e.g. two connection pools fighting over
+        the same DB max-connections limit)? If yes, Singleton fits. If you're just trying to avoid
+        passing a dependency around, that's not a Singleton problem — it's a dependency injection
+        problem, and Spring's default singleton-scoped beans already solve it without any of the
+        hand-rolled thread-safety code above.
+      </InfoBox>
+
       <h2>Factory Method Pattern</h2>
       <p>
         Defines an interface for creating objects but lets subclasses decide which class to instantiate.
@@ -149,6 +160,16 @@ Notification notif = NotificationFactory.create("EMAIL");
 notif.send("user@example.com", "Your order shipped!");`}
       </CodeBlock>
 
+      <InfoBox variant="tip" title="When to Reach for Factory Method">
+        Use Factory Method the moment a plain constructor call would need an if/else or switch to
+        pick a concrete class — like the notification channel example above. It's especially
+        valuable when the decision of "which implementation" is driven by config or runtime data
+        (a channel string from a request, a feature flag, a plugin name loaded from a properties
+        file) rather than something the caller knows at compile time. If there's only ever going
+        to be one implementation of an interface, skip the factory — <code>new SimpleGreeter()</code>{' '}
+        is not a smell, it's just object creation.
+      </InfoBox>
+
       <h3>Abstract Factory</h3>
       <CodeBlock language="java" title="Abstract Factory - Cross-Platform UI" showLineNumbers={true}>
 {`// Abstract products
@@ -189,6 +210,16 @@ public class LoginForm {
     }
 }`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="Factory Method vs. Abstract Factory">
+        Reach for Abstract Factory specifically when you're creating <em>families</em> of related
+        objects that must stay consistent with each other — a Material button must always pair
+        with a Material text field, never a Cupertino one. A single Factory Method is enough when
+        you're only choosing between variants of one product type (one notification channel).
+        Abstract Factory shows up most in UI toolkits and cross-cloud SDKs (e.g. swapping an
+        entire AWS vs. GCP client family behind one interface) — outside of those "whole family
+        must match" situations, it's usually overkill.
+      </InfoBox>
 
       <InfoBox variant="warning" title="When to Avoid Singleton">
         Singletons make unit testing difficult (global state), hide dependencies, and

@@ -52,17 +52,26 @@ function Intro() {
         <li><strong>2021: Vite 2</strong> &mdash; framework-agnostic rewrite; React, Preact, and vanilla templates land alongside Vue</li>
         <li><strong>2021&ndash;2022: Ecosystem adoption</strong> &mdash; SvelteKit, Astro, and later Nuxt adopt Vite as their default dev/build engine</li>
         <li><strong>2022: Vite 3</strong> &mdash; stabilized APIs, improved SSR support</li>
-        <li><strong>2023: Vite 4</strong> &mdash; migrated from esbuild to Rollup 3, faster cold starts</li>
+        <li><strong>2023: Vite 4</strong> &mdash; upgraded the production bundler from Rollup 2 to Rollup 3, faster cold starts</li>
         <li><strong>2023: Create React App effectively retired</strong> &mdash; the React team starts pointing new SPA users at Vite</li>
-        <li><strong>2024: Vite 5</strong> &mdash; Rollup 4 (rewritten in Rust-assisted tooling), Node 18+ requirement, smaller core</li>
-        <li><strong>2024&ndash;2025: Vite 6</strong> &mdash; Environment API groundwork for multiple runtime targets (browser, SSR, edge) and early Rolldown (Rust-based Rollup replacement) integration work</li>
+        <li><strong>2023: Vite 5</strong> &mdash; Rollup 4, Node 18+ requirement, smaller core</li>
+        <li><strong>2024: Vite 6</strong> &mdash; the Environment API, generalizing dev/build to arbitrary runtime targets (browser, SSR, edge/workers) instead of hardcoding two</li>
+        <li><strong>2025: Vite 7</strong> &mdash; Node 20+, default browser target moves to Baseline Widely Available; <code>rolldown-vite</code> ships as an opt-in drop-in</li>
+        <li><strong>2025&ndash;2026: Vite 8</strong> &mdash; Rolldown becomes the default bundler, replacing Rollup for builds and esbuild for pre-bundling</li>
       </ul>
 
-      <InfoBox variant="tip" title="Rolldown Is Coming">
-        The Vite team is building Rolldown, a Rust-based bundler meant to eventually replace
-        <em> both</em> esbuild's pre-bundling role and Rollup's production-build role with a
-        single, much faster engine. It's opt-in and evolving &mdash; this tutorial covers the
-        stable esbuild + Rollup architecture you'll actually work with today.
+      <InfoBox variant="tip" title="Rolldown: The Two Engines Became One">
+        Rolldown is the Rust bundler the Vite team built to collapse the two-engine split
+        described above &mdash; it takes over <em>both</em> esbuild's dependency pre-bundling and
+        Rollup's production build. It landed as opt-in <code>rolldown-vite</code> in the Vite 6/7
+        era and is the default from Vite 8 on.
+        <br /><br />
+        The architecture in this section still holds: what matters conceptually is
+        <strong> native-ESM serving at dev time vs a bundled graph at build time</strong>, and
+        that split is unchanged. Rolldown is Rollup-API-compatible on purpose, so
+        <code> build.rollupOptions</code> and most Rollup plugins carry over. Where lessons here
+        say &quot;Rollup builds your production bundle,&quot; read it as &quot;the Rollup-compatible
+        bundler&quot; &mdash; Rollup on Vite 7 and below, Rolldown from Vite 8.
       </InfoBox>
 
       <h2>Dev Time vs Build Time: Two Different Pipelines</h2>
@@ -214,7 +223,7 @@ console.log('Module loaded — check the Network tab, no bundle in sight!');`}</
       <CodeBlock language="bash" title="Run It">{`npm install --save-dev vite
 npx vite
 
-# VITE v5.x.x  ready in 180 ms
+# VITE v8.x.x  ready in 180 ms
 #
 # ➜  Local:   http://localhost:5173/
 # ➜  Network: use --host to expose`}</CodeBlock>

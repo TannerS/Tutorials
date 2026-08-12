@@ -1,24 +1,5 @@
 import { useState, type CSSProperties } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-
-const customStyle = {
-  ...oneDark,
-  'pre[class*="language-"]': {
-    ...oneDark['pre[class*="language-"]'],
-    background: '#1a1d2e',
-    borderRadius: '8px',
-    padding: '1.25rem',
-    margin: '1rem 0',
-    fontSize: '0.875rem',
-    border: '1px solid #2a2e42',
-  },
-  'code[class*="language-"]': {
-    ...oneDark['code[class*="language-"]'],
-    background: 'transparent',
-    fontFamily: "'JetBrains Mono', monospace",
-  },
-};
 
 export interface CodeBlockProps {
   children: string;
@@ -41,21 +22,28 @@ export function CodeBlock({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const titleStyle: CSSProperties | undefined = title
-    ? { borderRadius: '0 0 8px 8px', marginTop: 0 }
-    : undefined;
+  const preStyle: CSSProperties = {
+    background: 'var(--bg-code)',
+    borderRadius: title ? '0 0 8px 8px' : '8px',
+    padding: '1.25rem',
+    margin: '1rem 0',
+    marginTop: 0,
+    fontSize: '0.875rem',
+    border: '1px solid var(--border-color)',
+    borderTop: title ? 'none' : '1px solid var(--border-color)',
+  };
 
   return (
     <div style={{ position: 'relative', margin: '1rem 0' }}>
       {title && (
         <div style={{
-          background: '#252a3f',
+          background: 'var(--bg-active)',
           padding: '0.5rem 1rem',
           borderRadius: '8px 8px 0 0',
-          border: '1px solid #2a2e42',
+          border: '1px solid var(--border-color)',
           borderBottom: 'none',
           fontSize: '0.8rem',
-          color: '#9399b2',
+          color: 'var(--text-secondary)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -63,12 +51,12 @@ export function CodeBlock({
         }}>
           <span>{title}</span>
           <span style={{
-            background: '#1a1d2e',
+            background: 'var(--bg-card)',
             padding: '2px 8px',
             borderRadius: '4px',
             fontSize: '0.7rem',
             textTransform: 'uppercase',
-            color: '#5b9cf6',
+            color: 'var(--accent-blue)',
           }}>{language}</span>
         </div>
       )}
@@ -78,9 +66,9 @@ export function CodeBlock({
           position: 'absolute',
           top: title ? '3rem' : '0.5rem',
           right: '0.75rem',
-          background: copied ? '#4ade80' : '#252a3f',
-          color: copied ? '#0f1117' : '#9399b2',
-          border: '1px solid #2a2e42',
+          background: copied ? 'var(--accent-green)' : 'var(--bg-active)',
+          color: copied ? 'var(--bg-primary)' : 'var(--text-secondary)',
+          border: '1px solid var(--border-color)',
           borderRadius: '4px',
           padding: '4px 10px',
           cursor: 'pointer',
@@ -94,10 +82,12 @@ export function CodeBlock({
       </button>
       <SyntaxHighlighter
         language={language}
-        style={customStyle}
+        style={{}}
+        useInlineStyles={false}
         showLineNumbers={showLineNumbers}
         wrapLines
-        customStyle={titleStyle ?? {}}
+        customStyle={preStyle}
+        codeTagProps={{ className: 'site-code', style: { fontFamily: "'JetBrains Mono', monospace" } }}
       >
         {children.trim()}
       </SyntaxHighlighter>

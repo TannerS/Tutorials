@@ -81,14 +81,14 @@ export function TableOfContents({ containerRef, resetKey }: TableOfContentsProps
         overflow: 'auto',
         fontSize: '0.78rem',
         paddingLeft: '1rem',
-        borderLeft: '1px solid var(--border-color, #2a2e42)',
+        borderLeft: '1px solid var(--border-color)',
       }}
     >
       <div style={{
         textTransform: 'uppercase',
         letterSpacing: '0.08em',
         fontSize: '0.7rem',
-        color: 'var(--text-muted, #6b7090)',
+        color: 'var(--text-muted)',
         fontWeight: 700,
         marginBottom: '0.6rem',
       }}>
@@ -108,10 +108,10 @@ export function TableOfContents({ containerRef, resetKey }: TableOfContentsProps
                 }}
                 style={{
                   display: 'block',
-                  color: isActive ? '#5b9cf6' : 'var(--text-secondary, #9399b2)',
+                  color: isActive ? 'var(--accent-blue)' : 'var(--text-secondary)',
                   textDecoration: 'none',
                   fontWeight: isActive ? 600 : 400,
-                  borderLeft: isActive ? '2px solid #5b9cf6' : '2px solid transparent',
+                  borderLeft: isActive ? '2px solid var(--accent-blue)' : '2px solid transparent',
                   paddingLeft: '0.5rem',
                   lineHeight: 1.4,
                 }}

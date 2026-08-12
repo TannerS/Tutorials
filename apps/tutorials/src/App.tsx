@@ -52,15 +52,28 @@ import ReactImperativeBridge from './pages/react19/ImperativeBridge'
 import ReactModuleFederation from './pages/react19/ModuleFederation'
 import ReactFeatureFolder from './pages/react19/FeatureFolder'
 
-// SQL
-import SqlQuickstart from './pages/sql/Quickstart'
-import SqlJoins from './pages/sql/Joins'
-import SqlWindow from './pages/sql/Window'
-import SqlIndexing from './pages/sql/Indexing'
-import SqlDesign from './pages/sql/Design'
-import SqlTransactions from './pages/sql/Transactions'
-import SqlCte from './pages/sql/Cte'
-import SqlAdvanced from './pages/sql/Advanced'
+// SQL Fundamentals
+import SqlQuickstart from './pages/sql-fundamentals/Quickstart'
+import SqlJoins from './pages/sql-fundamentals/Joins'
+import SqlAggregation from './pages/sql-fundamentals/Aggregation'
+
+// SQL Design Patterns
+import SqlDesign from './pages/sql-design-patterns/Design'
+import SqlIndexing from './pages/sql-design-patterns/Indexing'
+import SqlSchemaPatterns from './pages/sql-design-patterns/SchemaPatterns'
+import SqlMultiTenancy from './pages/sql-design-patterns/MultiTenancy'
+
+// SQL Advanced
+import SqlTransactions from './pages/sql-advanced/Transactions'
+import SqlCte from './pages/sql-advanced/Cte'
+import SqlAdvanced from './pages/sql-advanced/Advanced'
+
+// SQL Field Guide
+import SFGBasicQueries from './pages/sql-field-guide/BasicQueries'
+import SFGAdvancedQueries from './pages/sql-field-guide/AdvancedQueries'
+import SFGSchemaDesign from './pages/sql-field-guide/SchemaDesign'
+import SFGPostgresGotchas from './pages/sql-field-guide/PostgresGotchas'
+import SFGQuickReference from './pages/sql-field-guide/QuickReference'
 
 // SOLID
 import SolidIntro from './pages/solid/Intro'
@@ -122,19 +135,8 @@ import AuthGateway from './pages/auth/Gateway'
 import AuthSecurity from './pages/auth/Security'
 
 // Java Cheat Sheet
-import JCSyntax from './pages/java-cheatsheet/Syntax'
-import JCCollections from './pages/java-cheatsheet/Collections'
-import JCStreams from './pages/java-cheatsheet/Streams'
-import JCConcurrency from './pages/java-cheatsheet/Concurrency'
-import JCAnnotations from './pages/java-cheatsheet/Annotations'
 
 // React Cheat Sheet
-import RCHooks from './pages/react-cheatsheet/Hooks'
-import RCPatterns from './pages/react-cheatsheet/Patterns'
-import RCState from './pages/react-cheatsheet/State'
-import RCStyling from './pages/react-cheatsheet/Styling'
-import RCRecipes from './pages/react-cheatsheet/Recipes'
-import RCAntiPatterns from './pages/react-cheatsheet/AntiPatterns'
 
 // Testing Strategies
 import TestIntro from './pages/testing/Intro'
@@ -146,11 +148,12 @@ import TestContract from './pages/testing/Contract'
 import TestE2e from './pages/testing/E2e'
 import TestBestPractices from './pages/testing/BestPractices'
 
-// Git & DevOps
-import DevGit from './pages/devops/Git'
-import DevBranching from './pages/devops/Branching'
-import DevCicd from './pages/devops/Cicd'
-import DevMonitoring from './pages/devops/Monitoring'
+// API Testing
+import ApiTestIntro from './pages/api-testing/Intro'
+import ApiTestControllers from './pages/api-testing/Controllers'
+import ApiTestValidation from './pages/api-testing/Validation'
+import ApiTestSecurity from './pages/api-testing/Security'
+import ApiTestPatterns from './pages/api-testing/Patterns'
 
 // Docker
 import DockerIntro from './pages/docker/Intro'
@@ -159,10 +162,6 @@ import DockerCompose from './pages/docker/Compose'
 import DockerNetworking from './pages/docker/Networking'
 import DockerSecurity from './pages/docker/Security'
 import DockerProduction from './pages/docker/Production'
-
-// Cloud Basics
-import CloudIntro from './pages/cloud/Intro'
-import CloudInfra from './pages/cloud/Infra'
 
 // System Design
 import SysIntro from './pages/systemdesign/Intro'
@@ -201,25 +200,45 @@ import RRCheatSheet from './pages/react-router/CheatSheet'
 
 // React + TS Field Guide
 import FGHooks from './pages/react-field-guide/Hooks'
+import FGStability from './pages/react-field-guide/Stability'
+import FGAdvancedRendering from './pages/react-field-guide/AdvancedRendering'
+import FGServerComponents from './pages/react-field-guide/ServerComponents'
 import FGComponentPatterns from './pages/react-field-guide/ComponentPatterns'
-import FGTypescriptTypes from './pages/react-field-guide/TypescriptTypes'
-import FGTypingReact from './pages/react-field-guide/TypingReact'
+import FGStyling from './pages/react-field-guide/Styling'
 import FGStateManagement from './pages/react-field-guide/StateManagement'
 import FGRouter from './pages/react-field-guide/Router'
+import FGRecipes from './pages/react-field-guide/Recipes'
 import FGGotchas from './pages/react-field-guide/Gotchas'
 import FGTesting from './pages/react-field-guide/Testing'
 
+// TypeScript Field Guide
+import TFGFundamentals from './pages/typescript-field-guide/Fundamentals'
+import TFGTypescriptTypes from './pages/typescript-field-guide/TypescriptTypes'
+import TFGTypingReact from './pages/typescript-field-guide/TypingReact'
+import TFGProjectSetup from './pages/typescript-field-guide/ProjectSetup'
+import TFGMigrationEnterprise from './pages/typescript-field-guide/MigrationEnterprise'
+import TFGBestPracticesGotchas from './pages/typescript-field-guide/BestPracticesGotchas'
+
 // Java + Spring Field Guide
 import JFGSyntax from './pages/java-field-guide/Syntax'
+import JFGOopGenerics from './pages/java-field-guide/OopGenerics'
 import JFGCollectionsStreams from './pages/java-field-guide/CollectionsStreams'
+import JFGExceptionsIo from './pages/java-field-guide/ExceptionsIo'
 import JFGConcurrency from './pages/java-field-guide/Concurrency'
-import JFGSpringDi from './pages/java-field-guide/SpringDi'
-import JFGSpringRest from './pages/java-field-guide/SpringRest'
-import JFGSpringData from './pages/java-field-guide/SpringData'
-import JFGSpringSecurity from './pages/java-field-guide/SpringSecurity'
-import JFGSpringTesting from './pages/java-field-guide/SpringTesting'
-import JFGBoot4 from './pages/java-field-guide/Boot4'
 import JFGGotchas from './pages/java-field-guide/Gotchas'
+
+// Spring Boot 4 Field Guide
+import SFGSpringDi from './pages/spring-field-guide/SpringDi'
+import SFGSpringRest from './pages/spring-field-guide/SpringRest'
+import SFGErrorHandling from './pages/spring-field-guide/ErrorHandling'
+import SFGSpringData from './pages/spring-field-guide/SpringData'
+import SFGConfigTransactions from './pages/spring-field-guide/ConfigTransactions'
+import SFGSpringSecurity from './pages/spring-field-guide/SpringSecurity'
+import SFGAopEvents from './pages/spring-field-guide/AopEvents'
+import SFGSpringTesting from './pages/spring-field-guide/SpringTesting'
+import SFGKafkaObservability from './pages/spring-field-guide/KafkaObservability'
+import SFGBoot4 from './pages/spring-field-guide/Boot4'
+import SFGGotchas from './pages/spring-field-guide/Gotchas'
 
 // State Management
 import SMIntro from './pages/state-mgmt/Intro'
@@ -242,7 +261,18 @@ import CSSGrid from './pages/css-mastery/Grid'
 import CSSResponsive from './pages/css-mastery/Responsive'
 import CSSAnimations from './pages/css-mastery/Animations'
 import CSSVariables from './pages/css-mastery/Variables'
+import CSSSass from './pages/css-mastery/Sass'
+import CSSTokens from './pages/css-mastery/Tokens'
+import CSSStyleInclusion from './pages/css-mastery/StyleInclusion'
 import CSSPatterns from './pages/css-mastery/Patterns'
+
+// CSS Field Guide
+import CFGBasics from './pages/css-field-guide/Basics'
+import CFGAdvanced from './pages/css-field-guide/Advanced'
+import CFGGotchas from './pages/css-field-guide/Gotchas'
+import CFGPatterns from './pages/css-field-guide/Patterns'
+import CFGSass from './pages/css-field-guide/Sass'
+import CFGTokens from './pages/css-field-guide/Tokens'
 
 // React Testing
 import RTIntro from './pages/react-testing/Intro'
@@ -376,14 +406,21 @@ function App() {
         <Route path="react19/module-federation" element={<ReactModuleFederation />} />
         <Route path="react19/feature-folder" element={<ReactFeatureFolder />} />
         {/* SQL */}
-        <Route path="sql/quickstart" element={<SqlQuickstart />} />
-        <Route path="sql/joins" element={<SqlJoins />} />
-        <Route path="sql/window" element={<SqlWindow />} />
-        <Route path="sql/indexing" element={<SqlIndexing />} />
-        <Route path="sql/design" element={<SqlDesign />} />
-        <Route path="sql/transactions" element={<SqlTransactions />} />
-        <Route path="sql/cte" element={<SqlCte />} />
-        <Route path="sql/advanced" element={<SqlAdvanced />} />
+        <Route path="sql-fundamentals/quickstart" element={<SqlQuickstart />} />
+        <Route path="sql-fundamentals/joins" element={<SqlJoins />} />
+        <Route path="sql-fundamentals/aggregation" element={<SqlAggregation />} />
+        <Route path="sql-design-patterns/design" element={<SqlDesign />} />
+        <Route path="sql-design-patterns/indexing" element={<SqlIndexing />} />
+        <Route path="sql-design-patterns/schema-patterns" element={<SqlSchemaPatterns />} />
+        <Route path="sql-design-patterns/multi-tenancy" element={<SqlMultiTenancy />} />
+        <Route path="sql-advanced/transactions" element={<SqlTransactions />} />
+        <Route path="sql-advanced/cte" element={<SqlCte />} />
+        <Route path="sql-advanced/advanced" element={<SqlAdvanced />} />
+        <Route path="sql-field-guide/basic-queries" element={<SFGBasicQueries />} />
+        <Route path="sql-field-guide/advanced-queries" element={<SFGAdvancedQueries />} />
+        <Route path="sql-field-guide/schema-design" element={<SFGSchemaDesign />} />
+        <Route path="sql-field-guide/postgres-gotchas" element={<SFGPostgresGotchas />} />
+        <Route path="sql-field-guide/quick-reference" element={<SFGQuickReference />} />
         {/* SOLID */}
         <Route path="solid/intro" element={<SolidIntro />} />
         <Route path="solid/srp" element={<SolidSrp />} />
@@ -437,19 +474,6 @@ function App() {
         <Route path="auth/authz" element={<AuthAuthz />} />
         <Route path="auth/gateway" element={<AuthGateway />} />
         <Route path="auth/security" element={<AuthSecurity />} />
-        {/* Java Cheat Sheet */}
-        <Route path="java-cheatsheet/syntax" element={<JCSyntax />} />
-        <Route path="java-cheatsheet/collections" element={<JCCollections />} />
-        <Route path="java-cheatsheet/streams" element={<JCStreams />} />
-        <Route path="java-cheatsheet/concurrency" element={<JCConcurrency />} />
-        <Route path="java-cheatsheet/annotations" element={<JCAnnotations />} />
-        {/* React Cheat Sheet */}
-        <Route path="react-cheatsheet/hooks" element={<RCHooks />} />
-        <Route path="react-cheatsheet/patterns" element={<RCPatterns />} />
-        <Route path="react-cheatsheet/state" element={<RCState />} />
-        <Route path="react-cheatsheet/styling" element={<RCStyling />} />
-        <Route path="react-cheatsheet/recipes" element={<RCRecipes />} />
-        <Route path="react-cheatsheet/antipatterns" element={<RCAntiPatterns />} />
         {/* Testing Strategies */}
         <Route path="testing/intro" element={<TestIntro />} />
         <Route path="testing/unit" element={<TestUnit />} />
@@ -459,11 +483,11 @@ function App() {
         <Route path="testing/contract" element={<TestContract />} />
         <Route path="testing/e2e" element={<TestE2e />} />
         <Route path="testing/bestpractices" element={<TestBestPractices />} />
-        {/* Git & DevOps */}
-        <Route path="devops/git" element={<DevGit />} />
-        <Route path="devops/branching" element={<DevBranching />} />
-        <Route path="devops/cicd" element={<DevCicd />} />
-        <Route path="devops/monitoring" element={<DevMonitoring />} />
+        <Route path="api-testing/intro" element={<ApiTestIntro />} />
+        <Route path="api-testing/controllers" element={<ApiTestControllers />} />
+        <Route path="api-testing/validation" element={<ApiTestValidation />} />
+        <Route path="api-testing/security" element={<ApiTestSecurity />} />
+        <Route path="api-testing/patterns" element={<ApiTestPatterns />} />
         {/* Docker */}
         <Route path="docker/intro" element={<DockerIntro />} />
         <Route path="docker/dockerfile" element={<DockerDockerfile />} />
@@ -471,9 +495,6 @@ function App() {
         <Route path="docker/networking" element={<DockerNetworking />} />
         <Route path="docker/security" element={<DockerSecurity />} />
         <Route path="docker/production" element={<DockerProduction />} />
-        {/* Cloud Basics */}
-        <Route path="cloud/intro" element={<CloudIntro />} />
-        <Route path="cloud/infra" element={<CloudInfra />} />
         {/* System Design */}
         <Route path="systemdesign/intro" element={<SysIntro />} />
         <Route path="systemdesign/scaling" element={<SysScaling />} />
@@ -509,25 +530,45 @@ function App() {
 
         {/* React + TS Field Guide */}
         <Route path="react-field-guide/hooks" element={<FGHooks />} />
+        <Route path="react-field-guide/stability" element={<FGStability />} />
+        <Route path="react-field-guide/advanced-rendering" element={<FGAdvancedRendering />} />
+        <Route path="react-field-guide/server-components" element={<FGServerComponents />} />
         <Route path="react-field-guide/component-patterns" element={<FGComponentPatterns />} />
-        <Route path="react-field-guide/typescript-types" element={<FGTypescriptTypes />} />
-        <Route path="react-field-guide/typing-react" element={<FGTypingReact />} />
+        <Route path="react-field-guide/styling" element={<FGStyling />} />
         <Route path="react-field-guide/state-management" element={<FGStateManagement />} />
         <Route path="react-field-guide/router" element={<FGRouter />} />
+        <Route path="react-field-guide/recipes" element={<FGRecipes />} />
         <Route path="react-field-guide/gotchas" element={<FGGotchas />} />
         <Route path="react-field-guide/testing" element={<FGTesting />} />
 
+        {/* TypeScript Field Guide */}
+        <Route path="typescript-field-guide/fundamentals" element={<TFGFundamentals />} />
+        <Route path="typescript-field-guide/typescript-types" element={<TFGTypescriptTypes />} />
+        <Route path="typescript-field-guide/typing-react" element={<TFGTypingReact />} />
+        <Route path="typescript-field-guide/project-setup" element={<TFGProjectSetup />} />
+        <Route path="typescript-field-guide/migration-enterprise" element={<TFGMigrationEnterprise />} />
+        <Route path="typescript-field-guide/best-practices-gotchas" element={<TFGBestPracticesGotchas />} />
+
         {/* Java + Spring Field Guide */}
         <Route path="java-field-guide/syntax" element={<JFGSyntax />} />
+        <Route path="java-field-guide/oop-generics" element={<JFGOopGenerics />} />
         <Route path="java-field-guide/collections-streams" element={<JFGCollectionsStreams />} />
+        <Route path="java-field-guide/exceptions-io" element={<JFGExceptionsIo />} />
         <Route path="java-field-guide/concurrency" element={<JFGConcurrency />} />
-        <Route path="java-field-guide/spring-di" element={<JFGSpringDi />} />
-        <Route path="java-field-guide/spring-rest" element={<JFGSpringRest />} />
-        <Route path="java-field-guide/spring-data" element={<JFGSpringData />} />
-        <Route path="java-field-guide/spring-security" element={<JFGSpringSecurity />} />
-        <Route path="java-field-guide/spring-testing" element={<JFGSpringTesting />} />
-        <Route path="java-field-guide/boot4" element={<JFGBoot4 />} />
         <Route path="java-field-guide/gotchas" element={<JFGGotchas />} />
+
+        {/* Spring Boot 4 Field Guide */}
+        <Route path="spring-field-guide/spring-di" element={<SFGSpringDi />} />
+        <Route path="spring-field-guide/spring-rest" element={<SFGSpringRest />} />
+        <Route path="spring-field-guide/error-handling" element={<SFGErrorHandling />} />
+        <Route path="spring-field-guide/spring-data" element={<SFGSpringData />} />
+        <Route path="spring-field-guide/config-transactions" element={<SFGConfigTransactions />} />
+        <Route path="spring-field-guide/spring-security" element={<SFGSpringSecurity />} />
+        <Route path="spring-field-guide/aop-events" element={<SFGAopEvents />} />
+        <Route path="spring-field-guide/spring-testing" element={<SFGSpringTesting />} />
+        <Route path="spring-field-guide/kafka-observability" element={<SFGKafkaObservability />} />
+        <Route path="spring-field-guide/boot4" element={<SFGBoot4 />} />
+        <Route path="spring-field-guide/gotchas" element={<SFGGotchas />} />
         {/* State Management */}
         <Route path="state-mgmt/intro" element={<SMIntro />} />
         <Route path="state-mgmt/redux" element={<SMRedux />} />
@@ -547,7 +588,16 @@ function App() {
         <Route path="css-mastery/responsive" element={<CSSResponsive />} />
         <Route path="css-mastery/animations" element={<CSSAnimations />} />
         <Route path="css-mastery/variables" element={<CSSVariables />} />
+        <Route path="css-mastery/sass" element={<CSSSass />} />
+        <Route path="css-mastery/tokens" element={<CSSTokens />} />
+        <Route path="css-mastery/style-inclusion" element={<CSSStyleInclusion />} />
         <Route path="css-mastery/patterns" element={<CSSPatterns />} />
+        <Route path="css-field-guide/basics" element={<CFGBasics />} />
+        <Route path="css-field-guide/advanced" element={<CFGAdvanced />} />
+        <Route path="css-field-guide/gotchas" element={<CFGGotchas />} />
+        <Route path="css-field-guide/patterns" element={<CFGPatterns />} />
+        <Route path="css-field-guide/sass" element={<CFGSass />} />
+        <Route path="css-field-guide/tokens" element={<CFGTokens />} />
         {/* React Testing */}
         <Route path="react-testing/intro" element={<RTIntro />} />
         <Route path="react-testing/components" element={<RTComponents />} />

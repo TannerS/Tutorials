@@ -393,6 +393,173 @@ function Dashboard({ showAdmin }) {
 // After: Pass promise as prop, use() to read, Suspense for loading`}
       </CodeBlock>
 
+      <h2>Context as a Provider &mdash; <code>Context.Provider</code> Is Deprecated</h2>
+
+      <p>
+        React 19 lets you render the context object itself as the provider. The old{' '}
+        <code>&lt;MyContext.Provider&gt;</code> form still works, but it is deprecated and
+        will be removed in a future major version.
+      </p>
+
+      <CodeBlock language="jsx" title="The new provider syntax" showLineNumbers>
+{`const ThemeContext = createContext('light');
+
+// React 19 — render the context directly
+function App({ children }) {
+  return (
+    <ThemeContext value="dark">
+      {children}
+    </ThemeContext>
+  );
+}
+
+// Before React 19 (deprecated — still works, will be removed)
+function OldApp({ children }) {
+  return (
+    <ThemeContext.Provider value="dark">
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+// Consumers are unchanged:
+const theme = useContext(ThemeContext);
+// ...or, new in 19, conditionally:
+const theme2 = use(ThemeContext);`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Note on the Rest of This Site">
+        <p>
+          You will still see <code>Context.Provider</code> in plenty of examples here and
+          in almost every codebase and blog post written before 2025 &mdash; the two forms are
+          behaviourally identical, so treat them as interchangeable when reading. Write the
+          new one in new code. <code>&lt;Context.Consumer&gt;</code> is deprecated in React 19
+          as well; use <code>useContext</code> or <code>use</code> instead.
+        </p>
+      </InfoBox>
+
+      <h2>Ref Cleanup Functions</h2>
+
+      <p>
+        A ref callback can now return a cleanup function, exactly like{' '}
+        <code>useEffect</code>. React calls it when the element is removed, instead of
+        calling the ref again with <code>null</code>.
+      </p>
+
+      <CodeBlock language="jsx" title="Ref callbacks that clean up after themselves" showLineNumbers>
+{`// React 19 — return a cleanup function
+function Chart({ data }) {
+  return (
+    <div
+      ref={(node) => {
+        const observer = new ResizeObserver(handleResize);
+        observer.observe(node);
+        // Cleanup runs when the element unmounts or the ref changes
+        return () => observer.disconnect();
+      }}
+    />
+  );
+}
+
+// Before React 19 — the awkward null-check dance
+function OldChart() {
+  const observerRef = useRef(null);
+  return (
+    <div
+      ref={(node) => {
+        if (node) {
+          observerRef.current = new ResizeObserver(handleResize);
+          observerRef.current.observe(node);
+        } else {
+          observerRef.current?.disconnect();  // called with null on unmount
+        }
+      }}
+    />
+  );
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="A Breaking Change in Disguise">
+        <p>
+          Because React now uses the return value, a ref callback must <strong>not</strong>{' '}
+          implicitly return anything else. The concise arrow body{' '}
+          <code>ref={'{'}(node) =&gt; (myRef.current = node){'}'}</code> returns the assigned
+          node, which React 19 will try to call as a cleanup function. Wrap it in braces:{' '}
+          <code>ref={'{'}(node) =&gt; {'{'} myRef.current = node; {'}}'}</code>. TypeScript
+          flags this for you; plain JavaScript does not.
+        </p>
+      </InfoBox>
+
+      <h2>Resource Preloading APIs</h2>
+
+      <p>
+        React 19 exposes the browser&apos;s resource hints as functions you can call from
+        components or event handlers. React deduplicates the calls and emits the
+        corresponding <code>&lt;link&gt;</code> tags into the document head.
+      </p>
+
+      <CodeBlock language="jsx" title="preload, preinit, prefetchDNS, preconnect" showLineNumbers>
+{`import { preload, preinit, prefetchDNS, preconnect } from 'react-dom';
+
+function SearchPage() {
+  // Start the DNS lookup / TCP handshake for a host you'll hit soon
+  prefetchDNS('https://cdn.example.com');
+  preconnect('https://api.example.com');
+
+  // Download a resource now, use it later (does NOT execute)
+  preload('/fonts/inter.woff2', { as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' });
+  preload('/hero.jpg', { as: 'image', fetchPriority: 'high' });
+
+  // Download AND execute/apply immediately
+  preinit('/analytics.js', { as: 'script' });
+  preinit('/theme.css', { as: 'style' });
+
+  return <Results />;
+}
+
+// Common pattern: warm the next route on hover
+<Link
+  to="/checkout"
+  onMouseEnter={() => {
+    preload('/api/cart', { as: 'fetch' });
+    preinit('/checkout.chunk.js', { as: 'script' });
+  }}
+/>`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="preload vs preinit">
+        <p>
+          <code>preload</code> fetches into cache and stops &mdash; use it for fonts, images, and
+          data you will need shortly. <code>preinit</code> fetches <em>and</em> evaluates &mdash;
+          the script runs, the stylesheet applies. Reach for <code>preinit</code> only when
+          you genuinely want the side effect now.
+        </p>
+      </InfoBox>
+
+      <h2>useDeferredValue Gets an Initial Value</h2>
+
+      <CodeBlock language="jsx" title="The second argument, new in React 19" showLineNumbers>
+{`// React 19: the second argument is what's returned on the FIRST render,
+// before the deferred value has caught up.
+function SearchResults({ query }) {
+  const deferredQuery = useDeferredValue(query, '');
+
+  // On the very first render deferredQuery is '' rather than query,
+  // so the expensive list renders empty immediately and fills in after.
+  const isStale = query !== deferredQuery;
+
+  return (
+    <div style={{ opacity: isStale ? 0.6 : 1 }}>
+      <ExpensiveResultList query={deferredQuery} />
+    </div>
+  );
+}
+
+// Without the initial value, the first render is NOT deferred —
+// it renders synchronously with the full query, which is exactly the
+// blocking render you were trying to avoid on initial mount.`}
+      </CodeBlock>
+
       <h2>Other React 19 Improvements</h2>
 
       <CodeBlock language="jsx" title="ref as Prop, Document Metadata, Error Reporting" showLineNumbers>
@@ -434,8 +601,67 @@ createRoot(document.getElementById('root'), {
   onUncaughtError: (error, errorInfo) => {
     showCrashDialog(error);
   },
-});`}
+});
+
+// STYLESHEETS WITH PRECEDENCE — render <link> in a component and React
+// hoists it to <head>, ordered by precedence, deduplicated across components.
+function Widget() {
+  return (
+    <>
+      <link rel="stylesheet" href="/widget.css" precedence="default" />
+      <div className="widget" />
+    </>
+  );
+}
+
+// ASYNC SCRIPTS — render <script async> anywhere; React dedupes and hoists it.
+function Map() {
+  return (
+    <>
+      <script async src="https://maps.example.com/sdk.js" />
+      <div id="map" />
+    </>
+  );
+}`}
       </CodeBlock>
+
+      <h2>What React 19 Removed</h2>
+
+      <InfoBox variant="danger" title="Removed APIs — Not Deprecated, Gone">
+        <p>These were long-deprecated and are deleted in React 19. If you are upgrading, these are the hard failures:</p>
+        <ul>
+          <li>
+            <code>propTypes</code> and <code>defaultProps</code> <strong>on function
+            components</strong> &mdash; silently ignored. Use TypeScript for the first and ES
+            default parameters (<code>{'function Btn({ size = \'md\' })'}</code>) for the
+            second. Class components keep <code>defaultProps</code>.
+          </li>
+          <li>
+            <strong>Legacy Context</strong> (<code>contextTypes</code> /{' '}
+            <code>getChildContext</code>) &mdash; use <code>createContext</code>.
+          </li>
+          <li>
+            <strong>String refs</strong> (<code>ref=&quot;input&quot;</code>) &mdash; use callback
+            refs or <code>useRef</code>.
+          </li>
+          <li>
+            <code>ReactDOM.render</code>, <code>ReactDOM.hydrate</code>, and{' '}
+            <code>unmountComponentAtNode</code> &mdash; use <code>createRoot</code>,{' '}
+            <code>hydrateRoot</code>, and <code>root.unmount()</code>.
+          </li>
+          <li>
+            <code>ReactDOM.findDOMNode</code> &mdash; use refs.
+          </li>
+          <li>
+            <code>react-test-renderer/shallow</code> &mdash; use React Testing Library.
+          </li>
+        </ul>
+        <p style={{ marginBottom: 0 }}>
+          <code>forwardRef</code> and <code>Context.Provider</code> are <em>deprecated but
+          still functional</em> &mdash; they will be removed in a later major, so migrate at
+          your leisure rather than in a panic.
+        </p>
+      </InfoBox>
 
     </LessonLayout>
   );

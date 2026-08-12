@@ -5,15 +5,15 @@ import PosterQuickRef from '../../components/PosterQuickRef';
 export default function FieldGuideSpringRest() {
   return (
     <PosterLayout
-      accent="amber"
-      eyebrow="Java + Spring Boot 4 · Field Reference"
+      accent="emerald"
+      eyebrow="Spring Boot 4 · Field Reference"
       title="Spring REST & Validation"
       tagline="Controllers, request binding, Bean Validation, and the throw-at-the-fault-line error-handling pattern — condensed for offline study."
       meta={['Spring Boot 4', '13 patterns']}
       footerLabel="Personal study reference — Spring Boot"
-      pageLabel="Java + Spring Field Guide · REST & Validation"
-      prev={{ path: '/java-field-guide/spring-di', label: 'Spring DI & Beans' }}
-      next={{ path: '/java-field-guide/spring-data', label: 'Spring Data & JPA' }}
+      pageLabel="Spring Field Guide · REST & Validation"
+      prev={{ path: '/spring-field-guide/spring-di', label: 'Spring DI & Beans' }}
+      next={{ path: '/spring-field-guide/error-handling', label: 'Error Handling & Validation' }}
     >
       <PosterCard
         glyph="Rc"

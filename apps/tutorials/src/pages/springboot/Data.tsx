@@ -360,7 +360,8 @@ List<Order> findWithDetailsByStatus(@Param("status") OrderStatus status);
           rows, so limiting rows would truncate the children. Older Hibernate versions logged{' '}
           <code>HHH000104: firstResult/maxResults specified with collection fetch; applying in
           memory</code> and then loaded the <em>entire</em> table into heap to paginate it.
-          Hibernate 6 handles this better for some shapes, but the reliable pattern is a{' '}
+          Hibernate 6 and 7 (the version Spring Boot 4 ships) handle this better for some shapes,
+          but the reliable pattern regardless of version is a{' '}
           <strong>two-query approach</strong>: page the ids first, then fetch the full graph for
           just those ids with <code>where id in :ids</code>.
         </p>

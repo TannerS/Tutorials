@@ -186,6 +186,17 @@ public class LegacyPaymentAdapter implements PaymentProcessor {
         between your code and vendor-specific database drivers.
       </InfoBox>
 
+      <InfoBox variant="tip" title="When to Reach for Adapter">
+        Reach for Adapter specifically when you don't control one side of the mismatch — a
+        third-party SDK, a legacy module another team owns, or a vendor API with its own
+        conventions, like the <code>LegacyPaymentGateway</code> above. If you own both interfaces,
+        don't write an adapter — just change one of them to match the other; introducing an
+        adapter between two interfaces you're both free to edit is pure ceremony. The moment the
+        legacy system disappears (fully migrated, or replaced by something with a compatible
+        interface), the adapter class should disappear with it — it's meant to be a temporary
+        seam, not a permanent architectural layer.
+      </InfoBox>
+
       <InteractiveChallenge
         question="What is the key structural difference between Decorator and Adapter?"
         options={[

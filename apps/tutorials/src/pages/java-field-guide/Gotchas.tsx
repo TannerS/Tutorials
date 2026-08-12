@@ -45,17 +45,23 @@ Customer c = customers.findById(id).orElseGet(this::createFreshCustomer);`}
 
       <PosterCard
         glyph="Pin"
-        title={<>Virtual thread pinning<span className="dim"> under synchronized</span></>}
+        title={<>Virtual thread pinning<span className="dim"> — rules changed in Java 24</span></>}
         language="java"
-        code={`// Pinned: I/O runs while holding a monitor lock.
+        code={`// Java 21-23: I/O under a monitor PINS the vthread.
 public synchronized void inc() {
-    externalCall();      // vthread can't unmount — pinned!
+    externalCall();      // can't unmount — pinned!
     count++;
 }
+// Java 24+ (JEP 491): synchronized no longer pins.
+// Still pins: native/JNI frames, class initializers.
 
-// Diagnose: -Djdk.tracePinnedThreads=full
-// Fix: ReentrantLock instead of synchronized around I/O.`}
-        caption="A virtual thread that hits synchronized (or a native call) pins to its carrier thread and can't be unmounted during I/O. Enough pinned vthreads under load exhausts the small carrier pool and latency gets WORSE, not better."
+// Diagnose: JFR jdk.VirtualThreadPinned  (24+)
+//           -Djdk.tracePinnedThreads=full (21-23)
+
+// Best fix on ANY JDK — don't hold a lock across I/O:
+externalCall();              // outside the lock
+count.incrementAndGet();     // only this needs atomicity`}
+        caption="Through Java 23, synchronized held across I/O pinned a vthread to its carrier and exhausted the small carrier pool under load. JEP 491 fixed that in Java 24, so 'always swap synchronized for ReentrantLock' is now stale advice — but holding any lock across a slow call still serialises callers, which is the real bug."
       />
 
       <PosterCard

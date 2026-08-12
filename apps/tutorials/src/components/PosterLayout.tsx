@@ -8,7 +8,7 @@ export interface PosterLink {
 }
 
 interface PosterLayoutProps {
-  accent: 'sky' | 'amber';
+  accent: 'sky' | 'amber' | 'blue' | 'emerald';
   eyebrow: string;
   title: string;
   tagline: string;
@@ -46,7 +46,7 @@ export default function PosterLayout({
             className="poster-toggle-btn"
             onClick={() => setMode((m) => (m === 'light' ? 'dark' : 'light'))}
           >
-            {mode === 'light' ? '● Dark mode' : '○ Light mode (B&W printer)'}
+            {mode === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
           </button>
         </div>
 

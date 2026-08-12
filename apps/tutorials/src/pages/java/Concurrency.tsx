@@ -75,44 +75,74 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
         </p>
       </InfoBox>
 
-      <h3>Pinning — the one gotcha you must know</h3>
+      <h3>Pinning — the gotcha whose rules changed in Java 24</h3>
       <p>
-        A virtual thread that hits <code>synchronized</code> or a native call is
-        <em>pinned</em> to its carrier — the JVM can't unmount it. If enough virtual
-        threads pin at once, you exhaust the carrier pool and everything slows down. Two
-        rules:
+        A <em>pinned</em> virtual thread is one the JVM cannot unmount from its carrier
+        while it blocks. If enough virtual threads pin at once you exhaust the carrier
+        pool and throughput collapses. The important thing to know in 2026 is that{' '}
+        <strong>the main cause of pinning was removed in Java 24</strong>, so advice
+        written for Java 21 is now half-obsolete.
+      </p>
+      <CodeBlock language="text" title="What actually pins, by JDK version">
+{`Java 21-23   synchronized blocks/methods PIN across blocking calls.
+             Native (JNI) frames PIN.
+             -> The classic "replace synchronized with ReentrantLock" advice.
+
+Java 24+     JEP 491 reimplemented object monitors so a virtual thread
+             CAN unmount inside synchronized. synchronized no longer pins
+             for ordinary blocking I/O.
+             Still pins: native/JNI frames, and class-initializer (<clinit>)
+             frames.
+
+Java 25 LTS  Same as 24. Diagnose with the JFR event jdk.VirtualThreadPinned
+             (-Djdk.tracePinnedThreads was removed in 24).`}
+      </CodeBlock>
+      <p>
+        So the rule depends on the JDK you actually target:
       </p>
       <ul>
-        <li>Replace <code>synchronized</code> with <code>ReentrantLock</code> where
-            contention is likely.</li>
-        <li>Diagnose pinning with <code>-Djdk.tracePinnedThreads=full</code> — the JVM
-            logs every pin site with a stack trace.</li>
+        <li><strong>On Java 21&ndash;23</strong> (still very common in production): replace{' '}
+            <code>synchronized</code> with <code>ReentrantLock</code> anywhere a lock is
+            held across I/O.</li>
+        <li><strong>On Java 24+</strong>: <code>synchronized</code> is safe for virtual
+            threads again. You no longer need to churn your locking code — though{' '}
+            <code>ReentrantLock</code> is still the better tool when you want{' '}
+            <code>tryLock</code>, timeouts, fairness, or multiple conditions.</li>
+        <li><strong>Either way</strong>, holding <em>any</em> lock across a slow call is a
+            throughput problem in its own right. Pinning was never the only reason to
+            avoid it.</li>
       </ul>
-      <CodeBlock language="java" title="Avoid pinning inside virtual threads">
-{`// Pinned: synchronized block runs while the virtual thread is I/O-blocked.
+      <CodeBlock language="java" title="Lock held across I/O — the shape that mattered">
+{`// On Java 21-23 this pins the virtual thread to its carrier for the whole call.
+// On Java 24+ it no longer pins — but it still serialises every caller behind
+// one slow network round trip, which is the real bug.
 public class Counter {
     private long count;
     public synchronized void inc() {
-        externalCall();          // I/O inside synchronized — pins the vthread
+        externalCall();          // slow I/O while holding the monitor
         count++;
     }
 }
 
-// Fixed with ReentrantLock — unmount happens across the I/O call.
+// Better on every JDK: do the I/O outside the lock, and only guard the
+// state mutation. Nothing is pinned and nothing is serialised unnecessarily.
 public class Counter {
-    private final ReentrantLock lock = new ReentrantLock();
-    private long count;
+    private final AtomicLong count = new AtomicLong();
     public void inc() {
-        lock.lock();
-        try {
-            externalCall();
-            count++;
-        } finally {
-            lock.unlock();
-        }
+        externalCall();          // no lock held here
+        count.incrementAndGet(); // the only part that needs to be atomic
     }
 }`}
       </CodeBlock>
+      <InfoBox variant="tip" title="Interview framing">
+        <p>
+          &ldquo;Virtual threads pin on <code>synchronized</code>&rdquo; is the answer
+          everyone memorised from the Java 21 launch articles. Saying &ldquo;that was true
+          through Java 23, and JEP 491 fixed it in 24 — now only native frames and class
+          initializers pin&rdquo; signals that you have followed the platform rather than
+          read one blog post.
+        </p>
+      </InfoBox>
 
       <h2>Structured Concurrency</h2>
       <p>
@@ -562,21 +592,22 @@ Non-blocking composition ............................. CompletableFuture`}
               the interrupt.</li>
           <li>Concurrent collections chosen deliberately — not
               <code>Collections.synchronizedMap</code>.</li>
-          <li>Pinning is not silently happening under load
-              (<code>-Djdk.tracePinnedThreads</code> in dev).</li>
+          <li>Pinning is not silently happening under load (JFR{' '}
+              <code>jdk.VirtualThreadPinned</code> on Java 24+; on 21&ndash;23,{' '}
+              <code>-Djdk.tracePinnedThreads=full</code>).</li>
         </ul>
       </InfoBox>
 
       <InteractiveChallenge
-        question="Your Spring Boot service enables spring.threads.virtual.enabled=true and moves all servlet requests to virtual threads. Under load, latency actually gets WORSE. jstack shows dozens of virtual threads pinned to a small number of carrier threads. What's the fix?"
+        question="A Spring Boot service on Java 21 enables spring.threads.virtual.enabled=true. Under load, latency gets WORSE, and JFR shows virtual threads pinned to a small number of carrier threads. Which answer is correct for Java 21 AND explains what changes on Java 24+?"
         options={[
-          "Increase the number of platform carrier threads with -Djdk.virtualThreadScheduler.parallelism",
-          "Add a virtual thread pool with a fixed size",
-          "Find the synchronized blocks or native calls that pin virtual threads during I/O and replace synchronized with ReentrantLock",
+          "Increase carrier threads with -Djdk.virtualThreadScheduler.parallelism; pinning is unavoidable on every JDK",
+          "Add a fixed-size virtual thread pool to bound concurrency",
+          "On Java 21-23, synchronized held across I/O pins the vthread — move the I/O out of the lock or use ReentrantLock. On Java 24+, JEP 491 lets vthreads unmount inside synchronized, so only native/JNI and class-initializer frames still pin",
           "Disable virtual threads and go back to platform threads"
         ]}
         correctIndex={2}
-        explanation="Pinning is what happens when a virtual thread hits a synchronized block or a native call while trying to yield during I/O — the JVM can't unmount it from the carrier. Under high concurrency, the small carrier-thread pool gets stuck holding pinned virtual threads and the whole system stalls. The fix is to eliminate pinning at the source: replace synchronized blocks with ReentrantLock (which supports unmounting) around I/O calls. Increasing carrier threads is a band-aid; pooling defeats the point of virtual threads."
+        explanation="Pinning is when the JVM cannot unmount a blocked virtual thread from its carrier, so a small carrier pool gets stuck and throughput collapses. Through Java 23, synchronized was the usual culprit and the standard fix was ReentrantLock (which supports unmounting) or restructuring so no lock is held across I/O. JEP 491 in Java 24 reimplemented object monitors so virtual threads unmount inside synchronized too — leaving native/JNI frames and class initializers as the remaining pin sites. Note the best fix is version-independent: don't hold any lock across a slow call, because that serialises callers whether or not it pins. Raising carrier parallelism is a band-aid and pooling virtual threads defeats their purpose."
       />
     </LessonLayout>
   );

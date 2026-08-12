@@ -161,34 +161,34 @@ npx turbo link`}
       <h2>NX vs Turborepo</h2>
       <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+          <tr style={{ borderBottom: '2px solid var(--border-light)', textAlign: 'left' }}>
             <th style={{ padding: '0.75rem' }}>Feature</th>
             <th style={{ padding: '0.75rem' }}>NX</th>
             <th style={{ padding: '0.75rem' }}>Turborepo</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
             <td style={{ padding: '0.75rem' }}>Learning curve</td>
             <td style={{ padding: '0.75rem' }}>Steeper — more concepts</td>
             <td style={{ padding: '0.75rem' }}>Gentle — just turbo.json</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
             <td style={{ padding: '0.75rem' }}>Code generation</td>
             <td style={{ padding: '0.75rem' }}>Built-in generators</td>
             <td style={{ padding: '0.75rem' }}>None built-in</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
             <td style={{ padding: '0.75rem' }}>Project graph</td>
             <td style={{ padding: '0.75rem' }}>Visual + interactive</td>
             <td style={{ padding: '0.75rem' }}>Basic</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
             <td style={{ padding: '0.75rem' }}>Plugin ecosystem</td>
             <td style={{ padding: '0.75rem' }}>Rich (React, Angular, Node)</td>
             <td style={{ padding: '0.75rem' }}>Minimal</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
             <td style={{ padding: '0.75rem' }}>Remote caching</td>
             <td style={{ padding: '0.75rem' }}>NX Cloud</td>
             <td style={{ padding: '0.75rem' }}>Vercel Remote Cache</td>

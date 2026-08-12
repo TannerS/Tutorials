@@ -12,7 +12,7 @@ const tableStyle: CSSProperties = {
 
 const thStyle: CSSProperties = {
   background: '#16213e',
-  color: '#e0e0e0',
+  color: 'var(--text-light-gray)',
   padding: '8px 10px',
   border: '1px solid #333',
   textAlign: 'left',
@@ -20,7 +20,7 @@ const thStyle: CSSProperties = {
 
 const tdStyle: CSSProperties = {
   background: '#1a1a2e',
-  color: '#e0e0e0',
+  color: 'var(--text-light-gray)',
   padding: '8px 10px',
   border: '1px solid #333',
 };

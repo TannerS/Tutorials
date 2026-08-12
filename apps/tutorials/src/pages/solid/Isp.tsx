@@ -245,6 +245,99 @@ PrintService service = new PrintService(new SimplePrinter());
 service.printDocument(myDoc);`}
       </CodeBlock>
 
+      <h2>A Realistic Case — Role Interfaces</h2>
+      <p>
+        Printers and robots make the principle easy to see, but the version you
+        will actually meet at work is subtler: a service or repository
+        interface that has grown to serve several unrelated callers. Nobody
+        throws <code>UnsupportedOperationException</code> here — the damage is
+        that every consumer is coupled to methods it never calls, and every
+        test has to stub all of them.
+      </p>
+
+      <CodeBlock language="java" title="FatServiceInterface.java">
+{`// BAD — one interface serving four different callers.
+public interface UserService {
+    User findById(long id);              // used by the profile page
+    List<User> search(String query);     // used by the admin console
+    void updateProfile(long id, Profile p);
+    void deactivate(long id);            // used by the admin console
+    void grantRole(long id, Role role);  // used by the security module
+    BillingAccount getBilling(long id);  // used by the billing module
+    void recordLogin(long id, Instant at); // used by the auth filter
+}
+
+// The auth filter only ever calls recordLogin(), but a test double
+// for it must now stub seven methods — and any signature change to
+// getBilling() forces the auth module to recompile.`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="RoleInterfaces.java">
+{`// GOOD — split by CONSUMER role, not by data type.
+public interface UserLookup {
+    User findById(long id);
+}
+
+public interface UserDirectory {
+    List<User> search(String query);
+    void deactivate(long id);
+}
+
+public interface RoleAssignment {
+    void grantRole(long id, Role role);
+}
+
+public interface LoginRecorder {
+    void recordLogin(long id, Instant at);
+}
+
+// One implementation can still satisfy several roles — the point is
+// that each CLIENT depends on only the slice it uses.
+@Service
+public class DefaultUserService
+        implements UserLookup, UserDirectory, RoleAssignment, LoginRecorder {
+    // ... single cohesive implementation
+}
+
+// The auth filter now declares exactly what it needs.
+public class AuthFilter {
+    private final LoginRecorder loginRecorder;
+
+    public AuthFilter(LoginRecorder loginRecorder) {
+        this.loginRecorder = loginRecorder;
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="Interfaces Belong to the Client, Not the Implementor">
+        <p>
+          The insight that makes ISP click: an interface is not a summary of
+          what a class can do — it is a statement of what a{' '}
+          <em>caller needs</em>. That is why the split above is by consumer
+          role rather than by subject matter, and why one class implementing
+          four interfaces is perfectly healthy rather than a smell.
+        </p>
+        <p>
+          This is also the difference between a <em>header interface</em> (one
+          interface mirroring one class, method for method — common but of
+          limited value) and a <em>role interface</em> (a small contract named
+          for the job the caller needs done). Role interfaces are what ISP is
+          asking for.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="Over-Segregation Is Also a Smell">
+        <p>
+          ISP does not mean &quot;one method per interface.&quot; Shattering a
+          cohesive contract into a dozen single-method interfaces produces
+          navigation pain and constructors with eight parameters, without
+          decoupling anything real. The test is whether the methods{' '}
+          <strong>change together and are used together</strong>. If every
+          caller of <code>save()</code> also calls <code>findById()</code>,
+          they belong in the same interface.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="tip" title="Composing Interfaces in Java">
         <p>
           Java allows a class to implement multiple interfaces. This makes ISP

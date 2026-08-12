@@ -113,6 +113,12 @@ function Aria() {
       {/* ── aria-hidden ───────────────────────────────────── */}
       <h2>aria-hidden</h2>
 
+      <p>
+        <code>aria-hidden="true"</code> removes an element — and everything inside it — from the
+        accessibility tree. The content still renders visually, but screen readers act as though it
+        doesn't exist. It's for purely decorative content that would just add noise if read aloud.
+      </p>
+
       <CodeBlock language="html" title="aria-hidden Usage">
 {`<!-- aria-hidden="true" removes an element from the a11y tree -->
 <!-- Use for decorative/redundant content that would clutter screen readers -->
@@ -145,6 +151,14 @@ function Aria() {
         screen readers won't notice unless you use a live region.
       </p>
 
+      <InfoBox variant="info" title="What Live Regions Actually Do">
+        <code>aria-live</code> tells the screen reader to watch an element and announce whatever
+        changes inside it, without the user needing to move focus there. <code>aria-atomic="true"</code>{' '}
+        re-reads the whole region on any change instead of just the bit that changed.{' '}
+        <code>role="status"</code> and <code>role="alert"</code> are shortcuts that already imply{' '}
+        <code>aria-live="polite"</code> and <code>"assertive"</code> — you rarely need to set both.
+      </InfoBox>
+
       <CodeBlock language="html" title="aria-live Patterns">
 {`<!-- polite — waits for the user to finish current task before announcing -->
 <div aria-live="polite" aria-atomic="true">
@@ -170,6 +184,11 @@ function Aria() {
 <!-- Search result count → aria-live="polite" -->
 <!-- Chat messages → aria-live="polite" with aria-relevant="additions" -->`}
       </CodeBlock>
+
+      <p>
+        This is plain HTML — no framework required. Here's the same pattern wired up in a React
+        component:
+      </p>
 
       <CodeBlock language="jsx" title="React Live Region Pattern">
 {`function SearchResults({ results, query }) {
@@ -204,6 +223,13 @@ function Aria() {
       {/* ── Disclosure Widgets ────────────────────────────── */}
       <h2>aria-expanded &amp; aria-controls</h2>
 
+      <p>
+        <code>aria-expanded</code> tells assistive tech whether a collapsible section is open or
+        closed — announced as "collapsed" or "expanded" right on the toggle button.{' '}
+        <code>aria-controls</code> points at the <code>id</code> of the element the button reveals,
+        so a screen reader can connect the two even though they aren't nested together in the DOM.
+      </p>
+
       <CodeBlock language="jsx" title="Accessible Disclosure / Accordion">
 {`function Accordion({ title, children }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -236,6 +262,34 @@ function Aria() {
 // Screen reader flow:
 // "Title, collapsed, button" → user presses Enter →
 // "Title, expanded, button" → panel content is now readable`}
+      </CodeBlock>
+
+      <p>
+        None of this is React-specific — it's plain HTML attributes plus a bit of script to flip
+        them:
+      </p>
+
+      <CodeBlock language="html" title="Same Accordion — Plain HTML + Vanilla JS">
+{`<h3>
+  <button id="acc-btn" aria-expanded="false" aria-controls="acc-panel"
+    onclick="toggleAccordion()">
+    Section Title
+    <span aria-hidden="true">▶</span>
+  </button>
+</h3>
+<div id="acc-panel" role="region" aria-labelledby="acc-btn" hidden>
+  Panel content goes here.
+</div>
+
+<script>
+function toggleAccordion() {
+  const btn = document.getElementById('acc-btn');
+  const panel = document.getElementById('acc-panel');
+  const isOpen = btn.getAttribute('aria-expanded') === 'true';
+  btn.setAttribute('aria-expanded', String(!isOpen));
+  panel.hidden = isOpen;
+}
+</script>`}
       </CodeBlock>
 
       {/* ── Accessible Modal ──────────────────────────────── */}
@@ -308,8 +362,61 @@ function Aria() {
 }`}
       </CodeBlock>
 
+      <p>
+        Strip away the React wrapper and it's the same handful of plain HTML attributes — the
+        behavior (focus trap, Escape, restoring focus) is just vanilla JS instead of hooks:
+      </p>
+
+      <CodeBlock language="html" title="Same Modal — Plain HTML + Vanilla JS">
+{`<div class="modal-overlay" id="overlay" onclick="closeModal()" hidden>
+  <div id="dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title"
+    tabindex="-1" onclick="event.stopPropagation()">
+    <h2 id="modal-title">Confirm Deletion</h2>
+    <p>Are you sure you want to delete this item?</p>
+    <button onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<script>
+let lastFocused;
+
+function openModal() {
+  lastFocused = document.activeElement;       // remember trigger
+  document.getElementById('overlay').hidden = false;
+  document.getElementById('dialog').focus();
+  document.addEventListener('keydown', handleModalKeydown);
+}
+
+function closeModal() {
+  document.getElementById('overlay').hidden = true;
+  document.removeEventListener('keydown', handleModalKeydown);
+  lastFocused?.focus();                       // return focus on close
+}
+
+function handleModalKeydown(e) {
+  if (e.key === 'Escape') closeModal();
+  // Tab: cycle focus between the first and last focusable element
+  // inside #dialog — same logic as the React version above.
+}
+</script>`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Or Skip the Manual Work">
+        HTML5's native <code>&lt;dialog&gt;</code> element (covered in the previous lesson) gives you
+        focus trapping, Escape-to-close, and an implicit <code>role="dialog"</code> for free — reach
+        for it before hand-rolling a div-based modal like the one above.
+      </InfoBox>
+
       {/* ── Accessible Tabs ───────────────────────────────── */}
       <h2>Complete Accessible Tabs</h2>
+
+      <p>
+        <code>role="tablist"</code> groups the tabs, <code>role="tab"</code> marks each clickable
+        tab, and <code>role="tabpanel"</code> marks the content tied to a tab.{' '}
+        <code>aria-selected</code> marks which tab is active, and <code>aria-controls</code> /{' '}
+        <code>aria-labelledby</code> link each tab to its panel so a screen reader can announce
+        "Tab 1 of 3, selected" and jump straight to the matching content.
+      </p>
 
       <CodeBlock language="jsx" title="Accessible Tabs with Roving Tabindex">
 {`function Tabs({ tabs }) {
@@ -368,8 +475,49 @@ function Aria() {
 // Tab again → moves into the panel content`}
       </CodeBlock>
 
+      <p>
+        Again, none of the accessibility here comes from React — it's the roles, attributes, and
+        keyboard handling below, translated to vanilla JS:
+      </p>
+
+      <CodeBlock language="html" title="Same Tabs — Plain HTML + Vanilla JS">
+{`<div role="tablist" aria-label="Content sections" id="tablist">
+  <button id="tab-0" role="tab" aria-selected="true"
+    aria-controls="panel-0" tabindex="0">Tab One</button>
+  <button id="tab-1" role="tab" aria-selected="false"
+    aria-controls="panel-1" tabindex="-1">Tab Two</button>
+</div>
+<div id="panel-0" role="tabpanel" aria-labelledby="tab-0" tabindex="0">
+  Panel one content
+</div>
+<div id="panel-1" role="tabpanel" aria-labelledby="tab-1" tabindex="0" hidden>
+  Panel two content
+</div>
+
+<script>
+document.getElementById('tablist').addEventListener('keydown', (e) => {
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  const current = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+  let next = current;
+  if (e.key === 'ArrowRight') next = (current + 1) % tabs.length;
+  if (e.key === 'ArrowLeft') next = (current - 1 + tabs.length) % tabs.length;
+  if (next === current) return;
+
+  tabs.forEach((t, i) => {
+    const selected = i === next;
+    t.setAttribute('aria-selected', String(selected));
+    t.tabIndex = selected ? 0 : -1;
+    document.getElementById(t.getAttribute('aria-controls')).hidden = !selected;
+  });
+  tabs[next].focus();
+});
+</script>`}
+      </CodeBlock>
+
       {/* ── Common ARIA Patterns Reference ────────────────── */}
       <h2>ARIA Patterns Quick Reference</h2>
+
+      <p>These are plain HTML patterns — no framework needed. Quick summary of each role:</p>
 
       <CodeBlock language="html" title="Common Widget ARIA Patterns">
 {`<!-- Tooltip -->
@@ -401,6 +549,15 @@ function Aria() {
   65%
 </div>`}
       </CodeBlock>
+
+      <InfoBox variant="note" title="What Each Role Means">
+        <strong>tooltip</strong> — supplementary text shown on hover/focus, linked via{' '}
+        <code>aria-describedby</code>. <strong>combobox</strong> — a text input paired with a popup
+        list; <code>aria-activedescendant</code> tracks the highlighted option without moving real
+        focus. <strong>switch</strong> — a two-state on/off toggle, communicated via{' '}
+        <code>aria-checked</code>. <strong>progressbar</strong> — exposes a numeric progress value
+        through <code>aria-valuenow</code>/<code>min</code>/<code>max</code>.
+      </InfoBox>
 
       <InteractiveChallenge
         question={"You have an icon-only button with an SVG icon. What is the correct accessible pattern?"}

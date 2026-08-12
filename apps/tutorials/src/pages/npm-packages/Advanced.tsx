@@ -162,27 +162,46 @@ import { API_URL } from '@myorg/config';
   "name": "@myorg/eslint-config",
   "private": true,
   "version": "0.0.0",
-  "main": "./index.js",
+  "type": "module",
+  "exports": { ".": "./index.js" },
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint-plugin-react": "^7.33.0"
+    "@eslint/js": "^9.0.0",
+    "typescript-eslint": "^8.0.0",
+    "eslint-plugin-react-hooks": "^5.0.0"
   }
 }
 
-// packages/eslint-config/index.js
-module.exports = {
-  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
-  parser: '@typescript-eslint/parser',
-  // ...shared config
-};
+// packages/eslint-config/index.js — a flat config is just an ARRAY,
+// which is what makes sharing it trivial: export it, spread it.
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
-// apps/web/.eslintrc.js — using the shared config:
-module.exports = {
-  extends: ['@myorg/eslint-config'],
-  // app-specific overrides...
-};`}
+export default [
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  { rules: { 'no-console': ['warn', { allow: ['warn', 'error'] }] } },
+];
+
+// apps/web/eslint.config.js — consuming the shared config:
+import myorg from '@myorg/eslint-config';
+
+export default [
+  ...myorg,
+  // app-specific overrides come after, so they win
+  { files: ['**/*.test.ts'], rules: { 'no-console': 'off' } },
+];`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="Flat Config Made Shared Configs Simpler">
+        Under the old <code>.eslintrc</code> system, a shared config was a plugin-resolution
+        problem: <code>extends</code> resolved plugin names as strings relative to the
+        <em> consuming</em> project, so a shared config's dependencies had to be hoisted into the
+        consumer's <code>node_modules</code> to be found. That is exactly the breakage monorepos
+        hit constantly. Flat config exports a plain array of objects with plugins imported as
+        real ES module references — normal JavaScript imports, resolved by Node from wherever
+        the package actually lives. Sharing a config across a workspace is now just importing
+        and spreading an array.
+      </InfoBox>
 
       <h2>Package Design Best Practices</h2>
 

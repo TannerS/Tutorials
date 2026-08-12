@@ -232,6 +232,111 @@ SELECT * FROM orders WHERE customer_id = 42;`}
         </p>
       </InfoBox>
 
+      <h2>Finding the Slow Queries in the First Place</h2>
+      <p>
+        Everything above assumes you already know <em>which</em> query to fix. In production you
+        usually don&apos;t. <code>pg_stat_statements</code> is the extension that answers it — it
+        aggregates every executed statement by normalised shape, so you can rank by total time
+        rather than guessing from anecdotes.
+      </p>
+
+      <CodeBlock language="sql" title="pg_stat_statements — the first thing to enable" showLineNumbers={true}>
+{`-- One-time setup. Requires a restart because it needs shared memory:
+--   postgresql.conf: shared_preload_libraries = 'pg_stat_statements'
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+-- The query that matters: biggest total time consumers.
+-- Sort by total_exec_time, NOT mean_exec_time — a 5ms query run
+-- 10 million times hurts far more than a 2s report run twice a day.
+SELECT
+  calls,
+  round(total_exec_time::numeric, 1)          AS total_ms,
+  round(mean_exec_time::numeric, 2)           AS mean_ms,
+  round(stddev_exec_time::numeric, 2)         AS stddev_ms,
+  rows,
+  query
+FROM pg_stat_statements
+WHERE query NOT LIKE '%pg_stat_statements%'
+ORDER BY total_exec_time DESC
+LIMIT 20;
+
+-- Cache hit ratio per statement: low ratio => going to disk.
+SELECT
+  round(100.0 * shared_blks_hit
+        / nullif(shared_blks_hit + shared_blks_read, 0), 1) AS cache_hit_pct,
+  calls, query
+FROM pg_stat_statements
+ORDER BY shared_blks_read DESC
+LIMIT 10;
+
+-- Reset the counters after a deploy so you measure the new code.
+SELECT pg_stat_statements_reset();
+
+-- Currently running queries, longest first — for "the site is down NOW".
+SELECT pid, now() - query_start AS duration, state, wait_event_type, query
+FROM pg_stat_activity
+WHERE state <> 'idle' AND query NOT LIKE '%pg_stat_activity%'
+ORDER BY duration DESC;
+
+-- Cancel politely; terminate only if that fails.
+SELECT pg_cancel_backend(12345);
+SELECT pg_terminate_backend(12345);`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="High stddev is the signal people miss">
+        <p>
+          A query with a 5 ms mean and a 900 ms standard deviation is not a healthy query — it is
+          two different queries wearing the same shape, usually because one parameter value hits a
+          selective index and another triggers a sequential scan. Mean latency hides this
+          completely; that is why the query above selects <code>stddev_exec_time</code> alongside
+          the mean. Chase the outliers, not the average.
+        </p>
+      </InfoBox>
+
+      <h2>Timeouts — The Safety Net Around DDL</h2>
+      <p>
+        <code>CREATE INDEX CONCURRENTLY</code> avoids holding a write lock, but plenty of other
+        migrations still need a brief <code>ACCESS EXCLUSIVE</code> lock. The danger is not the
+        lock itself — it is that acquiring it <em>queues behind</em> a long-running transaction,
+        and every subsequent query then queues behind <em>you</em>. A migration that should take
+        1 ms takes the site down for 10 minutes. Timeouts are the fix.
+      </p>
+
+      <CodeBlock language="sql" title="Making migrations fail instead of taking the site down" showLineNumbers={true}>
+{`-- Wait at most 3s to ACQUIRE a lock, then give up and error.
+-- Retrying a failed migration is cheap; a lock queue outage is not.
+SET lock_timeout = '3s';
+
+-- Cap how long the statement itself may run.
+SET statement_timeout = '30s';
+
+ALTER TABLE orders ADD COLUMN notes text;   -- fast: no table rewrite
+
+-- Sensible permanent defaults, set per role rather than globally:
+ALTER ROLE app_web  SET statement_timeout = '15s';   -- web requests
+ALTER ROLE migrator SET lock_timeout      = '3s';    -- schema changes
+-- Leave batch/analytics roles with a longer or zero timeout.
+
+-- Kill abandoned open transactions that block VACUUM and hold locks.
+ALTER ROLE app_web SET idle_in_transaction_session_timeout = '30s';
+
+-- CONCURRENTLY cannot run inside a transaction block, and on failure
+-- leaves an INVALID index behind that you must drop before retrying:
+SELECT indexrelid::regclass FROM pg_index WHERE NOT indisvalid;
+DROP INDEX CONCURRENTLY idx_orders_lookup;`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="statement_timeout does not cover lock waiting the way you'd expect">
+        <p>
+          These are two different clocks. <code>lock_timeout</code> bounds how long you wait{' '}
+          <em>to acquire</em> a lock; <code>statement_timeout</code> bounds total statement
+          execution. Set only <code>statement_timeout</code> and a migration can still sit in the
+          lock queue blocking every reader behind it for the whole timeout window. For DDL, set{' '}
+          <code>lock_timeout</code> low and aggressively — failing fast and retrying is almost
+          always the right behaviour.
+        </p>
+      </InfoBox>
+
       <InteractiveChallenge
         question="You have a composite index on (a, b, c). Which WHERE clause can fully utilize this index?"
         options={[

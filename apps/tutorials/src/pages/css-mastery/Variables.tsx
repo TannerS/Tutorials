@@ -11,7 +11,7 @@ export default function Variables() {
       sectionId="css-mastery"
       lessonIndex={4}
       prev={{ path: '/css-mastery/animations', label: 'Animations & Transitions' }}
-      next={{ path: '/css-mastery/patterns', label: 'Layout Patterns & Recipes' }}
+      next={{ path: '/css-mastery/sass', label: 'Sass & SCSS Fundamentals' }}
     >
       <h2>CSS Custom Properties</h2>
       <p>
@@ -133,6 +133,38 @@ export default function Variables() {
 }`}
       </CodeBlock>
 
+      <h3>light-dark() — One Declaration, Both Themes</h3>
+      <p>
+        <code>light-dark()</code> collapses the duplicated light/dark token blocks above into a
+        single declaration. It reads the element&apos;s used <code>color-scheme</code> and picks
+        the first value in light mode, the second in dark. The catch: it only works if
+        <code>color-scheme</code> is actually set — otherwise it always resolves light.
+      </p>
+
+      <CodeBlock language="css" title="light-dark() Token Definitions">
+{`:root {
+  /* Opt into both schemes — REQUIRED for light-dark() to switch */
+  color-scheme: light dark;
+
+  --color-bg:      light-dark(#fff,    #0f0f1a);
+  --color-text:    light-dark(#1a1a2e, #e2e8f0);
+  --color-surface: light-dark(#f1f5f9, #1e1e2e);
+  --color-primary: light-dark(#6366f1, #818cf8);
+}
+
+/* Manual override: flip color-scheme, and every light-dark()
+   token re-resolves — no second block of variables to maintain. */
+[data-theme="light"] { color-scheme: light; }
+[data-theme="dark"]  { color-scheme: dark; }`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="color-scheme Does Real Work On Its Own">
+        Beyond powering <code>light-dark()</code>, <code>color-scheme: light dark</code> tells
+        the browser to render <em>native</em> UI — form controls, scrollbars, the default canvas
+        background — in the matching theme. Without it, a dark-themed page keeps blindingly
+        white scrollbars and date pickers that no amount of custom CSS fully fixes.
+      </InfoBox>
+
       <h2>The :has() Selector</h2>
       <p>
         :has() selects an element based on what it <em>contains</em> — the &quot;parent
@@ -183,8 +215,11 @@ body:has(dialog[open]) { overflow: hidden; }`}
 
       <h2>Native CSS Nesting</h2>
       <p>
-        CSS supports nesting natively now. The &amp; parent reference works like Sass. Key
-        difference: native nesting requires &amp; before element selectors in some contexts.
+        CSS supports nesting natively now. The &amp; parent reference works like Sass.
+        Early drafts required a leading &amp; before bare element selectors
+        (<code>&amp; p</code> rather than <code>p</code>); the shipped spec relaxed that, so
+        <code>p {'{ ... }'}</code> nests directly in every evergreen browser. Writing the
+        explicit &amp; is still a useful habit — it reads unambiguously and matches Sass.
       </p>
 
       <CodeBlock language="css" title="Native Nesting Syntax">

@@ -132,6 +132,17 @@ public class SecureDocumentService implements DocumentService {
         in a proxy that adds the cross-cutting behavior before/after your method runs.
       </InfoBox>
 
+      <InfoBox variant="tip" title="When to Hand-Roll a Proxy vs. Just Use Spring">
+        Reach for a hand-written proxy like <code>CachingProductService</code> when you need
+        behavior Spring's annotations don't cover cleanly — per-key cache eviction logic,
+        request-scoped access rules that depend on more than a role check, or code running outside
+        a Spring context entirely (a library, a CLI tool). If you're already on Spring and the need
+        is generic caching, transactions, retries, or auth checks, don't hand-roll it —{' '}
+        <code>@Cacheable</code>, <code>@Transactional</code>, and <code>@Secured</code> are the
+        same Proxy pattern with the wiring already done for you, and they're far less code to
+        maintain.
+      </InfoBox>
+
       <h2>Chain of Responsibility</h2>
       <p>
         Passes a request along a chain of handlers. Each handler decides either to process the

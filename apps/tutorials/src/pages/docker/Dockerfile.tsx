@@ -146,6 +146,55 @@ CMD ["app.jar"]
         reinstall on every single build. Always separate the manifest copy from the source copy.
       </InfoBox>
 
+      <h3>BuildKit Cache Mounts</h3>
+      <p>
+        Layer ordering gets you a long way, but it is all-or-nothing: the
+        moment <code>package.json</code> changes at all, the entire dependency
+        install re-runs from scratch and re-downloads every package. BuildKit
+        (the default builder since Docker 23) fixes this with{' '}
+        <strong>cache mounts</strong> — a persistent directory that survives
+        across builds and is <em>not</em> committed into the image layer.
+      </p>
+
+      <CodeBlock language="dockerfile" title="Dockerfile — cache mounts" showLineNumbers>
+{`# syntax=docker/dockerfile:1
+
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+
+# The npm download cache persists between builds. Adding one dependency
+# re-downloads one package instead of all of them — and the cache
+# directory never becomes part of the image.
+RUN --mount=type=cache,target=/root/.npm \\
+    npm ci
+
+# Maven works the same way — hugely effective, since ~/.m2 is enormous.
+# RUN --mount=type=cache,target=/root/.m2 \\
+#     mvn -B package -DskipTests
+
+# Secrets get their own mount type. Unlike ARG or ENV, a secret mount
+# leaves NO trace in the image history — never pass tokens via ARG.
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \\
+    npm ci --omit=dev`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Cache Mounts vs. Layer Cache">
+        <p>
+          They solve different problems and are best used together. The{' '}
+          <strong>layer cache</strong> skips an instruction entirely when
+          nothing changed. A <strong>cache mount</strong> makes the instruction
+          cheaper when it <em>does</em> have to run.
+        </p>
+        <p>
+          One caveat for CI: cache mounts live on the build host, so an
+          ephemeral runner starts cold every time. Use{' '}
+          <code>docker buildx build --cache-from</code> /{' '}
+          <code>--cache-to</code> pointed at a registry to persist build cache
+          across CI runs.
+        </p>
+      </InfoBox>
+
       <h2>Multi-Stage Builds</h2>
       <p>
         Multi-stage builds solve a different problem: build tooling (compilers, package managers,
@@ -166,21 +215,31 @@ CMD ["app.jar"]
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci                  # installs ALL deps, including devDependencies
 COPY . .
 RUN npm run build
 
-# Stage 2: Production — starts fresh from a clean base image
+# Stage 2: Production dependencies ONLY.
+# This separate stage matters: the builder's node_modules contains
+# devDependencies (typescript, eslint, test runners). Copying that
+# directory straight into production would ship all of it.
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev       # production dependencies only
+
+# Stage 3: Production — starts fresh from a clean base image
 FROM node:20-alpine AS production
 WORKDIR /app
+ENV NODE_ENV=production
 
 # Create a dedicated non-root user (covered in depth in Security & Best Practices)
 RUN addgroup -g 1001 appgroup && adduser -u 1001 -G appgroup -s /bin/sh -D appuser
 
-# Only the compiled output and production node_modules are copied in —
+# Compiled output from the builder, runtime deps from the deps stage —
 # TypeScript source, devDependencies, and build caches are left behind
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=deps    /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 
 USER appuser

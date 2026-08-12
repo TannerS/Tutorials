@@ -98,6 +98,16 @@ public class PaymentService {
         @Component — zero changes to existing code. This is the Open/Closed Principle in action.
       </InfoBox>
 
+      <InfoBox variant="tip" title="When to Reach for Strategy">
+        Strategy earns its keep when you already have (or expect to keep adding) multiple
+        interchangeable ways to do the same job — payment methods, discount/pricing rules, sort
+        orders, auth providers. The tell-tale sign it's needed is a growing if/else or switch
+        chain on a "type" field, especially one that gets a new branch every few months from a
+        different team. If you genuinely have one algorithm and no credible second one coming,
+        skip it — a plain method is simpler than a one-implementation Strategy interface, and you
+        can always extract the interface later when a second implementation actually shows up.
+      </InfoBox>
+
       <h2>Observer Pattern</h2>
       <p>
         Defines a one-to-many dependency between objects so that when one object changes state,
@@ -227,6 +237,17 @@ public class ShippingListener {
     }
 }`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="When to Reach for Observer">
+        Reach for Observer when one event needs to trigger several independent side effects that
+        shouldn't block each other or know about each other — an order being placed should update
+        inventory, send an email, and record analytics, but the checkout flow shouldn't fail (or
+        even slow down) because the analytics service is having a bad day. That's exactly what
+        <code>@Async @EventListener</code> buys you above. Avoid it for a single, tightly-coupled
+        reaction that's really just "step 2 of this workflow" — publishing an event for something
+        only one caller will ever handle just hides a direct method call behind indirection,
+        making the code harder to trace for no real benefit.
+      </InfoBox>
 
       <InteractiveChallenge
         question="In the Strategy pattern, what is the main benefit of injecting a List<PaymentStrategy> in Spring?"

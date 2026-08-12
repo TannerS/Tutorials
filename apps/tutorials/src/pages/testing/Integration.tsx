@@ -419,6 +419,18 @@ mockMvc.perform(put("/api/users/{id}", userId)
     .andExpect(status().isOk());`}
       </CodeBlock>
 
+      <InfoBox variant="note" title="Going Deeper on API-Layer Testing">
+        <p>
+          The patterns above are the essentials. The dedicated{' '}
+          <strong>API Testing</strong> section picks up where this leaves off:
+          precise status-code and header assertions, content negotiation,
+          multipart uploads, <code>PATCH</code> semantics, testing validation
+          failures and <code>@ControllerAdvice</code> handlers, securing-endpoint
+          tests with <code>@WithMockUser</code> and JWT, and black-box testing
+          with REST Assured and Newman.
+        </p>
+      </InfoBox>
+
       <InteractiveChallenge
         question={"When should you use @WebMvcTest instead of @SpringBootTest?"}
         options={[

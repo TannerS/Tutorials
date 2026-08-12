@@ -5,15 +5,15 @@ import PosterQuickRef from '../../components/PosterQuickRef';
 export default function FieldGuideSpringSecurity() {
   return (
     <PosterLayout
-      accent="amber"
-      eyebrow="Java + Spring Boot 4 · Field Reference"
+      accent="emerald"
+      eyebrow="Spring Boot 4 · Field Reference"
       title="Spring Security"
       tagline="The modern SecurityFilterChain, JWT resource servers, and method-level auth — condensed for offline study."
       meta={['Spring Boot 4', '12 patterns']}
       footerLabel="Personal study reference — Spring Boot"
-      pageLabel="Java + Spring Field Guide · Security"
-      prev={{ path: '/java-field-guide/spring-data', label: 'Spring Data & JPA' }}
-      next={{ path: '/java-field-guide/spring-testing', label: 'Spring Testing' }}
+      pageLabel="Spring Field Guide · Security"
+      prev={{ path: '/spring-field-guide/config-transactions', label: 'Config & Transactions' }}
+      next={{ path: '/spring-field-guide/aop-events', label: 'AOP & Async Events' }}
     >
       <PosterCard
         glyph="Fc"

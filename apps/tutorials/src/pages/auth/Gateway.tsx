@@ -256,49 +256,49 @@ app.post('/admin/revoke-all/:userId', async (req, res) => {
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Aspect</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>JWT Passed to Every Service</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Gateway + Redis Session (Auth Wall)</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Aspect</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>JWT Passed to Every Service</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Gateway + Redis Session (Auth Wall)</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Where auth is checked</td>
             <td style={{ padding: '0.75rem' }}>Every service, independently</td>
             <td style={{ padding: '0.75rem' }}>Once, at the edge</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Revocation</td>
             <td style={{ padding: '0.75rem' }}>Hard — must wait for expiry or maintain a blocklist everywhere</td>
             <td style={{ padding: '0.75rem' }}>Instant — <code>DEL</code> the Redis key</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Backend complexity</td>
             <td style={{ padding: '0.75rem' }}>Every service needs a JWT library, public keys, JWKS caching</td>
             <td style={{ padding: '0.75rem' }}>Zero — backend reads a plain header</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Latency</td>
             <td style={{ padding: '0.75rem' }}>No network call — local signature check</td>
             <td style={{ padding: '0.75rem' }}>One extra hop (gateway → auth service → Redis), sub-ms with a local Redis</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Single point of failure</td>
             <td style={{ padding: '0.75rem' }}>None — fully stateless</td>
             <td style={{ padding: '0.75rem' }}>Auth service + Redis must be highly available</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Attack surface if a backend is compromised</td>
             <td style={{ padding: '0.75rem' }}>Compromised service can decode/replay JWTs it received</td>
             <td style={{ padding: '0.75rem' }}>Compromised backend never had a token to steal in the first place</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Scaling model</td>
             <td style={{ padding: '0.75rem' }}>Scales trivially — no shared state</td>
             <td style={{ padding: '0.75rem' }}>Redis must scale with total active sessions (cluster/replicas)</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Good fit for</td>
             <td style={{ padding: '0.75rem' }}>Public APIs, third-party integrations, mobile-to-backend, low-trust networks</td>
             <td style={{ padding: '0.75rem' }}>Internal microservice fleets behind one gateway, orgs that need instant revocation/compliance</td>
@@ -438,33 +438,33 @@ spec:
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #2a2e42' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Pattern</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24' }}>Solves</th>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Pattern</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Solves</th>
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Gateway + Redis (auth wall)</td>
             <td style={{ padding: '0.75rem' }}>Centralized session validation, instant revocation, backends never see a credential</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>BFF</td>
             <td style={{ padding: '0.75rem' }}>Keeping OAuth tokens off the browser entirely</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Token exchange</td>
             <td style={{ padding: '0.75rem' }}>Safely delegating identity across service-to-service calls</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Service mesh mTLS</td>
             <td style={{ padding: '0.75rem' }}>Enforcing the &quot;private network&quot; boundary cryptographically, not just by firewall rule</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Passkeys / WebAuthn</td>
             <td style={{ padding: '0.75rem' }}>Phishing-resistant login at the AuthN step</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Step-up auth</td>
             <td style={{ padding: '0.75rem' }}>Re-verifying identity for high-risk actions mid-session</td>
           </tr>

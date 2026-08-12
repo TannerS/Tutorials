@@ -636,12 +636,90 @@ const loggedCreate = withLogging(createUser);
 // loggedCreate has the same signature as createUser`}
       </CodeBlock>
 
-      <InfoBox variant="note" title="Cheat Sheet">
-        <strong>Make optional:</strong> Partial&lt;T&gt; — <strong>Make required:</strong> Required&lt;T&gt; — <strong>Make
-        readonly:</strong> Readonly&lt;T&gt; — <strong>Select keys:</strong> Pick&lt;T, K&gt; — <strong>Remove
-        keys:</strong> Omit&lt;T, K&gt; — <strong>Map keys to values:</strong> Record&lt;K, V&gt; — <strong>Keep
-        matching:</strong> Extract&lt;T, U&gt; — <strong>Remove matching:</strong> Exclude&lt;T, U&gt; — <strong>Remove
-        nulls:</strong> NonNullable&lt;T&gt;
+      <CodeBlock language="typescript" title="Awaited, ConstructorParameters, NoInfer">
+{`// Awaited<T> — unwrap a Promise, recursively
+type A = Awaited<Promise<string>>;             // string
+type B = Awaited<Promise<Promise<number>>>;    // number — unwraps all the way
+type C = Awaited<boolean | Promise<number>>;   // boolean | number
+
+// The idiomatic way to type "whatever this async function resolves to":
+async function loadUser(id: string) { /* ... */ return { id, name: "Alice" }; }
+type LoadedUser = Awaited<ReturnType<typeof loadUser>>;
+// { id: string; name: string }   (NOT Promise<...>)
+
+// ConstructorParameters<T> — the constructor's argument tuple
+class HttpClient {
+  constructor(baseUrl: string, timeout: number) {}
+}
+type ClientArgs = ConstructorParameters<typeof HttpClient>;
+// [baseUrl: string, timeout: number]
+
+// Practical: a factory that stays in sync with the constructor
+function makeClient(...args: ConstructorParameters<typeof HttpClient>) {
+  return new HttpClient(...args);
+}
+
+// NoInfer<T> (TS 5.4+) — block a parameter from driving inference
+function pick<T>(items: T[], fallback: NoInfer<T>): T {
+  return items[0] ?? fallback;
+}
+pick(["a", "b"], "c");   // T inferred as string from 'items' only
+// pick(["a", "b"], 42);  // Error — without NoInfer, T would widen to string | number`}
+      </CodeBlock>
+
+      <CodeBlock language="typescript" title="String manipulation types and 'this' helpers">
+{`// The four intrinsic string types — built into the compiler
+type Upper = Uppercase<"hello">;        // "HELLO"
+type Lower = Lowercase<"HELLO">;        // "hello"
+type Cap   = Capitalize<"hello">;       // "Hello"
+type Uncap = Uncapitalize<"Hello">;     // "hello"
+
+// They distribute over unions, which is what makes event-name mapping work:
+type Events = "click" | "focus";
+type Handlers = \`on\${Capitalize<Events>}\`;   // "onClick" | "onFocus"
+
+// ── 'this'-related utilities (rarely needed, but good to recognise) ──
+
+// ThisParameterType<T> — extract the declared 'this' parameter
+function greet(this: { name: string }, greeting: string) {
+  return greeting + ", " + this.name;
+}
+type GreetThis = ThisParameterType<typeof greet>;   // { name: string }
+
+// OmitThisParameter<T> — the same function with 'this' stripped
+type BoundGreet = OmitThisParameter<typeof greet>;  // (greeting: string) => string
+const bound: BoundGreet = greet.bind({ name: "Alice" });
+
+// ThisType<T> — sets the type of 'this' inside an object literal's methods.
+// Requires "noImplicitThis". Used by config-object APIs like Vue's options API.
+type Store = { state: { count: number } } & ThisType<{ increment(): void }>;`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="Complete Utility Type Cheat Sheet">
+        <p><strong>Object shape:</strong> Partial&lt;T&gt; (all optional) —
+        Required&lt;T&gt; (all required) — Readonly&lt;T&gt; (all readonly) —
+        Pick&lt;T, K&gt; (keep keys) — Omit&lt;T, K&gt; (drop keys) —
+        Record&lt;K, V&gt; (build a map type)</p>
+        <p><strong>Union filtering:</strong> Extract&lt;T, U&gt; (keep matching) —
+        Exclude&lt;T, U&gt; (remove matching) — NonNullable&lt;T&gt; (strip null/undefined)</p>
+        <p><strong>Function &amp; class:</strong> ReturnType&lt;F&gt; — Parameters&lt;F&gt; —
+        ConstructorParameters&lt;C&gt; — InstanceType&lt;C&gt; —
+        ThisParameterType&lt;F&gt; — OmitThisParameter&lt;F&gt; — ThisType&lt;T&gt;</p>
+        <p><strong>Async:</strong> Awaited&lt;P&gt; (unwrap Promise, recursively)</p>
+        <p><strong>String:</strong> Uppercase&lt;S&gt; — Lowercase&lt;S&gt; —
+        Capitalize&lt;S&gt; — Uncapitalize&lt;S&gt;</p>
+        <p><strong>Inference control:</strong> NoInfer&lt;T&gt; (TS 5.4+)</p>
+      </InfoBox>
+
+      <InfoBox variant="tip" title="They Are Not Magic — You Can Write Them Yourself">
+        <p>
+          Almost every utility above is a few lines of mapped or conditional type in
+          TypeScript&apos;s own <code>lib.es5.d.ts</code>. For example{' '}
+          <code>Exclude&lt;T, U&gt; = T extends U ? never : T</code> and{' '}
+          <code>Pick&lt;T, K extends keyof T&gt; = {'{'} [P in K]: T[P] {'}'}</code>.
+          The four string types are the exception &mdash; those are implemented inside the
+          compiler and cannot be expressed in TypeScript source.
+        </p>
       </InfoBox>
 
       {/* ── Section 12: Common Generic Patterns in Libraries ── */}

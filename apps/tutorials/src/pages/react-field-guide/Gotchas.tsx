@@ -6,13 +6,13 @@ export default function FieldGuideGotchas() {
   return (
     <PosterLayout
       accent="sky"
-      eyebrow="React + TypeScript · Field Reference"
+      eyebrow="React 19 · Field Reference"
       title="Gotchas & Anti-Patterns"
       tagline="The got-ya moments — things that silently break, pass code review, and don't show up until production. Won't need to google it."
       meta={['React 19', '12 gotchas']}
       footerLabel="Personal study reference — React Gotchas"
-      pageLabel="React + TS Field Guide · Gotchas"
-      prev={{ path: '/react-field-guide/router', label: 'React Router v7' }}
+      pageLabel="React 19 Field Guide · Gotchas"
+      prev={{ path: '/react-field-guide/recipes', label: 'Common Recipes' }}
       next={{ path: '/react-field-guide/testing', label: 'Testing Quick Reference' }}
     >
       <PosterCard

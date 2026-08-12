@@ -23,7 +23,7 @@ export default function Packages() {
 
       <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
         <thead>
-          <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+          <tr style={{ borderBottom: '2px solid var(--border-light)', textAlign: 'left' }}>
             <th style={{ padding: '0.75rem' }}>Feature</th>
             <th style={{ padding: '0.75rem' }}>npm</th>
             <th style={{ padding: '0.75rem' }}>Yarn (Berry)</th>
@@ -31,31 +31,31 @@ export default function Packages() {
           </tr>
         </thead>
         <tbody>
-          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
             <td style={{ padding: '0.75rem' }}>Speed</td>
             <td style={{ padding: '0.75rem' }}>Slowest</td>
             <td style={{ padding: '0.75rem' }}>Fast</td>
             <td style={{ padding: '0.75rem' }}>Fastest</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
             <td style={{ padding: '0.75rem' }}>Disk Usage</td>
             <td style={{ padding: '0.75rem' }}>Duplicates per project</td>
             <td style={{ padding: '0.75rem' }}>PnP or node_modules</td>
             <td style={{ padding: '0.75rem' }}>Content-addressable store</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
             <td style={{ padding: '0.75rem' }}>Lockfile</td>
             <td style={{ padding: '0.75rem' }}>package-lock.json</td>
             <td style={{ padding: '0.75rem' }}>yarn.lock</td>
             <td style={{ padding: '0.75rem' }}>pnpm-lock.yaml</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
             <td style={{ padding: '0.75rem' }}>Workspaces</td>
             <td style={{ padding: '0.75rem' }}>Built-in (v7+)</td>
             <td style={{ padding: '0.75rem' }}>Built-in</td>
             <td style={{ padding: '0.75rem' }}>Built-in</td>
           </tr>
-          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+          <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
             <td style={{ padding: '0.75rem' }}>Strictness</td>
             <td style={{ padding: '0.75rem' }}>Flat hoisting</td>
             <td style={{ padding: '0.75rem' }}>Strict (PnP)</td>

@@ -277,27 +277,403 @@ async function processFile() {
       {/* ── 9. Decorators ── */}
       <h2>Decorators</h2>
       <p>
-        TypeScript 5.0 shipped native support for Stage 3 decorators,
-        following the TC39 standard without extra compiler flags.
+        A decorator is a function that runs at <em>class-definition time</em> and can
+        observe or replace the thing it is attached to. TypeScript 5.0 shipped native
+        support for Stage 3 (TC39 standard) decorators &mdash; no compiler flag required.
+        They are the mechanism behind Angular&apos;s <code>@Component</code>, NestJS&apos;s
+        <code> @Injectable</code>, and TypeORM&apos;s <code>@Entity</code>.
       </p>
 
-      <CodeBlock language="typescript" title="Class and Method Decorators">
-{`// Method decorator - logging
-function log(target: any, context: ClassMethodDecoratorContext) {
+      <InfoBox variant="warning" title="Two Different Decorator Systems">
+        <p>
+          There are <strong>two incompatible</strong> decorator implementations, and code
+          you find online may target either one.
+        </p>
+        <ul>
+          <li>
+            <strong>Legacy / experimental</strong> &mdash; requires
+            <code> &quot;experimentalDecorators&quot;: true</code>. Signature:
+            <code> (target, propertyKey, descriptor)</code>. This is what Angular,
+            NestJS, and TypeORM still use today, and it is the only one that supports
+            <code> &quot;emitDecoratorMetadata&quot;</code> (the reflection data DI containers rely on).
+          </li>
+          <li>
+            <strong>Stage 3 / standard</strong> &mdash; the default in TS 5.0+ with no flag.
+            Signature: <code>(value, context)</code>. This is the one that will ship in
+            JavaScript itself.
+          </li>
+        </ul>
+        <p>
+          Turning on <code>experimentalDecorators</code> opts the whole project back into
+          the legacy behaviour. Match whatever your framework expects; everything below
+          is the modern Stage 3 form unless labelled otherwise.
+        </p>
+      </InfoBox>
+
+      <h3>The context object</h3>
+      <p>
+        Every Stage 3 decorator receives the decorated value plus a{' '}
+        <code>context</code> object describing what is being decorated.
+      </p>
+      <CodeBlock language="typescript" title="What every decorator gets handed">
+{`type Context = {
+  kind: "class" | "method" | "getter" | "setter" | "field" | "accessor";
+  name: string | symbol;
+  static: boolean;        // was it declared with 'static'?
+  private: boolean;       // was it a #private member?
+  access: { get?(obj): unknown; set?(obj, value): void };
+  addInitializer(fn: () => void): void;  // run extra setup per instance
+  metadata: Record<PropertyKey, unknown>;
+};
+
+// The specific context types TypeScript ships:
+// ClassDecoratorContext, ClassMethodDecoratorContext,
+// ClassGetterDecoratorContext, ClassSetterDecoratorContext,
+// ClassFieldDecoratorContext, ClassAccessorDecoratorContext`}
+      </CodeBlock>
+
+      <h3>Method decorators</h3>
+      <p>
+        A method decorator receives the original method and may return a replacement.
+        Return nothing to leave the method untouched (useful for pure registration).
+      </p>
+      <CodeBlock language="typescript" title="Logging and timing wrappers">
+{`function log<T extends (...args: any[]) => any>(
+  method: T,
+  context: ClassMethodDecoratorContext,
+): T {
   const name = String(context.name);
   return function (this: any, ...args: any[]) {
-    console.log(\`Calling \${name} with\`, args);
-    return target.apply(this, args);
-  };
+    console.log(\`-> \${name}(\`, args, ")");
+    const result = method.apply(this, args);
+    console.log(\`<- \${name} =\`, result);
+    return result;
+  } as T;
+}
+
+function timed<T extends (...args: any[]) => any>(
+  method: T,
+  context: ClassMethodDecoratorContext,
+): T {
+  return function (this: any, ...args: any[]) {
+    const start = performance.now();
+    try {
+      return method.apply(this, args);
+    } finally {
+      console.log(\`\${String(context.name)} took \${performance.now() - start}ms\`);
+    }
+  } as T;
 }
 
 class Calculator {
   @log
+  @timed
   add(a: number, b: number): number {
     return a + b;
   }
 }`}
       </CodeBlock>
+
+      <InfoBox variant="info" title="Evaluation Order With Stacked Decorators">
+        <p>
+          Decorator <em>expressions</em> are evaluated top-to-bottom, but the decorators are{' '}
+          <em>applied</em> bottom-to-top. Above, <code>@timed</code> wraps{' '}
+          <code>add</code> first, then <code>@log</code> wraps that &mdash; so at call time
+          the log output is the outermost layer. Think of it as function composition:
+          <code> log(timed(add))</code>.
+        </p>
+      </InfoBox>
+
+      <h3>Decorator factories &mdash; decorators that take arguments</h3>
+      <p>
+        <code>@log</code> is a decorator. <code>@retry(3)</code> is a <em>decorator factory</em>:
+        a function you call, which returns the actual decorator. That extra layer is how a
+        decorator receives configuration.
+      </p>
+      <CodeBlock language="typescript" title="A configurable retry decorator">
+{`function retry(attempts: number, delayMs = 100) {
+  // The factory captures the config...
+  return function <T extends (...args: any[]) => Promise<any>>(
+    method: T,
+    context: ClassMethodDecoratorContext,
+  ): T {
+    // ...and returns the real decorator.
+    return async function (this: any, ...args: any[]) {
+      let lastError: unknown;
+      for (let i = 0; i < attempts; i++) {
+        try {
+          return await method.apply(this, args);
+        } catch (err) {
+          lastError = err;
+          console.warn(\`\${String(context.name)} failed, retry \${i + 1}/\${attempts}\`);
+          await new Promise(r => setTimeout(r, delayMs * 2 ** i)); // backoff
+        }
+      }
+      throw lastError;
+    } as T;
+  };
+}
+
+class ApiClient {
+  @retry(3, 200)
+  async fetchUser(id: string): Promise<User> {
+    const res = await fetch(\`/api/users/\${id}\`);
+    if (!res.ok) throw new Error(res.statusText);
+    return res.json();
+  }
+}`}
+      </CodeBlock>
+
+      <h3>Class decorators &mdash; replacing the constructor</h3>
+      <CodeBlock language="typescript" title="Observe, register, or replace the whole class">
+{`// 1. Pure side effect — register the class somewhere, return nothing
+const registry = new Map<string, unknown>();
+
+function component(tag: string) {
+  return function (target: Function, context: ClassDecoratorContext) {
+    registry.set(tag, target);
+  };
+}
+
+// 2. Replace the class — return a subclass
+function withTimestamp<T extends new (...args: any[]) => object>(
+  target: T,
+  context: ClassDecoratorContext,
+) {
+  return class extends target {
+    createdAt = new Date();
+  };
+}
+
+@component("user-card")
+class UserCard {
+  constructor(public name: string) {}
+}
+
+// 3. Per-instance setup via addInitializer
+function sealed(target: Function, context: ClassDecoratorContext) {
+  context.addInitializer(function () {
+    Object.seal(this);  // runs once per instance, after fields are set
+  });
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Class Decorators Run Once, Not Per Instance">
+        <p>
+          A class decorator fires a single time, when the <code>class</code> statement is
+          evaluated &mdash; not on every <code>new</code>. If you need per-instance work, use
+          <code> context.addInitializer()</code>, which runs in the constructor for each
+          instance created.
+        </p>
+      </InfoBox>
+
+      <h3>Field, getter/setter, and auto-accessor decorators</h3>
+      <CodeBlock language="typescript" title="The remaining decorator kinds">
+{`// FIELD decorator: returns an initializer that transforms the initial value
+function uppercase(_: undefined, context: ClassFieldDecoratorContext<any, string>) {
+  return function (initialValue: string) {
+    return initialValue.toUpperCase();
+  };
+}
+
+// GETTER decorator: memoize an expensive computed property
+function memoize<T>(getter: () => T, context: ClassGetterDecoratorContext) {
+  const cache = new WeakMap<object, T>();
+  return function (this: object): T {
+    if (!cache.has(this)) cache.set(this, getter.call(this));
+    return cache.get(this)!;
+  };
+}
+
+// AUTO-ACCESSOR decorator: 'accessor' generates a getter/setter pair over a
+// private field, and the decorator can intercept BOTH sides.
+function observable<T>(
+  target: ClassAccessorDecoratorTarget<any, T>,
+  context: ClassAccessorDecoratorContext,
+): ClassAccessorDecoratorResult<any, T> {
+  return {
+    get() { return target.get.call(this); },
+    set(value: T) {
+      console.log(\`\${String(context.name)} changed to\`, value);
+      target.set.call(this, value);
+    },
+    init(initial: T) { return initial; },
+  };
+}
+
+class Product {
+  @uppercase sku = "abc-123";        // stored as "ABC-123"
+  @observable accessor price = 9.99;  // logs every assignment
+
+  @memoize
+  get expensiveReport(): string { return heavyComputation(this); }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The accessor Keyword">
+        <p>
+          <code>accessor price = 9.99</code> is new syntax introduced alongside Stage 3
+          decorators. It desugars to a private field plus a generated getter/setter,
+          which is what gives a decorator a hook on reads <em>and</em> writes &mdash; a plain
+          field decorator only sees the initial value.
+        </p>
+      </InfoBox>
+
+      <h3>Practical pattern: validation decorators</h3>
+      <CodeBlock language="typescript" title="Declarative validation, collected via metadata">
+{`type Validator = (value: unknown) => string | null;
+
+const validators = new WeakMap<object, Map<string, Validator[]>>();
+
+function addValidator(context: any, fn: Validator) {
+  context.addInitializer(function (this: object) {
+    const proto = Object.getPrototypeOf(this);
+    if (!validators.has(proto)) validators.set(proto, new Map());
+    const map = validators.get(proto)!;
+    const key = String(context.name);
+    map.set(key, [...(map.get(key) ?? []), fn]);
+  });
+}
+
+function required(_: any, context: ClassFieldDecoratorContext) {
+  addValidator(context, v =>
+    v === undefined || v === null || v === "" ? "is required" : null);
+  return undefined;
+}
+
+function maxLength(n: number) {
+  return function (_: any, context: ClassFieldDecoratorContext) {
+    addValidator(context, v =>
+      typeof v === "string" && v.length > n ? \`must be <= \${n} chars\` : null);
+    return undefined;
+  };
+}
+
+class SignupForm {
+  @required @maxLength(50) email = "";
+  @required @maxLength(72) password = "";
+}`}
+      </CodeBlock>
+
+      <h3>Legacy decorators &mdash; what you will see in Angular and NestJS</h3>
+      <p>
+        Framework code you read at work almost certainly uses the older signature.
+        It is worth being able to recognise it.
+      </p>
+      <CodeBlock language="typescript" title="Legacy signatures (experimentalDecorators: true)">
+{`// tsconfig.json
+// { "compilerOptions": {
+//     "experimentalDecorators": true,
+//     "emitDecoratorMetadata": true   // needed for DI by type
+// } }
+
+// Legacy METHOD decorator — mutates the property descriptor
+function legacyLog(
+  target: any,             // the prototype (or constructor, if static)
+  propertyKey: string,
+  descriptor: PropertyDescriptor,
+) {
+  const original = descriptor.value;
+  descriptor.value = function (...args: any[]) {
+    console.log(propertyKey, args);
+    return original.apply(this, args);
+  };
+  return descriptor;
+}
+
+// Legacy PARAMETER decorator — the Stage 3 standard has NO equivalent.
+// This is the hook that makes constructor-injection DI possible.
+function Inject(token: string) {
+  return function (target: any, key: string | undefined, index: number) {
+    // record: "constructor arg #index of target needs 'token'"
+  };
+}
+
+@Injectable()
+class UserService {
+  constructor(@Inject("HTTP") private http: HttpClient) {}
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="No Parameter Decorators in the Standard">
+        <p>
+          Stage 3 decorators deliberately dropped parameter decorators. Any DI framework
+          that injects by constructor parameter &mdash; Angular, NestJS, InversifyJS &mdash; therefore
+          still requires <code>experimentalDecorators</code> today. Do not try to mix the
+          two systems in one project: the flag is all-or-nothing.
+        </p>
+      </InfoBox>
+
+      {/* ── 9b. Modules vs Namespaces ── */}
+      <h2>Modules vs Namespaces</h2>
+      <p>
+        Before ES modules were standard, TypeScript shipped <code>namespace</code> as its own
+        way to avoid polluting the global scope. Modules won. You still need to recognise
+        namespaces because they appear throughout older codebases and in{' '}
+        <code>.d.ts</code> files.
+      </p>
+
+      <CodeBlock language="typescript" title="The two mechanisms side by side">
+{`// ── NAMESPACE (legacy) — merges into one global object ──
+namespace Validation {
+  export interface Validator { isValid(s: string): boolean; }
+
+  const lettersOnly = /^[A-Za-z]+$/;   // not exported = private to the namespace
+
+  export class LettersValidator implements Validator {
+    isValid(s: string) { return lettersOnly.test(s); }
+  }
+}
+// Nested and merged across files with /// <reference path="..." />
+const v = new Validation.LettersValidator();
+
+// ── MODULE (modern) — one file, one module, real imports ──
+// validation.ts
+export interface Validator { isValid(s: string): boolean; }
+const lettersOnly = /^[A-Za-z]+$/;      // file-private automatically
+export class LettersValidator implements Validator {
+  isValid(s: string) { return lettersOnly.test(s); }
+}
+
+// consumer.ts
+import { LettersValidator } from "./validation";`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Do Not Write New Namespaces">
+        <p>
+          Namespaces predate ES modules and are effectively deprecated for application
+          code: they are not tree-shakeable, they break under{' '}
+          <code>isolatedModules</code>, and every modern bundler is built around real
+          imports. The one place they remain correct is inside declaration files, where{' '}
+          <code>declare namespace</code> describes the shape of a global script-tag
+          library or augments an existing global (as with <code>Express.Request</code>).
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="typescript" title="Type-only imports and exports">
+{`// 'import type' is erased entirely at compile time — no runtime import emitted.
+import type { User } from "./models";
+import { type Config, createClient } from "./client";  // inline type modifier
+
+export type { User };
+export { createClient };
+
+// Why it matters:
+// 1. Required by isolatedModules / esbuild / SWC, which compile file-by-file
+//    and cannot tell whether an import is a type or a value.
+// 2. Prevents accidental runtime imports that create circular dependencies
+//    or pull a whole module into the bundle just for its types.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="verbatimModuleSyntax">
+        <p>
+          Setting <code>&quot;verbatimModuleSyntax&quot;: true</code> makes the rule explicit:
+          any import without the <code>type</code> keyword is emitted as-is, and any import
+          with it is dropped. No guessing by the compiler. It is the recommended setting
+          for new projects and supersedes the older{' '}
+          <code>importsNotUsedAsValues</code> and <code>preserveValueImports</code> flags.
+        </p>
+      </InfoBox>
 
       {/* ── 10. Module Augmentation ── */}
       <h2>Module Augmentation</h2>
@@ -507,6 +883,36 @@ type Good<T> = HandleA<T> | HandleB<T>;`}
         correctIndex={0}
         explanation={"Template literal types distribute over unions. Capitalize<'click' | 'hover'> becomes 'Click' | 'Hover'. Then the template produces 'onClick' | 'onHover'."}
         language="typescript"
+      />
+
+      <InteractiveChallenge
+        question={"In what order do these decorators wrap the method, and what runs first at call time?"}
+        code={`class Service {
+  @log
+  @retry(3)
+  async fetch() { /* ... */ }
+}`}
+        language="typescript"
+        options={[
+          "@log wraps first; @retry's logic runs first at call time",
+          "@retry wraps first; @log's logic runs first at call time",
+          "They apply in source order and run in source order",
+          "Only the closest decorator (@retry) is applied",
+        ]}
+        correctIndex={1}
+        explanation={"Decorator expressions evaluate top-to-bottom (so retry(3) is called before @log is read), but decorators are APPLIED bottom-to-top. @retry wraps fetch first, then @log wraps that result — equivalent to log(retry(3)(fetch)). Because @log is the outermost wrapper, its code runs first when the method is called."}
+      />
+
+      <InteractiveChallenge
+        question={"Your team is adding NestJS to a TypeScript 5 project. NestJS injects dependencies through constructor parameters. What does the tsconfig need?"}
+        options={[
+          "Nothing — Stage 3 decorators are on by default in TS 5",
+          "\"experimentalDecorators\": true and \"emitDecoratorMetadata\": true",
+          "\"target\": \"ES2022\" only",
+          "\"useDefineForClassFields\": false only",
+        ]}
+        correctIndex={1}
+        explanation={"The Stage 3 standard decorators that TS 5 enables by default have no parameter decorators at all, and no metadata emit. Constructor-parameter injection therefore requires opting back into the legacy system with experimentalDecorators, plus emitDecoratorMetadata so the DI container can read parameter types via reflect-metadata. The flag is project-wide — you cannot mix the two decorator systems."}
       />
 
     </LessonLayout>

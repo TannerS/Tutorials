@@ -13,7 +13,7 @@ export default function Responsive() {
       prev={{ path: '/css-mastery/grid', label: 'CSS Grid Complete Guide' }}
       next={{ path: '/css-mastery/animations', label: 'Animations & Transitions' }}
     >
-      <p>Responsive design in 2024+ goes far beyond media queries. Container queries, fluid typography, dynamic viewport units, and logical properties have fundamentally changed how we build adaptive layouts. This is the modern toolkit every senior engineer should have internalized.</p>
+      <p>Modern responsive design goes far beyond media queries. Container queries, fluid typography, dynamic viewport units, and logical properties have fundamentally changed how we build adaptive layouts. This is the modern toolkit every senior engineer should have internalized.</p>
 
       <h2>Mobile-First vs Desktop-First</h2>
 
@@ -182,6 +182,55 @@ export default function Responsive() {
         <p><strong>size</strong> — containment on both axes. Rarely needed and more expensive; requires the element to have an explicit size on both axes.</p>
         <p><strong>normal</strong> — no containment (default). The element can&apos;t be queried.</p>
       </InfoBox>
+
+      <h3>Container Query Units</h3>
+
+      <p>Container queries bring their own length units, sized against the query container rather than the viewport. These are what make a component <em>fully</em> self-contained: <code>vw</code>-based fluid type inside a component is still secretly coupled to the viewport, but <code>cqi</code>-based type scales with the space the component was actually given.</p>
+
+      <CodeBlock language="css" title="cqi / cqw / cqb / cqh">
+{`/* cqw  = 1% of the container's WIDTH
+   cqh  = 1% of the container's HEIGHT
+   cqi  = 1% of the container's INLINE size  ← the one you want
+   cqb  = 1% of the container's BLOCK size
+   cqmin/cqmax = the smaller/larger of cqi and cqb */
+
+.card-wrapper { container-type: inline-size; }
+
+.card__title {
+  /* Scales with the CARD, not the window — identical component in a
+     narrow sidebar and a wide main column each get correct type sizes */
+  font-size: clamp(1rem, 5cqi, 2rem);
+}
+
+.card__body { padding: 2cqi; }`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="cqi Needs a Container Above It">
+        Container units resolve against the nearest ancestor with a
+        <code> container-type</code>. If none exists, they fall back to the <em>small viewport</em>
+        size — so the CSS silently keeps working but stops being component-relative. When
+        container-relative type &quot;isn&apos;t responding,&quot; the missing
+        <code> container-type</code> on the parent is almost always the cause.
+      </InfoBox>
+
+      <h3>Style Queries</h3>
+
+      <p>Container queries can also test a container&apos;s <em>custom property values</em>, not just its size. This lets a parent set a variant with one variable and have descendants react — without threading a modifier class through every child in the markup.</p>
+
+      <CodeBlock language="css" title="@container style()">
+{`.card { --variant: default; }
+.card.is-featured { --variant: featured; }
+
+/* Children react to the ancestor's custom property */
+@container style(--variant: featured) {
+  .card__title { font-size: 1.5rem; color: var(--accent); }
+  .card__badge { display: block; }
+}
+
+/* Note: style() queries need NO container-type — every element is
+   automatically a style container. Size queries are the ones that
+   require opting in with container-type. */`}
+      </CodeBlock>
 
       <h2>Viewport Units — The Mobile Trap</h2>
 
