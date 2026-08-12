@@ -227,6 +227,16 @@ public class OrderEnrichmentService {
     }
 }`}
       </CodeBlock>
+      <InfoBox variant="warning" title="This API was restructured in Java 25">
+        <p>
+          The <code>ShutdownOnFailure</code> subclass form above is the Java 21&ndash;24 preview
+          API and requires <code>--enable-preview</code>. Java 25 finalised{' '}
+          <code>StructuredTaskScope</code> with a different shape:{' '}
+          <code>StructuredTaskScope.open(Joiner.allSuccessfulOrThrow())</code>, where{' '}
+          <code>join()</code> returns the result and throws on failure. If your service targets
+          Java 25 use that form — see the Java Concurrency lesson for both side by side.
+        </p>
+      </InfoBox>
 
       <h2>AOT and Native Image (GraalVM)</h2>
       <p>
@@ -278,36 +288,190 @@ Micrometer Tracing replaces Sleuth
 Micrometer Observation API replaces manual metric-only instrumentation`}
       </CodeBlock>
 
-      <h2>What Boot 4 Adds Over Boot 3</h2>
+      <h2>What Boot 4 Actually Changes Over Boot 3</h2>
       <p>
-        Boot 4 (2026) is more of a refinement than a revolution:
+        Boot 4 (built on Spring Framework 7) is not a <code>javax</code>→<code>jakarta</code>-scale
+        rewrite, but it is more than a version bump. These are the changes that affect real code.
       </p>
-      <ul>
-        <li>
-          <strong>Consolidated null-safety.</strong> Broader <code>@NullMarked</code>
-          packages and improved IDE checks.
-        </li>
-        <li>
-          <strong>More Kotlin coroutines integration</strong> in reactive contexts.
-        </li>
-        <li>
-          <strong>Bean-registration API refinements</strong> (programmatic bean
-          registration is cleaner).
-        </li>
-        <li>
-          <strong>Structured concurrency helpers</strong> as it stabilizes in the JDK.
-        </li>
-        <li>
-          Continued push on native images and AOT hint coverage.
-        </li>
-      </ul>
 
-      <InfoBox variant="note" title="Version pinning in practice">
+      <h3>1. The baseline moved</h3>
+      <CodeBlock language="text" title="Platform requirements">
+{`Java          17 minimum (21+ strongly recommended — virtual threads, and the
+              runtime the framework is tuned against)
+Jakarta EE    EE 11 APIs (Servlet 6.1, JPA 3.2, Bean Validation 3.1)
+Spring        Framework 7.0
+Jackson       Jackson 3 is the new baseline — the package root changed from
+              com.fasterxml.jackson to tools.jackson, and ObjectMapper is now
+              immutable and built via JsonMapper.builder(). Boot still supports
+              Jackson 2 on the classpath during migration, but new code should
+              target 3.
+Kotlin        Kotlin 2.x`}
+      </CodeBlock>
+
+      <h3>2. The module layout was split apart</h3>
+      <p>
+        This is the change most likely to touch your build file. In Boot 3, essentially every
+        auto-configuration lived in one giant <code>spring-boot-autoconfigure</code> jar. Boot 4
+        breaks that into per-technology modules, so an app pulls in auto-configuration only for
+        what it actually uses. Starters mostly shield you from this — but if you depended on
+        <code>spring-boot-autoconfigure</code> directly, or wrote your own starter, you will need
+        to update coordinates.
+      </p>
+      <CodeBlock language="text" title="Module restructure">
+{`Boot 3:  org.springframework.boot:spring-boot-autoconfigure   (everything)
+
+Boot 4:  org.springframework.boot:spring-boot-web-server
+         org.springframework.boot:spring-boot-webmvc
+         org.springframework.boot:spring-boot-data-jpa
+         org.springframework.boot:spring-boot-security
+         ...one module per technology
+
+Also removed: the legacy META-INF/spring.factories mechanism for
+auto-configuration. Everything now uses
+META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+(which has been the preferred form since Boot 2.7).`}
+      </CodeBlock>
+
+      <h3>3. Null-safety standardised on JSpecify</h3>
+      <p>
+        Spring&apos;s home-grown <code>org.springframework.lang.Nullable</code> is replaced by the
+        vendor-neutral <strong>JSpecify</strong> annotations. Packages are{' '}
+        <code>@NullMarked</code> by default, meaning every type is non-null unless explicitly
+        marked <code>@Nullable</code>. The practical payoff is that IntelliJ and the Kotlin
+        compiler can now flag a null-safety violation against Spring APIs at compile time instead
+        of at runtime.
+      </p>
+      <CodeBlock language="java" title="JSpecify null-marking">
+{`// package-info.java — everything in this package is non-null by default
+@NullMarked
+package com.example.orders;
+
+import org.jspecify.annotations.NullMarked;
+
+// Now @Nullable is the exception that stands out, and tooling enforces it.
+import org.jspecify.annotations.Nullable;
+
+public interface OrderRepository {
+    Order require(UUID id);              // guaranteed non-null
+    @Nullable Order findRaw(UUID id);    // explicitly may be null
+}`}
+      </CodeBlock>
+
+      <h3>4. API versioning is built into the framework</h3>
+      <p>
+        Previously every team hand-rolled versioning with URL prefixes or a custom{' '}
+        <code>RequestCondition</code>. Framework 7 makes the version a first-class mapping
+        attribute, resolvable from a header, a query parameter, a media type, or the path.
+      </p>
+      <CodeBlock language="java" title="Versioned endpoints">
+{`@Configuration
+public class ApiVersionConfig implements WebMvcConfigurer {
+    @Override
+    public void configureApiVersioning(ApiVersionConfigurer configurer) {
+        configurer.useRequestHeader("X-API-Version")
+                  .addSupportedVersions("1.0", "1.1", "2.0");
+    }
+}
+
+@RestController
+@RequestMapping("/orders")
+public class OrderController {
+
+    @GetMapping(value = "/{id}", version = "1.0")
+    OrderV1 getV1(@PathVariable UUID id) { ... }
+
+    // "1.1+" means this handles 1.1 and every later version until one
+    // explicitly supersedes it — no duplicated mappings per release.
+    @GetMapping(value = "/{id}", version = "1.1+")
+    OrderV2 getV2(@PathVariable UUID id) { ... }
+}`}
+      </CodeBlock>
+
+      <h3>5. Resilience annotations moved into core Spring</h3>
+      <p>
+        Retry and concurrency limiting no longer require the separate Spring Retry project. The
+        <code>org.springframework.resilience</code> package ships <code>@Retryable</code> and{' '}
+        <code>@ConcurrencyLimit</code> as core, AOP-backed annotations.
+      </p>
+      <CodeBlock language="java" title="Built-in retry and concurrency limiting">
+{`@EnableResilientMethods            // switches on the supporting AOP infrastructure
+@Configuration
+class ResilienceConfig { }
+
+@Service
+public class PaymentGateway {
+
+    @Retryable(maxAttempts = 4,
+               delay = 200, multiplier = 2.0, maxDelay = 5000,
+               includes = TransientGatewayException.class)
+    public Receipt charge(Payment payment) {
+        return client.post(payment);
+    }
+
+    @Recover                        // invoked when every attempt is exhausted
+    public Receipt fallback(TransientGatewayException e, Payment payment) {
+        return Receipt.deferred(payment.id());
+    }
+
+    // Cap in-flight calls to a fragile downstream, without a thread pool.
+    @ConcurrencyLimit(10)
+    public Report generate(ReportRequest req) { ... }
+}`}
+      </CodeBlock>
+
+      <h3>6. Programmatic bean registration with BeanRegistrar</h3>
+      <p>
+        <code>BeanRegistrar</code> gives you a supported, AOT-friendly way to register beans
+        conditionally in code — replacing the reflection-heavy{' '}
+        <code>BeanDefinitionRegistryPostProcessor</code> pattern, which native images struggled
+        with.
+      </p>
+      <CodeBlock language="java" title="BeanRegistrar">
+{`class TenantRegistrar implements BeanRegistrar {
+    @Override
+    public void register(BeanRegistry registry, Environment env) {
+        for (String tenant : env.getRequiredProperty("app.tenants").split(",")) {
+            registry.registerBean("dataSource-" + tenant, DataSource.class,
+                spec -> spec.supplier(ctx -> buildDataSource(tenant)));
+        }
+    }
+}
+
+@Configuration
+@Import(TenantRegistrar.class)
+class TenantConfig { }`}
+      </CodeBlock>
+
+      <h3>7. Declarative HTTP clients get auto-registration</h3>
+      <p>
+        The <code>@HttpExchange</code> interfaces shown earlier no longer need a hand-written{' '}
+        <code>HttpServiceProxyFactory</code> <code>@Bean</code> each — Boot 4 can discover and
+        register them, with base URLs bound from configuration properties.
+      </p>
+      <CodeBlock language="java" title="Auto-registered HTTP service clients">
+{`@Configuration
+@ImportHttpServices(group = "catalog", types = CatalogApi.class)
+class HttpClientConfig { }`}
+      </CodeBlock>
+      <CodeBlock language="yaml" title="...with the base URL in configuration">
+{`spring:
+  http:
+    client:
+      service:
+        group:
+          catalog:
+            base-url: https://catalog.example.com`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="Migration reality check">
         <p>
-          Most enterprise services target the Spring Boot version their organization
-          standardizes on — often the latest LTS. Boot 3.x remains supported alongside
-          Boot 4. All the patterns in this section work on both unless explicitly noted
-          as Spring 6.1+.
+          Boot 3.x remains supported alongside Boot 4, and almost every pattern in this section
+          works on both. The two upgrade steps that actually take time are the{' '}
+          <strong>Jackson 3 package rename</strong> (a find-and-replace across imports, plus any
+          code that mutated a shared <code>ObjectMapper</code> after construction) and the{' '}
+          <strong>module split</strong> if you maintain a custom starter. Everything else —
+          JSpecify, API versioning, <code>@Retryable</code>, <code>BeanRegistrar</code> — is
+          opt-in, so you can upgrade first and adopt them incrementally.
         </p>
       </InfoBox>
 
