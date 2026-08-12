@@ -53,7 +53,7 @@ export default function Setup() {
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.0</version>
+        <version>4.0.0</version>
     </parent>
 
     <groupId>com.example</groupId>
@@ -62,7 +62,8 @@ export default function Setup() {
     <name>my-app</name>
 
     <properties>
-        <java.version>17</java.version>
+        <!-- Boot 4 requires 17 as a minimum; target 21+ for virtual threads. -->
+        <java.version>21</java.version>
     </properties>
 
     <dependencies>
@@ -114,6 +115,108 @@ export default function Setup() {
         </p>
       </InfoBox>
 
+      <h3>The Gradle Equivalent</h3>
+      <p>
+        Gradle is the other mainstream choice. It is faster on large builds (incremental
+        compilation and a build cache) at the cost of a build script that is code rather than
+        declarative XML. Boot provides an official plugin, and the{' '}
+        <code>io.spring.dependency-management</code> plugin does the same version-alignment job as
+        Maven&apos;s parent POM.
+      </p>
+
+      <CodeBlock language="text" title="build.gradle.kts (Kotlin DSL)">
+{`plugins {
+    java
+    id("org.springframework.boot") version "4.0.0"
+    id("io.spring.dependency-management") version "1.1.7"
+}
+
+group = "com.example"
+version = "0.0.1-SNAPSHOT"
+
+java {
+    toolchain {
+        // Gradle downloads this JDK if it isn't installed — builds become
+        // reproducible regardless of what the developer has on PATH.
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+
+    runtimeOnly("org.postgresql:postgresql")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:postgresql")
+}
+
+tasks.withType<Test> { useJUnitPlatform() }`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="Dependency scopes, and why they matter">
+        <p>
+          <code>implementation</code> (Gradle) / default <code>compile</code> scope (Maven) puts a
+          library on both the compile and runtime classpath. <code>runtimeOnly</code> /{' '}
+          <code>&lt;scope&gt;runtime&lt;/scope&gt;</code> puts it only on the runtime classpath —
+          correct for JDBC drivers, which you never import in code, and it stops anyone accidentally
+          coupling application code to a specific driver. <code>testImplementation</code> /{' '}
+          <code>&lt;scope&gt;test&lt;/scope&gt;</code> keeps test-only libraries out of the shipped
+          artifact entirely.
+        </p>
+      </InfoBox>
+
+      <h3>Structuring the Package Tree</h3>
+      <p>
+        The diagram above shows <strong>package-by-layer</strong> — a{' '}
+        <code>controller</code>, <code>service</code>, and <code>repository</code> package each
+        holding every class of that kind. It is the structure most tutorials use and it is fine for
+        a small application, but it scales poorly: a single feature is smeared across four
+        packages, every class must be <code>public</code> to be reachable, and nothing stops any
+        class from calling any other.
+      </p>
+
+      <CodeBlock language="text" title="Two ways to organise the same application">
+{`PACKAGE BY LAYER — fine for a demo, awkward past ~20 classes
+com.example.shop
+├── controller/   OrderController, ProductController, CustomerController
+├── service/      OrderService, ProductService, CustomerService
+├── repository/   OrderRepository, ProductRepository, CustomerRepository
+└── model/        Order, Product, Customer
+
+PACKAGE BY FEATURE — each package is a vertical slice
+com.example.shop
+├── order/        OrderController, OrderService, OrderRepository, Order
+├── product/      ProductController, ProductService, ProductRepository, Product
+├── customer/     CustomerController, CustomerService, CustomerRepository, Customer
+└── shared/       cross-cutting config, error handling, common types
+
+Why the second wins as the codebase grows:
+  - A change to "orders" touches one directory, not four.
+  - Only the package's entry point needs to be public. OrderRepository can be
+    package-private, so nothing outside com.example.shop.order can reach the
+    database directly. The compiler enforces the layering.
+  - Deleting a feature means deleting a directory.
+  - It maps cleanly onto modules later, if the service is ever split.`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Keep the main class at the root of your package tree">
+        <p>
+          <code>@SpringBootApplication</code> component-scans <em>its own package and everything
+          below it</em>. If <code>MyAppApplication</code> lives in{' '}
+          <code>com.example.myapp</code>, then <code>com.example.myapp.order</code> is scanned but{' '}
+          <code>com.example.other</code> is not — and the symptom is a confusing{' '}
+          <code>NoSuchBeanDefinitionException</code> for a class that is visibly annotated{' '}
+          <code>@Service</code>. Putting the main class at the root is the convention precisely
+          because it makes scanning cover everything without extra configuration.
+        </p>
+      </InfoBox>
+
       <h3>The Main Application Class</h3>
       <p>
         Every Spring Boot project has a main application class annotated with
@@ -161,6 +264,53 @@ java -jar target/my-app-0.0.1-SNAPSHOT.jar
 # With a specific profile
 java -jar target/my-app-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev`}
       </CodeBlock>
+
+      <h3>Building a Container Image</h3>
+      <p>
+        Boot can build an OCI image without a Dockerfile, using Cloud Native Buildpacks. The
+        resulting image is layered so that dependencies (which rarely change) sit in a different
+        layer from your application classes (which change every build) — so a redeploy pushes a few
+        hundred kilobytes rather than the whole fat JAR.
+      </p>
+
+      <CodeBlock language="text" title="Buildpacks, and the hand-written equivalent">
+{`# No Dockerfile required — Boot builds a layered image directly.
+./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=myorg/my-app:1.0
+./gradlew bootBuildImage --imageName=myorg/my-app:1.0
+
+# The equivalent multi-stage Dockerfile, if you need full control.
+# The key idea is 'layertools extract' — it splits the fat JAR into layers
+# ordered by how often they change, so Docker can cache the stable ones.
+
+FROM eclipse-temurin:21-jdk AS builder
+WORKDIR /app
+COPY . .
+RUN ./mvnw -DskipTests clean package
+RUN java -Djarmode=tools -jar target/*.jar extract --layers --destination extracted
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=builder /app/extracted/dependencies/ ./
+COPY --from=builder /app/extracted/spring-boot-loader/ ./
+COPY --from=builder /app/extracted/snapshot-dependencies/ ./
+COPY --from=builder /app/extracted/application/ ./
+# Never run as root.
+RUN useradd -r -u 1001 appuser
+USER appuser
+ENTRYPOINT ["java", "-jar", "app.jar"]`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Let the JVM see the container's limits">
+        <p>
+          Modern JVMs are container-aware and size the heap from the cgroup memory limit rather
+          than the host&apos;s total RAM — but the default ceiling is only 25% of that limit, which
+          wastes most of a small container. Set{' '}
+          <code>-XX:MaxRAMPercentage=75</code> so the heap actually uses the memory you paid for,
+          and leave the rest for metaspace, thread stacks, and native buffers. Avoid hardcoding{' '}
+          <code>-Xmx</code>: it silently ignores the container limit and is the usual cause of a
+          pod being OOM-killed by the platform while the JVM believes it has room to spare.
+        </p>
+      </InfoBox>
 
       <InteractiveChallenge
         question="What does the spring-boot-starter-parent POM provide?"

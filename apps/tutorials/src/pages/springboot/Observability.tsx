@@ -82,6 +82,87 @@ export default function Observability() {
         </p>
       </InfoBox>
 
+      <h2>Liveness and Readiness — Getting Deploys Right</h2>
+      <p>
+        The <code>health.probes.enabled: true</code> setting above unlocks two extra endpoints, and
+        the difference between them is the difference between a clean rolling deploy and a
+        restart loop. Setting both to the same thing — or pointing both at{' '}
+        <code>/actuator/health</code> — is one of the most common Kubernetes misconfigurations.
+      </p>
+
+      <CodeBlock language="text" title="The two probes and what they mean">
+{`/actuator/health/liveness    "Is this process broken beyond recovery?"
+                             FAIL => the platform KILLS and restarts the pod.
+                             Must NOT depend on external systems. If the
+                             database is down, restarting your pod does not
+                             help — it just adds an outage on top of an outage.
+
+/actuator/health/readiness   "Can this instance serve traffic right now?"
+                             FAIL => the pod is removed from the load balancer
+                             but LEFT RUNNING. Correct place to check the
+                             database, a required downstream, or a cache warm-up.
+                             It recovers automatically when the dependency does.
+
+The classic outage: readiness checks are wired into the liveness probe, a
+shared database blips, EVERY pod fails liveness simultaneously, the whole
+fleet restarts at once, and the cold-start stampede keeps the database down.`}
+      </CodeBlock>
+
+      <CodeBlock language="yaml" title="Kubernetes probe configuration">
+{`readinessProbe:
+  httpGet: { path: /actuator/health/readiness, port: 8081 }
+  periodSeconds: 5
+  failureThreshold: 3
+
+livenessProbe:
+  httpGet: { path: /actuator/health/liveness, port: 8081 }
+  periodSeconds: 10
+  failureThreshold: 3
+
+# startupProbe gives a slow-booting JVM time to come up WITHOUT having to
+# loosen the liveness thresholds for the rest of the pod's life.
+startupProbe:
+  httpGet: { path: /actuator/health/liveness, port: 8081 }
+  periodSeconds: 5
+  failureThreshold: 30        # allows up to 150s to start`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="Contributing to the right probe group">
+{`// Health indicators are assigned to groups by configuration, not by class.
+// Put dependency checks in readiness only:
+//
+// management.endpoint.health.group.readiness.include: readinessState,db,redis
+// management.endpoint.health.group.liveness.include:  livenessState
+
+// Drive readiness from application code when a warm-up must finish first.
+@Component
+public class WarmupListener {
+    private final ApplicationEventPublisher events;
+
+    public void onCacheLoaded() {
+        AvailabilityChangeEvent.publish(events, this,
+            ReadinessState.ACCEPTING_TRAFFIC);
+    }
+
+    public void onDependencyLost() {
+        AvailabilityChangeEvent.publish(events, this,
+            ReadinessState.REFUSING_TRAFFIC);   // drains traffic, no restart
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Graceful shutdown completes the picture">
+        <p>
+          Probes control when traffic arrives; graceful shutdown controls how it stops. With{' '}
+          <code>server.shutdown: graceful</code> and{' '}
+          <code>spring.lifecycle.timeout-per-shutdown-phase: 30s</code>, a SIGTERM makes Boot stop
+          accepting new requests, finish in-flight ones, then exit. Boot also flips readiness to{' '}
+          <code>REFUSING_TRAFFIC</code> at the start of shutdown, so the load balancer stops
+          routing before the connections close — without this, every deploy drops a handful of
+          requests.
+        </p>
+      </InfoBox>
+
       <h2>Micrometer — Metrics in Practice</h2>
       <p>
         <code>MeterRegistry</code> is the entry point. Three primary meter types:
