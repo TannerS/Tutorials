@@ -11,7 +11,7 @@ export default function Integration() {
       sectionId="testing"
       lessonIndex={3}
       prev={{ path: '/testing/mocking', label: 'Mocking & Test Doubles' }}
-      next={{ path: '/testing/e2e', label: 'End-to-End Testing' }}
+      next={{ path: '/testing/testcontainers', label: 'Testcontainers & Test Data' }}
     >
       <h2>What Is Integration Testing?</h2>
       <p>

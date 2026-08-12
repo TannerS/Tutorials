@@ -9,9 +9,9 @@ export default function Performance() {
     <LessonLayout
       title="Performance & Memoization"
       sectionId="react19"
-      lessonIndex={5}
+      lessonIndex={6}
       prev={{ path: '/react19/context', label: 'Context & Composition' }}
-      next={{ path: '/react19/react19', label: 'React 19 New Features' }}
+      next={{ path: '/react19/profiling', label: 'Profiling React Apps in the Browser' }}
     >
       <p>React is fast by default. Most performance issues come from unnecessary re-renders cascading through large trees, or expensive computations running on every render. Here's when and how to optimize.</p>
 

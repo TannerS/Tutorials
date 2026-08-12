@@ -10,7 +10,7 @@ export default function Hooks() {
     <LessonLayout
       title="Hooks Deep Dive"
       sectionId="react19"
-      lessonIndex={1}
+      lessonIndex={2}
       prev={{ path: '/react19/lifecycle-sim', label: '🧪 Lifecycle Simulator' }}
       next={{ path: '/react19/state', label: 'State Management Patterns' }}
     >

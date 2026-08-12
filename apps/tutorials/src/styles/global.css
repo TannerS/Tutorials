@@ -126,6 +126,71 @@ li {
   display: flex;
 }
 
+/* ============================================================
+   Print — this is the stylesheet that actually loads (unlike the
+   old src/index.css, which was never imported anywhere and had no
+   effect). Handles a plain browser Ctrl/Cmd+P on any page: hides
+   nav chrome, lifts the html/body/#root overflow:hidden that the
+   app relies on for its internal scroll containers, flattens the
+   dark theme to a print-safe light one, and keeps code/diagrams
+   from splitting across a page break.
+   ============================================================ */
+@media print {
+  html, body, #root {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #111 !important;
+  }
+  body { font-size: 11pt; }
+
+  .sidebar-container,
+  .mobile-backdrop,
+  aside,
+  [role="dialog"],
+  button[aria-label="Open menu"] {
+    display: none !important;
+  }
+
+  main {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  /* LessonLayout's flex row (content + TOC) and its content column */
+  main > div { display: block !important; overflow: visible !important; height: auto !important; max-width: none !important; width: 100% !important; gap: 0 !important; }
+  main > div > div:first-child { max-width: none !important; width: 100% !important; flex: initial !important; min-width: 0 !important; overflow: visible !important; }
+
+  h1, h2, h3, h4 { color: #000 !important; background: none !important; -webkit-text-fill-color: initial !important; }
+  h1 { font-size: 20pt; }
+  h2 { font-size: 15pt; page-break-after: avoid; }
+  h3 { font-size: 12.5pt; page-break-after: avoid; }
+  p, li { color: #222 !important; orphans: 3; widows: 3; }
+
+  a { color: #111 !important; }
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #555;
+    word-break: break-all;
+  }
+
+  pre, code {
+    background: #f4f4f4 !important;
+    color: #111 !important;
+    font-size: 9pt !important;
+    page-break-inside: avoid;
+  }
+  pre { border: 1pt solid #ccc !important; padding: 6pt 8pt !important; }
+
+  svg { max-width: 100% !important; height: auto !important; page-break-inside: avoid; }
+
+  button { background: transparent !important; border: none !important; color: #111 !important; }
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .mobile-menu-btn {

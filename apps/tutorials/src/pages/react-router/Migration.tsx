@@ -11,7 +11,7 @@ export default function Migration() {
       sectionId="react-router"
       lessonIndex={7}
       prev={{ path: '/react-router/fullapp', label: 'Complete App Routing' }}
-      next={null}
+      next={{ path: '/react-router/cheatsheet', label: 'Cheat Sheet' }}
     >
       <p>
         Migrating from React Router v5 to v7 is a two-step jump: v5 → v6

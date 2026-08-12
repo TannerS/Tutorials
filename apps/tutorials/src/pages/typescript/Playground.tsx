@@ -7,8 +7,9 @@ export default function TsPlayground() {
     <LessonLayout
       title="TypeScript Playground — Interactive Challenges"
       sectionId="typescript"
-      lessonIndex={11}
+      lessonIndex={10}
       prev={{ path: '/typescript/tsconfig', label: 'tsconfig Mastery' }}
+      next={{ path: '/typescript/enterprise', label: 'Enterprise Patterns' }}
     >
       <p>
         Eight hands-on challenges covering the TypeScript concepts that come up most in real codebases.

@@ -9,7 +9,7 @@ export default function BestPractices() {
     <LessonLayout
       title="Testing Best Practices"
       sectionId="testing"
-      lessonIndex={5}
+      lessonIndex={7}
       prev={{ path: '/testing/e2e', label: 'End-to-End Testing' }}
       next={null}
     >

@@ -11,7 +11,7 @@ export default function Authz() {
       sectionId="auth"
       lessonIndex={5}
       prev={{ path: '/auth/oauth', label: 'OAuth 2.0 & OIDC' }}
-      next={{ path: '/auth/security', label: 'Web Security (CORS, CSRF, XSS)' }}
+      next={{ path: '/auth/gateway', label: 'Gateway Auth: Envoy, Redis & the Auth Wall' }}
     >
       <p>
         Authentication and authorization are the two pillars of access control. They are often confused
@@ -283,8 +283,22 @@ Phase 6: Logout
             <td style={{ padding: '0.75rem' }}>JWT passed between services</td>
             <td style={{ padding: '0.75rem' }}>Per-service AuthZ</td>
           </tr>
+          <tr style={{ borderBottom: '1px solid #2a2e42' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Gateway-Validated Session</strong></td>
+            <td style={{ padding: '0.75rem' }}>OAuth/OIDC or password</td>
+            <td style={{ padding: '0.75rem' }}>Opaque token + Redis session, validated once at the edge</td>
+            <td style={{ padding: '0.75rem' }}>Centralized at gateway/auth service — backends trust headers, never see a token</td>
+          </tr>
         </tbody>
       </table>
+
+      <InfoBox variant="tip" title="Want the Full Gateway Pattern?">
+        <p>
+          The next lesson walks through this exact &quot;Gateway-Validated Session&quot; row in detail — Envoy&#39;s
+          <code> ext_authz</code> filter, the Redis session schema, instant revocation, and why backend
+          services can be entirely invisible to the public internet.
+        </p>
+      </InfoBox>
 
       <h2>Concept Relationship Map</h2>
 

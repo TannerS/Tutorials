@@ -9,8 +9,8 @@ function Monitoring() {
     <LessonLayout
       title="Monitoring & Observability"
       sectionId="devops"
-      lessonIndex={5}
-      prev={{ path: '/devops/cloud', label: 'Cloud Basics (AWS/Azure)' }}
+      lessonIndex={3}
+      prev={{ path: '/devops/cicd', label: 'CI/CD Pipelines' }}
       next={null}
     >
       <h2>The Three Pillars of Observability</h2>

@@ -9,8 +9,8 @@ export default function E2e() {
     <LessonLayout
       title="End-to-End Testing"
       sectionId="testing"
-      lessonIndex={4}
-      prev={{ path: '/testing/integration', label: 'Integration Testing' }}
+      lessonIndex={6}
+      prev={{ path: '/testing/contract', label: 'Contract & Property-Based Testing' }}
       next={{ path: '/testing/bestpractices', label: 'Testing Best Practices' }}
     >
       <h2>E2E Testing Philosophy</h2>

@@ -11,7 +11,7 @@ function Recipes() {
       sectionId="react-cheatsheet"
       lessonIndex={4}
       prev={{ path: '/react-cheatsheet/styling', label: 'Styling Approaches' }}
-      next={null}
+      next={{ path: '/react-cheatsheet/antipatterns', label: 'Anti-Patterns Quick Reference' }}
     >
       <p>Copy-paste recipes for everyday React patterns. Each one is self-contained and production-ready.</p>
 

@@ -11,7 +11,7 @@ function Advanced() {
       sectionId="java"
       lessonIndex={9}
       prev={{ path: '/java/io', label: 'I/O & File Handling' }}
-      next={null}
+      next={{ path: '/java/optional', label: 'Optional — Best & Worst Practices' }}
     >
       <h2>Modern Java Features</h2>
       <p>

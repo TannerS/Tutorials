@@ -138,7 +138,12 @@ async function main() {
         const page = await browser.newPage({ viewport: { width: 816, height: 1200 } });
         try {
           const target = url.replace(HOST, '127.0.0.1') + lesson.path;
-          await page.goto(target, { waitUntil: 'networkidle' });
+          // 'load' rather than 'networkidle': pages embedding a live widget
+          // (e.g. Sandpack's bundler iframe) hold connections open for
+          // hot-reload and never go network-idle, which would hang this
+          // indefinitely. 'load' plus the explicit settle-wait below is
+          // enough for mermaid/syntax-highlighting/static widgets.
+          await page.goto(target, { waitUntil: 'load', timeout: 30_000 });
 
           // Remove site chrome that shouldn't appear in the print, and force
           // <main> out of its scroll-container state so the whole content
@@ -220,6 +225,11 @@ async function main() {
           console.log(`           ${scrollHeightPx}px tall, ${(buf.length/1024).toFixed(0)}KB`);
 
           buffers.push(buf);
+        } catch (err) {
+          // Don't let one broken/hung lesson (e.g. a page embedding a live
+          // widget that fails to load in headless Chromium) abort the whole
+          // section's PDF. Skip it and keep going.
+          console.error(`           SKIPPED (${err.message.split('\n')[0]})`);
         } finally {
           await page.close();
         }

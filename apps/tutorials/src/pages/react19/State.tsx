@@ -9,7 +9,7 @@ export default function State() {
     <LessonLayout
       title="State Management Patterns"
       sectionId="react19"
-      lessonIndex={2}
+      lessonIndex={3}
       prev={{ path: '/react19/hooks', label: 'Hooks Deep Dive' }}
       next={{ path: '/react19/effects', label: 'Effects & Data Fetching' }}
     >

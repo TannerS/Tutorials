@@ -11,7 +11,7 @@ export default function Proxy() {
       sectionId="patterns"
       lessonIndex={6}
       prev={{ path: '/patterns/composite', label: 'Composite & Facade' }}
-      next={{ path: '/patterns/realworld', label: 'Real-World Applications' }}
+      next={{ path: '/patterns/command', label: 'Command & Iterator' }}
     >
       <h2>Proxy Pattern</h2>
       <p>

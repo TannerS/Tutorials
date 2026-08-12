@@ -8,7 +8,7 @@ export default function Typescript() {
     <LessonLayout
       title="TypeScript Crash Course"
       sectionId="react19"
-      lessonIndex={9}
+      lessonIndex={11}
       prev={{ path: '/react19/patterns', label: 'Advanced Patterns' }}
       next={{ path: '/react19/build-toolchain', label: 'Build Toolchain' }}
     >

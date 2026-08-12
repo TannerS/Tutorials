@@ -1,0 +1,268 @@
+/* ============================================================
+   Poster-style "Field Reference" cheat sheets.
+
+   Two accents (per stack, not per topic — flip through a printed
+   stack and know the language by color): --accent-sky for
+   React + TypeScript, --accent-amber for Java + Spring Boot.
+
+   Three render modes:
+     1. Screen dark  (default)  — vivid Prism syntax colors.
+     2. Screen light ([data-mode="light"]) — the ink-minimal
+        preview: near-white code panels, tokens told apart by
+        weight/style instead of hue. This is what will print.
+     3. @media print — hardcoded, ignores data-mode entirely, so
+        printing is correct even if left in dark mode on screen.
+   ============================================================ */
+
+.poster-sheet {
+  --bg: #0c0e15;
+  --ink: #e7e9f2;
+  --ink-soft: #a3a8c0;
+  --ink-faint: #6c7191;
+  --panel: #05070c;
+  --code-bg: #0a0c15;
+  --code-rule: #1c2036;
+  --border: #22263c;
+  --card-bg: #12141f;
+  --syn-kw: #ff7ad1;
+  --syn-str: #7ee3a0;
+  --syn-fn: #6cc6ff;
+  --syn-num: #ffb072;
+  --syn-com: #767c96;
+  --syn-punc: #c7cde3;
+  --syn-prop: #c9a6ff;
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 1rem 0 2rem;
+}
+
+/* ---- Stack accents ---- */
+.poster-sheet[data-accent="sky"] {
+  --accent: #38bdf8;
+  --accent-ink: #7dd3fc;
+  --accent-dim: #123246;
+}
+.poster-sheet[data-accent="amber"] {
+  --accent: #f59e0b;
+  --accent-ink: #fcd34d;
+  --accent-dim: #3d2f14;
+}
+
+/* ---- Light mode: the ink-minimal preview — matches print ---- */
+.poster-sheet[data-mode="light"] {
+  --bg: #eef1f6;
+  --ink: #14161f;
+  --ink-soft: #52586b;
+  --ink-faint: #82869c;
+  --panel: #12141c;
+  --code-bg: #f8f8fa;
+  --code-rule: #dfe2ea;
+  --border: #dde2ec;
+  --card-bg: #ffffff;
+  --syn-kw: #14161f;
+  --syn-str: #14161f;
+  --syn-fn: #14161f;
+  --syn-num: #14161f;
+  --syn-com: #6a6f83;
+  --syn-punc: #14161f;
+  --syn-prop: #14161f;
+}
+.poster-sheet[data-mode="light"][data-accent="sky"] { --accent-ink: #0a75ab; --accent-dim: #d7edfb; }
+.poster-sheet[data-mode="light"][data-accent="amber"] { --accent-ink: #92400e; --accent-dim: #fef3c7; }
+
+.poster-sheet[data-mode="light"] .poster-code .token.keyword,
+.poster-sheet[data-mode="light"] .poster-code .token.boolean,
+.poster-sheet[data-mode="light"] .poster-code .token.builtin,
+.poster-sheet[data-mode="light"] .poster-code .token.annotation,
+.poster-sheet[data-mode="light"] .poster-code .token.decorator {
+  font-weight: 700;
+}
+.poster-sheet[data-mode="light"] .poster-code .token.function,
+.poster-sheet[data-mode="light"] .poster-code .token.class-name,
+.poster-sheet[data-mode="light"] .poster-code .token.tag {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: #b7bccc;
+  text-underline-offset: 2px;
+}
+.poster-sheet[data-mode="light"] .poster-code .token.comment { font-style: italic; }
+
+/* ---- Toggle (screen only) ---- */
+.poster-toggle-bar { display: flex; justify-content: flex-end; padding: 0.6rem 1.5rem 0; }
+.poster-toggle-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: var(--card-bg); border: 1px solid var(--border); color: var(--ink-soft);
+  font: 600 0.76rem/1 'Inter', sans-serif; letter-spacing: 0.02em;
+  padding: 0.45rem 0.8rem; border-radius: 999px; cursor: pointer;
+}
+.poster-toggle-btn:hover { color: var(--ink); border-color: var(--accent); }
+.poster-toggle-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- Header band ---- */
+.poster-band {
+  background: var(--panel);
+  color: #f2f4fb;
+  padding: 2rem 1.75rem 1.75rem;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 1.5rem; flex-wrap: wrap;
+  border-bottom: 3px solid var(--accent);
+}
+.poster-eyebrow {
+  color: var(--accent-ink); font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 0.5rem;
+}
+.poster-band h2.poster-title {
+  margin: 0; font-size: 2.15rem; font-weight: 800; letter-spacing: -0.02em;
+  text-wrap: balance; line-height: 1.05; color: #fff;
+  background: none; -webkit-text-fill-color: initial;
+}
+.poster-band p.poster-tag { margin: 0.6rem 0 0; color: #b7bcd4; font-size: 0.92rem; max-width: 46ch; }
+.poster-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.poster-chip {
+  border: 1px solid #2a2f48; background: #12162490; color: #cfd3e8;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em;
+  padding: 0.3rem 0.65rem; border-radius: 999px; white-space: nowrap;
+}
+.poster-chip.accent { border-color: var(--accent); color: var(--accent-ink); }
+
+/* ---- Card grid ---- */
+.poster-main { padding: 1.5rem 1.5rem 2rem; }
+.poster-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+@media (max-width: 680px) { .poster-grid { grid-template-columns: 1fr; } }
+
+.poster-card {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1rem 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.65rem;
+  break-inside: avoid;
+}
+.poster-card-head { display: flex; align-items: center; gap: 0.6rem; }
+.poster-glyph {
+  flex: none; width: 28px; height: 28px; border-radius: 8px;
+  background: var(--accent-dim); color: var(--accent-ink);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 800;
+}
+.poster-card h3 {
+  margin: 0; font-size: 1.02rem; font-weight: 700; color: var(--ink);
+  font-family: 'JetBrains Mono', monospace; letter-spacing: -0.01em;
+}
+.poster-card h3 .dim { color: var(--ink-faint); font-weight: 500; }
+.poster-badge { font-size: 0.62rem; font-weight: 700; color: var(--ink-faint); margin-left: 0.35rem; vertical-align: middle; }
+
+.poster-card p.poster-cap { margin: 0; color: var(--ink-soft); font-size: 0.83rem; line-height: 1.5; }
+
+/* ---- Code panel (Prism, class-based tokens — see .poster-code below) ---- */
+.poster-code-wrap {
+  margin: 0; background: var(--code-bg); border: 1px solid var(--code-rule);
+  border-radius: 8px; padding: 0.75rem 0.85rem; overflow-x: auto;
+}
+.poster-code-wrap pre { margin: 0; background: none !important; }
+.poster-code {
+  /* Reset the site's global `code { background; padding; border-radius }`
+     (meant for short inline `code` snippets in prose) — on a block-level,
+     multi-line <code> it renders as a background box per visual line. */
+  display: block;
+  background: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font: 12px/1.6 'JetBrains Mono', ui-monospace, Consolas, monospace !important;
+  color: var(--syn-punc);
+}
+.poster-code .token.keyword,
+.poster-code .token.boolean,
+.poster-code .token.builtin,
+.poster-code .token.operator { color: var(--syn-kw); }
+.poster-code .token.annotation,
+.poster-code .token.decorator { color: var(--syn-kw); font-weight: 700; }
+.poster-code .token.string,
+.poster-code .token.template-string,
+.poster-code .token.char { color: var(--syn-str); }
+.poster-code .token.function,
+.poster-code .token.class-name,
+.poster-code .token.tag { color: var(--syn-fn); }
+.poster-code .token.number { color: var(--syn-num); }
+.poster-code .token.comment { color: var(--syn-com); font-style: italic; }
+.poster-code .token.punctuation { color: var(--syn-punc); }
+.poster-code .token.property,
+.poster-code .token.attr-name,
+.poster-code .token.parameter,
+.poster-code .token.maybe-class-name { color: var(--syn-prop); }
+
+/* ---- Wide quick-reference card ---- */
+.poster-wide { grid-column: 1 / -1; background: var(--panel); border-radius: 10px; padding: 1.15rem 1.3rem 1.3rem; color: #eef0fa; }
+.poster-wide h3 { margin: 0 0 0.8rem; font-size: 0.95rem; font-weight: 700; color: var(--accent-ink); text-transform: uppercase; letter-spacing: 0.06em; }
+.poster-wide-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.45rem 1.4rem; }
+@media (max-width: 680px) { .poster-wide-grid { grid-template-columns: 1fr; } }
+.poster-wide-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid #232841; font-size: 0.82rem; }
+.poster-wide-row .need { color: #9aa0bd; }
+.poster-wide-row .ans { color: #f2f4fb; font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: right; }
+
+.poster-foot { padding: 1rem 1.5rem 1.4rem; color: var(--ink-faint); font-size: 0.74rem; display: flex; justify-content: space-between; border-top: 1px solid var(--border); }
+
+/* ============================================================
+   Print — ignores data-mode entirely. White page, near-black
+   text, barely-tinted code panels (not solid fills — this
+   repeats on every card, every page, across a growing set),
+   tokens told apart by weight/underline/italic only.
+   ============================================================ */
+@media print {
+  .poster-sheet { background: #fff !important; color: #111 !important; border-radius: 0; margin: 0; }
+  .poster-toggle-bar { display: none !important; }
+
+  .poster-band { background: #fff !important; color: #111 !important; border-bottom: 2pt solid #111 !important; padding: 0 0 10pt !important; break-after: avoid; }
+  .poster-eyebrow { color: #444 !important; }
+  .poster-band h2.poster-title { color: #000 !important; }
+  .poster-band p.poster-tag { color: #333 !important; }
+  .poster-chip { background: #fff !important; color: #333 !important; border: 1pt solid #999 !important; }
+  .poster-chip.accent { border-color: #111 !important; color: #111 !important; font-weight: 700; }
+
+  .poster-main { padding: 10pt 0 0 !important; }
+  .poster-grid { gap: 12pt 10pt !important; }
+
+  .poster-card { background: #fff !important; border: 1pt solid #bbb !important; break-inside: avoid; }
+  .poster-card:nth-of-type(4n+1) { break-before: page; }
+  .poster-band, .poster-card:first-of-type { break-before: avoid; }
+
+  .poster-glyph { background: #fff !important; color: #111 !important; border: 1.25pt solid #111 !important; border-radius: 6pt; }
+  .poster-card h3 { color: #000 !important; }
+  .poster-card h3 .dim { color: #555 !important; }
+  .poster-badge { color: #555 !important; }
+  .poster-card p.poster-cap { color: #222 !important; }
+
+  .poster-code-wrap { background: #fbfbfc !important; border: 1pt solid #ccc !important; }
+  .poster-code { color: #111 !important; }
+  .poster-code .token.keyword,
+  .poster-code .token.boolean,
+  .poster-code .token.builtin,
+  .poster-code .token.annotation,
+  .poster-code .token.decorator,
+  .poster-code .token.operator { color: #000 !important; font-weight: 700 !important; text-decoration: none !important; }
+  .poster-code .token.function,
+  .poster-code .token.class-name,
+  .poster-code .token.tag {
+    color: #000 !important; font-weight: 700 !important;
+    text-decoration: underline; text-decoration-color: #999; text-underline-offset: 2px;
+  }
+  .poster-code .token.string,
+  .poster-code .token.template-string,
+  .poster-code .token.char,
+  .poster-code .token.number,
+  .poster-code .token.property,
+  .poster-code .token.attr-name,
+  .poster-code .token.parameter,
+  .poster-code .token.maybe-class-name,
+  .poster-code .token.punctuation { color: #111 !important; font-weight: 400 !important; }
+  .poster-code .token.comment { color: #555 !important; font-style: italic !important; font-weight: 400 !important; }
+
+  .poster-wide { background: #fff !important; color: #111 !important; border: 1.5pt solid #111 !important; break-inside: avoid; break-before: page; }
+  .poster-wide h3 { color: #000 !important; }
+  .poster-wide-row { border-bottom: 0.75pt solid #ccc !important; }
+  .poster-wide-row .need { color: #333 !important; }
+  .poster-wide-row .ans { color: #000 !important; }
+
+  .poster-foot { color: #555 !important; border-top: 1pt solid #999 !important; break-before: avoid; }
+}

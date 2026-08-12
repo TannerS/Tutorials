@@ -8,8 +8,8 @@ export default function React19() {
     <LessonLayout
       title="React 19 New Features"
       sectionId="react19"
-      lessonIndex={6}
-      prev={{ path: '/react19/performance', label: 'Performance & Memoization' }}
+      lessonIndex={8}
+      prev={{ path: '/react19/profiling', label: 'Profiling React Apps in the Browser' }}
       next={{ path: '/react19/server', label: 'Server Components & Actions' }}
     >
       <p>React 19 is the most significant release since hooks. It introduces the React Compiler (automatic memoization), Actions for async state transitions, new hooks for forms and optimistic UI, and the <code>use()</code> hook. Let's dive into each.</p>

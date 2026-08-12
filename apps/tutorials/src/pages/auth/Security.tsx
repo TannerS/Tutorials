@@ -9,8 +9,8 @@ export default function Security() {
     <LessonLayout
       title="Web Security (CORS, CSRF, XSS)"
       sectionId="auth"
-      lessonIndex={6}
-      prev={{ path: '/auth/authz', label: 'AuthN vs AuthZ' }}
+      lessonIndex={7}
+      prev={{ path: '/auth/gateway', label: 'Gateway Auth: Envoy, Redis & the Auth Wall' }}
       next={null}
     >
       <p>

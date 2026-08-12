@@ -11,7 +11,7 @@ function Cicd() {
       sectionId="devops"
       lessonIndex={2}
       prev={{ path: '/devops/branching', label: 'Branching Strategies' }}
-      next={{ path: '/devops/docker', label: 'Docker Fundamentals' }}
+      next={{ path: '/devops/monitoring', label: 'Monitoring & Observability' }}
     >
       <h2>CI vs CD vs CD</h2>
       <p>

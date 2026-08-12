@@ -8,7 +8,7 @@ export default function Server() {
     <LessonLayout
       title="Server Components & Actions"
       sectionId="react19"
-      lessonIndex={7}
+      lessonIndex={9}
       prev={{ path: '/react19/react19', label: 'React 19 New Features' }}
       next={{ path: '/react19/patterns', label: 'Advanced Patterns' }}
     >

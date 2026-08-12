@@ -1,169 +1,25 @@
 import CodeBlock from '../../components/CodeBlock';
-import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
-function Cloud() {
+export default function Infra() {
   return (
     <LessonLayout
-      title="Cloud Basics (AWS/Azure)"
-      sectionId="devops"
-      lessonIndex={4}
-      prev={{ path: '/devops/docker', label: 'Docker Fundamentals' }}
-      next={{ path: '/devops/monitoring', label: 'Monitoring & Observability' }}
+      title="Multi-Cloud, IaC & Cost"
+      sectionId="cloud"
+      lessonIndex={1}
+      prev={{ path: '/cloud/intro', label: 'Cloud Service Models & Compute' }}
+      next={null}
     >
-      <h2>Cloud Service Models</h2>
-      <p>
-        Understanding what you manage vs. what the provider manages is fundamental to
-        choosing the right service for each workload.
-      </p>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th>You Manage</th>
-            <th>Provider Manages</th>
-            <th>Examples</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>IaaS</strong></td>
-            <td>OS, runtime, app, data</td>
-            <td>Hardware, networking, virtualization</td>
-            <td>EC2, Azure VMs</td>
-          </tr>
-          <tr>
-            <td><strong>PaaS</strong></td>
-            <td>App, data</td>
-            <td>Everything else</td>
-            <td>Elastic Beanstalk, Azure App Service</td>
-          </tr>
-          <tr>
-            <td><strong>SaaS</strong></td>
-            <td>Configuration</td>
-            <td>Everything</td>
-            <td>Gmail, Salesforce, Jira</td>
-          </tr>
-          <tr>
-            <td><strong>FaaS</strong></td>
-            <td>Function code only</td>
-            <td>Everything else, including scaling</td>
-            <td>Lambda, Azure Functions</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <FlowChart
-        title="Cloud Responsibility Spectrum"
-        chart={"graph LR\nA[On-Premise] --> B[IaaS]\nB --> C[PaaS]\nC --> D[FaaS/Serverless]\nD --> E[SaaS]\nstyle A fill:#f44336,color:#fff\nstyle B fill:#FF9800,color:#fff\nstyle C fill:#2196F3,color:#fff\nstyle D fill:#4CAF50,color:#fff\nstyle E fill:#9C27B0,color:#fff"}
-      />
-
-      <h2>AWS Core Services</h2>
-
-      <h3>Compute</h3>
-
-      <CodeBlock language="bash" title="EC2 — Virtual Servers">
-{`# Launch an EC2 instance via CLI
-aws ec2 run-instances \
-  --image-id ami-0abcdef1234567890 \
-  --instance-type t3.medium \
-  --key-name my-keypair \
-  --security-group-ids sg-12345678 \
-  --subnet-id subnet-abcdef \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=my-server}]'
-
-# SSH into your instance
-ssh -i my-keypair.pem ec2-user@<public-ip>
-
-# Common instance types:
-# t3.micro  — free tier, burstable, dev/test
-# t3.medium — small workloads
-# m6i.large — general purpose production
-# c6i.large — compute-optimized
-# r6i.large — memory-optimized`}
-      </CodeBlock>
-
-      <CodeBlock language="javascript" title="Lambda — Serverless Functions">
-{`// Lambda handler (Node.js)
-export const handler = async (event) => {
-  const { name } = JSON.parse(event.body);
-  
-  // Process the request
-  const result = await processData(name);
-  
-  return {
-    statusCode: 200,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: 'Success', data: result }),
-  };
-};
-
-// Lambda is billed per millisecond of execution
-// Max execution time: 15 minutes
-// Max memory: 10GB
-// Cold starts: first invocation takes longer`}
-      </CodeBlock>
-
-      <h3>Storage &amp; Databases</h3>
-
-      <CodeBlock language="bash" title="S3 — Object Storage">
-{`# Create a bucket
-aws s3 mb s3://my-company-assets-prod
-
-# Upload files
-aws s3 cp ./build s3://my-bucket/static/ --recursive
-aws s3 sync ./dist s3://my-bucket/app/ --delete
-
-# Presigned URLs (temporary access)
-aws s3 presign s3://my-bucket/private/report.pdf --expires-in 3600
-
-# S3 storage classes:
-# Standard         — frequently accessed
-# Intelligent      — auto-tiering
-# Standard-IA      — infrequent access
-# Glacier          — archival (minutes to hours retrieval)
-# Glacier Deep     — archival (12+ hours retrieval)`}
-      </CodeBlock>
-
-      <CodeBlock language="bash" title="RDS — Managed Databases">
-{`# Create a PostgreSQL instance
-aws rds create-db-instance \
-  --db-instance-identifier my-db \
-  --db-instance-class db.t3.medium \
-  --engine postgres \
-  --engine-version 16 \
-  --master-username admin \
-  --master-user-password "SecureP@ss123!" \
-  --allocated-storage 100 \
-  --storage-type gp3 \
-  --multi-az \
-  --backup-retention-period 7
-
-# RDS handles: patching, backups, failover, read replicas
-# Supported engines: PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, Aurora`}
-      </CodeBlock>
-
-      <h3>Messaging &amp; Integration</h3>
-
-      <CodeBlock language="bash" title="SQS and SNS">
-{`# SQS — Message queue (point-to-point)
-aws sqs create-queue --queue-name order-processing
-aws sqs send-message --queue-url <url> --message-body '{"orderId": 123}'
-
-# SNS — Pub/Sub (fan-out to multiple subscribers)
-aws sns create-topic --name order-events
-aws sns subscribe --topic-arn <arn> --protocol sqs --notification-endpoint <queue-arn>
-
-# Pattern: SNS topic fans out to multiple SQS queues
-# Order placed -> SNS topic -> SQS (fulfillment)
-#                            -> SQS (notifications)
-#                            -> SQS (analytics)`}
-      </CodeBlock>
-
       <h2>AWS to Azure Mapping</h2>
+      <p>
+        Job postings and existing infrastructure won't always agree on a provider. The
+        underlying concepts are the same across clouds — only the names change. Keeping this
+        table in your head (or bookmarked) makes it much faster to read unfamiliar
+        infrastructure or interview for a role that uses a different provider than you're
+        used to.
+      </p>
 
       <table>
         <thead>
@@ -253,6 +109,11 @@ aws sns subscribe --topic-arn <arn> --protocol sqs --notification-endpoint <queu
       </table>
 
       <h2>Infrastructure as Code</h2>
+      <p>
+        Clicking around a console doesn't scale and isn't repeatable. Terraform describes
+        infrastructure declaratively in HCL and is cloud-agnostic — the same workflow
+        provisions AWS, Azure, GCP, or all three. The core loop is four commands.
+      </p>
 
       <CodeBlock language="bash" title="Terraform Basics">
 {`# Initialize a new Terraform project
@@ -267,6 +128,11 @@ terraform apply
 # Destroy infrastructure
 terraform destroy`}
       </CodeBlock>
+
+      <p>
+        A minimal project defines a provider and the resources you want, and Terraform
+        figures out the create/update/delete plan needed to reach that state.
+      </p>
 
       <CodeBlock language="json" title="Terraform — main.tf (HCL shown as reference)">
 {`// Provider configuration
@@ -287,7 +153,7 @@ resource "aws_instance" "api_server" {
   ami           = "ami-0abcdef1234567890"
   instance_type = "t3.medium"
   subnet_id     = aws_subnet.public.id
-  
+
   tags = {
     Name        = "api-server"
     Environment = "production"
@@ -301,11 +167,11 @@ resource "aws_db_instance" "main" {
   engine_version = "16"
   instance_class = "db.t3.medium"
   allocated_storage = 100
-  
+
   db_name  = "myapp"
   username = "admin"
   password = var.db_password   // from variables
-  
+
   multi_az             = true
   skip_final_snapshot  = false
 }`}
@@ -318,6 +184,14 @@ resource "aws_db_instance" "main" {
       </InfoBox>
 
       <h2>12-Factor App Methodology</h2>
+      <p>
+        Once your infrastructure is codified, the application running on top of it should
+        follow the same discipline. The{' '}
+        <a href="https://12factor.net" target="_blank" rel="noreferrer">12-factor app</a>{' '}
+        methodology is a set of practices for building apps that deploy cleanly to any cloud
+        environment — most of them boil down to "don't assume anything about the machine
+        you're running on."
+      </p>
 
       <table>
         <thead>
@@ -350,6 +224,11 @@ resource "aws_db_instance" "main" {
       </InfoBox>
 
       <h2>Cost Optimization Tips</h2>
+      <p>
+        Cloud bills grow quietly. A handful of habits — right-sizing, buying commitment
+        discounts where usage is predictable, and cleaning up idle resources — usually
+        account for most of the savings available without any architectural changes.
+      </p>
 
       <CodeBlock language="bash" title="Cost-Saving Strategies">
 {`# 1. Right-size instances — monitor CPU/memory and downsize
@@ -389,8 +268,4 @@ aws ec2 run-instances --instance-market-options MarketType=spot
       </InfoBox>
     </LessonLayout>
   );
-}
-
-export default function CloudPage() {
-  return <Cloud />;
 }

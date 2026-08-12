@@ -9,8 +9,8 @@ export default function Realworld() {
     <LessonLayout
       title="Real-World Pattern Applications"
       sectionId="patterns"
-      lessonIndex={7}
-      prev={{ path: '/patterns/proxy', label: 'Proxy & Chain of Responsibility' }}
+      lessonIndex={12}
+      prev={{ path: '/patterns/flyweight', label: 'Flyweight & Interpreter' }}
       next={null}
     >
       <h2>Patterns in Enterprise Architecture</h2>

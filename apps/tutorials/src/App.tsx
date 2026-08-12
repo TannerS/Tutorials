@@ -40,6 +40,7 @@ import ReactState from './pages/react19/State'
 import ReactEffects from './pages/react19/Effects'
 import ReactContext from './pages/react19/Context'
 import ReactPerformance from './pages/react19/Performance'
+import ReactProfiling from './pages/react19/Profiling'
 import ReactNew from './pages/react19/React19'
 import ReactServer from './pages/react19/Server'
 import ReactPatterns from './pages/react19/Patterns'
@@ -77,6 +78,11 @@ import PatternsDecorator from './pages/patterns/Decorator'
 import PatternsBuilder from './pages/patterns/Builder'
 import PatternsComposite from './pages/patterns/Composite'
 import PatternsProxy from './pages/patterns/Proxy'
+import PatternsCommand from './pages/patterns/Command'
+import PatternsState from './pages/patterns/State'
+import PatternsBridge from './pages/patterns/Bridge'
+import PatternsMemento from './pages/patterns/Memento'
+import PatternsFlyweight from './pages/patterns/Flyweight'
 import PatternsRealworld from './pages/patterns/Realworld'
 
 // React Anti-Patterns
@@ -112,6 +118,7 @@ import AuthCookies from './pages/auth/Cookies'
 import AuthJwt from './pages/auth/Jwt'
 import AuthOauth from './pages/auth/Oauth'
 import AuthAuthz from './pages/auth/Authz'
+import AuthGateway from './pages/auth/Gateway'
 import AuthSecurity from './pages/auth/Security'
 
 // Java Cheat Sheet
@@ -127,12 +134,15 @@ import RCPatterns from './pages/react-cheatsheet/Patterns'
 import RCState from './pages/react-cheatsheet/State'
 import RCStyling from './pages/react-cheatsheet/Styling'
 import RCRecipes from './pages/react-cheatsheet/Recipes'
+import RCAntiPatterns from './pages/react-cheatsheet/AntiPatterns'
 
 // Testing Strategies
 import TestIntro from './pages/testing/Intro'
 import TestUnit from './pages/testing/Unit'
 import TestMocking from './pages/testing/Mocking'
 import TestIntegration from './pages/testing/Integration'
+import TestTestcontainers from './pages/testing/Testcontainers'
+import TestContract from './pages/testing/Contract'
 import TestE2e from './pages/testing/E2e'
 import TestBestPractices from './pages/testing/BestPractices'
 
@@ -140,9 +150,19 @@ import TestBestPractices from './pages/testing/BestPractices'
 import DevGit from './pages/devops/Git'
 import DevBranching from './pages/devops/Branching'
 import DevCicd from './pages/devops/Cicd'
-import DevDocker from './pages/devops/Docker'
-import DevCloud from './pages/devops/Cloud'
 import DevMonitoring from './pages/devops/Monitoring'
+
+// Docker
+import DockerIntro from './pages/docker/Intro'
+import DockerDockerfile from './pages/docker/Dockerfile'
+import DockerCompose from './pages/docker/Compose'
+import DockerNetworking from './pages/docker/Networking'
+import DockerSecurity from './pages/docker/Security'
+import DockerProduction from './pages/docker/Production'
+
+// Cloud Basics
+import CloudIntro from './pages/cloud/Intro'
+import CloudInfra from './pages/cloud/Infra'
 
 // System Design
 import SysIntro from './pages/systemdesign/Intro'
@@ -164,7 +184,7 @@ import TsMigration from './pages/typescript/Migration'
 import TsBestPractices from './pages/typescript/BestPractices'
 import TsNewProject from './pages/typescript/NewProject'
 import TsTsconfig from './pages/typescript/Tsconfig'
-import TsInteractive from './pages/typescript/Interactive'
+import TsInteractive from './pages/typescript/Playground'
 import TsEnterprise from './pages/typescript/EnterprisePatterns'
 import TsCheatsheet from './pages/typescript/Cheatsheet'
 
@@ -177,6 +197,29 @@ import RRAdvanced from './pages/react-router/Advanced'
 import RRTesting from './pages/react-router/Testing'
 import RRFullapp from './pages/react-router/Fullapp'
 import RRMigration from './pages/react-router/Migration'
+import RRCheatSheet from './pages/react-router/CheatSheet'
+
+// React + TS Field Guide
+import FGHooks from './pages/react-field-guide/Hooks'
+import FGComponentPatterns from './pages/react-field-guide/ComponentPatterns'
+import FGTypescriptTypes from './pages/react-field-guide/TypescriptTypes'
+import FGTypingReact from './pages/react-field-guide/TypingReact'
+import FGStateManagement from './pages/react-field-guide/StateManagement'
+import FGRouter from './pages/react-field-guide/Router'
+import FGGotchas from './pages/react-field-guide/Gotchas'
+import FGTesting from './pages/react-field-guide/Testing'
+
+// Java + Spring Field Guide
+import JFGSyntax from './pages/java-field-guide/Syntax'
+import JFGCollectionsStreams from './pages/java-field-guide/CollectionsStreams'
+import JFGConcurrency from './pages/java-field-guide/Concurrency'
+import JFGSpringDi from './pages/java-field-guide/SpringDi'
+import JFGSpringRest from './pages/java-field-guide/SpringRest'
+import JFGSpringData from './pages/java-field-guide/SpringData'
+import JFGSpringSecurity from './pages/java-field-guide/SpringSecurity'
+import JFGSpringTesting from './pages/java-field-guide/SpringTesting'
+import JFGBoot4 from './pages/java-field-guide/Boot4'
+import JFGGotchas from './pages/java-field-guide/Gotchas'
 
 // State Management
 import SMIntro from './pages/state-mgmt/Intro'
@@ -240,11 +283,12 @@ import WpPlugins from './pages/webpack/Plugins'
 import WpDevserver from './pages/webpack/Devserver'
 import WpAdvanced from './pages/webpack/Advanced'
 
-// Interview Prep
-import IPReact from './pages/interview-prep/React'
-import IPTypescript from './pages/interview-prep/Typescript'
-import IPFrontend from './pages/interview-prep/Frontend'
-import IPCoding from './pages/interview-prep/Coding'
+// Vite
+import ViteIntro from './pages/vite/Intro'
+import ViteCore from './pages/vite/Core'
+import VitePlugins from './pages/vite/Plugins'
+import ViteDevserver from './pages/vite/Devserver'
+import ViteAdvanced from './pages/vite/Advanced'
 
 function NotFound() {
   return (
@@ -320,6 +364,7 @@ function App() {
         <Route path="react19/effects" element={<ReactEffects />} />
         <Route path="react19/context" element={<ReactContext />} />
         <Route path="react19/performance" element={<ReactPerformance />} />
+        <Route path="react19/profiling" element={<ReactProfiling />} />
         <Route path="react19/react19" element={<ReactNew />} />
         <Route path="react19/server" element={<ReactServer />} />
         <Route path="react19/patterns" element={<ReactPatterns />} />
@@ -354,6 +399,11 @@ function App() {
         <Route path="patterns/builder" element={<PatternsBuilder />} />
         <Route path="patterns/composite" element={<PatternsComposite />} />
         <Route path="patterns/proxy" element={<PatternsProxy />} />
+        <Route path="patterns/command" element={<PatternsCommand />} />
+        <Route path="patterns/state" element={<PatternsState />} />
+        <Route path="patterns/bridge" element={<PatternsBridge />} />
+        <Route path="patterns/memento" element={<PatternsMemento />} />
+        <Route path="patterns/flyweight" element={<PatternsFlyweight />} />
         <Route path="patterns/realworld" element={<PatternsRealworld />} />
         {/* React Anti-Patterns */}
         <Route path="react-antipatterns/intro" element={<AntiIntro />} />
@@ -385,6 +435,7 @@ function App() {
         <Route path="auth/jwt" element={<AuthJwt />} />
         <Route path="auth/oauth" element={<AuthOauth />} />
         <Route path="auth/authz" element={<AuthAuthz />} />
+        <Route path="auth/gateway" element={<AuthGateway />} />
         <Route path="auth/security" element={<AuthSecurity />} />
         {/* Java Cheat Sheet */}
         <Route path="java-cheatsheet/syntax" element={<JCSyntax />} />
@@ -398,20 +449,31 @@ function App() {
         <Route path="react-cheatsheet/state" element={<RCState />} />
         <Route path="react-cheatsheet/styling" element={<RCStyling />} />
         <Route path="react-cheatsheet/recipes" element={<RCRecipes />} />
+        <Route path="react-cheatsheet/antipatterns" element={<RCAntiPatterns />} />
         {/* Testing Strategies */}
         <Route path="testing/intro" element={<TestIntro />} />
         <Route path="testing/unit" element={<TestUnit />} />
         <Route path="testing/mocking" element={<TestMocking />} />
         <Route path="testing/integration" element={<TestIntegration />} />
+        <Route path="testing/testcontainers" element={<TestTestcontainers />} />
+        <Route path="testing/contract" element={<TestContract />} />
         <Route path="testing/e2e" element={<TestE2e />} />
         <Route path="testing/bestpractices" element={<TestBestPractices />} />
         {/* Git & DevOps */}
         <Route path="devops/git" element={<DevGit />} />
         <Route path="devops/branching" element={<DevBranching />} />
         <Route path="devops/cicd" element={<DevCicd />} />
-        <Route path="devops/docker" element={<DevDocker />} />
-        <Route path="devops/cloud" element={<DevCloud />} />
         <Route path="devops/monitoring" element={<DevMonitoring />} />
+        {/* Docker */}
+        <Route path="docker/intro" element={<DockerIntro />} />
+        <Route path="docker/dockerfile" element={<DockerDockerfile />} />
+        <Route path="docker/compose" element={<DockerCompose />} />
+        <Route path="docker/networking" element={<DockerNetworking />} />
+        <Route path="docker/security" element={<DockerSecurity />} />
+        <Route path="docker/production" element={<DockerProduction />} />
+        {/* Cloud Basics */}
+        <Route path="cloud/intro" element={<CloudIntro />} />
+        <Route path="cloud/infra" element={<CloudInfra />} />
         {/* System Design */}
         <Route path="systemdesign/intro" element={<SysIntro />} />
         <Route path="systemdesign/scaling" element={<SysScaling />} />
@@ -443,6 +505,29 @@ function App() {
         <Route path="react-router/testing" element={<RRTesting />} />
         <Route path="react-router/fullapp" element={<RRFullapp />} />
         <Route path="react-router/migration" element={<RRMigration />} />
+        <Route path="react-router/cheatsheet" element={<RRCheatSheet />} />
+
+        {/* React + TS Field Guide */}
+        <Route path="react-field-guide/hooks" element={<FGHooks />} />
+        <Route path="react-field-guide/component-patterns" element={<FGComponentPatterns />} />
+        <Route path="react-field-guide/typescript-types" element={<FGTypescriptTypes />} />
+        <Route path="react-field-guide/typing-react" element={<FGTypingReact />} />
+        <Route path="react-field-guide/state-management" element={<FGStateManagement />} />
+        <Route path="react-field-guide/router" element={<FGRouter />} />
+        <Route path="react-field-guide/gotchas" element={<FGGotchas />} />
+        <Route path="react-field-guide/testing" element={<FGTesting />} />
+
+        {/* Java + Spring Field Guide */}
+        <Route path="java-field-guide/syntax" element={<JFGSyntax />} />
+        <Route path="java-field-guide/collections-streams" element={<JFGCollectionsStreams />} />
+        <Route path="java-field-guide/concurrency" element={<JFGConcurrency />} />
+        <Route path="java-field-guide/spring-di" element={<JFGSpringDi />} />
+        <Route path="java-field-guide/spring-rest" element={<JFGSpringRest />} />
+        <Route path="java-field-guide/spring-data" element={<JFGSpringData />} />
+        <Route path="java-field-guide/spring-security" element={<JFGSpringSecurity />} />
+        <Route path="java-field-guide/spring-testing" element={<JFGSpringTesting />} />
+        <Route path="java-field-guide/boot4" element={<JFGBoot4 />} />
+        <Route path="java-field-guide/gotchas" element={<JFGGotchas />} />
         {/* State Management */}
         <Route path="state-mgmt/intro" element={<SMIntro />} />
         <Route path="state-mgmt/redux" element={<SMRedux />} />
@@ -497,11 +582,12 @@ function App() {
         <Route path="webpack/plugins" element={<WpPlugins />} />
         <Route path="webpack/devserver" element={<WpDevserver />} />
         <Route path="webpack/advanced" element={<WpAdvanced />} />
-        {/* Interview Prep */}
-        <Route path="interview-prep/react" element={<IPReact />} />
-        <Route path="interview-prep/typescript" element={<IPTypescript />} />
-        <Route path="interview-prep/frontend" element={<IPFrontend />} />
-        <Route path="interview-prep/coding" element={<IPCoding />} />
+        {/* Vite */}
+        <Route path="vite/intro" element={<ViteIntro />} />
+        <Route path="vite/core" element={<ViteCore />} />
+        <Route path="vite/plugins" element={<VitePlugins />} />
+        <Route path="vite/devserver" element={<ViteDevserver />} />
+        <Route path="vite/advanced" element={<ViteAdvanced />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
