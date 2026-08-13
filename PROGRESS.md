@@ -291,6 +291,18 @@ All 6 lessons written AND wired into `sections.ts` + `App.tsx` (I wired each as 
 - Verdict on SOLID rigor: solid overall, LSP strongest; DIP was least rigorous (now fixed). Named 5 files genuinely clean after full reads, including independently re-verifying every WCAG 2.2 citation in `accessibility/Intro.tsx` against number *and* level.
 - Attribution rigor worth noting: it confirmed the repo-wide tsc errors belonged to a concurrent lane by stashing that single file, re-running tsc clean, then popping the stash.
 
+**Sweep D (Java / Spring / npm / tooling / playground — 14 files) — DONE.** Best verification discipline of the whole audit: compiled Java on a real **JDK 26**, ran the TypeChecker snippets through `typescript@6.0.3` + `@typescript/vfs`, and captured live `npm pack` output on npm 11.6.2 rather than trusting any of it.
+- **`springboot/Observability.tsx` had a hard compile error** — `private final ApplicationEventPublisher events;` with no constructor. Confirmed with javac: *"variable events not initialized in the default constructor"*.
+- **`java/Streams.tsx` stated a false fact**: `"hello".chars()` described as yielding *code points*. It yields UTF-16 **code units** — verified on JDK 26 that `"a😀".chars()` → `97, 55357, 56832` (surrogate pair) vs `codePoints()` → `97, 128512`.
+- **`java/Collections.tsx` contradicted its own complexity table** — a comment and the ArrayList-vs-LinkedList box both claimed middle insert/remove is O(1) for `LinkedList`; it's O(n) since traversal dominates, which the page's own table already said.
+- **Another defect in a playground I built**: the TypeChecker's "Generic constraint violation" example didn't produce the diagnostic its title claims — `longest("hello", 42)` reports TS2345 (literal inference), the same class as the "Wrong argument type" example. Changed to `longest<number>(10, 42)`, which genuinely reports TS2344 constraint violation. It also confirmed the page's headline strict-mode claim holds exactly, and that the lib CDN + TS 6.0.3 `lib.dom.d.ts`/`lib.es2022.d.ts` really return 200.
+- **`npm-deep-dive/Security.tsx` showed npm 6 `audit` output as current**, and its supply-chain attack timeline stopped at 2022. Added the September 2025 `chalk`/`debug` maintainer-phishing compromise and the self-replicating Shai-Hulud worm, plus a **Trusted Publishing (OIDC)** section — the lesson previously taught long-lived classic tokens as the only publish path.
+- Cross-file drift fixed: `spring-field-guide/SpringSecurity.tsx`'s JWT card told you to trust any issuer while its own tutorial carries a DANGER box saying signature verification ≠ validation.
+- Named 5 files genuinely clean (incl. `java/Syntax.tsx`, all arithmetic verified numerically) and independently agreed with the prior lane's read on two Spring field-guide pages.
+- Scope note: it edited `src/components/TsTypeChecker.tsx` because the playground's snippets live there and `playground/TypeChecker.tsx` is its sole importer — reasonable and well-explained.
+
+**Typecheck confirmed clean repo-wide (`tsc exit=0`) once this lane's in-flight file landed.**
+
 ### Remaining plan
-1. Collect the remaining 3 sweep reports → verify typecheck/lint/build → commit + push round 6.
+1. Collect the remaining 2 sweep reports (TypeScript, React) → verify typecheck/lint/build → commit + push round 6.
 2. Dispatch round 7 as weighted lanes — roughly 3 lanes on React (react19 / react-field-guide / react-router / react-antipatterns / react-testing / state-mgmt), 2 on TypeScript (typescript / typescript-field-guide), 2 on Java+Spring (java / springboot / both field guides), and 2–3 covering the remainder (SQL, CSS, architecture/security, testing, tooling, playgrounds) — each with an explicit final step of reconciling its section's cheat sheet against everything the repo now contains.
