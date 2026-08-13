@@ -566,6 +566,66 @@ const { pending: p } = useFormStatus();
 const [optimistic, addOptimistic] = useOptimistic(items);`}
       </CodeBlock>
 
+      <h2>Runtime Validation — Types Are Erased</h2>
+      <CodeBlock language="ts" title="The boundary is where the compiler stops helping">
+{`// ❌ THE HOLE. This compiles clean under strict, and checks NOTHING.
+const data: User = await res.json();   // an ASSERTION, not a check
+// res.json() and JSON.parse both return 'any', and 'any' is assignable to
+// everything — so the annotation asks the compiler no question at all.
+// Fails 3 components deep as "Cannot read properties of undefined".
+
+// ✅ Cheapest fix, no library: annotate the boundary value 'unknown'.
+const raw: unknown = await res.json();  // now you MUST narrow before use
+
+// UNVALIDATED regardless of how you typed it:
+//   fetch / res.json()   JSON.parse    process.env
+//   form fields          URL + search params        localStorage
+//   message queues       third-party SDK callbacks`}
+      </CodeBlock>
+
+      <CodeBlock language="ts" title="Schema as the single source of truth (Zod v4)">
+{`import * as z from 'zod';
+
+const UserSchema = z.object({
+  id:    z.number().int().positive(),
+  name:  z.string().min(1),
+  email: z.email(),                 // v4 top-level. v3 was z.string().email()
+  role:  z.enum(['admin', 'user']),
+});
+
+type User = z.infer<typeof UserSchema>;   // DERIVE it — never declare twice
+// One declaration, two outputs: a runtime validator AND a static type.
+// An interface next to a hand-written check is two things that drift.
+
+// parse vs safeParse — the most common design mistake
+UserSchema.parse(raw);      // THROWS ZodError. Use for invariants that should
+                            // crash: env at startup, broken API contracts.
+const r = UserSchema.safeParse(raw);   // discriminated union — no try/catch
+if (r.success) r.data;      // typed + narrowed
+else           r.error;     // ZodError, only available in this branch
+// Rule of thumb: safeParse for humans, parse for programmer errors.
+
+// z.infer is z.output. With .default()/.transform(), input ≠ output:
+type In = z.input<typeof S>;   // what you hand TO the parser (form values)
+
+// Objects STRIP unknown keys by default — z.strictObject() to reject them.
+// z.coerce.number() for env/query strings; z.stringbool() for DEBUG="false".`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Validate at the edge, then trust internally">
+        <p>
+          Build a wall where data <em>enters</em> — HTTP responses, request bodies,{' '}
+          <code>process.env</code>, forms, storage, queues. Behind that wall the static
+          types are honest again and need no re-checking; that is what they are for.
+          Parsing the same object at every layer is the failure mode of enthusiasm.
+        </p>
+        <p>
+          Same discipline as Spring&rsquo;s <code>@Valid</code> + Bean Validation, from the
+          opposite direction: Zod builds a schema value and derives the type; Bean
+          Validation starts from the type and attaches constraints.
+        </p>
+      </InfoBox>
+
       <h2>Result Type — When Not to Throw</h2>
       <CodeBlock language="ts" title="Explicit success / failure">
 {`type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
@@ -585,19 +645,35 @@ function parseEmail(raw: unknown): Result<string, string> {
 import { type Config, createClient } from './client';  // inline type modifier
 export type { User };
 
-// declare module — augment a third-party package's types
-declare module 'express' {
-  interface Request { userId?: string }
+// declare module — merges into what the module EXPORTS. Nothing else.
+declare module 'my-lib' {
+  interface LibOptions { retries?: number }   // OK: my-lib exports LibOptions
 }
 
-// declare global — augment globals (file must have a top-level import/export)
+// ⚠️ THE EXPRESS TRAP — the intuitive guess, and it SILENTLY DOES NOTHING.
+declare module 'express' {
+  interface Request { user?: User }
+}
+// It merges into express's own wrapper interface, not the Request that
+// handlers actually receive (that one comes from express-serve-static-core).
+// No error, no warning, and req.user still does not exist.
+
+// ✅ Express.Request is reachable only through the GLOBAL namespace:
+declare global {
+  namespace Express {
+    interface Request { user?: User }
+  }
+}
+export {};   // declare global requires the file to be a module
+
+// declare global — also the way to augment real globals
 declare global {
   interface Window { analytics: { track(e: string): void } }
 }
 
 // namespace — LEGACY. Do not write new ones in app code.
-// Still correct inside .d.ts files describing script-tag globals.
-declare namespace Express { interface Request { user?: User } }`}
+// And a BARE 'declare namespace X' inside a module is a brand-new LOCAL
+// declaration, never an augmentation — it compiles clean and does nothing.`}
       </CodeBlock>
 
       <h2>tsconfig Essentials</h2>
@@ -642,6 +718,78 @@ tsc --traceResolution        # why an import resolved (or didn't)
 tsc --extendedDiagnostics    # where compile time is going
 tsc --generateTrace out/     # perf trace, open in edge://tracing
 tsc -b                       # build mode — respects project references`}
+      </CodeBlock>
+
+      <h2>TypeScript on Node — Strip vs Transform</h2>
+      <CodeBlock language="ts" title="node app.ts runs — but only strips, and never checks">
+{`// STRIPPING  = replace type syntax with whitespace. Needs NO type information.
+//              Annotations, interfaces, type aliases, generics → erased. Runs.
+// TRANSFORMING = emit JavaScript that was not in the source. Needs codegen.
+
+// These three EMIT RUNTIME CODE, so there is nothing to delete:
+enum Status { A, B }                       // → a real runtime object
+class C { constructor(private x: number) {} }   // parameter property → assignment
+namespace N { }                            // → an IIFE
+
+$ node withenum.ts
+SyntaxError [ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX]:
+  TypeScript enum is not supported in strip-only mode
+
+// Not three arbitrary gaps — one fact three times. Classify any feature as
+// "type-only" or "emits code" and you can predict which side it lands on.
+
+// Escape hatch (experimental): node --experimental-transform-types app.ts
+// Better: don't use them. as-const objects over enum, ES modules over namespace.
+
+// tsconfig — turn a STARTUP failure into a BUILD error:
+{ "compilerOptions": { "erasableSyntaxOnly": true } }`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="Node does not type-check. At all.">
+        <p>
+          Stripping requires no type information, and Node has no type checker.{' '}
+          <code>const n: number = &quot;not a number&quot;</code> in a <code>.ts</code> file
+          runs and prints <code>not a number</code>. Nothing warns, nothing fails.
+        </p>
+        <p>
+          <strong>Native execution replaces your bundler, not your compiler.</strong>{' '}
+          <code>tsc --noEmit</code> still has to live somewhere — CI, or at minimum your
+          editor.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="ts" title="Node + Express essentials">
+{`npm i -D typescript @types/node @types/express   // Node/Express ship no types
+
+// ── __dirname does not exist in ES modules (it is a CommonJS variable) ──
+const here = import.meta.dirname;               // Node 20.11+ / 21.2+ — simplest
+const self = import.meta.filename;
+// Older / portable:
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// ── Request is GENERIC: Request<Params, ResBody, ReqBody, Query> ──
+app.get('/users/:id', (req: Request<{ id: string }>, res: Response) => {
+  req.params.id;        // string — checked. req.params.nope is an error.
+});
+app.post('/users', (req: Request<unknown, unknown, { name: string }>, res) => {
+  res.status(201).json({ name: req.body.name });
+});
+// ⚠️ req.body is a LIE until you validate it — that annotation is an assertion
+//    about data that arrived over the network. Parse it with a schema.
+
+// ── Add req.user: declare global, NOT declare module 'express' ──
+declare global { namespace Express { interface Request { user?: User } } }
+export {};
+
+// ── Error middleware is identified by ARITY — four parameters ──
+// Drop 'next' and it silently becomes ordinary middleware that never runs.
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  const message = err instanceof Error ? err.message : 'Unknown error';
+  res.status(500).json({ error: message });
+});
+// 'unknown', not 'Error' — anything can be thrown in JS, including strings.`}
       </CodeBlock>
 
       <h2>Reading Compiler Errors</h2>

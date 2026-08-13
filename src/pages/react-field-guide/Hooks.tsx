@@ -9,7 +9,7 @@ export default function FieldGuideHooks() {
       eyebrow="React 19 · Field Reference"
       title="Hooks Cheat Sheet"
       tagline="What a hook actually is, the two rules that govern all of them, then every hook's signature and the one thing that trips people up."
-      meta={['React 19.2', 'Rules + 18 hooks']}
+      meta={['React 19.2', 'Rules + 17 hooks']}
       footerLabel="Personal study reference — React 19"
       pageLabel="React 19 Field Guide · Hooks"
       prev={{ path: '/react-field-guide/fundamentals', label: 'React Fundamentals' }}

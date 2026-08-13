@@ -9,7 +9,7 @@ export default function FieldGuideTsBestPracticesGotchas() {
       eyebrow="TypeScript · Field Reference"
       title="Best Practices & Gotchas"
       tagline="The got-ya moments that separate production-grade TypeScript from any-driven development."
-      meta={['TS 6', '17 gotchas']}
+      meta={['TS 6', '19 gotchas']}
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · Best Practices & Gotchas"
       prev={{ path: '/typescript-field-guide/project-setup', label: 'Project Setup & tsconfig' }}
@@ -141,7 +141,8 @@ function handle(data: Object) { /* ... */ }
 
 process('a string');  // compiles!
 process(42);           // compiles!
-process(null as any);  // only null/undefined are excluded
+process(null);         // Error — null and undefined are the ONLY things
+process(undefined);    // Error —   {} rejects. Verified with tsc.
 
 // Fix: say what you actually expect
 function process(data: Record<string, unknown>) { /* ... */ }`}
@@ -163,6 +164,45 @@ function getLength(value: unknown): number {
   return 0;
 }`}
         caption="as tells the compiler to trust you — it performs zero runtime verification. A typeof, instanceof, or custom type-predicate check narrows the type AND guarantees the claim is true before the code that depends on it runs."
+      />
+
+      <PosterCard
+        glyph="Bd"
+        title={<>Boundary Data <span className="dim">Is Never Actually Checked</span></>}
+        language="typescript"
+        code={`// Compiles clean under strict. Verifies NOTHING.
+const data: User = await res.json();
+
+// res.json() and JSON.parse are both typed 'any', and any is assignable
+// to everything — so ': User' asks the compiler no question at all.
+// It is an ASSERTION wearing declaration syntax.
+
+// ✅ Cheapest possible fix, no library required:
+const raw: unknown = await res.json();   // must narrow before any use
+
+// Unvalidated no matter how carefully you typed it:
+//   fetch / res.json()   JSON.parse   process.env   form fields
+//   URL + search params  localStorage  queues  third-party callbacks`}
+        caption="Types are erased before your code runs, so the compiler's guarantee stops at the process boundary. Rename a field on the backend and nothing fails at the edge — it fails three components deep as 'Cannot read properties of undefined', in a file that is not the broken one. Annotating the raw value ': unknown' instead of ': User' converts that silent runtime crash into a compile error you cannot ignore."
+      />
+
+      <PosterCard
+        glyph="Sc"
+        title={<>Schema <span className="dim">as Single Source of Truth</span></>}
+        language="typescript"
+        code={`const UserSchema = z.object({
+  id:    z.number().int().positive(),
+  email: z.email(),                 // Zod v4 top-level; v3 was .string().email()
+});
+
+type User = z.infer<typeof UserSchema>;   // DERIVE it — never write it twice
+
+UserSchema.parse(raw);        // THROWS ZodError — for invariants that should
+                              // crash: env at startup, broken API contracts
+const r = UserSchema.safeParse(raw);   // discriminated union, no try/catch
+if (r.success) r.data;        // typed + narrowed
+else           r.error;       // only available in this branch`}
+        caption="One declaration, two outputs: a runtime validator and a static type. An interface sitting next to a hand-written check is two things that drift apart the first time someone edits one. Rule of thumb: safeParse for humans (form input you must render errors for), parse for programmer errors and startup invariants. Validate once at the edge, then trust internally — re-parsing between your own already-validated functions is what the static types are for."
       />
 
       <PosterCard
@@ -313,6 +353,8 @@ const f = Feature.DarkMode;
           { need: "Callback typed as just Function", answer: 'Write the exact (args) => ReturnType signature' },
           { need: "'as' hides a wrong runtime shape", answer: 'typeof / instanceof / type predicate instead' },
           { need: 'req.user still not on Express.Request', answer: 'declare global { namespace Express { ... } }' },
+          { need: 'fetch/JSON.parse result annotated with my type', answer: 'That is an assertion — annotate unknown, then parse' },
+          { need: 'Stop the schema and the interface drifting apart', answer: 'Declare the schema, derive the type via z.infer' },
           { need: 'const enum still emits a runtime object', answer: 'Expected under isolatedModules — use as const' },
           { need: 'Narrowed value is "possibly null" in a callback', answer: 'Copy to a const first, then narrow the const' },
           { need: 'A 20-line type error and no idea where to start', answer: 'Read the LAST line — that is the root cause' },

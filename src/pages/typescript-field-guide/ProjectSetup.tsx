@@ -9,7 +9,7 @@ export default function FieldGuideTsProjectSetup() {
       eyebrow="TypeScript · Field Reference"
       title="Project Setup & tsconfig"
       tagline="Scaffolding a project and the compiler flags that matter — what each one does and why you'd flip it."
-      meta={['TS 6', '16 flags']}
+      meta={['TS 6', '18 flags']}
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · Project Setup & tsconfig"
       prev={{ path: '/typescript-field-guide/fundamentals', label: 'TypeScript Fundamentals' }}
@@ -216,6 +216,46 @@ import { fetchUser } from './api';    // kept at runtime`}
       />
 
       <PosterCard
+        glyph="nTS"
+        title={<>node app.ts<span className="dim"> — strip, don&apos;t transform</span></>}
+        language="typescript"
+        code={`// Node runs .ts directly by STRIPPING types — replacing type syntax
+// with whitespace. That needs no type information, so it is fast.
+// It is NOT a transform: nothing new can be generated.
+
+interface User { id: number }        // ✅ type-only — erased, runs
+const x: number = 42;                // ✅ erased, runs
+
+enum Status { Active }               // ❌ compiles to a runtime OBJECT
+class C { constructor(private x: number) {} }  // ❌ ctor assignment
+namespace N {}                       // ❌ becomes an IIFE
+
+$ node withenum.ts
+SyntaxError [ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX]:
+  TypeScript enum is not supported in strip-only mode`}
+        caption="One fact, not three arbitrary gaps: each rejected construct emits runtime code, so there is nothing to honour by deleting characters. Classify any TypeScript feature as type-only or emits-code and you can predict which side of the line it falls on. node --experimental-transform-types is the escape hatch; preferring as-const objects over enum and ES modules over namespace — advice this guide gives anyway — is the better answer."
+      />
+
+      <PosterCard
+        glyph="eS"
+        title={<>erasableSyntaxOnly</>}
+        language="typescript"
+        code={`{
+  "compilerOptions": {
+    "erasableSyntaxOnly": true   // TS 5.8+
+  }
+}
+
+enum Status { Active }
+// Error: This syntax is not allowed when 'erasableSyntaxOnly' is enabled.
+
+// Node does NOT type-check — verified, one line:
+//   const n: number = "not a number";
+//   $ node bad.ts  ->  not a number      (no warning, no failure)`}
+        caption="Turns a class of startup crashes into build errors everyone sees. Set it whenever you intend to run .ts directly, or a teammate's launch flags decide whether the app boots. The second half matters more: native execution replaces your bundler, not your compiler. Node ships zero type safety at runtime, so tsc --noEmit still has to live in CI or you will ship a blatant type error."
+      />
+
+      <PosterCard
         glyph="pa"
         title={<>paths <span className="dim">&amp; baseUrl</span></>}
         language="typescript"
@@ -268,6 +308,8 @@ import { fetchUser } from './api';    // kept at runtime`}
           { need: 'Fix "not a module" default imports from CJS', answer: 'esModuleInterop' },
           { need: "A broken 3rd-party .d.ts breaks your build", answer: 'skipLibCheck' },
           { need: 'Vite/esbuild build fails on type-only exports', answer: 'isolatedModules or verbatimModuleSyntax' },
+          { need: 'enum/namespace crashes Node at startup', answer: 'erasableSyntaxOnly — makes it a build error instead' },
+          { need: 'Node runs my .ts — do I still need tsc?', answer: 'Yes. Node never type-checks; keep tsc --noEmit in CI' },
           { need: 'Import alias works in editor, fails at build', answer: 'Add paths to bundler config too' },
           { need: 'File exists but "cannot find module"', answer: 'Check include/exclude, run tsc --listFiles' },
           { need: 'Match Vite\'s import resolution rules', answer: 'moduleResolution: "bundler"' },

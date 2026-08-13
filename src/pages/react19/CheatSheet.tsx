@@ -494,8 +494,8 @@ function Parent({ children }) {
 
       <CodeBlock language="text" title="What 'pure' means for a component">
 {`A PURE COMPONENT:
-  • Output depends ONLY on its props
-  • Same props → same JSX output, every time
+  • Output depends ONLY on its inputs: props, state, and context
+  • Same inputs → same JSX output, every time
   • No side effects during render (no mutations, no API calls, no random values)
 
 PURE:
@@ -505,23 +505,37 @@ PURE:
   // Call it with title="Hello", text="World" → always renders the same thing ✅
 
 NOT PURE:
-  function Counter({ initialCount }) {
-    const [count, setCount] = useState(initialCount);  // internal state = not pure
+  function Feed({ posts }) {
+    analytics.track('feed_rendered');        // ❌ side effect DURING render
+    return <p>{Math.random()}</p>;           // ❌ non-deterministic output
+  }
+  // Impurity means the RENDER itself mutates something outside the component,
+  // does I/O, or reads a changing global (Math.random, Date.now).
+
+LOCAL STATE DOES NOT MAKE A COMPONENT IMPURE:
+  function Counter() {
+    const [count, setCount] = useState(0);
     return <button onClick={() => setCount(c => c + 1)}>{count}</button>;
   }
-  // Same props, but output changes over time (state changes it) ❌
+  // ✅ Still pure. State is an INPUT to the render, exactly like props:
+  // same (props, state, context) → same JSX, every time. Calling a setter
+  // from an EVENT HANDLER is not a render side effect.
 
 WHY IT MATTERS FOR PERFORMANCE:
-  A pure component is safe to skip re-rendering when its props haven't changed.
-  This is exactly what React.memo does — it wraps a component and says:
-  "This is pure. Skip re-rendering if all props pass Object.is."
+  A pure component is safe to skip re-rendering when its inputs haven't
+  changed. That is what React.memo adds — it wraps a component and says:
+  "On a PARENT cascade, skip this if all props pass Object.is."
 
-  React.memo on a stateful component is WRONG — it will still bail out
-  on prop checks, but the component has its own state that can change
-  independently of props. React.memo can't detect that.
+  React.memo on a stateful component is CORRECT and extremely common.
+  memo only intercepts the parent-cascade path (trigger #2). A component's
+  own setState schedules a re-render directly on that fiber and is never
+  blocked by memo — that is required for correctness, not a hole in it.
+  It is the same fact as "❌ Does NOT prevent re-renders from setState
+  inside the component" in the React.memo Rules block above.
 
 RULE:
-  Candidate for React.memo  ←→  Component is pure (no internal state, no side effects)`}
+  Candidate for React.memo  ←→  render is pure AND every prop is stable
+  AND the parent re-renders often. Internal state does not disqualify it.`}
       </CodeBlock>
 
       <InfoBox variant="note" title="📝 Same Position in Tree = Same Instance">
