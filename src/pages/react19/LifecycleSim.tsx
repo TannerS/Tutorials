@@ -41,23 +41,31 @@ export default function LifecycleSim() {
       <p>
         Work through each step below <strong>in order</strong>, using the
         simulator above. After each action, compare the log output with the
-        expected output shown here. This is a hands-on lab — you learn by doing.
+        output shown here. This is a hands-on lab — you learn by doing.
       </p>
 
       <h3>Step 1: Mount Your First Child</h3>
       <InfoBox variant="note" title="Action: Click Mount Child">
         Click the <strong>Mount Child</strong> button in the simulator. This
-        creates a new ChildDemo component. Watch the log panel carefully.
+        creates a new child component, labelled <code>Child A</code> in the simulator. Watch the log panel carefully.
       </InfoBox>
-      <CodeBlock language="text" title="Expected Log Output">
-        {"🔄 [ChildDemo A] Render (value=0)\n🧮 [ChildDemo A] useMemo computed: VALUE=0\n📐 [ChildDemo A] useLayoutEffect [mount]\n✅ [ChildDemo A] useEffect [mount]"}
+      <CodeBlock language="text" title="Log Output — the lines to look for">
+        {"🔄 Child A: Render phase (prop: 0, renders: 1)\n🧮 Child A: useMemo computed (value × 2)\n📐 Child A: useLayoutEffect\n✅ Child A: useEffect [mounted]\n📦 Child A: useEffect [prop changed → 0]"}
       </CodeBlock>
       <InfoBox variant="info" title="What Just Happened?">
         React renders the component first — this is the <strong>render phase</strong>,
         where the component function runs and useMemo computes. Then in the{' '}
         <strong>commit phase</strong>, useLayoutEffect fires synchronously
-        BEFORE the browser paints, and useEffect fires AFTER paint. The order
-        is always: render → memo → layoutEffect → paint → effect.
+        BEFORE the browser paints, and both useEffects fire AFTER paint, in the
+        order they were declared. The order is always: render → memo →
+        layoutEffect → paint → effects.
+      </InfoBox>
+      <InfoBox variant="note" title="Compare the ordering, not the exact text">
+        Mounting a child also re-renders the parent that owns the toggle, so you
+        will see a <code>🔄 Parent: Render phase</code> line mixed in, and any
+        children already on screen will log their own re-render. That is normal.
+        What matters in every step below is the <strong>relative order</strong> of
+        the emoji-tagged phases, not a line-for-line match with the block shown.
       </InfoBox>
 
       <h3>Step 2: Update Parent State</h3>
@@ -65,9 +73,21 @@ export default function LifecycleSim() {
         Click the <strong>Update Parent</strong> button. This increments the
         parent&apos;s count state. Watch how it affects the child.
       </InfoBox>
-      <CodeBlock language="text" title="Expected Log Output">
-        {"🔄 [Parent] Render (count=1)\n🔄 [ChildDemo A] Render (value=0)\n📐 [Parent] useLayoutEffect [update] count=1\n📐 [ChildDemo A] useLayoutEffect [update]\n📦 [Parent] useEffect [update] count=1"}
+      <CodeBlock language="text" title="Log Output — the lines to look for">
+        {"🔄 Parent: Render phase (count: 1)\n🔄 Child A: Render phase (prop: 0, renders: 2)\n🧹 Parent: cleanup [count effect]\n📦 Parent: useEffect [count changed → 1]"}
       </CodeBlock>
+      <InfoBox variant="tip" title="Why only ONE effect re-fired">
+        Both components re-rendered, but the only effect that ran again is the
+        one whose dependency actually changed — Parent&apos;s{' '}
+        <code>useEffect(..., [count])</code>. Every other effect in the
+        simulator depends on values that are stable across renders, so React
+        skipped them. Notice the cleanup fires <em>before</em> the re-run: React
+        always tears down the previous effect before running the next one.
+        <br /><br />
+        This is the single most useful thing in this lab: <strong>re-rendering
+        and re-running effects are different events.</strong> A component can
+        re-render many times without a single effect firing.
+      </InfoBox>
       <InfoBox variant="warning" title="Key Insight: Unnecessary Re-renders">
         The CHILD re-renders even though its props did not change! This is
         React&apos;s default behavior — <strong>ALL children re-render when
@@ -78,10 +98,10 @@ export default function LifecycleSim() {
       <h3>Step 3: Update Child Props</h3>
       <InfoBox variant="note" title="Action: Click Update Child Props">
         Click the <strong>Update Child Props</strong> button. This changes the
-        value prop passed to ChildDemo A. Watch for the useMemo recomputation.
+        value prop passed to Child A. Watch for the useMemo recomputation.
       </InfoBox>
-      <CodeBlock language="text" title="Expected Log Output">
-        {"🔄 [ChildDemo A] Render (value=1)\n🧮 [ChildDemo A] useMemo computed: VALUE=1\n📐 [ChildDemo A] useLayoutEffect [update]\n✅ [ChildDemo A] useEffect [update]"}
+      <CodeBlock language="text" title="Log Output — the lines to look for">
+        {"🔄 Parent: Render phase (count: 0)\n🔄 Child A: Render phase (prop: 1, renders: 2)\n🧮 Child A: useMemo computed (value × 2)\n🧹 Child A: cleanup [prop effect]\n📦 Child A: useEffect [prop changed → 1]"}
       </CodeBlock>
       <InfoBox variant="tip" title="Key Insight: useMemo Dependency Tracking">
         Notice the 🧮 emoji — useMemo recomputed because its dependency (value)
@@ -95,31 +115,49 @@ export default function LifecycleSim() {
         Click the <strong>Unmount Child</strong> button. Watch the cleanup
         functions fire — pay attention to the ORDER.
       </InfoBox>
-      <CodeBlock language="text" title="Expected Log Output">
-        {"🧹 [ChildDemo A] useEffect cleanup\n🧹 [ChildDemo A] useLayoutEffect cleanup"}
+      <CodeBlock language="text" title="Log Output — the lines to look for">
+        {"🧹 Child A: layoutEffect cleanup\n🧹 Child A: cleanup [unmounting]\n🧹 Child A: cleanup [prop effect]"}
       </CodeBlock>
       <InfoBox variant="warning" title="Key Insight: Cleanup Order">
-        Cleanup runs in this order: useEffect cleanup first, then useLayoutEffect
-        cleanup. This is the reverse of the mount order. React tears down effects
-        in the opposite sequence from how it set them up — ensuring each cleanup
-        can safely reference the DOM state left by the previous cleanup.
+        <strong>useLayoutEffect cleanup runs first, then the useEffect
+        cleanups.</strong> That is the same relative order as mount, not the
+        reverse of it — and the reason is the same in both directions: layout
+        effects are synchronous parts of the commit, while passive effects are
+        flushed separately afterwards.
+        <br /><br />
+        On unmount React runs the layout cleanup synchronously while it is
+        tearing the node out of the DOM, so anything measuring or mutating
+        layout is undone before the browser can paint a half-removed UI. The
+        passive cleanups — cancelling a fetch, clearing a timer, closing a
+        socket — run just after, because nothing visual depends on them.
+        Within each group, cleanups run in the order the effects were declared.
       </InfoBox>
 
       <h3>Step 5: Mount Two Children, Then Update Parent</h3>
       <InfoBox variant="note" title="Action: Mount Child, Toggle 2nd Child, Then Update Parent">
         First click <strong>Mount Child</strong>, then click{' '}
-        <strong>Toggle 2nd Child</strong> to mount ChildDemo B. Then click{' '}
+        <strong>Toggle 2nd Child</strong> to mount Child B. Then click{' '}
         <strong>Update Parent</strong>. Watch how effects from both children
         interleave in the log.
       </InfoBox>
-      <CodeBlock language="text" title="Expected Log Output">
-        {"🔄 [Parent] Render (count=1)\n🔄 [ChildDemo A] Render (value=0)\n🔄 [ChildDemo B] Render (value=0)\n📐 [ChildDemo A] useLayoutEffect [update]\n📐 [ChildDemo B] useLayoutEffect [update]\n📐 [Parent] useLayoutEffect [update] count=1\n📦 [Parent] useEffect [update] count=1"}
+      <CodeBlock language="text" title="Log Output — the lines to look for">
+        {"🔄 Parent: Render phase (count: 1)\n🔄 Child A: Render phase (prop: 0, renders: 2)\n🔄 Child B: Render phase (prop: 10, renders: 2)\n🧹 Parent: cleanup [count effect]\n📦 Parent: useEffect [count changed → 1]"}
       </CodeBlock>
-      <InfoBox variant="info" title="Key Insight: Bottom-Up Effect Processing">
-        React processes effects <strong>bottom-up</strong> — children before
-        parent. Both ChildDemo A and ChildDemo B fire their effects before the
-        Parent. This guarantees that when a parent effect runs, all child effects
-        have already completed.
+      <InfoBox variant="info" title="Key Insight: Three renders, one effect">
+        All three components re-render, and again only the one effect whose
+        dependency changed actually runs. Both children re-render purely because
+        their parent did.
+      </InfoBox>
+      <InfoBox variant="note" title="Seeing bottom-up ordering for yourself">
+        React does process effects <strong>bottom-up</strong> — a child&apos;s
+        effects complete before its parent&apos;s, so a parent effect can rely on
+        every child having finished. This step won&apos;t show it, because the
+        children&apos;s effect dependencies don&apos;t change here.
+        <br /><br />
+        To watch it happen, use <strong>Mount Child</strong> and{' '}
+        <strong>Toggle 2nd Child</strong> instead: on mount every effect runs for
+        the first time, and you&apos;ll see each child&apos;s{' '}
+        <code>📐</code> and <code>✅</code> lines land before the parent&apos;s.
       </InfoBox>
 
       <h3>Step 6: Force Re-render</h3>
@@ -127,14 +165,19 @@ export default function LifecycleSim() {
         Make sure a child is mounted, then click <strong>Force Re-render</strong>.
         Watch the log — you will see render phase output but NO mount effects.
       </InfoBox>
-      <CodeBlock language="text" title="Expected Log Output">
-        {"🔄 [Parent] Render (count=1)\n🔄 [ChildDemo A] Render (value=0)\n📐 [Parent] useLayoutEffect [update] count=1\n📐 [ChildDemo A] useLayoutEffect [update]"}
+      <CodeBlock language="text" title="Log Output — the lines to look for">
+        {"🔄 Parent: Render phase (count: 0)\n🔄 Child A: Render phase (prop: 0, renders: 3)"}
       </CodeBlock>
-      <InfoBox variant="tip" title="Key Insight: Re-render vs Mount">
-        Force re-render triggers the render phase for all components, but only
-        update effects fire — not mount effects. React knows the component is
-        already mounted, so it runs the update path. Effects with unchanged
-        dependencies will not re-execute at all.
+      <InfoBox variant="tip" title="Key Insight: Re-render vs Mount — and vs Effects">
+        This is the purest demonstration in the lab: <strong>render lines only,
+        and not one effect</strong>. Nothing changed except React being told to
+        render again, so every dependency array is identical to last time and
+        React skips every effect. The render counter still climbs, proving the
+        components really did re-render.
+        <br /><br />
+        Three distinct things are easy to conflate — this step separates them:
+        a component <em>re-rendering</em>, a component <em>mounting</em>, and an
+        effect <em>re-running</em>. Only the first happened here.
       </InfoBox>
 
       {/* ── Observation Challenges ── */}
@@ -166,9 +209,9 @@ export default function LifecycleSim() {
             Watch for the 🧮 emoji in the log.
           </li>
           <li>
-            <strong>What happens to ChildDemo B&apos;s effects when you
-            unmount ChildDemo A?</strong> Nothing — ChildDemo B is independent.
-            Only ChildDemo A&apos;s cleanup fires.
+            <strong>What happens to Child B&apos;s effects when you
+            unmount Child A?</strong> Nothing — Child B is independent.
+            Only Child A&apos;s cleanup fires.
           </li>
         </ol>
       </InfoBox>

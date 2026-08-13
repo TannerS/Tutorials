@@ -22,6 +22,94 @@ export default function Intro() {
         dependency wiring.
       </p>
 
+      <h3>First, three words you need before anything else makes sense</h3>
+      <p>
+        Almost every Spring explanation on the internet uses these three terms in its first
+        paragraph and defines none of them. They are the whole model, and they are simpler than
+        the jargon suggests.
+      </p>
+
+      <CodeBlock language="text" title="Bean, container, context — the entire vocabulary">
+{`BEAN       An ordinary Java object that Spring created for you and holds onto,
+           instead of you writing 'new'. There is nothing special about the
+           class. A bean is just "an object under the framework's management".
+
+CONTAINER  The thing holding all those objects. It knows how to build each one,
+           what each one needs, and hands out the same instance to everyone who
+           asks (by default). "IoC container" is the same thing — Inversion of
+           Control just names the fact that IT calls the constructors, not you.
+
+CONTEXT    The concrete container object, class ApplicationContext. When people
+           say "the context failed to start", they mean this object could not
+           finish building the map of beans. It IS the running application:
+           kill the context and your app is over.
+
+So: "Spring injects the repository bean into your service" unpacks to
+"the container called your service's constructor and passed in the repository
+object it had already built."`}
+      </CodeBlock>
+
+      <h3>What does Spring Boot actually do that plain Java doesn't?</h3>
+      <p>
+        A fair question, because none of the above is magic you couldn&apos;t write yourself.
+        Here is the same tiny application twice — once wired by hand, once by the container —
+        so you can see exactly what work is being taken off you and what it costs.
+      </p>
+
+      <CodeBlock language="java" title="Plain Java: you own every constructor call">
+{`public class Main {
+    public static void main(String[] args) {
+        // You build the object graph by hand, bottom-up, in dependency order.
+        DataSource dataSource   = new HikariDataSource(hikariConfig());
+        OrderRepository repo    = new JdbcOrderRepository(dataSource);
+        PaymentGateway gateway  = new StripeGateway(System.getenv("STRIPE_KEY"));
+        OrderService service    = new OrderService(repo, gateway);
+        OrderController ctrl    = new OrderController(service);
+
+        // ...and you own the HTTP server, the routing table, the JSON codec,
+        // the shutdown hook, the connection-pool lifecycle, and the config
+        // parsing. None of that is business logic. All of it is load-bearing.
+        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        server.createContext("/api/orders", exchange -> { /* parse, route, serialise */ });
+        server.start();
+    }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="The same thing in Spring Boot">
+{`@SpringBootApplication
+public class Main {
+    public static void main(String[] args) {
+        SpringApplication.run(Main.class, args);
+    }
+}
+
+@RestController
+class OrderController {
+    private final OrderService service;
+    // Spring sees this constructor, sees it needs an OrderService, finds or
+    // builds that bean, and passes it in. That is dependency injection.
+    OrderController(OrderService service) { this.service = service; }
+}
+
+// The DataSource, the connection pool, the HTTP server, the JSON codec, the
+// shutdown hook and the config parsing are all still there — they are just
+// beans Spring Boot created for you because it saw the matching libraries on
+// the classpath. That inference is called AUTO-CONFIGURATION, and the rest of
+// this page is about how it decides.`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="The trade you are making">
+        <p>
+          Hand-wiring is explicit: you can read <code>main</code> and know the entire object
+          graph. Spring&apos;s version is shorter and uniform, but the graph is now
+          <em> implied</em> — assembled at runtime from annotations, the classpath, and your
+          config. That is a genuinely good trade at the scale of a real service, and it is
+          also the reason Spring gets called &quot;magic&quot;. The cure is not to avoid it; it
+          is to know the rules the container follows, which is what the next few lessons do.
+        </p>
+      </InfoBox>
+
       <h3>The Spring Ecosystem</h3>
       <p>
         The Spring ecosystem is a collection of projects that address virtually every aspect
@@ -169,11 +257,23 @@ public class MyApplication {
       <h3>Creating Your First REST Endpoint</h3>
 
       <CodeBlock language="java" title="HelloController.java — Your First Endpoint">
-{`import org.springframework.web.bind.annotation.*;
+{`import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController               // = @Controller + @ResponseBody on every method
 @RequestMapping("/api")       // base path for all endpoints in this controller
 public class HelloController {
+
+    // The controller is a bean, so its collaborators arrive through the
+    // constructor. UserService is another bean; you never call 'new' on it.
+    private final UserService users;
+
+    public HelloController(UserService users) {
+        this.users = users;
+    }
 
     // GET /api/hello
     @GetMapping("/hello")
@@ -184,20 +284,21 @@ public class HelloController {
     // GET /api/greet?name=Alice
     @GetMapping("/greet")
     public Map<String, String> greet(@RequestParam(defaultValue = "World") String name) {
+        // Returning a Map: Jackson serialises it to {"message":"Hello, Alice!"}.
         return Map.of("message", "Hello, " + name + "!");
     }
 
     // POST /api/users
     @PostMapping("/users")
     public ResponseEntity<User> createUser(@RequestBody User user) {
-        User saved = userService.save(user);
+        User saved = users.save(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     // GET /api/users/42
     @GetMapping("/users/{id}")
     public User getUser(@PathVariable Long id) {
-        return userService.findById(id)
+        return users.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 }`}
@@ -309,6 +410,117 @@ logging:
           when running as a packaged JAR.
         </p>
       </InfoBox>
+
+      <h2>Reading a Startup Failure</h2>
+      <p>
+        Your first hundred Spring problems will be startup problems, and Boot is unusually good
+        at explaining them — it runs a set of <strong>failure analyzers</strong> that recognise
+        common exceptions and reformat them into a Description/Action block. The trick is
+        knowing to scroll <em>past</em> the stack trace to find it. Anything under
+        <code> ***************************</code> was written for you to read; the trace above
+        it usually was not.
+      </p>
+
+      <CodeBlock language="text" title="The four failures you will actually hit">
+{`(1) A dependency has no bean to satisfy it
+***************************
+APPLICATION FAILED TO START
+***************************
+Description:
+Parameter 0 of constructor in com.example.OrderService required a bean of
+type 'com.example.OrderRepository' that could not be found.
+Action:
+Consider defining a bean of type 'com.example.OrderRepository' in your
+configuration.
+
+  READ IT AS: "I was told to build OrderService, its constructor wants an
+  OrderRepository, and I have none registered under that type."
+  USUAL CAUSE: the class isn't annotated (@Service/@Component/@Repository),
+  or it lives OUTSIDE the package tree under your @SpringBootApplication
+  class, so component scanning never saw it. Check the package first — the
+  annotation is usually right there and visibly correct, which is exactly
+  why people stare at it for ten minutes.
+
+
+(2) Two beans fit, and Spring will not guess
+Parameter 0 of constructor in com.example.CheckoutService required a single
+bean, but 2 were found:
+	- stripeGateway: defined in file [.../StripePaymentGateway.class]
+	- paypalGateway: defined in file [.../PaypalPaymentGateway.class]
+
+  READ IT AS: NoUniqueBeanDefinitionException. Note that it NAMES both
+  candidates — that list is the answer to "which one did I forget about?".
+  FIX: @Primary on the default, or @Qualifier at the injection point.
+  Covered in the Dependency Injection lesson.
+
+
+(3) The port is taken
+Description:
+Web server failed to start. Port 8080 was already in use.
+Action:
+Identify and stop the process that's listening on port 8080 or configure
+this application to listen on another port.
+
+  Almost always a previous run you didn't stop.
+  lsof -i :8080     (macOS/Linux)      then kill the pid
+  Or just: --server.port=8081
+
+
+(4) The beans depend on each other in a loop
+Description:
+The dependencies of some of the beans in the application context form a cycle:
+   orderService defined in file [...]
+      ↓
+   inventoryService defined in file [...]
+      ↑     ↓
+   +---------+
+
+  Boot 2.6+ refuses this by default. The ASCII diagram tells you exactly
+  which beans are in the loop. Fix the design, don't set
+  spring.main.allow-circular-references=true — see the DI lesson.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The one flag worth memorising: --debug">
+        <p>
+          When the failure is &quot;auto-configuration did something I did not expect&quot; —
+          the wrong <code>DataSource</code>, security switched on when you didn&apos;t ask for
+          it, an endpoint missing — run with <code>--debug</code>. Boot prints a{' '}
+          <strong>CONDITIONS EVALUATION REPORT</strong> listing every auto-configuration class
+          under <em>Positive matches</em> (it applied, and why) and <em>Negative matches</em>
+          (it backed off, and which condition failed). This turns &quot;why is this bean
+          here?&quot; from guesswork into a lookup.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="text" title="What --debug prints, trimmed">
+{`$ ./mvnw spring-boot:run -Dspring-boot.run.arguments=--debug
+
+============================
+CONDITIONS EVALUATION REPORT
+============================
+
+Positive matches:
+-----------------
+   DataSourceAutoConfiguration matched:
+      - @ConditionalOnClass found required class
+        'javax.sql.DataSource' (OnClassCondition)
+
+   DataSourceAutoConfiguration#dataSource matched:
+      - @ConditionalOnMissingBean (types: javax.sql.DataSource;
+        SearchStrategy: all) did not find any beans (OnBeanCondition)
+        ^^ this line is the whole "you can override it" mechanism, visible.
+
+Negative matches:
+-----------------
+   RedisAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class
+           'org.springframework.data.redis.core.RedisOperations'
+        ^^ i.e. "you don't have the Redis starter, so I did nothing."
+
+Read this as a decision log. Every bean Spring Boot created for you has a
+line here saying which condition let it in.`}
+      </CodeBlock>
 
       <InteractiveChallenge
         question="What is the primary advantage of Spring Boot over traditional Spring?"

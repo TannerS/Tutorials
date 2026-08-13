@@ -225,6 +225,68 @@ Customer managed = customers.save(detached);
         methods, native queries, or a hand-written implementation.
       </p>
 
+      <h3>How an interface with no implementation runs a query</h3>
+      <p>
+        This is the piece of Spring Data that most looks like magic, and the mechanism is
+        short enough to hold in your head. Knowing it turns two common mysteries — &quot;why
+        did my app fail to start?&quot; and &quot;why is it querying the wrong field?&quot; —
+        into obvious answers.
+      </p>
+
+      <CodeBlock language="text" title="What happens to findByEmailIgnoreCase at startup">
+{`1. @EnableJpaRepositories (which spring-boot-starter-data-jpa switches on for
+   you) scans for interfaces extending Repository. It registers each one as a
+   bean whose factory is a RepositoryFactoryBean.
+
+2. That factory creates a JDK DYNAMIC PROXY implementing your interface. Every
+   call is routed to one handler. There is no generated .class file on disk to
+   go looking for — this is why "go to implementation" in your IDE lands on
+   SimpleJpaRepository or nothing at all.
+
+3. For each method, a QueryLookupStrategy decides where the query comes from:
+      - a matching @Query annotation?           -> use it
+      - a named query "Customer.findByX"?       -> use it
+      - otherwise                               -> PARSE THE METHOD NAME
+
+4. Name parsing (class PartTree) splits the name in two:
+      findBy | EmailIgnoreCase
+      ^^^^^^   ^^^^^^^^^^^^^^^
+      subject  predicate
+   The subject sets the action and any limit (find / exists / count / delete,
+   plus First / Top10 / Distinct). The predicate is split on And/Or, and each
+   part is matched GREEDILY against the entity's property names, with trailing
+   keywords (IgnoreCase, GreaterThan, In, Between, Like, IsNull...) stripped off.
+
+5. The resulting tree is turned into a JPA Criteria query ONCE, at startup,
+   and reused for every call.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The payoff: your typos are startup failures, not 3am pages">
+        <p>
+          Because step 4 happens while the context is building, a property that does not exist
+          stops the application immediately with{' '}
+          <code>PropertyReferenceException: No property &apos;emial&apos; found for type
+          &apos;Customer&apos;</code> — and the message helpfully lists the properties it
+          <em>did</em> find. A misspelled derived query can never reach production. Compare
+          that with a hand-written JPQL string, which is only parsed the first time the method
+          is called.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="The greedy match, and the underscore that fixes it">
+        <p>
+          Step 4 resolves property names greedily, longest-first, which is ambiguous when a
+          nested path collides with a real property. If <code>Order</code> has both an{' '}
+          <code>address</code> (with a <code>zipCode</code>) and a field called{' '}
+          <code>addressZip</code>, then <code>findByAddressZipCode</code> matches{' '}
+          <code>addressZip.code</code> — not what you meant, and it fails at startup because{' '}
+          <code>code</code> is not a property of a String. Spell the traversal explicitly with
+          an underscore: <code>findByAddress_ZipCode</code>. That underscore is the only escape
+          hatch in the naming DSL, and it is why you occasionally see it in otherwise
+          camel-case repositories.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="java" title="A repository with the four common shapes">
 {`public interface CustomerRepository extends JpaRepository<Customer, UUID> {
 
@@ -545,6 +607,59 @@ public void importAll(List<CustomerImport> rows) {
     }
 }`}
       </CodeBlock>
+
+      <h2>Bulk Updates — the one write that skips dirty checking</h2>
+      <p>
+        Everything above assumes writes flow through the persistence context. A{' '}
+        <code>@Modifying</code> query does not: it sends one <code>UPDATE</code> or{' '}
+        <code>DELETE</code> straight to the database. That is exactly why you would use it —
+        marking 200,000 rows one managed entity at a time is absurd — and exactly why it has a
+        sharp edge.
+      </p>
+      <CodeBlock language="java" title="@Modifying, and the two flags you almost always want">
+{`public interface OrderRepository extends JpaRepository<Order, UUID> {
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update Order o set o.status = :status where o.placedAt < :cutoff")
+    int expireOlderThan(@Param("status") OrderStatus status,
+                        @Param("cutoff") Instant cutoff);
+}
+
+// WHY THE FLAGS:
+//
+// flushAutomatically — pending changes in the persistence context have not
+//   reached the database yet. Without this, your bulk UPDATE runs against
+//   rows that don't reflect edits you made earlier in the same transaction,
+//   and then the flush at commit overwrites the bulk update. Silent, and
+//   ordering-dependent.
+//
+// clearAutomatically — the bulk UPDATE bypassed the first-level cache, so
+//   any entity already loaded in this transaction still holds the OLD value.
+//   Read it back and you get stale data from memory, not the new row. Worse:
+//   touch it and dirty checking writes the stale value back at commit,
+//   undoing your bulk update. Clearing detaches everything so the next read
+//   goes to the database.
+//
+// The cost of clearAutomatically: every managed entity is detached, so any
+// reference you were holding is now stale/detached too. Run bulk statements
+// in their own narrow transaction and this never bites you.
+
+// Also note: the return value is the ROW COUNT, not entities. And @Modifying
+// without a surrounding transaction throws
+// "Executing an update/delete query" -> TransactionRequiredException.`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="deleteAll() vs deleteAllInBatch()">
+        <p>
+          The same distinction appears in the CRUD methods you get for free.{' '}
+          <code>deleteAll()</code> loads every entity and deletes them one at a time so that
+          lifecycle callbacks and cascades run — correct, and catastrophic on a large table.{' '}
+          <code>deleteAllInBatch()</code> issues a single <code>DELETE</code> statement,
+          skipping callbacks and cascades entirely. Neither is the &quot;right&quot; one; pick
+          the one whose trade-off you actually want, and know that the fast one will not
+          cascade to children (so a foreign key will stop you).
+        </p>
+      </InfoBox>
 
       <h2>Auditing</h2>
       <p>

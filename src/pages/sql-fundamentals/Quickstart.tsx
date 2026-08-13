@@ -310,6 +310,29 @@ EXECUTE find_user('anything '' OR 1=1 --');   -- treated as a literal string
         </p>
       </InfoBox>
 
+      <InfoBox variant="info" title="Logical order is a meaning, not a plan">
+        <p>
+          One clarification that saves a lot of confusion later. The order above defines what a
+          query <strong>means</strong> — which names are visible where, and what the result must be.
+          It is emphatically <em>not</em> a description of what the database does at runtime.
+        </p>
+        <p>
+          SQL is declarative: you state the result you want, and the planner is free to compute it
+          any way that produces the same answer. It routinely reorders joins, pushes a{' '}
+          <code>WHERE</code> predicate down into an index so filtered rows are never read at all,
+          evaluates <code>LIMIT</code> early enough to stop a scan after twenty rows, and skips{' '}
+          <code>ORDER BY</code> entirely when an index already returns rows in that order. A{' '}
+          <code>LIMIT 10</code> on a billion-row table does not sort a billion rows first, even
+          though the logical order says sorting happens before limiting.
+        </p>
+        <p>
+          Keep the two models separate and both become useful: <strong>logical order answers
+          &quot;why is this query illegal / why is this alias not visible&quot;</strong>, and{' '}
+          <strong><code>EXPLAIN</code> answers &quot;why is this query slow&quot;</strong>. Reading
+          plans is covered in the Indexing lesson.
+        </p>
+      </InfoBox>
+
       <h2>OFFSET Pagination Is Broken at Scale</h2>
 
       <CodeBlock language="sql" title="Keyset (Cursor) Pagination vs OFFSET" showLineNumbers={true}>

@@ -281,29 +281,31 @@ java -jar target/my-app-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev`}
 # The equivalent multi-stage Dockerfile, if you need full control.
 # The key idea is layer extraction — it splits the fat JAR into layers
 # ordered by how often they change, so Docker can cache the stable ones.
-# (Boot 3.3+ spells this '-Djarmode=tools ... extract'. On Boot 3.2 and
-#  earlier it was '-Djarmode=layertools ... extract'.)
 
 FROM eclipse-temurin:21-jdk AS builder
-WORKDIR /app
+WORKDIR /builder
 COPY . .
 RUN ./mvnw -DskipTests clean package
-RUN java -Djarmode=tools -jar target/*.jar extract --layers --destination extracted
+RUN cp target/*.jar application.jar
+# Boot 3.3+ spelling. On Boot 3.2 and earlier it was '-Djarmode=layertools'.
+RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
 
 FROM eclipse-temurin:21-jre
-WORKDIR /app
+WORKDIR /application
 # Order matters: least-frequently-changed layer first, so a code-only change
 # invalidates just the last COPY.
-COPY --from=builder /app/extracted/dependencies/ ./
-COPY --from=builder /app/extracted/spring-boot-loader/ ./
-COPY --from=builder /app/extracted/snapshot-dependencies/ ./
-COPY --from=builder /app/extracted/application/ ./
+COPY --from=builder /builder/extracted/dependencies/ ./
+COPY --from=builder /builder/extracted/spring-boot-loader/ ./
+COPY --from=builder /builder/extracted/snapshot-dependencies/ ./
+COPY --from=builder /builder/extracted/application/ ./
 # Never run as root.
 RUN useradd -r -u 1001 appuser
 USER appuser
-# NOT "java -jar app.jar" — the layers are exploded on disk, there is no fat
-# JAR any more. Launch the exploded form through the Boot loader instead.
-ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]`}
+# This 'application.jar' is NOT the fat jar. Extraction rewrote it as a thin
+# jar whose manifest Class-Path points at the ./lib directory that landed in
+# the dependencies layer — so a plain 'java -jar' is correct, and you do not
+# invoke JarLauncher yourself.
+ENTRYPOINT ["java", "-jar", "application.jar"]`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="Let the JVM see the container's limits">

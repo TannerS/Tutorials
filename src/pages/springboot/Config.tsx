@@ -54,6 +54,72 @@ export default function Config() {
         </ul>
       </InfoBox>
 
+      <h3>Relaxed binding — why SPRING_DATASOURCE_URL sets spring.datasource.url</h3>
+      <p>
+        The precedence table says environment variables beat files, which raises an obvious
+        question it does not answer: an environment variable cannot contain a dot, so how does{' '}
+        <code>SPRING_DATASOURCE_URL</code> ever become <code>spring.datasource.url</code>? The
+        answer is <strong>relaxed binding</strong>, and it is the single most useful thing to
+        know about Spring config, because it is how you override <em>any</em> property in a
+        container without touching a file.
+      </p>
+
+      <CodeBlock language="text" title="All of these bind to the same property">
+{`Canonical form (always use this in your YAML):   app.catalog-api.max-retries
+
+  app.catalog-api.max-retries        kebab-case   <- canonical
+  app.catalogApi.maxRetries          camelCase
+  app.catalog_api.max_retries        snake_case
+  APP_CATALOGAPI_MAXRETRIES          upper snake  <- environment variables
+  APP_CATALOG_API_MAX_RETRIES        also works
+
+THE ENV-VAR RULE, precisely:
+  uppercase it, and replace every character that isn't a letter or digit
+  with an underscore. Dots and dashes both become '_'.
+
+  spring.datasource.url        ->  SPRING_DATASOURCE_URL
+  spring.jpa.hibernate.ddl-auto->  SPRING_JPA_HIBERNATE_DDLAUTO
+  management.endpoints.web.exposure.include
+                               ->  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+
+Indexed properties use underscores for the brackets:
+  app.servers[0].host          ->  APP_SERVERS_0_HOST
+
+So you can override anything, anywhere, with no file:
+  docker run -e SPRING_DATASOURCE_URL=jdbc:postgresql://db/orders my-app`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="@Value does NOT get relaxed binding — @ConfigurationProperties does">
+        <p>
+          This asymmetry costs people an afternoon at least once.{' '}
+          <code>@ConfigurationProperties</code> binds through the <code>Binder</code>, which
+          tries every relaxed spelling above. <code>@Value(&quot;${'{'}...{'}'}&quot;)</code>{' '}
+          is a plain placeholder resolution against the <code>Environment</code> — it looks up
+          the <em>exact</em> string you wrote and nothing else.
+        </p>
+        <p>
+          The practical failure: <code>@Value(&quot;${'{'}app.maxRetries{'}'}&quot;)</code>{' '}
+          works locally where <code>application.yml</code> spells it{' '}
+          <code>maxRetries</code>, then fails in production where the value arrives as{' '}
+          <code>APP_MAX_RETRIES</code>. (It survives <em>slightly</em> more often than it
+          should because <code>SystemEnvironmentPropertySource</code> does some name mangling
+          of its own, which makes the behaviour look inconsistent rather than simply wrong.)
+          It is one more reason the typed-properties section below is the recommended default
+          rather than a style preference.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="tip" title="When you just need to know where a value came from">
+        <p>
+          Stop guessing and ask the application. <code>/actuator/env/spring.datasource.url</code>{' '}
+          returns every property source that defines that key, in precedence order, with the
+          winner first — so &quot;why is this value X in prod?&quot; is a single request.
+          (Keep the endpoint authenticated; see the warning further down this page.) In a test
+          or a debugger, the same answer comes from{' '}
+          <code>((ConfigurableEnvironment) env).getPropertySources()</code>.
+        </p>
+      </InfoBox>
+
       <h2>application.yml vs application.properties</h2>
       <p>
         Same content, different syntax. YAML wins on readability for anything nested; properties

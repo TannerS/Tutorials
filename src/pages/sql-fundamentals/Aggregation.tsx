@@ -43,6 +43,75 @@ GROUP BY department
 ORDER BY headcount DESC;`}
       </CodeBlock>
 
+      <h2>Why GROUP BY Forces the Aggregate Rule</h2>
+
+      <p>
+        Everyone learns the rule — <em>every column in the SELECT list must either appear in the
+        GROUP BY or be wrapped in an aggregate</em> — and most people learn it by having Postgres
+        shout it at them. The rule is not arbitrary bureaucracy, and once you see the mechanism you
+        will never have to memorise it again.
+      </p>
+
+      <p>
+        <code>GROUP BY</code> physically collapses many rows into one. After it runs, a group is not
+        a row — it is a <em>bag</em> of rows sharing the grouping key. Ask for{' '}
+        <code>department</code> and there is exactly one answer, because that is what defined the
+        group. Ask for <code>salary</code> and there are five different answers with no reason to
+        prefer any of them, so the question is meaningless. An aggregate is precisely a function
+        that turns the whole bag into one value, which is why it is the only other thing allowed.
+      </p>
+
+      <CodeBlock language="sql" title="The rule, and what the error is really telling you" showLineNumbers={true}>
+{`-- The 3 Engineering rows collapse to 1 group. Which salary should it print?
+SELECT department, salary
+FROM employees
+GROUP BY department;
+-- ERROR: column "employees.salary" must appear in the GROUP BY clause
+--        or be used in an aggregate function
+-- Read it as: "you asked a question that has five answers."
+
+-- Both legal fixes just answer the question:
+SELECT department, MAX(salary) FROM employees GROUP BY department;  -- pick one
+SELECT department, salary      FROM employees GROUP BY department, salary;
+                                                        -- ^ finer groups, so
+                                                        --   salary IS the key
+
+-- MySQL (with ONLY_FULL_GROUP_BY off) silently returns an ARBITRARY salary
+-- here instead of erroring. That is not a friendlier database; it is the same
+-- meaningless question with the error suppressed. Postgres is doing you a favour.
+
+-- The one exception, and it follows from the same logic: group by a PRIMARY KEY
+-- and every other column of that table is functionally dependent on it — one id
+-- means exactly one name — so there is only ever one answer and Postgres allows it.
+SELECT e.id, e.name, COUNT(o.id) AS order_count
+FROM employees e
+LEFT JOIN orders o ON o.employee_id = e.id
+GROUP BY e.id;              -- e.name is legal: id is the PK of employees
+-- Grouping by e.name instead would fail — a name is not guaranteed unique.`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="The same model explains WHERE vs HAVING, and the alias rule">
+        <p>
+          <code>WHERE</code> runs <em>before</em> the collapse, so it sees individual rows and can
+          never see an aggregate — <code>WHERE COUNT(*) &gt; 5</code> is asking about a group that
+          does not exist yet. <code>HAVING</code> runs <em>after</em>, so it sees groups and{' '}
+          <em>only</em> groups, which is why it can use <code>COUNT(*)</code> and why filtering
+          individual rows there is both wrong and slow.
+        </p>
+        <p>
+          Put the row-level filter in <code>WHERE</code> every time it is possible. Rows removed
+          before grouping are rows that never have to be hashed or sorted; the same predicate moved
+          to <code>HAVING</code> does the aggregation work first and then throws the result away.
+          Same answer, more work.
+        </p>
+        <p>
+          And it explains the alias rule from the Quickstart lesson: <code>SELECT</code> is
+          evaluated after <code>GROUP BY</code> and <code>HAVING</code>, so the alias those clauses
+          would need does not exist yet. Repeat the expression, or wrap the whole thing in a CTE and
+          filter the outer query.
+        </p>
+      </InfoBox>
+
       <h2>WHERE vs HAVING</h2>
 
       <CodeBlock language="sql" title="WHERE vs HAVING — Know the Difference" showLineNumbers={true}>
@@ -105,7 +174,41 @@ GROUP BY GROUPING SETS (
   (department, level),
   (department),
   ()
-);`}
+);
+-- ROLLUP and CUBE are just shorthand for particular GROUPING SETS.
+-- ROLLUP (a, b) == GROUPING SETS ((a,b), (a), ())
+-- CUBE   (a, b) == GROUPING SETS ((a,b), (a), (b), ())
+-- One pass over the table produces all of them, which is the whole point:
+-- it beats UNION ALL-ing three separately-scanned queries together.`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Subtotal rows are NULL — and so is missing data. GROUPING() tells them apart.">
+        <p>
+          A <code>ROLLUP</code> subtotal row marks the rolled-up column as <code>NULL</code>. But an
+          employee with no recorded <code>level</code> also has <code>NULL</code> there. Both print
+          identically, so a report can silently show a real &quot;unknown level&quot; group where
+          the reader expects a subtotal — or the reverse.
+        </p>
+        <p>
+          <code>GROUPING(col)</code> is the disambiguator: it returns <code>1</code> when the column
+          was collapsed by the grouping set, <code>0</code> when the <code>NULL</code> is real data.
+          Any ROLLUP/CUBE query destined for human eyes should label its rows with it.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="sql" title="Labelling subtotal rows correctly" showLineNumbers={true}>
+{`SELECT
+  CASE WHEN GROUPING(department) = 1 THEN 'ALL DEPARTMENTS'
+       ELSE COALESCE(department, '(unspecified)') END AS department,
+  CASE WHEN GROUPING(level) = 1 THEN 'subtotal'
+       ELSE COALESCE(level, '(unspecified)') END      AS level,
+  COUNT(*) AS headcount
+FROM employees
+GROUP BY ROLLUP (department, level)
+-- GROUPING() is an aggregate-context function, so it is legal in ORDER BY
+-- and HAVING too. Sorting by it keeps subtotals under their detail rows
+-- instead of scattering them alphabetically:
+ORDER BY GROUPING(department), department, GROUPING(level), level;`}
       </CodeBlock>
 
       <h2>Window ≠ GROUP BY</h2>
@@ -133,9 +236,28 @@ GROUP BY GROUPING SETS (
   ROW_NUMBER() OVER w AS row_num,    -- unique sequential: 1,2,3,4,5
   RANK()       OVER w AS rank,       -- gaps on ties:      1,2,2,4,5
   DENSE_RANK() OVER w AS dense_rank, -- no gaps:           1,2,2,3,4
-  NTILE(4)     OVER w AS quartile    -- split into N buckets
+  NTILE(4)     OVER w AS quartile    -- split into N equal-sized buckets
 FROM employees
 WINDOW w AS (PARTITION BY department ORDER BY salary DESC);
+
+-- The three ranking functions differ ONLY in how they treat ties, and the
+-- difference is invisible until there are ties — so test with ties:
+--   salaries 500, 400, 400, 300, 200
+--   ROW_NUMBER  1, 2, 3, 4, 5   arbitrary tiebreak; the two 400s get 2 and 3
+--   RANK        1, 2, 2, 4, 5   ties share a rank, then rank SKIPS ("3rd place
+--                               doesn't exist because two people took 2nd")
+--   DENSE_RANK  1, 2, 2, 3, 4   ties share a rank, no gap
+--
+-- ROW_NUMBER's tiebreak is NON-DETERMINISTIC. Two runs of the same query can
+-- assign 2 and 3 to different employees, so a "top 3 per department" report can
+-- change between refreshes. Add a unique tiebreaker to make it stable:
+--   ORDER BY salary DESC, id
+--
+-- NTILE(n) splits the partition into n buckets as evenly as possible. When the
+-- row count doesn't divide evenly the REMAINDER GOES TO THE EARLIER BUCKETS:
+-- NTILE(4) over 10 rows gives bucket sizes 3, 3, 2, 2 — not 2, 2, 3, 3. This is
+-- why NTILE is a poor fit for true percentiles on small partitions; use
+-- PERCENT_RANK() or CUME_DIST() when the exact cut point matters.
 
 -- Top-N per group: "Top 3 earners per department"
 WITH ranked AS (

@@ -25,11 +25,65 @@ export default function Security() {
         chart={"graph TD\nA[HTTP Request] --> B[SecurityContextPersistenceFilter]\nB --> C[Authentication Filter e.g. BearerTokenAuthenticationFilter]\nC --> D[Authorization Filter]\nD --> E[Controller]\nE --> F[Response]\nC -.->|Auth failure| G[401]\nD -.->|Access denied| H[403]"}
       />
 
+      <h3>How that chain gets in front of your controller</h3>
+      <p>
+        Worth thirty seconds, because it explains where to put a breakpoint and why a rule can
+        silently apply to nothing. Spring Security is not wired into Spring MVC at all — it is
+        a <em>servlet filter</em>, sitting entirely outside the framework that handles your
+        request.
+      </p>
+
+      <CodeBlock language="text" title="Request → your controller, with the security layer named">
+{`Servlet container (Tomcat)
+   |
+   v
+DelegatingFilterProxy  — a plain servlet Filter registered under the fixed
+   |                     name "springSecurityFilterChain". Its only job is to
+   |                     look that bean up in the Spring context and delegate,
+   |                     so the container needn't know about Spring at all.
+   v
+FilterChainProxy       — holds a LIST of SecurityFilterChain beans. It walks
+   |                     them in order and picks the FIRST whose matcher
+   |                     accepts this request. Exactly one chain is used.
+   v
+that chain's filters   — CsrfFilter, the authentication filter for your setup,
+   |                     ExceptionTranslationFilter, AuthorizationFilter, ...
+   |                     Each may reject: the request stops here, and your
+   |                     controller is never called.
+   v
+DispatcherServlet      — only now does Spring MVC exist. HandlerMapping,
+   |                     argument resolvers, your @RestController.
+   v
+your controller method
+
+TWO CONSEQUENCES WORTH REMEMBERING:
+  * A 401/403 from a URL rule is produced BEFORE MVC runs — which is why
+    @RestControllerAdvice cannot catch it. (See the Error Handling lesson;
+    you configure an AuthenticationEntryPoint / AccessDeniedHandler instead.)
+  * permitAll() does NOT mean "skip security". The request still traverses
+    the whole chain; the authorization filter simply votes to allow it. An
+    anonymous Authentication is still populated.`}
+      </CodeBlock>
+
       <h2>The Modern SecurityFilterChain (Boot 3+)</h2>
       <p>
         The old <code>WebSecurityConfigurerAdapter</code> was removed. You now configure
         security by exposing a <code>SecurityFilterChain</code> bean.
       </p>
+
+      <InfoBox variant="warning" title="Reading the examples below: one chain at a time">
+        <p>
+          This lesson shows several <code>SecurityFilterChain</code> beans — a token-API one
+          here, a form-login one later, a CSRF one after that. Each is a <em>standalone
+          illustration</em> of one policy. If you paste two of them into the same application
+          you have two chains with no matcher and no order, and{' '}
+          <code>FilterChainProxy</code> will route every request to whichever happens to sort
+          first, silently ignoring the other. Applications that genuinely need two policies
+          scope them with <code>securityMatcher</code> and order them with{' '}
+          <code>@Order</code> — the <strong>Spring Security 7 &amp; Boot 4 Changes</strong>{' '}
+          lesson works through that pattern.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="java" title="Baseline stateless JWT config">
 {`@Configuration

@@ -313,6 +313,30 @@ All 6 lessons written AND wired into `sections.ts` + `App.tsx` (I wired each as 
 - Added `createRoutesStub`, v7's purpose-built route-testing utility, entirely absent from `Testing.tsx`.
 - **Important verification caveat it surfaced**: `tsc` skips semantic checks when *any* file has a syntax error, so a plain `npx tsc --noEmit` can mask real type errors while another lane's file is mid-write. A clean `exit=0` is trustworthy; a non-zero exit with syntax errors means type errors elsewhere are hidden. Worth remembering for future parallel runs.
 
+**Sweep A (TypeScript — 12 files) — DONE.** Heaviest correctness damage of any section; every claim was verified by driving the compiler API rather than reasoning about it.
+- **`Advanced.tsx`'s "type-safe builder" enforced nothing** — the line commented `// Error! port and db not set` compiled clean (`false & true = never`, assignable to `true`). Rewritten with `Missing`/`Exclude` + a phantom field; now errors exactly as documented.
+- **`Generics.tsx` stated a false claim twice** (`error?: never` "makes TS reject `res.error`" — it doesn't, `never | undefined` is `undefined`), and its `UserRepository implements Repository<User>` produced **4 compile errors**.
+- **`strictFunctionTypes` example was backwards in two files** — showed the *legal* widening direction as if unsound. `Cheatsheet.tsx` already had it right, so the repo contradicted itself.
+- **`Interfaces.tsx`'s Express module augmentation was a silent no-op** (module-scoped `declare namespace` → local namespace); needed `declare global`. `Advanced.tsx` had the same bug *and contradicted its own InfoBox 30 lines below*.
+- **`DeepReadonly` depth limiter never decremented `Depth`** — the limit limited nothing.
+- `React.tsx`'s RefObject quiz contradicted the same file's §9 box; `MutableRefObject` is deprecated and no `useRef` overload returns it.
+- Stale config: `.eslintrc` JSON in two files (removed in ESLint 10; repo runs 10.4.0 flat config), pre-5.9 `tsc --init` output, `alwaysStrict` listed as a strict flag (TS source literally says "Previously a strict-mode flag, but no longer"), `const enum` taught as "no runtime object" (false under every bundler in this course), instantiation depth "~50" (actual 100).
+- Named 3 files genuinely clean; added 2 field-guide PosterCards for traps that were absent.
+
+## Round 6 — COMPLETE, committed (`f2d2661`), pushed
+Verified: `tsc` 0, `eslint` 0 errors, `vite build` clean, **31 sections / 243 lessons** (up from 237), zero orphans/dangling/unrouted, and a new check confirming **every `lessonIndex` matches its position in `sections.ts`** (worth keeping — three lanes renumbered concurrently).
+
+## Round 7 — pedagogy + cheat-sheet reconciliation (IN PROGRESS)
+
+8 lanes dispatched. Every lane is told the same framing: **correctness is now the floor, not the goal** — assume the code compiles; the question is whether the page actually *teaches*. Each hunts jargon-before-definition, trivial→advanced jumps with no intermediate rung, examples that show syntax but never motivation, walls of code with no narration, and missing "why it works this way." Plus logic/example errors that aren't code errors (a before/after where the "after" doesn't fix the stated problem; a conclusion the demo doesn't support).
+
+Weighted per the user's priority: **3 lanes React** (react19 / router+antipatterns+testing+state-mgmt), **1 TypeScript**, **2 Java+Spring**, **1 SQL+CSS**, **1 architecture/security**, **1 testing+tooling+playgrounds**.
+
+Section-specific angles given: patterns must show the *pressure* before the structure; auth must give the threat model not just the rule; Spring must explain the *mechanism* behind annotations (proxy → self-invocation) rather than "this annotation does X"; SQL/CSS must teach the execution model (why the optimiser chose that plan, why `position: relative` matters) not just the incantation; playground pages must tell the reader what to try and what to notice rather than just embedding the widget.
+
+**Field-guide/cheat-sheet reconciliation is deliberately held back** — it must run LAST, since it mirrors what these 8 lanes add. Every content lane is told to report its additions for that purpose, and is barred from touching field-guide directories so the two waves can't collide.
+
 ### Remaining plan
-1. Collect the last sweep report (TypeScript) → verify typecheck/lint/build → commit + push round 6.
+1. Collect 8 round-7 reports → verify → commit + push.
+2. Dispatch the field-guide/cheat-sheet reconciliation lane(s) with the accumulated list of additions from rounds 4–7 → verify → commit + push.
 2. Dispatch round 7 as weighted lanes — roughly 3 lanes on React (react19 / react-field-guide / react-router / react-antipatterns / react-testing / state-mgmt), 2 on TypeScript (typescript / typescript-field-guide), 2 on Java+Spring (java / springboot / both field guides), and 2–3 covering the remainder (SQL, CSS, architecture/security, testing, tooling, playgrounds) — each with an explicit final step of reconciling its section's cheat sheet against everything the repo now contains.

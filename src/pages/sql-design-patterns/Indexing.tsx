@@ -180,6 +180,156 @@ WHERE status = 'shipped' AND customer_id = 12345;
 
       <h2>Reading EXPLAIN ANALYZE</h2>
 
+      <p>
+        Everything above is a claim about what <em>should</em> happen. <code>EXPLAIN</code> is how
+        you find out what <em>did</em>. It is the single highest-leverage SQL skill there is, and it
+        is entirely learnable — the output looks intimidating only because nobody explains its
+        shape. So: the shape first, then a real plan line by line.
+      </p>
+
+      <InfoBox variant="info" title="Four facts that make the output readable">
+        <p>
+          <strong>1. It is a tree, printed inside-out.</strong> Each <code>-&gt;</code> starts a
+          child node, and indentation is depth. Rows are produced by the <em>most indented</em>{' '}
+          nodes and flow <em>upward</em>; the top line is the last thing that happens, not the
+          first. Read bottom-up to follow execution, top-down to see intent.
+        </p>
+        <p>
+          <strong>2. <code>cost=A..B</code> is two numbers, not a range.</strong> <code>A</code> is
+          the startup cost — work done before the first row can be emitted (a sort must read
+          everything before it can emit anything, so its startup cost is high). <code>B</code> is
+          the total cost for all rows. The units are arbitrary planner units anchored to
+          &quot;one sequential page fetch = 1.0&quot;; they are <strong>not</strong> milliseconds
+          and cannot be converted to any. They exist only to be compared against the cost of the
+          plans the planner rejected.
+        </p>
+        <p>
+          <strong>3. <code>rows=</code> is a guess; <code>actual rows=</code> is the truth.</strong>{' '}
+          The planner picks a plan using the guess, so when the guess is badly wrong the plan is
+          usually wrong too. This one comparison diagnoses most bad plans.
+        </p>
+        <p>
+          <strong>4. <code>actual time</code> and <code>rows</code> are PER LOOP.</strong> A node
+          reporting <code>rows=3 loops=10000</code> produced 30,000 rows, and a node reporting{' '}
+          <code>actual time=0.5..0.9 loops=10000</code> consumed roughly 9 seconds, not 0.9 ms.
+          Forgetting to multiply by <code>loops</code> is the most common misreading of a plan, and
+          it hides exactly the nested-loop blowups you are usually hunting.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="sql" title="A real plan, annotated" showLineNumbers={false}>
+{`EXPLAIN (ANALYZE, BUFFERS)
+SELECT c.name, count(*) AS orders
+FROM customers c
+JOIN orders o ON o.customer_id = c.id
+WHERE o.created_at >= DATE '2024-01-01'
+GROUP BY c.name;
+
+HashAggregate  (cost=8123.44..8148.44 rows=2000 width=26)
+               (actual time=61.402..61.865 rows=1987 loops=1)
+  Group Key: c.name
+  Batches: 1  Memory Usage: 401kB
+  ->  Hash Join  (cost=71.00..7873.44 rows=50000 width=18)
+                 (actual time=1.104..48.213 rows=49812 loops=1)
+        Hash Cond: (o.customer_id = c.id)
+        ->  Index Scan using idx_orders_created_at on orders o
+                 (cost=0.43..6698.60 rows=50000 width=8)
+                 (actual time=0.061..24.417 rows=49812 loops=1)
+              Index Cond: (created_at >= '2024-01-01'::date)
+              Buffers: shared hit=1010 read=3288
+        ->  Hash  (cost=46.00..46.00 rows=2000 width=18)
+                 (actual time=1.020..1.021 rows=2000 loops=1)
+              Buckets: 4096  Batches: 1  Memory Usage: 137kB
+              ->  Seq Scan on customers c  (cost=0.00..46.00 rows=2000 width=18)
+                                           (actual time=0.008..0.402 rows=2000 loops=1)
+                    Buffers: shared hit=194
+Planning Time: 0.312 ms
+Execution Time: 62.104 ms`}
+      </CodeBlock>
+
+      <p>
+        Now walk it bottom-up, the order the rows actually move:
+      </p>
+
+      <InfoBox variant="tip" title="The same plan, in English">
+        <p>
+          <strong>Seq Scan on customers</strong> — reads all 2,000 customers. A sequential scan here
+          is <em>correct</em>, not a failure: the query needs every customer row, and there is no
+          filter an index could help with. An index would be strictly more work.
+        </p>
+        <p>
+          <strong>Hash</strong> — loads those 2,000 rows into an in-memory hash table keyed on{' '}
+          <code>c.id</code>. <code>Batches: 1</code> means it fit in <code>work_mem</code> in one
+          pass. If that said <code>Batches: 8</code>, the hash spilled to disk and raising{' '}
+          <code>work_mem</code> would help.
+        </p>
+        <p>
+          <strong>Index Scan on orders</strong> — the <code>Index Cond</code> line is the thing to
+          look for. It means the date predicate was pushed <em>into</em> the index, so only matching
+          rows were ever fetched. Contrast with a <code>Filter:</code> line, which means rows were
+          read and then thrown away — and a companion <code>Rows Removed by Filter</code> tells you
+          how much work was wasted.
+        </p>
+        <p>
+          <strong>Hash Join</strong> — probes the hash table once per order row. It ran{' '}
+          <code>loops=1</code>, so its 48 ms is real elapsed time, and because node timings are{' '}
+          <strong>inclusive of their children</strong>, the join&apos;s own cost is 48.2 − 24.4 ≈ 24
+          ms, not 48.
+        </p>
+        <p>
+          <strong>HashAggregate</strong> — groups by name at the top. Estimated 2,000 groups, got
+          1,987: the estimate is excellent, which is why this plan is trustworthy.
+        </p>
+        <p>
+          <strong>Buffers</strong> — <code>shared hit</code> came from Postgres&apos;s cache;{' '}
+          <code>shared read</code> came from outside it (OS cache or disk). The orders scan read
+          3,288 blocks it didn&apos;t have cached — 26 MB of I/O, and the reason this query takes 62
+          ms rather than 10. Always pass <code>BUFFERS</code>; I/O volume is a far more stable
+          signal than wall-clock time on a shared machine.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="Why the planner ignored the index you just built">
+        <p>
+          Postgres is a <strong>cost-based</strong> planner, not a rule-based one. It never asks
+          &quot;is there an index?&quot; It estimates the cost of every viable plan and takes the
+          cheapest. So &quot;my index isn&apos;t being used&quot; is always one of a short list of
+          answers:
+        </p>
+        <p>
+          <strong>The index genuinely would be slower.</strong> An index scan on a non-covering
+          index costs one random heap fetch per matching row. Past roughly 5–10% selectivity, reading
+          the table sequentially wins outright, and the planner is right to say so. Confirm rather
+          than argue: <code>SET enable_seqscan = off;</code> then re-run <code>EXPLAIN ANALYZE</code>{' '}
+          and compare the real times. (That setting is a diagnostic, never a fix — never leave it on.)
+        </p>
+        <p>
+          <strong>The estimate is wrong.</strong> If <code>rows=12</code> but{' '}
+          <code>actual rows=400000</code>, the planner chose for a query it thought was tiny. Run{' '}
+          <code>ANALYZE tablename;</code>, and for a skewed column raise its sample size:{' '}
+          <code>ALTER TABLE t ALTER COLUMN c SET STATISTICS 1000;</code>. For columns that are
+          correlated (city and postcode), create extended statistics with{' '}
+          <code>CREATE STATISTICS ... (dependencies)</code> — otherwise the planner multiplies the
+          two selectivities as if they were independent and lands orders of magnitude low.
+        </p>
+        <p>
+          <strong>The predicate isn&apos;t sargable.</strong> Wrapping the indexed column in a
+          function or a cast hides it: <code>WHERE lower(email) = ...</code> cannot use an index on{' '}
+          <code>email</code>, and <code>WHERE created_at::date = ...</code> cannot use one on{' '}
+          <code>created_at</code>. Rewrite the predicate as a range on the bare column, or build the
+          matching expression index. Leading-wildcard <code>LIKE &apos;%foo&apos;</code> is the same
+          problem: a B-tree is sorted by prefix, so there is no prefix to seek to.
+        </p>
+        <p>
+          <strong>Type mismatch.</strong> Comparing a <code>bigint</code> column to a{' '}
+          <code>numeric</code> parameter can force a cast on the column side and silently disable the
+          index. The tell is a <code>Filter</code> line where you expected an{' '}
+          <code>Index Cond</code>.
+        </p>
+      </InfoBox>
+
+      <h3>Node Types at a Glance</h3>
+
       <CodeBlock language="sql" title="EXPLAIN ANALYZE: What to Look For" showLineNumbers={true}>
 {`EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
 SELECT * FROM orders

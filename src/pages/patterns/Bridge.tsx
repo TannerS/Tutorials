@@ -15,12 +15,23 @@ export default function Bridge() {
     >
       <h2>Bridge Pattern</h2>
       <p>
-        Decouples an abstraction from its implementation so the two can vary independently. Instead
-        of a single inheritance hierarchy that multiplies out every combination of "what" and "how"
-        (think <code>EmailSmsNotification</code>, <code>EmailPushNotification</code>,
-        <code>SmsPushNotification</code>...), you split it into two hierarchies connected by
-        composition: a high-level abstraction that holds a reference to a low-level implementation
-        interface. Change either side without touching the other.
+        Decouples an abstraction from its implementation so the two can vary independently.
+      </p>
+      <p>
+        The problem it solves is a <strong>multiplication</strong>. Suppose you have notification
+        kinds — order-shipped, password-reset, payment-failed — and delivery channels — email, SMS,
+        push. Model both with inheritance in one hierarchy and you need a class for every pairing:
+        <code>OrderShippedEmailNotification</code>, <code>OrderShippedSmsNotification</code>,
+        <code>OrderShippedPushNotification</code>, <code>PasswordResetEmailNotification</code>, and
+        so on. That is 3 × 3 = 9 classes, and the counts multiply rather than add: a fourth channel
+        costs you three more classes, a fourth notification kind costs another four.
+      </p>
+      <p>
+        Bridge splits the one hierarchy into two connected by composition — a high-level abstraction
+        (the notification kind, the &quot;what&quot;) holding a reference to a low-level implementor
+        interface (the delivery channel, the &quot;how&quot;). Now the two axes <em>add</em> instead
+        of multiplying: 3 + 3 = 6 classes, and a new channel costs exactly one, no matter how many
+        notification kinds exist.
       </p>
 
       <FlowChart

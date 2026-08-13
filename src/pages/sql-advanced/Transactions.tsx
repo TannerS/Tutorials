@@ -176,8 +176,11 @@ COMMIT;
 -- Option C: change the default for the whole session (rarely what you want)
 SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
--- The snapshot is taken at the first STATEMENT, not at BEGIN. An idle
--- "BEGIN;" followed 10 minutes later by a SELECT still sees fresh data.
+-- Under REPEATABLE READ / SERIALIZABLE the frozen snapshot is taken at the
+-- first STATEMENT, not at BEGIN. An idle "BEGIN;" followed 10 minutes later
+-- by a SELECT still sees fresh data as of that SELECT.
+-- Under READ COMMITTED there is no frozen snapshot at all: every statement
+-- gets a new one. See the MVCC section below.
 
 -- PostgreSQL default is READ COMMITTED
 -- MySQL InnoDB default is REPEATABLE READ`}
@@ -418,15 +421,34 @@ SET lock_timeout = '5s';  -- error after 5 seconds of waiting
 
       <InfoBox variant="note" title="Multi-Version Concurrency Control">
         <p>
-          PostgreSQL doesn't use read locks. Instead, every row has hidden <code>xmin</code> and <code>xmax</code> fields
-          tracking which transaction created/deleted it. Readers see a <strong>snapshot</strong> of the database at
-          their transaction's start time. Writers create new row versions instead of overwriting. This means:
+          PostgreSQL doesn&apos;t use read locks. Instead, every row carries two hidden system
+          columns: <code>xmin</code>, the ID of the transaction that created that row version, and{' '}
+          <code>xmax</code>, the ID of the transaction that deleted or superseded it (zero if it is
+          still live). A <strong>snapshot</strong> is essentially a list of which transaction IDs had
+          committed at the moment it was taken. A row version is visible to you if its{' '}
+          <code>xmin</code> is committed-and-in-your-snapshot and its <code>xmax</code> is not — no
+          locks consulted, just an arithmetic test on every tuple the scan touches. Writers create
+          new row versions instead of overwriting, so an old reader keeps seeing the old version.
+          This is where the headline property comes from:
         </p>
         <p><strong>Readers never block writers. Writers never block readers.</strong></p>
         <p>
-          The tradeoff: dead tuples accumulate and must be cleaned by <code>VACUUM</code>. Autovacuum
-          handles this, but write-heavy tables may need tuning. Long-running transactions prevent
-          cleanup of old versions — avoid holding transactions open for minutes/hours.
+          <strong>When the snapshot is taken is what the isolation levels actually differ on</strong>,
+          and it is worth stating precisely because it is usually stated wrong. Under{' '}
+          <code>READ COMMITTED</code> — the default — a <em>fresh snapshot is taken at the start of
+          every statement</em>. That is exactly why two identical <code>SELECT</code>s in one
+          transaction can return different data: non-repeatable reads are not a bug in the default
+          level, they are its defining behaviour. Under <code>REPEATABLE READ</code> and{' '}
+          <code>SERIALIZABLE</code>, one snapshot is taken at the first statement of the transaction
+          and reused for all of it, which is what freezes the view.
+        </p>
+        <p>
+          The tradeoff: superseded versions (&quot;dead tuples&quot;) accumulate and must be reclaimed
+          by <code>VACUUM</code>. Autovacuum handles this, but write-heavy tables may need tuning.
+          And note the consequence of the snapshot rule — Postgres can only reclaim a dead tuple once
+          <em>no</em> snapshot could still need it, so a single transaction left open for an hour
+          pins dead rows across the entire database, not just the tables it touched. That is why
+          &quot;idle in transaction&quot; is treated as an incident and not a curiosity.
         </p>
       </InfoBox>
 

@@ -173,9 +173,12 @@ public class AppConfig {
 
     // Method parameters are injected from the container.
     // The method name becomes the bean name unless overridden with @Bean("name").
+    // Note the builder: RedisCacheManager's constructors are protected, which
+    // is common for Spring's own types — reach for the static factory or
+    // builder rather than assuming 'new' works.
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory factory) {
-        return new RedisCacheManager(factory);
+        return RedisCacheManager.builder(factory).build();
     }
 }`}
       </CodeBlock>
@@ -317,8 +320,17 @@ public class NoopNotificationService implements NotificationService {
 @Profile("dev")
 public class InMemoryEventStore implements EventStore { /* ... */ }
 
-// The @ConditionalOnX family belongs on @Bean methods inside a
-// @Configuration (ideally an auto-configuration), NOT on scanned classes.
+// The dividing line is WHAT the condition looks at:
+//
+//   Conditions on FIXED FACTS — @ConditionalOnProperty, @ConditionalOnClass,
+//   @Profile, @ConditionalOnWebApplication — read the Environment or the
+//   classpath. Those answers are the same no matter when they run, so these
+//   are safe anywhere, including on component-scanned classes (as above).
+//
+//   Conditions on OTHER BEANS — @ConditionalOnMissingBean, @ConditionalOnBean
+//   — read the registry, which is still being filled in while scanning runs.
+//   Those belong on @Bean methods inside a @Configuration, ideally a real
+//   auto-configuration, where registration order is defined.
 @Configuration
 public class CacheConfig {
 

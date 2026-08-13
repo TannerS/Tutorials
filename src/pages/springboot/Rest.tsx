@@ -202,6 +202,70 @@ public record OrderItem(
         </p>
       </InfoBox>
 
+      <h3>Where @Valid actually runs — and why it sometimes doesn&apos;t</h3>
+      <p>
+        &quot;<code>@Valid</code> validates the object&quot; is true and useless the first time
+        it silently does nothing. There are <strong>two entirely different machines</strong>
+        that honour that annotation, they trigger in different places, and knowing which one
+        you are in explains every case where validation appears to be ignored.
+      </p>
+
+      <CodeBlock language="java" title="Machine 1: the argument resolver (controllers)">
+{`@PostMapping
+public UserDto create(@Valid @RequestBody CreateUserRequest req) { ... }
+
+// MECHANISM: no proxy is involved. When Spring MVC resolves this parameter,
+// RequestResponseBodyMethodProcessor deserialises the body with Jackson,
+// then checks the parameter for an annotation whose simple name starts with
+// "Valid" — and if it finds one, runs the Validator (Hibernate Validator)
+// BEFORE your method body is entered.
+//
+// Failures become MethodArgumentNotValidException -> your @RestControllerAdvice.
+//
+// This is why @Valid on a controller parameter is reliable: it is part of
+// argument resolution, which always happens. Nothing can bypass it.`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="Machine 2: the AOP proxy (everywhere else)">
+{`// THE TRAP: this compiles, reads correctly, and validates NOTHING.
+@Service
+public class UserService {
+    public void register(@Valid CreateUserRequest req) { ... }   // no-op
+}
+
+// MECHANISM: outside the web layer there is no argument resolver — the
+// caller just invokes a method. Constraint checking on an arbitrary bean
+// method is done by MethodValidationPostProcessor, which wraps the bean in
+// an AOP PROXY. And that processor only wraps classes it has been told to:
+// the ones annotated @Validated AT CLASS LEVEL.
+
+@Service
+@Validated                                   // <- THIS is what turns it on
+public class UserService {
+    public void register(@Valid CreateUserRequest req) { ... }   // now checked
+}
+
+// Two consequences fall straight out of "it's a proxy", both of which you
+// have met before on this course:
+//   1. Failures are ConstraintViolationException, NOT
+//      MethodArgumentNotValidException — a different exception type, so it
+//      needs its own @ExceptionHandler or it becomes a 500.
+//   2. Self-invocation bypasses it. this.register(bad) skips the proxy and
+//      skips validation, exactly like @Transactional.`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="@Valid vs @Validated, finally">
+        <p>
+          <code>@Valid</code> is the Jakarta Bean Validation annotation; it means &quot;cascade
+          into this object&quot; and is the only one that works on nested fields.{' '}
+          <code>@Validated</code> is Spring&apos;s, and it does two jobs the Jakarta one
+          cannot: it carries <em>validation groups</em>, and on a class it switches on the
+          method-validation proxy above. Practical rule — <code>@Valid</code> on parameters and
+          nested fields, <code>@Validated</code> on the class when you need method validation
+          outside a controller, or on a parameter when you need a group.
+        </p>
+      </InfoBox>
+
       <h2>Response Control — Status, Headers, and Location</h2>
 
       <CodeBlock language="java" title="ResponseEntity for full control">
@@ -225,8 +289,14 @@ public ResponseEntity<OrderDto> place(@Valid @RequestBody PlaceOrderRequest req)
 public ResponseEntity<ReportDto> get(@PathVariable UUID id,
                                      WebRequest webReq) {
     Report report = reports.byId(id);
-    if (webReq.checkNotModified(report.lastModifiedEpoch(), report.etag())) {
-        return null; // Spring writes 304 automatically
+    // Signature is checkNotModified(String etag, long lastModified) — ETAG
+    // FIRST. Reversing them does not compile, which is the good outcome;
+    // reversing them in the single-arg overloads silently compares the
+    // wrong thing, which is not.
+    if (webReq.checkNotModified(report.etag(), report.lastModifiedEpoch())) {
+        // Returning null is the documented signal for "the response is
+        // already handled" — checkNotModified set 304 and the headers.
+        return null;
     }
     return ResponseEntity.ok()
         .eTag(report.etag())
@@ -311,31 +381,55 @@ public UserDto patch(@PathVariable UUID id, @RequestBody JsonNode mergePatch) {
         per endpoint, and Spring picks the right converter based on <code>Accept</code> and
         <code>Content-Type</code> headers.
       </p>
-      <CodeBlock language="java" title="Multiple response formats from one endpoint">
-{`@GetMapping(value = "/reports/{id}",
-            produces = { MediaType.APPLICATION_JSON_VALUE,
-                         MediaType.APPLICATION_PDF_VALUE,
-                         "text/csv" })
-// NOTE: a real Accept header is a weighted LIST, e.g.
-//   "text/html, application/json;q=0.9, */*;q=0.8"
-// so never switch on the raw string. Either let Spring negotiate for you by
-// declaring separate handler methods with different 'produces' values, or
-// resolve the best match yourself as below.
-public ResponseEntity<?> get(@PathVariable UUID id,
-                             @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) {
-    Report r = reports.byId(id);
-    MediaType best = MediaType.sortBySpecificityAndQuality(
-            MediaType.parseMediaTypes(acceptHeader)).getFirst();
-    return switch (best.toString()) {
-        case MediaType.APPLICATION_PDF_VALUE ->
-            ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf.render(r));
-        case "text/csv" ->
-            ResponseEntity.ok().contentType(MediaType.parseMediaType("text/csv")).body(csv.render(r));
-        default ->
-            ResponseEntity.ok(reportMapper.toDto(r));
-    };
-}`}
+      <CodeBlock language="java" title="Let the framework negotiate — one handler per format">
+{`// A real Accept header is a WEIGHTED LIST, not one value:
+//   Accept: text/html, application/json;q=0.9, */*;q=0.8
+// Parsing that yourself means implementing q-value ordering and wildcard
+// specificity rules, and the utility that used to do it for you
+// (MediaType.sortBySpecificityAndQuality) is gone in Spring Framework 7.
+// Don't. Declare 'produces' per handler and let Spring match the header
+// against the mappings — that IS content negotiation.
+
+@GetMapping(value = "/reports/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+public ReportDto getJson(@PathVariable UUID id) {
+    return reportMapper.toDto(reports.byId(id));
+}
+
+@GetMapping(value = "/reports/{id}", produces = MediaType.APPLICATION_PDF_VALUE)
+public ResponseEntity<byte[]> getPdf(@PathVariable UUID id) {
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_PDF)
+        .body(pdf.render(reports.byId(id)));
+}
+
+@GetMapping(value = "/reports/{id}", produces = "text/csv")
+public ResponseEntity<byte[]> getCsv(@PathVariable UUID id) {
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType("text/csv"))
+        .body(csv.render(reports.byId(id)));
+}
+
+// Same URL, three mappings. Spring picks by Accept and returns 406 Not
+// Acceptable on its own if the client asks for something none of them
+// produce — a correct response you would have had to write by hand.
+
+// The mechanism underneath: for a return value that isn't already bytes,
+// Spring walks its list of HttpMessageConverters and uses the first one
+// that can write (returnType, negotiatedMediaType). Jackson's converter
+// claims application/json, which is why returning a DTO "just becomes
+// JSON" — no annotation is doing it, a converter is.`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="Negotiating on a URL suffix or a query parameter instead">
+        <p>
+          Some clients cannot set <code>Accept</code> (a browser link, a spreadsheet import).
+          Rather than reading the header yourself, switch the strategy globally —{' '}
+          <code>spring.mvc.contentnegotiation.favor-parameter: true</code> makes{' '}
+          <code>?format=csv</code> select the media type, with{' '}
+          <code>spring.mvc.contentnegotiation.media-types.csv: text/csv</code> registering the
+          mapping. The handler methods above are then unchanged.
+        </p>
+      </InfoBox>
 
       <h2>File Upload and Streaming</h2>
 
@@ -343,13 +437,20 @@ public ResponseEntity<?> get(@PathVariable UUID id,
 {`@PostMapping(value = "/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 public DocumentDto upload(
         @RequestPart("file") MultipartFile file,
-        @RequestPart("metadata") @Valid DocumentMeta meta) {
+        @RequestPart("metadata") @Valid DocumentMeta meta) throws IOException {
 
+    // getInputStream() throws IOException — declare it and let the advice
+    // map it, rather than swallowing it into a misleading 400.
     if (file.getSize() > 25 * 1024 * 1024) {
         throw new PayloadTooLargeException("Max 25MB");
     }
     return docs.store(file.getInputStream(), meta);
-}`}
+}
+
+// Set the container's own limits too, or a 500 MB upload is buffered before
+// your size check ever runs:
+//   spring.servlet.multipart.max-file-size: 25MB
+//   spring.servlet.multipart.max-request-size: 30MB`}
       </CodeBlock>
 
       <CodeBlock language="java" title="Streaming response (large files, no OOM)">
@@ -428,10 +529,23 @@ public class TraceIdFilter extends OncePerRequestFilter {
 // per-endpoint timing.
 @Component
 public class TimingInterceptor implements HandlerInterceptor {
+
+    // preHandle and afterCompletion are separate callbacks on the SAME
+    // request, so state has to travel between them somehow. A request
+    // attribute is that channel — a field on the interceptor would not
+    // work, because the interceptor is a singleton shared by every
+    // concurrent request.
+    @Override
+    public boolean preHandle(HttpServletRequest req, HttpServletResponse res, Object handler) {
+        req.setAttribute("startNanos", System.nanoTime());
+        return true;      // false here would abort the request before the controller
+    }
+
     @Override
     public void afterCompletion(HttpServletRequest req, HttpServletResponse res,
                                 Object handler, Exception ex) {
-        long start = (Long) req.getAttribute("startNanos");
+        Long start = (Long) req.getAttribute("startNanos");
+        if (start == null) return;    // preHandle didn't run for this path
         Metrics.timer("http.duration").record(System.nanoTime() - start, NANOSECONDS);
     }
 }

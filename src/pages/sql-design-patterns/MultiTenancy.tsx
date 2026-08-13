@@ -176,7 +176,9 @@ INSERT INTO order_events (order_id, event_type, payload, sequence_number) VALUES
   (501, 'ItemAdded',    '{"sku": "WIDGET-1", "qty": 2}',       2),
   (501, 'OrderShipped', '{"carrier": "UPS", "tracking": "1Z..."}', 3);
 
--- Current state is DERIVED by folding events, not stored directly
+-- STEP 1 — read the stream back in order. Note what this is: the HISTORY.
+-- It is not yet the current state, and conflating the two is the usual
+-- first mistake with event sourcing.
 SELECT
   order_id,
   jsonb_agg(jsonb_build_object('type', event_type, 'data', payload)
@@ -188,7 +190,35 @@ GROUP BY order_id;
 -- Use jsonb_AGG (an array), not jsonb_OBJECT_agg keyed on event_type: the
 -- same event type recurs in a stream ('ItemAdded' three times), and
 -- jsonb_object_agg keeps only the last value per key — silently dropping
--- most of the history you were trying to preserve.`}
+-- most of the history you were trying to preserve.
+
+-- STEP 2 — the actual FOLD. Current state is what you get by replaying every
+-- event in sequence order and letting later ones win. Postgres has no built-in
+-- "merge these jsonb documents" aggregate, so the idiomatic way is to explode
+-- every payload into key/value pairs, keep the LAST value per key with
+-- DISTINCT ON, then reassemble one document.
+WITH latest_per_key AS (
+  SELECT DISTINCT ON (e.order_id, kv.key)
+         e.order_id, kv.key, kv.value
+  FROM order_events e
+  CROSS JOIN LATERAL jsonb_each(e.payload) AS kv(key, value)
+  WHERE e.order_id = 501
+  ORDER BY e.order_id, kv.key, e.sequence_number DESC   -- DESC = last write wins
+)
+SELECT order_id, jsonb_object_agg(key, value) AS current_state
+FROM latest_per_key
+GROUP BY order_id;
+-- For the three events above this returns one row:
+--   {"qty": 2, "sku": "WIDGET-1", "total": 59.99,
+--    "carrier": "UPS", "customer_id": 9, "tracking": "1Z..."}
+
+-- HONEST CAVEAT, and it is the crux of event sourcing: last-write-wins is only
+-- the correct fold for events that REPLACE a field. 'ItemAdded' is additive —
+-- three of them mean three items, and the query above would keep only the last
+-- sku. Any real system folds with per-event-type logic (a reducer in the
+-- application, or a plpgsql function), not one generic SQL expression. Which
+-- is precisely why the read model further down exists: you fold once, on write,
+-- and let ordinary queries hit an ordinary table.`}
       </CodeBlock>
 
       <CodeBlock language="sql" title="Snapshots — Avoid Replaying Millions of Events" showLineNumbers={true}>

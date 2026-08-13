@@ -229,11 +229,18 @@ SET search_vector =
 
 CREATE INDEX idx_articles_search ON articles USING GIN (search_vector);
 
--- Keep search_vector in sync automatically on every write
+-- Keeping search_vector in sync on every write is mandatory — a stale vector
+-- means the row silently stops matching. The built-in trigger does that:
 CREATE TRIGGER trg_articles_tsvector
   BEFORE INSERT OR UPDATE ON articles
   FOR EACH ROW EXECUTE FUNCTION
   tsvector_update_trigger(search_vector, 'pg_catalog.english', title, body);
+-- BUT NOTE WHAT IT THROWS AWAY: tsvector_update_trigger just concatenates
+-- to_tsvector() over the listed columns. It has no way to express setweight(),
+-- so the very first UPDATE overwrites the weighted vector built above with an
+-- UNWEIGHTED one — and ts_rank silently stops ranking title matches higher.
+-- If you want weights, the trigger must be hand-written plpgsql, or (better)
+-- use a generated column instead — see below.
 
 -- Query: match "database" AND "index", either order, with stemming
 SELECT id, title, ts_rank(search_vector, query) AS rank
@@ -253,12 +260,13 @@ FROM articles
 WHERE search_vector @@ to_tsquery('english', 'index');`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Generated Columns Replace the Trigger Entirely">
+      <InfoBox variant="tip" title="Generated Columns Replace the Trigger — and Do More Than It Can">
         <p>
-          Postgres 12+ generated columns do everything the trigger above does, with no trigger
-          code — including the weighted <code>setweight()</code> ranking, since{' '}
-          <code>setweight</code>, <code>||</code> and the two-argument{' '}
-          <code>to_tsvector(regconfig, text)</code> are all IMMUTABLE:
+          Postgres 12+ generated columns keep the vector in sync with no trigger code at all,{' '}
+          <em>and</em> they can carry the weighting that <code>tsvector_update_trigger</code>{' '}
+          cannot — because <code>setweight</code>, <code>||</code> and the two-argument{' '}
+          <code>to_tsvector(regconfig, text)</code> are all IMMUTABLE, which is exactly the
+          requirement a generated column imposes. This is the version to reach for:
         </p>
         <p>
           <code>

@@ -177,7 +177,13 @@ export default function Flexbox() {
       </p>
       <CodeBlock language="css" title="flex-shrink Example">{`.sidebar { flex-shrink: 0; width: 250px; } /* stays fixed at 250px */
 .main    { flex-shrink: 1; }               /* absorbs overflow */
-.shrink-fast { flex-shrink: 3; } /* shrinks 3x faster than default */
+
+/* CAREFUL: shrink factors are NOT a straight ratio the way grow factors are.
+   The browser weights each factor by the item's flex-basis, so "3" only means
+   "3x more than a sibling" when the two items start at the SAME base size.
+   The next section explains why — it is the one genuinely surprising part of
+   the flex algorithm. */
+.shrink-fast { flex-shrink: 3; }
 .shrink-slow { flex-shrink: 1; }`}</CodeBlock>
 
       <h2>flex-basis</h2>
