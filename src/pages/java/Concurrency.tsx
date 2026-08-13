@@ -457,6 +457,72 @@ count++;                                 // STILL a race condition
 private final AtomicInteger count = new AtomicInteger();
 count.incrementAndGet();`}
       </CodeBlock>
+      <p>
+        &quot;May never terminate&quot; sounds like a theoretical caveat, so here is the same
+        program actually run on a current JDK. The worker spins on the flag; main clears it after
+        half a second:
+      </p>
+
+      <CodeBlock language="java" title="Vis.java — run on JDK 26">
+{`static boolean running = true;                       // NOT volatile
+
+public static void main(String[] args) throws Exception {
+    Thread t = new Thread(() -> {
+        long n = 0;
+        while (running) { n++; }
+        System.out.println("worker exited after " + n + " iters");
+    });
+    t.start();
+    Thread.sleep(500);
+    running = false;
+    System.out.println("main set running=false");
+    t.join(3000);
+    System.out.println(t.isAlive() ? "*** WORKER STILL RUNNING" : "worker terminated");
+}
+
+// Output:
+//   main set running=false
+//   *** WORKER STILL RUNNING
+//
+// The worker never exits. Not "exits late" — never. Change one word:
+
+static volatile boolean running = true;
+
+// Output:
+//   main set running=false
+//   worker exited after 2110180242 iters
+//   worker terminated`}
+      </CodeBlock>
+
+      <p>
+        Two billion iterations of a loop whose exit condition had already been set. The write
+        genuinely happened — main printed its line — but the JIT, seeing a loop that never writes{' '}
+        <code>running</code>, hoisted the read <em>out</em> of the loop and cached it in a
+        register. There is no bug in the JIT here: absent a happens-before edge, nothing in the
+        language required it to re-read the field, so it did not.
+      </p>
+
+      <InfoBox variant="note" title="What &quot;happens-before&quot; actually means">
+        <p>
+          The name is the single most misleading term in Java concurrency, because it sounds like
+          a statement about time. It is not. Two events being ordered in wall-clock time — as they
+          plainly were above, the write finished long before most of those reads — guarantees
+          nothing at all.
+        </p>
+        <p>
+          <strong>Happens-before is a visibility guarantee, not a chronology.</strong> Saying
+          &quot;A happens-before B&quot; means: everything thread A had written before A is
+          guaranteed to be visible to thread B at B, and the compiler and CPU are forbidden from
+          reordering across that edge. Without such an edge between two threads, the JMM permits
+          each to observe the other&apos;s writes in any order, or never.
+        </p>
+        <p>
+          So the practical question is never &quot;did this happen first?&quot; It is{' '}
+          <em>&quot;which edge connects these two threads?&quot;</em> If you cannot name one from
+          the list below, you have a race — even if the code has run correctly for two years.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="info" title="The happens-before edges worth memorising">
         <ul>
           <li>

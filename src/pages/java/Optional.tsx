@@ -153,6 +153,49 @@ Customer c = customers.findById(id).orElse(createFreshCustomer());
 Customer c = customers.findById(id).orElseGet(this::createFreshCustomer);`}
       </CodeBlock>
 
+      <p>
+        This one is worth proving rather than trusting, because the wrong version looks
+        completely harmless. Put a print statement in the default and call both on an Optional
+        that <em>has</em> a value:
+      </p>
+
+      <CodeBlock language="java" title="Watch which one runs">
+{`static String expensive() {
+    System.out.println("   >> expensive() ran");
+    return "fallback";
+}
+
+Optional<String> present = Optional.of("real value");
+
+present.orElse(expensive());        // prints ">> expensive() ran", returns "real value"
+present.orElseGet(Eager::expensive);// prints nothing,              returns "real value"`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Why — and where else this bites you">
+        <p>
+          There is no Optional-specific magic here. <code>orElse(expensive())</code> is an
+          ordinary method call, and <strong>Java evaluates every argument before invoking the
+          method</strong>. So <code>expensive()</code> has already run and returned by the time{' '}
+          <code>orElse</code> starts — <code>orElse</code> then discards the result. It never had
+          the option to skip the work.
+        </p>
+        <p>
+          <code>orElseGet</code> takes a <code>Supplier</code>, so what gets evaluated eagerly is
+          only the lambda <em>object</em>. The body runs only if <code>orElseGet</code> chooses to
+          call <code>get()</code> on it. That is the whole difference, and it is the same reason
+          every lazy API in Java is shaped this way — <code>orElseThrow(Supplier)</code>,{' '}
+          <code>requireNonNullElseGet</code>, and the{' '}
+          <code>log.debug(&quot;x={}&quot;, value)</code> placeholder form instead of{' '}
+          <code>log.debug(&quot;x=&quot; + expensiveToString())</code>.
+        </p>
+        <p>
+          Note what makes this hard to catch: the returned <em>value</em> is correct in both
+          cases. The bug is invisible in tests that only assert on results. It shows up as a
+          latency or database-load problem, or — if the default has side effects like inserting a
+          row or incrementing a counter — as mysterious extra writes.
+        </p>
+      </InfoBox>
+
       <h2>Anti-Pattern #6 — isPresent + get Instead of ifPresent / map</h2>
       <CodeBlock language="java" title="The imperative pattern you're trying to avoid">
 {`// WRONG — reads like the null-check code Optional was meant to replace.

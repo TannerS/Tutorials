@@ -46,8 +46,9 @@ function Syntax() {
         double preciseDecimal = 3.14159;  // ~15 decimal digits (default for decimals)
 
         // Character type
-        char letter = 'A';               // Single 16-bit Unicode character
-        char unicodeChar = '\\u0041';     // Unicode representation of 'A'
+        char letter = 'A';               // ONE 16-bit UTF-16 code unit (not always
+                                         // a whole character — see the note below)
+        char unicodeChar = '\\u0041';     // Unicode escape for 'A'
 
         // Boolean type
         boolean isJavaFun = true;         // true or false only
@@ -62,13 +63,145 @@ function Syntax() {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="info" title="Primitive vs Reference Types">
+      <InfoBox variant="warning" title="A char is not a character">
         <p>
-          Primitive types store actual values directly in memory, making them fast and efficient.
-          Reference types (like <code>String</code>, arrays, and objects) store a reference
-          (memory address) that points to the actual data on the heap. Java also provides wrapper
-          classes (<code>Integer</code>, <code>Double</code>, etc.) that let you treat primitives
-          as objects when needed — this is called <strong>autoboxing</strong>.
+          You will read everywhere that <code>char</code> holds &quot;a Unicode character&quot;.
+          That was true in 1995, when Unicode fit in 16 bits. It no longer is. A{' '}
+          <code>char</code> is one <strong>UTF-16 code unit</strong>, and characters outside the
+          first 65,536 (emoji, many CJK extensions, historic scripts) take <em>two</em> of them:
+        </p>
+        <CodeBlock language="java" title="Counting a string with an emoji in it">
+{`String s = "a😀b";                            // three characters, visually
+s.length();                                   // 4  <- code units, not characters
+s.codePointCount(0, s.length());              // 3  <- actual characters
+(int) s.charAt(1);                            // 55357 — half of the emoji,
+                                              //         meaningless on its own`}
+        </CodeBlock>
+        <p>
+          So <code>length()</code> is a count of code units, and iterating with{' '}
+          <code>charAt</code> will saw an emoji in half. For ASCII text — most of what you write
+          early on — the distinction never shows up, which is exactly why it surprises people
+          later. When it matters, use <code>s.codePoints()</code> rather than{' '}
+          <code>s.chars()</code>.
+        </p>
+      </InfoBox>
+
+      <h3>Primitives vs References: Stack and Heap</h3>
+      <p>
+        &quot;Primitives go on the stack, objects go on the heap&quot; is the usual one-liner. It
+        is worth unpacking, because those two words explain assignment, equality, and null for the
+        rest of the language.
+      </p>
+      <ul>
+        <li>
+          The <strong>stack</strong> is per-thread scratch space. Every method call pushes a{' '}
+          <em>frame</em> holding that call&apos;s local variables; when the method returns the
+          frame is popped and the space is gone. It is fast because allocation is just moving a
+          pointer, and it is why infinite recursion gives you a{' '}
+          <code>StackOverflowError</code>. (It is also the thing a stack trace is a picture of.)
+        </li>
+        <li>
+          The <strong>heap</strong> is one shared region where all objects live. It outlives the
+          method that created an object, it is shared across threads, and it is managed by the
+          garbage collector, which reclaims objects nothing refers to any more.
+        </li>
+      </ul>
+      <p>
+        A <code>int x = 5</code> local variable holds the number <code>5</code> in its stack slot.
+        A <code>String s</code> local variable holds a <em>reference</em> in its stack slot — an
+        arrow to an object on the heap. The consequence you actually feel:
+      </p>
+
+      <CodeBlock language="java" title="What gets copied on assignment">
+{`// Primitive: the VALUE is copied. Two independent slots.
+int a = 5;
+int b = a;
+b = 99;
+System.out.println(a);        // 5  — a never moved
+
+// Reference: the ARROW is copied, not the object. Two names, one object.
+int[] xs = {1, 2, 3};
+int[] ys = xs;
+ys[0] = 99;
+System.out.println(xs[0]);    // 99 — same array, seen through two variables
+
+// This is also why every method call in Java is pass-by-value: what gets
+// copied into the parameter is the arrow. The method can mutate the object
+// it points at, but reassigning the parameter cannot change the caller's
+// variable.
+static void tryToSwap(int[] arr) {
+    arr[0] = 42;              // caller SEES this — same object
+    arr = new int[]{7, 8};    // caller does NOT see this — local arrow only
+}`}
+      </CodeBlock>
+
+      <p>
+        And it is why <code>null</code> exists at all: a reference variable can hold an arrow that
+        points nowhere. An <code>int</code> cannot — there is no bit pattern in those 32 bits
+        reserved to mean &quot;absent&quot;, which is precisely why the wrapper types below are
+        needed for things like a nullable database column.
+      </p>
+
+      <h3>Autoboxing — and the two ways it bites</h3>
+      <p>
+        Each primitive has a matching <strong>wrapper class</strong> — an ordinary heap object
+        holding one primitive value: <code>int</code>/<code>Integer</code>,{' '}
+        <code>double</code>/<code>Double</code>, <code>boolean</code>/<code>Boolean</code>, and so
+        on. You need them because generics and collections only work with reference types: there
+        is no <code>List&lt;int&gt;</code>, only <code>List&lt;Integer&gt;</code>.
+      </p>
+      <p>
+        <strong>Autoboxing</strong> is the compiler silently inserting the conversion for you.
+        Write <code>list.add(5)</code> and the compiler rewrites it as{' '}
+        <code>list.add(Integer.valueOf(5))</code>; write <code>int n = list.get(0)</code> and it
+        inserts <code>list.get(0).intValue()</code> (<em>unboxing</em>). It is convenient and
+        almost invisible — which is the problem, because it hides an object allocation and a
+        method call in code that looks like plain arithmetic.
+      </p>
+
+      <CodeBlock language="java" title="Trap 1: == on boxed values, and the Integer cache">
+{`Integer a = 127, b = 127;
+Integer c = 128, d = 128;
+
+System.out.println(a == b);        // true
+System.out.println(c == d);        // false   <- same numbers, different answer
+System.out.println(c.equals(d));   // true
+
+// Why: Integer.valueOf() keeps a CACHE of boxed values from -128 to 127 and
+// hands out the same object every time. Inside that range both variables end
+// up pointing at one cached object, so == (a reference comparison) is true.
+// Outside it, valueOf allocates a fresh object each call, so == is false.
+//
+// The lesson is NOT "the cache boundary is at 127". It is that == on boxed
+// types asks "same object?", never "same number?" — and it happens to answer
+// correctly for small values, which is the worst possible failure mode:
+// it passes your tests and breaks in production on a big number.
+//
+// Always use equals() for wrappers, or compare the primitives:
+if (a.equals(b))          { }      // fine
+if (a.intValue() == b)    { }      // fine — unboxes, numeric comparison`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="Trap 2: unboxing null">
+{`Map<String, Integer> counts = new HashMap<>();
+int n = counts.get("missing");     // compiles fine
+
+// java.lang.NullPointerException: Cannot invoke "java.lang.Integer.intValue()"
+//   because the return value of "java.util.Map.get(Object)" is null
+
+// The map returned null, and the invisible .intValue() the compiler inserted
+// was called on it. Nothing on that line mentions intValue — this is why the
+// NPE looks like it comes from nowhere. The fix is to not unbox blindly:
+int n = counts.getOrDefault("missing", 0);`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Rule of thumb">
+        <p>
+          Use primitives by default. Reach for a wrapper only when you need{' '}
+          <code>null</code> to mean &quot;absent&quot; or when a generic type forces it
+          (<code>List&lt;Integer&gt;</code>, <code>Map&lt;String, Long&gt;</code>). And never use{' '}
+          <code>==</code> on a wrapper type — the moment a value can exceed 127 it silently starts
+          returning the wrong answer.
         </p>
       </InfoBox>
 
@@ -235,6 +368,57 @@ String json = """
         }
         """;`}
       </CodeBlock>
+
+      <h3>Why <code>==</code> sometimes works on Strings</h3>
+      <p>
+        &quot;Use <code>equals</code>, not <code>==</code>&quot; is the rule. The reason it is
+        such an easy rule to break is that <code>==</code> <em>appears to work</em> most of the
+        time, and the mechanism behind that is worth knowing.
+      </p>
+      <p>
+        The JVM keeps a <strong>string pool</strong>: a table of unique string objects. Every
+        string <em>literal</em> in your source is put in that pool by the class loader, and every
+        occurrence of the same literal anywhere in the program resolves to{' '}
+        <strong>the same object</strong>. This is only safe because strings are immutable — if
+        one holder could modify a shared string, every other holder would see the change. It
+        exists to save memory, since literals like <code>&quot;id&quot;</code> or{' '}
+        <code>&quot;UTF-8&quot;</code> can appear thousands of times.
+      </p>
+      <p>
+        So <code>==</code> between two literals answers &quot;same object?&quot; and gets{' '}
+        <code>true</code> — for reasons that have nothing to do with the text matching. Change
+        where the string comes from and the answer flips:
+      </p>
+
+      <CodeBlock language="java" title="Every one of these strings reads &quot;java&quot;">
+{`String a = "java";
+String b = "java";               // a == b  -> true   same pooled literal
+String c = new String("java");   // a == c  -> false  'new' forces a fresh object
+String d = c.intern();           // a == d  -> true   intern() returns the pooled one
+
+String e = "ja" + "va";          // a == e  -> true   BOTH operands are compile-time
+                                 //                   constants, so javac folds this
+                                 //                   into the literal "java"
+String part = "ja";
+String f = part + "va";          // a == f  -> false  computed at RUNTIME, so it is
+                                 //                   a brand-new heap object
+a.equals(f);                     //         -> true   the only question you meant to ask`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="Why this is worse than a normal bug">
+        <p>
+          Note what <code>e</code> and <code>f</code> mean in practice: <code>==</code> succeeds
+          for hardcoded strings and fails for anything read from a file, a network request, a
+          database, or user input. So the comparison passes every test you write with literals in
+          it, then fails on real data. Reach for <code>equals</code> every time and the question
+          never arises.
+        </p>
+        <p>
+          A useful mental shortcut for the whole language: <code>==</code> on any reference type
+          asks <em>&quot;are these the same object?&quot;</em>. It never asks about contents. The
+          only place it means what you expect is on primitives.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="java" title="StringBuilder.java">
 {`// WRONG — creates a new String on EVERY iteration. O(n^2) work and garbage.

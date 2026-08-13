@@ -399,6 +399,98 @@ public class EqualsHashCode {
 }`}
       </CodeBlock>
 
+      <h3>Why <code>contains</code> returns false: what happens inside the HashMap</h3>
+      <p>
+        That <code>false</code> is worth more than the rule that predicts it. &quot;Always
+        override <code>hashCode</code> when you override <code>equals</code>&quot; is memorisable
+        but forgettable; the mechanism is neither. Here is what a{' '}
+        <code>HashSet</code>/<code>HashMap</code> actually does on every lookup.
+      </p>
+      <p>
+        The map holds an array of buckets — 16 of them by default. To find a key it does three
+        things, <strong>in this order</strong>:
+      </p>
+      <ol>
+        <li>
+          Call <code>key.hashCode()</code> and stir the bits (<code>h ^ (h &gt;&gt;&gt; 16)</code>,
+          so that high bits influence the result), giving a <em>stored hash</em>.
+        </li>
+        <li>
+          Take that hash modulo the table size to pick <strong>one bucket</strong>, and look only
+          inside it. This is the whole point of a hash table — it is what makes lookup O(1)
+          instead of a scan of every element.
+        </li>
+        <li>
+          Walk that bucket&apos;s entries. For each one, compare the <em>stored hash</em> first,
+          and only call <code>equals()</code> if the hashes match.
+        </li>
+      </ol>
+      <p>
+        Now put <code>BadPoint</code> through it. It inherits <code>Object.hashCode()</code>, which
+        is derived from object identity, so two distinct-but-equal instances produce two unrelated
+        numbers:
+      </p>
+
+      <CodeBlock language="java" title="The two hash codes of two equal objects">
+{`BadPoint a = new BadPoint(1, 2);
+BadPoint b = new BadPoint(1, 2);
+
+a.equals(b);      // true          — your equals() says they are the same
+a.hashCode();     // 293907205     — identity-derived, arbitrary
+b.hashCode();     // 1794717576    — a completely unrelated number
+
+// (exact values vary per object and per run — that is precisely the problem)`}
+      </CodeBlock>
+
+      <p>
+        Step 1 produces a different hash for <code>b</code> than was stored for <code>a</code>.
+        Step 2 therefore usually probes a different bucket entirely — and even when the two
+        collide into the <em>same</em> bucket by luck, step 3 rejects the entry on the stored-hash
+        comparison before it ever reaches <code>equals()</code>.
+      </p>
+      <p>
+        Which leads to the detail that makes the whole thing click. Put a print statement inside{' '}
+        <code>BadPoint.equals</code> and run the lookup:
+      </p>
+
+      <CodeBlock language="java" title="Your equals() is never called at all">
+{`@Override public boolean equals(Object o) {
+    System.out.println("   >> equals() was called");
+    return o instanceof BadPoint p && p.x == x && p.y == y;
+}
+
+Set<BadPoint> set = new HashSet<>();
+set.add(new BadPoint(1, 2));
+set.contains(new BadPoint(1, 2));
+
+// Output:
+//   false
+//
+// That is the ENTIRE output. ">> equals() was called" never prints.`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="The consequence people miss">
+        <p>
+          The carefully written <code>equals()</code> is not being <em>overruled</em> — it is
+          never reached. <code>hashCode()</code> decides <em>where to look</em>, and{' '}
+          <code>equals()</code> only settles ties among the handful of entries found there. Get
+          the first one wrong and the second never gets a turn.
+        </p>
+        <p>
+          So the failure is worse than &quot;lookups return false&quot;. A{' '}
+          <code>HashSet</code> will happily store both objects — <code>size()</code> becomes 2 for
+          two objects that are <code>equals()</code> to each other, breaking the one guarantee a
+          Set exists to provide. <code>map.put(key, v)</code> twice creates two entries instead of
+          replacing one. And <code>remove()</code> cannot find the object either, so it leaks.
+        </p>
+        <p>
+          This also explains why the reverse omission is harmless-but-useless: overriding{' '}
+          <code>hashCode</code> without <code>equals</code> sends equal-valued objects to the
+          right bucket, where <code>Object.equals</code> then rejects them on identity anyway.
+          The two methods are one mechanism, which is why the language ties them together.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="danger" title="Mutable keys are a data-loss bug">
         <p>
           If you put an object into a <code>HashSet</code> or use it as a{' '}

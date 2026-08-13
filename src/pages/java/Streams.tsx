@@ -126,9 +126,95 @@ public class FunctionalInterfaces {
 
       <h2>The Stream API</h2>
       <p>
-        The Stream API provides a declarative way to process sequences of elements. Instead of
-        writing loops with mutable state, you describe <em>what</em> you want using a pipeline
-        of operations.
+        Streams are usually introduced as &quot;a declarative way to process sequences&quot;,
+        which is true and completely unpersuasive. The case for them is easier to see from the
+        problem they remove, so start there.
+      </p>
+      <p>
+        The task: <em>from a list of employees, take everyone earning at least 90,000, and produce
+        their names grouped by department, with departments and names both in alphabetical
+        order.</em> Nothing exotic — this is an afternoon&apos;s reporting work. Written as a
+        loop:
+      </p>
+
+      <CodeBlock language="java" title="The loop version">
+{`Map<String, List<String>> result = new TreeMap<>();
+
+for (Employee e : staff) {
+    if (e.salary() >= 90_000) {
+        List<String> names = result.get(e.department());
+        if (names == null) {                    // does the group exist yet?
+            names = new ArrayList<>();
+            result.put(e.department(), names);
+        }
+        names.add(e.name());
+    }
+}
+for (List<String> names : result.values()) {    // second pass, just to sort
+    Collections.sort(names);
+}
+return result;`}
+      </CodeBlock>
+
+      <p>
+        That works. The problem is not its length — it is that four unrelated concerns are
+        interleaved, and you cannot change one without re-reading all of them:
+      </p>
+      <ul>
+        <li>
+          <strong>The actual logic</strong> — filter, group, extract names, sort — is scattered
+          across three different constructs and two passes.
+        </li>
+        <li>
+          <strong>Four lines exist only to manage the accumulator.</strong> The null-check-and-create
+          dance has nothing to do with the problem; it is bookkeeping the data structure demands.
+        </li>
+        <li>
+          <strong>The result is mutable while being built</strong>, so the loop body must be read
+          in full before you can be sure the map is not modified somewhere unexpected.
+        </li>
+        <li>
+          <strong>The shape is not composable.</strong> &quot;Also give me a headcount per
+          department&quot; means another loop, or tangling a second accumulator into this one.
+        </li>
+      </ul>
+
+      <p>The same computation as a pipeline:</p>
+
+      <CodeBlock language="java" title="The stream version — identical output">
+{`return staff.stream()
+    .filter(e -> e.salary() >= 90_000)
+    .sorted(Comparator.comparing(Employee::name))
+    .collect(Collectors.groupingBy(Employee::department, TreeMap::new,
+             Collectors.mapping(Employee::name, Collectors.toList())));
+
+// Both versions produce exactly:
+//   {eng=[Ada, Alan, Grace], ops=[Barbara]}`}
+      </CodeBlock>
+
+      <p>
+        Every line names one of the four operations from the problem statement, in the order the
+        problem stated them, and the accumulator bookkeeping is gone entirely —{' '}
+        <code>groupingBy</code> owns the &quot;create the group if absent&quot; logic. That is the
+        actual trade: you give up explicit control of the iteration in exchange for the loop&apos;s
+        <em>intent</em> becoming readable.
+      </p>
+
+      <InfoBox variant="warning" title="Streams are not always the answer">
+        <p>
+          The win above is real but conditional. A stream is worth reaching for when you are{' '}
+          <strong>transforming a collection into another value</strong> — filtering, mapping,
+          grouping, aggregating. It is the wrong tool when you need an index, when you must mutate
+          the source, when you want to <code>break</code> out on a complex condition, or when the
+          body needs to throw a checked exception (see the Exceptions lesson). A plain{' '}
+          <code>for</code> loop is not a legacy construct, and a stream that needs a comment to
+          explain it has lost the argument.
+        </p>
+      </InfoBox>
+
+      <p>
+        With the motivation established, the rest of this lesson is the vocabulary: what
+        operations exist, when they run, and how to combine them.
       </p>
 
       <FlowChart

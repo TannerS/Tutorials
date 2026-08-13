@@ -247,6 +247,60 @@ public static <T extends Iterable<String> & AutoCloseable> void drain(T source)
         </p>
       </InfoBox>
 
+      <p>
+        &quot;All generic type information is removed&quot; is a strong claim, so it is worth
+        proving rather than believing. Ask two differently-parameterised lists what class they
+        are:
+      </p>
+
+      <CodeBlock language="java" title="Erasure, observed">
+{`List<String>  a = new ArrayList<>();
+List<Integer> b = new ArrayList<>();
+
+a.getClass() == b.getClass();     // true
+a.getClass().getName();           // "java.util.ArrayList"  — no <String> anywhere
+
+// There is exactly ONE ArrayList class at runtime. <String> is a note the
+// compiler keeps for itself and then throws away.`}
+      </CodeBlock>
+
+      <p>
+        The second half of erasure — &quot;the compiler inserts casts at the call sites&quot; — is
+        just as observable. Sneak a wrong value past the compiler using a raw reference, and watch
+        where the failure surfaces:
+      </p>
+
+      <CodeBlock language="java" title="Where the hidden cast lives">
+{`List<String> a = new ArrayList<>();
+
+List raw = a;          // raw type — compiler downgrades to a warning
+raw.add(42);           // succeeds! nothing at runtime knows this list is "of String"
+a.size();              // 1 — the Integer really is in there
+
+String s = a.get(0);   // ClassCastException: class java.lang.Integer cannot be
+                       // cast to class java.lang.String
+
+// Note WHERE it blew up. Nothing in your source casts anything on that line —
+// a.get(0) is declared to return String. The cast is the one javac inserted
+// for you, and it is the only runtime type checking generics get.`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="Why Java did it this way">
+        <p>
+          Erasure exists for <strong>migration compatibility</strong>. Generics arrived in Java 5,
+          fifteen years into the language&apos;s life, and every existing{' '}
+          <code>List</code> in every compiled library had to keep working. Erasing to the same
+          bytecode a Java 1.4 compiler produced meant generic and non-generic code could
+          interoperate freely, and old <code>.class</code> files kept running untouched.
+        </p>
+        <p>
+          The price is everything in the next section. C# made the opposite choice — reified
+          generics, where <code>List&lt;string&gt;</code> is a genuinely distinct runtime type —
+          and paid for it by breaking compatibility. Knowing which trade-off Java took is what
+          makes the restrictions below feel like consequences rather than arbitrary rules.
+        </p>
+      </InfoBox>
+
       <h3>What Erasure Actually Costs You</h3>
       <p>
         Erasure is not an academic footnote — it produces a specific list of things the compiler
@@ -426,6 +480,109 @@ public class Wildcards {
           produces T values). Use <code>? super T</code> when you only <strong>write</strong> to
           a structure (it consumes T values). Use an exact type <code>T</code> when you both read
           and write. This principle is the key to writing flexible, reusable generic APIs.
+        </p>
+      </InfoBox>
+
+      <h3>Why PECS Is True (and why the mnemonic is the wrong way round to learn it)</h3>
+      <p>
+        PECS is easy to recite and easy to apply backwards, because &quot;producer&quot; and
+        &quot;consumer&quot; are named from the <em>collection&apos;s</em> point of view, not
+        yours. Derive it instead — it takes one idea. Read a wildcard as{' '}
+        <strong>&quot;some one specific type I don&apos;t know&quot;</strong>, not &quot;any
+        type&quot;. Every restriction follows from that.
+      </p>
+
+      <p>
+        <strong><code>? extends Number</code> — an unknown subtype.</strong> The parameter might be
+        a <code>List&lt;Integer&gt;</code>, a <code>List&lt;Double&gt;</code>, or a{' '}
+        <code>List&lt;Number&gt;</code>. The compiler does not know which one, only that whatever
+        it is sits at or below <code>Number</code>.
+      </p>
+      <ul>
+        <li>
+          <em>Reading is safe.</em> Whatever comes out is at least a <code>Number</code>, because
+          every candidate type is a <code>Number</code>. So <code>get</code> works.
+        </li>
+        <li>
+          <em>Writing is not.</em> If you could <code>add(1)</code> and the caller passed a{' '}
+          <code>List&lt;Double&gt;</code>, you would have put an <code>Integer</code> into it —
+          exactly the corruption that invariance exists to prevent. So <code>add</code> is banned.
+        </li>
+      </ul>
+
+      <p>
+        <strong><code>? super Integer</code> — an unknown supertype.</strong> It might be a{' '}
+        <code>List&lt;Integer&gt;</code>, a <code>List&lt;Number&gt;</code>, or a{' '}
+        <code>List&lt;Object&gt;</code>. Now everything inverts:
+      </p>
+      <ul>
+        <li>
+          <em>Writing is safe.</em> An <code>Integer</code> can be stored in any of those, because
+          an <code>Integer</code> <em>is</em> an <code>Integer</code>, a <code>Number</code>, and
+          an <code>Object</code>. So <code>add</code> works.
+        </li>
+        <li>
+          <em>Reading gives you almost nothing.</em> The list might be a{' '}
+          <code>List&lt;Object&gt;</code>, so the only thing the compiler can promise about an
+          element is that it is an <code>Object</code>. So <code>get</code> compiles but returns{' '}
+          <code>Object</code>.
+        </li>
+      </ul>
+
+      <p>
+        The compiler even names the unknown type when it rejects you. It invents a fresh
+        &quot;capture&quot; variable for it, and once you can read these messages they stop being
+        cryptic:
+      </p>
+
+      <CodeBlock language="java" title="The actual javac errors">
+{`static void readOnly(List<? extends Number> src) {
+    Number n = src.get(0);            // fine
+    src.add(Integer.valueOf(1));      // error
+}
+// error: incompatible types: Integer cannot be converted to CAP#1
+//   where CAP#1 is a fresh type-variable:
+//     CAP#1 extends Number from capture of ? extends Number
+
+static void writeOnly(List<? super Integer> dst) {
+    dst.add(1);                       // fine
+    Integer i = dst.get(0);           // error
+}
+// error: incompatible types: CAP#1 cannot be converted to Integer
+//   where CAP#1 is a fresh type-variable:
+//     CAP#1 extends Object super: Integer from capture of ? super Integer
+
+// CAP#1 IS "the one specific type I don't know". Read it that way and both
+// errors say the obvious thing: you cannot prove an Integer fits into an
+// unknown subtype, and you cannot prove an unknown supertype is an Integer.`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="One signature that uses both">
+        <p>
+          The clearest real example is a copy method, where one list is read and the other is
+          written — so it needs both wildcards at once:
+        </p>
+        <CodeBlock language="java" title="Both halves of PECS in one place">
+{`public static <T> void copy(List<? super T> dest, List<? extends T> src) {
+    for (int i = 0; i < src.size(); i++) {
+        dest.set(i, src.get(i));       // read from src, write into dest
+    }
+}
+
+// src PRODUCES T values  -> ? extends T
+// dest CONSUMES T values -> ? super T
+
+// The payoff is flexibility that the naive signature copy(List<T>, List<T>)
+// would refuse:
+List<Object> dest = new ArrayList<>(...);
+List<Integer> src = List.of(1, 2, 3);
+copy(dest, src);        // T = Integer; Object is a supertype. Compiles.`}
+        </CodeBlock>
+        <p>
+          One thing wildcards never help with: a parameter you both read <em>and</em> write needs
+          a plain <code>T</code>. And there is no point putting a wildcard on a{' '}
+          <strong>return</strong> type — it forces every caller to deal with the same unknown
+          type you refused to pin down.
         </p>
       </InfoBox>
 

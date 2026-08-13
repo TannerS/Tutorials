@@ -215,6 +215,65 @@ public class Cat extends Animal {
 }`}
       </CodeBlock>
 
+      <h3>What <code>@Override</code> actually does</h3>
+      <p>
+        <code>@Override</code> appears above two methods in the code you just read, and it is
+        easy to assume it is what <em>causes</em> the override. It is not. Overriding is decided
+        purely by the method signature — delete every <code>@Override</code> above and the program
+        behaves identically. The annotation is an <strong>assertion checked by the compiler</strong>:
+        &quot;I believe this method overrides something in a supertype; fail the build if it does
+        not.&quot;
+      </p>
+      <p>
+        That sounds like a formality until you see what it catches. Both of the following compile
+        cleanly without it, and both are silently broken:
+      </p>
+
+      <CodeBlock language="java" title="Two bugs @Override would have caught">
+{`class Animal {
+    public String toString()          { return "Animal"; }
+    public boolean equals(Object o)   { return this == o; }
+}
+
+class Dog extends Animal {
+    // BUG 1 — a typo (capital S). This is a brand-new method that nothing
+    // ever calls. Dog still uses Animal's toString().
+    public String toStr1ng() { return "Dog"; }
+
+    // BUG 2 — parameter is Dog, not Object. This does not override equals();
+    // it OVERLOADS it. Collections call equals(Object), so they get Animal's
+    // identity comparison and your logic never runs.
+    public boolean equals(Dog other) { return true; }
+}
+
+Animal a = new Dog();
+System.out.println(a);                              // "Animal"  <- bug 1
+new Dog().equals((Object) new Dog());               // false     <- bug 2`}
+      </CodeBlock>
+
+      <p>
+        Add the annotation and the compiler stops you before the code ever runs:
+      </p>
+
+      <CodeBlock language="java" title="The compiler error">
+{`class Dog extends Animal {
+    @Override public boolean equals(Dog other) { return true; }
+}
+
+// error: equals(Dog) in Dog does not override or implement
+//        a method from a supertype`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Put it on every override">
+        <p>
+          The cost is one line; the payoff is that an entire class of silent failures becomes a
+          compile error. It also protects you in the other direction: if a superclass you do not
+          control later renames or removes a method, your build breaks loudly instead of your
+          subclass quietly ceasing to participate. Modern IDEs add it automatically and will warn
+          when it is missing. <code>@Override</code> is also valid on interface implementations.
+        </p>
+      </InfoBox>
+
       <h2>Polymorphism</h2>
       <p>
         Polymorphism means &quot;many forms.&quot; It allows objects of different classes to be

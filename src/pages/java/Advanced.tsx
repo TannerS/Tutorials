@@ -199,6 +199,87 @@ public class RecordDemo {
 }`}
       </CodeBlock>
 
+      <h3>The two things &quot;records are immutable&quot; does not mean</h3>
+      <p>
+        A record&apos;s components are <code>final</code>, so the <em>reference</em> in each field
+        can never be reassigned. That is the entire guarantee, and it is weaker than most people
+        assume. If a component points at something mutable, the record is a thin shell around
+        mutable state — and it hands that state out to anyone who asks.
+      </p>
+
+      <CodeBlock language="java" title="Shallow immutability, demonstrated">
+{`record Team(String name, List<String> members) {}
+
+List<String> roster = new ArrayList<>(List.of("Ada"));
+Team t = new Team("eng", roster);
+
+roster.add("Alan");           // mutate the list we passed IN
+System.out.println(t);        // Team[name=eng, members=[Ada, Alan]]
+
+t.members().add("Grace");     // mutate through the ACCESSOR
+System.out.println(t);        // Team[name=eng, members=[Ada, Alan, Grace]]`}
+      </CodeBlock>
+
+      <p>
+        Both leaks are closed by copying in the compact constructor. <code>List.copyOf</code> is
+        the right tool: it copies <em>and</em> returns an unmodifiable list, so the accessor
+        cannot be used as a back door either.
+      </p>
+
+      <CodeBlock language="java" title="Defensive copy in the compact constructor">
+{`record SafeTeam(String name, List<String> members) {
+    SafeTeam {
+        // Reassigning the parameter is exactly what a compact constructor is
+        // for — the generated code assigns THIS value to the field.
+        members = List.copyOf(members);
+    }
+}
+
+List<String> roster = new ArrayList<>(List.of("Ada"));
+SafeTeam s = new SafeTeam("eng", roster);
+
+roster.add("Alan");
+System.out.println(s);        // SafeTeam[name=eng, members=[Ada]]   <- unaffected
+
+s.members().add("X");         // UnsupportedOperationException
+
+// Note List.copyOf rejects nulls. If null elements are legal, use
+// Collections.unmodifiableList(new ArrayList<>(members)) instead.`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Array components break equals() and hashCode()">
+        <p>
+          The generated <code>equals</code> compares each component with <code>equals</code>, and
+          arrays inherit identity equality from <code>Object</code>. So a record with an array
+          component almost never behaves the way you want:
+        </p>
+        <CodeBlock language="java" title="Two records with identical contents">
+{`record Buf(byte[] data) {}
+
+new Buf(new byte[]{1, 2}).equals(new Buf(new byte[]{1, 2}));   // false`}
+        </CodeBlock>
+        <p>
+          The same applies to <code>hashCode</code>, so such a record is unusable as a{' '}
+          <code>HashMap</code> key. Either store a <code>List&lt;Byte&gt;</code> or an immutable
+          wrapper instead, or override <code>equals</code>, <code>hashCode</code>, and{' '}
+          <code>toString</code> by hand using the <code>Arrays.*</code> helpers. Records let you
+          override any generated member; you just have to remember that the array case requires
+          it.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="tip" title="Where records are the wrong choice">
+        <p>
+          A record is a transparent carrier for its components — that transparency is the feature.
+          It is the wrong tool when you need to <em>hide</em> representation (the accessors are
+          public and named after the fields, permanently), when you need mutable state, when you
+          need to extend a class (records are implicitly <code>final</code> and always extend{' '}
+          <code>java.lang.Record</code>), or when the type&apos;s identity matters more than its
+          value — a JPA entity with a database identity is the standard example, and it is why
+          entities remain ordinary classes.
+        </p>
+      </InfoBox>
+
       <h2>Sealed Classes</h2>
       <p>
         Sealed classes (Java 15, finalized in Java 17) restrict which classes can extend them.

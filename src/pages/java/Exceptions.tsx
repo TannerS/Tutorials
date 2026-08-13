@@ -399,6 +399,90 @@ public class BankDemo {
 }`}
       </CodeBlock>
 
+      <h3>What Chaining Actually Produces</h3>
+      <p>
+        Points 3 and 4 above both say &quot;preserve the cause&quot;, which is easy to nod along
+        to without knowing what it buys. The second argument to an exception constructor is stored
+        as the <strong>cause</strong>, and when the exception is finally printed, the JVM walks
+        that chain and prints every link. That output is the thing you will spend real debugging
+        time reading, so it is worth seeing produced.
+      </p>
+      <p>
+        Three layers, each wrapping the one below with the context it uniquely knows:
+      </p>
+
+      <CodeBlock language="java" title="Chain.java">
+{`static void queryDb() throws SQLException {
+    throw new SQLException("connection reset by peer");
+}
+
+static void loadCustomer() {
+    try { queryDb(); }
+    catch (SQLException e) {
+        // The repository knows WHICH customer. The driver did not.
+        throw new DataAccessException("loading customer 42", e);
+    }
+}
+
+public static void main(String[] args) {
+    try { loadCustomer(); }
+    catch (DataAccessException e) {
+        // The controller knows WHICH REQUEST. The repository did not.
+        throw new ServiceException("GET /customers/42 failed", e);
+    }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="The resulting stack trace">
+{`Exception in thread "main" ServiceException: GET /customers/42 failed
+	at Chain.main(Chain.java:20)
+Caused by: DataAccessException: loading customer 42
+	at Chain.loadCustomer(Chain.java:16)
+	at Chain.main(Chain.java:19)
+Caused by: java.sql.SQLException: connection reset by peer
+	at Chain.queryDb(Chain.java:12)
+	at Chain.loadCustomer(Chain.java:15)
+	... 1 more`}
+      </CodeBlock>
+
+      <p>Three things to take from that output:</p>
+      <ul>
+        <li>
+          <strong>Read it bottom-up.</strong> The last <code>Caused by:</code> is the root cause —{' '}
+          the connection reset. Everything above it is context added on the way out. Engineers
+          waste a lot of time reading the top block, which is usually the least informative one.
+        </li>
+        <li>
+          <strong>Each layer earns its place by adding what the layer below could not know.</strong>{' '}
+          The driver knows the socket died; only the repository knows it was customer 42; only the
+          controller knows which request. Wrapping without adding context — {' '}
+          <code>throw new ServiceException(e)</code> with no message — just makes the trace longer.
+        </li>
+        <li>
+          <strong><code>... 1 more</code> is not truncation you need to worry about.</strong> The
+          JVM omits frames the enclosing trace already printed. That last frame is{' '}
+          <code>Chain.main</code>, listed above. Nothing is lost.
+        </li>
+      </ul>
+
+      <InfoBox variant="warning" title="The one-character version of this bug">
+        <p>
+          <code>throw new ServiceException(&quot;context&quot;, e)</code> passes the cause.{' '}
+          <code>throw new ServiceException(&quot;context: &quot; + e.getMessage())</code> does not
+          — it copies the text and drops the object. The log then shows one frame pointing at your
+          wrapper, with <em>no</em> <code>Caused by:</code> section and no indication of where the
+          failure actually originated. The two lines look almost identical in review and behave
+          completely differently at 3am.
+        </p>
+        <p>
+          Access the chain programmatically with <code>e.getCause()</code>, which returns{' '}
+          <code>null</code> at the root. Note that a custom exception only supports chaining if you
+          actually declare a constructor that forwards to{' '}
+          <code>super(message, cause)</code> — a very common omission in hand-rolled exception
+          classes.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="danger" title="Never Catch and Ignore">
         <p>
           An empty <code>catch</code> block is one of the worst anti-patterns in Java. It

@@ -111,6 +111,117 @@ function Intro() {
         </li>
       </ul>
 
+      <h3>Why <code>main</code> has exactly that signature</h3>
+      <p>
+        &quot;It&apos;s just the magic incantation&quot; is the usual answer, and it leaves you
+        unable to debug the day you typo it. Every word in that line is doing a specific job, and
+        each one follows from the same fact: <strong>the JVM has to call your method before any of
+        your code has run.</strong> Read the signature left to right with that in mind and it
+        stops being arbitrary.
+      </p>
+      <ul>
+        <li>
+          <code>public</code> — the launcher lives outside your class and your package. If the
+          method were <code>private</code> or package-private, the JVM could not legally call it.
+        </li>
+        <li>
+          <code>static</code> — this is the big one. A non-static method must be called{' '}
+          <em>on an object</em>, so the JVM would have to construct a <code>HelloWorld</code>{' '}
+          first — and to do that it would need to know which constructor to call and what to pass
+          it. Making <code>main</code> static sidesteps the whole question: the method belongs to
+          the class, so the JVM can call it the moment the class is loaded, with no instance in
+          existence. (Java 25 relaxed this — see below — but by answering that question rather
+          than dodging it.)
+        </li>
+        <li>
+          <code>void</code> — there is no caller inside your program to hand a value back to. The
+          JVM discards a return value, so the language forbids one. To report success or failure
+          to the operating system you call <code>System.exit(1)</code>, which sets the process exit
+          code directly.
+        </li>
+        <li>
+          <code>String[] args</code> — the command-line arguments after the class name. Running{' '}
+          <code>java HelloWorld alpha beta</code> gives you an array of length 2. Note it is length
+          2, not 3: unlike C, <code>args[0]</code> is the first <em>argument</em>, not the program
+          name.
+        </li>
+      </ul>
+      <p>
+        The practical payoff: if you get any part of it wrong, the class still compiles — it is a
+        perfectly legal method, just not the one the launcher wants — and the failure shows up at
+        launch instead. That distinction confuses a lot of beginners, so it is worth seeing:
+      </p>
+
+      <CodeBlock language="java" title="Compiles clean, fails to launch">
+{`public class HelloWorld {
+    public static void main(String args) { }   // a String, not a String[]
+}
+
+// javac HelloWorld.java   -> succeeds, produces HelloWorld.class
+// java HelloWorld         -> Error: Main method not found in class HelloWorld,
+//                            please define the main method as:
+//                               public static void main(String[] args)
+
+// The compiler had no reason to object: that is a valid method. It is simply
+// an unrelated method that happens to share a name. Only the launcher cares.`}
+      </CodeBlock>
+
+      <h3>What the launcher actually looks for</h3>
+      <p>
+        Since Java 25 the rule is broader than &quot;must be <code>public static void
+        main(String[])</code>&quot;. The launcher searches your class for a method named{' '}
+        <code>main</code> returning <code>void</code> that is not <code>private</code>, and picks
+        the first match in this order:
+      </p>
+      <ol>
+        <li><code>static void main(String[] args)</code> — the classic form.</li>
+        <li><code>static void main()</code> — no parameters.</li>
+        <li><code>void main(String[] args)</code> — an instance method.</li>
+        <li><code>void main()</code> — an instance method with no parameters.</li>
+      </ol>
+      <p>
+        A <code>String[]</code> version always beats a no-parameter version, and a static version
+        always beats an instance version at the same arity. If it lands on one of the instance
+        forms, the launcher constructs your class first — which is why <em>that</em> class needs a
+        non-private zero-argument constructor:
+      </p>
+
+      <CodeBlock language="java" title="Instance main — what the launcher does for you">
+{`public class HelloWorld {
+    HelloWorld() { System.out.println("constructor ran"); }
+    public void main(String[] args) { System.out.println("instance main"); }
+}
+
+// java HelloWorld
+//   constructor ran
+//   instance main
+
+// But give it only a constructor that takes arguments:
+public class Broken {
+    private Broken(int x) { }
+    public void main(String[] args) { }
+}
+// java Broken
+//   Error: no non-private zero argument constructor found in class Broken`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The parts you can change">
+        <p>
+          The name <code>main</code>, the <code>void</code> return, and the parameter{' '}
+          <em>type</em> (<code>String[]</code>, or nothing) are fixed. The parameter{' '}
+          <em>name</em> is yours — <code>main(String[] cliArgs)</code> works fine and{' '}
+          <code>args</code> is only convention. You may write it as{' '}
+          <code>main(String... args)</code>, because varargs compile to an array parameter, so the
+          launcher sees the signature it wants. And the method need not be <code>public</code> —
+          only not <code>private</code>.
+        </p>
+        <p>
+          Keep writing <code>public static void main(String[] args)</code> anyway. It is what
+          every codebase, tutorial, and IDE template contains, and the relaxed rules exist mainly
+          so that the compact form in the next section can work.
+        </p>
+      </InfoBox>
+
       <h2>Compiling and Running</h2>
       <p>To compile and run your program from the command line:</p>
 
@@ -197,6 +308,99 @@ public class Greeting {
     }
 }`}
       </CodeBlock>
+
+      <h2>When It Breaks: Reading a Stack Trace</h2>
+      <p>
+        You will see a stack trace within your first hour of writing Java, so it is worth being
+        able to read one now rather than treating it as a wall of red text. A stack trace is not
+        an error message with decoration around it — it is a <strong>snapshot of the call stack at
+        the instant the exception was created</strong>, printed innermost-first.
+      </p>
+      <p>Here is a real one. The program asks a two-element list for its third element:</p>
+
+      <CodeBlock language="java" title="Report.java">
+{`import java.util.List;                                    // line 1
+
+public class Report {
+    public static void main(String[] args) {
+        List<String> names = List.of("Ada", "Alan");
+        System.out.println(lengthOfThird(names));         // line 6
+    }
+
+    static int lengthOfThird(List<String> names) {
+        return names.get(2).length();                     // line 10
+    }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="What it prints">
+{`Exception in thread "main" java.lang.IndexOutOfBoundsException: Index: 2 Size: 2
+	at java.base/java.util.ImmutableCollections$AbstractImmutableList.outOfBounds(ImmutableCollections.java:345)
+	at java.base/java.util.ImmutableCollections$List12.get(ImmutableCollections.java:600)
+	at Report.lengthOfThird(Report.java:10)
+	at Report.main(Report.java:6)`}
+      </CodeBlock>
+
+      <p>Read it in three passes:</p>
+      <ol>
+        <li>
+          <strong>The first line is the what.</strong> The thread it happened on
+          (<code>&quot;main&quot;</code>), the exception type
+          (<code>java.lang.IndexOutOfBoundsException</code>), and the message
+          (<code>Index: 2 Size: 2</code>). The type tells you the category of failure; the message
+          is where the useful specifics live. Here it already tells you the whole story — you
+          asked for index 2 of a 2-element list.
+        </li>
+        <li>
+          <strong>The frames read bottom-to-top in time order.</strong> The <em>bottom</em> frame
+          is where execution started and the <em>top</em> is where it blew up. So:{' '}
+          <code>main</code> (line 6) called <code>lengthOfThird</code> (line 10), which called{' '}
+          <code>get</code>, which called <code>outOfBounds</code>, which threw. Beginners often
+          read the top line and conclude the bug is in the JDK. It almost never is.
+        </li>
+        <li>
+          <strong>Find the topmost frame that is your code.</strong> That is where to put the
+          breakpoint. Here it is <code>Report.lengthOfThird(Report.java:10)</code> — file and line
+          number included. Frames prefixed with a module like <code>java.base/</code> are library
+          code; they show you <em>how</em> you got there, but the mistake is nearly always in the
+          first frame you wrote yourself.
+        </li>
+      </ol>
+
+      <InfoBox variant="tip" title="NullPointerExceptions tell you the variable now">
+        <p>
+          An NPE used to give you a line number and nothing else — miserable when the line had
+          five things on it that could be null. Since Java 15, <em>helpful NullPointerExceptions</em>{' '}
+          are on by default and the message names the exact expression:
+        </p>
+        <CodeBlock language="java" title="Helpful NPE">
+{`Map<String, User> users = Map.of("ada", new User("Ada"));
+System.out.println(users.get("alan").name().toUpperCase());
+
+// Exception in thread "main" java.lang.NullPointerException:
+//   Cannot invoke "User.name()" because the return value of
+//   "java.util.Map.get(Object)" is null`}
+        </CodeBlock>
+        <p>
+          It names both the call that failed (<code>User.name()</code>) and{' '}
+          <em>why the receiver was null</em> (<code>Map.get</code> returned null). Read those
+          messages — they usually remove the need to debug at all. If you see a bare{' '}
+          <code>NullPointerException</code> with no explanation, you are on an old JVM or someone
+          disabled the feature.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="&quot;Caused by&quot; — read the last one first">
+        <p>
+          When a trace contains <code>Caused by:</code> sections, the exception was caught and
+          rewrapped on the way up. The top block is the outermost wrapper (often something generic
+          like a framework&apos;s <code>ServiceException</code>); each <code>Caused by:</code>{' '}
+          takes you one layer deeper toward the original failure. The <strong>last</strong>{' '}
+          <code>Caused by:</code> in the output is the root cause, and it is usually the only one
+          worth reading first. You will meet the mechanism that produces these — exception
+          chaining — in the Exceptions lesson.
+        </p>
+      </InfoBox>
 
       <h2>Test Your Knowledge</h2>
 
