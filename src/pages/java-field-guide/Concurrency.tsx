@@ -267,9 +267,9 @@ barrier.await();`}
 
       <PosterCard
         glyph="STS"
-        title={<>StructuredTaskScope<span className="dim"> — API changed in Java 25</span></>}
+        title={<>StructuredTaskScope<span className="dim"> — still preview; API changed in Java 25</span></>}
         language="java"
-        code={`// Java 21-24 (preview, needs --enable-preview)
+        code={`// Java 21-24 shape (preview)
 try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
     var a = scope.fork(() -> svcA.get());
     var b = scope.fork(() -> svcB.get());
@@ -278,15 +278,15 @@ try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
     return new Result(a.get(), b.get());
 }
 
-// Java 25 (final) — policy moved into a Joiner passed to open()
+// Java 25+ shape — policy moved into a Joiner passed to open()
 try (var scope = StructuredTaskScope.open(Joiner.<Object>allSuccessfulOrThrow())) {
     var a = scope.fork(() -> svcA.get());
     var b = scope.fork(() -> svcB.get());
     scope.join();                    // throws if any subtask failed
     return new Result(a.get(), b.get());
 }
-// First-success race: Joiner.anySuccessfulResultOrThrow() — join() returns it.`}
-        caption="Same concept in both: fork in a lexical scope, siblings cancelled on failure, deterministic close, no leaked tasks. Check which JDK your project targets before writing either form."
+// First-success race: Joiner.anySuccessfulOrThrow() — join() returns it.`}
+        caption="Both shapes need --enable-preview at compile AND run time — structured concurrency is still preview in Java 26 (JEP 525, sixth preview); only ScopedValue finalised, in 25. Same concept in both: fork in a lexical scope, siblings cancelled on failure, deterministic close, no leaked tasks."
       />
 
       <PosterCard
@@ -322,7 +322,7 @@ if (!lock.tryLock(2, TimeUnit.SECONDS)) throw new BusyException();
           { need: 'Producer-consumer pipeline', answer: 'BlockingQueue' },
           { need: 'Blocking call inside a virtual thread', answer: "Don't hold ANY lock across it (JDK-independent). Only pre-24: swap synchronized for ReentrantLock" },
           { need: 'Bound concurrency against a fragile downstream', answer: 'Semaphore — not a smaller thread pool' },
-          { need: 'Fan out and cancel siblings on first failure', answer: 'StructuredTaskScope' },
+          { need: 'Fan out and cancel siblings on first failure', answer: 'StructuredTaskScope — still preview, needs --enable-preview' },
           { need: 'Wait for several async tasks', answer: 'CompletableFuture.allOf' },
         ]}
       />

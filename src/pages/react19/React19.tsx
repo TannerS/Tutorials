@@ -530,12 +530,22 @@ function OldChart() {
 
       <InfoBox variant="danger" title="A Breaking Change in Disguise">
         <p>
-          Because React now uses the return value, a ref callback must <strong>not</strong>{' '}
-          implicitly return anything else. The concise arrow body{' '}
-          <code>ref={'{'}(node) =&gt; (myRef.current = node){'}'}</code> returns the assigned
-          node, which React 19 will try to call as a cleanup function. Wrap it in braces:{' '}
-          <code>ref={'{'}(node) =&gt; {'{'} myRef.current = node; {'}}'}</code>. TypeScript
-          flags this for you; plain JavaScript does not.
+          React only uses the return value when it <strong>is a function</strong>. Anything
+          else is ignored, and React falls back to the legacy behaviour of calling the ref
+          again with <code>null</code>. So the concise arrow body{' '}
+          <code>ref={'{'}(node) =&gt; (myRef.current = node){'}'}</code> still behaves
+          correctly at runtime &mdash; React never tries to call the returned node. What
+          breaks is the <em>type</em>: a ref callback is declared to return{' '}
+          <code>void | (() =&gt; void)</code>, so returning the node is a compile error.
+          Wrap it in braces:{' '}
+          <code>ref={'{'}(node) =&gt; {'{'} myRef.current = node; {'}}'}</code>.
+        </p>
+        <p>
+          The real runtime trap is a concise body whose expression happens to evaluate to a
+          function &mdash; <code>ref={'{'}(node) =&gt; setup(node){'}'}</code> where{' '}
+          <code>setup</code> returns a function. React will run that on removal as if it were
+          your cleanup, and the ref will never be called with <code>null</code>. TypeScript
+          flags the assignment mistake for you; plain JavaScript warns about neither.
         </p>
       </InfoBox>
 

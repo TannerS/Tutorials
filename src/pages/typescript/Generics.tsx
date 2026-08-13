@@ -330,8 +330,15 @@ type AnyValue = User[keyof User];    // number | string | boolean`}
         </p>
         <p>
           One trap: it is <code>User[&quot;name&quot;]</code>, never{' '}
-          <code>User.name</code>. Dot notation on a type is a syntax error &mdash; types are
-          not objects.
+          <code>User.name</code>. Dot notation <em>parses</em> fine &mdash; a dotted name in
+          type position is how you reach into a namespace, as in{' '}
+          <code>React.FC</code> &mdash; so this is not a syntax error but a checker error,
+          and a helpfully specific one:{' '}
+          <code>
+            error TS2713: Cannot access &apos;User.name&apos; because &apos;User&apos; is a
+            type, but not a namespace. Did you mean to retrieve the type of the property
+            &apos;name&apos; in &apos;User&apos; with &apos;User[&quot;name&quot;]&apos;?
+          </code>
         </p>
       </InfoBox>
 
@@ -515,8 +522,8 @@ function createForm<TValues extends Record<string, unknown>>(
   };
 }
 
-// Usage
-interface LoginForm { username: string; password: string; remember: boolean; }
+// Usage — 'type', not 'interface': the constraint is Record<string, unknown>
+type LoginForm = { username: string; password: string; remember: boolean };
 
 const form = createForm<LoginForm>({
   initialValues: { username: "", password: "", remember: false },
@@ -554,12 +561,13 @@ class TypedEmitter<TEvents extends EventMap> {
   }
 }
 
-// Define your event contract
-interface AppEvents {
+// Define your event contract.
+// NOTE: this must be a 'type', not an 'interface' — see the box below.
+type AppEvents = {
   userLogin: { userId: number; timestamp: Date };
   pageView: { path: string };
   error: { message: string; code: number };
-}
+};
 
 const emitter = new TypedEmitter<AppEvents>();
 emitter.on("userLogin", (data) => {
@@ -568,6 +576,33 @@ emitter.on("userLogin", (data) => {
 emitter.emit("userLogin", { userId: 1, timestamp: new Date() }); // ✅
 emitter.emit("userLogin", { path: "/" }); // ❌ Wrong shape`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Why Those Two Contracts Are type, Not interface">
+        <p>
+          Both <code>AppEvents</code> above and <code>LoginForm</code> in the form example are
+          constrained by <code>{'Record<string, unknown>'}</code>, and an{' '}
+          <code>interface</code> <strong>does not satisfy that constraint</strong>:
+        </p>
+        <p>
+          <code>
+            error TS2344: Type &apos;AppEvents&apos; does not satisfy the constraint
+            &apos;EventMap&apos;. Index signature for type &apos;string&apos; is missing in type
+            &apos;AppEvents&apos;.
+          </code>
+        </p>
+        <p>
+          A <em>type alias</em> for an object literal gets an <strong>implicit index
+          signature</strong>; an <em>interface</em> never does. The reason is declaration
+          merging &mdash; an interface can be reopened and extended by any later declaration,
+          so TypeScript cannot promise its key set stays within <code>string</code>. A type
+          alias is sealed at its definition, so the compiler can prove it.
+        </p>
+        <p>
+          If you need the shape to stay an <code>interface</code>, loosen the constraint
+          instead &mdash; <code>{'<TEvents extends object>'}</code> works here, since{' '}
+          <code>keyof</code> and <code>TEvents[K]</code> are all this class actually uses.
+        </p>
+      </InfoBox>
 
       <h3>Generic Repository Pattern</h3>
       <CodeBlock language="typescript" title="Data Access Layer">
@@ -845,8 +880,9 @@ type Store = { state: { count: number } } & ThisType<{ increment(): void }>;`}
           TypeScript&apos;s own <code>lib.es5.d.ts</code>. For example{' '}
           <code>Exclude&lt;T, U&gt; = T extends U ? never : T</code> and{' '}
           <code>Pick&lt;T, K extends keyof T&gt; = {'{'} [P in K]: T[P] {'}'}</code>.
-          The four string types are the exception &mdash; those are implemented inside the
-          compiler and cannot be expressed in TypeScript source.
+          The four string types and <code>NoInfer</code> are the exceptions &mdash; they are
+          declared as <code>= intrinsic</code> in that file, implemented inside the compiler,
+          and cannot be expressed in TypeScript source.
         </p>
       </InfoBox>
 

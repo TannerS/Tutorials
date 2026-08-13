@@ -703,7 +703,8 @@ Java 21  (2023, LTS)       — virtual threads, pattern matching for switch,
 Java 24  (2025, non-LTS)   — Stream Gatherers final (custom intermediate ops),
                              and JEP 491: synchronized no longer pins virtual
                              threads. Both roll forward into 25.
-Java 25  (2025, LTS)       — refined structured concurrency, stable ScopedValue,
+Java 25  (2025, LTS)       — ScopedValue final; structured concurrency redesigned
+                             but STILL preview (and still preview in 26),
                              module import declarations, compact source files,
                              more pattern-matching depth
 

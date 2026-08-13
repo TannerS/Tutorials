@@ -146,10 +146,10 @@ public class Counter {
 
       <h2>Structured Concurrency</h2>
       <p>
-        Java 21 previewed <code>StructuredTaskScope</code> (still evolving through Java
-        23). The idea: fork multiple subtasks in a lexical scope, join them, and if one
-        fails, cancel the siblings. Cleaner than juggling <code>Future</code>s or
-        <code>CompletableFuture</code> chains.
+        Java 21 previewed <code>StructuredTaskScope</code>, and it is <em>still</em> a preview
+        API — sixth preview in Java 26 (JEP 525). The idea: fork multiple subtasks in a
+        lexical scope, join them, and if one fails, cancel the siblings. Cleaner than
+        juggling <code>Future</code>s or <code>CompletableFuture</code> chains.
       </p>
       <CodeBlock language="java" title="Fork-and-join with automatic cancellation">
 {`// Fetch three things in parallel; abort all if any fails.
@@ -186,14 +186,14 @@ public InventoryDto anyMirror(String sku)
 
       <InfoBox variant="warning" title="The API changed in Java 25 — know both shapes">
         <p>
-          <code>StructuredTaskScope</code> spent several releases in preview and was
-          restructured before finalising in Java 25. The <code>ShutdownOnFailure</code> /{' '}
-          <code>ShutdownOnSuccess</code> subclasses shown above are the Java 21&ndash;24 preview
-          form. In Java 25 the policy moved into a <code>Joiner</code> passed to a static{' '}
-          <code>open()</code> factory, and <code>join()</code> itself returns the result and
-          throws on failure:
+          <code>StructuredTaskScope</code> was substantially restructured in Java 25 (JEP 505),
+          but it did <strong>not</strong> finalise there — it is still preview in 25 and 26.
+          The <code>ShutdownOnFailure</code> / <code>ShutdownOnSuccess</code> subclasses shown
+          above are the Java 21&ndash;24 form. From Java 25 the policy moved into a{' '}
+          <code>Joiner</code> passed to a static <code>open()</code> factory, and{' '}
+          <code>join()</code> itself returns the result and throws on failure:
         </p>
-        <CodeBlock language="java" title="Java 25 form">
+        <CodeBlock language="java" title="Java 25+ form (still preview)">
 {`// All must succeed — replaces ShutdownOnFailure
 try (var scope = StructuredTaskScope.open(Joiner.<Object>allSuccessfulOrThrow())) {
     var order    = scope.fork(() -> orderService.find(orderId));
@@ -203,7 +203,7 @@ try (var scope = StructuredTaskScope.open(Joiner.<Object>allSuccessfulOrThrow())
 }
 
 // First success wins — replaces ShutdownOnSuccess
-try (var scope = StructuredTaskScope.open(Joiner.<InventoryDto>anySuccessfulResultOrThrow())) {
+try (var scope = StructuredTaskScope.open(Joiner.<InventoryDto>anySuccessfulOrThrow())) {
     scope.fork(() -> primaryClient.get(sku));
     scope.fork(() -> secondaryClient.get(sku));
     return scope.join();               // returns the winning result directly
@@ -212,7 +212,14 @@ try (var scope = StructuredTaskScope.open(Joiner.<InventoryDto>anySuccessfulResu
         <p>
           The concept is identical — fork in a scope, siblings cancelled on failure, deterministic
           close. Check which JDK your project targets before writing either form, and remember
-          that on Java 21&ndash;24 this API needs <code>--enable-preview</code>.
+          that <strong>every</strong> version to date needs <code>--enable-preview</code> at
+          both compile and run time. On JDK 26 the import alone fails without it:{' '}
+          <code>error: StructuredTaskScope is a preview API and is disabled by default</code>,
+          and a class compiled with the flag but launched without it dies at load time with{' '}
+          <code>UnsupportedClassVersionError: Preview features are not enabled … (class file
+          version 70.65535)</code>. That <code>65535</code> minor version is the marker: preview
+          class files only load on the same major JDK that produced them, so this is not
+          something to ship in a library other teams consume.
         </p>
       </InfoBox>
 

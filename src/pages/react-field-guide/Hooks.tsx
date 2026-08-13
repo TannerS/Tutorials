@@ -301,7 +301,7 @@ function MyInput({ ref, ...props }) {
   const obs = new ResizeObserver(fn); obs.observe(node);
   return () => obs.disconnect();   // runs on unmount
 }} />`}
-        caption="Because React now USES the return value, the concise form (node) => (myRef.current = node) returns the node and React calls it as cleanup. Always use a braced body. TypeScript catches this; plain JS does not."
+        caption="React uses the return value only if it IS a function; anything else is ignored and the ref is called with null as before. So the concise form (node) => (myRef.current = node) still works at runtime — but TypeScript rejects it, so use a braced body. The real trap is a concise body that happens to return a function."
       />
 
       <PosterQuickRef

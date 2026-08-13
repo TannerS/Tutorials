@@ -774,8 +774,10 @@ function MyInput({ ref, ...props }) { return <input ref={ref} {...props} />; }
   const obs = new ResizeObserver(fn); obs.observe(node);
   return () => obs.disconnect();          // called on unmount
 }} />
-// GOTCHA: (node) => (ref.current = node) now returns the node, which React
-// tries to call as cleanup. Always use a braced body: (node) => { ... }
+// GOTCHA: React only uses the return value if it IS a function; anything else
+// is ignored and the ref is called with null as before. So the concise
+// (node) => (ref.current = node) still works, but TypeScript rejects it.
+// Use a braced body: (node) => { ... }
 
 // ── render the Context itself as the provider ──
 <ThemeContext value="dark">{children}</ThemeContext>
