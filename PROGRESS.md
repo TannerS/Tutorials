@@ -255,3 +255,15 @@ Never-modified counts by section: typescript 12, react19 9, react-router 7, soli
 - `testing/WhatToTest.tsx` + `testing/Performance.tsx` — the beginner "what do I actually write here" lesson, and parallelization/isolation/suite-speed.
 
 *Four sweeping the 66 unaudited files*, each pointed at the specific defect classes prior rounds found nearby (e.g. the react lane is told that `react-router/Data.tsx` taught `defer()`/`json()` which were removed in v7, and to check the rest of that section for the same problem). All four are told to name files they find genuinely clean, and NOT to touch navigation, since lesson lanes are concurrently renumbering three of those sections.
+
+### Round 7 — expanded mandate (queued, starts when round 6 lands)
+
+User clarified the goal, and it adds an axis every prior round has missed: *"go through every section, every page, check for errors, in the logic or examples or anything, not solely code errors... make the tutorials very detailed but easily explained, and make sure cheat sheets are updated with any info you added, removed, or deleted, entire repo wide with more focus on react, typescript, and java."*
+
+What's genuinely new here versus rounds 4–6:
+1. **Pedagogical quality is now a first-class criterion.** Every prior round optimised for *correctness* — does it compile, is the claim true, is anything missing. None assessed whether an explanation actually *teaches*: unexplained jargon on first use, a leap from trivial to advanced with no intermediate step, an example that demonstrates syntax but not the reason anyone would reach for it, a wall of code with no narration. "Very detailed but easily explained" is the bar.
+2. **Logic/example errors, not just code errors** — an example that compiles but doesn't illustrate the point it's introduced for, a analogy that breaks down, a worked example whose numbers don't add up, a claimed conclusion the demo doesn't actually support.
+3. **Cheat-sheet/field-guide sync as a closing step.** Rounds 4–6 added a lot of content (Java 25 module imports, `useEffectEvent`, `<Activity>`, `cache()`, SSR entry points, advisory locks, anchor positioning, passkeys/WebAuthn, DPoP, ETag concurrency, and more) and removed/corrected other material. Every one of those changes needs to be reflected in the corresponding field guide or cheat sheet, and stale entries for removed content need to go.
+4. **Weighting**: React, TypeScript, Java get the deepest treatment; everything else still gets a full pass.
+
+Plan: once round 6's 9 lanes land and are wired + verified, dispatch round 7 as weighted lanes — roughly 3 lanes on React (react19 / react-field-guide / react-router / react-antipatterns / react-testing / state-mgmt), 2 on TypeScript (typescript / typescript-field-guide), 2 on Java+Spring (java / springboot / both field guides), and 2–3 covering the remainder (SQL, CSS, architecture/security, testing, tooling, playgrounds) — each with an explicit final step of reconciling its section's cheat sheet against everything the repo now contains.
