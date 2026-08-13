@@ -53,8 +53,12 @@ function Semantic() {
 </div>
 <div class="footer">© 2024</div>
 
-<!-- Screen reader hears: "group, group, group, group..."
-     No landmarks, no headings, no navigation structure -->`}
+<!-- A plain <div> has NO role, so it is not announced at all — the
+     screen reader just reads the text straight through: "Home About
+     Welcome Content here... 2024". That is the actual problem: not a
+     wrong announcement, but a total absence of structure. No landmarks
+     to jump to, no headings list, and "Home" reads as text rather than
+     as a link the user can activate. -->`}
       </CodeBlock>
 
       <CodeBlock language="html" title="✅ Semantic HTML">
@@ -222,8 +226,14 @@ function Semantic() {
     </tr>
   </tbody>
 </table>
-<!-- Screen reader: "Table, Team Members, 3 columns, 2 rows.
-     Row 2: Name: Jane Smith, Role: Senior Engineer, Department: Platform" -->`}
+<!-- Screen reader: "Table, Team Members, 3 columns, 3 rows.
+     Row 2: Name: Jane Smith, Role: Senior Engineer, Department: Platform"
+     (The header row counts, which is why Jane is row 2, not row 1.)
+
+     The scope attributes are what make this work. Without them the
+     reader announces bare cell values -- "Senior Engineer" with no
+     hint that it is a Role -- so a user tabbing through column 2 has
+     to remember the header from several rows back. -->`}
       </CodeBlock>
 
       {/* ── Forms ─────────────────────────────────────────── */}

@@ -83,6 +83,29 @@ public class Employee {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Why That Costs You — Three Teams, One File">
+        <p>
+          &quot;Three reasons to change&quot; sounds abstract until you notice that three{' '}
+          <em>different teams</em> now edit the same file. Finance changes the tax rate. The DBA
+          renames the <code>dept</code> column. Marketing wants the report in the new brand
+          template. Each of those is a separate ticket, and every one of them lands in{' '}
+          <code>Employee.java</code>.
+        </p>
+        <p>
+          The concrete damage: <strong>merge conflicts on every release</strong>, and a blast
+          radius nobody can predict. Notice that <code>generateReport()</code> calls{' '}
+          <code>calculatePay()</code> — so when Finance adjusts the bonus rule, the report&apos;s
+          numbers change too. Was that intended? Nobody can tell from this file, so the reporting
+          team has to re-verify their output every time payroll ships.
+        </p>
+        <p>
+          And the test story is worse. To assert one thing about the bonus formula, you need a
+          live MySQL connection, because <code>saveToDatabase()</code> lives in the same class and
+          drags JDBC into the test&apos;s classpath. A pure arithmetic rule has become an
+          integration test.
+        </p>
+      </InfoBox>
+
       <h2>Good Example — Separated Responsibilities</h2>
       <p>
         By extracting each concern into its own class, we ensure that each
@@ -164,6 +187,50 @@ public class EmployeeReportGenerator {
     }
 }`}
       </CodeBlock>
+
+      <h2>The Payoff, Made Concrete</h2>
+      <p>
+        The split is only worth its extra files if something actually got better. Compare the
+        test you can now write against the one you could write before:
+      </p>
+
+      <CodeBlock language="java" title="PayCalculatorTest.java">
+{`// The whole point of the refactor, in one test.
+// No database. No SMTP server. No HTML parsing. No Spring context.
+// It runs in single-digit milliseconds and never flakes.
+class PayCalculatorTest {
+
+    @Test
+    void salesEmployeesGetTheLargerBonus() {
+        var calculator = new PayCalculator();
+        var employee = new Employee("Dana", 100_000, "Sales");
+
+        // 100,000 - 30% tax (30,000) + 15% sales bonus (15,000) = 85,000
+        assertEquals(85_000, calculator.calculatePay(employee), 0.01);
+    }
+
+    @Test
+    void everyoneElseGetsTheStandardBonus() {
+        var calculator = new PayCalculator();
+        var employee = new Employee("Ravi", 100_000, "Engineering");
+
+        // 100,000 - 30% tax (30,000) + 5% standard bonus (5,000) = 75,000
+        assertEquals(75_000, calculator.calculatePay(employee), 0.01);
+    }
+}
+
+// Against the God Class version, this test was impossible to write
+// without a running MySQL instance -- not because the pay rule needed
+// one, but because saveToDatabase() shared the class with it.`}
+      </CodeBlock>
+
+      <p>
+        That is what &quot;one reason to change&quot; buys: Finance can now change the bonus rule
+        and re-run <em>two fast tests</em> to prove it, instead of re-running an integration suite
+        and manually eyeballing a report. The DBA can change the schema without recompiling the
+        pay logic. The three tickets that used to collide in one file now touch three files that
+        nobody else is editing.
+      </p>
 
       <InfoBox variant="warning" title="Common Misconception">
         <p>

@@ -20,10 +20,82 @@ export default function Strategy() {
         the most frequently used patterns in enterprise Java.
       </p>
 
+      <h3>First, the Code That Hurts</h3>
+      <p>
+        Strategy is easiest to understand as the answer to a specific, very common kind of pain,
+        so it is worth meeting that pain first. Here is a payment service after eighteen months of
+        &quot;just add one more payment method&quot; tickets:
+      </p>
+
+      <CodeBlock language="java" title="The Version You Actually Inherit" showLineNumbers={true}>
+{`@Service
+public class PaymentService {
+
+    public PaymentResult pay(Order order) {
+        if (order.getPaymentMethod() == PaymentMethod.CREDIT_CARD) {
+            String token = gateway.tokenize(order.getCardDetails());
+            return gateway.charge(token, order.getTotal());
+
+        } else if (order.getPaymentMethod() == PaymentMethod.PAYPAL) {
+            return paypalClient.executePayment(
+                order.getPaypalToken(), order.getTotal());
+
+        } else if (order.getPaymentMethod() == PaymentMethod.APPLE_PAY) {
+            var decrypted = applePayDecryptor.decrypt(order.getApplePayBlob());
+            return gateway.charge(decrypted.token(), order.getTotal());
+
+        } else if (order.getPaymentMethod() == PaymentMethod.KLARNA) {
+            var session = klarnaClient.createSession(order);
+            return klarnaClient.authorize(session, order.getTotal());
+
+        } // ...and four more branches below this one
+
+        throw new UnsupportedPaymentException(order.getPaymentMethod());
+    }
+}`}
+      </CodeBlock>
+
+      <p>
+        Nothing here is <em>wrong</em>, which is exactly why it survives code review the first
+        three times. The problems are structural, and they compound:
+      </p>
+      <ul>
+        <li>
+          <strong>One class now has every payment team&apos;s dependencies.</strong> The
+          constructor needs a card gateway, a PayPal client, an Apple Pay decryptor, and a Klarna
+          client — so a unit test of the PayPal branch still has to construct or mock all four.
+        </li>
+        <li>
+          <strong>Every new method edits a file four teams share.</strong> Adding Klarna meant
+          touching the same method that handles credit cards, and the credit-card path is the one
+          that must never break.
+        </li>
+        <li>
+          <strong>The branches drift.</strong> One adds retry logic, another adds a metrics
+          counter, a third forgets both, and the inconsistency is invisible because it is spread
+          down a 200-line method.
+        </li>
+      </ul>
+      <p>
+        Notice what varies and what doesn&apos;t: the <em>selection</em> (&quot;which method did
+        the customer choose?&quot;) is identical every time, while the <em>algorithm</em> behind
+        each branch is entirely different. That split — one stable question, many interchangeable
+        answers — is precisely the seam Strategy cuts along. Each branch becomes its own class,
+        and the if-chain becomes a lookup.
+      </p>
+
       <FlowChart
         title="Strategy Pattern Structure"
         chart={"graph TD\n  A[Context] --> B[Strategy Interface]\n  B --> C[ConcreteStrategyA]\n  B --> D[ConcreteStrategyB]\n  B --> E[ConcreteStrategyC]\n  A -->|\"delegates to\"| B"}
       />
+
+      <p>
+        Here is the same feature after the cut. Read it against the three problems above: each
+        strategy now carries only <em>its own</em> dependency, so testing the PayPal path
+        constructs one class with one mock; adding Klarna adds a file instead of editing the
+        credit-card path; and the shared concerns (selection, the &quot;unsupported&quot; error)
+        live in exactly one place where they cannot drift.
+      </p>
 
       <CodeBlock language="java" title="Strategy Pattern - Payment Processing" showLineNumbers={true}>
 {`// Strategy interface

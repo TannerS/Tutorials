@@ -17,9 +17,9 @@ export default function AbstractFactory() {
       <p>
         You are writing a reporting service that has to run against Postgres in production and
         SQL Server for one enterprise customer. Three pieces of your data layer are
-        vendor-specific: the connection, the query builder, and the paginator (Postgres wants{' '}
-        <code>LIMIT ? OFFSET ?</code>, SQL Server wants{' '}
-        <code>OFFSET ? ROWS FETCH NEXT ? ROWS ONLY</code>). All three sit behind neutral
+        vendor-specific: the connection, the query builder, and the paginator. Postgres takes{' '}
+        <code>LIMIT ? OFFSET ?</code>; SQL Server has no <code>LIMIT</code> keyword at all and
+        requires <code>OFFSET ? ROWS FETCH NEXT ? ROWS ONLY</code>. All three sit behind neutral
         interfaces, so any of them can be handed to any caller.
       </p>
       <p>
@@ -40,9 +40,9 @@ export default function AbstractFactory() {
             ? new PgQueryBuilder()
             : new MssqlQueryBuilder();
 
-        // ...and six months later someone adds pagination and gets
-        // this one line wrong.
-        Paginator paginator = new MssqlPaginator();   // <-- BUG
+        // ...and six months later someone adds pagination and hardcodes
+        // the dialect they develop against.
+        Paginator paginator = new PgPaginator();   // <-- BUG
 
         return new Report(conn, queries, paginator);
     }
@@ -51,10 +51,16 @@ export default function AbstractFactory() {
 
       <InfoBox variant="danger" title="Why the Compiler Cannot Save You Here">
         <p>
-          <code>MssqlPaginator</code> is a perfectly valid <code>Paginator</code>. It type-checks.
-          It passes any unit test that mocks the connection. It only fails when a real Postgres
-          server rejects <code>OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY</code> — which is to say,
-          in production, on the vendor nobody runs locally.
+          <code>PgPaginator</code> is a perfectly valid <code>Paginator</code>. It type-checks. It
+          passes any unit test that mocks the connection. It passes every test on the developer&apos;s
+          laptop, on CI, and in production — because all three run Postgres. It fails only when a
+          real SQL Server rejects <code>LIMIT 10 OFFSET 20</code> as a syntax error, which is to
+          say: on the one enterprise customer nobody runs locally, after deploy.
+        </p>
+        <p>
+          Note the direction of the trap. The mismatch is invisible precisely <em>because</em> the
+          hardcoded choice is the correct one almost everywhere. A bug that fires on the common
+          path gets caught in an hour; this one waits for the rare path.
         </p>
         <p>
           The three objects form a <strong>family</strong>: they are individually substitutable but
