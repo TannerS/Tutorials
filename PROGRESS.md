@@ -266,4 +266,20 @@ What's genuinely new here versus rounds 4–6:
 3. **Cheat-sheet/field-guide sync as a closing step.** Rounds 4–6 added a lot of content (Java 25 module imports, `useEffectEvent`, `<Activity>`, `cache()`, SSR entry points, advisory locks, anchor positioning, passkeys/WebAuthn, DPoP, ETag concurrency, and more) and removed/corrected other material. Every one of those changes needs to be reflected in the corresponding field guide or cheat sheet, and stale entries for removed content need to go.
 4. **Weighting**: React, TypeScript, Java get the deepest treatment; everything else still gets a full pass.
 
-Plan: once round 6's 9 lanes land and are wired + verified, dispatch round 7 as weighted lanes — roughly 3 lanes on React (react19 / react-field-guide / react-router / react-antipatterns / react-testing / state-mgmt), 2 on TypeScript (typescript / typescript-field-guide), 2 on Java+Spring (java / springboot / both field guides), and 2–3 covering the remainder (SQL, CSS, architecture/security, testing, tooling, playgrounds) — each with an explicit final step of reconciling its section's cheat sheet against everything the repo now contains.
+**User stepped out mid-round-6 and asked me to continue the entire process without them.** Operating autonomously from here: finish round 6, then run round 7 to completion, committing and pushing after each verified stage so nothing is lost if the session dies.
+
+### Round 6 status at handoff
+All 6 lessons written AND wired into `sections.ts` + `App.tsx` (I wired each as it landed rather than batching, so an unreachable lesson never sits in the tree):
+- `react19/ssr-hydration` — SSR & Hydration (lifted ~100 lines out of `Server.tsx`, went deeper)
+- `typescript/native-compiler` — TS 6→7. **Notable repo finding**: TS 7.0.2 is stable, and `import('typescript')` no longer exposes `transpileModule`/`createProgram` (moved to `typescript/unstable/*` as an RPC client, no browser build). The 3 playground components would break on a bump to 7. Repo is pinned at 6.0.3 so nothing is broken now, but there's a version ceiling.
+- `springboot/security-migration` — Spring Security 7 / Boot 4 delta, verified against Spring docs with sources cited.
+- `patterns/abstract-factory` — 23rd GoF pattern; content lifted out of `Singleton.tsx`, cross-reference left behind.
+- `testing/what-to-test` + `testing/performance`.
+
+**Security fix made directly by me** off the Spring lane's finding: `auth/Security.tsx` recommended `CsrfTokenRequestAttributeHandler` as the SPA CSRF fix. That's the most-posted answer online and it's wrong — its actual effect is disabling the per-response XOR masking that mitigates BREACH. The real issue is Security 6's *deferred token loading*, fixed by keeping `XorCsrfTokenRequestAttributeHandler` and setting `setCsrfRequestAttributeName(null)`. Corrected, with an explicit warning naming the trap and a pointer to Security 7's `csrf.spa()`.
+
+**Still running at handoff**: the 4 sweep lanes over the 66 never-audited files. Typecheck is transiently red from files being mid-written (`npm-deep-dive/Security.tsx`, earlier `react-router/CheatSheet.tsx`) — this is expected, NOT a real breakage. Verify with `npx tsc --noEmit` once lanes report; do not edit those files underneath a running lane.
+
+### Remaining plan
+1. Collect the 4 sweep reports → verify typecheck/lint/build → commit + push round 6.
+2. Dispatch round 7 as weighted lanes — roughly 3 lanes on React (react19 / react-field-guide / react-router / react-antipatterns / react-testing / state-mgmt), 2 on TypeScript (typescript / typescript-field-guide), 2 on Java+Spring (java / springboot / both field guides), and 2–3 covering the remainder (SQL, CSS, architecture/security, testing, tooling, playgrounds) — each with an explicit final step of reconciling its section's cheat sheet against everything the repo now contains.
