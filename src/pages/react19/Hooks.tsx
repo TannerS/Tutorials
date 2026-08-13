@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 import { LiveExample } from '../../components/LiveExample';
 
@@ -523,7 +522,7 @@ function useInterval(callback, delay) {
 
 // Pattern 2: Previous value tracking
 function usePrevious(value) {
-  const ref = useRef();
+  const ref = useRef(undefined); // React 19: useRef REQUIRES an argument
   useEffect(() => {
     ref.current = value; // Updates AFTER render, so returns previous
   });
@@ -578,7 +577,7 @@ function useStableCallback(fn) {
 
       <CodeBlock language="jsx" title="usePrevious — Step by Step Trace">
 {`function usePrevious(value) {
-  const ref = useRef();      // Persists across renders
+  const ref = useRef(undefined);  // Persists across renders
   useEffect(() => {
     ref.current = value;     // Runs AFTER return — updates for NEXT render
   });
@@ -701,6 +700,38 @@ function Parent() {
           <li><strong>usePrevious</strong> — when you need to compare current vs previous value (animations, "changed since last render" checks)</li>
           <li><strong>useStableCallback</strong> — when you need a stable function reference that won't break <code>React.memo</code> or dependency arrays, but must always use fresh closure values</li>
         </ul>
+      </InfoBox>
+
+      <InfoBox variant="success" title="React 19.2: useEffectEvent supersedes patterns 1 and 3">
+        <p>
+          Patterns 1 and 3 exist for one reason — an <em>effect</em> needs the latest value
+          without re-running when it changes. React 19.2 ships{' '}
+          <code>useEffectEvent</code> for exactly that, and it is the version you should write
+          in new code:
+        </p>
+        <pre style={{ margin: '0.5rem 0 0.75rem', fontSize: '0.82rem', overflowX: 'auto' }}>{
+`function useInterval(callback, delay) {
+  const onTick = useEffectEvent(callback);   // stable, always latest
+  useEffect(() => {
+    if (delay === null) return;
+    const id = setInterval(onTick, delay);
+    return () => clearInterval(id);
+  }, [delay]);
+}`
+        }</pre>
+        <p style={{ marginBottom: 0 }}>
+          <strong>The caveats matter.</strong> An Effect Event may only be called from inside an
+          effect, must be declared in the component or custom hook that uses it, must never be
+          passed to a child or returned from a hook, and must never appear in a dependency
+          array. When you need to hand a stable function to a <em>child</em> component, that is
+          still <code>useCallback</code> — not <code>useEffectEvent</code>. And{' '}
+          <code>usePrevious</code> (pattern 2) has no replacement; keep using the ref.
+        </p>
+        <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+          One more reason to prefer it: <code>ref.current = fn</code> during render (pattern 3)
+          is technically a render-phase mutation, which the Rules of React forbid and the React
+          Compiler may bail out on. <code>useEffectEvent</code> is the sanctioned version.
+        </p>
       </InfoBox>
 
       <h2>useReducer — When useState Isn't Enough</h2>
@@ -1001,12 +1032,20 @@ function Parent() {
         chart={"graph TD\n  A[Parent re-renders] --> B{Is handleDelete the same ref?}\n  B -->|Without useCallback: NO| C[React.memo fails]\n  C --> D[ExpensiveList re-renders - wasted]\n  B -->|With useCallback: YES| E[React.memo passes]\n  E --> F[ExpensiveList skips re-render]\n  style C fill:#5c1a1a,stroke:#ef5350,color:#e0e0e0\n  style D fill:#5c1a1a,stroke:#ef5350,color:#e0e0e0\n  style F fill:#1a3a1a,stroke:#66bb6a,color:#e0e0e0"}
       />
 
-      <InfoBox variant="warning" title="useCallback Is Useless Without React.memo">
+      <InfoBox variant="warning" title="For This Purpose, useCallback Needs React.memo on the Other Side">
         <p>
-          If the child component is <strong>not</strong> wrapped in <code>React.memo</code>, <code>useCallback</code> does nothing useful.
-          The child will re-render anyway because its parent re-rendered — the stable reference doesn't help if nobody is checking it.
+          If you are memoizing a callback <em>to stop a child re-rendering</em> and that child is{' '}
+          <strong>not</strong> wrapped in <code>React.memo</code>, <code>useCallback</code> does
+          nothing. The child re-renders anyway because its parent re-rendered — a stable reference
+          doesn&apos;t help when nobody is checking it.
         </p>
-        <p><strong>Both halves are required:</strong> <code>useCallback</code> on the parent + <code>React.memo</code> on the child.</p>
+        <p style={{ marginBottom: 0 }}>
+          <strong>Both halves are required for that use case:</strong> <code>useCallback</code> on
+          the parent + <code>React.memo</code> on the child. <code>useCallback</code> has two{' '}
+          <em>other</em> jobs where no <code>memo</code> is involved at all — keeping a function
+          out of a <code>useEffect</code>/<code>useMemo</code> dependency array, and keeping a
+          context value&apos;s identity stable. Those are covered next.
+        </p>
       </InfoBox>
 
       <h3>When to Use useCallback</h3>
@@ -1238,7 +1277,7 @@ function useOnlineStatus() {
 // useImperativeHandle — customize the ref exposed to the parent
 // React 19: ref is a plain prop, so NO forwardRef wrapper is needed.
 function FancyInput({ ref, ...props }) {
-  const inputRef = useRef();
+  const inputRef = useRef(null);
   useImperativeHandle(ref, () => ({
     focus: () => inputRef.current.focus(),
     scrollIntoView: () => inputRef.current.scrollIntoView(),

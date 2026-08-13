@@ -91,17 +91,37 @@ import pkg from 'cjs-package';
 # Note: named exports from CJS may not work in all cases
 # import { specific } from 'cjs-package'; // may fail
 
-# CJS can require() ESM: ❌ DOES NOT WORK
+# CJS can require() ESM: ⚠️ IT DEPENDS — this changed recently
 const pkg = require('esm-only-package');
-# Error: require() of ES Module not supported
-# This is the #1 reason for "dual publishing"`}
+# On Node < 20.19 / < 22.12:
+#   Error [ERR_REQUIRE_ESM]: require() of ES Module not supported
+# On Node 20.19+, 22.12+, and all of 24+:
+#   Works, PROVIDED the module graph has no top-level await.
+#   If it does: ERR_REQUIRE_ASYNC_MODULE`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="CJS Cannot Require ESM">
-        This is the fundamental incompatibility. Since <code>require()</code> is synchronous
-        and ESM loading is asynchronous, CJS cannot load ESM modules. If your package is
-        ESM-only, anyone using CommonJS (older Node.js projects, Jest without transforms,
-        many tools) cannot use it. This is why dual publishing exists.
+      <InfoBox variant="warning" title="&quot;CJS Cannot Require ESM&quot; Is Now Only Half True">
+        <p>
+          For a decade this was an absolute, and you will still read it everywhere. It stopped
+          being true in 2024: Node.js unflagged <code>require(esm)</code> in <strong>22.12</strong>{' '}
+          and backported it to <strong>20.19</strong>. On any currently supported Node,{' '}
+          <code>require()</code> of an ES module works — Node evaluates it synchronously and
+          hands back the module namespace object (so a default export arrives as{' '}
+          <code>.default</code>, not as the whole value).
+        </p>
+        <p>
+          The one hard limit remains: if the ESM graph contains{' '}
+          <strong>top-level await</strong>, it genuinely cannot be evaluated synchronously
+          and you get <code>ERR_REQUIRE_ASYNC_MODULE</code>. Use{' '}
+          <code>await import()</code> there.
+        </p>
+        <p>
+          So dual publishing is no longer strictly required for Node consumers — but it is
+          still worth doing, because bundlers, older Node versions still in the wild, and
+          tools with their own resolvers don&apos;t all follow Node&apos;s timeline. Treat
+          ESM-only as a decision about which consumers you are willing to drop, not as
+          something the runtime forbids.
+        </p>
       </InfoBox>
 
       <h2>"type" Field and File Extensions</h2>
@@ -337,6 +357,8 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+// Or, on Node 20.11+ / 21.2+, just use the built-ins directly:
+// import.meta.dirname  and  import.meta.filename
 
 // PITFALL 2: require() in ESM
 // import pkg from './other.js';  // ✅
@@ -352,8 +374,11 @@ import pkg from 'cjs-pkg';      // ✅ Then use pkg.foo
 
 // PITFALL 4: JSON imports in ESM
 // const pkg = require('./package.json');  // ✅ CJS
-import pkg from './package.json' assert { type: 'json' };  // ESM (experimental)
-// Safer: use fs.readFileSync + JSON.parse
+import pkg from './package.json' with { type: 'json' };  // ESM — 'with', not 'assert'
+// The 'assert { type: "json" }' spelling you'll see in older posts was the
+// earlier proposal; it was renamed to 'with' and REMOVED in Node 22.
+// Portable alternative that works everywhere:
+//   const pkg = JSON.parse(await readFile(new URL('./package.json', import.meta.url)));
 
 // PITFALL 5: Dual package hazard
 // If both CJS and ESM versions of your package are loaded
@@ -378,7 +403,7 @@ import pkg from './package.json' assert { type: 'json' };  // ESM (experimental)
           "Their package.json is missing the 'type' field"
         ]}
         correctIndex={1}
-        explanation="This error occurs when a CommonJS project tries to require() an ES Module package. Since require() is synchronous and ESM is asynchronous, Node.js cannot load ESM via require(). The solution is to either dual-publish your package (ship both .cjs and .mjs) or the consumer needs to switch to ESM (import syntax)."
+        explanation="A CommonJS project tried to require() an ES-Module-only package on a Node version older than 20.19 / 22.12. Node has since unflagged require(esm), so on current Node this usually just works — unless the module uses top-level await, which fails with ERR_REQUIRE_ASYNC_MODULE instead. Fixes, in order of preference: tell them to upgrade Node, dual-publish (.cjs + .mjs), or have them switch to import syntax."
       />
 
       <InteractiveChallenge
@@ -397,7 +422,7 @@ import pkg from './package.json' assert { type: 'json' };  // ESM (experimental)
       <ul>
         <li>CJS (require/module.exports) is synchronous and Node.js's original system</li>
         <li>ESM (import/export) is the JavaScript standard, async, enables tree-shaking</li>
-        <li>CJS cannot require() ESM — this is why dual publishing exists</li>
+        <li>CJS could not require() ESM for years — that is why dual publishing exists. Node 20.19+/22.12+ allows it, except when the ESM graph uses top-level await</li>
         <li>Use <code>exports</code> with <code>import</code> and <code>require</code> conditions for dual format</li>
         <li>tsup is the easiest tool for building both CJS and ESM with TypeScript declarations</li>
         <li>Test with both <code>require()</code> and <code>import</code> before publishing</li>

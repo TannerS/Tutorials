@@ -15,10 +15,14 @@ export default function Performance() {
     >
       <h2>Why Performance Is a Feature</h2>
       <p>
-        A 100ms delay in load time drops conversion by 7%. Performance isn't a
-        nice-to-have — it's a business requirement. Google uses Core Web Vitals
-        as a ranking signal. Your users on 3G connections in rural areas will
-        thank you for every kilobyte you shave.
+        Performance isn't a nice-to-have — it's a business requirement. The
+        widely-cited studies land in the same range: Amazon reported roughly{' '}
+        <strong>1% of sales lost per 100ms</strong> of added latency, and Akamai
+        measured about <strong>7% lower conversion per additional second</strong> of
+        delay. Treat the exact numbers as directional rather than laws — they come
+        from specific sites in specific years — but the direction has never
+        reversed. Google also uses Core Web Vitals as a ranking signal, and your
+        users on slow connections will thank you for every kilobyte you shave.
       </p>
 
       <h2>Bundle Analysis Tools</h2>
@@ -308,8 +312,13 @@ const ExpensiveList = memo(function ExpensiveList({ items }) {
 });
 
 // 3. useMemo — cache expensive computations
+// NOTE the spread: Array.prototype.sort() sorts IN PLACE. Calling
+// items.sort() here would mutate the prop/state array you were handed,
+// which is a real bug (React may not re-render, and other consumers of
+// that array silently see it reordered). Copy first — or use the newer
+// items.toSorted(...), which returns a new array (Node 20+ / ES2023).
 const sortedItems = useMemo(
-  () => items.sort((a, b) => a.name.localeCompare(b.name)),
+  () => [...items].sort((a, b) => a.name.localeCompare(b.name)),
   [items]
 );
 

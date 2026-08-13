@@ -216,7 +216,7 @@ class ProductApiIntegrationTest {
       <h2>What&apos;s Ahead</h2>
       <ul>
         <li><strong>Testing Controllers &amp; Responses</strong> — status codes, headers, content negotiation, pagination, multipart uploads</li>
-        <li><strong>Testing Validation &amp; Error Handling</strong> — bad input, <code>@ExceptionHandler</code> testing, RFC 7807 <code>ProblemDetail</code> assertions</li>
+        <li><strong>Testing Validation &amp; Error Handling</strong> — bad input, <code>@ExceptionHandler</code> testing, RFC 9457 <code>ProblemDetail</code> assertions</li>
         <li><strong>Testing Secured Endpoints</strong> — <code>@WithMockUser</code>, mocking JWTs, 401 vs 403, CSRF, method security</li>
         <li><strong>API Testing Patterns &amp; CI</strong> — REST Assured, Postman/Newman, parallel execution, flaky test mitigation</li>
       </ul>

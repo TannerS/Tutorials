@@ -147,14 +147,14 @@ export default function PackageJson() {
   },
 
   "devDependencies": {
-    "typescript": "^5.3.0",
+    "typescript": "^5.9.0",
     "tsup": "^8.0.0",
-    "jest": "^29.7.0",
-    "eslint": "^8.50.0"
+    "vitest": "^3.0.0",
+    "eslint": "^9.0.0"
   },
 
   "peerDependencies": {
-    "react": "^17.0.0 || ^18.0.0"
+    "react": "^18.0.0 || ^19.0.0"
   },
 
   "peerDependenciesMeta": {
@@ -248,8 +248,8 @@ export default function PackageJson() {
       <CodeBlock language="json" title="engines — specify Node.js version">
 {`{
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=20.19.0",
+    "npm": ">=10.0.0"
   }
 }
 
@@ -330,15 +330,15 @@ export default function PackageJson() {
   },
 
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.19.0"
   },
 
   "devDependencies": {
-    "eslint": "^8.50.0",
-    "rimraf": "^5.0.0",
+    "eslint": "^9.0.0",
+    "rimraf": "^6.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.3.0",
-    "vitest": "^1.0.0"
+    "typescript": "^5.9.0",
+    "vitest": "^3.0.0"
   },
 
   "publishConfig": {

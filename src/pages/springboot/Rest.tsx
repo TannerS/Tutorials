@@ -48,7 +48,9 @@ public class UserController {
     // GET /api/users?status=active&page=0&size=20
     @GetMapping
     public Page<UserDto> list(
-            @RequestParam(defaultValue = "active") UserStatus status,
+            // Enum binding is CASE-SENSITIVE by default — this must match the
+            // constant name exactly, or Spring throws MethodArgumentTypeMismatch.
+            @RequestParam(defaultValue = "ACTIVE") UserStatus status,
             @PageableDefault(size = 20) Pageable pageable) {
         return users.list(status, pageable);
     }
@@ -314,10 +316,17 @@ public UserDto patch(@PathVariable UUID id, @RequestBody JsonNode mergePatch) {
             produces = { MediaType.APPLICATION_JSON_VALUE,
                          MediaType.APPLICATION_PDF_VALUE,
                          "text/csv" })
+// NOTE: a real Accept header is a weighted LIST, e.g.
+//   "text/html, application/json;q=0.9, */*;q=0.8"
+// so never switch on the raw string. Either let Spring negotiate for you by
+// declaring separate handler methods with different 'produces' values, or
+// resolve the best match yourself as below.
 public ResponseEntity<?> get(@PathVariable UUID id,
-                             @RequestHeader("Accept") String accept) {
+                             @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) {
     Report r = reports.byId(id);
-    return switch (accept) {
+    MediaType best = MediaType.sortBySpecificityAndQuality(
+            MediaType.parseMediaTypes(acceptHeader)).getFirst();
+    return switch (best.toString()) {
         case MediaType.APPLICATION_PDF_VALUE ->
             ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).body(pdf.render(r));
         case "text/csv" ->

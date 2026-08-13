@@ -1,3 +1,9 @@
+/* eslint-disable react-hooks/refs -- This component's whole purpose is to show
+   what React does during the render phase: it deliberately logs from render
+   bodies and counts renders in a ref. `logRef` is a buffer that is *replaced*
+   (never mutated) and only surfaced after a committed `setTick`, so reading it
+   during render is intentional and safe here. Enforcing the rule would mean
+   deleting the lesson this component exists to teach. */
 import {
   useState,
   useEffect,

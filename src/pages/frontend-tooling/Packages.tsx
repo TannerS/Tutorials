@@ -86,7 +86,7 @@ export default function Packages() {
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=22.0.0",
     "npm": ">=10.0.0"
   },
   "scripts": {
@@ -98,16 +98,16 @@ export default function Packages() {
     "test:ci": "vitest run --coverage"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.0"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.16.0"
   },
   "devDependencies": {
-    "@types/react": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.0",
-    "typescript": "^5.5.0",
-    "vite": "^5.4.0",
-    "vitest": "^2.0.0"
+    "@types/react": "^19.2.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "typescript": "^5.9.0",
+    "vite": "^8.0.0",
+    "vitest": "^3.0.0"
   }
 }`}
       </CodeBlock>
@@ -199,10 +199,11 @@ engine-strict=true
 # Private registry for @myorg scoped packages
 @myorg:registry=https://npm.pkg.github.com
 
-# Auto-install peer dependencies (npm v7+)
-auto-install-peers=true
-
-# Hoist patterns for pnpm
+# NOTE: auto-install-peers is a PNPM setting, not an npm one.
+# npm 7+ installs peer dependencies automatically with no flag at all;
+# writing auto-install-peers in an npm .npmrc silently does nothing.
+# pnpm-only settings (ignored by npm):
+# auto-install-peers=true
 # public-hoist-pattern[]=*eslint*
 # public-hoist-pattern[]=*prettier*`}
       </CodeBlock>
@@ -215,7 +216,7 @@ auto-install-peers=true
       </p>
 
       <CodeBlock language="bash" title="Using patch-package">
-{`npm install patch-package
+{`npm install -D patch-package
 
 # 1. Fix the bug directly in node_modules/broken-lib/index.js
 # 2. Generate a patch file

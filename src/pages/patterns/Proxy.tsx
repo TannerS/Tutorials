@@ -132,6 +132,76 @@ public class SecureDocumentService implements DocumentService {
         in a proxy that adds the cross-cutting behavior before/after your method runs.
       </InfoBox>
 
+      <InfoBox variant="danger" title="Self-Invocation Silently Bypasses the Proxy">
+        <p>
+          Understanding that Spring&apos;s annotations <em>are</em> the Proxy pattern immediately
+          explains the framework&apos;s most notorious gotcha — and it is a very common interview
+          question precisely because it separates people who memorised the annotation from people who
+          understand the mechanism.
+        </p>
+        <p>
+          The proxy is a <strong>separate object wrapping your bean</strong>. Callers hold a reference
+          to the proxy, so their calls are intercepted. But when one method of your bean calls another
+          method <em>on itself</em>, that call goes through <code>this</code> — the real object, not
+          the wrapper. The proxy is never involved, and the annotation does nothing at all. No error,
+          no warning; the transaction or cache simply does not happen.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="java" title="The Self-Invocation Trap" showLineNumbers={true}>
+{`@Service
+public class OrderService {
+
+    public void processAll(List<Order> orders) {
+        for (Order order : orders) {
+            // BROKEN: 'this.processOne(...)' bypasses the proxy entirely.
+            // @Transactional is IGNORED -- no transaction is started.
+            processOne(order);
+        }
+    }
+
+    @Transactional
+    public void processOne(Order order) { ... }
+}
+
+// FIX 1 (best): move the annotated method to a different bean, so the
+// call crosses a real bean boundary and hits that bean's proxy.
+@Service
+public class OrderService {
+    private final OrderProcessor processor;   // injected -> a PROXY
+
+    public void processAll(List<Order> orders) {
+        orders.forEach(processor::processOne); // intercepted correctly
+    }
+}
+
+// FIX 2: inject the proxy into itself (works, but a design smell --
+// it signals the class is doing two jobs).
+@Service
+public class OrderService {
+    @Autowired @Lazy private OrderService self;
+
+    public void processAll(List<Order> orders) {
+        orders.forEach(self::processOne);
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Two More Consequences of the Proxy Mechanism">
+        <p>
+          <strong>Only <code>public</code> methods are intercepted.</strong> A{' '}
+          <code>@Transactional</code> on a <code>private</code>, <code>protected</code>, or
+          package-private method is silently ignored under JDK proxies, because there is nothing for
+          the proxy to override.
+        </p>
+        <p>
+          <strong><code>final</code> classes and methods cannot be proxied by CGLIB.</strong> CGLIB
+          works by generating a <em>subclass</em>, so a <code>final</code> class cannot be subclassed
+          and a <code>final</code> method cannot be overridden. This is why Kotlin — where classes are
+          final by default — needs the <code>all-open</code> compiler plugin for Spring.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="tip" title="When to Hand-Roll a Proxy vs. Just Use Spring">
         Reach for a hand-written proxy like <code>CachingProductService</code> when you need
         behavior Spring's annotations don't cover cleanly — per-key cache eviction logic,

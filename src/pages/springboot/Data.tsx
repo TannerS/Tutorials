@@ -34,8 +34,9 @@ export default function Data() {
        indexes = @Index(name = "ix_customer_email", columnList = "email", unique = true))
 public class Customer {
 
+    // No @GeneratedValue: the factory below assigns the id, so it is never
+    // null. See the note under "entity equality" for why that matters.
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false, length = 255)
@@ -104,35 +105,59 @@ public class Customer {
     @Id @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    public UUID getId() { return id; }
+
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
-        // Hibernate hands you a proxy subclass, so getClass() != o.getClass()
-        // is WRONG. Compare the effective class instead.
+        // Hibernate hands you a proxy SUBCLASS, so getClass() != o.getClass()
+        // is WRONG — it would say a proxy never equals its own entity.
+        // instanceof is correct because the proxy IS-A Customer.
         if (!(o instanceof Customer other)) return false;
-        return id != null && id.equals(other.id);
+        // Use the GETTER, never other.id. Reading a field directly on an
+        // uninitialised proxy returns null; only the getter triggers the load.
+        return id != null && id.equals(other.getId());
     }
 
     @Override
     public final int hashCode() {
-        // CONSTANT hash, deliberately. It must not change when the id is
-        // assigned on persist. Collisions inside one persistence context
-        // are irrelevant — you never hold thousands of entities in a Set.
-        return getClass().hashCode();
+        // A literal CONSTANT, deliberately. Two requirements drive this:
+        //   1. It must not change when the id is assigned on persist,
+        //      or a Set loses track of an entity you just saved.
+        //   2. It must be identical for an entity and its proxy — which is
+        //      why this is NOT getClass().hashCode(): the proxy's class is
+        //      Customer$HibernateProxy$xyz, a different class object.
+        // Collisions are irrelevant; you never hold thousands in one Set.
+        return Customer.class.hashCode();
     }
 }`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="The simplest way out: assign ids in the application">
         <p>
-          Notice the entity above uses <code>GenerationType.UUID</code> and the factory method
-          sets <code>id</code> at construction. If the id is assigned <em>before</em> the entity is
-          ever persisted, it is never null, and both <code>equals</code> and{' '}
-          <code>hashCode</code> can simply delegate to it. Application-assigned UUIDs also let you
-          batch inserts properly, which <code>GenerationType.IDENTITY</code> silently prevents —
-          Hibernate must round-trip to the database for each row to learn the generated key. If
-          you need sequential ids for index locality, use a UUIDv7 generator or a database
-          sequence with an allocation size, not <code>IDENTITY</code>.
+          Notice the entity above has a bare <code>@Id</code> and the factory method sets{' '}
+          <code>id</code> at construction. If the id is assigned <em>before</em> the entity is ever
+          persisted it is never null, so <code>equals</code> and <code>hashCode</code> can simply
+          delegate to it and the whole null-id problem disappears. Application-assigned ids also
+          let Hibernate batch inserts properly, which <code>GenerationType.IDENTITY</code> silently
+          prevents — it must round-trip to the database for every single row to learn the generated
+          key.
+        </p>
+        <p>
+          <strong>Do not combine the two.</strong> If you keep{' '}
+          <code>@GeneratedValue(strategy = GenerationType.UUID)</code> <em>and</em> assign the id
+          yourself, Hibernate&apos;s generator overwrites your value — the two strategies are
+          alternatives, not complements.
+        </p>
+        <p>
+          The one cost of an application-assigned id: <code>save()</code> can no longer tell a new
+          entity from a detached one by &quot;is the id null?&quot;, so it issues a{' '}
+          <code>SELECT</code> before each insert to check. Avoid that by implementing{' '}
+          <code>Persistable&lt;UUID&gt;</code> with an <code>@Transient boolean isNew</code> flag
+          cleared in <code>@PostLoad</code>/<code>@PostPersist</code>, or by calling{' '}
+          <code>entityManager.persist()</code> directly on the insert path. And if you want
+          sequential ids for index locality, generate <strong>UUIDv7</strong> (time-ordered) rather
+          than random v4 — random UUID primary keys fragment B-tree indexes badly at scale.
         </p>
       </InfoBox>
 
@@ -255,8 +280,10 @@ Customer managed = customers.save(detached);
     PageRequest.of(0, 20, Sort.by("createdAt").descending()));
 // Two queries: SELECT ... LIMIT 20  + SELECT count(*)
 
-Slice<Customer> slice = customers.findFirst20ByStatusOrderByCreatedAtDesc(ACTIVE);
-// One query: SELECT ... LIMIT 21 — 21st row means "has next"
+Slice<Customer> slice = customers.findByStatus(ACTIVE, PageRequest.of(0, 20));
+// One query: SELECT ... LIMIT 21 — the 21st row means "has next".
+// Slice still needs a Pageable; it just skips the count query.
+// Declare it as: Slice<Customer> findByStatus(CustomerStatus s, Pageable p);
 
 List<Customer>  list  = customers.findTop20ByStatusOrderByCreatedAtDesc(ACTIVE);
 // One query, no next/prev metadata`}
@@ -429,7 +456,10 @@ public class OrderService {
         client.
       </p>
       <CodeBlock language="java" title="Handling optimistic-lock failures">
-{`@Retryable(retryFor = ObjectOptimisticLockingFailureException.class,
+{`// Spring Retry flavour (org.springframework.retry.annotation).
+// Spring Framework 7 ships its OWN @Retryable with different attribute names
+// (maxRetries / includes, no @Backoff) — see the Boot 4 Novelties lesson.
+@Retryable(retryFor = ObjectOptimisticLockingFailureException.class,
            maxAttempts = 3, backoff = @Backoff(delay = 50, multiplier = 2))
 @Transactional
 public Order applyDiscount(UUID id, BigDecimal pct) {
@@ -586,8 +616,23 @@ ALTER TABLE customer
 UPDATE customer SET status = 'ACTIVE' WHERE status IS NULL;
 
 ALTER TABLE customer
-    ALTER COLUMN status SET NOT NULL;
+    ALTER COLUMN status SET NOT NULL;`}
+      </CodeBlock>
 
+      <CodeBlock language="sql" title="V4__index_customer_email.sql — must NOT run in a transaction">
+{`-- CREATE INDEX CONCURRENTLY does not lock writers, which is what you want on
+-- a live table. But PostgreSQL refuses to run it inside a transaction block,
+-- and Flyway wraps every migration in one by default:
+--   ERROR: CREATE INDEX CONCURRENTLY cannot run inside a transaction block
+--
+-- Fix: put it ALONE in its own migration and turn the transaction off with a
+-- sibling config file named V4__index_customer_email.sql.conf containing:
+--     executeInTransaction=false
+--
+-- Also note CONCURRENTLY can fail and leave an INVALID index behind, so the
+-- statement is written to be re-runnable.
+
+DROP INDEX IF EXISTS ix_customer_email;
 CREATE UNIQUE INDEX CONCURRENTLY ix_customer_email ON customer (LOWER(email));`}
       </CodeBlock>
 
@@ -632,7 +677,7 @@ class CustomerRepositoryTest {
 class CustomerRepositoryIT {
 
     @Container
-    static PostgreSQLContainer<?> pg = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer<?> pg = new PostgreSQLContainer<>("postgres:17-alpine");
 
     @DynamicPropertySource
     static void datasource(DynamicPropertyRegistry r) {

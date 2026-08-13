@@ -1,6 +1,8 @@
 # Tutorials
 
-A personal study site: React 19 + TypeScript, covering Java, Spring Boot 4, React 19, TypeScript, SQL/Postgres, SOLID, design patterns, microservices, API design, auth & security, testing, DevOps, Docker, CSS, accessibility, and more — 30+ sections, several with dedicated printable "field guide" cheat sheets. Cmd-K command palette, sticky table of contents, dark/light theme, live Sandpack editor.
+A personal study site: React 19 + TypeScript, covering Java, Spring Boot 4, React 19, TypeScript, SQL/Postgres, SOLID, design patterns, microservices, API design, auth & security, testing, frontend tooling & npm, CSS, accessibility, and more — 31 sections, five with dedicated printable "field guide" cheat sheets. Cmd-K command palette, sticky table of contents, dark/light theme, live Sandpack editor.
+
+The authoritative list of sections is `src/data/sections.ts`.
 
 ---
 
@@ -29,9 +31,9 @@ npm run dev        # http://localhost:5173
 
 ```bash
 npm run typecheck   # tsc --noEmit
-npm run build        # tsc && vite build
-npm run lint          # eslint .
-npm run preview       # serve the production build locally
+npm run build       # tsc && vite build
+npm run lint        # eslint . — covers .ts/.tsx via typescript-eslint
+npm run preview     # serve the production build locally
 ```
 
 ---
@@ -41,17 +43,21 @@ npm run preview       # serve the production build locally
 The site produces **one PDF per section** for offline reading.
 
 ```bash
-# One-time setup — install Chromium and (optionally) Ghostscript for merging.
+# One-time setup — the headless browser the exporter drives.
 npx playwright install chromium
-brew install ghostscript          # macOS; on Linux use apt/yum
 
-# Generate every section
+# Build the site, then generate every section
 npm run build:pdf
 
-# Or specific sections
-node scripts/build-pdf.mjs java
-node scripts/build-pdf.mjs springboot react19 typescript
+# Or specific sections, re-using the existing dist/ build
+npm run pdf:section java
+npm run pdf:section springboot react19 typescript
 ```
+
+`pdf:section` does **not** rebuild — it serves whatever is already in `dist/`,
+so run `npm run build` first if the site has changed since the last build.
+Merging is done in-process by `pdf-lib`; no Ghostscript or other external
+binary is required.
 
 Output goes to `dist-pdf/*.pdf` — one file per section. The generator:
 
@@ -63,7 +69,12 @@ Output goes to `dist-pdf/*.pdf` — one file per section. The generator:
 
 **Printing the PDFs:** each lesson is one variable-height page. Open in Preview.app or Adobe Acrobat and print with **"Scale to fit paper"** — the printer splits each tall page into physical Letter sheets automatically, the same way browsers handle printing a long web page.
 
-Print CSS lives at the end of `src/index.css`. The `html.print-mode` class is added by the PDF script, but the plain `@media print` block also fires from the browser's built-in Print → Save as PDF flow if you want to print a single lesson directly.
+Print CSS lives in a single `@media print` block in **`src/styles/global.css`**
+(there is no `src/index.css`), plus a companion block in `src/styles/poster.css`
+for the field-guide pages. Nothing is script-only: the same rules fire from the
+browser's built-in Print → Save as PDF, so `Cmd/Ctrl+P` on any lesson produces
+the same clean output — chrome hidden, code wrapped instead of clipped, dark
+theme flattened to ink-on-paper regardless of the theme you were reading in.
 
 ---
 

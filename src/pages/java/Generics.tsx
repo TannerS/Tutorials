@@ -276,9 +276,10 @@ public static <T extends Iterable<String> & AutoCloseable> void drain(T source)
     // 5. Cannot have a static field of the type parameter's type.
     // private static T shared;                        // COMPILE ERROR
 
-    // 6. Cannot catch or throw a generic exception type.
+    // 6. Cannot CATCH a type variable — the JVM needs a real class to match.
     // catch (T e) { }                                 // COMPILE ERROR
-    // ...but you CAN declare "throws T" on a method.
+    // ...but you CAN declare "throws T" and rethrow a T you were handed:
+    //    <T extends Throwable> void rethrow(T t) throws T { throw t; }
 }`}
       </CodeBlock>
 

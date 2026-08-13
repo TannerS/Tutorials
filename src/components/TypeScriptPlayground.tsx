@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Sandpack } from '@codesandbox/sandpack-react';
 import { useTheme } from './ThemeProvider';
 

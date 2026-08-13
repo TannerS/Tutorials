@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState, type ReactNode } from 'react';
+import { hasModifier, isTypingTarget } from './keyboardNav';
 import '../styles/poster.css';
 
 export interface PosterLink {
@@ -28,10 +29,14 @@ export default function PosterLayout({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const tag = document.activeElement?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-      if (e.key === 'ArrowLeft' && prev) navigate(prev.path);
-      else if (e.key === 'ArrowRight' && next) navigate(next.path);
+      if (isTypingTarget() || hasModifier(e) || e.defaultPrevented) return;
+      if (e.key === 'ArrowLeft' && prev) {
+        e.preventDefault();
+        navigate(prev.path);
+      } else if (e.key === 'ArrowRight' && next) {
+        e.preventDefault();
+        navigate(next.path);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -73,20 +78,24 @@ export default function PosterLayout({
         </footer>
       </div>
 
-      <div style={{
+      {/* The prev/next bar lives outside .poster-sheet, so it follows the SITE
+          theme, not the poster's own dark/light toggle — it has to use the
+          global tokens. It previously hardcoded the dark-theme hexes, which
+          left a dark rule and a low-contrast blue sitting on the light theme. */}
+      <div className="no-print" style={{
         display: 'flex',
         justifyContent: 'space-between',
         marginTop: '1rem',
         paddingTop: '1rem',
-        borderTop: '1px solid #2a2e42',
+        borderTop: '1px solid var(--border-color)',
       }}>
         {prev ? (
-          <Link to={prev.path} style={{ color: '#5b9cf6', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Link to={prev.path} style={{ color: 'var(--accent-blue)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             ← {prev.label}
           </Link>
         ) : <div />}
         {next ? (
-          <Link to={next.path} style={{ color: '#5b9cf6', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Link to={next.path} style={{ color: 'var(--accent-blue)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {next.label} →
           </Link>
         ) : <div />}

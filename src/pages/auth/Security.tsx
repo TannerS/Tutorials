@@ -483,6 +483,34 @@ app.use(helmet.hsts({
         </tbody>
       </table>
 
+      <InfoBox variant="tip" title="Two Header Details Worth Knowing">
+        <p>
+          <strong>Host allowlists in CSP are largely ineffective.</strong> Google&apos;s own research
+          found the great majority of real-world CSP policies bypassable, because allowlisting a CDN also
+          allowlists every JSONP endpoint and outdated Angular copy hosted on it. The modern policy is{' '}
+          <strong>nonce-based with <code>&#39;strict-dynamic&#39;</code></strong>: trust scripts carrying
+          a per-response nonce, let those scripts load their own dependencies, and ignore host
+          allowlists entirely.
+        </p>
+        <p>
+          <code>script-src &#39;nonce-{'{random}'}&#39; &#39;strict-dynamic&#39; https: &#39;unsafe-inline&#39;; object-src &#39;none&#39;; base-uri &#39;none&#39;</code>
+        </p>
+        <p>
+          The trailing <code>https:</code> and <code>&#39;unsafe-inline&#39;</code> look alarming but are
+          deliberate fallbacks for older browsers — any browser that understands{' '}
+          <code>&#39;strict-dynamic&#39;</code> ignores both. Note <code>base-uri &#39;none&#39;</code>,
+          which is easy to forget and stops an injected <code>&lt;base&gt;</code> tag redirecting every
+          relative script URL. The nonce must be freshly random per response; a static &quot;nonce&quot;
+          is no protection at all.
+        </p>
+        <p>
+          <strong><code>X-Frame-Options</code> is superseded by{' '}
+          <code>frame-ancestors</code>.</strong> CSP&apos;s <code>frame-ancestors &#39;none&#39;</code>{' '}
+          does the same job with real allowlist support, and takes precedence where both are present.
+          Keep <code>X-Frame-Options</code> only as a legacy fallback.
+        </p>
+      </InfoBox>
+
       <h2>Input Validation and Rate Limiting</h2>
 
       <CodeBlock language="javascript" title="Input Validation and Rate Limiting (Express.js)">
@@ -510,12 +538,18 @@ app.post('/register',
   loginLimiter,
   [
     body('email').isEmail().normalizeEmail(),
+
+    // Password rules per current NIST SP 800-63B guidance:
+    // length + a breach check, NOT character-class rules. See below.
     body('password')
-      .isLength({ min: 8 })
-      .matches(/[A-Z]/).withMessage('Must contain uppercase')
-      .matches(/[0-9]/).withMessage('Must contain number')
-      .matches(/[^A-Za-z0-9]/).withMessage('Must contain special char'),
-    body('name').trim().escape().isLength({ min: 1, max: 100 }),
+      .isLength({ min: 12, max: 128 })   // max caps hashing-DoS cost
+      .custom(async (pw) => {
+        if (await isInBreachCorpus(pw)) {
+          throw new Error('This password has appeared in a known breach');
+        }
+      }),
+
+    body('name').trim().isLength({ min: 1, max: 100 }),
   ],
   (req, res) => {
     const errors = validationResult(req);
@@ -526,6 +560,35 @@ app.post('/register',
   }
 );`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Password Composition Rules Are Now Advised Against">
+        <p>
+          The &quot;one uppercase, one number, one special character&quot; validator is the single most
+          common piece of outdated security code still being written, and it is worth knowing why current
+          guidance rejects it.
+        </p>
+        <p>
+          <strong>NIST SP 800-63B</strong> — the standard everyone else cites — explicitly says verifiers{' '}
+          <em>shall not</em> impose composition rules, and <em>shall not</em> require periodic rotation
+          without evidence of compromise. Both rules push users toward predictable behaviour:{' '}
+          <code>Password1!</code> satisfies every complexity checker ever written, and forced 90-day
+          expiry produces <code>Password2!</code>. Meanwhile the rules block genuinely strong
+          passphrases and drive password reuse.
+        </p>
+        <p><strong>What the current guidance asks for instead:</strong></p>
+        <ul>
+          <li><strong>Length is the real control.</strong> Minimum 8 as an absolute floor; 15+ recommended for user-chosen secrets. Allow at least 64 characters so passphrases fit.</li>
+          <li><strong>Check against a breach corpus.</strong> Screen new passwords against known-compromised lists — this is what actually stops credential stuffing. Have I Been Pwned&apos;s range API lets you do it with k-anonymity, never sending the full hash.</li>
+          <li><strong>Accept all printable Unicode, including spaces and emoji.</strong> Normalise (NFKC) before hashing.</li>
+          <li><strong>Do not truncate, and do not block paste.</strong> Blocking paste actively fights password managers.</li>
+          <li><strong>Rotate only on evidence of compromise.</strong></li>
+        </ul>
+        <p>
+          Note how this interacts with hashing from the <em>Encryption</em> lesson: bcrypt silently
+          truncates at 72 bytes, so &quot;accept long passphrases&quot; is another reason to prefer
+          Argon2id.
+        </p>
+      </InfoBox>
 
       <h2>Security Best Practices</h2>
 

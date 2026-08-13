@@ -191,9 +191,13 @@ git add package-lock.json
 npm install --package-lock-only
 # This regenerates the lockfile without installing anything
 
-# Pro tip: add to .gitattributes to simplify merges
-# .gitattributes:
-# package-lock.json merge=ours`}
+# NOTE: you'll see ".gitattributes: package-lock.json merge=ours" suggested
+# as a shortcut. Don't cargo-cult it — "ours" is not a built-in merge driver,
+# so without also running
+#   git config merge.ours.driver true
+# the line does nothing at all. And even configured, it blindly discards the
+# other branch's lockfile changes, which quietly drops their new dependencies.
+# Regenerating with npm (options 1-3 above) is the correct fix.`}
       </CodeBlock>
 
       <InfoBox variant="warning" title="Don't Blindly Regenerate">

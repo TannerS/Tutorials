@@ -186,9 +186,19 @@ USING employees e
 WHERE a.employee_id = e.id
   AND e.terminated_date < CURRENT_DATE - INTERVAL '1 year';
 
--- DELETE all rows (truncate is faster for full wipe)
-DELETE FROM temp_imports;          -- logged, can rollback
-TRUNCATE TABLE temp_imports;       -- unlogged, instant, resets sequences
+-- DELETE all rows (truncate is much faster for a full wipe)
+DELETE FROM temp_imports;          -- scans and marks every row dead; leaves bloat for VACUUM
+TRUNCATE TABLE temp_imports;       -- deallocates the whole file; O(1) regardless of row count
+
+-- Two things people get wrong about TRUNCATE in Postgres:
+--  1. It IS transactional and WAL-logged. BEGIN; TRUNCATE t; ROLLBACK; restores
+--     the rows. (That is Postgres — in Oracle/MySQL, TRUNCATE is DDL that commits.)
+--  2. It does NOT reset IDENTITY/SERIAL sequences unless you ask:
+TRUNCATE TABLE temp_imports RESTART IDENTITY;
+
+-- It also takes an ACCESS EXCLUSIVE lock (blocks even SELECTs) and will refuse
+-- to run if another table's FK references it, unless you opt in:
+TRUNCATE TABLE orders, order_items RESTART IDENTITY CASCADE;
 
 -- UPDATE ... RETURNING to see exactly what changed
 UPDATE employees
@@ -280,11 +290,23 @@ EXECUTE find_user('anything '' OR 1=1 --');   -- treated as a literal string
 
       <InfoBox variant="warning" title="The Classic Gotcha">
         <p>
-          You can't reference a SELECT alias in WHERE or GROUP BY (in standard SQL) because SELECT
-          runs <em>after</em> those clauses. PostgreSQL does allow it in <code>ORDER BY</code>{' '}
-          (which runs after SELECT) but not in <code>WHERE</code>, <code>GROUP BY</code>, or{' '}
-          <code>HAVING</code>. MySQL is looser about GROUP BY — Postgres is strict. Always use the
-          original expression or a CTE/subquery if you need to filter on a computed column.
+          In standard SQL you can't reference a SELECT alias in <code>WHERE</code>,{' '}
+          <code>GROUP BY</code>, or <code>HAVING</code>, because SELECT is processed{' '}
+          <em>after</em> all three. <code>ORDER BY</code> runs after SELECT, so it is the one
+          clause where the alias is always legal.
+        </p>
+        <p>
+          PostgreSQL adds one extension worth knowing precisely: it <strong>does</strong> accept an
+          output-column name in <code>GROUP BY</code> (and an ordinal position, e.g.{' '}
+          <code>GROUP BY 1</code>) — that is why <code>GROUP BY 1, 2</code> appears all over this
+          site. It still does <em>not</em> accept aliases in <code>WHERE</code> or{' '}
+          <code>HAVING</code>. Note the resolution rule: if a name matches both an input column and
+          an output alias, <code>GROUP BY</code> picks the <em>input</em> column, so shadowing a
+          real column name with an alias is a good way to confuse yourself.
+        </p>
+        <p>
+          To filter on a computed column, repeat the expression or — better — wrap it in a CTE or
+          subquery and filter the outer query. That works everywhere and stays readable.
         </p>
       </InfoBox>
 
@@ -310,7 +332,7 @@ LIMIT 20;`}
       </CodeBlock>
 
       <InteractiveChallenge
-        question="Given the SQL logical execution order, which clause can legally reference a column alias defined in SELECT?"
+        question="Given the SQL logical execution order, which clause can reference a SELECT column alias in standard SQL — and in every engine?"
         options={[
           'WHERE',
           'GROUP BY',
@@ -318,7 +340,7 @@ LIMIT 20;`}
           'ORDER BY',
         ]}
         correctIndex={3}
-        explanation="ORDER BY is processed after SELECT, so it can reference SELECT aliases. WHERE, GROUP BY, and HAVING all execute before SELECT in the logical order."
+        explanation="ORDER BY is processed after SELECT, so it can always reference SELECT aliases. WHERE, GROUP BY, and HAVING all execute before SELECT in the logical order. Postgres-specific footnote: Postgres additionally accepts an output-column name or ordinal (GROUP BY 1) in GROUP BY as a non-standard extension — but never in WHERE or HAVING."
         language="sql"
       />
 

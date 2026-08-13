@@ -172,6 +172,8 @@ test('dashboard content verification', async ({ page }) => {
 
       <CodeBlock language="javascript" title="Page Object Class">
 {`// pages/LoginPage.js
+import { expect } from '@playwright/test';  // needed for expectError below
+
 export class LoginPage {
   constructor(page) {
     this.page = page;
@@ -230,6 +232,12 @@ test.describe('Authentication', () => {
       <CodeBlock language="javascript" title="API Tests Without a Browser">
 {`import { test, expect } from '@playwright/test';
 
+// NOTE: these three tests deliberately share state and must run in order.
+// That only works because Playwright runs tests within a file serially in one
+// worker by default. Add fullyParallel: true (or a retry, which re-runs only
+// the failed test) and 'GET' breaks because 'POST' never ran to set the id.
+// Prefer test.describe.serial() to make the dependency explicit, or create the
+// user inside each test via a fixture.
 test.describe('Users API', () => {
   let createdUserId;
 
@@ -301,7 +309,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24        # current Active LTS; Node 20 went EOL in April 2026
 
       - run: npm ci
       - run: npx playwright install --with-deps

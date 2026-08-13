@@ -409,14 +409,60 @@ public class SerializationDemo {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="Serialization Security">
+      <InfoBox variant="danger" title="Serialization Security — deserialization is remote code execution">
         <p>
-          Java serialization has known security vulnerabilities and is considered a legacy
-          feature. For new projects, prefer JSON (using Jackson or Gson), XML, or Protocol
-          Buffers for data interchange. If you must use Java serialization, always define a{' '}
-          <code>serialVersionUID</code>, use <code>transient</code> for sensitive fields, and
-          consider implementing custom <code>readObject</code>/<code>writeObject</code> methods
-          for validation.
+          This is not a theoretical risk. <code>ObjectInputStream.readObject()</code> constructs
+          arbitrary classes named in the byte stream and runs their{' '}
+          <code>readObject</code> methods <em>before</em> you ever get a chance to check the type.
+          If an attacker controls those bytes and a suitable &quot;gadget chain&quot; is on your
+          classpath, they get code execution. Whole CVE families (Apache Commons Collections,
+          Log4j 1.x, and many more) are exactly this bug. Java serialization is now officially a
+          legacy feature the JDK intends to replace.
+        </p>
+        <p>
+          <strong>Never deserialize data you do not control.</strong> For data interchange use
+          JSON (Jackson), Protocol Buffers, or Avro — formats that build a value from a schema
+          rather than instantiating whatever the payload asks for.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="java" title="SerializationFilter.java">
+{`// If you genuinely cannot remove Java serialization, put an allow-list filter
+// in front of it. Filters (JEP 290, Java 9; per-stream factories in JEP 415,
+// Java 17) are checked BEFORE any class is resolved or constructed.
+
+ObjectInputFilter filter = ObjectInputFilter.Config.createFilter(
+    "com.myapp.dto.*;java.util.*;java.lang.*;" +   // allowed patterns
+    "maxdepth=20;maxarray=10000;maxrefs=1000;" +   // resource limits
+    "!*"                                           // reject everything else
+);
+
+try (var in = new ObjectInputStream(source)) {
+    in.setObjectInputFilter(filter);               // MUST be set before readObject
+    Order order = (Order) in.readObject();
+}
+
+// Process-wide default, no code change required:
+//   java -Djdk.serialFilter='com.myapp.dto.*;!*' -jar app.jar
+
+// Other hardening, in rough order of value:
+//   1. Don't accept serialized input at a trust boundary at all.
+//   2. Allow-list with a filter (above) — never a deny-list; new gadget
+//      chains are found constantly.
+//   3. Set 'serialVersionUID' explicitly, or any field change breaks
+//      compatibility with an unhelpful InvalidClassException.
+//   4. Mark secrets 'transient' so they never reach the stream.
+//   5. Validate invariants in readObject() — the constructor did NOT run,
+//      so a hand-crafted stream can produce an "impossible" object.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Records deserialize more safely">
+        <p>
+          A <code>record</code> that implements <code>Serializable</code> is deserialized through
+          its <strong>canonical constructor</strong>, not by field-stuffing an uninitialized
+          object. That means your compact-constructor validation actually runs, and the classic
+          &quot;deserialization bypasses my invariants&quot; attack does not apply. It is one more
+          reason to model data as records.
         </p>
       </InfoBox>
 

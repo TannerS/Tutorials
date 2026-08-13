@@ -58,22 +58,46 @@ public class Housekeeping {
 
       <InfoBox variant="warning" title="The default scheduler pool has ONE thread">
         <p>
-          Every <code>@Scheduled</code> method runs on a single-threaded
-          <code>ScheduledTaskScheduler</code> unless you configure otherwise. A slow job
-          blocks every other job. Configure a proper pool:
+          Every <code>@Scheduled</code> method runs on one shared{' '}
+          <code>ThreadPoolTaskScheduler</code> whose pool size defaults to <strong>1</strong>. A
+          slow job blocks every other job — and a job that hangs stops all scheduling forever.
+          Raise the pool size:
         </p>
       </InfoBox>
-      <CodeBlock language="java" title="A sane scheduler configuration">
+      <CodeBlock language="yaml" title="The one-line fix">
+{`spring:
+  task:
+    scheduling:
+      pool:
+        size: 4
+      thread-name-prefix: scheduled-`}
+      </CodeBlock>
+      <CodeBlock language="java" title="...or configure the scheduler explicitly">
 {`@Configuration
 @EnableScheduling
 public class SchedulingConfig implements SchedulingConfigurer {
     @Override
     public void configureTasks(ScheduledTaskRegistrar registrar) {
-        var executor = Executors.newScheduledThreadPool(
-            4, Thread.ofVirtual().name("scheduled-", 1L).factory());
-        registrar.setScheduler(executor);
+        var scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(4);
+        scheduler.setThreadNamePrefix("scheduled-");
+        // Don't let a shutdown cut a running job in half.
+        scheduler.setWaitForTasksToCompleteOnShutdown(true);
+        scheduler.setAwaitTerminationSeconds(30);
+        scheduler.initialize();
+        registrar.setTaskScheduler(scheduler);
     }
-}`}
+}
+
+// NOTE: do NOT hand a virtual-thread factory to a ScheduledThreadPoolExecutor.
+// Scheduled executors POOL their threads, and pooling virtual threads defeats
+// the purpose (see the Java Concurrency lesson). If you want each scheduled
+// job's BODY to run on a virtual thread, keep a small platform-thread
+// scheduler for the timing and dispatch the work:
+//     @Scheduled(fixedDelay = 60_000)
+//     void job() { Thread.startVirtualThread(this::doWork); }
+// Boot's spring.threads.virtual.enabled=true also switches the scheduler to
+// a virtual-thread-per-task model for you on Java 21+.`}
       </CodeBlock>
 
       <InfoBox variant="danger" title="Scheduled tasks in a multi-instance deployment">
@@ -270,8 +294,12 @@ spring:
       <InfoBox variant="warning" title="Cache gotchas that always come up in code review">
         <ul>
           <li>Self-invocation trap — same rule as everything else AOP.</li>
-          <li>Caching <code>null</code> returns is off by default in Redis; on for
-              Simple/Caffeine. Set <code>cache-null-values</code> deliberately.</li>
+          <li>Caching <code>null</code> returns is <strong>on</strong> by default (including
+              Redis — <code>spring.cache.redis.cache-null-values</code> defaults to{' '}
+              <code>true</code>). That is usually what you want, because it stops a
+              &quot;missing&quot; key hammering the database on every request, but it also means
+              a deleted row stays &quot;absent&quot; in cache for the whole TTL. Set it
+              deliberately either way.</li>
           <li>Cache keys derived from mutable objects break when the object changes.
               Use a stable key (primitive or record).</li>
           <li>Cross-service cache invalidation is hard — if you cache in service A and

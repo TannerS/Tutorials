@@ -5,12 +5,16 @@
  * Runs a static preview server (vite preview) over the built site, then
  * uses Playwright to visit every lesson in every section, capture each
  * page as PDF, and concatenate the pages into one PDF per section under
- * apps/tutorials/dist-pdf/.
+ * ./dist-pdf/ (repo root — this used to say apps/tutorials/dist-pdf/, left
+ * over from the pre-flatten monorepo layout).
  *
  * Usage:
  *   npm run build:pdf                       # build + generate every section
- *   node scripts/build-pdf.mjs java         # only the 'java' section
+ *   npm run pdf:section java                # re-use the existing dist/ build
  *   node scripts/build-pdf.mjs java react19 # multiple sections
+ *
+ * `pdf:section` does NOT rebuild — it serves whatever is already in dist/,
+ * so run `npm run build` first if the site has changed.
  *
  * Prerequisites (one-time):
  *   npm install
@@ -19,18 +23,19 @@
 
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
-import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, rm, access } from 'node:fs/promises';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+// Repo root. The repo is flat now (no apps/tutorials/), so '..' from scripts/
+// lands on the root that holds dist/, src/ and vite.config.ts.
 const APP_ROOT = resolve(__dirname, '..');
 const OUT_DIR = join(APP_ROOT, 'dist-pdf');
 const HOST = '127.0.0.1';
 const PORT = 5273;
-const BASE_URL = `http://${HOST}:${PORT}`;
 
 const wantedSections = process.argv.slice(2);
 
@@ -67,16 +72,23 @@ async function loadSections() {
 
   const outfile = join(tmpdir(), `sections-${process.pid}.mjs`);
   await writeFile(outfile, stripped);
-  const mod = await import(`file://${outfile}`);
-  return mod.sections;
+  try {
+    const mod = await import(`file://${outfile}`);
+    return mod.sections;
+  } finally {
+    await rm(outfile, { force: true });
+  }
 }
 
 async function startPreviewServer(port) {
   return new Promise((resolvePreview, reject) => {
+    // detached so the whole process group can be signalled on exit: `npx`
+    // execs vite as a CHILD, so killing the npx wrapper alone left a vite
+    // server holding the port until it was hunted down by hand.
     const child = spawn(
       'npx',
       ['vite', 'preview', '--host', HOST, '--port', String(port), '--strictPort'],
-      { cwd: APP_ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
+      { cwd: APP_ROOT, stdio: ['ignore', 'pipe', 'pipe'], detached: true },
     );
 
     let ready = false;
@@ -84,6 +96,7 @@ async function startPreviewServer(port) {
       const s = buf.toString();
       if (!ready && /Local:\s+http/.test(s)) {
         ready = true;
+        clearTimeout(timer);
         resolvePreview(child);
       }
     };
@@ -93,14 +106,34 @@ async function startPreviewServer(port) {
       if (!ready) reject(new Error(`vite preview exited with code ${code}`));
     });
 
-    // safety timeout
-    setTimeout(() => {
+    // safety timeout — unref'd so a successful run isn't held open for 15s
+    const timer = setTimeout(() => {
       if (!ready) reject(new Error('vite preview did not start in time'));
     }, 15_000);
+    timer.unref();
   });
 }
 
+function stopPreviewServer(child) {
+  if (!child || child.exitCode !== null) return;
+  try {
+    // negative pid = the whole detached process group (npx + vite)
+    process.kill(-child.pid, 'SIGTERM');
+  } catch {
+    try { child.kill('SIGTERM'); } catch { /* already gone */ }
+  }
+}
+
 async function main() {
+  // `vite preview` serves dist/. Without a build it starts and then 404s every
+  // route, which used to surface as a pile of blank PDFs instead of an error.
+  try {
+    await access(join(APP_ROOT, 'dist', 'index.html'));
+  } catch {
+    console.error('[pdf] No dist/index.html — run `npm run build` first (or use `npm run build:pdf`).');
+    process.exit(1);
+  }
+
   const port = await findFreePort(PORT);
   const url = `http://${HOST}:${port}`;
 
@@ -137,7 +170,7 @@ async function main() {
         // renders at the same size the print media styles expect.
         const page = await browser.newPage({ viewport: { width: 816, height: 1200 } });
         try {
-          const target = url.replace(HOST, '127.0.0.1') + lesson.path;
+          const target = url + lesson.path;
           // 'load' rather than 'networkidle': pages embedding a live widget
           // (e.g. Sandpack's bundler iframe) hold connections open for
           // hot-reload and never go network-idle, which would hang this
@@ -154,7 +187,6 @@ async function main() {
           //  overflow:visible does NOT reliably override an inline style set
           //  on <main> during the print pass.)
           await page.evaluate(() => {
-            document.documentElement.classList.add('print-mode');
             document.querySelectorAll('.sidebar-container, aside, .mobile-backdrop, button[aria-label="Open menu"]').forEach(el => el.remove());
 
             // Turn off flex/scroll at every ancestor of the lesson content so
@@ -235,13 +267,21 @@ async function main() {
         }
       }
 
+      if (buffers.length === 0) {
+        // Every lesson threw. Writing a 0-page PDF here produced a file that
+        // most viewers refuse to open, which looked like a corrupt export
+        // rather than "nothing rendered".
+        console.error(`[pdf] ${section.id}: no lessons rendered — skipping ${filename}`);
+        continue;
+      }
+
       // Concatenate PDFs — we use a tiny inline PDF merger to avoid another dep.
       const merged = await mergePdfBuffers(buffers);
       await writeFile(filename, merged);
     }
   } finally {
     await browser.close();
-    preview.kill();
+    stopPreviewServer(preview);
   }
 
   console.log(`[pdf] Done. PDFs in ${OUT_DIR}`);

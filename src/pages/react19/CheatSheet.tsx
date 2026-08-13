@@ -166,7 +166,7 @@ Arrow function vs named function?             → Named function for components 
       </CodeBlock>
 
       <InfoBox variant="success" title="The Golden Rule">
-        <p>React re-renders are <strong>not the enemy</strong> — unnecessary re-renders of <strong>expensive components</strong> are. Don't optimize everything. Profile first, then apply memo + stabilization only where it matters. The React Compiler (coming soon) will do most of this automatically.</p>
+        <p>React re-renders are <strong>not the enemy</strong> — unnecessary re-renders of <strong>expensive components</strong> are. Don't optimize everything. Profile first, then apply memo + stabilization only where it matters. The React Compiler does most of this automatically once you enable it.</p>
       </InfoBox>
 
       <h2>🎯 React Stability Master Reference</h2>
@@ -207,8 +207,11 @@ useCallback             memoizedFn        ✅ Yes     Same until deps change
 
 useContext              contextValue      ⚠️  Depends  Stable if provider value is memoized
 useId                   string            ✅ Always  Generated once, never changes
-useTransition           [isPending, fn]   ✅ Always  Both are stable
-useDeferredValue        deferredValue     ⚠️  Varies  New ref when source changes`}
+useTransition           [isPending, start]
+  → isPending                             ❌ No      A boolean that flips true/false
+  → startTransition                       ✅ Always  Same function every render
+useDeferredValue        deferredValue     ⚠️  Varies  New ref when source changes
+useEffectEvent          eventFn           ✅ Always  Stable ref, always latest closure`}
       </CodeBlock>
 
       <h3>Stability by Value Type</h3>
@@ -398,7 +401,22 @@ function Parent({ children }) {
 // React sees same reference → skips re-rendering those children.`}
       </CodeBlock>
 
-      <h3>The Three Scenarios That Break Children-as-Props Bailout</h3>
+      <h3>What Actually Breaks the Children-as-Props Bailout</h3>
+
+      <InfoBox variant="warning" title="The bailout depends on element identity — not on WHY the parent re-rendered">
+        <p>
+          React bails out of re-rendering a child fiber when the new element object is{' '}
+          <code>===</code> the old one (<code>oldProps === newProps</code> and nothing is
+          scheduled on that fiber). It never asks <em>why</em> the parent re-rendered. So a
+          parent re-rendering from its own <code>setState</code>, from a context subscription,
+          or from wrapping <code>{'{children}'}</code> in a Provider all behave the same:{' '}
+          <strong>the children reference is untouched, so the bailout still holds.</strong>
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          The bailout only breaks when something produces a <strong>new element object</strong>{' '}
+          for that child.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="jsx" title="When children-as-props stops working">
 {`// ✅ WORKS — App owns the JSX, Parent never recreates it
@@ -411,55 +429,53 @@ function Parent({ children }) {
 }
 // ExpensiveTree does NOT re-render when count changes ✅
 
+// ✅ STILL WORKS — Parent also consumes a context
+function Parent({ children }) {
+  const theme = useContext(ThemeCtx);  // re-renders when theme changes...
+  return <div className={theme}>{children}</div>;
+}
+// ...but 'children' is Parent's own prop, unchanged → ExpensiveTree bails out ✅
+
+// ✅ STILL WORKS — Parent wraps children in a Provider
+function Parent({ children }) {
+  const [count, setCount] = useState(0);
+  return <SomeContext value={count}>{children}</SomeContext>;
+}
+// The <SomeContext> element is new each render, but its 'children' prop is the
+// SAME element object → that subtree bails out. Only useContext(SomeContext)
+// CONSUMERS inside it re-render, via the context broadcast. ✅
+
 // ─────────────────────────────────────────────────────────────────────────────
-// ❌ BREAKS SCENARIO 1: App (the owner) re-renders
+// ❌ BREAKS 1: the OWNER re-renders (this is the only structural cause)
 function App() {
   const [appState, setAppState] = useState(0);  // App has state too
-  return <Parent><ExpensiveTree /></Parent>;     // App re-renders → recreates JSX → new ref
+  return <Parent><ExpensiveTree /></Parent>;     // App re-renders → new JSX → new ref
 }
-// When App re-renders, it recreates <ExpensiveTree /> → ExpensiveTree re-renders ❌
+// App re-renders → recreates <ExpensiveTree /> → ExpensiveTree re-renders ❌
+// FIX: move the state down (into Parent or a sibling), or lift the provider
+//      tree into main.tsx where nothing above it ever re-renders.
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ❌ BREAKS SCENARIO 2: Parent is also a context consumer
-const ThemeCtx = createContext('light');
-function Parent({ children }) {
-  const theme = useContext(ThemeCtx);  // Parent subscribes to context
-  const [count, setCount] = useState(0);
-  return <div>{children}</div>;
-}
-// When ThemeCtx changes → Parent re-renders (subscription) →
-// children is re-rendered as part of Parent's output → ExpensiveTree re-renders ❌
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ❌ BREAKS SCENARIO 3: Parent renders a Provider that wraps children directly
+// ❌ BREAKS 2: Parent rebuilds the children elements
 function Parent({ children }) {
   const [count, setCount] = useState(0);
-  return (
-    <SomeContext.Provider value={count}>
-      {children}   {/* Provider re-renders → children re-renders as Provider's output */}
-    </SomeContext.Provider>
+  return Children.map(children, (child) =>
+    cloneElement(child, { count })     // cloneElement returns a NEW element
   );
 }
-// Even though children came from App, Provider is now the structural parent.
-// When Provider re-renders, it re-renders its output — which includes children ❌
+// Every render produces fresh element objects → no bailout ❌
+// FIX: pass data via context, or accept a render prop you control.
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ✅ FIX for Scenario 3: move children OUTSIDE the Provider wrapper
+// ❌ BREAKS 3: children is a FUNCTION (render prop), called during render
 function Parent({ children }) {
   const [count, setCount] = useState(0);
-  return (
-    <Wrapper count={count}>
-      {children}   {/* children is a prop of Wrapper, not rendered by Provider */}
-    </Wrapper>
-  );
+  return <div>{children(count)}</div>;   // calling it creates new elements
 }
-function Wrapper({ count, children }) {
-  return (
-    <SomeContext.Provider value={count}>
-      <div>{children}</div>   {/* Provider owns <div>, Wrapper owns children */}
-    </SomeContext.Provider>
-  );
-}`}
+// The function reference is stable, but its RETURN VALUE is new every call ❌
+// This is the real cost of render props vs. plain children.
+
+// ❌ BREAKS 4: the child subtree reads changed context, or has its own
+//    scheduled update. Bailout is skipped for fibers with pending work —
+//    which is correct: they genuinely need to re-render.`}
       </CodeBlock>
 
       <InfoBox variant="note" title="Two Independent Re-render Mechanisms">
@@ -778,10 +794,94 @@ forwardRef            →  ref as a plain prop
           <code>React.memo</code> are mostly unnecessary — it inserts equivalent caching at build
           time. It still cannot help you with: <code>useRef</code>, <code>useLayoutEffect</code>,
           context splitting, <code>key</code> props, list virtualization, or code splitting.
-          And it silently opts out of any component that breaks the Rules of React, so run{' '}
-          <code>eslint-plugin-react-compiler</code> before you turn compilation on.
+          And it silently opts out of any component that breaks the Rules of React, so run the
+          compiler lint rules first. Those rules now ship <em>inside</em>{' '}
+          <code>eslint-plugin-react-hooks</code> (v6+) — the standalone{' '}
+          <code>eslint-plugin-react-compiler</code> package is retired. Enable the{' '}
+          <code>recommended-latest</code> config and fix what it reports before turning
+          compilation on.
         </p>
       </InfoBox>
+
+      <h2>🆕 React 19.1 / 19.2 Additions</h2>
+
+      <CodeBlock language="jsx" title="APIs added after the 19.0 release" showLineNumbers>
+{`// ── useEffectEvent (19.2) — the sanctioned fix for stale closures in effects ──
+// Extracts non-reactive logic out of an effect. The returned function has a
+// STABLE identity but always sees the LATEST props/state. Never goes in deps.
+import { useEffectEvent } from 'react';
+
+function ChatRoom({ roomId, theme }) {
+  const onConnected = useEffectEvent(() => {
+    showToast('Connected!', theme);   // reads latest 'theme'...
+  });
+
+  useEffect(() => {
+    const conn = createConnection(roomId);
+    conn.on('connected', onConnected);
+    conn.connect();
+    return () => conn.disconnect();
+  }, [roomId]);   // ...but 'theme' is NOT a dependency → no reconnect on theme change
+}
+// RULES: only call it from inside an effect, only declare it in the component/hook
+// that uses it, never pass it to another component, never put it in a deps array.
+// This replaces the old useRef "useLatest / useStableCallback" workaround.
+
+// ── <Activity> (19.2) — hide a subtree without unmounting it ──
+import { Activity } from 'react';
+
+<Activity mode={isVisible ? 'visible' : 'hidden'}>
+  <ExpensiveTab />
+</Activity>
+// hidden: DOM stays in the tree (display:none), state and refs are PRESERVED,
+//         effects are cleaned up, and re-renders happen at low priority.
+// Use for: tab panels, wizard steps, prerendering the likely next route.
+// NOT the same as {isVisible && <X />} — that unmounts and loses all state.
+
+// ── cache() — dedupe/memoize async work per request (Server Components) ──
+import { cache } from 'react';
+
+const getUser = cache(async (id) => db.user.findUnique({ where: { id } }));
+// Ten Server Components calling getUser(1) in one request = ONE query.
+// Server Components only. Cache is scoped to a single request, then discarded.
+
+// ── cacheSignal() (19.2) — abort work when the cache is discarded ──
+import { cacheSignal } from 'react';
+const res = await fetch(url, { signal: cacheSignal() });`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="Rendering entry points — client, hydration, and SSR" showLineNumbers>
+{`// ── CLIENT-ONLY (SPA — this is what Vite gives you) ──
+import { createRoot } from 'react-dom/client';
+createRoot(document.getElementById('root')).render(<App />);
+
+// ── HYDRATION (attach to server-rendered HTML) ──
+import { hydrateRoot } from 'react-dom/client';
+hydrateRoot(document.getElementById('root'), <App />, {
+  onCaughtError, onUncaughtError, onRecoverableError,
+});
+// hydrateRoot takes the JSX as the 2nd ARGUMENT — there is no .render() call.
+// Mismatch between server HTML and the first client render = hydration error.
+
+// ── SSR, Node streams (Express, etc.) ──
+import { renderToPipeableStream } from 'react-dom/server';
+const { pipe, abort } = renderToPipeableStream(<App />, {
+  bootstrapScripts: ['/main.js'],
+  onShellReady()  { res.statusCode = 200; pipe(res); },  // shell is flushable
+  onShellError()  { res.statusCode = 500; res.send('<h1>Error</h1>'); },
+  onError(err)    { logError(err); },
+});
+
+// ── SSR, Web streams (Cloudflare Workers, Deno, Bun, edge runtimes) ──
+import { renderToReadableStream } from 'react-dom/server';
+const stream = await renderToReadableStream(<App />, { bootstrapScripts: ['/main.js'] });
+
+// ── prerender / prerenderToNodeStream (19.x) — static generation ──
+// Same idea, but WAITS for all data before resolving instead of streaming.
+
+// ── renderToString — legacy, synchronous, NO streaming, NO Suspense support ──
+// Avoid in new code; it cannot wait for Suspense boundaries to resolve.`}
+      </CodeBlock>
 
       <h2>🏗️ Enterprise Patterns — Advanced Reference</h2>
 

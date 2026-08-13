@@ -266,7 +266,9 @@ mvc.perform(get("/api/orders/ORD-1/status")).andExpect(jsonPath("$.status").valu
 // RELIABLE — polls until true or times out, fast when the condition is already met
 @Test
 void orderBecomesSearchableAfterAsyncIndexing() {
-    restAssured.post("/api/orders", validOrderJson());
+    given().contentType(ContentType.JSON).body(validOrderJson())
+        .when().post("/api/orders")
+        .then().statusCode(201);
 
     await()
         .atMost(Duration.ofSeconds(5))

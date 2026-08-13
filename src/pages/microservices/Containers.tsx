@@ -46,13 +46,21 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package files first (layer caching!)
+# Install ALL deps including devDependencies -- the build needs
+# TypeScript, which lives in devDependencies. Installing only
+# production deps here would make 'npm run build' below fail.
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source code
 COPY src/ ./src/
 COPY tsconfig.json ./
 RUN npm run build
+
+# Now produce a clean production-only node_modules for the runtime
+# stage. ('--only=production' is deprecated since npm 7 -- the
+# current flag is '--omit=dev'.)
+RUN npm ci --omit=dev
 
 # Stage 2: Production image
 FROM node:20-alpine AS production
@@ -61,7 +69,7 @@ WORKDIR /app
 # Security: run as non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Copy only production artifacts
+# Copy only production artifacts (node_modules is now dev-free)
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
@@ -114,7 +122,62 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \\
 
 USER spring
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]`}
+# NOTE the 'exec'. Without it, 'sh' stays PID 1 and the JVM runs as a
+# child -- so SIGTERM from Kubernetes goes to the shell, which does
+# NOT forward it. The JVM never runs its shutdown hooks, in-flight
+# requests are dropped, and the pod is SIGKILLed after the grace
+# period. 'exec' REPLACES the shell with the JVM so the JVM is PID 1
+# and receives the signal directly.
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="PID 1 and Graceful Shutdown — the Bug You Only See Under Load">
+        <p>
+          The <code>exec</code> above looks like a detail and is not. Kubernetes stops a pod by
+          sending <strong>SIGTERM</strong> and waiting{' '}
+          <code>terminationGracePeriodSeconds</code> (30 by default) before <strong>SIGKILL</strong>.
+          Your application is supposed to use that window to stop accepting new connections and
+          finish the requests it already has.
+        </p>
+        <p>
+          If a shell is PID 1, none of that happens — shells do not forward signals to children.
+          Every rolling deploy then drops whatever was in flight. It never shows up in testing,
+          because at low traffic there is usually nothing in flight.
+        </p>
+        <p>
+          Prefer the exec form entirely (<code>ENTRYPOINT [&quot;java&quot;, &quot;-jar&quot;,
+          &quot;app.jar&quot;]</code>) and pass JVM options via the{' '}
+          <code>JAVA_TOOL_OPTIONS</code> environment variable, which the JVM picks up on its own —
+          then there is no shell in the picture at all.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="There Is a Second Race: Readiness vs. Endpoint Removal">
+        <p>
+          Even with signals handled correctly, SIGTERM and removal from the Service&apos;s endpoint
+          list happen <em>in parallel</em>, not in sequence. For a short window the pod is shutting
+          down while kube-proxy on some nodes is still routing new requests to it — producing
+          connection-refused errors during every deploy.
+        </p>
+        <p>
+          The standard fix is a <code>preStop</code> hook that simply sleeps, giving endpoint
+          removal time to propagate before the application begins shutting down:
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="yaml" title="Graceful Shutdown — the Complete Pattern">
+{`spec:
+  terminationGracePeriodSeconds: 60   # must exceed your longest request
+  containers:
+    - name: order-service
+      lifecycle:
+        preStop:
+          exec:
+            # Do nothing for 10s. This is not a hack -- it lets the
+            # endpoint removal propagate to every kube-proxy BEFORE
+            # the app starts refusing work. SIGTERM is sent only
+            # after preStop completes.
+            command: ["sh", "-c", "sleep 10"]`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="Docker Best Practices">
@@ -179,7 +242,7 @@ ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]`}
           <tr>
             <td><strong>Secret</strong></td>
             <td>Sensitive data</td>
-            <td>Base64-encoded. For passwords, API keys, certificates. Consider external secret managers.</td>
+            <td><strong>Base64 is encoding, not encryption</strong> — anyone with read access decodes it instantly, and by default Secrets sit in plaintext in etcd. Enable encryption-at-rest, lock down RBAC, and prefer an external manager (Vault, AWS/GCP Secrets Manager via the Secrets Store CSI driver).</td>
           </tr>
           <tr>
             <td><strong>Ingress</strong></td>

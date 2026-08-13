@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useRef, type ReactNode } from 'react';
 import ProgressTracker from './ProgressTracker';
 import { TableOfContents } from './TableOfContents';
+import { hasModifier, isTypingTarget } from './keyboardNav';
 
 export interface LessonLink {
   path: string;
@@ -31,11 +32,12 @@ export default function LessonLayout({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const tag = document.activeElement?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (isTypingTarget() || hasModifier(e) || e.defaultPrevented) return;
       if (e.key === 'ArrowLeft' && prev) {
+        e.preventDefault();
         navigate(prev.path);
       } else if (e.key === 'ArrowRight' && next) {
+        e.preventDefault();
         navigate(next.path);
       }
     };

@@ -114,8 +114,9 @@ function handleChange(e) {
         glyph="Cp"
         title={<>The React Compiler<span className="dim"> changes the calculus</span></>}
         language="text"
-        code={`If the compiler is enabled on your project (check babel-plugin-
-react-compiler / the "rc" flag in your build config):
+        code={`If the compiler is enabled on your project (look for
+babel-plugin-react-compiler in vite.config / babel config —
+it shipped 1.0 and is stable, so there's no "rc" tag anymore):
 
   It auto-inserts useMemo/useCallback/memo equivalents for you
   at BUILD time, for any component/hook that follows the Rules

@@ -126,16 +126,20 @@ try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
 
       <PosterCard
         glyph="Pin"
-        title={<>Pinning Gotcha<span className="dim"> — synchronized + virtual threads</span></>}
+        title={<>Pinning Gotcha<span className="dim"> — rules changed in Java 24</span></>}
         language="java"
-        code={`// GOTCHA: synchronized pins a virtual thread to its OS carrier thread
+        code={`// Java 21-23: synchronized PINS the vthread to its OS carrier thread
 synchronized (lock) {
-    blockingIoCall();   // carrier thread can't be reused while pinned
+    blockingIoCall();   // carrier can't be reused while pinned
 }
+// Fix on 21-23: ReentrantLock, which unmounts correctly.
 
-// Fix: use ReentrantLock around I/O instead of synchronized
-// Diagnose with -Djdk.tracePinnedThreads=full`}
-        caption="Pinning defeats the whole point of virtual threads — the carrier is stuck for the duration. Swap synchronized for ReentrantLock in code paths that also block on I/O."
+// Java 24+ (JEP 491): synchronized no longer pins.
+// Still pins: native/JNI frames, class initializers.
+
+// Diagnose: JFR event jdk.VirtualThreadPinned on 24+
+//           -Djdk.tracePinnedThreads=full on 21-23 (removed in 24)`}
+        caption="Through Java 23 this was the #1 virtual-thread trap and the origin of 'always replace synchronized with ReentrantLock'. JEP 491 fixed it in Java 24, so that advice is now stale — but holding any lock across a slow call still serialises every caller, which is the real bug on every JDK."
       />
 
       <PosterCard

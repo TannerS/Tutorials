@@ -62,15 +62,31 @@ class Counter {
   increment() { return ++this.#count; }
 }`}
       </CodeBlock>
-      <CodeBlock language="javascript" title="Target: ES5">
+      <CodeBlock language="javascript" title="Target: ES5 (real compiler output, helper bodies elided)">
 {`"use strict";
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (...) { /* ... */ };
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (...) { /* ... */ };
+var _Counter_count;
 var greet = function (name) { return "Hi, ".concat(name !== null && name !== void 0 ? name : "friend", "!"); };
 var Counter = /** @class */ (function () {
-    function Counter() { _Counter_count.set(this, 0); }
-    Counter.prototype.increment = function () { /* private-field emulation via WeakMap */ };
+    function Counter() {
+        _Counter_count.set(this, 0);
+    }
+    Counter.prototype.increment = function () {
+        var _a;
+        return __classPrivateFieldSet(this, _Counter_count, (_a = __classPrivateFieldGet(this, _Counter_count, "f"), ++_a), "f");
+    };
     return Counter;
-}());`}
+}());
+_Counter_count = new WeakMap();`}
       </CodeBlock>
+
+      <p>
+        The only thing edited above is the bodies of the two{' '}
+        <code>__classPrivateField*</code> helpers, which are ~8 lines each of
+        type-checking boilerplate. Everything else is byte-for-byte what the
+        compiler emits — run it in the playground and compare.
+      </p>
 
       <InfoBox variant="tip" title="What actually changed">
         <ul>
@@ -78,7 +94,12 @@ var Counter = /** @class */ (function () {
           <li>Template literal → <code>.concat()</code> string building (no backtick syntax in ES5)</li>
           <li><code>??</code> → an explicit <code>!== null &amp;&amp; !== undefined</code> check (nullish coalescing is ES2020+)</li>
           <li><code>class</code> → an IIFE returning a constructor function with prototype methods (ES5 has no <code>class</code> keyword)</li>
-          <li><code>#count</code> → emulated with a <code>WeakMap</code> (real private fields are ES2022+)</li>
+          <li>
+            <code>#count</code> → emulated with a <code>WeakMap</code> keyed on the
+            instance, plus injected <code>__classPrivateFieldGet/Set</code> helpers that
+            throw the same <code>TypeError</code> real private fields would if you
+            access them on the wrong object (real private fields are ES2022+)
+          </li>
         </ul>
       </InfoBox>
     </LessonLayout>

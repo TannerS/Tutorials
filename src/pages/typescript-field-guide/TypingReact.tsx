@@ -37,8 +37,10 @@ const Greeting: React.FC<{ name: string }> = ({ name }) => <h1>{name}</h1>;`}
   maxWidth?: number;
 }
 function Card({ title, subtitle, maxWidth = 400 }: CardProps) { /* ... */ }
-// JS default parameters — NOT defaultProps (deprecated in React 18.3+)`}
-        caption="Optional props get a `?`; defaults come from JS destructuring defaults, not the old defaultProps API."
+// JS default parameters — NOT defaultProps.
+// React 19 REMOVED defaultProps on function components: it is now
+// silently ignored, so the old form fails without any warning.`}
+        caption="Optional props get a `?`; defaults come from JS destructuring defaults. defaultProps was deprecated in 18.3 and removed for function components in React 19 — it does nothing now, and nothing tells you. Class components still honour it."
       />
 
       <PosterCard
@@ -137,14 +139,28 @@ const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
       />
 
       <PosterCard
-        glyph="fR"
-        title={<>forwardRef<span className="dim">()</span></>}
-        code={`const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
-  ({ label, ...rest }, ref) => (
-    <div><label>{label}</label><input ref={ref} {...rest} /></div>
-  )
-);`}
-        caption="Generic order is forwardRef<RefType, PropsType> — ref type first, the opposite order from how you'd guess reading the JSX."
+        glyph="rP"
+        title={<>Typing a <span className="dim">ref prop</span></>}
+        badge="R19"
+        code={`// ✅ React 19 — ref is an ordinary prop. No wrapper.
+interface TextInputProps extends ComponentPropsWithRef<'input'> {
+  label: string;
+}
+function TextInput({ label, ref, ...rest }: TextInputProps) {
+  return <div><label>{label}</label><input ref={ref} {...rest} /></div>;
+}
+
+// Custom handle via useImperativeHandle — still no forwardRef
+interface Handle { focus(): void }
+function Fancy({ ref }: { ref?: Ref<Handle> }) {
+  const inner = useRef<HTMLInputElement>(null);
+  useImperativeHandle(ref, () => ({ focus: () => inner.current?.focus() }), []);
+  return <input ref={inner} />;
+}
+
+// ⚠️ DEPRECATED — you'll still read this everywhere pre-2025
+const Old = forwardRef<HTMLInputElement, Props>(({ label, ...r }, ref) => ...);`}
+        caption="forwardRef is deprecated in React 19 and slated for removal — ref is just a prop on function components now. Two type notes: ComponentPropsWithRef<'input'> already includes the correctly-typed ref, and ComponentPropsWithoutRef is the one you want when you are NOT forwarding. If you do read the old form, the generic order is forwardRef<RefType, PropsType> — ref first, which is the reverse of what the JSX suggests."
       />
 
       <PosterCard
@@ -184,7 +200,7 @@ const [state, formAction, isPending] = useActionState(submitAction, initial);`}
           { need: 'Type a form input change', answer: 'React.ChangeEvent<HTMLInputElement>' },
           { need: 'Type a submit handler', answer: 'React.FormEvent<HTMLFormElement>' },
           { need: 'Type a [value, setter] hook return', answer: 'as const tuple' },
-          { need: 'Type a ref-forwarding component', answer: 'forwardRef<RefType, PropsType>' },
+          { need: 'Type a ref-forwarding component', answer: 'Accept `ref` as a prop — ComponentPropsWithRef<"input"> (R19)' },
           { need: 'Type a reusable list/select', answer: 'Generic component (plain function, not FC)' },
           { need: 'Type a form action', answer: 'useActionState(action, initialState)' },
         ]}

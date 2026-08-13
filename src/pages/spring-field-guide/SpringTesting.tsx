@@ -103,7 +103,7 @@ class OrderFlowIT {
 
     @Container
     static PostgreSQLContainer<?> pg =
-        new PostgreSQLContainer<>("postgres:16-alpine");
+        new PostgreSQLContainer<>("postgres:17-alpine");
 
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry r) {
@@ -123,7 +123,7 @@ class OrderFlowIT {
 testcontainers.reuse.enable=true
 
 # per-container
-new PostgreSQLContainer<>("postgres:16-alpine")
+new PostgreSQLContainer<>("postgres:17-alpine")
     .withReuse(true);`}
         caption="Without reuse, every test run pays the container-startup tax again. With it, containers persist across runs and subsequent runs start in seconds."
       />

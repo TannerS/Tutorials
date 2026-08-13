@@ -270,7 +270,7 @@ npx turbo link`}
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "react": "^18.3.0"
+    "react": "^19.0.0"
   }
 }`}
       </CodeBlock>
@@ -316,7 +316,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
 

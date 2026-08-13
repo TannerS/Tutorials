@@ -78,7 +78,10 @@ CREATE TABLE products_history (
   product_id INT NOT NULL,
   name VARCHAR(200) NOT NULL,
   price NUMERIC(10,2) NOT NULL,
-  operation CHAR(1) NOT NULL,          -- 'I', 'U', 'D'
+  operation TEXT NOT NULL CHECK (operation IN ('I','U','D')),
+                                       -- TEXT + CHECK, not CHAR(1): CHAR
+                                       -- blank-pads and the padding surprises
+                                       -- you in comparisons later
   changed_by TEXT,                     -- app-set via SET LOCAL / session var
   changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

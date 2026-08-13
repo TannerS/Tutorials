@@ -167,7 +167,7 @@ import { API_URL } from '@myorg/config';
   "dependencies": {
     "@eslint/js": "^9.0.0",
     "typescript-eslint": "^8.0.0",
-    "eslint-plugin-react-hooks": "^5.0.0"
+    "eslint-plugin-react-hooks": "^7.0.0"
   }
 }
 
@@ -420,7 +420,7 @@ npx bundlephobia-cli my-package`}
   },
   "files": ["dist/"],
   "sideEffects": false,
-  "engines": { "node": ">=18" }
+  "engines": { "node": ">=20.19" }
 }`}
       </CodeBlock>
 
@@ -439,14 +439,14 @@ npx bundlephobia-cli my-package`}
   "files": ["dist/"],
   "sideEffects": ["*.css"],
   "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.9.0"
   }
 }`}
       </CodeBlock>
@@ -460,9 +460,9 @@ npx bundlephobia-cli my-package`}
     "my-cli": "./dist/cli.mjs"
   },
   "files": ["dist/"],
-  "engines": { "node": ">=18" },
+  "engines": { "node": ">=20.19" },
   "dependencies": {
-    "commander": "^11.0.0",
+    "commander": "^14.0.0",
     "chalk": "^5.3.0"
   }
 }`}

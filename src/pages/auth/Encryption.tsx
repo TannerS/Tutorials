@@ -476,9 +476,27 @@ async function checkPassword(plaintext, storedHash) {
           Grover&#39;s algorithm), which is still impractical to brute-force.
         </p>
         <p>
-          <strong>Post-quantum cryptography</strong> is being standardized by NIST. Algorithms like CRYSTALS-Kyber
-          (key exchange) and CRYSTALS-Dilithium (signatures) are designed to resist quantum attacks. Google and
-          Cloudflare are already experimenting with hybrid post-quantum TLS.
+          <strong>Post-quantum cryptography is no longer a future item.</strong> NIST finished the
+          standardisation process in August 2024, publishing <strong>FIPS 203 (ML-KEM</strong>, the
+          standardised form of CRYSTALS-Kyber, for key encapsulation), <strong>FIPS 204 (ML-DSA</strong>,
+          from CRYSTALS-Dilithium, for signatures) and <strong>FIPS 205 (SLH-DSA</strong>, from
+          SPHINCS+, a hash-based signature backup). Say &quot;ML-KEM&quot; rather than
+          &quot;Kyber&quot; if you want to sound current.
+        </p>
+        <p>
+          It has also shipped. Hybrid post-quantum key exchange —{' '}
+          <code>X25519MLKEM768</code>, which combines classical X25519 with ML-KEM so the connection is
+          safe if <em>either</em> holds — is enabled by default in Chrome and Firefox and supported
+          across Cloudflare and AWS. A large fraction of TLS 1.3 traffic is already post-quantum
+          protected today.
+        </p>
+        <p>
+          <strong>Why the hurry, given no quantum computer can do this yet?</strong> Because of{' '}
+          <em>harvest now, decrypt later</em>: an adversary records encrypted traffic today and decrypts
+          it once the hardware exists. Any secret that must stay secret for a decade is already at risk,
+          which is why key exchange was migrated first. <strong>Signatures</strong> are less urgent — a
+          signature only needs to resist forgery at the moment it is verified — which is why certificates
+          are still ECDSA/RSA while key exchange has already moved.
         </p>
       </InfoBox>
 
@@ -489,7 +507,8 @@ async function checkPassword(plaintext, storedHash) {
         <p><strong>Asymmetric (RSA/ECC)</strong>: Two keys, slower, solves key distribution. Used for key exchange and signatures.</p>
         <p><strong>Digital Signatures</strong>: Hash + sign with private key. Proves authenticity and integrity.</p>
         <p><strong>Hybrid (TLS)</strong>: Asymmetric for key exchange, symmetric for data. Best of both worlds.</p>
-        <p><strong>Quantum</strong>: Breaks RSA/ECC. AES-256 survives. Post-quantum standards coming.</p>
+        <p><strong>Password Hashing</strong>: The exception to everything above — deliberately slow. Argon2id first, bcrypt acceptable. Never a plain SHA.</p>
+        <p><strong>Quantum</strong>: Breaks RSA/ECC. AES-256 survives. Post-quantum standards are final (ML-KEM/ML-DSA) and hybrid key exchange is already deployed.</p>
       </InfoBox>
 
       <p>

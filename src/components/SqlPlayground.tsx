@@ -57,7 +57,7 @@ const SNIPPETS: Snippet[] = [
   {
     id: 'where',
     title: '2. WHERE + ORDER BY — filter and sort',
-    blurb: 'WHERE runs before the rows are returned, ORDER BY after. Sorting is the last thing SQL does, which is why you can ORDER BY an alias but not WHERE on one.',
+    blurb: 'WHERE filters rows before they are returned; ORDER BY sorts what survives. Note SQLite lets you WHERE on a SELECT alias as a convenience extension — PostgreSQL rejects that, so do not rely on it.',
     sql: `SELECT product, amount, created_at
 FROM orders
 WHERE amount > 100
@@ -66,7 +66,7 @@ ORDER BY amount DESC;`,
   {
     id: 'join',
     title: '3. JOIN — combine two tables',
-    blurb: 'The ON clause states how the two tables relate. Get it wrong and you get a cartesian product — every row times every row.',
+    blurb: 'The ON clause states how the two tables relate. Omit it (or make it always-true) and you get a cartesian product — all 8 orders times all 6 users, 48 rows. Try deleting the ON clause and running it.',
     sql: `SELECT
   u.name,
   o.product,

@@ -153,7 +153,8 @@ public class Counter {
       </p>
       <CodeBlock language="java" title="Fork-and-join with automatic cancellation">
 {`// Fetch three things in parallel; abort all if any fails.
-public EnrichedOrder enrich(UUID orderId) throws InterruptedException {
+public EnrichedOrder enrich(UUID orderId)
+        throws InterruptedException, ExecutionException {   // throwIfFailed throws the latter
     try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
         var orderTask    = scope.fork(() -> orderService.find(orderId));
         var customerTask = scope.fork(() -> customerService.forOrder(orderId));
@@ -172,7 +173,8 @@ public EnrichedOrder enrich(UUID orderId) throws InterruptedException {
 
       <CodeBlock language="java" title="ShutdownOnSuccess — first result wins">
 {`// Race two mirrors; use whichever returns first.
-public InventoryDto anyMirror(String sku) throws InterruptedException {
+public InventoryDto anyMirror(String sku)
+        throws InterruptedException, ExecutionException {   // result() throws the latter
     try (var scope = new StructuredTaskScope.ShutdownOnSuccess<InventoryDto>()) {
         scope.fork(() -> primaryClient.get(sku));
         scope.fork(() -> secondaryClient.get(sku));
@@ -258,12 +260,20 @@ public class AuditService {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="ScopedValue is still incubating">
+      <InfoBox variant="warning" title="ScopedValue is final in Java 25 — preview before that">
         <p>
-          As of Java 21 it's a preview/incubator API, stabilizing around Java 25. On
-          Java 21 today, guard with <code>--enable-preview</code>. Existing services will
-          keep using <code>ThreadLocal</code> for the foreseeable future — but for new
-          code and new context variables, <code>ScopedValue</code> is the better default.
+          <code>ScopedValue</code> previewed from Java 21 through 24 and was{' '}
+          <strong>finalised in Java 25</strong> (JEP 506), so on Java 25+ it is ordinary API with
+          no flags. On Java 21&ndash;24 you still need <code>--enable-preview</code>, and the shape
+          of the API shifted during preview: the old static <code>ScopedValue.runWhere(...)</code>{' '}
+          / <code>callWhere(...)</code> helpers were dropped in favour of the{' '}
+          <code>where(...).run(...)</code> carrier form shown above.
+        </p>
+        <p>
+          Existing services will keep using <code>ThreadLocal</code> for the foreseeable future —
+          it is what Spring's <code>SecurityContextHolder</code> and MDC-based logging are built
+          on — but for new code and new context variables, <code>ScopedValue</code> is the better
+          default.
         </p>
       </InfoBox>
 
@@ -491,8 +501,14 @@ count.incrementAndGet();`}
       <CodeBlock language="java" title="What to use instead of a synchronized ArrayList">
 {`// Concurrent map — the workhorse
 ConcurrentHashMap<String, Session> sessions = new ConcurrentHashMap<>();
-sessions.computeIfAbsent(id, Session::create);
-sessions.merge(id, 1, Integer::sum);
+sessions.computeIfAbsent(id, Session::create);   // atomic get-or-create
+
+// merge is the atomic "upsert with a combining function"
+ConcurrentHashMap<String, Integer> hits = new ConcurrentHashMap<>();
+hits.merge(path, 1, Integer::sum);               // insert 1, or add 1 to what's there
+
+// NOTE: the atomicity is per-operation. A get() followed by a put() is NOT
+// atomic even on a ConcurrentHashMap — use compute/merge/putIfAbsent instead.
 
 // Concurrent queue — bounded, blocking
 BlockingQueue<Task> queue = new ArrayBlockingQueue<>(1000);
@@ -515,8 +531,11 @@ List<Listener> listeners = new CopyOnWriteArrayList<>();
             designed to remove.
           </li>
           <li>
-            <strong><code>synchronized</code> around I/O in virtual threads.</strong>
-            Pins the vthread; scale collapses. Prefer <code>ReentrantLock</code>.
+            <strong>Holding any lock across I/O.</strong> On Java 21&ndash;23 a{' '}
+            <code>synchronized</code> block around a blocking call also <em>pins</em> the vthread
+            and scale collapses; JEP 491 removed that in Java 24. But on every JDK it still
+            serialises every caller behind one slow round trip, so move the I/O out of the lock
+            rather than just swapping <code>synchronized</code> for <code>ReentrantLock</code>.
           </li>
           <li>
             <strong>Blocking calls inside <code>CompletableFuture</code> chains that use
@@ -564,8 +583,10 @@ List<Listener> listeners = new CopyOnWriteArrayList<>();
       <CodeBlock language="text" title="Which primitive for which job">
 {`Task is I/O-bound (HTTP, DB, disk) ................... virtual thread per task
 Task is CPU-bound (parallel compute) ................. fixed thread pool ~ CPU count
-Coordinate N tasks that all must succeed ............. StructuredTaskScope.ShutdownOnFailure
-Race N tasks, first success wins ..................... StructuredTaskScope.ShutdownOnSuccess
+Coordinate N tasks that all must succeed ............. StructuredTaskScope + allSuccessfulOrThrow
+                                                      (ShutdownOnFailure on Java 21-24)
+Race N tasks, first success wins ..................... StructuredTaskScope + anySuccessfulResultOrThrow
+                                                      (ShutdownOnSuccess on Java 21-24)
 Per-request immutable context (traceId, userId) ...... ScopedValue
 Legacy per-thread mutable context .................... ThreadLocal (last resort)
 Shared counter, low contention ....................... AtomicLong

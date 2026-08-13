@@ -251,6 +251,50 @@ public class ApiExceptionHandler {
         </p>
       </InfoBox>
 
+      <InfoBox variant="danger" title="The catch-all will swallow your 403s">
+        <p>
+          An <code>@ExceptionHandler(Exception.class)</code> is greedy. When{' '}
+          <code>@PreAuthorize</code> rejects a call, Spring Security throws{' '}
+          <code>AccessDeniedException</code> from <em>inside</em> the controller invocation — so
+          the advice catches it first and turns a legitimate <strong>403</strong> into a{' '}
+          <strong>500</strong>, complete with an oncall page. The same happens to{' '}
+          <code>ErrorResponseException</code> and <code>ResponseStatusException</code>, whose
+          carefully chosen statuses get flattened.
+        </p>
+        <p>
+          Fix it by adding explicit handlers for those types — a more specific{' '}
+          <code>@ExceptionHandler</code> always wins over a broader one, so what matters is that
+          the handler exists, not where you declare it.
+        </p>
+        <CodeBlock language="java" title="Let security and status-carrying exceptions through">
+{`@ExceptionHandler(AccessDeniedException.class)
+public ResponseEntity<ProblemDetail> handleDenied(AccessDeniedException e,
+                                                  HttpServletRequest req) {
+    // Deliberately vague — never tell the caller WHY they were refused.
+    ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access denied");
+    p.setInstance(URI.create(req.getRequestURI()));
+    p.setProperty("code", "ACCESS_DENIED");
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(p);
+}
+
+// ErrorResponseException already knows its status and body — don't remap it.
+@ExceptionHandler(ErrorResponseException.class)
+public ProblemDetail handleErrorResponse(ErrorResponseException e) {
+    return e.getBody();
+}
+
+// Better still: extend ResponseEntityExceptionHandler, which already maps every
+// standard Spring MVC exception to the right status, and override only what you
+// want to customise.
+@RestControllerAdvice
+public class ApiExceptionHandler extends ResponseEntityExceptionHandler { }
+
+// NOTE: an AccessDeniedException from the FILTER chain (i.e. a URL-level
+// .authenticated() rule) never reaches @ControllerAdvice at all — it is handled
+// by the AccessDeniedHandler configured on HttpSecurity. You need both.`}
+        </CodeBlock>
+      </InfoBox>
+
       <h2>Bean Validation — The 20 Constraints You'll Actually Use</h2>
 
       <CodeBlock language="java" title="Jakarta Bean Validation reference">
@@ -280,10 +324,14 @@ public class ApiExceptionHandler {
 @AssertTrue                     // for a boolean method that must return true
 @AssertFalse
 
-// Nested and cross-field
+// Nested
 @Valid                          // apply constraints on the referenced object
-@ScriptAssert(lang = "javascript",
-              script = "_this.password.equals(_this.passwordConfirm)")`}
+
+// CROSS-FIELD: do NOT reach for Hibernate Validator's @ScriptAssert.
+// It needs a JSR-223 script engine, and Nashorn was removed from the JDK in
+// Java 15 — so lang="javascript" throws at runtime unless you add GraalJS.
+// Write a class-level constraint instead (see below), or validate in the
+// record's compact constructor.`}
       </CodeBlock>
 
       <h3>Custom constraints for domain rules</h3>
@@ -315,7 +363,37 @@ public class StrongPasswordValidator implements ConstraintValidator<StrongPasswo
 public record CreateUserRequest(
         @NotBlank @Email                              String email,
         @NotBlank @StrongPassword                     String password,
-        @NotBlank @Size(max = 100)                    String displayName) { }`}
+        @NotBlank @Size(max = 100)                    String displayName) { }
+
+// ---- Cross-field: a CLASS-level constraint, the @ScriptAssert replacement ----
+@Target(ElementType.TYPE)                     // note: TYPE, not FIELD
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = PasswordsMatchValidator.class)
+public @interface PasswordsMatch {
+    String message() default "passwords do not match";
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default {};
+}
+
+public class PasswordsMatchValidator
+        implements ConstraintValidator<PasswordsMatch, SignupRequest> {
+
+    public boolean isValid(SignupRequest r, ConstraintValidatorContext ctx) {
+        if (r.password() == null || r.passwordConfirm() == null) return true;
+        if (r.password().equals(r.passwordConfirm())) return true;
+
+        // Attach the violation to a FIELD so the client gets a usable error,
+        // instead of an object-level message with no field name.
+        ctx.disableDefaultConstraintViolation();
+        ctx.buildConstraintViolationWithTemplate(ctx.getDefaultConstraintMessageTemplate())
+           .addPropertyNode("passwordConfirm")
+           .addConstraintViolation();
+        return false;
+    }
+}
+
+@PasswordsMatch
+public record SignupRequest(String password, String passwordConfirm) { }`}
       </CodeBlock>
 
       <h2>Validation Groups — Different Rules for Different Operations</h2>

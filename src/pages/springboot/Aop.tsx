@@ -249,9 +249,12 @@ public class CatalogClient {
           The snippet above is the <code>spring-retry</code> form, which is what you will find
           in every existing Boot 2/3 codebase. Spring Framework 7 (Boot 4) absorbed this into
           core as the <code>org.springframework.resilience</code> package, so a new project
-          gets <code>@Retryable</code> without an extra dependency. The annotation is the same
-          idea with a flatter attribute set, and it ships with a companion for bounding
-          concurrency:
+          gets <code>@Retryable</code> without an extra dependency. It is the same idea, but
+          it is <strong>not a drop-in rename</strong> — the attributes differ
+          (<code>maxRetries</code> vs <code>maxAttempts</code>, <code>includes</code> vs{' '}
+          <code>retryFor</code>, inline backoff vs nested <code>@Backoff</code>), and there is{' '}
+          <strong>no <code>@Recover</code></strong> in core Spring at all. It does ship a
+          companion for bounding concurrency:
         </p>
         <CodeBlock language="java" title="Core Spring resilience (Boot 4)">
 {`@EnableResilientMethods          // replaces @EnableRetry
@@ -262,13 +265,20 @@ class ResilienceConfig { }
 public class CatalogClient {
 
     // Backoff attributes are inline rather than a nested @Backoff.
+    // And the count attribute is maxRetries, NOT maxAttempts:
+    // maxRetries = 3 means up to 4 total calls (1 initial + 3 retries).
     @Retryable(includes = { RemoteApiException.class, SocketTimeoutException.class },
-               maxAttempts = 4,
-               delay = 200, multiplier = 2.0, maxDelay = 5000)
+               maxRetries = 3,
+               delay = 200, multiplier = 2.0, maxDelay = 5000, jitter = 50)
     public ProductDto get(String id) { ... }
 
-    @Recover                     // unchanged
-    public ProductDto recoverGet(RemoteApiException e, String id) { ... }
+    // NO @Recover HERE — core Spring has no fallback-method mechanism.
+    // When retries are exhausted the last exception simply propagates, so
+    // catch it at the call site:
+    public ProductDto getOrUnavailable(String id) {
+        try { return get(id); }
+        catch (RemoteApiException e) { return ProductDto.unavailable(id); }
+    }
 
     // No spring-retry equivalent — caps in-flight calls to a fragile
     // downstream without dedicating a thread pool to it.

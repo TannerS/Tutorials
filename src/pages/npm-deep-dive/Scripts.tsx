@@ -34,7 +34,7 @@ export default function Scripts() {
     "format": "prettier --write src/",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist node_modules/.cache",
-    "prepare": "husky install"
+    "prepare": "husky"
   }
 }`}
       </CodeBlock>
@@ -69,7 +69,7 @@ npm restart    # runs "restart" (or stop + start)
     "lint": "eslint src/"
   },
   "devDependencies": {
-    "eslint": "^8.50.0"
+    "eslint": "^9.0.0"
   }
 }
 
@@ -150,7 +150,9 @@ npx eslint src/
   "scripts": {
     "preinstall": "node check-node-version.js",
 
-    "prepare": "husky install",
+    "prepare": "husky",
+    // v9+ is just "husky". "husky install" was deprecated in v9
+    // and removed in v10 — it prints a deprecation notice and exits.
 
     "prepublishOnly": "npm run build && npm test",
 
@@ -362,7 +364,7 @@ npx npm-run-all --sequential build deploy`}
     "validate": "npm run typecheck && npm run lint && npm run test",
     "ci": "npm run validate && npm run build",
 
-    "prepare": "husky install",
+    "prepare": "husky",
     "pre-commit": "lint-staged"
   }
 }`}

@@ -97,18 +97,21 @@ curl https://registry.npmjs.org/lodash/4.17.21
 
       <CodeBlock language="bash" title="npm vs npx">
 {`# npm: install globally, then use
-npm install -g create-react-app
-create-react-app my-app
+npm install -g some-scaffolder
+some-scaffolder my-app
+# Downside: it's now pinned on your machine until you upgrade it,
+# and every project you scaffold gets whatever version you happen to have.
 
 # npx: download temporarily, execute, discard
-npx create-react-app my-app
+npm create vite@latest my-app
+# ("npm create X" is sugar for "npx create-X")
 
 # npx also runs local binaries from node_modules/.bin
-npx jest --watch
-# equivalent to: ./node_modules/.bin/jest --watch
+npx vitest --watch
+# equivalent to: ./node_modules/.bin/vitest --watch
 
-# npx with a specific version
-npx create-next-app@14.0.0 my-app`}
+# npx with a specific version — pin when you need reproducibility
+npx create-next-app@15.0.0 my-app`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="npx Resolution Order">

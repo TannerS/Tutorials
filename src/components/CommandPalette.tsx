@@ -54,13 +54,23 @@ export function CommandPalette({
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const restoreFocusTo = useRef<HTMLElement | null>(null);
 
+  // Layout mounts this only while it's open, so mount === open. That's what
+  // resets `query`/`active` between openings: the previous version returned
+  // null while closed but stayed mounted, so it kept its state and had to
+  // clear it from an effect on every open.
   useEffect(() => {
-    if (open) {
-      setQuery('');
-      setActive(0);
-      setTimeout(() => inputRef.current?.focus(), 0);
-    }
+    if (!open) return;
+    // Remember what had focus so closing can hand it back — without this,
+    // dismissing the palette dropped focus onto <body> and a keyboard user had
+    // to Tab in from the top of the document again.
+    restoreFocusTo.current = document.activeElement as HTMLElement | null;
+    const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 0);
+    return () => {
+      window.clearTimeout(focusTimer);
+      restoreFocusTo.current?.focus?.();
+    };
   }, [open]);
 
   const results = useMemo(() => {
@@ -73,9 +83,10 @@ export function CommandPalette({
       .map((r) => r.item);
   }, [query, items]);
 
-  useEffect(() => {
-    setActive(0);
-  }, [query]);
+  // `active` is clamped against the current result list rather than reset from
+  // an effect: an effect-driven reset renders one frame with a stale highlight
+  // (and trips react-hooks/set-state-in-effect).
+  const activeIndex = results.length === 0 ? -1 : Math.min(active, results.length - 1);
 
   useEffect(() => {
     if (!open) return;
@@ -92,23 +103,36 @@ export function CommandPalette({
   // Keep active item in view
   useEffect(() => {
     const list = listRef.current;
-    if (!list) return;
-    const activeEl = list.children[active] as HTMLElement | undefined;
+    if (!list || activeIndex < 0) return;
+    const activeEl = list.children[activeIndex] as HTMLElement | undefined;
     activeEl?.scrollIntoView({ block: 'nearest' });
-  }, [active]);
+  }, [activeIndex]);
 
   if (!open) return null;
+
+  const activeOptionId = activeIndex >= 0 ? `cmdk-option-${activeIndex}` : undefined;
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActive((i) => Math.min(i + 1, results.length - 1));
+      setActive(Math.min(activeIndex + 1, results.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setActive((i) => Math.max(i - 1, 0));
+      setActive(Math.max(activeIndex - 1, 0));
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setActive(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      setActive(results.length - 1);
+    } else if (e.key === 'Tab') {
+      // The input is the only focusable control in the dialog, so a plain Tab
+      // walked focus out to the page behind the overlay while the modal stayed
+      // open — focus and the visible UI ended up in two different places.
+      e.preventDefault();
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const item = results[active];
+      const item = results[activeIndex];
       if (item) {
         item.onSelect();
         onClose();
@@ -153,7 +177,17 @@ export function CommandPalette({
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          aria-label="Search"
+          aria-label="Search lessons"
+          // Without these the listbox was invisible to screen readers: the
+          // highlighted row is tracked in React state, not DOM focus, so the
+          // input has to advertise it via aria-activedescendant.
+          role="combobox"
+          aria-expanded
+          aria-controls="cmdk-listbox"
+          aria-activedescendant={activeOptionId}
+          aria-autocomplete="list"
+          autoComplete="off"
+          spellCheck={false}
           style={{
             background: 'transparent',
             border: 'none',
@@ -167,7 +201,9 @@ export function CommandPalette({
 
         <ul
           ref={listRef}
+          id="cmdk-listbox"
           role="listbox"
+          aria-label="Lesson results"
           style={{
             listStyle: 'none',
             margin: 0,
@@ -177,16 +213,17 @@ export function CommandPalette({
           }}
         >
           {results.length === 0 && (
-            <li style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            <li role="presentation" style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
               No matches
             </li>
           )}
           {results.map((item, idx) => {
-            const isActive = idx === active;
+            const isActive = idx === activeIndex;
             const color = item.color ?? 'var(--accent-blue)';
             return (
               <li
                 key={item.id}
+                id={`cmdk-option-${idx}`}
                 role="option"
                 aria-selected={isActive}
                 onMouseEnter={() => setActive(idx)}

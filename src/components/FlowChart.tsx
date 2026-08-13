@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import mermaid from 'mermaid';
 import { useTheme } from './ThemeProvider';
-
-let chartId = 0;
 
 const darkThemeVariables = {
   primaryColor: '#252a3f',
@@ -50,11 +48,11 @@ const lightSwap: Record<string, string> = {
   '#0f1117': '#f6f7fa', '#161822': '#eef0f5', '#12141e': '#f1f2f6',
   '#1a1d2e': '#ffffff', '#1e2235': '#eef0f5', '#1f2337': '#e7e9f0',
   '#252a3f': '#dde1ea',
-  '#e4e6f0': '#14161f', '#9399b2': '#52586b', '#6c7293': '#7d8298',
+  '#e4e6f0': '#14161f', '#9399b2': '#52586b', '#6c7293': '#6b7183',
   '#2a2e42': '#dde2ec',
-  '#5b9cf6': '#2563eb', '#4ade80': '#16a34a', '#a78bfa': '#7c3aed',
-  '#fb923c': '#c2410c', '#f87171': '#dc2626', '#22d3ee': '#0891b2',
-  '#facc15': '#a16207', '#f472b6': '#db2777',
+  '#5b9cf6': '#2563eb', '#4ade80': '#15803d', '#a78bfa': '#7c3aed',
+  '#fb923c': '#c2410c', '#f87171': '#dc2626', '#22d3ee': '#0e7490',
+  '#facc15': '#a16207', '#f472b6': '#be185d',
   '#10b981': '#059669', '#fbbf24': '#92400e', '#f59e0b': '#92400e',
   '#d97706': '#78350f', '#6366f1': '#4338ca', '#8b5cf6': '#6d28d9',
   '#3b82f6': '#1d4ed8', '#ef4444': '#b91c1c', '#dc2626': '#991b1b',
@@ -73,7 +71,12 @@ export default function FlowChart({ chart, title }: FlowChartProps) {
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState('');
-  const idRef = useRef(`mermaid-${chartId++}`);
+  // Was `useRef(\`mermaid-${chartId++}\`)`, which bumped the module counter on
+  // every single render (the argument is evaluated each time even though only
+  // the first value is kept). useId gives a stable per-instance id; mermaid
+  // uses it as a DOM id and CSS selector, so strip anything not selector-safe.
+  const reactId = useId();
+  const chartDomId = `mermaid-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   useEffect(() => {
     let cancelled = false;
@@ -91,15 +94,15 @@ export default function FlowChart({ chart, title }: FlowChartProps) {
     const render = async () => {
       try {
         const source = theme === 'light' ? applyLightSwap(chart.trim()) : chart.trim();
-        const { svg: rendered } = await mermaid.render(idRef.current, source);
+        const { svg: rendered } = await mermaid.render(chartDomId, source);
         if (!cancelled) setSvg(rendered);
       } catch (e) {
         console.error('Mermaid render error:', e);
       }
     };
-    render();
+    void render();
     return () => { cancelled = true; };
-  }, [chart, theme]);
+  }, [chart, theme, chartDomId]);
 
   return (
     <div className="flow-chart" style={{

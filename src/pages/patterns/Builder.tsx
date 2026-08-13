@@ -38,7 +38,11 @@ export default function Builder() {
     private HttpRequest(Builder builder) {
         this.method = builder.method;
         this.url = builder.url;
-        this.headers = Collections.unmodifiableMap(builder.headers);
+        // COPY, don't wrap. Collections.unmodifiableMap() returns a
+        // VIEW of the builder's map -- the caller still holds the
+        // builder, so a later .header(...) call would mutate this
+        // supposedly-immutable request. Map.copyOf takes a snapshot.
+        this.headers = Map.copyOf(builder.headers);
         this.body = builder.body;
         this.timeout = builder.timeout;
         this.retries = builder.retries;

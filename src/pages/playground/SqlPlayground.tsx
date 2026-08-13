@@ -73,11 +73,31 @@ CREATE TABLE orders (
         <li><code>LIMIT</code> — take the top slice</li>
       </ol>
       <p>
-        That ordering is why <code>WHERE COUNT(*) &gt; 1</code> is an error (the
-        counts don&apos;t exist yet at step 2 — use <code>HAVING</code>), and why{' '}
-        <code>ORDER BY total_spent</code> works on an alias that{' '}
-        <code>WHERE total_spent &gt; 100</code> cannot see.
+        That ordering is why <code>WHERE COUNT(*) &gt; 1</code> is an error — the
+        counts don&apos;t exist yet at step 2, so you need <code>HAVING</code>. Try it
+        in the playground: SQLite answers with{' '}
+        <code>misuse of aggregate: COUNT()</code>.
       </p>
+
+      <InfoBox variant="warning" title="SQLite is more permissive about aliases than the standard">
+        <p>
+          The usual companion rule is &quot;you can <code>ORDER BY</code> a{' '}
+          <code>SELECT</code> alias but you can&apos;t <code>WHERE</code> on one,&quot;
+          because <code>WHERE</code> runs before <code>SELECT</code> computes the
+          aliases. That is true in PostgreSQL and SQL Server — and{' '}
+          <strong>not</strong> true here. SQLite (like MySQL) accepts{' '}
+          <code>SELECT amount AS total FROM orders WHERE total &gt; 100</code> as a
+          convenience extension, and it runs fine in this playground.
+        </p>
+        <p>
+          Worth knowing because it cuts both ways: a query you develop against
+          SQLite or MySQL can fail with{' '}
+          <code>column &quot;total&quot; does not exist</code> the moment it reaches
+          Postgres. The portable fix is to repeat the expression in the{' '}
+          <code>WHERE</code>, or wrap the query in a subquery/CTE so the alias
+          genuinely exists by the time you filter on it.
+        </p>
+      </InfoBox>
 
       <InfoBox variant="tip" title="JOIN vs. LEFT JOIN, in one experiment">
         <p>

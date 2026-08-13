@@ -40,7 +40,8 @@ export default function Kafka() {
       acks: all                                # wait for all in-sync replicas
       retries: 5
       properties:
-        enable.idempotence: true               # exactly-once producer semantics
+        enable.idempotence: true               # NOT exactly-once — see note below.
+                                               # De-duplicates PRODUCER RETRIES only.
         max.in.flight.requests.per.connection: 5
         compression.type: zstd
     consumer:
@@ -175,6 +176,66 @@ public class KafkaErrorConfig {
           org.springframework.kafka.support.serializer.JsonDeserializer`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Idempotent producer is not exactly-once">
+        <p>
+          <code>enable.idempotence=true</code> gives the producer a sequence number per
+          partition so the broker discards duplicates caused by <em>its own internal retries</em>.
+          That is all. It does not deduplicate two separate <code>send()</code> calls from your
+          code, and it says nothing about consumers.
+        </p>
+        <p>
+          Real end-to-end exactly-once requires Kafka <strong>transactions</strong>: a{' '}
+          <code>transactional.id</code> on the producer, sending records and consumer offsets in
+          one transaction, and <code>isolation.level=read_committed</code> on consumers. It only
+          holds <em>within</em> Kafka — the moment a handler writes to your database, that write
+          is outside the Kafka transaction. Which is why the practical answer for almost every
+          service is the one below: <strong>assume at-least-once and make handlers
+          idempotent.</strong>
+        </p>
+      </InfoBox>
+
+      <h2>Rebalances and the max.poll.interval.ms Trap</h2>
+      <p>
+        The single most common Kafka incident in a Spring service is not a broker failure — it
+        is a consumer group that will not stop rebalancing, because a handler got slower than
+        the poll interval.
+      </p>
+      <CodeBlock language="text" title="Why the group keeps rebalancing">
+{`The consumer's poll loop must call poll() at least every
+max.poll.interval.ms (default 5 minutes). If your handler takes longer to
+process one batch than that, the broker assumes the consumer died, kicks it
+out of the group, and REBALANCES. The evicted consumer then finishes, tries
+to commit, and fails with CommitFailedException — so the records are
+redelivered to whoever got the partition, which is also slow, and the cycle
+repeats. Throughput goes to zero while the group thrashes.
+
+The tell: repeated "Attempt to heartbeat failed since group is rebalancing"
+or "This member will leave the group because consumer poll timeout had
+expired" in the logs.
+
+Fixes, best first:
+  1. Make the handler faster, or do the slow work asynchronously.
+  2. Lower max.poll.records so each batch is smaller (default 500).
+  3. Raise max.poll.interval.ms only if the work genuinely is that slow.
+  4. Keep session.timeout.ms / heartbeat.interval.ms at defaults —
+     heartbeats run on a BACKGROUND thread since Kafka 0.10.1, so they are
+     not what your slow handler blocks. max.poll.interval.ms is.`}
+      </CodeBlock>
+      <CodeBlock language="yaml" title="The knobs">
+{`spring:
+  kafka:
+    consumer:
+      max-poll-records: 100            # smaller batches = faster loop
+      properties:
+        max.poll.interval.ms: 300000   # 5 min default
+        session.timeout.ms: 45000
+        heartbeat.interval.ms: 3000
+    listener:
+      # concurrency must be <= partition count, or the extra
+      # consumers sit permanently idle with no partition assigned.
+      concurrency: 3`}
+      </CodeBlock>
+
       <h2>Idempotent Consumers</h2>
       <p>
         Kafka delivers at least once. Under retries, network hiccups, and rebalances,
@@ -221,13 +282,22 @@ public Order place(NewOrderRequest req) {
 @Scheduled(fixedDelayString = "\${outbox.poll-ms:200}")
 @Transactional
 public void relay() {
+    // SELECT ... FOR UPDATE SKIP LOCKED so multiple replicas can relay
+    // concurrently without publishing the same row twice.
     List<OutboxRow> batch = outbox.claimBatch(100);
     for (OutboxRow row : batch) {
-        kafka.send(row.topic(), row.key(), row.payload())
-            .whenComplete((res, ex) -> {
-                if (ex == null) outbox.markSent(row.id());
-                // failures stay pending — next tick retries.
-            });
+        try {
+            // BLOCK on the send. Do NOT use whenComplete() here: the callback
+            // fires on the producer's IO thread AFTER this transaction has
+            // already committed, so markSent() would run with no transaction
+            // and the row could be relayed forever.
+            kafka.send(row.topic(), row.key(), row.payload())
+                 .get(5, TimeUnit.SECONDS);
+            outbox.markSent(row.id());       // same tx as the claim
+        } catch (Exception e) {
+            log.warn("relay failed for {}, staying pending", row.id(), e);
+            break;   // preserve per-key ordering; next tick retries from here
+        }
     }
 }`}
       </CodeBlock>

@@ -132,23 +132,31 @@ ORDER BY path;
 
 -- Bill of materials: recursive cost rollup
 WITH RECURSIVE bom AS (
-  -- Base: leaf components (no sub-parts)
+  -- Anchor: the TOP-LEVEL assembly, walking DOWN into its sub-parts
   SELECT part_id, parent_id, part_name, quantity, unit_cost,
-         unit_cost AS total_cost, 1 AS level
+         quantity                     AS effective_qty,
+         unit_cost * quantity         AS total_cost,
+         1 AS level
   FROM parts
-  WHERE part_id = 'BIKE-001'  -- top-level assembly
+  WHERE part_id = 'BIKE-001'
 
   UNION ALL
 
+  -- Multiply the child's quantity THROUGH the parent's accumulated quantity:
+  -- 2 wheels per bike x 32 spokes per wheel = 64 spokes, not 32.
   SELECT p.part_id, p.parent_id, p.part_name, p.quantity, p.unit_cost,
-         p.unit_cost * p.quantity AS total_cost, b.level + 1
+         b.effective_qty * p.quantity                  AS effective_qty,
+         p.unit_cost * b.effective_qty * p.quantity    AS total_cost,
+         b.level + 1
   FROM parts p
   JOIN bom b ON p.parent_id = b.part_id
 )
-SELECT level, part_name, quantity, unit_cost,
+SELECT level, part_name, effective_qty, unit_cost, total_cost,
        SUM(total_cost) OVER () AS assembly_total_cost
 FROM bom
-ORDER BY level, part_name;`}
+ORDER BY level, part_name;
+-- The quantity multiplication is the whole point of a BOM rollup. Summing a
+-- raw per-row quantity instead is the classic way to under-count deep trees.`}
       </CodeBlock>
 
       <InfoBox variant="danger" title="Infinite Recursion Protection">
@@ -178,7 +186,27 @@ WITH RECURSIVE org_tree AS (
 )
 CYCLE id SET is_cycle USING path
 SELECT * FROM org_tree WHERE NOT is_cycle;
--- 'path' and 'is_cycle' are auto-managed columns Postgres adds for you`}
+-- 'path' and 'is_cycle' are auto-managed columns Postgres adds for you.
+-- 'path' is an array of the id values visited, so it doubles as the
+-- reporting chain you'd otherwise accumulate by hand.
+
+-- Its sibling: SEARCH controls the ORDER rows come back in. A recursive CTE
+-- otherwise emits rows in iteration order, which is breadth-first-ish but is
+-- NOT guaranteed — never rely on it, declare what you want:
+WITH RECURSIVE org_tree AS (
+  SELECT id, name, manager_id FROM employees WHERE id = 100
+  UNION ALL
+  SELECT e.id, e.name, e.manager_id
+  FROM employees e JOIN org_tree t ON e.manager_id = t.id
+)
+SEARCH DEPTH FIRST BY name SET ordercol   -- or: SEARCH BREADTH FIRST BY name
+SELECT * FROM org_tree ORDER BY ordercol;
+-- DEPTH FIRST prints each manager immediately followed by their whole subtree
+-- (the shape you want for an indented org chart); BREADTH FIRST prints the
+-- tree level by level. You must still ORDER BY the column it sets.
+
+-- SEARCH and CYCLE can be combined, in that order:
+--   SEARCH DEPTH FIRST BY id SET ordercol CYCLE id SET is_cycle USING path`}
       </CodeBlock>
 
       <h2>Graph Queries & Path Finding</h2>
@@ -211,15 +239,23 @@ ORDER BY total_weight
 LIMIT 1;
 
 -- Generate a date series — prefer generate_series() over a recursive CTE for this;
--- shown here purely to illustrate the recursive pattern
+-- shown here purely to illustrate the recursive pattern.
 WITH RECURSIVE dates AS (
   SELECT DATE '2024-01-01' AS d
   UNION ALL
-  SELECT d + INTERVAL '1 day'
+  SELECT d + 1            -- date + int stays a date
   FROM dates
   WHERE d < DATE '2024-12-31'
 )
 SELECT d FROM dates;
+
+-- WATCH THE TYPES. Writing  d + INTERVAL '1 day'  above fails outright:
+--   ERROR: recursive query "dates" column 1 has type date in non-recursive
+--          term but type timestamp without time zone overall
+-- because date + interval promotes to timestamp, and both arms of the
+-- UNION ALL must agree. Postgres fixes the column types from the ANCHOR
+-- term, so the recursive term must match it exactly — cast if needed:
+--   SELECT (d + INTERVAL '1 day')::date
 
 -- The idiomatic Postgres way to do the above (set-returning function, no recursion)
 SELECT generate_series('2024-01-01'::date, '2024-12-31'::date, '1 day') AS d;`}

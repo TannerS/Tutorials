@@ -213,6 +213,33 @@ public class OrderFacade {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Notice What That @Transactional Is Actually Doing">
+        <p>
+          The facade above is a clean illustration of the pattern, but copy it into production as-is
+          and you have a classic distributed-systems bug. <code>@Transactional</code> opens a database
+          transaction that stays open across <code>payment.authorize()</code> and{' '}
+          <code>payment.capture()</code> — <strong>remote network calls</strong>. Two problems follow:
+        </p>
+        <p>
+          <strong>You hold a database connection and its locks for the duration of a third-party HTTP
+          call.</strong> When the payment provider is slow, your connection pool drains and the whole
+          service stalls on something that has nothing to do with the database.
+        </p>
+        <p>
+          <strong>The rollback is a lie.</strong> If step 6 throws, the database transaction rolls
+          back — but the money is already captured. A database transaction cannot un-charge a credit
+          card. The atomicity the annotation implies simply does not extend past your own database.
+        </p>
+        <p>
+          The real fix is to keep external calls outside the transaction and coordinate with a{' '}
+          <strong>saga</strong> — each step gets an explicit compensating action (void the
+          authorization, release the stock) — usually with a transactional{' '}
+          <strong>outbox</strong> so the local write and the intent to call outward commit together.
+          The <em>Microservices → Data Management</em> lesson covers both. The Facade pattern is still
+          the right shape here; it is the transaction boundary that needs to be drawn tighter.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="tip" title="Facade vs Service Layer">
         In Spring Boot applications, your @Service classes often act as facades. The Controller
         calls one service method, which orchestrates multiple repositories and other services.

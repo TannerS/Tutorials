@@ -374,6 +374,49 @@ export default function Flexbox() {
   <footer class="hg-footer">Footer</footer>
 </div>`}</CodeBlock>
 
+      <h2>The One Flexbox Bug Everyone Hits</h2>
+      <p>
+        A flex item refuses to shrink past its content and blows out of the container &mdash; a long
+        URL, a wide <code>&lt;pre&gt;</code>, or a table forces a horizontal scrollbar that no amount
+        of <code>width: 100%</code> or <code>overflow: hidden</code> on the parent will fix. This is
+        not a bug in your CSS; it is the specified default, and the fix is one line.
+      </p>
+
+      <CodeBlock language="css" title="min-width: auto — the automatic minimum size">{`/* Flex items have min-width: auto (NOT 0) on the main axis. That resolves
+   to the item's MIN-CONTENT size, so an item can never shrink smaller than
+   its longest unbreakable word — flex-shrink is powerless against it. */
+
+.container { display: flex; }
+.item      { flex: 1; }            /* still overflows on long content */
+
+/* FIX — pick whichever reads best; they're equivalent in effect: */
+.item { min-width: 0; }            /* the canonical one-liner */
+.item { overflow: hidden; }        /* also works: overflow != visible
+                                      changes the automatic minimum to 0 */
+
+/* In a COLUMN flex container the axis flips, so it's min-height: */
+.column-container { display: flex; flex-direction: column; }
+.column-item      { min-height: 0; }
+
+/* Real-world shape: a sidebar layout where the main area must be allowed
+   to shrink and let its own content scroll or ellipsis. */
+.layout { display: flex; }
+.sidebar { flex: 0 0 250px; }
+.main    { flex: 1; min-width: 0; }        /* without this, .main overflows */
+.main .title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;                     /* only truncates once min-width: 0 */
+}`}</CodeBlock>
+
+      <InfoBox variant="warning" title="Why text-overflow: ellipsis 'doesn't work' inside flex">
+        This is the same bug wearing a different hat. Truncation needs the element to be narrower
+        than its text, but the automatic minimum size stops the flex item from ever getting
+        narrower. Adding <code>min-width: 0</code> to the flex <em>item</em> &mdash; not to the
+        element with the ellipsis &mdash; is what unblocks it. Grid items have exactly the same
+        default, which is why the Grid lesson lists the identical fix.
+      </InfoBox>
+
       <h2>Property Decision Tree</h2>
       <FlowChart
         title="Choosing the Right Flex Property"

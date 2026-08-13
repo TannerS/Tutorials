@@ -211,9 +211,12 @@ public class InventoryEventListener {
     private final InventoryService inventory;
     private final ApplicationEventPublisher events;
 
-    @EventListener
-    @Async
+    // @TransactionalEventListener is ITSELF meta-annotated with
+    // @EventListener. Stacking both registers the listener TWICE, so
+    // the method fires once immediately and again after commit --
+    // reserving the stock twice. Use one or the other, never both.
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Async
     public void onOrderPlaced(OrderPlacedEvent event) {
         Order order = event.order();
         order.getItems().forEach(item ->
@@ -230,7 +233,10 @@ public class InventoryEventListener {
 public class NotificationEventListener {
     private final EmailService emailService;
 
-    @EventListener
+    // Also after-commit: a plain @EventListener + @Async would race the
+    // publisher's transaction and could email a customer about an order
+    // whose transaction then rolls back.
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async
     public void onOrderPlaced(OrderPlacedEvent event) {
         emailService.sendOrderConfirmation(
@@ -238,7 +244,7 @@ public class NotificationEventListener {
             event.order());
     }
 
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async
     public void onPaymentCaptured(PaymentCapturedEvent event) {
         emailService.sendPaymentReceipt(event.orderId(), event.amount());

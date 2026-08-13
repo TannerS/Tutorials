@@ -154,7 +154,8 @@ console.log('Unique glyph objects:', factory.cachedCount); // far fewer than tex
 
       <InfoBox variant="info" title="Flyweight in the Standard Library">
         <code>Integer.valueOf(int)</code> in Java caches and shares boxed integers from -128 to 127
-        (<code>Integer.CACHE</code>) rather than allocating a new object every time — a Flyweight
+        (via the internal <code>Integer.IntegerCache</code>) rather than allocating a new object every
+        time — a Flyweight
         applied to a hot path. Node's V8 engine does something similar for small integers
         internally, and string interning (Java's <code>String.intern()</code>) shares identical
         string literals across the whole JVM for the same reason: don't pay to store the same

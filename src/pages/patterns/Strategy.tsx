@@ -238,6 +238,50 @@ public class ShippingListener {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="danger" title="Two Traps in Spring's Event System">
+        <p>
+          <strong>1. <code>publishEvent()</code> is synchronous by default.</strong> Without{' '}
+          <code>@Async</code> the listener runs on the calling thread, inside the caller&apos;s
+          transaction, and a listener that throws will <em>roll back the publisher&apos;s
+          transaction</em>. That surprises people who assumed &quot;publishing an event&quot; meant
+          fire-and-forget.
+        </p>
+        <p>
+          <strong>2. <code>@Async</code> alone creates a race with the transaction.</strong> Adding{' '}
+          <code>@Async</code> fixes the blocking, but now the listener runs on another thread{' '}
+          <em>before the publisher&apos;s transaction has committed</em>. The listener queries the
+          database for the order it was just told about — and does not find it. This is one of the most
+          common intermittent bugs in Spring codebases, and it only shows up under load.
+        </p>
+        <p>
+          <strong>The fix is <code>@TransactionalEventListener</code></strong>, which defers delivery
+          until the transaction actually commits:
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="java" title="Publish-After-Commit — the Correct Default" showLineNumbers={true}>
+{`@Component
+public class ShippingListener {
+
+    // AFTER_COMMIT is the default phase: the listener only runs once
+    // the publisher's transaction has successfully committed, so the
+    // data it was told about is guaranteed to be visible.
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Async
+    public void handleShipped(OrderEvent event) {
+        shippingService.scheduleDelivery(event.getOrder());
+    }
+}
+
+// Consequences worth knowing:
+//  - If the transaction ROLLS BACK, the listener never fires. Usually
+//    what you want: no email about an order that does not exist.
+//  - After commit you are outside the transaction, so writes here need
+//    their own (REQUIRES_NEW), and a failure cannot undo the commit.
+//    If the side effect MUST happen, an event listener is the wrong
+//    tool — use the transactional outbox pattern instead.`}
+      </CodeBlock>
+
       <InfoBox variant="tip" title="When to Reach for Observer">
         Reach for Observer when one event needs to trigger several independent side effects that
         shouldn't block each other or know about each other — an order being placed should update

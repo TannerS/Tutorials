@@ -51,7 +51,11 @@ npm install -D @testing-library/react \\
       </CodeBlock>
 
       <CodeBlock language="javascript" title="vite.config.ts">
-{`import { defineConfig } from 'vite';
+{`// NOTE the import: 'vitest/config', NOT 'vite'.
+// Vite's own defineConfig has no 'test' key, so importing from 'vite' gives you
+// "Object literal may only specify known properties — 'test' does not exist".
+// vitest/config re-exports defineConfig with the test options merged in.
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
@@ -62,7 +66,11 @@ export default defineConfig({
     setupFiles: './src/setupTests.ts',
     css: true,                  // process CSS imports instead of erroring
   },
-});`}
+});
+
+// The alternative, if you must keep the config importing from 'vite':
+//   /// <reference types="vitest/config" />
+// as the first line of the file.`}
       </CodeBlock>
 
       <CodeBlock language="javascript" title="src/setupTests.ts">

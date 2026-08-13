@@ -501,7 +501,48 @@ Fix: memoize props you pass down,   | Fix: useMemo the provider value
 // React 19 — cleaner syntax
 <ThemeContext value={theme}>
   {children}
-</ThemeContext>`}
+</ThemeContext>
+
+// <Context.Consumer> is deprecated too — it never had a reason to exist
+// after hooks. Replace it with useContext() or use().
+// BEFORE:
+<ThemeContext.Consumer>
+  {(theme) => <Panel theme={theme} />}
+</ThemeContext.Consumer>
+// AFTER:
+const theme = useContext(ThemeContext);`}
+      </CodeBlock>
+
+      <h3><code>use(Context)</code> — the conditional read</h3>
+
+      <p>
+        <code>useContext</code> obeys the Rules of Hooks: top level only, never inside a
+        branch or a loop. React 19&apos;s <code>use()</code> is exempt — it can read a context
+        from inside a conditional. That is the entire difference; both subscribe the component
+        identically and both cause the same re-render on a value change.
+      </p>
+
+      <CodeBlock language="jsx" title="use() vs useContext()" showLineNumbers>
+{`import { use, useContext } from 'react';
+
+function Panel({ showAdmin }) {
+  const theme = useContext(ThemeContext);   // must be here, unconditionally
+
+  if (showAdmin) {
+    const admin = use(AdminContext);        // ✅ legal — only use() may do this
+    return <AdminView theme={theme} config={admin} />;
+  }
+  return <UserView theme={theme} />;
+}
+
+// Why it matters: it lets you avoid subscribing to a context you don't need
+// on this render path. In the branch above, a component that never renders the
+// admin branch is not subscribed to AdminContext and won't re-render when it
+// changes.
+//
+// It does NOT make context reads cheaper, selective, or partial — you still
+// get the whole value, and any change to that value re-renders you.
+// For per-field subscriptions you still need split contexts or a store.`}
       </CodeBlock>
 
       <hr style={{ borderColor: '#333', margin: '3rem 0 2rem' }} />
@@ -1144,7 +1185,7 @@ render(
 
 // ✅ BETTER: test-specific provider with controlled state
 function TestViewerProvider({ user, children }) {
-  const value = useMemo(() => ({ user, login: jest.fn(), logout: jest.fn() }), [user]);
+  const value = useMemo(() => ({ user, login: vi.fn(), logout: vi.fn() }), [user]);
   return <ViewerContext.Provider value={value}>{children}</ViewerContext.Provider>;
 }
 
@@ -1236,15 +1277,15 @@ function App() {
       />
 
       <InteractiveChallenge
-        question="A component wrapped in React.memo consumes a context via useContext. The context value changes. What happens?"
+        question={"A Provider owns state and renders {children}. Its own state changes — the parent above it did NOT re-render. What happens to a child that was passed in as children and does NOT call useContext?"}
         options={[
-          "React.memo prevents the re-render since props didn't change",
-          "The component re-renders — context changes bypass React.memo",
-          "The component re-renders only if the context value fails Object.is comparison",
-          "It depends on whether the component reads the changed property"
+          "It re-renders — the Provider is its parent, so the cascade reaches it",
+          "It bails out — the children element reference is unchanged",
+          "It re-renders only if it is not wrapped in React.memo",
+          "It unmounts and remounts because the Provider produced new JSX"
         ]}
         correctIndex={1}
-        explanation="React.memo only prevents re-renders caused by parent re-rendering with same props. Context is a separate subscription mechanism — when context value changes, ALL subscribed consumers re-render unconditionally. This is why splitting contexts and memoizing provider values is important."
+        explanation={"The children element object was created by the Provider's PARENT, which did not re-render — so it is the exact same object as last render. React compares oldProps === newProps on that fiber, finds no scheduled work, and bails out of the whole subtree. React.memo is not needed and would change nothing. This is the children-as-props optimization, and it holds no matter WHY the Provider re-rendered — own state, parent cascade, or its own context subscription."}
         language="jsx"
       />
     </LessonLayout>

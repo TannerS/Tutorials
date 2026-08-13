@@ -92,6 +92,7 @@ export default function Oauth() {
     &redirect_uri=https://example.com/callback
     &scope=openid email profile
     &state=random-csrf-token
+    &nonce=random-nonce                      # OIDC: binds the id_token
     &code_challenge=SHA256(code_verifier)    # PKCE
     &code_challenge_method=S256
 
@@ -109,14 +110,14 @@ Step 4: Google redirects back with authorization code
 
 Step 5: Server exchanges code for tokens (server-to-server)
   POST https://oauth2.googleapis.com/token
-  {
-    "grant_type": "authorization_code",
-    "code": "4/0AY0e-g7...",
-    "client_id": "YOUR_CLIENT_ID",
-    "client_secret": "YOUR_CLIENT_SECRET",
-    "redirect_uri": "https://example.com/callback",
-    "code_verifier": "original_code_verifier"    # PKCE
-  }
+  Content-Type: application/x-www-form-urlencoded   # NOT JSON
+
+  grant_type=authorization_code
+  &code=4/0AY0e-g7...
+  &client_id=YOUR_CLIENT_ID
+  &client_secret=YOUR_CLIENT_SECRET
+  &redirect_uri=https://example.com/callback
+  &code_verifier=original_code_verifier             # PKCE
 
 Step 6: Google returns tokens
   {
@@ -148,9 +149,11 @@ app.get('/auth/google', (req, res) => {
     .update(codeVerifier)
     .digest('base64url');
 
-  // Store code verifier in session for later
+  // Store the verifier, state and nonce in the session for later.
+  // All three are generated here and checked on the way back.
   req.session.codeVerifier = codeVerifier;
   req.session.oauthState = crypto.randomBytes(16).toString('hex');
+  req.session.oauthNonce = crypto.randomBytes(16).toString('hex');
 
   const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   authUrl.searchParams.set('response_type', 'code');
@@ -158,6 +161,7 @@ app.get('/auth/google', (req, res) => {
   authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
   authUrl.searchParams.set('scope', 'openid email profile');
   authUrl.searchParams.set('state', req.session.oauthState);
+  authUrl.searchParams.set('nonce', req.session.oauthNonce);  // OIDC replay defence
   authUrl.searchParams.set('code_challenge', codeChallenge);
   authUrl.searchParams.set('code_challenge_method', 'S256');
 
@@ -168,22 +172,34 @@ app.get('/auth/google', (req, res) => {
 app.get('/auth/callback', async (req, res) => {
   const { code, state } = req.query;
 
-  // Verify state to prevent CSRF
-  if (state !== req.session.oauthState) {
+  // Verify state to prevent CSRF. Compare in constant time and make
+  // it single-use — a state value must never be accepted twice.
+  const expectedState = req.session.oauthState;
+  const expectedNonce = req.session.oauthNonce;
+  const codeVerifier = req.session.codeVerifier;
+  delete req.session.oauthState;
+  delete req.session.oauthNonce;
+  delete req.session.codeVerifier;
+
+  if (!expectedState || state !== expectedState) {
     return res.status(403).json({ error: 'Invalid state' });
   }
 
-  // Exchange code for tokens
+  // Exchange code for tokens. NOTE: the token endpoint takes
+  // application/x-www-form-urlencoded, NOT JSON (RFC 6749 s4.1.3).
+  // Posting a JSON body is a classic first-time mistake — most
+  // providers reject it with invalid_request.
   const tokenResponse = await axios.post(
     'https://oauth2.googleapis.com/token',
-    {
+    new URLSearchParams({
       grant_type: 'authorization_code',
       code,
       client_id: GOOGLE_CLIENT_ID,
       client_secret: GOOGLE_CLIENT_SECRET,
       redirect_uri: REDIRECT_URI,
-      code_verifier: req.session.codeVerifier,
-    }
+      code_verifier: codeVerifier,
+    }),
+    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   );
 
   const { access_token, id_token, refresh_token } = tokenResponse.data;
@@ -191,16 +207,21 @@ app.get('/auth/callback', async (req, res) => {
   // VERIFY the ID token — never just base64-decode it. An unverified
   // decode trusts whatever the token says, which is exactly the bug
   // that lets a forged token log an attacker in as anyone.
-  const userInfo = await verifyIdToken(id_token);
+  const userInfo = await verifyIdToken(id_token, expectedNonce);
 
-  // Create session or JWT for your app
-  req.session.user = {
-    id: userInfo.sub,
-    email: userInfo.email,
-    name: userInfo.name,
-  };
-
-  res.redirect('/dashboard');
+  // Federated login is NOT the end of the story: Google authenticated
+  // the user, but the user still has no session with YOUR app. Mint
+  // one now — and rotate the session ID first, exactly as in the
+  // Cookies lesson, because the privilege level just changed.
+  req.session.regenerate((err) => {
+    if (err) return res.status(500).send('Session error');
+    req.session.user = {
+      id: userInfo.sub,        // 'sub' is the stable user key, NOT email
+      email: userInfo.email,
+      name: userInfo.name,
+    };
+    res.redirect('/dashboard');
+  });
 });
 
 // ID token verification using the provider's published JWKS.
@@ -247,6 +268,100 @@ async function verifyIdToken(idToken, expectedNonce) {
           The auth server verifies that SHA-256(code_verifier) matches the code_challenge. An attacker
           who intercepts the authorization code cannot complete the exchange because they do not have
           the original code_verifier.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="danger" title="Three PKCE Details People Get Wrong">
+        <p>
+          <strong>1. <code>S256</code>, never <code>plain</code>.</strong> The spec defines a{' '}
+          <code>plain</code> method where the challenge <em>is</em> the verifier, unhashed. That defeats
+          the entire mechanism: an attacker who intercepts the authorization request has just been handed
+          the verifier. <code>plain</code> exists only for clients incapable of SHA-256, which in practice
+          means nothing you will write. OAuth 2.1 requires <code>S256</code> wherever the client can do
+          it, and a server should refuse <code>plain</code> outright.
+        </p>
+        <p>
+          <strong>2. The verifier must be high-entropy and per-request.</strong> The spec mandates 43–128
+          characters from an unreserved alphabet, generated by a CSPRNG. A verifier derived from
+          something guessable, or reused across requests, is no verifier at all.
+        </p>
+        <p>
+          <strong>3. PKCE is not a client secret, and not a substitute for <code>state</code>.</strong>{' '}
+          PKCE proves that the party redeeming the code is the same party that started the flow. It does
+          not authenticate <em>which</em> client that is, and it does not prove the callback landed in the
+          browser session that initiated it — that is still <code>state</code>&apos;s job. A confidential
+          client sends a client secret <em>and</em> PKCE <em>and</em> state.
+        </p>
+      </InfoBox>
+
+      <h2>Sender-Constrained Tokens (DPoP and mTLS Binding)</h2>
+
+      <p>
+        The OAuth 2.1 table below mentions refresh tokens being &quot;sender-constrained.&quot; That term
+        is worth unpacking, because it names the one structural weakness left in ordinary OAuth.
+      </p>
+
+      <InfoBox variant="info" title="The Bearer Token Problem">
+        <p>
+          A <strong>bearer</strong> token means exactly what the word says: whoever bears it may use it.
+          The resource server checks the token is valid, not that <em>you</em> are the party it was issued
+          to. Steal it — from a log, a proxy, a compromised SDK, an exfiltrated backup — and you are
+          indistinguishable from the legitimate client. Every other defence in this lesson is about
+          keeping the token from being stolen, because nothing catches it once it has been.
+        </p>
+        <p>
+          <strong>Sender-constrained</strong> (or proof-of-possession) tokens close that gap by binding
+          the token to a key the client holds. Presenting the token is no longer sufficient; you must also
+          prove you hold the matching private key. A stolen token alone becomes useless.
+        </p>
+      </InfoBox>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Mechanism</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>How the Binding Works</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Fits</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>DPoP</strong> (RFC 9449)</td>
+            <td style={{ padding: '0.75rem' }}>Client generates a key pair and sends a signed <code>DPoP</code> proof JWT with each request, covering the method, URL, and a timestamp. The access token carries a thumbprint of that key in a <code>cnf</code> claim</td>
+            <td style={{ padding: '0.75rem' }}>Browsers, SPAs, mobile — anywhere client certificates are impractical</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>mTLS binding</strong> (RFC 8705)</td>
+            <td style={{ padding: '0.75rem' }}>The token is bound to the client&apos;s TLS certificate; the resource server compares the presented cert against the token&apos;s <code>cnf</code> claim</td>
+            <td style={{ padding: '0.75rem' }}>Server-to-server, finance/open-banking, anywhere PKI already exists</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <CodeBlock language="text" title="A DPoP-Protected Request">
+{`GET /orders HTTP/1.1
+Host: api.example.com
+Authorization: DPoP eyJhbGciOiJSUzI1NiIs...     <- note: DPoP, not Bearer
+DPoP: eyJ0eXAiOiJkcG9wK2p3dCIsImFsZyI6IkVTMjU2Ii...
+
+# The DPoP proof header is a JWT signed by the client's private key:
+#   htm: "GET"                      <- method it is valid for
+#   htu: "https://api.example.com/orders"   <- URL it is valid for
+#   iat: 1767225600                 <- freshness
+#   jti: "..."                      <- server tracks these to block replay
+#   ath: "<hash of the access token>"
+#
+# Replaying the access token without a matching, fresh, correctly-scoped
+# proof fails. Replaying the proof itself fails on jti/iat.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Do You Need This?">
+        <p>
+          For most applications, no — short-lived bearer tokens in <code>HttpOnly</code> cookies, or the
+          BFF pattern from the Gateway lesson, are the proportionate answer. DPoP earns its complexity
+          when tokens must live in a browser, or in high-value domains (open banking, healthcare) where
+          regulation demands proof-of-possession. Know the term and the one-line reason it exists: it
+          turns a stolen token from a complete compromise into a useless string.
         </p>
       </InfoBox>
 

@@ -9,7 +9,7 @@ export default function FieldGuideQuickReference() {
       eyebrow="SQL · Field Reference"
       title="What Do I Reach For?"
       tagline="A decision-first cheat sheet — the PostgreSQL tool for each recurring job, in one place."
-      meta={['PostgreSQL 16', '12 decisions']}
+      meta={['PostgreSQL 17+', '12 decisions']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · What Do I Reach For?"
       prev={{ path: '/sql-field-guide/postgres-gotchas', label: 'Postgres Gotchas & Pitfalls' }}
@@ -84,10 +84,12 @@ CREATE INDEX ... USING GIN (custom_attrs)`}
         glyph="Search"
         title={<>Add <span className="dim">text search</span></>}
         language="sql"
-        code={`search_vector TSVECTOR GENERATED ALWAYS AS
-  (to_tsvector('english', title || ' ' || body)) STORED;
+        code={`search_vector TSVECTOR GENERATED ALWAYS AS (
+  setweight(to_tsvector('english', coalesce(title,'')), 'A') ||
+  setweight(to_tsvector('english', coalesce(body ,'')), 'B')
+) STORED;
 CREATE INDEX ... USING GIN (search_vector);`}
-        caption="Postgres full-text search handles tens of millions of rows fine. Reach for Elasticsearch/Typesense only for fuzzy/typo-tolerant search at real scale."
+        caption="Postgres full-text search handles tens of millions of rows fine. The coalesce() is required — || propagates NULL, so one NULL body would blank the whole vector. The config must be a literal ('english'), since the 1-arg to_tsvector is only STABLE and generated columns demand IMMUTABLE. Reach for Elasticsearch/Typesense only for fuzzy/typo-tolerant search at real scale."
       />
 
       <PosterCard
@@ -136,7 +138,8 @@ WHERE id = ? AND version = ?;
           { need: 'Fastest way to check if a query uses an index', answer: 'EXPLAIN (ANALYZE, BUFFERS) — look for Seq Scan vs Index Scan' },
           { need: 'Fastest way to find an unused index', answer: 'SELECT * FROM pg_stat_user_indexes WHERE idx_scan = 0' },
           { need: 'Fastest way to bulk-load data', answer: 'COPY, not batched INSERTs' },
-          { need: 'Safest way to add a NOT NULL column to a huge table', answer: 'Add nullable + backfill in batches + add NOT NULL constraint (Postgres 12+ skips the full rewrite if a CHECK already proves it)' },
+          { need: 'Safest way to add a NOT NULL column to a huge table', answer: 'Add nullable, backfill in batches, add a NOT VALID CHECK (col IS NOT NULL), VALIDATE it, then SET NOT NULL — PG12+ sees the proven CHECK and skips the full-table scan' },
+          { need: 'Adding a column with a default to a huge table', answer: 'Safe since PG11 — a non-volatile DEFAULT is stored in the catalog, no table rewrite' },
           { need: 'Safest way to change isolation level app-wide', answer: "Don't — set it per-transaction only where the anomaly actually matters" },
           { need: 'How to avoid the N+1 query problem in Postgres', answer: 'LATERAL join or a single window-function query instead of one query per row' },
         ]}

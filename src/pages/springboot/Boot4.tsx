@@ -397,6 +397,35 @@ public class OrderController {
         <code>org.springframework.resilience</code> package ships <code>@Retryable</code> and{' '}
         <code>@ConcurrencyLimit</code> as core, AOP-backed annotations.
       </p>
+      <InfoBox variant="warning" title="This is NOT the Spring Retry API — the attributes differ">
+        <p>
+          Core Spring&apos;s <code>@Retryable</code> and the long-standing Spring Retry
+          project&apos;s <code>@Retryable</code> have the same simple name and different members.
+          Importing the wrong one compiles and then behaves unexpectedly. The differences that
+          catch people:
+        </p>
+        <ul>
+          <li>
+            Core Spring uses <code>maxRetries</code> (retries <em>after</em> the first call);
+            Spring Retry uses <code>maxAttempts</code> (total calls, including the first).
+          </li>
+          <li>
+            Core Spring uses <code>includes</code>/<code>excludes</code>; Spring Retry uses{' '}
+            <code>retryFor</code>/<code>noRetryFor</code>.
+          </li>
+          <li>
+            Backoff is flat attributes (<code>delay</code>, <code>multiplier</code>,{' '}
+            <code>jitter</code>, <code>maxDelay</code>) in core Spring; Spring Retry nests them in{' '}
+            <code>@Backoff</code>.
+          </li>
+          <li>
+            <strong>Core Spring has no <code>@Recover</code>.</strong> When retries are exhausted
+            the last exception simply propagates — catch it at the call site, or use a{' '}
+            <code>MethodRetryEvent</code> listener for observability. <code>@Recover</code>{' '}
+            fallback methods remain a Spring Retry feature only.
+          </li>
+        </ul>
+      </InfoBox>
       <CodeBlock language="java" title="Built-in retry and concurrency limiting">
 {`@EnableResilientMethods            // switches on the supporting AOP infrastructure
 @Configuration
@@ -405,21 +434,23 @@ class ResilienceConfig { }
 @Service
 public class PaymentGateway {
 
-    @Retryable(maxAttempts = 4,
+    // NOTE the attribute is maxRetries, NOT maxAttempts (that is Spring Retry).
+    // maxRetries counts retries AFTER the first call: 3 here = up to 4 calls.
+    // Defaults: maxRetries = 3, delay = 1000ms, multiplier = 1.0, retry on ANY
+    // exception — so always narrow it with includes/excludes.
+    @Retryable(includes = TransientGatewayException.class,
+               maxRetries = 3,
                delay = 200, multiplier = 2.0, maxDelay = 5000,
-               includes = TransientGatewayException.class)
+               jitter = 50)          // spreads retries, avoids a thundering herd
     public Receipt charge(Payment payment) {
         return client.post(payment);
-    }
-
-    @Recover                        // invoked when every attempt is exhausted
-    public Receipt fallback(TransientGatewayException e, Payment payment) {
-        return Receipt.deferred(payment.id());
     }
 
     // Cap in-flight calls to a fragile downstream, without a thread pool.
     @ConcurrencyLimit(10)
     public Report generate(ReportRequest req) { ... }
+
+    // @ConcurrencyLimit(1) gives you lock-like mutual exclusion on a method.
 }`}
       </CodeBlock>
 

@@ -199,7 +199,11 @@ body:has(dialog[open]) { overflow: hidden; }`}
       </p>
 
       <CodeBlock language="css" title=":is() vs :where()">
-{`/* :is() — specificity = (0,0,2) */
+{`/* Scores below use the spec's 3-column form (ID, class, element) — the
+   Fundamentals lesson writes a 4th leading column for inline styles.
+   Same scoring, one extra column. */
+
+/* :is() — specificity = (0,0,2): two TYPE selectors, no classes */
 :is(article, section) :is(h1, h2, h3) { line-height: 1.2; }
 
 /* :where() — specificity = (0,0,0), trivially overridable */
@@ -288,6 +292,120 @@ body:has(dialog[open]) { overflow: hidden; }`}
 @scope (.dashboard-widget) {
   :scope { container-type: inline-size; padding: 1rem; }
   .metric { font-size: 2rem; font-weight: 700; }
+}`}
+      </CodeBlock>
+
+      <h2>Anchor Positioning</h2>
+      <p>
+        Tethering a tooltip, dropdown, or popover to the element that triggered it has always
+        required JavaScript &mdash; measure the trigger with{' '}
+        <code>getBoundingClientRect()</code>, compute coordinates, then re-run the whole thing on
+        every scroll and resize. That is what Floating UI and Popper exist to do. Anchor
+        positioning moves the job into the browser&apos;s layout engine, where it stays correct for
+        free.
+      </p>
+
+      <CodeBlock language="css" title="anchor-name, position-anchor, and anchor()">
+{`/* 1. Name the anchor element */
+.tooltip-trigger {
+  anchor-name: --trigger;      /* a dashed-ident, like a custom property */
+}
+
+/* 2. Point the positioned element at that name */
+.tooltip {
+  position: absolute;          /* or fixed — anchoring needs one of them */
+  position-anchor: --trigger;
+
+  /* 3a. position-area: the declarative way — a 3x3 grid around the anchor */
+  position-area: block-start center;   /* directly above, horizontally centred */
+}
+
+/* 3b. anchor(): the precise way — resolve one edge of the anchor to a length.
+       Reads as "my bottom edge sits at my anchor's top edge". */
+.tooltip-precise {
+  position: absolute;
+  position-anchor: --trigger;
+  bottom: anchor(top);
+  left:   anchor(center);
+  translate: -50% 0;
+  margin-bottom: 8px;
+}
+
+/* Size relative to the anchor too */
+.dropdown {
+  position-anchor: --trigger;
+  min-width: anchor-size(width);       /* match the trigger's width */
+  max-height: 40vh;
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="css" title="position-try — automatic flipping when space runs out">
+{`/* The hard part of tooltips isn't placing them, it's placing them AGAIN
+   when they'd overflow the viewport. position-try-fallbacks does that
+   without a single line of JS. */
+.tooltip {
+  position: absolute;
+  position-anchor: --trigger;
+  position-area: block-start center;   /* preferred: above */
+
+  /* Tried in order; the first that fits on screen wins. */
+  position-try-fallbacks:
+    block-end center,                  /* flip below */
+    inline-end center,                 /* try to the right */
+    inline-start center;               /* then to the left */
+}
+
+/* Shorthand for the common "just flip me" cases */
+.menu {
+  position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+}
+
+/* Custom fallback with its own property overrides */
+@position-try --shift-up {
+  bottom: anchor(top);
+  left: anchor(center);
+  margin-bottom: 4px;
+}
+.popover { position-try-fallbacks: --shift-up; }`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Pair it with the popover attribute and it's genuinely zero-JS">
+        Anchor positioning composes with the native HTML <code>popover</code> attribute and the{' '}
+        <code>&lt;dialog&gt;</code> element. <code>popover</code> gives you the top-layer rendering,
+        light-dismiss on outside click, and Esc-to-close behaviour; anchor positioning gives you the
+        placement and the flipping. Between them, the common tooltip/dropdown/menu cases need no
+        positioning library at all &mdash; and because it runs in the layout engine, it stays
+        correct during scroll without a single event listener.
+      </InfoBox>
+
+      <InfoBox variant="warning" title="Check support before you ship this one">
+        Anchor positioning is the least settled feature on this page. It shipped in Chromium first
+        and other engines have followed at different rates, so unlike <code>:has()</code>,{' '}
+        <code>@layer</code>, or <code>light-dark()</code> &mdash; all comfortably baseline &mdash;
+        this one still warrants a check against your support target. It degrades badly rather than
+        gracefully: without support the element simply falls back to normal absolute positioning,
+        which usually means it lands in the wrong place instead of merely looking plainer. Gate it
+        behind <code>@supports (anchor-name: --x)</code> and keep a static fallback position, or
+        keep using a JS library until your baseline catches up.
+      </InfoBox>
+
+      <CodeBlock language="css" title="Progressive enhancement pattern">
+{`.tooltip {
+  /* Fallback everyone gets: plain absolute inside a positioned parent */
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  translate: -50% 0;
+}
+
+@supports (anchor-name: --x) {
+  .trigger { anchor-name: --trigger; }
+  .tooltip {
+    position-anchor: --trigger;
+    position-area: block-start center;
+    position-try-fallbacks: flip-block;
+    bottom: auto; left: auto; translate: none;   /* undo the fallback */
+  }
 }`}
       </CodeBlock>
 

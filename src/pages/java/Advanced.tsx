@@ -17,7 +17,8 @@ function Advanced() {
       <p>
         Java has evolved significantly since Java 8, with new releases every six months
         introducing powerful features that make the language more concise, expressive, and safe.
-        This lesson covers the most impactful additions from Java 10 through Java 21.
+        This lesson covers the most impactful additions from Java 10 through Java 25, the current
+        LTS release.
       </p>
 
       <FlowChart
@@ -429,14 +430,19 @@ module com.myapp.core {
     exports com.myapp.core.api;
     exports com.myapp.core.model;
 
-    // Dependencies: modules this module needs
+    // Dependencies: modules this module needs.
+    // java.base is required implicitly — you never declare it.
     requires java.logging;
-    requires java.sql;
 
-    // Transitive dependency
-    requires transitive java.base;
+    // 'transitive' re-exports the dependency to MY consumers: anyone who
+    // requires com.myapp.core also gets java.sql, without declaring it.
+    // Use it when your exported API signatures mention that module's types.
+    requires transitive java.sql;
 
-    // Open package for reflection (needed by frameworks like Spring/Jackson)
+    // Compile-time only — not needed at runtime (e.g. annotations).
+    requires static org.jetbrains.annotations;
+
+    // Open package for deep reflection (needed by Spring/Jackson/JPA).
     opens com.myapp.core.model to com.fasterxml.jackson.databind;
 }
 
@@ -488,11 +494,14 @@ public class VirtualThreads {
 
       <InfoBox variant="note" title="Choosing the Right Java Version">
         <p>
-          For production applications, use a Long-Term Support (LTS) release: Java 17 or Java 21
-          are the current recommended choices. Java 17 gives you records, sealed classes, text
-          blocks, and pattern matching for instanceof. Java 21 adds virtual threads, pattern
-          matching in switch, record patterns, and sequenced collections. Both receive years of
-          security updates and bug fixes.
+          For production applications, use a Long-Term Support (LTS) release.{' '}
+          <strong>Java 25 is the current LTS</strong> and the right default for anything new: it
+          brings stable <code>ScopedValue</code>, finalised structured concurrency, module import
+          declarations, and compact source files, on top of everything below. Java 21 remains a
+          perfectly good target if your platform or vendor has not certified 25 yet — it already
+          has virtual threads, pattern matching in switch, record patterns, and sequenced
+          collections. Java 17 is the floor for existing services: records, sealed classes, text
+          blocks, and pattern matching for <code>instanceof</code>, but no virtual threads.
         </p>
       </InfoBox>
 
@@ -534,6 +543,71 @@ for (int x : reversed) { /* ... */ }`}
           references, and generic helper methods that operate on "an ordered
           collection" become simpler because <code>SequencedCollection</code> is the
           type you accept.
+        </p>
+      </InfoBox>
+
+      <h2>Module Imports and Compact Source Files (Java 25)</h2>
+      <p>
+        Two features finalised in Java 25 attack the same target: the wall of ceremony between you
+        and a working program. They matter for scripts and learning, and{' '}
+        <code>import module</code> is genuinely useful in production code too.
+      </p>
+
+      <CodeBlock language="java" title="ModuleImports.java">
+{`// JEP 511 — one import instead of a dozen.
+// This imports every package EXPORTED by java.base: java.util, java.io,
+// java.nio.file, java.time, java.util.stream, java.util.function...
+import module java.base;
+
+public class Report {
+    public static void main(String[] args) throws IOException {
+        List<String> lines = Files.readAllLines(Path.of("data.csv"));   // java.nio.file
+        Map<String, Long> byType = lines.stream()                        // java.util.stream
+            .collect(Collectors.groupingBy(Report::type, Collectors.counting()));
+        Instant now = Instant.now();                                     // java.time
+    }
+}
+
+// Ambiguity is a COMPILE ERROR, not a silent pick. java.awt.List vs
+// java.util.List both arrive if you import both modules, so you resolve it
+// with an ordinary single-type import, which always wins:
+import module java.base;
+import module java.desktop;
+import java.util.List;        // disambiguates — this List is the one meant`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="Compact source files — JEP 512">
+{`// A whole valid program. No class, no 'public static void main', no imports.
+// Run it directly: java Hello.java
+void main() {
+    var names = List.of("Ann", "Bo");    // java.base is imported implicitly
+    IO.println("Hello, " + names);       // new java.lang.IO
+}
+
+// You can still declare fields and other methods — they become members of
+// an unnamed top-level class the compiler synthesises for you.
+String greeting = "Hi";
+
+void main() {
+    IO.println(greeting + ", " + readName());
+}
+
+String readName() {
+    return IO.readln("Your name? ");     // IO.readln prompts and reads a line
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Know where the boundary is">
+        <p>
+          The <code>main</code> method here is an <em>instance</em> method with no{' '}
+          <code>String[] args</code> parameter — the JVM constructs the synthesised class and calls
+          it. That is why it cannot be <code>static</code>-only thinking: a compact source file has
+          no name you can reference, so nothing else can import it.
+        </p>
+        <p>
+          Use compact source files for scripts, throwaway experiments, and teaching. The moment
+          code needs to be imported by something else, give it a real class in a real package.{' '}
+          <code>import module</code>, by contrast, is fine anywhere — it is just an import.
         </p>
       </InfoBox>
 

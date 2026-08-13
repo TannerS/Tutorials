@@ -98,7 +98,18 @@ public class RetryingHttpClient extends HttpClientDecorator {
                 return delegate.send(request);
             } catch (HttpException e) {
                 if (++attempts >= maxRetries) throw e;
-                sleep(attempts * 1000L); // Exponential backoff
+
+                // EXPONENTIAL backoff with full jitter.
+                // Exponential: the wait DOUBLES each attempt
+                // (1s, 2s, 4s...) -- 'attempts * 1000' would be
+                // LINEAR (1s, 2s, 3s) and is a common mislabel.
+                // Jitter: randomising the wait stops every client
+                // that failed together from retrying together and
+                // re-flattening the service (the thundering herd).
+                long backoffMs = Math.min(
+                    1000L * (1L << (attempts - 1)),  // 1s, 2s, 4s, 8s
+                    30_000L);                        // capped at 30s
+                sleep(ThreadLocalRandom.current().nextLong(backoffMs));
             }
         }
     }
@@ -110,8 +121,28 @@ HttpClient client = new LoggingHttpClient(
         new DefaultHttpClient(), 3
     )
 );
-// Logs -> Retries -> Actual HTTP call`}
+// Logs -> Retries -> Actual HTTP call
+//
+// Flip the two and the behaviour changes materially: with
+// new RetryingHttpClient(new LoggingHttpClient(...), 3) you get one
+// log line PER ATTEMPT instead of one per logical request. Neither is
+// wrong -- but you have to decide which you meant.`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Only Retry What Is Safe to Retry">
+        <p>
+          A retry decorator applied blindly is a correctness bug waiting to happen. Retrying a{' '}
+          <code>GET</code> is harmless; retrying a <code>POST /payments</code> that actually succeeded
+          but whose <em>response</em> was lost charges the customer twice.
+        </p>
+        <p>
+          Retry only <strong>idempotent</strong> operations, and only on errors that are plausibly
+          transient — connection timeouts, <code>502</code>/<code>503</code>/<code>504</code>. Never
+          retry a <code>400</code> or <code>422</code>: the request was wrong and will be wrong again.
+          To make a non-idempotent operation safely retryable, send an <strong>idempotency key</strong>{' '}
+          so the server can recognise and de-duplicate the repeat.
+        </p>
+      </InfoBox>
 
       <InfoBox variant="tip" title="Decorator vs Inheritance">
         Inheritance is static — you choose the behavior at compile time. Decorator is dynamic —

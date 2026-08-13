@@ -362,8 +362,12 @@ export default function Grid() {
   overflow: hidden;
 }
 
-/* GOTCHA: z-index works on grid items WITHOUT position: relative */
-.grid-item { z-index: 1; }  /* grid items create a stacking context */
+/* GOTCHA: z-index works on grid items WITHOUT position: relative.
+   Precise rule: a grid or flex item with a z-index OTHER than auto
+   creates a stacking context. A plain item with z-index: auto does not —
+   so this is about z-index being honoured on a static element, not about
+   every grid item being its own stacking context. */
+.grid-item { z-index: 1; }
 
 /* GOTCHA: minmax(0, 1fr) is how you get TRULY equal columns.
    Plain 1fr means minmax(auto, 1fr) — the auto floor is the item's

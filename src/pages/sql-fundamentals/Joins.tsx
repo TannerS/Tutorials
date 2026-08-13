@@ -256,8 +256,8 @@ SELECT count(*) FROM (
       <InfoBox variant="info" title="JOIN vs Subquery Decision Guide">
         <p><strong>Use JOIN when:</strong> You need columns from both tables in the output, or you're combining data from multiple sources.</p>
         <p><strong>Use subquery when:</strong> You need to filter based on another table's data but don't need its columns, or you need aggregated values for comparison.</p>
-        <p><strong>Use EXISTS when:</strong> You're checking for the existence of related rows — it short-circuits on the first match.</p>
-        <p><strong>Performance:</strong> Postgres's planner often transforms between these internally. Write for clarity first, optimize later.</p>
+        <p><strong>Use EXISTS when:</strong> You're checking for the existence of related rows and the condition is correlated to the outer row.</p>
+        <p><strong>Performance:</strong> The "EXISTS is faster than IN" rule you'll hear repeated is Oracle-era folklore that does not describe modern Postgres. The planner turns both into a semi-join and costs them identically. Write whichever reads more clearly; the one genuine reason to prefer <code>NOT EXISTS</code> over <code>NOT IN</code> is <em>correctness</em> around NULLs, not speed.</p>
       </InfoBox>
 
       <h2>Common JOIN Mistakes</h2>
@@ -321,15 +321,17 @@ FROM employees;`}
       <h2>EXISTS vs IN — The Real Difference</h2>
 
       <CodeBlock language="sql" title="EXISTS vs IN Performance Characteristics" showLineNumbers={true}>
-{`-- IN: materializes the subquery result, then probes it
--- Good when subquery result is small
+{`-- These two are SEMANTICALLY different but PLAN the same in modern Postgres:
+-- the planner rewrites both into a semi-join and then picks hash/merge/nested-loop
+-- on cost. Check EXPLAIN before "optimizing" one into the other.
+
+-- IN (subquery)
 SELECT * FROM orders
 WHERE customer_id IN (
   SELECT id FROM customers WHERE region = 'US'
 );
 
--- EXISTS: short-circuits on first match per outer row
--- Good when outer table is small or subquery is correlated
+-- EXISTS (correlated) — same plan, same result HERE
 SELECT * FROM orders o
 WHERE EXISTS (
   SELECT 1 FROM customers c

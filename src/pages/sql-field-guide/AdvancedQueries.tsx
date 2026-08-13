@@ -9,7 +9,7 @@ export default function FieldGuideAdvancedQueries() {
       eyebrow="SQL · Field Reference"
       title="Advanced Queries"
       tagline="Joins, window functions, CTEs, and LATERAL — the toolkit for queries plain SELECTs can't express."
-      meta={['PostgreSQL 16', '13 patterns']}
+      meta={['PostgreSQL 17+', '13 patterns']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · Advanced Queries"
       prev={{ path: '/sql-field-guide/basic-queries', label: 'Basic Queries' }}
@@ -145,7 +145,7 @@ WHERE EXISTS (
   SELECT 1 FROM customers c
   WHERE c.id = o.customer_id AND c.region = 'US'
 );`}
-        caption="EXISTS short-circuits on first match per outer row — better than IN when the subquery is correlated or the outer table is small."
+        caption="Modern Postgres plans IN (subquery) and EXISTS identically — both become semi-joins. The 'EXISTS is faster' rule is Oracle-era folklore. Pick on readability; the one real reason to prefer NOT EXISTS over NOT IN is NULL correctness, not speed."
       />
 
       <PosterCard

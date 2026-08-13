@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 
 export interface CodeBlockProps {
@@ -15,11 +15,21 @@ export function CodeBlock({
   showLineNumbers = true,
 }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
+  const resetTimer = useRef<number | undefined>(undefined);
+
+  // The 2s "✓ Copied" reset used to be a bare setTimeout with no cleanup, so
+  // navigating to another lesson within 2s left a timer holding a setState on
+  // an unmounted component (and a second click restarted the label mid-flight).
+  useEffect(() => () => window.clearTimeout(resetTimer.current), []);
 
   const handleCopy = () => {
-    void navigator.clipboard.writeText(children.trim());
+    void navigator.clipboard.writeText(children.trim()).catch(() => {
+      /* clipboard can be blocked (insecure origin / denied permission) —
+         the button still flashes so the interaction isn't a dead end. */
+    });
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    window.clearTimeout(resetTimer.current);
+    resetTimer.current = window.setTimeout(() => setCopied(false), 2000);
   };
 
   const preStyle: CSSProperties = {
@@ -61,7 +71,9 @@ export function CodeBlock({
         </div>
       )}
       <button
+        type="button"
         onClick={handleCopy}
+        aria-label={copied ? 'Code copied to clipboard' : `Copy ${title ?? language} code to clipboard`}
         className="no-print"
         style={{
           position: 'absolute',

@@ -340,24 +340,43 @@ test('Navigation has no accessibility violations', async () => {
 
       <h2>Code Coverage Configuration</h2>
 
-      <CodeBlock language="jsx" title="jest.config.js — Coverage Settings">
-{`// jest.config.js
-module.exports = {
+      <CodeBlock language="javascript" title="vitest.config.ts — Coverage Settings">
+{`// Requires: npm i -D @vitest/coverage-v8
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/setupTests.ts',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/**/*.{js,jsx,ts,tsx}'],
+      exclude: ['src/**/*.d.ts', 'src/main.tsx', 'src/mocks/**', 'src/**/*.stories.*'],
+      thresholds: { branches: 80, functions: 80, lines: 80, statements: 80 },
+    },
+  },
+});
+
+// Run: npx vitest run --coverage`}
+      </CodeBlock>
+
+      <CodeBlock language="javascript" title="jest.config.js — The Same Thing on Jest">
+{`export default {
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
     '!src/index.{js,tsx}',
-    '!src/reportWebVitals.js',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
     '!src/mocks/**',
   ],
-  coverageThresholds: {
-    global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
+  // coverageThreshold — SINGULAR. "coverageThresholds" is not a real option;
+  // Jest ignores unknown keys, so the plural spelling silently enforces nothing.
+  coverageThreshold: {
+    global: { branches: 80, functions: 80, lines: 80, statements: 80 },
   },
   coverageReporters: ['text', 'lcov', 'clover'],
 };
@@ -365,9 +384,16 @@ module.exports = {
 // Run: npx jest --coverage`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Verify Your Threshold Actually Fails">
+        A coverage threshold nobody has ever seen fail is usually a threshold that{' '}
+        <em>can&apos;t</em> fail — a typo&apos;d key, a config file the runner never loads,
+        or a CI step that swallows the exit code. Once, deliberately set the threshold
+        to <code>100</code> and confirm the build goes red. Then set it back.
+      </InfoBox>
+
       <h2>CI Pipeline for Tests</h2>
 
-      <CodeBlock language="jsx" title=".github/workflows/test.yml">
+      <CodeBlock language="yaml" title=".github/workflows/test.yml">
 {`name: Test Suite
 on:
   pull_request:
@@ -383,22 +409,22 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24        # Active LTS; Node 20 went EOL April 2026
           cache: 'npm'
 
       - run: npm ci
 
+      # Thresholds live in vitest.config.ts, so this one command both runs the
+      # tests and fails the job if coverage regresses — no second pass needed.
       - name: Run Tests with Coverage
-        run: npx jest --coverage --ci --maxWorkers=2
+        run: npx vitest run --coverage
 
       - name: Upload Coverage
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage/lcov-report/
-
-      - name: Check Coverage Thresholds
-        run: npx jest --coverage --coverageThreshold='{"global":{"branches":80,"functions":80,"lines":80}}'`}
+          path: coverage/`}
       </CodeBlock>
 
       <h2>Test File Organization</h2>
@@ -531,7 +557,7 @@ test('shows success message after form submission', async () => {
 
       <CodeBlock language="jsx" title="Full Feature Test Suite — UserManagement">
 {`// UserManagement.test.jsx
-import { render, screen, waitFor } from '../test-utils';
+import { render, screen, waitFor, within } from '../test-utils';
 import userEvent from '@testing-library/user-event';
 import { server } from '../mocks/server';
 import { http, HttpResponse } from 'msw';

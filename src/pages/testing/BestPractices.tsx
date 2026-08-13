@@ -36,10 +36,29 @@ void premiumDiscount() {
     // Act
     BigDecimal total = pricing.calculateTotal(order);
 
-    // Assert
-    assertEquals(BigDecimal.valueOf(170.00), total);
+    // Assert — compareTo, NOT assertEquals (see the warning below)
+    assertThat(total).isEqualByComparingTo("170.00");
 }`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="Never assertEquals two BigDecimals">
+        <p>
+          <code>BigDecimal.equals()</code> compares <strong>value and scale</strong>,
+          so <code>170.0</code> and <code>170.00</code> are not equal to each other
+          even though they are the same number. A test written as{' '}
+          <code>assertEquals(BigDecimal.valueOf(170.00), total)</code> passes or fails
+          based on how many trailing zeros the production code happened to produce —
+          which changes the first time someone swaps a <code>multiply</code> for a{' '}
+          <code>divide</code>.
+        </p>
+        <p>
+          Compare numerically instead: AssertJ&apos;s{' '}
+          <code>assertThat(total).isEqualByComparingTo(&quot;170.00&quot;)</code>, or
+          with plain JUnit{' '}
+          <code>assertEquals(0, expected.compareTo(total))</code>. This is one of the
+          most common false-failure sources in Java money code.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="javascript" title="AAA in JavaScript">
 {`test('should apply 15% discount for premium members', () => {
@@ -156,6 +175,79 @@ void trialShouldExpireAfter30Days() {
 }`}
       </CodeBlock>
 
+      <h2>Root-Causing a Flaky Test</h2>
+      <p>
+        Knowing the usual causes is not the same as finding <em>this</em> one. The
+        mistake almost everyone makes is re-running the test until it fails again and
+        guessing. Work through it in order instead — each step rules out a whole
+        category:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Ask</th>
+            <th>How to Check</th>
+            <th>If Yes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Does it fail in isolation?</td>
+            <td>Run that single test 100&times; on its own</td>
+            <td>Self-contained bug: timing, randomness, or a real race in the code</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Does it fail only after other tests?</td>
+            <td>Run the whole file/suite repeatedly; try a fixed vs. random seed order</td>
+            <td>Order dependence — leaked global state, unreset mock, unclosed connection</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Does it pass serially but fail in parallel?</td>
+            <td>Re-run with one worker (<code>--runInBand</code> / <code>maxWorkers=1</code> / <code>-DforkCount=1</code>)</td>
+            <td>Shared resource — same DB rows, same port, same temp file, same fixture</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Does it fail only in CI?</td>
+            <td>Compare timezone, locale, CPU count, and clock; CI is slower and often UTC</td>
+            <td>Environment assumption — a hardcoded timeout or a local-timezone date</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Is the failure timing-shaped?</td>
+            <td>Look for <code>sleep</code>, fixed waits, or polling in the test or code</td>
+            <td>Replace the wait with a condition (<code>waitFor</code>, Awaitility)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <CodeBlock language="bash" title="Reproducing Flakiness on Purpose">
+{`# JavaScript — hammer one test, single worker, fail fast
+npx jest path/to/file.test.js -t "the flaky one" --runInBand --bail
+npx vitest run path/to/file.test.ts --repeat 100 --no-file-parallelism
+
+# Randomize order to expose test-order coupling
+npx jest --randomize            # Jest 30+
+npx vitest run --sequence.shuffle
+
+# Java — repeat a single test, then force serial execution
+@RepeatedTest(100)
+mvn test -Dtest=OrderServiceTest#flakyMethod -DforkCount=1`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="Quarantine Is a Timer, Not a Trash Can">
+        When you cannot fix a flaky test today, quarantine it — but attach a ticket, an
+        owner, and a date. A <code>@Disabled</code> / <code>test.skip</code> with no
+        follow-up is just a deleted test with extra steps, and the bug it was catching
+        is now invisible. Track the count of quarantined tests; if it only ever goes
+        up, the suite is dying.
+      </InfoBox>
+
       <h2>Test Data Builders &amp; Factories</h2>
       <p>
         Complex test data setup clutters tests. Use builders or factories to create
@@ -259,7 +351,7 @@ void overdraftThrows() {
     );
 
     assertEquals("Insufficient funds: balance=100, requested=150", ex.getMessage());
-    assertEquals(BigDecimal.valueOf(100), from.getBalance());
+    assertThat(from.getBalance()).isEqualByComparingTo("100");  // not assertEquals — scale
 }`}
       </CodeBlock>
 
@@ -351,13 +443,120 @@ void asyncProcessing() throws Exception {
         </tbody>
       </table>
 
-      <h2>Mutation Testing</h2>
+      <h2>What Coverage Actually Measures (and What It Can&apos;t)</h2>
       <p>
-        Mutation testing modifies your production code (introduces &quot;mutants&quot;) and checks
-        if your tests catch the change. Tools: PIT (Java) and Stryker (JavaScript). Run
-        periodically on critical modules — it&apos;s expensive but reveals gaps that line
-        coverage cannot.
+        Coverage tools answer exactly one question: <em>was this line executed while
+        the tests ran?</em> They do not — cannot — tell you whether anything was{' '}
+        <strong>asserted</strong> about it. This test earns 100% coverage of{' '}
+        <code>calculateTotal</code> and would still pass if the function returned
+        garbage:
       </p>
+
+      <CodeBlock language="javascript" title="100% Covered, 0% Tested">
+{`test('calculates the total', () => {
+  const pricing = new PricingService();
+  pricing.calculateTotal({ subtotal: 200, tier: 'PREMIUM' });
+  // ...and that's it. No expect(). Every line ran. Coverage: 100%.
+});`}
+      </CodeBlock>
+
+      <p>
+        Not all coverage metrics are equally strict either. They form a hierarchy, and
+        the number your dashboard shows is usually the weakest one:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Satisfied When</th>
+            <th>What It Still Misses</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Line / statement</td>
+            <td>Every line ran at least once</td>
+            <td>A line with a branch on it needs only one of its paths taken</td>
+          </tr>
+          <tr>
+            <td>Branch</td>
+            <td>Every <code>if</code> went both true and false</td>
+            <td>Compound conditions — <code>a &amp;&amp; b</code> counts as covered without ever varying <code>b</code></td>
+          </tr>
+          <tr>
+            <td>Condition / MC-DC</td>
+            <td>Each sub-condition independently affects the outcome</td>
+            <td>Whether the outcome was ever <em>checked</em></td>
+          </tr>
+          <tr>
+            <td>Mutation score</td>
+            <td>Deliberately broken code makes a test fail</td>
+            <td>Behavior you never wrote a test for at all</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <InfoBox variant="warning" title="Read Branch Coverage, Not Line Coverage">
+        If your team tracks a single number, make it <strong>branch</strong> coverage.
+        Line coverage on typical business code runs 10–20 points higher than branch
+        coverage for the same test suite, because a guard clause, a ternary, or a{' '}
+        <code>?.</code> counts as fully covered the moment either path is taken. An 85%
+        line / 62% branch project is usually reported as &quot;85% covered&quot;.
+      </InfoBox>
+
+      <h2>Mutation Testing — Grading the Tests Themselves</h2>
+      <p>
+        Coverage grades your <em>code</em>. Mutation testing grades your{' '}
+        <em>tests</em>. The tool makes small, deliberate edits to production code —{' '}
+        changing <code>&gt;</code> to <code>&gt;=</code>, swapping <code>+</code> for{' '}
+        <code>-</code>, replacing a return value with <code>null</code>, deleting a
+        method call — then reruns the suite. Each edit is a <strong>mutant</strong>. If
+        a test fails, the mutant is <strong>killed</strong> — your suite noticed. If
+        every test still passes, the mutant <strong>survived</strong>, and you have
+        found a line that is covered but not actually verified.
+      </p>
+
+      <CodeBlock language="java" title="A Surviving Mutant — Covered but Unverified">
+{`// Production code
+public boolean isEligibleForFreeShipping(Order order) {
+    return order.getTotal() > 50;      // MUTANT: change > to >=
+}
+
+// The only test — passes against BOTH the original and the mutant
+@Test
+void freeShippingForLargeOrders() {
+    assertTrue(service.isEligibleForFreeShipping(orderOf(100)));
+    assertFalse(service.isEligibleForFreeShipping(orderOf(10)));
+}
+// Line coverage: 100%. Mutation score: 0% for the boundary.
+// Nothing pins down what happens at exactly 50 — the classic off-by-one gap.
+
+// The test that kills it
+@Test
+void fiftyExactlyIsNotFreeShipping() {
+    assertFalse(service.isEligibleForFreeShipping(orderOf(50)));
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="bash" title="Running Mutation Testing">
+{`# Java — PIT (pitest)
+mvn org.pitest:pitest-maven:mutationCoverage
+# HTML report: target/pit-reports/index.html
+
+# JavaScript / TypeScript — Stryker
+npx stryker run
+# Config: stryker.config.json — set mutate globs to a single module first`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="How to Actually Adopt Mutation Testing">
+        It is slow — the suite reruns once per mutant, so a full run can take
+        minutes to hours. Don&apos;t bolt it onto every PR. Scope it to your highest-risk
+        module (pricing, permissions, the state machine), run it nightly or weekly, and
+        treat surviving mutants as a to-do list rather than a build gate. A mutation
+        score of 60–70% on critical code tells you far more than 90% line coverage
+        across the whole repo.
+      </InfoBox>
 
       <h2>Common Testing Mistakes</h2>
       <FlowChart

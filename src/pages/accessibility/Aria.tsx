@@ -220,6 +220,97 @@ function Aria() {
 // }`}
       </CodeBlock>
 
+      <h3>Live Region Pitfalls — Why Yours Probably Does Not Announce</h3>
+
+      <p>
+        Live regions are the single most common source of &quot;I added the ARIA and nothing
+        happened.&quot; Almost always it is one of these four.
+      </p>
+
+      <InfoBox variant="danger" title="1. The Region Must Already Exist in the DOM">
+        <p>
+          This is the big one. The screen reader has to be <em>watching</em> a region before its
+          contents change. If you mount the live region and its message in the same render, there was
+          nothing to observe changing, and most screen readers announce nothing at all.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="The Mount-and-Announce Bug">
+{`// BROKEN — the live region and its text appear together, so there
+// was never a "change" for the screen reader to notice.
+function Toast({ message }) {
+  return message
+    ? <div role="status">{message}</div>
+    : null;
+}
+
+// FIXED — the region is ALWAYS rendered and always empty-or-full.
+// Only its text content changes, which is what gets announced.
+function Toast({ message }) {
+  return (
+    <div role="status" className="sr-only">
+      {message}
+    </div>
+  );
+}
+
+// Same rule in vanilla JS: put the empty container in your HTML at
+// page load, then write into it later.
+//   <div id="announcer" role="status" class="sr-only"></div>
+//   document.getElementById('announcer').textContent = 'Saved';`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="2. Do Not Set Both role and aria-live">
+        <p>
+          <code>role=&quot;status&quot;</code> already implies{' '}
+          <code>aria-live=&quot;polite&quot;</code>, and <code>role=&quot;alert&quot;</code> implies{' '}
+          <code>aria-live=&quot;assertive&quot;</code>. Setting both is redundant, and some screen
+          reader/browser pairs have historically double-announced as a result. Pick one — the role is
+          usually the better choice because it also conveys meaning.
+        </p>
+        <p>
+          (The React example above uses both to make the mapping obvious while you are learning. In
+          production, <code>role=&quot;status&quot;</code> alone is enough.)
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="3. Identical Text Twice Announces Once">
+        <p>
+          If the new content is character-for-character the same as what is already there, there is no
+          change and nothing is announced. Two failed save attempts producing the same
+          &quot;Could not save&quot; means the user hears it once and assumes their second attempt did
+          nothing.
+        </p>
+        <p>
+          Fix it by clearing the region first (set it to <code>&#39;&#39;</code>, then set the message
+          on the next tick), or by including something that varies — a count, a timestamp.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="4. assertive Is Not &quot;Important&quot; — It Is &quot;Interrupt&quot;">
+        <p>
+          <code>assertive</code> cuts off whatever the user is currently listening to, mid-word. On a
+          page that fires several of them it becomes unusable. Reserve it for genuinely urgent,
+          time-sensitive information: a session about to expire, a submission that failed
+          destructively. Autosave confirmations, search counts, and loading states are all{' '}
+          <code>polite</code>.
+        </p>
+        <p>
+          A related trap: never put an <code>aria-live</code> region around content that updates
+          constantly (a timer, a live-updating count). The screen reader will talk over itself
+          indefinitely.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="tip" title="Do Not Hide a Live Region with display:none">
+        <p>
+          A region hidden with <code>display: none</code> or{' '}
+          <code>visibility: hidden</code> is removed from the accessibility tree entirely, so its
+          changes are never announced. Use the <code>.sr-only</code> clip technique shown above, which
+          keeps the element in the tree while making it visually imperceptible.
+        </p>
+      </InfoBox>
+
       {/* ── Disclosure Widgets ────────────────────────────── */}
       <h2>aria-expanded &amp; aria-controls</h2>
 
@@ -239,6 +330,7 @@ function Aria() {
     <div>
       <h3>
         <button
+          id={panelId + '-btn'}   // the panel points BACK at this id
           aria-expanded={isOpen}
           aria-controls={panelId}
           onClick={() => setIsOpen(!isOpen)}
@@ -258,6 +350,12 @@ function Aria() {
     </div>
   );
 }
+
+// NOTE the id on the button. An aria-labelledby that points at an id
+// which does not exist fails SILENTLY -- no console error, no visual
+// difference, the region just ends up with no accessible name. This
+// is the single most common ARIA bug, and only an a11y tree
+// inspection or an automated check will catch it.
 
 // Screen reader flow:
 // "Title, collapsed, button" → user presses Enter →

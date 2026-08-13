@@ -39,7 +39,8 @@ export default function MultiTenancy() {
   id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   tenant_id INT NOT NULL,
   customer_name VARCHAR(200) NOT NULL,
-  total NUMERIC(10,2) NOT NULL
+  total NUMERIC(10,2) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Every index that matters starts with tenant_id
@@ -50,14 +51,39 @@ CREATE INDEX idx_orders_tenant_created ON orders (tenant_id, created_at);
 -- makes this a database guarantee instead of an app-code discipline problem.
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 
+-- USING  = which existing rows this role can SEE (SELECT/UPDATE/DELETE)
+-- WITH CHECK = which rows it may WRITE. Omit WITH CHECK and a tenant can
+-- happily INSERT rows tagged with someone else's tenant_id.
 CREATE POLICY tenant_isolation ON orders
-  USING (tenant_id = current_setting('app.current_tenant')::int);
+  USING       (tenant_id = current_setting('app.current_tenant')::int)
+  WITH CHECK  (tenant_id = current_setting('app.current_tenant')::int);
 
--- The app sets this once per connection/request; Postgres enforces it on
--- every SELECT/UPDATE/DELETE automatically, even for hand-written queries.
-SET app.current_tenant = '42';
-SELECT * FROM orders;  -- only tenant 42's rows, even without an explicit WHERE`}
+-- SET LOCAL, not SET. LOCAL scopes the value to the current transaction, so a
+-- pooled connection cannot carry tenant 42's setting into tenant 99's next
+-- request. This is the single most common way RLS multi-tenancy goes wrong.
+BEGIN;
+  SET LOCAL app.current_tenant = '42';
+  SELECT * FROM orders;  -- only tenant 42's rows, without an explicit WHERE
+COMMIT;`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="RLS Does Nothing For the Table Owner — Verify This First">
+        <p>
+          <code>ENABLE ROW LEVEL SECURITY</code> is silently <strong>bypassed</strong> by the
+          table's owner and by any superuser or role with <code>BYPASSRLS</code>. Most
+          applications connect as the role that ran the migrations — which is the owner — so the
+          policy you just wrote protects nobody, and every test passes because every row is still
+          visible. Either connect as a separate non-owning role, or force it:
+        </p>
+        <p>
+          <code>ALTER TABLE orders FORCE ROW LEVEL SECURITY;</code>
+        </p>
+        <p>
+          Always prove isolation with a negative test: set the tenant to A, query for a row you
+          know belongs to B, and assert you get zero rows. An RLS setup that has never been tested
+          this way is usually not working.
+        </p>
+      </InfoBox>
 
       <InfoBox variant="tip" title="RLS Is the Safety Net, Not the Whole Strategy">
         <p>
@@ -65,6 +91,13 @@ SELECT * FROM orders;  -- only tenant 42's rows, even without an explicit WHERE`
           design — it's a database-enforced backstop for the inevitable missed{' '}
           <code>WHERE tenant_id = ?</code>. Combine both: explicit filtering for performance, RLS
           for the guarantee that a bug can't leak tenant B's rows into tenant A's response.
+        </p>
+        <p>
+          Keep filtering explicitly for a performance reason too. A policy is an extra qualifier
+          the planner must apply, and <code>current_setting(...)</code> is opaque to it, so RLS
+          alone can produce worse plans than the same predicate written into the query. Write{' '}
+          <code>WHERE tenant_id = ?</code> anyway and let RLS be the thing that catches you when
+          you forget.
         </p>
       </InfoBox>
 
@@ -146,11 +179,16 @@ INSERT INTO order_events (order_id, event_type, payload, sequence_number) VALUES
 -- Current state is DERIVED by folding events, not stored directly
 SELECT
   order_id,
-  jsonb_object_agg(event_type, payload ORDER BY sequence_number) AS event_history,
-  (array_agg(event_type ORDER BY sequence_number DESC))[1] AS latest_status
+  jsonb_agg(jsonb_build_object('type', event_type, 'data', payload)
+            ORDER BY sequence_number) AS event_history,
+  (array_agg(event_type ORDER BY sequence_number DESC))[1] AS latest_event
 FROM order_events
 WHERE order_id = 501
-GROUP BY order_id;`}
+GROUP BY order_id;
+-- Use jsonb_AGG (an array), not jsonb_OBJECT_agg keyed on event_type: the
+-- same event type recurs in a stream ('ItemAdded' three times), and
+-- jsonb_object_agg keeps only the last value per key — silently dropping
+-- most of the history you were trying to preserve.`}
       </CodeBlock>
 
       <CodeBlock language="sql" title="Snapshots — Avoid Replaying Millions of Events" showLineNumbers={true}>
@@ -163,14 +201,25 @@ CREATE TABLE order_snapshots (
   PRIMARY KEY (order_id, as_of_sequence)
 );
 
--- Rebuild current state: load latest snapshot, replay only events AFTER it
-SELECT s.state, e.*
-FROM order_snapshots s
+-- Rebuild current state: load the LATEST snapshot, replay only events after it.
+-- Pick the snapshot FIRST — joining every snapshot and sorting afterwards
+-- re-reads the entire history you were trying to skip.
+WITH latest_snapshot AS (
+  SELECT state, as_of_sequence
+  FROM order_snapshots
+  WHERE order_id = 501
+  ORDER BY as_of_sequence DESC
+  LIMIT 1
+)
+SELECT s.state, e.event_type, e.payload, e.sequence_number
+FROM latest_snapshot s
 LEFT JOIN order_events e
-  ON e.order_id = s.order_id AND e.sequence_number > s.as_of_sequence
-WHERE s.order_id = 501
-ORDER BY s.as_of_sequence DESC, e.sequence_number
-LIMIT 1000;  -- snapshot + only the small tail of events since it was taken`}
+  ON e.order_id = 501
+ AND e.sequence_number > s.as_of_sequence
+ORDER BY e.sequence_number;
+-- LEFT JOIN so a freshly-snapshotted entity with no newer events still
+-- returns its state row. The tail is bounded by your snapshot interval,
+-- so this stays fast no matter how long the entity has existed.`}
       </CodeBlock>
 
       <InfoBox variant="info" title="Why Bother? What You Get For Free">

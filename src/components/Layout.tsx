@@ -1,9 +1,25 @@
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo, useSyncExternalStore } from 'react';
 import Sidebar from './Sidebar';
 import { sections } from '../data/sections';
 import { CommandPalette, type CommandItem } from './CommandPalette';
 import { useCommandPaletteShortcut } from './useCommandPaletteShortcut';
+
+// Mirrors the `@media (max-width: 768px)` breakpoint in global.css, which is
+// what actually turns the sidebar into an overlay drawer.
+const MOBILE_QUERY = '(max-width: 768px)';
+
+function useIsMobile(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mql = window.matchMedia(MOBILE_QUERY);
+      mql.addEventListener('change', onChange);
+      return () => mql.removeEventListener('change', onChange);
+    },
+    () => window.matchMedia(MOBILE_QUERY).matches,
+    () => false,
+  );
+}
 
 function HomePage() {
   return (
@@ -28,10 +44,13 @@ function HomePage() {
         gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
         gap: '1rem',
       }}>
-        {sections.map(section => (
+        {/* A section with no lessons would have crashed the whole home page on
+            `section.lessons[0].path` (TypeScript can't catch it — the index
+            signature is not checked). Skip it instead. */}
+        {sections.filter(section => section.lessons.length > 0).map(section => (
           <Link
             key={section.id}
-            to={section.lessons[0].path}
+            to={section.lessons[0]!.path}
             style={{
               background: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
@@ -91,16 +110,42 @@ export default function Layout() {
   const navigate = useNavigate();
   const isHome = location.pathname === '/';
   const mainRef = useRef<HTMLElement>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const isMobile = useIsMobile();
 
-  // Scroll to top on route change
+  // The mobile drawer is open only for the route it was opened on, so picking
+  // a lesson closes it for free. Previously this was a boolean cleared from the
+  // route-change effect, which cost an extra render pass per navigation and
+  // left the drawer briefly covering the freshly-loaded page.
+  const [drawerOpenedAt, setDrawerOpenedAt] = useState<string | null>(null);
+  const mobileOpen = drawerOpenedAt === location.pathname;
+  const setMobileOpen = useCallback(
+    (open: boolean) => setDrawerOpenedAt(open ? location.pathname : null),
+    [location.pathname],
+  );
+
+  // Scroll to top on route change.
   useEffect(() => {
     if (mainRef.current) {
       mainRef.current.scrollTop = 0;
     }
-    setMobileOpen(false);
   }, [location.pathname]);
+
+  // Escape closes the mobile drawer and returns focus to the button that
+  // opened it. Previously the drawer could only be dismissed by tapping the
+  // backdrop, which is unreachable with a keyboard.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileOpen(false);
+        menuBtnRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileOpen, setMobileOpen]);
 
   // Cmd-K / Ctrl-K toggles the palette
   useCommandPaletteShortcut(useCallback(() => setPaletteOpen((o) => !o), []));
@@ -125,8 +170,12 @@ export default function Layout() {
     <div style={{ display: 'flex', height: '100vh' }}>
       {/* Mobile hamburger */}
       <button
+        ref={menuBtnRef}
+        type="button"
         className="mobile-menu-btn"
-        onClick={() => setMobileOpen(true)}
+        onClick={() => setMobileOpen(!mobileOpen)}
+        aria-expanded={mobileOpen}
+        aria-controls="site-sidebar"
         style={{
           display: 'none',
           position: 'fixed',
@@ -162,7 +211,17 @@ export default function Layout() {
         />
       )}
 
-      <div className={`sidebar-container ${mobileOpen ? 'sidebar-open' : ''}`}>
+      {/* `inert` while the drawer is off-screen on mobile: the sidebar is only
+          translated out of view, so without this every one of its ~200 links
+          stayed in the tab order and Tab walked focus through invisible
+          content. The attribute is ignored at desktop widths where the
+          sidebar is always visible (mobileOpen is irrelevant there), so it is
+          driven by a media query read rather than by mobileOpen alone. */}
+      <div
+        id="site-sidebar"
+        className={`sidebar-container ${mobileOpen ? 'sidebar-open' : ''}`}
+        inert={isMobile && !mobileOpen}
+      >
         <Sidebar />
       </div>
       <main ref={mainRef} style={{
@@ -173,12 +232,16 @@ export default function Layout() {
         {isHome ? <HomePage /> : <Outlet />}
       </main>
 
-      <CommandPalette
-        open={paletteOpen}
-        onClose={() => setPaletteOpen(false)}
-        items={commandItems}
-        placeholder="Jump to lesson… (Cmd-K)"
-      />
+      {/* Mounted only while open so its query/selection reset for free on each
+          open, and so the overlay isn't in the a11y tree the rest of the time. */}
+      {paletteOpen && (
+        <CommandPalette
+          open
+          onClose={() => setPaletteOpen(false)}
+          items={commandItems}
+          placeholder="Jump to lesson… (Cmd-K)"
+        />
+      )}
     </div>
   );
 }

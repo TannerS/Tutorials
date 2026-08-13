@@ -247,6 +247,15 @@
   .poster-card p.poster-cap { color: #222 !important; }
 
   .poster-code-wrap { background: #fbfbfc !important; border: 1pt solid #ccc !important; }
+  /* global.css's print block styles every `pre` with its own border + padding.
+     Inside a poster card that lands *inside* .poster-code-wrap's border, so
+     each snippet printed with a double rule. Re-neutralise the inner pre. */
+  .poster-code-wrap pre {
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: none !important;
+  }
   .poster-code { color: #111 !important; }
   .poster-code .token.keyword,
   .poster-code .token.boolean,

@@ -74,6 +74,40 @@ export default function Mocking() {
         called the right methods (behavior verification). Both have their place.
       </InfoBox>
 
+      <InfoBox variant="warning" title="The Tools Don't Use These Words the Way the Taxonomy Does">
+        <p>
+          The five-way split above comes from Gerard Meszaros&apos;{' '}
+          <em>xUnit Test Patterns</em>, and it describes <strong>roles</strong>, not
+          classes. Real libraries hand you one object that can play several of them,
+          and they all named it &quot;mock&quot;:
+        </p>
+        <ul>
+          <li>
+            <code>jest.fn()</code> / <code>vi.fn()</code> is, in taxonomy terms, a{' '}
+            <strong>spy</strong> — it records every call. Add{' '}
+            <code>.mockReturnValue()</code> and it is also a <strong>stub</strong>. It
+            only becomes a <strong>mock</strong> when you assert on the recording.
+          </li>
+          <li>
+            Mockito&apos;s <code>mock()</code> is likewise a recording stub. In the
+            strict sense a mock fails the moment an <em>unexpected</em> call happens;
+            Mockito instead returns a default and lets you check afterwards with{' '}
+            <code>verify()</code>. (<code>Mockito.verifyNoMoreInteractions()</code> is
+            how you get closer to true mock semantics.)
+          </li>
+          <li>
+            Mockito&apos;s <code>spy()</code> means something different again: a{' '}
+            <em>partial</em> double wrapping a real object, where unstubbed methods run
+            the real implementation.
+          </li>
+        </ul>
+        <p>
+          Why it matters in practice: the words are load-bearing in code review. &quot;This
+          should be a stub, not a mock&quot; means <em>stop asserting on the interaction and
+          assert on the result instead</em> — a real design comment, not pedantry.
+        </p>
+      </InfoBox>
+
       <h2>Mockito — Java Mocking</h2>
 
       <h3>Setup</h3>
@@ -234,17 +268,46 @@ test('should display user name', async () => {
 
       <h3>jest.spyOn() — Spying on Real Methods</h3>
       <CodeBlock language="javascript" title="Spying Without Replacing">
-{`import * as mathUtils from './mathUtils';
+{`const logger = { warn: (msg) => console.warn(msg) };
 
-test('should call multiply internally', () => {
-  const spy = jest.spyOn(mathUtils, 'multiply');
-  const result = mathUtils.square(5);
+test('warns when the cache is cold', () => {
+  const spy = jest.spyOn(logger, 'warn');
 
-  expect(result).toBe(25);
-  expect(spy).toHaveBeenCalledWith(5, 5);
-  spy.mockRestore();
+  cache.get('missing-key', logger);
+
+  expect(spy).toHaveBeenCalledWith(expect.stringMatching(/cache miss/i));
+  spy.mockRestore();   // put the real method back
 });`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="spyOn Does Not Work on ES Module Namespaces">
+        <p>
+          The example you will see everywhere —{' '}
+          <code>import * as utils from &apos;./utils&apos;</code> then{' '}
+          <code>jest.spyOn(utils, &apos;helper&apos;)</code> — is a trap, and it fails
+          for two independent reasons:
+        </p>
+        <ul>
+          <li>
+            <strong>The namespace object is read-only.</strong> It only ever worked
+            because Babel/ts-jest rewrote your ESM into CommonJS objects. Under native
+            ESM (Vitest, or Jest with real ESM) the module namespace is sealed and you
+            get <code>TypeError: Cannot redefine property</code>.
+          </li>
+          <li>
+            <strong>Internal calls don&apos;t go through the namespace anyway.</strong>{' '}
+            If <code>square()</code> calls <code>multiply()</code> directly, it uses the
+            local binding — patching the export cannot intercept it, so the spy records
+            nothing even where the assignment succeeds.
+          </li>
+        </ul>
+        <p>
+          Spy on objects you own and pass around (as above), or mock the whole module
+          with <code>jest.mock()</code> / <code>vi.mock()</code>. If you find yourself
+          wanting to spy on one function that another function in the same file calls,
+          that is the design telling you the collaborator should be a parameter.
+        </p>
+      </InfoBox>
 
       <h3>Mocking Timers</h3>
       <CodeBlock language="javascript" title="Controlling Time in Tests">

@@ -157,11 +157,27 @@ COMMIT;
 -- TX2: INSERT INTO orders (status) VALUES ('pending'); COMMIT;
 -- TX1: SELECT COUNT(*) FROM orders WHERE status = 'pending';  -> still 5 in Postgres's REPEATABLE READ
 
--- Setting isolation level
-SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-BEGIN;
-  -- your queries here see a consistent snapshot
+-- Setting the isolation level. ORDER MATTERS — this is the usual mistake:
+-- SET TRANSACTION only applies INSIDE a transaction block, and only before
+-- the first query. Issued on its own it does nothing but emit
+-- "WARNING: SET TRANSACTION can only be used in transaction blocks".
+
+-- Option A: declare it on BEGIN (clearest)
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+  -- your queries here see one consistent snapshot
 COMMIT;
+
+-- Option B: SET as the first statement AFTER BEGIN
+BEGIN;
+  SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+  -- ...
+COMMIT;
+
+-- Option C: change the default for the whole session (rarely what you want)
+SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+-- The snapshot is taken at the first STATEMENT, not at BEGIN. An idle
+-- "BEGIN;" followed 10 minutes later by a SELECT still sees fresh data.
 
 -- PostgreSQL default is READ COMMITTED
 -- MySQL InnoDB default is REPEATABLE READ`}
@@ -192,12 +208,24 @@ SELECT * FROM orders WHERE id = 100 FOR SHARE;
 SELECT * FROM employees WHERE id = 1 FOR NO KEY UPDATE;
 
 -- TABLE-LEVEL LOCKS (heavy, use sparingly)
-LOCK TABLE inventory IN EXCLUSIVE MODE;  -- blocks all other access
-LOCK TABLE inventory IN SHARE MODE;      -- blocks writes, allows reads
+LOCK TABLE inventory IN SHARE MODE;             -- blocks writes, allows reads
+LOCK TABLE inventory IN EXCLUSIVE MODE;         -- blocks writes AND other
+                                                -- lockers, but plain SELECT
+                                                -- still runs (ACCESS SHARE)
+LOCK TABLE inventory IN ACCESS EXCLUSIVE MODE;  -- THIS is the one that blocks
+                                                -- literally everything,
+                                                -- including SELECT
+
+-- Note the naming trap: "EXCLUSIVE" is NOT the strongest mode, despite the
+-- name. Only ACCESS EXCLUSIVE conflicts with ACCESS SHARE (what SELECT takes).
+-- ACCESS EXCLUSIVE is what most ALTER TABLE, DROP, TRUNCATE and
+-- REFRESH MATERIALIZED VIEW (non-CONCURRENTLY) acquire — which is exactly why
+-- an unguarded migration can stall every reader on the table.
 
 -- Lock modes from weakest to strongest:
 -- ACCESS SHARE < ROW SHARE < ROW EXCLUSIVE < SHARE UPDATE EXCLUSIVE
--- < SHARE < SHARE ROW EXCLUSIVE < EXCLUSIVE < ACCESS EXCLUSIVE`}
+-- < SHARE < SHARE ROW EXCLUSIVE < EXCLUSIVE < ACCESS EXCLUSIVE
+--    ^ taken by SELECT                        ^ taken by ALTER/DROP/TRUNCATE`}
       </CodeBlock>
 
       <h2>Locking Strategies</h2>
@@ -251,6 +279,84 @@ WHERE id = 42 AND version = 3;  -- version check!
         </p>
       </InfoBox>
 
+      <h2>NOWAIT and SKIP LOCKED — Choosing How to Fail</h2>
+
+      <CodeBlock language="sql" title="The three waiting behaviours of FOR UPDATE" showLineNumbers={true}>
+{`-- 1. DEFAULT: block until the lock is free (or lock_timeout fires)
+SELECT * FROM inventory WHERE id = 42 FOR UPDATE;
+
+-- 2. NOWAIT: error immediately (SQLSTATE 55P03, lock_not_available)
+--    if the row is locked. Use when "someone else is editing this" is a
+--    real answer you can show the user right now.
+SELECT * FROM inventory WHERE id = 42 FOR UPDATE NOWAIT;
+
+-- 3. SKIP LOCKED: silently omit locked rows from the result.
+--    Use for work queues; NEVER for a query whose row count must be correct,
+--    because it quietly returns an incomplete set by design.
+SELECT * FROM job_queue WHERE status = 'pending'
+ORDER BY created_at LIMIT 1 FOR UPDATE SKIP LOCKED;`}
+      </CodeBlock>
+
+      <h2>Advisory Locks — Mutexes That Aren't About Rows</h2>
+
+      <p>
+        Every lock so far protects a row or a table. <strong>Advisory locks</strong> protect
+        whatever <em>you</em> decide they mean: they are named 64-bit mutexes Postgres tracks for
+        you but attaches no semantics to. This is how you get a distributed lock across
+        application instances without adding Redis or ZooKeeper — the database you already have
+        is already a consensus point.
+      </p>
+
+      <CodeBlock language="sql" title="Session vs Transaction Advisory Locks" showLineNumbers={true}>
+{`-- TRANSACTION-scoped (use this one). Released automatically at COMMIT or
+-- ROLLBACK — impossible to leak, even if the client crashes mid-transaction.
+BEGIN;
+  SELECT pg_advisory_xact_lock(hashtext('nightly-billing-run'));
+  -- ... only one worker in the whole fleet is inside this block ...
+COMMIT;
+
+-- Non-blocking variant: returns TRUE if acquired, FALSE immediately if not.
+-- The right shape for a cron job that should skip rather than pile up.
+SELECT pg_try_advisory_xact_lock(hashtext('nightly-billing-run'));
+
+-- SESSION-scoped: held until explicitly released or the connection drops.
+SELECT pg_advisory_lock(12345);
+SELECT pg_advisory_unlock(12345);
+-- DANGER with a connection pooler: the lock outlives your request and rides
+-- the pooled connection into the next one. Prefer the _xact_ variants.
+
+-- Two-int form gives you a namespace: (class_id, object_id)
+SELECT pg_advisory_xact_lock(42, user_id) FROM users WHERE id = 99;
+
+-- Who holds what right now:
+SELECT pid, classid, objid, granted
+FROM pg_locks WHERE locktype = 'advisory';`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The Two Jobs Advisory Locks Actually Do">
+        <p>
+          <strong>1. Single-runner enforcement.</strong> "Only one instance may run the nightly
+          job / this migration / this cache rebuild." Wrapping the job in{' '}
+          <code>pg_try_advisory_xact_lock</code> and exiting quietly on <code>FALSE</code> is
+          simpler and more reliable than a leader-election library.
+        </p>
+        <p>
+          <strong>2. Locking a row that does not exist yet.</strong>{' '}
+          <code>SELECT ... FOR UPDATE</code> can only lock rows that are already there, so it
+          cannot serialize "check if this user exists, and if not create them" — two transactions
+          both find nothing and both insert. An advisory lock keyed on the email hash serializes
+          the whole check-then-insert. (For that specific case{' '}
+          <code>INSERT ... ON CONFLICT</code> is still the better answer; advisory locks earn
+          their keep when the work between check and insert is more than one statement.)
+        </p>
+        <p>
+          Caveat worth knowing: advisory locks do <strong>not</strong> participate in the deadlock
+          detector's usual guarantees around ordering the way row locks do — two sessions taking
+          two advisory locks in opposite orders can still deadlock, and Postgres will still detect
+          it. Same discipline applies: consistent order.
+        </p>
+      </InfoBox>
+
       <h2>Deadlocks</h2>
 
       <p>
@@ -271,14 +377,27 @@ WHERE id = 42 AND version = 3;  -- version check!
 -- TX2: UPDATE accounts SET balance = 400 WHERE id = 1; -- WAITS for TX1
 -- DEADLOCK! PostgreSQL detects this and kills one transaction.
 
--- PREVENTION: Always lock rows in the same order
+-- PREVENTION: acquire the locks up front, in a deterministic order,
+-- THEN do the work. Note the two concerns are separate:
+--   lock ORDER prevents the deadlock;
+--   the transfer DIRECTION must stay whatever the business asked for.
 BEGIN;
-  -- Sort IDs and always lock lower ID first
-  UPDATE accounts SET balance = balance - 100
-  WHERE id = LEAST(1, 2);  -- always lock the lower ID first
-  UPDATE accounts SET balance = balance + 100
-  WHERE id = GREATEST(1, 2);
+  -- One statement locks BOTH rows, ordered by id, so every transaction in the
+  -- system queues them in the same sequence and no cycle can form.
+  SELECT id FROM accounts
+  WHERE id IN (:from_id, :to_id)
+  ORDER BY id
+  FOR UPDATE;
+
+  -- Now apply the transfer in its real direction — NOT lowest-id-first.
+  UPDATE accounts SET balance = balance - 100 WHERE id = :from_id;
+  UPDATE accounts SET balance = balance + 100 WHERE id = :to_id;
 COMMIT;
+
+-- A tempting one-liner you'll see is  WHERE id = LEAST(:a, :b)  /
+-- GREATEST(:a, :b). Don't: it debits whichever account has the smaller id,
+-- so a transfer from 7 to 3 silently runs backwards. Order the LOCKING,
+-- never the money.
 
 -- Set a lock timeout to fail fast
 SET lock_timeout = '5s';  -- error after 5 seconds of waiting

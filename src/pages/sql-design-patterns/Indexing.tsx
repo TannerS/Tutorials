@@ -57,13 +57,30 @@ CREATE INDEX idx_active_orders ON orders (customer_id, created_at)
 WHERE status = 'active';
 -- Much smaller, much faster for the common query pattern
 
--- Expression index — index on computed values
-CREATE INDEX idx_orders_year ON orders (EXTRACT(YEAR FROM created_at));
--- Enables: WHERE EXTRACT(YEAR FROM created_at) = 2024
+-- Expression index — index on computed values.
+-- The expression MUST be IMMUTABLE. This is the classic failure:
+--   CREATE INDEX idx_orders_year ON orders (EXTRACT(YEAR FROM created_at));
+--   ERROR: functions in index expression must be marked IMMUTABLE
+-- ...because created_at is TIMESTAMPTZ and the year depends on the session's
+-- TimeZone setting, making the extract merely STABLE. Pin the zone to make it
+-- immutable again:
+CREATE INDEX idx_orders_year
+  ON orders (EXTRACT(YEAR FROM created_at AT TIME ZONE 'UTC'));
+-- Enables: WHERE EXTRACT(YEAR FROM created_at AT TIME ZONE 'UTC') = 2024
+--
+-- But for a whole-year filter, DON'T index the expression at all. A plain
+-- B-tree on created_at answers it with a range scan, and stays useful for
+-- every other time window you'll ever ask for:
+CREATE INDEX idx_orders_created_at ON orders (created_at);
+-- WHERE created_at >= '2024-01-01' AND created_at < '2025-01-01'
+-- Expression indexes earn their place when the expression is NOT rewritable
+-- as a range — LOWER(), a JSONB path, a computed score.
 
--- Case-insensitive search index
+-- Case-insensitive search index (LOWER is immutable, so this is fine)
 CREATE INDEX idx_users_email_lower ON users (LOWER(email));
 -- Enables: WHERE LOWER(email) = 'alice@example.com'
+-- The query must use the SAME expression, character for character, or the
+-- planner will not match it to the index.
 
 -- Concurrent index creation (doesn't lock the table)
 CREATE INDEX CONCURRENTLY idx_big_table_col ON big_table (col);
@@ -89,7 +106,10 @@ CREATE INDEX idx_tags ON articles USING gin (tags);
 
 CREATE INDEX idx_doc_search ON documents
 USING gin (to_tsvector('english', content));
--- Enables: WHERE to_tsvector('english', content) @@ to_tsquery('indexing')
+-- Enables: WHERE to_tsvector('english', content) @@ to_tsquery('english', 'indexing')
+-- Pass the config explicitly on BOTH sides. The 1-arg to_tsvector(content)
+-- reads default_text_search_config, which makes it STABLE — Postgres will
+-- refuse to build the index on it at all.
 
 -- GiST index: geometric data, ranges, nearest-neighbor
 CREATE INDEX idx_location ON stores USING gist (coordinates);
@@ -111,7 +131,7 @@ CREATE INDEX idx_logs_ts ON event_logs USING brin (created_at);
       </InfoBox>
 
       <InfoBox variant="warning" title="When NOT to Index">
-        <p><strong>Small tables:</strong> Sequential scan is faster than index overhead for tables under ~10K rows.</p>
+        <p><strong>Small tables:</strong> Once a table fits in a handful of pages, a sequential scan beats the index lookup and the planner will ignore your index anyway. The threshold is far lower than people assume — think hundreds of rows, not the ~10K figure that gets repeated. Don't guess: <code>EXPLAIN</code> tells you what the planner actually chose.</p>
         <p><strong>Low selectivity columns:</strong> A boolean column with 50/50 distribution — the index won't help.</p>
         <p><strong>Write-heavy tables:</strong> Every INSERT/UPDATE/DELETE must also update every index. Audit/log tables often shouldn't have many indexes.</p>
         <p><strong>Columns you never filter/join/sort on:</strong> Sounds obvious, but audit your existing indexes — dead indexes waste write performance.</p>
@@ -191,23 +211,34 @@ WHERE customer_id = 12345 AND status = 'shipped';
       <h2>Index Maintenance & Bloat</h2>
 
       <CodeBlock language="sql" title="Index Health Monitoring" showLineNumbers={true}>
-{`-- Find indexes that haven't been used since last stats reset
+{`-- Find indexes that haven't been used since the last stats reset.
+-- NOTE the column names: pg_stat_user_indexes exposes relname/indexrelname,
+-- NOT tablename/indexname. (Those belong to the pg_indexes VIEW — mixing the
+-- two up is the usual reason this query errors with "column does not exist".)
 SELECT
-  schemaname, tablename, indexname,
-  idx_scan AS times_used,
+  schemaname,
+  relname      AS table_name,
+  indexrelname AS index_name,
+  idx_scan     AS times_used,
   pg_size_pretty(pg_relation_size(indexrelid)) AS index_size
 FROM pg_stat_user_indexes
 WHERE idx_scan = 0
   AND indexrelid NOT IN (
-    SELECT conindid FROM pg_constraint  -- skip unique/pk constraints
+    SELECT conindid FROM pg_constraint WHERE conindid <> 0  -- skip unique/pk
   )
 ORDER BY pg_relation_size(indexrelid) DESC;
 
--- Check index bloat (ratio of dead tuples)
+-- Biggest indexes by size, with their usage — read the two together.
+-- (This is size + traffic, NOT a bloat measurement: Postgres core has no
+-- cheap exact bloat figure. For real bloat estimates use the pgstattuple
+-- extension — pgstatindex('idx_name') reports avg_leaf_density — or one of
+-- the well-known bloat-estimate queries.)
 SELECT
-  schemaname, tablename, indexname,
+  schemaname,
+  relname      AS table_name,
+  indexrelname AS index_name,
   pg_size_pretty(pg_relation_size(indexrelid)) AS index_size,
-  idx_scan AS scans,
+  idx_scan     AS scans,
   idx_tup_read AS tuples_read,
   idx_tup_fetch AS tuples_fetched
 FROM pg_stat_user_indexes

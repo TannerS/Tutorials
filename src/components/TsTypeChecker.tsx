@@ -195,7 +195,6 @@ export default function TsTypeChecker() {
       runDiagnostics();
     }, 250);
     return () => window.clearTimeout(debounceRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, status]);
 
   // Strict mode is a compilerOption fixed at environment-creation time, so

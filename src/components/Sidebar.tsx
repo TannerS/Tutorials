@@ -52,32 +52,43 @@ export default function Sidebar() {
   const { theme, toggleTheme } = useTheme();
   const [search, setSearch] = useState('');
 
-  // Which section is open (one at a time)
-  const [expandedSection, setExpandedSection] = useState<string | null>(() => {
-    const current = sections.find((s) => isSectionActive(location.pathname, s.id));
-    return current ? current.id : null;
-  });
+  // Which section is open (one at a time). This is DERIVED from the route
+  // rather than synced into state by an effect — the effect version re-rendered
+  // the whole ~200-link tree a second time on every navigation, and briefly
+  // painted the previous section as the open one.
+  const activeSectionId =
+    sections.find((s) => isSectionActive(location.pathname, s.id))?.id ?? null;
+
+  // A manual open/close overrides the route-derived default, but only until the
+  // next navigation — hence recording which path the choice was made on.
+  const [sectionOverride, setSectionOverride] =
+    useState<{ path: string; id: string | null } | null>(null);
+  const expandedSection =
+    sectionOverride && sectionOverride.path === location.pathname
+      ? sectionOverride.id
+      : activeSectionId;
 
   // Which groups are open (all open by default, at every nesting depth)
   const [expandedGroups, setExpandedGroups] = useState(
     () => new Set(allGroupIds(groups))
   );
 
-  // Auto-expand current section + every ancestor group on navigation
+  // Re-expand every ancestor group when navigating into a group the user had
+  // previously collapsed. This one genuinely has to be an effect (it reacts to
+  // navigation, an external event, and must not clobber manual collapses on
+  // unrelated renders); the functional update below already bails out when
+  // nothing would change, so it can't cascade.
   useEffect(() => {
-    const current = sections.find(s => isSectionActive(location.pathname, s.id));
-    if (current) {
-      setExpandedSection(current.id);
-      const groupId = sectionGroupMap[current.id];
-      if (groupId) {
-        const chain = ancestorChain(groupId);
-        setExpandedGroups(prev => {
-          if (chain.every((id) => prev.has(id))) return prev;
-          return new Set([...prev, ...chain]);
-        });
-      }
-    }
-  }, [location.pathname]);
+    if (!activeSectionId) return;
+    const groupId = sectionGroupMap[activeSectionId];
+    if (!groupId) return;
+    const chain = ancestorChain(groupId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setExpandedGroups(prev => {
+      if (chain.every((id) => prev.has(id))) return prev;
+      return new Set([...prev, ...chain]);
+    });
+  }, [activeSectionId]);
 
   const toggleGroup = (groupId: string): void => {
     setExpandedGroups((prev) => {
@@ -89,7 +100,10 @@ export default function Sidebar() {
   };
 
   const toggleSection = (sectionId: string): void => {
-    setExpandedSection((prev) => (prev === sectionId ? null : sectionId));
+    setSectionOverride({
+      path: location.pathname,
+      id: expandedSection === sectionId ? null : sectionId,
+    });
   };
 
   // Renders one section's header + (if open) its lesson list. `depth` is the
@@ -104,7 +118,9 @@ export default function Sidebar() {
     return (
       <div key={section.id}>
         <button
+          type="button"
           onClick={() => toggleSection(section.id)}
+          aria-expanded={isSectionOpen}
           style={{
             width: '100%',
             background: 'none',
@@ -141,7 +157,7 @@ export default function Sidebar() {
               color: 'var(--text-muted)',
               transform: isSectionOpen ? 'rotate(90deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s ease',
-            }}>▶</span>
+            }} aria-hidden="true">▶</span>
           </div>
         </button>
 
@@ -203,7 +219,9 @@ export default function Sidebar() {
     return (
       <div key={group.id}>
         <button
+          type="button"
           onClick={() => toggleGroup(group.id)}
+          aria-expanded={isGroupOpen}
           style={{
             width: '100%',
             background: 'none',
@@ -235,7 +253,7 @@ export default function Sidebar() {
             color: 'var(--text-muted)',
             transform: isGroupOpen ? 'rotate(90deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s ease',
-          }}>▶</span>
+          }} aria-hidden="true">▶</span>
         </button>
 
         {isGroupOpen && (

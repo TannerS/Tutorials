@@ -224,6 +224,38 @@ function ChatRoom({ roomId }) {
         </table>
       </InfoBox>
 
+      <InfoBox variant="success" title="React 19.2: useEffectEvent is the version to write today">
+        <p>
+          The ref trick above is the pre-2026 workaround. React 19.2 ships{' '}
+          <code>useEffectEvent</code>, which does the same job with the intent stated out loud —
+          &quot;this part of the effect reads the latest values but is <em>not</em> reactive&quot;:
+        </p>
+        <pre style={{ margin: '0.5rem 0 0.75rem', fontSize: '0.82rem', overflowX: 'auto' }}>{
+`function ChatRoom({ roomId }) {
+  const [messages, setMessages] = useState([]);
+
+  const poll = useEffectEvent(() => {
+    fetch(\`/api/rooms/\${roomId}/messages\`)   // always the latest roomId
+      .then(r => r.json()).then(setMessages);
+  });
+
+  useEffect(() => {
+    const id = setInterval(poll, 5000);
+    return () => clearInterval(id);
+  }, []);   // honest: nothing in here is reactive
+}`
+        }</pre>
+        <p style={{ marginBottom: 0 }}>
+          <strong>But read the example above carefully before copying either version.</strong> In
+          this specific case, <em>not</em> re-running on <code>roomId</code> is arguably the bug:
+          switching rooms should probably cancel the in-flight poll and reset{' '}
+          <code>messages</code> immediately, which only the <code>[roomId]</code> version does.
+          Suppressing a dependency is a decision about behaviour, not a performance trick — the
+          ref and <code>useEffectEvent</code> are both ways to say &quot;I meant to do this,&quot;
+          not ways to silence the linter.
+        </p>
+      </InfoBox>
+
       <h2>Anti-Pattern 4: Race Conditions in Data Fetching</h2>
 
       <CodeBlock language="jsx" title="Data Fetching Race Condition">

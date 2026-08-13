@@ -123,7 +123,7 @@ public class ApiExceptionHandler {
 }`}
       </CodeBlock>
 
-      <CodeBlock language="java" title="Testing the Mapping — RFC 7807 ProblemDetail Assertions">
+      <CodeBlock language="java" title="Testing the Mapping — RFC 9457 ProblemDetail Assertions">
 {`@Test
 @DisplayName("out-of-stock throws 409 with a structured ProblemDetail body")
 void insufficientInventoryReturns409() throws Exception {
@@ -153,7 +153,10 @@ void orderNotFoundReturns404() throws Exception {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="info" title="Why RFC 7807 ProblemDetail Matters for Tests">
+      <InfoBox variant="info" title="Why RFC 9457 ProblemDetail Matters for Tests">
+        The spec is <strong>RFC 9457</strong>, which obsoleted RFC 7807 in 2023 — the
+        media type (<code>application/problem+json</code>) and every field name are
+        unchanged, so most material still cites 7807 and nothing you test breaks.{' '}
         Spring&apos;s built-in <code>ProblemDetail</code> gives error responses a
         predictable shape (<code>type</code>, <code>title</code>, <code>status</code>,{' '}
         <code>detail</code>, <code>instance</code>, plus custom properties). Testing

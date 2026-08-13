@@ -32,7 +32,23 @@ export default function Tls() {
       <InfoBox variant="info" title="The Three Pillars of TLS">
         <p><strong>Confidentiality</strong> — Data is encrypted using AES-256-GCM. Eavesdroppers see gibberish.</p>
         <p><strong>Authentication</strong> — X.509 certificates prove you are talking to the real server, not an impostor.</p>
-        <p><strong>Integrity</strong> — HMAC ensures data has not been tampered with in transit.</p>
+        <p><strong>Integrity</strong> — Every record carries an authentication tag; any tampering makes decryption fail outright.</p>
+      </InfoBox>
+
+      <InfoBox variant="note" title="Where Integrity Actually Comes From (a Common Interview Trip-Up)">
+        <p>
+          People often say &quot;TLS uses HMAC for integrity.&quot; That was true of TLS 1.2 and earlier,
+          which encrypted with a cipher like AES-CBC and then bolted on a separate HMAC — the
+          MAC-then-encrypt construction that produced a decade of padding-oracle attacks (BEAST, Lucky13,
+          POODLE).
+        </p>
+        <p>
+          <strong>TLS 1.3 removed that entirely.</strong> It permits only <strong>AEAD</strong>{' '}
+          (Authenticated Encryption with Associated Data) ciphers — AES-GCM, ChaCha20-Poly1305,
+          AES-CCM — where confidentiality and integrity are the same operation and the authentication tag
+          is produced by the cipher itself. HMAC is still present in TLS 1.3, but for{' '}
+          <em>key derivation</em> (HKDF) and the <code>Finished</code> message, not for record integrity.
+        </p>
       </InfoBox>
 
       <h2>X.509 Certificates</h2>
@@ -47,11 +63,11 @@ export default function Tls() {
 {`Certificate:
   Version: 3 (v3)
   Serial Number: 04:e5:ab:12:...
-  Signature Algorithm: ecdsa-with-SHA256
-  Issuer: CN=Let's Encrypt Authority X3, O=Let's Encrypt
+  Signature Algorithm: ecdsa-with-SHA384
+  Issuer: CN=E5, O=Let's Encrypt, C=US
   Validity:
-    Not Before: Jan 1 00:00:00 2024 UTC
-    Not After:  Apr 1 00:00:00 2024 UTC    (90 days!)
+    Not Before: Jan 1 00:00:00 2026 UTC
+    Not After:  Apr 1 00:00:00 2026 UTC    (90 days!)
   Subject: CN=www.example.com
   Subject Public Key Info:
     Algorithm: EC (prime256v1)
@@ -143,10 +159,31 @@ Step 6: Key Derivation (HKDF)
   - Master secret → HKDF-Expand → client/server write keys
   - Separate keys for each direction
 
-Step 7: Encrypted Communication
+Step 7: Finished (both directions)
+  - Each side sends an HMAC over the entire handshake transcript
+  - Proves neither side's messages were altered mid-handshake
+    (this is what defeats downgrade attacks)
+
+Step 8: Encrypted Communication
   - All traffic encrypted with AES-256-GCM
   - Using the derived session keys`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="Almost Everything Is Encrypted Earlier Than You Think">
+        <p>
+          One detail that trips people up: in TLS 1.3 only <code>ClientHello</code> and{' '}
+          <code>ServerHello</code> travel in the clear. The key exchange completes immediately after them,
+          so the <strong>certificate itself is encrypted</strong> — unlike TLS 1.2, where a passive
+          observer could read which certificate the server presented.
+        </p>
+        <p>
+          The gap that remains is <strong>SNI</strong>: the client still has to name the host it wants in
+          the plaintext <code>ClientHello</code> so a server hosting many sites knows which certificate to
+          send. That is why a network observer can still see <em>which site</em> you visited even under
+          TLS 1.3. Encrypted Client Hello (ECH) is the extension that closes this last gap, and it is
+          rolling out now.
+        </p>
+      </InfoBox>
 
       <h3>Key Derivation from ECDH</h3>
 
@@ -165,6 +202,72 @@ Step 7: Encrypted Communication
         <p>
           From S, both sides use <strong>HKDF (HMAC-based Key Derivation Function)</strong> to derive
           separate encryption keys for client-to-server and server-to-client traffic.
+        </p>
+      </InfoBox>
+
+      <h2>Forward Secrecy — Why the Key Exchange Is Ephemeral</h2>
+
+      <p>
+        There is a reason the handshake above generates a <em>fresh</em> ECDH key pair per connection
+        rather than just using the long-lived key inside the certificate. That property has a name, and it
+        is one of the most commonly asked TLS questions.
+      </p>
+
+      <InfoBox variant="info" title="Forward Secrecy (PFS)">
+        <p>
+          <strong>The threat model:</strong> an adversary records your encrypted traffic today and stores
+          it. Years later they obtain the server&apos;s private key — a breach, a subpoena, a
+          decommissioned server sold on eBay. Can they now decrypt the traffic they recorded?
+        </p>
+        <p>
+          <strong>Old TLS: yes.</strong> With RSA key transport (the classic{' '}
+          <code>TLS_RSA_WITH_AES_128_CBC_SHA</code> family), the client picked the session secret,
+          encrypted it <em>to the server&apos;s public key</em>, and sent it. That secret is sitting in
+          the recorded traffic, and the server&apos;s private key unlocks it. One key compromise
+          retroactively decrypts every session ever recorded.
+        </p>
+        <p>
+          <strong>TLS 1.3: no.</strong> The session secret comes from an ECDHE exchange using key pairs
+          generated for that one connection and discarded afterwards. The certificate&apos;s private key
+          is used only to <em>sign</em> the handshake (the <code>CertificateVerify</code> step) — proving
+          identity in real time, never protecting the session secret. Stealing it later lets you
+          impersonate the server going forward, but it does not decrypt a single recorded session.
+        </p>
+        <p>
+          TLS 1.3 makes this mandatory: static RSA and static DH key exchange were removed from the
+          protocol outright. In TLS 1.2 forward secrecy was merely an option you had to configure — which
+          is the single best reason to insist on 1.3.
+        </p>
+      </InfoBox>
+
+      <h2>0-RTT Resumption and Its Sharp Edge</h2>
+
+      <p>
+        TLS 1.3 also added <strong>0-RTT</strong> (&quot;early data&quot;): on a <em>reconnection</em> to
+        a server you have spoken to before, the client can send application data in its very first
+        packet, using a pre-shared key from the previous session. Zero round trips of handshake latency.
+        It is a large win for mobile and for repeat page loads, and it comes with a genuine security
+        caveat that interviewers like.
+      </p>
+
+      <InfoBox variant="danger" title="0-RTT Data Is Replayable">
+        <p>
+          Early data is not covered by any live exchange with the server — that is exactly what makes it
+          fast. Nothing about it is fresh, so an attacker who captures a 0-RTT packet can{' '}
+          <strong>re-send it later</strong> and the server will process it again. There is no nonce to
+          catch the duplicate.
+        </p>
+        <p>
+          0-RTT also does not have forward secrecy for the early data itself, since it is protected by the
+          pre-shared key rather than a fresh exchange.
+        </p>
+        <p>
+          <strong>The rule:</strong> only ever put idempotent requests in early data. A replayed{' '}
+          <code>GET /home</code> is harmless; a replayed <code>POST /transfer</code> moves money twice.
+          Servers should restrict early data to safe methods (nginx&apos;s <code>ssl_early_data</code>{' '}
+          sets <code>Early-Data: 1</code> so your application can reject anything non-idempotent with
+          <code> 425 Too Early</code>). If you cannot reason about it, leave 0-RTT off — it is off by
+          default in most stacks for this reason.
         </p>
       </InfoBox>
 
@@ -191,21 +294,53 @@ Step 7: Encrypted Communication
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>OCSP</strong></td>
-            <td style={{ padding: '0.75rem' }}>Client asks CA in real-time if cert is revoked</td>
-            <td style={{ padding: '0.75rem' }}>Real-time but adds latency and privacy concern</td>
+            <td style={{ padding: '0.75rem' }}>Client asks the CA in real time whether a cert is revoked</td>
+            <td style={{ padding: '0.75rem' }}>Real-time, but leaks the user&#39;s browsing to the CA, adds latency, and fails open — being phased out</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>OCSP Stapling</strong></td>
-            <td style={{ padding: '0.75rem' }}>Server pre-fetches OCSP response and includes it in TLS handshake</td>
-            <td style={{ padding: '0.75rem' }}>Best approach — fast, private, no extra round trips</td>
+            <td style={{ padding: '0.75rem' }}>Server pre-fetches the OCSP response and includes it in the handshake</td>
+            <td style={{ padding: '0.75rem' }}>Fixes OCSP&#39;s latency and privacy problems, but inherits its decline as CAs retire OCSP responders</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Browser-pushed lists</strong></td>
+            <td style={{ padding: '0.75rem' }}>Vendor aggregates CRLs and ships them to the browser out of band (Chrome CRLSets, Firefox CRLite)</td>
+            <td style={{ padding: '0.75rem' }}>What browsers actually rely on today — zero latency, no privacy leak, no fail-open</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Short-lived certs</strong></td>
+            <td style={{ padding: '0.75rem' }}>Sidestep revocation by expiring quickly and renewing automatically via ACME</td>
+            <td style={{ padding: '0.75rem' }}>The direction the whole industry is moving — nothing to revoke if it expires in days</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>CT Logs</strong></td>
             <td style={{ padding: '0.75rem' }}>Public append-only log of all issued certificates</td>
-            <td style={{ padding: '0.75rem' }}>Audit trail — detect misissued certs</td>
+            <td style={{ padding: '0.75rem' }}>Audit trail — detect misissued certs (not revocation, but how you find out you need it)</td>
           </tr>
         </tbody>
       </table>
+
+      <InfoBox variant="warning" title="Revocation Is the Part of PKI That Never Really Worked">
+        <p>
+          Be careful repeating &quot;OCSP stapling is the answer&quot; — it is the answer to a question
+          the industry has largely stopped asking. Online revocation checking fails open by design: if the
+          responder is unreachable, browsers proceed anyway, because doing otherwise would make a CA
+          outage into an internet outage. An attacker positioned to use a stolen key is also positioned to
+          block the check. Chrome has never done live OCSP for this reason, preferring its own pushed
+          CRLSets, and Firefox uses CRLite.
+        </p>
+        <p>
+          The industry answer is to make revocation matter less by shrinking certificate lifetimes. The
+          CA/Browser Forum has agreed a schedule stepping the maximum public TLS certificate lifetime down
+          from 398 days to <strong>47 days by 2029</strong>, and Let&apos;s Encrypt now issues 6-day
+          certificates. A cert that expires this week barely needs revoking.
+        </p>
+        <p>
+          <strong>The practical consequence for you:</strong> certificate renewal has to be automated
+          (ACME, cert-manager, your cloud provider&apos;s managed certs). Anything involving a human
+          diarising a renewal date is already broken at a 47-day cadence.
+        </p>
+      </InfoBox>
 
       <h2>Mutual TLS (mTLS)</h2>
 
@@ -294,7 +429,23 @@ https.get(options, (res) => {
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>SNI</strong></td>
-            <td style={{ padding: '0.75rem' }}>Server Name Indication — client specifies domain in ClientHello so one IP can host multiple HTTPS sites.</td>
+            <td style={{ padding: '0.75rem' }}>Server Name Indication — client specifies domain in ClientHello so one IP can host multiple HTTPS sites. Sent in plaintext; ECH encrypts it.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>AEAD</strong></td>
+            <td style={{ padding: '0.75rem' }}>Authenticated Encryption with Associated Data — confidentiality and integrity in one operation. The only kind of cipher TLS 1.3 allows.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Forward Secrecy</strong></td>
+            <td style={{ padding: '0.75rem' }}>Ephemeral per-connection keys, so a future private-key compromise cannot decrypt past recorded traffic. Mandatory in TLS 1.3.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>0-RTT</strong></td>
+            <td style={{ padding: '0.75rem' }}>Early data on resumed connections. Fast, but replayable — idempotent requests only.</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>HSTS</strong></td>
+            <td style={{ padding: '0.75rem' }}>Response header telling the browser to only ever use HTTPS for this host, closing the plaintext-first-request gap. Covered in <em>Web Security</em>.</td>
           </tr>
         </tbody>
       </table>

@@ -107,13 +107,15 @@ USING source_table s ON t.id = s.id
 WHEN MATCHED AND s.deleted = TRUE THEN
   DELETE
 WHEN MATCHED THEN
-  UPDATE SET
-    t.name = s.name,
-    t.price = s.price,
-    t.updated_at = NOW()
+  UPDATE SET                  -- target columns are NOT alias-qualified here:
+    name = s.name,            --   "SET t.name = ..." is a syntax error
+    price = s.price,
+    updated_at = NOW()
 WHEN NOT MATCHED THEN
   INSERT (id, name, price, created_at)
   VALUES (s.id, s.name, s.price, NOW());
+-- WHEN clauses are evaluated top-down and the FIRST match wins, so the
+-- narrow "MATCHED AND deleted" branch must come before the catch-all MATCHED.
 
 -- Bulk upsert from staging table
 INSERT INTO products (id, name, price, updated_at)
@@ -170,10 +172,21 @@ WHERE payload @? '$.items[*] ? (@.price > 100)';
 -- Aggregate JSON into arrays/objects
 SELECT
   payload->>'user_id' AS user_id,
-  JSONB_AGG(event_type ORDER BY created_at) AS event_sequence,
-  JSONB_OBJECT_AGG(event_type, COUNT(*)) AS event_counts
+  JSONB_AGG(event_type ORDER BY created_at) AS event_sequence
 FROM events
 GROUP BY payload->>'user_id';
+
+-- Careful: aggregates CANNOT be nested. This is a syntax error, not slow SQL:
+--   JSONB_OBJECT_AGG(event_type, COUNT(*))
+--   ERROR: aggregate function calls cannot be nested
+-- Aggregate once in a subquery, then aggregate the result:
+SELECT user_id, JSONB_OBJECT_AGG(event_type, n) AS event_counts
+FROM (
+  SELECT payload->>'user_id' AS user_id, event_type, COUNT(*) AS n
+  FROM events
+  GROUP BY 1, 2
+) per_type
+GROUP BY user_id;
 
 -- Update a nested JSONB field in place without replacing the whole document
 UPDATE events
@@ -240,13 +253,27 @@ FROM articles
 WHERE search_vector @@ to_tsquery('english', 'index');`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Generated Columns Simplify the Trigger">
+      <InfoBox variant="tip" title="Generated Columns Replace the Trigger Entirely">
         <p>
-          Postgres 12+ generated columns can replace the trigger above entirely:{' '}
-          <code>search_vector TSVECTOR GENERATED ALWAYS AS (to_tsvector('english', title || ' ' || body)) STORED</code>.
-          It stays in sync automatically with zero trigger code — use it unless you need the
-          weighted <code>setweight()</code> ranking shown above, which generated columns can't
-          express as cleanly.
+          Postgres 12+ generated columns do everything the trigger above does, with no trigger
+          code — including the weighted <code>setweight()</code> ranking, since{' '}
+          <code>setweight</code>, <code>||</code> and the two-argument{' '}
+          <code>to_tsvector(regconfig, text)</code> are all IMMUTABLE:
+        </p>
+        <p>
+          <code>
+            search_vector tsvector GENERATED ALWAYS AS ( setweight(to_tsvector('english',
+            coalesce(title,'')), 'A') || setweight(to_tsvector('english', coalesce(body,'')), 'B')
+            ) STORED
+          </code>
+        </p>
+        <p>
+          Two requirements that trip people up. The <code>coalesce()</code> calls are not optional
+          padding — <code>||</code> propagates NULL, so one NULL <code>body</code> would blank the
+          entire search vector for that row. And the language configuration must be a{' '}
+          <strong>literal</strong>: the one-argument <code>to_tsvector(body)</code> reads the{' '}
+          <code>default_text_search_config</code> GUC, which makes it merely STABLE, and Postgres
+          rejects non-IMMUTABLE expressions in a generated column.
         </p>
       </InfoBox>
 
@@ -330,9 +357,9 @@ CREATE TABLE sessions_p3 PARTITION OF sessions FOR VALUES WITH (MODULUS 4, REMAI
 
       <InfoBox variant="danger" title="Partitioning Gotchas">
         <p><strong>The partition key must be part of every unique/primary key.</strong> You can't have a global PRIMARY KEY(id) independent of the partition key — Postgres can't enforce uniqueness across partitions without it.</p>
-        <p><strong>Foreign keys referencing a partitioned table</strong> have historically had rough edges — verify behavior on your Postgres version before relying on them heavily.</p>
+        <p><strong>Foreign keys:</strong> a partitioned table can reference other tables, and (since PG 12) other tables can reference a partitioned table. The constraint is upstream of that: the referenced unique key must include the partition key, so you often cannot point an FK at the natural <code>id</code> alone.</p>
         <p><strong>Too many partitions hurts planning time.</strong> Thousands of partitions can slow down query planning itself. Hundreds is usually fine; low thousands needs care.</p>
-        <p><strong>Always create a DEFAULT partition</strong> or inserts that don't match any range/list will simply error.</p>
+        <p><strong>A DEFAULT partition is a trade, not a freebie.</strong> Without one, an insert that matches no partition errors outright. With one, that insert silently lands in the catch-all — and attaching a <em>new</em> partition afterwards must scan the entire default partition (holding a lock) to prove no row belongs in the new range. For a date-ranged table where you pre-create partitions on a schedule, letting the insert fail loudly is often the better signal. Note <code>HASH</code> partitioning has no DEFAULT partition at all — the modulus covers every value by construction.</p>
       </InfoBox>
 
       <InfoBox variant="tip" title="When to Partition">

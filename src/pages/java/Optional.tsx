@@ -75,7 +75,8 @@ public Customer required(UUID id) {
 }
 
 // Reasons:
-// - Not serializable in most serializers without custom converters.
+// - Optional does not implement Serializable at all, so any class with an
+//   Optional field cannot be Java-serialized.
 // - Optional is not designed for storage; it lives about as well in memory
 //   as a "boxed" flag but with the added cost of the Optional wrapper.
 // - JPA / Jackson / Kryo / Protobuf all have to be taught it, one by one.
@@ -186,11 +187,16 @@ opt.isEmpty();                 // no value (Java 11+)
 opt.orElse(fallback);          // eager; fine for constants
 opt.orElseGet(() -> compute());// lazy; use when default is expensive
 opt.orElseThrow(() -> new MyException());   // throw on absence
+opt.orElseThrow();             // Java 10+ — NoSuchElementException, but with a
+                               // clearer name than get(). Prefer over get().
 
 // Transform
 opt.map(fn);                   // Optional<A> -> Optional<B>
 opt.flatMap(fn);               // fn returns Optional<B>; unwraps the wrapper
 opt.filter(pred);              // Optional -> Optional (empty if pred is false)
+opt.or(() -> other());         // Java 9+ — fall back to ANOTHER Optional,
+                               // staying in Optional. Great for chained lookups:
+                               //   cache.find(id).or(() -> db.find(id))
 
 // Consume
 opt.ifPresent(consumer);       // side effect only if present

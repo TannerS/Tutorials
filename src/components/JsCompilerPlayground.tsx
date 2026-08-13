@@ -14,8 +14,11 @@ interface Target {
   year: string;
 }
 
+// ES3 is deliberately absent: TypeScript 6 *removed* the ES3 target, so selecting
+// it emits an error and silently skips all downleveling — a lying option is worse
+// than a missing one. ES5 is deprecated (removal in TS 7) but still functional,
+// which is why compilerOptions below set ignoreDeprecations.
 const TARGETS: Target[] = [
-  { key: 'ES3', label: 'ES3', year: '1999' },
   { key: 'ES5', label: 'ES5', year: '2009' },
   { key: 'ES2015', label: 'ES2015 (ES6)', year: '2015' },
   { key: 'ES2016', label: 'ES2016 (ES7)', year: '2016' },
@@ -245,6 +248,9 @@ export default function JsCompilerPlayground() {
         compilerOptions: {
           target: ts.ScriptTarget[target],
           module: ts.ModuleKind.ESNext,
+          // ES5 is deprecated as of TS 6; without this every ES5 compile would
+          // surface a deprecation diagnostic in the error bar below.
+          ignoreDeprecations: '6.0',
           reportDiagnostics: true,
         },
         reportDiagnostics: true,

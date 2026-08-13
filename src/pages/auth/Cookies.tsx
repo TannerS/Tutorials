@@ -64,8 +64,8 @@ Cookie: sessionId=abc123; theme=dark`}
         <tbody>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Domain</strong></td>
-            <td style={{ padding: '0.75rem' }}>Which domain(s) receive the cookie</td>
-            <td style={{ padding: '0.75rem' }}><code>Domain=.example.com</code></td>
+            <td style={{ padding: '0.75rem' }}>Which domain(s) receive the cookie. Setting it <em>widens</em> scope to all subdomains; omitting it locks the cookie to the exact host, which is what you want for auth</td>
+            <td style={{ padding: '0.75rem' }}><code>Domain=example.com</code></td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Path</strong></td>
@@ -103,11 +103,48 @@ Cookie: sessionId=abc123; theme=dark`}
         <p><strong>None</strong> — Cookie is always sent, even cross-site. Must have <code>Secure</code> flag. Only for legitimate cross-site needs (embedded iframes, third-party APIs).</p>
       </InfoBox>
 
+      <InfoBox variant="tip" title="The Default Is Lax — But Set It Anyway">
+        <p>
+          Since 2020 Chrome, Edge, and Firefox treat a cookie with <strong>no</strong>{' '}
+          <code>SameSite</code> attribute as <code>SameSite=Lax</code>. Omitting it is therefore not the
+          same as opting out — you get Lax by default, which is usually what you wanted.
+        </p>
+        <p>
+          Still set it explicitly. The default is browser policy rather than a guarantee (Safari&apos;s
+          behaviour has historically differed, and older clients default to <code>None</code>), and an
+          explicit attribute documents the intent for the next person reading the code.
+        </p>
+        <p>
+          One sharp edge worth knowing: <code>Lax</code> is enforced on the <em>site</em>, and a
+          site is registrable-domain + scheme, so <code>http://example.com</code> and{' '}
+          <code>https://example.com</code> are the same site — <code>SameSite</code> is not a substitute
+          for <code>Secure</code>.
+        </p>
+      </InfoBox>
+
       <h2>Session vs Persistent Cookies</h2>
 
       <InfoBox variant="info" title="Two Types of Cookies">
-        <p><strong>Session Cookie</strong> — No <code>Max-Age</code> or <code>Expires</code> set. Dies when the browser tab or window closes. Used for temporary state like a session ID.</p>
+        <p><strong>Session Cookie</strong> — No <code>Max-Age</code> or <code>Expires</code> set. The browser keeps it only for the lifetime of the browser <em>session</em> and never writes it to disk. Used for temporary state like a session ID.</p>
         <p><strong>Persistent Cookie</strong> — Has <code>Max-Age</code> or <code>Expires</code>. Survives browser restarts. Used for "remember me" features, theme preferences, and analytics.</p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="A Session Cookie Is Not a Reliable Expiry Mechanism">
+        <p>
+          Two things people get wrong here. First, it dies when the <strong>browser</strong> closes, not
+          when the tab does — other tabs and windows share the same cookie jar.
+        </p>
+        <p>
+          Second, and more importantly: every major browser has a session-restore feature
+          (&quot;continue where you left off&quot;, restore-after-crash, and mobile browsers that are
+          almost never truly closed). When it kicks in, session cookies are restored too, so a
+          &quot;session&quot; cookie can easily outlive the browser by days.
+        </p>
+        <p>
+          <strong>Never rely on browser shutdown to end a session.</strong> Enforce the lifetime
+          server-side — an idle timeout that slides on activity plus an absolute cap that does not — and
+          treat the cookie&apos;s own expiry as a convenience for the browser, not a security control.
+        </p>
       </InfoBox>
 
       <h2>Server-Side Sessions</h2>
@@ -155,13 +192,20 @@ app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await authenticate(email, password);
 
-  if (user) {
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+
+  // CRITICAL: issue a BRAND NEW session ID at the moment privilege
+  // changes. Writing userId onto the pre-login session ID is the
+  // session fixation bug (see below).
+  req.session.regenerate((err) => {
+    if (err) return res.status(500).json({ error: 'Session error' });
+
     req.session.userId = user.id;       // Store user ID in session
     req.session.roles = user.roles;     // Store roles in session
     res.json({ message: 'Logged in' });
-  } else {
-    res.status(401).json({ error: 'Invalid credentials' });
-  }
+  });
 });
 
 // Protected route
@@ -251,8 +295,121 @@ public class AuthController {
         session.invalidate();
         return ResponseEntity.ok(Map.of("message", "Logged out"));
     }
-}`}
+}
+
+// NOTE: Spring Security's own login filters call changeSessionId()
+// for you (sessionManagement().sessionFixation().changeSessionId()
+// is the default). A hand-rolled controller like the one above does
+// NOT — you must rotate the ID yourself, e.g. via
+// request.changeSessionId() before writing the user attributes.`}
       </CodeBlock>
+
+      <h2>Session Fixation — the Bug That Hides in Every Hand-Rolled Login</h2>
+
+      <p>
+        Notice the <code>regenerate()</code> call in the Express example above. It is not boilerplate; it
+        is the entire defence against <strong>session fixation</strong>, and hand-written login handlers
+        omit it constantly.
+      </p>
+
+      <InfoBox variant="danger" title="How the Attack Works">
+        <p>
+          Sessions are usually created on the <em>first</em> request, before anyone logs in — that is how
+          a shopping cart survives until checkout. So the attacker does not need to steal your cookie
+          afterwards; they can <strong>plant one beforehand</strong>.
+        </p>
+        <p>
+          The attacker visits your site, gets an anonymous session ID, and gets the victim&apos;s browser
+          to adopt that same ID (a crafted link if you ever accept a session ID from the URL, an injected
+          <code> Set-Cookie</code> from a subdomain they control, or an XSS on any same-site page). The
+          victim then logs in normally. If the server simply writes <code>userId</code> onto the existing
+          session, the attacker&apos;s pre-planted ID is now an <strong>authenticated</strong> session —
+          and they are holding a copy of it.
+        </p>
+        <p>
+          <strong>The fix:</strong> rotate the session identifier every time the privilege level changes —
+          at login, and again on any step-up such as re-authenticating before a password change. Express
+          calls it <code>req.session.regenerate()</code>, Servlet/Spring calls it{' '}
+          <code>request.changeSessionId()</code>, PHP calls it{' '}
+          <code>session_regenerate_id(true)</code>. Same idea everywhere: the ID the attacker holds ceases
+          to be the ID that is logged in.
+        </p>
+      </InfoBox>
+
+      <h2>Cookie Name Prefixes: <code>__Host-</code> and <code>__Secure-</code></h2>
+
+      <p>
+        Cookie attributes are invisible once the cookie comes back — the browser sends only{' '}
+        <code>Cookie: name=value</code>, with no indication of whether it was set with{' '}
+        <code>Secure</code>, or which host set it. Prefixes solve that by making the browser refuse to
+        store a cookie unless the attributes match its name, so the name itself becomes a guarantee.
+      </p>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Prefix</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Browser Enforces</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>What It Guarantees</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>__Secure-</code></td>
+            <td style={{ padding: '0.75rem' }}>Must have <code>Secure</code>, must be set from an HTTPS page</td>
+            <td style={{ padding: '0.75rem' }}>The cookie was never set over plain HTTP</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>__Host-</code></td>
+            <td style={{ padding: '0.75rem' }}><code>Secure</code>, <code>Path=/</code>, and <strong>no <code>Domain</code> attribute</strong></td>
+            <td style={{ padding: '0.75rem' }}>Locked to the exact host that set it — a subdomain cannot write it</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <InfoBox variant="tip" title="Why __Host- Is the One That Matters for Auth">
+        <p>
+          Cookies do not respect the origin boundary the way everything else in the browser does.{' '}
+          <code>blog.example.com</code> can set a cookie with{' '}
+          <code>Domain=example.com</code> that <code>app.example.com</code> will then send — so one
+          neglected subdomain, or one subdomain takeover, is enough to overwrite your session cookie or
+          plant a fixed session ID.
+        </p>
+        <p>
+          Because <code>__Host-</code> forbids the <code>Domain</code> attribute entirely, the browser
+          refuses to store any subdomain&apos;s attempt to set that name. Name your session cookie{' '}
+          <code>__Host-sessionId</code> and subdomain cookie injection stops being your problem. This is
+          the same reason the CSRF token in the <em>Web Security</em> lesson uses a{' '}
+          <code>__Host-</code> name.
+        </p>
+      </InfoBox>
+
+      <h2>Third-Party Cookies and CHIPS (<code>Partitioned</code>)</h2>
+
+      <InfoBox variant="info" title="Same Cookie, Different Top-Level Site">
+        <p>
+          Historically a cookie set by <code>widget.example</code> was shared across <em>every</em> site
+          that embedded that widget — which is precisely how cross-site tracking worked, and why browsers
+          have been restricting third-party cookies (Safari&apos;s ITP and Firefox&apos;s Total Cookie
+          Protection block them outright; Chrome ships user-facing controls for them).
+        </p>
+        <p>
+          <strong>CHIPS</strong> (Cookies Having Independent Partitioned State) is the sanctioned way to
+          keep a legitimate embedded widget working: adding the <code>Partitioned</code> attribute gives
+          the cookie a separate jar <em>per top-level site</em>. Your chat widget on{' '}
+          <code>shop-a.com</code> and the same widget on <code>shop-b.com</code> each get their own
+          isolated cookie, and neither can be used to correlate the user across the two.
+        </p>
+        <p>
+          <code>Set-Cookie: __Host-widgetSession=abc; Secure; Path=/; SameSite=None; Partitioned</code>
+        </p>
+        <p>
+          <strong>Rule of thumb:</strong> a first-party login cookie should never need this. If you find
+          yourself reaching for <code>SameSite=None</code> to make auth work inside an iframe, add{' '}
+          <code>Partitioned</code> — and be aware that the partitioned cookie is genuinely a different
+          cookie per embedding site, so a session established in one will not exist in another.
+        </p>
+      </InfoBox>
 
       <h2>Session Pros and Cons</h2>
 
@@ -294,7 +451,7 @@ public class AuthController {
           are sent automatically, the request includes the session cookie, and the server thinks the request
           is legitimate.
         </p>
-        <p><strong>Mitigation:</strong> Use <code>SameSite=Lax</code> or <code>SameSite=Strict</code> cookies. For legacy browsers, use CSRF tokens — a unique random value included in each form that the attacker cannot predict.</p>
+        <p><strong>Mitigation:</strong> <code>SameSite=Lax</code> or <code>Strict</code> is the baseline layer — it stops the browser attaching the cookie to a cross-site POST, which kills the classic version of this attack. It is <em>not</em> a complete defence on its own: <code>SameSite</code> is site-scoped, so a hostile subdomain still counts as same-site, and <code>Lax</code> still permits top-level GET navigations. Pair it with a CSRF token bound to the session, and an <code>Origin</code> / <code>Sec-Fetch-Site</code> check. The <strong>Web Security</strong> lesson at the end of this section works through all of this in detail.</p>
       </InfoBox>
 
       <h3>Cookie Theft</h3>
@@ -309,21 +466,25 @@ public class AuthController {
 
       <CodeBlock language="javascript" title="Security Checklist for Cookies">
 {`// SECURE cookie configuration
-res.cookie('sessionId', sessionId, {
+res.cookie('__Host-sessionId', sessionId, {
   httpOnly: true,      // Prevents XSS from reading the cookie
-  secure: true,        // Only sent over HTTPS
-  sameSite: 'lax',     // Prevents CSRF (most cases)
+  secure: true,        // Only sent over HTTPS (required by __Host-)
+  sameSite: 'lax',     // Baseline CSRF layer — not the whole defence
   maxAge: 3600000,     // 1 hour expiry
-  path: '/',           // Sent for all paths
-  domain: '.example.com',
+  path: '/',           // Required by __Host-
+  // NO domain: — deliberately. Omitting Domain scopes the cookie to
+  // this exact host, so no subdomain can read or overwrite it. The
+  // __Host- prefix makes the browser ENFORCE that omission.
 });
 
 // INSECURE cookie configuration - DON'T DO THIS
 res.cookie('sessionId', sessionId, {
-  // httpOnly: false (default) - JS can read it!
-  // secure: false (default) - sent over HTTP!
-  // sameSite: 'none' - sent cross-site!
-  // No maxAge - session cookie only
+  // httpOnly omitted (default false) - JS can read it!
+  // secure omitted (default false) - sent over plain HTTP!
+  // sameSite omitted - modern browsers apply Lax, but you are
+  //   relying on a browser default instead of stating intent.
+  domain: '.example.com',  // WIDENS scope to every subdomain --
+                           // one compromised subdomain gets the session.
 });`}
       </CodeBlock>
 

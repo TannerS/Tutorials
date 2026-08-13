@@ -1,5 +1,4 @@
 import CodeBlock from '../../components/CodeBlock';
-import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
@@ -302,6 +301,67 @@ app:
     stripe:
       api-key: \${STRIPE_API_KEY}
       webhook-secret: \${STRIPE_WEBHOOK_SECRET}`}
+      </CodeBlock>
+
+      <h3>spring.config.import — how secrets actually arrive in Kubernetes</h3>
+      <p>
+        Env vars are fine until you have thirty of them. Since Boot 2.4,{' '}
+        <code>spring.config.import</code> pulls additional property sources in at startup, and the{' '}
+        <code>configtree:</code> form reads a directory of files where each{' '}
+        <em>filename is the key</em> and its contents are the value — which is exactly how
+        Kubernetes mounts a Secret or ConfigMap as a volume.
+      </p>
+      <CodeBlock language="yaml" title="Importing config from files, trees, and servers">
+{`spring:
+  config:
+    import:
+      # A K8s secret mounted at /etc/secrets produces files like
+      #   /etc/secrets/spring.datasource.password
+      # 'optional:' means don't fail startup when the path is absent (local dev).
+      - optional:configtree:/etc/secrets/
+      # Docker Compose / Swarm secrets land here.
+      - optional:configtree:/run/secrets/
+      # Pull in another YAML file, relative to the config location.
+      - optional:classpath:shared-defaults.yml
+      # External systems, when the matching starter is on the classpath.
+      - optional:vault://
+      - optional:configserver:https://config.example.com
+
+# Config-tree values win over application.yml because imports are treated as
+# higher-precedence property sources than the document that imports them.`}
+      </CodeBlock>
+
+      <h3>Multi-document YAML — profiles in one file</h3>
+      <p>
+        Rather than a file per profile, you can separate documents with <code>---</code> and gate
+        each on a condition. Note the modern key is{' '}
+        <code>spring.config.activate.on-profile</code>; the old in-document{' '}
+        <code>spring.profiles</code> key was deprecated in Boot 2.4 and removed in 3.0.
+      </p>
+      <CodeBlock language="yaml" title="One application.yml, several environments">
+{`app:
+  cache:
+    ttl: PT1M          # base value, applies everywhere
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+app:
+  cache:
+    ttl: PT10M
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+      # Can also gate on a cloud platform or an arbitrary expression:
+      # on-cloud-platform: kubernetes
+  jpa:
+    hibernate:
+      ddl-auto: create-drop`}
       </CodeBlock>
 
       <InfoBox variant="danger" title="Never log a properties dump in production">

@@ -99,7 +99,8 @@ class OrderControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    // @MockitoBean replaced @MockBean, which Spring Boot 3.4 deprecated.
+    @MockitoBean
     private OrderService orderService;
 
     @Test
@@ -137,6 +138,12 @@ class OrderControllerTest {
         Use <code>@WebMvcTest</code> when you only need to test the controller layer
         with mocked services. It&apos;s much faster because it doesn&apos;t load the full
         context. Use <code>@SpringBootTest</code> when you need the complete wiring.
+        <br /><br />
+        Note the annotation for supplying those mocks changed: <code>@MockBean</code>{' '}
+        and <code>@SpyBean</code> were deprecated in Spring Boot 3.4 in favour of
+        Spring Framework&apos;s own <code>@MockitoBean</code> and{' '}
+        <code>@MockitoSpyBean</code>. Older tutorials and Stack Overflow answers will
+        still show <code>@MockBean</code>; it works but is on its way out.
       </InfoBox>
 
       <h3>@DataJpaTest — Repository Slice</h3>
@@ -389,7 +396,9 @@ class OrderRepositoryTest {
 const db = require('./db');
 
 beforeEach(async () => {
-  // Truncate all tables before each test
+  // Open a transaction; everything the test writes is discarded below.
+  // (Requires a single pinned connection — with a pool, BEGIN and ROLLBACK
+  // can land on different connections and silently do nothing.)
   await db.query('BEGIN');
 });
 
@@ -440,7 +449,7 @@ mockMvc.perform(put("/api/users/{id}", userId)
           "When you need to run E2E tests with a real browser"
         ]}
         correctIndex={1}
-        explanation="@WebMvcTest loads only the web layer (controllers, filters, advice) and is much faster than @SpringBootTest. Services and repositories are provided as @MockBean. Use @SpringBootTest when you need the full context."
+        explanation="@WebMvcTest loads only the web layer (controllers, filters, advice) and is much faster than @SpringBootTest. Services and repositories are supplied as @MockitoBean (the replacement for the deprecated @MockBean). Use @SpringBootTest when you need the full context."
         language="java"
       />
 

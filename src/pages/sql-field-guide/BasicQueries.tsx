@@ -9,7 +9,7 @@ export default function FieldGuideBasicQueries() {
       eyebrow="SQL · Field Reference"
       title="Basic Queries"
       tagline="Table creation, CRUD, and filtering — the PostgreSQL syntax you reach for every single day."
-      meta={['PostgreSQL 16', '12 patterns']}
+      meta={['PostgreSQL 17+', '14 patterns']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · Basic Queries"
       prev={null}
@@ -138,9 +138,41 @@ WHERE e.department = d.old_name;`}
         glyph="Tr"
         title={<>TRUNCATE <span className="dim">vs</span> DELETE</>}
         language="sql"
-        code={`DELETE FROM temp_imports;     -- logged, row-by-row, rollback-able
-TRUNCATE TABLE temp_imports;  -- instant, resets sequences`}
-        caption="For a full-table wipe, TRUNCATE is dramatically faster than DELETE because it deallocates pages instead of marking rows dead one by one."
+        code={`DELETE FROM temp_imports;     -- row-by-row, leaves bloat for VACUUM
+TRUNCATE TABLE temp_imports;  -- O(1); still transactional, still rollback-able
+
+-- Sequences are NOT reset unless you ask:
+TRUNCATE TABLE temp_imports RESTART IDENTITY;`}
+        caption="For a full-table wipe TRUNCATE is dramatically faster — it deallocates pages instead of marking rows dead. Two myths: in Postgres it IS transactional (BEGIN; TRUNCATE; ROLLBACK; restores the rows), and it does NOT reset IDENTITY/SERIAL without RESTART IDENTITY. It does take an ACCESS EXCLUSIVE lock."
+      />
+
+      <PosterCard
+        glyph="Set"
+        title={<>UNION / INTERSECT <span className="dim">/ EXCEPT</span></>}
+        language="sql"
+        code={`-- Joins add COLUMNS. Set operations stack ROWS.
+SELECT email FROM customers
+UNION ALL                 -- keeps duplicates; no dedup pass. Default to this.
+SELECT email FROM leads;
+
+SELECT id FROM customers
+EXCEPT                    -- in the first query, not the second
+SELECT customer_id FROM orders;`}
+        caption="Plain UNION deduplicates, which costs a full sort/hash — use UNION ALL unless you actually need it. EXCEPT/INTERSECT compare with IS NOT DISTINCT FROM, so two NULLs match: that makes EXCEPT a NULL-safe anti-join where NOT IN is not."
+      />
+
+      <PosterCard
+        glyph="Prm"
+        title={<>Parameterize <span className="dim">— never concatenate</span></>}
+        language="sql"
+        code={`-- Input:  ' OR '1'='1     concatenated into the query string:
+SELECT * FROM users WHERE email = '' OR '1'='1';  -- returns EVERY user
+
+-- Parameterized: query and values travel separately, so input
+-- can never become syntax.
+PREPARE find_user (text) AS
+  SELECT id, email FROM users WHERE email = $1;`}
+        caption="Placeholders only work for VALUES. Table names, column names and ORDER BY direction cannot be parameterized — validate those against an allowlist you control, never by escaping. An ORM's raw-query escape hatch reintroduces the whole risk."
       />
 
       <PosterQuickRef
@@ -155,7 +187,9 @@ TRUNCATE TABLE temp_imports;  -- instant, resets sequences`}
           { need: 'Conditional COUNT/SUM', answer: 'COUNT(*) FILTER (WHERE condition)' },
           { need: '"Not in this list" that handles NULLs safely', answer: 'NOT EXISTS, never NOT IN' },
           { need: 'Paginate past page 100 efficiently', answer: 'Keyset pagination, not OFFSET' },
-          { need: 'Wipe an entire table fast', answer: 'TRUNCATE TABLE' },
+          { need: 'Wipe an entire table fast', answer: 'TRUNCATE TABLE (add RESTART IDENTITY to reset sequences)' },
+          { need: 'Stack two result sets on top of each other', answer: 'UNION ALL (plain UNION only when you need the dedup)' },
+          { need: 'Safely put user input into a query', answer: 'Parameter placeholders; allowlist for identifiers' },
         ]}
       />
     </PosterLayout>

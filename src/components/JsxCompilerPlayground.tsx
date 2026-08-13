@@ -15,8 +15,9 @@ interface Target {
   year: string;
 }
 
+// ES3 is deliberately absent — TypeScript 6 removed the target entirely, so
+// picking it would emit an error and skip downleveling altogether.
 const TARGETS: Target[] = [
-  { key: 'ES3', label: 'ES3', year: '1999' },
   { key: 'ES5', label: 'ES5', year: '2009' },
   { key: 'ES2015', label: 'ES2015 (ES6)', year: '2015' },
   { key: 'ES2016', label: 'ES2016 (ES7)', year: '2016' },
@@ -157,6 +158,9 @@ export default function JsxCompilerPlayground() {
           target: ts.ScriptTarget[target],
           module: ts.ModuleKind.ESNext,
           jsx: ts.JsxEmit[runtime],
+          // ES5 is deprecated as of TS 6 — silence the diagnostic so the error
+          // bar is reserved for actual problems in the user's source.
+          ignoreDeprecations: '6.0',
           reportDiagnostics: true,
         },
         reportDiagnostics: true,

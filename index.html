@@ -4,10 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Interactive study notes for Java, Spring Boot, React 19, TypeScript, SQL, SOLID, design patterns, testing and system design — with runnable playgrounds and printable field guides."
+    />
+    <meta name="color-scheme" content="dark light" />
     <title>Dev Tutorials — Java, Spring Boot, React 19, SQL, SOLID, Design Patterns</title>
     <script>
+      // Runs before first paint so the app never flashes the wrong theme.
+      // localStorage access itself can throw (Safari private mode, blocked
+      // third-party storage), which would leave the document with no
+      // data-theme at all — hence the try/catch and the dark fallback.
       (function () {
-        var stored = localStorage.getItem('site-theme');
+        var stored = null;
+        try { stored = localStorage.getItem('site-theme'); } catch (e) { /* storage blocked */ }
         var theme = stored === 'dark' || stored === 'light'
           ? stored
           : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');

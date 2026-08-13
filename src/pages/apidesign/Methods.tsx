@@ -141,6 +141,130 @@ POST /payments
         </p>
       </InfoBox>
 
+      <h2>Conditional Requests: ETag, If-Match, and the Lost Update Problem</h2>
+
+      <p>
+        Idempotency protects you from your <em>own</em> retries. Conditional requests protect you
+        from <em>other people&apos;s</em> writes — and they are the missing piece behind the{' '}
+        <code>409 Conflict</code> status mentioned above.
+      </p>
+
+      <InfoBox variant="warning" title="The Lost Update Problem">
+        <p>
+          Two users open the same record. Alice changes the phone number; Bob changes the address.
+          Both send a <code>PUT</code> with their full copy of the resource. Bob&apos;s request
+          arrives second and overwrites everything — <strong>Alice&apos;s phone number change is
+          silently gone</strong>. Nobody gets an error. Nobody finds out until a delivery fails.
+        </p>
+        <p>
+          This is not a rare race. It is the normal outcome any time two people edit the same thing,
+          and a plain <code>PUT</code> API has no way to detect it.
+        </p>
+      </InfoBox>
+
+      <p>
+        The fix is <strong>optimistic concurrency control</strong>: the server hands out a version
+        marker with every read, and requires the client to present it when writing. If the resource
+        has changed since, the write is rejected instead of silently clobbering.
+      </p>
+
+      <CodeBlock language="http" title="ETag + If-Match — Optimistic Concurrency">
+        {`# 1. Client reads the resource. The server returns a version marker.
+GET /api/users/42
+HTTP/1.1 200 OK
+ETag: "v3-8a7f2c"                <- opaque; a hash or a version number
+{ "id": 42, "name": "Alice", "phone": "555-0100" }
+
+# 2. Client writes back, quoting the version it based its edit on.
+PUT /api/users/42
+If-Match: "v3-8a7f2c"
+{ "id": 42, "name": "Alice", "phone": "555-0199" }
+
+# 3a. Still v3 -> the write is applied, and a NEW etag is returned.
+HTTP/1.1 200 OK
+ETag: "v4-c1d9e0"
+
+# 3b. Someone else already wrote v4 -> REJECTED. Nothing is lost.
+HTTP/1.1 412 Precondition Failed
+Content-Type: application/problem+json
+{
+  "type": "https://api.example.com/errors/stale-resource",
+  "title": "Precondition Failed",
+  "status": 412,
+  "detail": "This user was modified by someone else. Re-read it and reapply your change."
+}
+
+# 428 Precondition Required: use this to REJECT unconditional writes
+# outright, forcing every client to participate rather than letting
+# careless ones opt out of the safety mechanism.
+PUT /api/users/42          (no If-Match header)
+HTTP/1.1 428 Precondition Required`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="The Same Mechanism Saves Bandwidth on Reads">
+        <p>
+          <code>If-Match</code> guards writes; its read-side sibling{' '}
+          <code>If-None-Match</code> powers caching. The client sends back the{' '}
+          <code>ETag</code> it already has, and if nothing changed the server replies{' '}
+          <code>304 Not Modified</code> with <strong>an empty body</strong> — the client reuses its
+          cached copy and you have spent a few hundred bytes instead of a full payload.
+        </p>
+        <p>
+          <code>Last-Modified</code> / <code>If-Modified-Since</code> do the same job with
+          timestamps, but they are only accurate to one second and cannot distinguish two changes
+          within the same second. Prefer <code>ETag</code> when correctness matters.
+        </p>
+      </InfoBox>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Header</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Used On</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Means</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Failure Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>If-Match</code></td>
+            <td style={{ padding: '0.75rem' }}>PUT, PATCH, DELETE</td>
+            <td style={{ padding: '0.75rem' }}>&quot;Only apply this if the resource is still the version I read&quot;</td>
+            <td style={{ padding: '0.75rem' }}><code>412</code></td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>If-None-Match</code></td>
+            <td style={{ padding: '0.75rem' }}>GET</td>
+            <td style={{ padding: '0.75rem' }}>&quot;Only send a body if it changed since this version&quot;</td>
+            <td style={{ padding: '0.75rem' }}><code>304</code> (a success, not an error)</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>If-None-Match: *</code></td>
+            <td style={{ padding: '0.75rem' }}>PUT</td>
+            <td style={{ padding: '0.75rem' }}>&quot;Create only if it does not already exist&quot; — a safe upsert</td>
+            <td style={{ padding: '0.75rem' }}><code>412</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <InfoBox variant="tip" title="Weak vs Strong ETags — and How to Generate One">
+        <p>
+          A <strong>strong</strong> ETag (<code>&quot;abc123&quot;</code>) means byte-for-byte
+          identical. A <strong>weak</strong> ETag (<code>W/&quot;abc123&quot;</code>) means
+          semantically equivalent — useful when a response is re-serialised with different
+          whitespace or key order but the same meaning. <code>If-Match</code> requires a strong
+          comparison; <code>If-None-Match</code> accepts weak.
+        </p>
+        <p>
+          In practice you rarely hash the body. The cheap and correct approach is to expose your
+          database&apos;s existing row version: JPA&apos;s <code>@Version</code> column, Postgres{' '}
+          <code>xmin</code>, or an <code>updated_at</code> timestamp. Emit it as the ETag, and let
+          the database&apos;s own optimistic-locking check reject the stale write — which is exactly
+          what <code>OptimisticLockException</code> already does. Map that exception to a{' '}
+          <code>412</code> in your error handler and you are done.
+        </p>
+      </InfoBox>
+
       <h2>HTTP Methods in Practice</h2>
 
       <CodeBlock language="java" title="Spring Boot Controller — Complete CRUD">
@@ -318,7 +442,9 @@ module.exports = router;`}
         <p><strong>403 Forbidden</strong> — The client is authenticated but does not have permission. The server understood the request but refuses to authorize it.</p>
         <p><strong>404 Not Found</strong> — The requested resource does not exist. Also used to hide the existence of resources the user is not authorized to see.</p>
         <p><strong>409 Conflict</strong> — The request conflicts with the current state of the resource. Common with concurrent updates or duplicate unique constraints.</p>
-        <p><strong>422 Unprocessable Entity</strong> — The request is well-formed but semantically invalid. Validation errors belong here.</p>
+        <p><strong>412 Precondition Failed</strong> — An <code>If-Match</code>/<code>If-None-Match</code> precondition did not hold. The resource changed underneath the client; they must re-read and retry. See the conditional-requests section above.</p>
+        <p><strong>422 Unprocessable Content</strong> — The request is well-formed but semantically invalid. Validation errors belong here. (RFC 9110 renamed this from &quot;Unprocessable Entity&quot;; both names refer to 422.)</p>
+        <p><strong>428 Precondition Required</strong> — The server requires the request to be conditional. Used to force clients to send <code>If-Match</code> so they cannot accidentally clobber concurrent edits.</p>
         <p><strong>429 Too Many Requests</strong> — Rate limit exceeded. Include Retry-After header telling the client when to retry.</p>
       </InfoBox>
 

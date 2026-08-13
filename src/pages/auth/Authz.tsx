@@ -50,9 +50,14 @@ export default function Authz() {
             <td style={{ padding: '0.75rem' }}>Most web apps</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><strong>Passkey (WebAuthn)</strong></td>
+            <td style={{ padding: '0.75rem' }}>Something you have — a device-bound key pair; the server stores only a public key and verifies a signed challenge</td>
+            <td style={{ padding: '0.75rem' }}>The direction the industry is moving — phishing-resistant, no shared secret to steal</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Biometric</strong></td>
-            <td style={{ padding: '0.75rem' }}>Something you are — fingerprint, face, iris</td>
-            <td style={{ padding: '0.75rem' }}>Mobile devices, physical access</td>
+            <td style={{ padding: '0.75rem' }}>Something you are — fingerprint, face, iris. Usually a <em>local</em> unlock gesture releasing a key, not data sent to the server</td>
+            <td style={{ padding: '0.75rem' }}>Mobile devices, physical access, unlocking a passkey</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Certificate</strong></td>
@@ -184,6 +189,28 @@ public class ArticleController {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="tip" title="Passkeys in One Paragraph">
+        <p>
+          Every method above except passkeys shares a secret with the server: a password, an OTP seed, a
+          magic-link token. Anything shared can be phished, replayed, or leaked in a breach.{' '}
+          <strong>WebAuthn</strong> replaces the shared secret with a key pair. Your device keeps the
+          private key (in a secure enclave, unlocked by a biometric or PIN); the server stores only the
+          public key and authenticates you by sending a random challenge and checking the signature.
+        </p>
+        <p>
+          The property that makes it genuinely different is <strong>origin binding</strong>: the browser
+          includes the real origin in what gets signed and refuses to use a credential registered for{' '}
+          <code>bank.com</code> on <code>bank-secure-login.com</code>. That is a defence against phishing
+          the <em>user cannot override by being fooled</em> — unlike an OTP, which a convincing fake site
+          will happily ask you to type in. A &quot;passkey&quot; is a WebAuthn credential that is
+          discoverable and synced across your devices via a platform keychain, which is what finally made
+          the technology usable enough to replace passwords rather than merely supplement them.
+        </p>
+        <p>
+          The <strong>Gateway Auth</strong> lesson has the registration code and the ceremony details.
+        </p>
+      </InfoBox>
+
       <h3>ABAC (Attribute-Based Access Control)</h3>
 
       <InfoBox variant="info" title="ABAC: More Flexible, More Complex">
@@ -195,6 +222,31 @@ public class ArticleController {
         <p>
           ABAC is more powerful but significantly more complex to implement and audit. Use RBAC unless
           you genuinely need attribute-based policies.
+        </p>
+      </InfoBox>
+
+      <h3>ReBAC (Relationship-Based Access Control)</h3>
+
+      <InfoBox variant="note" title="When Permission Depends on a Graph">
+        <p>
+          There is a third model worth knowing by name, because RBAC cannot express it and interviewers
+          reach for it when discussing anything Google-Docs-shaped. ReBAC decides access from the{' '}
+          <strong>relationships between objects</strong>: you may edit this document because you are an
+          editor of the folder that contains it, which is owned by a team you belong to.
+        </p>
+        <p>
+          RBAC struggles here because the permission is not a property of the user at all — it is a path
+          through a graph, and it changes when the document moves. Google&apos;s{' '}
+          <strong>Zanzibar</strong> paper is the canonical design (it backs Docs, Drive, YouTube, and
+          Cloud IAM), and the open-source implementations — SpiceDB, OpenFGA, Ory Keto — are what you
+          would actually reach for. Permissions are stored as relation tuples,{' '}
+          <code>document:readme#editor@user:alice</code>, and a check becomes a graph traversal.
+        </p>
+        <p>
+          <strong>Practical guidance:</strong> RBAC covers the great majority of applications. Reach for
+          ABAC when decisions depend on context (time, location, data classification), and ReBAC when
+          they depend on ownership and sharing hierarchies. Most mature systems end up with RBAC as the
+          coarse layer and one of the others for fine-grained resource checks.
         </p>
       </InfoBox>
 

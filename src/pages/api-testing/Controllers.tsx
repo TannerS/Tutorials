@@ -61,7 +61,7 @@ void putOnMissingResourceReturns404() throws Exception {
 void unsupportedMethodReturns405() throws Exception {
     mvc.perform(patch("/api/orders/{id}", "ORD-1"))  // controller has no PATCH mapping
         .andExpect(status().isMethodNotAllowed())
-        .andExpect(header().exists("Allow"));        // RFC 7231 requires this header
+        .andExpect(header().exists("Allow"));        // RFC 9110 requires this header on a 405
 }`}
       </CodeBlock>
 
@@ -191,10 +191,35 @@ void rejectsNegativePageSizeWith400() throws Exception {
 void filtersByQueryParameter() throws Exception {
     when(orders.findByStatus("PAID")).thenReturn(List.of(new OrderDto("ORD-2", "PAID")));
 
+    // A List is serialized as a top-level JSON array, so the path is $[*] —
+    // $.content[*] only applies when the controller returns a Page.
     mvc.perform(get("/api/orders").param("status", "PAID"))
-        .andExpect(jsonPath("$.content[*].status", everyItem(is("PAID"))));
+        .andExpect(jsonPath("$[*].status", everyItem(is("PAID"))));
 }`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Two of These Only Pass If You Wrote the Validation">
+        <p>
+          <code>rejectsNegativePageSizeWith400</code> assumes the endpoint validates
+          page parameters. Out of the box, Spring Data&apos;s{' '}
+          <code>PageableHandlerMethodArgumentResolver</code> does <strong>not</strong>{' '}
+          reject a negative or oversized <code>size</code> — it silently clamps to the
+          default (and to <code>spring.data.web.pageable.max-page-size</code>, 2000 by
+          default). To get a 400 you need explicit constraints, e.g.{' '}
+          <code>@Validated</code> on the controller plus{' '}
+          <code>@Min(1) @Max(100) int size</code> as a bound parameter. Write the test
+          expecting 400, watch it fail, then add the validation — otherwise the test
+          documents behavior you don&apos;t actually have.
+        </p>
+        <p>
+          Likewise the 413 upload test below: multipart size limits are enforced by the
+          servlet container, which <code>MockMvc</code> does not run.{' '}
+          <code>MockMultipartFile</code> bypasses the parser entirely, so a slice test
+          will happily accept an 11MB file. Assert 413 in a{' '}
+          <code>@SpringBootTest(webEnvironment = RANDOM_PORT)</code> test against a real
+          server instead.
+        </p>
+      </InfoBox>
 
       <h2>Multipart File Uploads</h2>
       <CodeBlock language="java" title="Testing File Upload Endpoints">

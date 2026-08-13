@@ -167,8 +167,19 @@ ORDER BY d.quarter, revenue DESC;`}
   attributes JSONB,                     -- semi-structured product attributes
   price_range NUMRANGE,                 -- range type: e.g. '[10.00,25.00)'
   available_from DATERANGE,
-  sku UUID DEFAULT gen_random_uuid()    -- UUID PK/alt-key, no sequence contention
+  sku UUID DEFAULT gen_random_uuid()    -- built in since PG13; no pgcrypto needed
 );
+
+-- On UUID keys: gen_random_uuid() is v4 — uniformly RANDOM. As a PRIMARY KEY
+-- on a big table that is a real cost: every insert lands on a different B-tree
+-- page, so the index loses write locality and the cache hit rate collapses.
+-- UUID v7 is time-ordered, so inserts append to the right-hand edge like a
+-- sequence while staying globally unique and client-generatable:
+  id UUID PRIMARY KEY DEFAULT uuidv7()  -- built in as of PG18
+-- On PG17 and older, generate v7 in the application (most languages have a
+-- library) or use a small SQL function. Reach for UUIDs when IDs must be
+-- unguessable or minted outside the database — otherwise IDENTITY is smaller
+-- (8 bytes vs 16) and faster.
 
 -- Query an array column
 SELECT * FROM products WHERE tags @> ARRAY['clearance'];
@@ -184,6 +195,121 @@ SELECT * FROM products WHERE price_range @> 19.99::numeric;`}
           a substitute for a proper join table when the "many" side needs its own identity,
           constraints, or independent querying — see the EAV anti-pattern discussion in the next
           lesson for where this line gets crossed.
+        </p>
+      </InfoBox>
+
+      <h2>Constraints Most People Never Reach For</h2>
+
+      <p>
+        Everyone knows <code>NOT NULL</code>, <code>UNIQUE</code>, <code>CHECK</code> and foreign
+        keys. Postgres has three more that remove whole categories of application code — each one
+        turns a rule you were enforcing in Java into a rule the database enforces for every writer,
+        forever.
+      </p>
+
+      <CodeBlock language="sql" title="GENERATED columns — derived data that cannot drift" showLineNumbers={true}>
+{`-- A STORED generated column is computed on write and kept on disk. It can
+-- never disagree with its inputs, because you are not allowed to write it.
+CREATE TABLE order_items (
+  id          INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  quantity    INT     NOT NULL CHECK (quantity > 0),
+  unit_price  NUMERIC(10,2) NOT NULL,
+  line_total  NUMERIC(12,2) GENERATED ALWAYS AS (quantity * unit_price) STORED
+);
+
+INSERT INTO order_items (quantity, unit_price) VALUES (3, 9.99);
+-- line_total is 29.97 automatically. Writing to it directly is an ERROR,
+-- which is the point: there is no code path that can put it out of sync.
+
+-- Index them like any column — this is how you index a JSONB field with a
+-- proper type instead of casting in every WHERE clause:
+CREATE TABLE events (
+  payload  JSONB NOT NULL,
+  user_id  INT GENERATED ALWAYS AS ((payload->>'user_id')::int) STORED
+);
+CREATE INDEX ON events (user_id);
+
+-- RULES: the expression must be IMMUTABLE, may reference only the CURRENT row
+-- (no subqueries, no other tables), and cannot reference another generated
+-- column. Postgres supports STORED only — there is no VIRTUAL yet, so it costs
+-- disk. Use a plain VIEW when you'd rather spend CPU on read than bytes on disk.`}
+      </CodeBlock>
+
+      <CodeBlock language="sql" title="EXCLUSION constraints — UNIQUE for things that aren't equality" showLineNumbers={true}>
+{`-- "No two bookings for the same room may OVERLAP IN TIME."
+-- UNIQUE can't express this: no two rows are equal, they merely intersect.
+CREATE EXTENSION IF NOT EXISTS btree_gist;   -- needed to mix = with &&
+
+CREATE TABLE bookings (
+  id        INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  room_id   INT NOT NULL,
+  during    TSTZRANGE NOT NULL,
+  cancelled BOOLEAN NOT NULL DEFAULT FALSE,
+
+  -- Read it as: reject a new row if there EXISTS a row where
+  -- room_id = room_id AND during && during (&& = "ranges overlap").
+  EXCLUDE USING GIST (
+    room_id WITH =,
+    during  WITH &&
+  ) WHERE (NOT cancelled)          -- exclusion constraints can be partial too
+);
+
+INSERT INTO bookings (room_id, during)
+VALUES (1, '[2026-03-01 09:00, 2026-03-01 11:00)');
+
+INSERT INTO bookings (room_id, during)
+VALUES (1, '[2026-03-01 10:00, 2026-03-01 12:00)');
+-- ERROR: conflicting key value violates exclusion constraint
+
+-- This is genuinely race-proof. The equivalent "SELECT to check for overlap,
+-- then INSERT" in application code is NOT: two concurrent requests both see
+-- no conflict and both insert. Doing it in the constraint is the only version
+-- that holds under concurrency without an explicit lock.
+-- Mind the range bounds: '[)' (inclusive-exclusive) is what you almost always
+-- want, so a booking ending at 11:00 doesn't collide with one starting at 11:00.`}
+      </CodeBlock>
+
+      <CodeBlock language="sql" title="NULLS NOT DISTINCT — fixing UNIQUE's blind spot (PG15+)" showLineNumbers={true}>
+{`-- By default, UNIQUE treats every NULL as distinct from every other NULL,
+-- so a "unique" column happily accepts unlimited NULL rows:
+CREATE TABLE contacts (email TEXT UNIQUE, tenant_id INT);
+INSERT INTO contacts VALUES (NULL, 1), (NULL, 1), (NULL, 1);   -- all accepted!
+
+-- PG15+ lets you say what you usually meant: NULLs collide with each other.
+CREATE TABLE contacts (
+  email     TEXT,
+  tenant_id INT NOT NULL,
+  UNIQUE NULLS NOT DISTINCT (email, tenant_id)
+);
+INSERT INTO contacts VALUES (NULL, 1);
+INSERT INTO contacts VALUES (NULL, 1);   -- ERROR: duplicate key value
+
+-- Where this actually bites: a nullable column in a composite unique key.
+--   UNIQUE (tenant_id, external_ref)  with external_ref sometimes NULL
+-- lets the same tenant accumulate unlimited NULL-ref rows, and the duplicate
+-- data shows up months later in a report rather than at insert time.
+--
+-- Before PG15 the workaround was two partial unique indexes:
+CREATE UNIQUE INDEX ON contacts (tenant_id, external_ref)
+  WHERE external_ref IS NOT NULL;
+CREATE UNIQUE INDEX ON contacts (tenant_id)
+  WHERE external_ref IS NULL;`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Why Push These Down Into the Schema">
+        <p>
+          Each of these replaces a rule that would otherwise live in application code — and
+          application-code rules hold only for the code paths that remember them. The nightly
+          import script, the admin console, the psql session someone opens during an incident, and
+          next year's second service all write to the same tables. A constraint is the only kind of
+          rule that applies to all of them.
+        </p>
+        <p>
+          The concurrency argument is stronger still. &quot;Check, then write&quot; in application
+          code is a race condition by construction: two requests can both pass the check before
+          either writes. <code>EXCLUDE</code>, <code>UNIQUE</code>, and{' '}
+          <code>ON CONFLICT</code> are the versions that survive concurrency, because the check and
+          the write are the same operation.
         </p>
       </InfoBox>
 
@@ -254,7 +380,8 @@ amount_cents BIGINT NOT NULL
 
 -- If you store cents, ALWAYS store the currency too. A bare number is
 -- meaningless the moment a second currency appears.
-currency CHAR(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}$')
+-- (TEXT, not CHAR(3) — see the note below on why CHAR's blank padding bites.)
+currency TEXT NOT NULL CHECK (currency ~ '^[A-Z]{3}$')
 
 -- NUMERIC without a precision is legal and stores arbitrary precision, but
 -- it accepts anything — including the 17-decimal-place result of a bad

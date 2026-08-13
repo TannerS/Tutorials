@@ -52,10 +52,18 @@ ORDER BY headcount DESC;`}
 -- "Departments with more than 5 senior engineers"
 SELECT department, COUNT(*) AS senior_count
 FROM employees
-WHERE level >= 'Senior'       -- row-level filter (before GROUP BY)
+WHERE level = 'Senior'        -- row-level filter (before GROUP BY)
 GROUP BY department
 HAVING COUNT(*) > 5           -- group-level filter (after GROUP BY)
 ORDER BY senior_count DESC;
+
+-- NOTE: do NOT write  WHERE level >= 'Senior'  to mean "Senior or above".
+-- On a text column that is a LEXICOGRAPHIC comparison, not a seniority one:
+-- it matches 'Senior' and 'Staff' but excludes 'Mid' and 'Principal'.
+-- If levels are ordered, model the order explicitly — an INT rank column, or
+-- a Postgres ENUM, which compares by declaration order rather than alphabet:
+--   CREATE TYPE seniority AS ENUM ('Junior','Mid','Senior','Staff','Principal');
+--   ... WHERE level >= 'Senior'::seniority   -- now genuinely means "or above"
 
 -- Conditional aggregation (avoids multiple queries)
 SELECT
@@ -184,9 +192,22 @@ FROM user_events;`}
 
       <InfoBox variant="warning" title="LAST_VALUE Trap">
         <p>
-          The default frame is <code>ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code>.
-          So <code>LAST_VALUE</code> with the default frame just returns the current row's value — useless.
-          You almost always need <code>ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING</code>.
+          When <code>OVER</code> has an <code>ORDER BY</code> and you don't write a frame, the
+          default is <code>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code> —{' '}
+          <strong>RANGE</strong>, not ROWS. The frame therefore ends at the last row that{' '}
+          <em>ties</em> with the current row on the ORDER BY expression, not at the current row
+          itself. So <code>LAST_VALUE</code> with the default frame returns the current row's value
+          (or its last peer), never the partition's true last value. You almost always want an
+          explicit <code>ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING</code>.
+        </p>
+        <p>
+          The RANGE-vs-ROWS distinction is invisible until there are ties, which is exactly why it
+          bites in production. With rows <code>(d=1,10), (d=2,20), (d=2,30), (d=3,40)</code>,{' '}
+          <code>SUM(amt) OVER (ORDER BY d)</code> gives <code>10, 60, 60, 100</code> — both{' '}
+          <code>d=2</code> rows already include each other — while{' '}
+          <code>SUM(amt) OVER (ORDER BY d ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)</code>{' '}
+          gives <code>10, 30, 60, 100</code>. If you want a true row-by-row running total, say{' '}
+          <code>ROWS</code> explicitly.
         </p>
       </InfoBox>
 

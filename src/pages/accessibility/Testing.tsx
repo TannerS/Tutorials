@@ -58,7 +58,17 @@ function Testing() {
       <CodeBlock language="javascript" title="eslint-plugin-jsx-a11y Setup">
 {`// npm install --save-dev eslint-plugin-jsx-a11y
 
-// .eslintrc.js
+// ESLint 9+ uses FLAT config (eslint.config.js). The older
+// .eslintrc.js format below still works via ESLINT_USE_FLAT_CONFIG=false,
+// but new projects should use flat config:
+//
+//   import jsxA11y from 'eslint-plugin-jsx-a11y';
+//   export default [
+//     jsxA11y.flatConfigs.recommended,
+//     { rules: { 'jsx-a11y/no-redundant-roles': 'warn' } },
+//   ];
+
+// .eslintrc.js (legacy format)
 module.exports = {
   plugins: ['jsx-a11y'],
   extends: ['plugin:jsx-a11y/recommended'],

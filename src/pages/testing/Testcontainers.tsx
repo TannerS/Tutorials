@@ -134,7 +134,9 @@ class OrderRepositoryIntegrationTest {
       </p>
 
       <CodeBlock language="bash" title="Install">
-{`npm install --save-dev testcontainers pg`}
+{`# 'testcontainers' is the core package (GenericContainer, networks, wait strategies).
+# Each pre-built module ships separately under the @testcontainers scope.
+npm install --save-dev testcontainers @testcontainers/postgresql pg`}
       </CodeBlock>
 
       <CodeBlock language="javascript" title="Postgres Integration Test (Node)">

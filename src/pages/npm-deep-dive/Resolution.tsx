@@ -205,8 +205,8 @@ npm ls --all | grep "deduped"
   "name": "my-ui-components",
   "version": "1.0.0",
   "peerDependencies": {
-    "react": "^17.0.0 || ^18.0.0",
-    "react-dom": "^17.0.0 || ^18.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "peerDependenciesMeta": {
     "react-dom": {
@@ -214,8 +214,8 @@ npm ls --all | grep "deduped"
     }
   },
   "devDependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }`}
       </CodeBlock>

@@ -105,6 +105,11 @@ RSASHA256(
             <td style={{ padding: '0.75rem' }}>Issued at time</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>nbf</code></td>
+            <td style={{ padding: '0.75rem' }}>Registered</td>
+            <td style={{ padding: '0.75rem' }}>Not before — token is invalid until this time</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><code>jti</code></td>
             <td style={{ padding: '0.75rem' }}>Registered</td>
             <td style={{ padding: '0.75rem' }}>JWT ID — unique token identifier</td>
@@ -343,7 +348,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
       <h3>1. The <code>alg: none</code> Attack</h3>
       <p>
-        The JWT spec includes an <code>none</code> algorithm meaning
+        The JWT spec includes a <code>none</code> algorithm meaning
         &quot;unsecured token.&quot; An attacker takes a valid token, edits the
         payload to <code>&quot;roles&quot;: [&quot;admin&quot;]</code>, sets
         the header to <code>&quot;alg&quot;: &quot;none&quot;</code>, and drops

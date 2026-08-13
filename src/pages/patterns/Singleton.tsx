@@ -117,7 +117,27 @@ Connection conn = DatabasePool.INSTANCE.getConnection();`}
         chart={"graph TD\n  A[Client] --> B[Creator]\n  B --> C[ConcreteCreatorA]\n  B --> D[ConcreteCreatorB]\n  C --> E[ProductA]\n  D --> F[ProductB]\n  E --> G[Product Interface]\n  F --> G"}
       />
 
-      <CodeBlock language="java" title="Factory Method - Notification System" showLineNumbers={true}>
+      <InfoBox variant="warning" title="First: &quot;Simple Factory&quot; Is Not the Factory Method Pattern">
+        <p>
+          This trips up a lot of people, and interviewers ask it deliberately. The thing most
+          codebases call &quot;the factory&quot; — one static method with a switch that returns a
+          concrete type — is <strong>Simple Factory</strong>, an idiom that does not appear in the GoF
+          book at all. It is useful and you should know it, but it is not Factory Method.
+        </p>
+        <p>
+          <strong>Factory Method</strong> (the actual GoF pattern, shown in the diagram above) puts the
+          creation step in an <em>overridable method on a Creator class</em>. Subclasses decide what to
+          instantiate, and the base class&apos;s algorithm calls that method without knowing the answer.
+          The decision moves to <em>which subclass you are</em>, not to a switch statement.
+        </p>
+        <p>
+          Both are below, in that order, so you can see the difference.
+        </p>
+      </InfoBox>
+
+      <h4>Simple Factory (the common idiom)</h4>
+
+      <CodeBlock language="java" title="Simple Factory - Notification System" showLineNumbers={true}>
 {`// Product interface
 public interface Notification {
     void send(String recipient, String message);
@@ -142,7 +162,7 @@ public class PushNotification implements Notification {
     }
 }
 
-// Factory
+// Simple Factory: ONE class centralising the switch.
 public class NotificationFactory {
     public static Notification create(String channel) {
         return switch (channel.toUpperCase()) {
@@ -157,17 +177,80 @@ public class NotificationFactory {
 
 // Usage
 Notification notif = NotificationFactory.create("EMAIL");
-notif.send("user@example.com", "Your order shipped!");`}
+notif.send("user@example.com", "Your order shipped!");
+
+// NOTE: adding a channel means EDITING this switch, so Simple Factory
+// does not satisfy the Open/Closed Principle. What it does buy you is
+// a single place where that decision lives, instead of the same
+// if/else copy-pasted across twenty call sites. That is often enough.`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="When to Reach for Factory Method">
-        Use Factory Method the moment a plain constructor call would need an if/else or switch to
-        pick a concrete class — like the notification channel example above. It's especially
-        valuable when the decision of "which implementation" is driven by config or runtime data
-        (a channel string from a request, a feature flag, a plugin name loaded from a properties
-        file) rather than something the caller knows at compile time. If there's only ever going
-        to be one implementation of an interface, skip the factory — <code>new SimpleGreeter()</code>{' '}
-        is not a smell, it's just object creation.
+      <h4>Factory Method (the GoF pattern)</h4>
+
+      <CodeBlock language="java" title="Factory Method - Subclass Decides the Product" showLineNumbers={true}>
+{`// The Creator defines the ALGORITHM and leaves a hole for the product.
+public abstract class NotificationDispatcher {
+
+    // The factory method: subclasses fill this in.
+    protected abstract Notification createNotification();
+
+    // Template of shared behaviour. Note it never names a concrete
+    // product — that is the whole point.
+    public final void dispatch(String recipient, String message) {
+        Notification notification = createNotification();
+        auditLog.record("dispatching via " + notification.getClass());
+        notification.send(recipient, message);
+        metrics.increment("notifications.sent");
+    }
+}
+
+// Each ConcreteCreator answers the question one way.
+public class EmailDispatcher extends NotificationDispatcher {
+    @Override
+    protected Notification createNotification() {
+        return new EmailNotification(smtpConfig);
+    }
+}
+
+public class SmsDispatcher extends NotificationDispatcher {
+    @Override
+    protected Notification createNotification() {
+        return new SmsNotification(twilioClient);
+    }
+}
+
+// Adding a push channel = adding ONE new subclass.
+// No existing file is edited — this version IS open/closed.
+public class PushDispatcher extends NotificationDispatcher {
+    @Override
+    protected Notification createNotification() {
+        return new PushNotification(firebaseClient);
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Choosing Between Them">
+        <p>
+          <strong>Simple Factory</strong> is the right default. Use it the moment a plain constructor
+          call would need an if/else or a switch to pick a concrete class — especially when the choice
+          is driven by runtime data (a channel string from a request, a feature flag, a plugin name in
+          a config file). Centralising that switch in one place is a genuine win even though it is not
+          a GoF pattern.
+        </p>
+        <p>
+          <strong>Factory Method</strong> earns its extra ceremony only when there is <em>shared
+          surrounding algorithm</em> that varies solely in which object it works with — the{' '}
+          <code>dispatch()</code> method above. If you would end up with subclasses whose only content
+          is a one-line <code>create()</code> override and nothing else, you have written a more
+          verbose Simple Factory.
+        </p>
+        <p>
+          <strong>In Spring,</strong> both are frequently displaced entirely: inject a{' '}
+          <code>Map&lt;String, Notification&gt;</code> and Spring populates it with every bean keyed by
+          name, or inject a <code>List</code> and select with a <code>supports()</code> predicate as in
+          the Strategy lesson. If there is only ever one implementation, skip all of this —{' '}
+          <code>new SimpleGreeter()</code> is not a smell, it is just object creation.
+        </p>
       </InfoBox>
 
       <h3>Abstract Factory</h3>

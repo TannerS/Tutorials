@@ -79,10 +79,15 @@ export default function Responsive() {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;  /* don't omit this one */
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
+/* animation-iteration-count is the line people drop, and it matters:
+   an infinite animation with a 0.01ms duration doesn't stop — it loops
+   forever at maximum rate, pinning the CPU on exactly the machines whose
+   users asked for less motion. Capping the count is what actually ends it. */
 
 /* Hover capability — critical for touch vs pointer devices */
 @media (hover: hover) {

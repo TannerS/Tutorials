@@ -124,6 +124,70 @@ function RouteAnnouncer() {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Choose One Strategy, Not Both">
+        <p>
+          The two approaches above are <strong>alternatives</strong>. Doing both means the screen
+          reader announces the heading (because focus moved there) and then announces the live-region
+          message too — the user hears the page name twice.
+        </p>
+        <p>
+          <strong>Move focus</strong> when the user should start interacting with the new page —
+          it also resets the tab position, which announcing alone does not. <strong>Announce
+          only</strong> when moving focus would be disruptive, such as an in-page filter change that
+          rewrites results while the user is still working in the filter controls.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="danger" title="Focusing an h1 Has Three Failure Modes">
+        <p>
+          <strong>1. The heading may not exist yet.</strong>{' '}
+          <code>document.querySelector(&#39;h1&#39;)</code> runs in an effect that may fire before a
+          lazily-loaded route has rendered its content, silently doing nothing. Focus a stable
+          wrapper you control rather than querying for whatever heading happens to be there.
+        </p>
+        <p>
+          <strong>2. Focusing scrolls.</strong> Calling <code>.focus()</code> jumps the viewport to
+          the element. If your layout expects to be at the top after navigation, pass{' '}
+          <code>{'{ preventScroll: true }'}</code> and handle scrolling separately.
+        </p>
+        <p>
+          <strong>3. The initial page load is not a route change.</strong> A full load already puts
+          focus at the document start, so firing this on mount steals focus for no reason. Skip the
+          first run.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="A More Robust Route Focus Handler">
+{`function RouteFocus({ children }) {
+  const location = useLocation();
+  const targetRef = useRef(null);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    // Don't hijack focus on the very first page load -- the browser
+    // has already put the user at the top of the document.
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    // Focus a container WE own, not whatever h1 may or may not exist.
+    // preventScroll stops the focus call from fighting scroll restoration.
+    targetRef.current?.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  return (
+    // tabindex="-1" makes it programmatically focusable without
+    // adding it to the tab order. The label gives the screen reader
+    // something to announce when focus lands.
+    <div ref={targetRef} tabIndex={-1} aria-label="Main content" style={{ outline: 'none' }}>
+      {children}
+    </div>
+  );
+}`}
+      </CodeBlock>
+
       {/* ── Focus Trapping ────────────────────────────────── */}
       <h2>Focus Trapping in Modals</h2>
       <p>
@@ -157,6 +221,50 @@ function RouteAnnouncer() {
   }, [isActive]);
 
   return containerRef;
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Or Stop Hand-Rolling Focus Traps Entirely">
+        <p>
+          The Tab-cycling hook above is the classic implementation and worth understanding, but it has
+          real gaps: it does not see focusable elements inside shadow DOM or iframes, it treats
+          visually hidden elements as focusable, and it does nothing about a screen reader user
+          navigating the background content by virtual cursor rather than by Tab.
+        </p>
+        <p>
+          Two modern tools do this properly:
+        </p>
+        <p>
+          <strong>Native <code>&lt;dialog&gt;</code> with{' '}
+          <code>showModal()</code>.</strong> The browser traps focus, renders in the top layer, closes
+          on Escape, and makes everything behind it inert — all for free, and correctly.
+        </p>
+        <p>
+          <strong>The <code>inert</code> attribute.</strong> Now supported in every major browser,{' '}
+          <code>inert</code> removes an entire subtree from focus, clicks, and the accessibility tree
+          at once. Setting it on your app root while a modal is open is a far stronger guarantee than
+          intercepting Tab, because it also blocks the virtual cursor:
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="inert — the Modern Way to Isolate a Modal">
+{`function Modal({ isOpen, onClose, children }) {
+  useEffect(() => {
+    const appRoot = document.getElementById('root-content');
+    if (!appRoot) return;
+
+    // Everything outside the modal becomes unreachable: not
+    // focusable, not clickable, and INVISIBLE TO SCREEN READERS.
+    // A Tab-key trap alone does not achieve that last part.
+    if (isOpen) appRoot.inert = true;
+    return () => { appRoot.inert = false; };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+  return createPortal(
+    <div role="dialog" aria-modal="true">{children}</div>,
+    document.body   // portal OUTSIDE the inert subtree, or the modal
+  );                // would make itself inert too
 }`}
       </CodeBlock>
 
@@ -294,9 +402,15 @@ button:focus-visible {
   }
 }
 
-/* WCAG 2.4.7 (AA): Focus must be visible
-   WCAG 2.4.11 (AAA): Focus indicator must have
-   sufficient contrast and minimum area */`}
+/* Which criterion is which (people mix these up):
+   2.4.7  Focus Visible          (AA)  - there must BE an indicator
+   2.4.11 Focus Not Obscured     (AA)  - NEW in 2.2. The focused
+          element must not be hidden behind a sticky header, cookie
+          banner, or chat widget. A visible ring you cannot see
+          because it is under a toolbar still fails.
+   2.4.13 Focus Appearance       (AAA) - NEW in 2.2. Sets the actual
+          numbers: at least a 2px-thick perimeter and a 3:1 contrast
+          ratio against adjacent colours. */`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="Never outline: none Without an Alternative">

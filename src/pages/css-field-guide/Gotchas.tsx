@@ -9,7 +9,7 @@ export default function FieldGuideCssGotchas() {
       eyebrow="CSS · Field Reference"
       title="Gotchas & Specificity Pitfalls"
       tagline="The got-ya moments that pass code review and don't show up until someone else's screen — mostly about specificity, containment, and defaults nobody reads."
-      meta={['CSS3', '12 gotchas']}
+      meta={['CSS3', '13 gotchas']}
       footerLabel="Personal study reference — CSS Gotchas"
       pageLabel="CSS Field Guide · Gotchas"
       prev={{ path: '/css-field-guide/advanced', label: 'Advanced CSS & Modern Selectors' }}
@@ -46,17 +46,22 @@ export default function FieldGuideCssGotchas() {
         glyph="Mc"
         title={<>Margin Collapse<span className="dim"> Surprise</span></>}
         language="css"
-        code={`.section { margin-bottom: 40px; }
-.section:last-child { margin-bottom: 0; }
-/* footer directly after .section still gets a gap from
-   the SECOND-to-last margin, not what you'd expect —
-   collapsing "reaches through" empty/margin-only elements too */
+        code={`/* 1. SIBLINGS — the gap is the LARGER margin, not the sum */
+.a { margin-bottom: 20px; }
+.b { margin-top: 30px; }
+/* gap between them is 30px, not 50px */
 
+/* 2. PARENT/CHILD — the child's margin ESCAPES the parent if the
+   parent has no padding, border, or block formatting context.
+   The whole parent box moves down; the child gains no inset. */
 .parent { padding: 0; }
-.child { margin-top: 20px; }
-/* child's margin ESCAPES the parent entirely if parent has
-   no padding/border/BFC — parent moves down, not the child */`}
-        caption="The second case trips people up constantly: a child's top margin can collapse THROUGH its own parent if the parent has no padding, border, or established block formatting context — the whole parent box shifts down instead of gaining internal space."
+.child  { margin-top: 20px; }
+
+/* 3. THROUGH AN EMPTY ELEMENT — a box with no content, height,
+   padding or border lets its own top and bottom margins collapse
+   together AND merge with its neighbours' */
+.spacer { margin: 20px 0; }   /* empty div: contributes 20px total, not 40 */`}
+        caption="Three distinct forms, all of which take the LARGEST margin rather than adding. Collapsing only reaches 'through' an element when that element is genuinely empty — no content, height, padding or border. Any of padding, border, display: flow-root, or a flex/grid parent stops it; gap never collapses at all, which is the main reason gap beats margin for spacing children."
       />
 
       <PosterCard
@@ -168,6 +173,22 @@ li:not(:where(.active)) { color: gray; }  /* :where() zeroes it back out */`}
         caption="stretch is flexbox's default cross-axis alignment, which is why flex children with no explicit height all end up the same height as the tallest one — set align-items: flex-start explicitly when content-sized rows are what you actually want."
       />
 
+      <PosterCard
+        glyph="Mw"
+        title={<>min-width: auto<span className="dim"> Refuses to Shrink</span></>}
+        language="css"
+        code={`.layout { display: flex; }
+.main   { flex: 1; }
+/* ❌ a long URL or a wide <pre> inside .main forces a page-level
+   horizontal scrollbar. flex-shrink can't help: flex and grid items
+   default to min-width: auto, which resolves to their MIN-CONTENT
+   size — a hard floor below which they will not go. */
+
+.main { flex: 1; min-width: 0; }   /* ✅ the whole fix */
+/* column direction / grid rows use min-height: 0 instead */`}
+        caption="The most common flexbox bug there is, and the reason text-overflow: ellipsis 'doesn't work' inside flex — truncation needs the box to get narrower than its text, and the automatic minimum size forbids it. Set min-width: 0 on the flex ITEM, not on the element with the ellipsis. overflow: hidden has the same effect, since any overflow other than visible changes the automatic minimum to 0."
+      />
+
       <PosterQuickRef
         title="Symptom → root cause"
         rows={[
@@ -179,6 +200,8 @@ li:not(:where(.active)) { color: gray; }  /* :where() zeroes it back out */`}
           { need: 'A child margin pushed the whole parent down', answer: 'Margin collapsed through the parent — add padding or a BFC' },
           { need: 'Cards are all the same height unexpectedly', answer: 'align-items: stretch is the flex default' },
           { need: 'New override rule refuses to win', answer: "Check for an unlayered rule beating your @layer, or an existing !important" },
+          { need: 'Long content forces a horizontal scrollbar', answer: 'Flex/grid item needs min-width: 0 — min-width: auto is the default floor' },
+          { need: "text-overflow: ellipsis does nothing in a flex row", answer: 'Same cause — add min-width: 0 to the flex item' },
         ]}
       />
     </PosterLayout>

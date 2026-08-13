@@ -275,31 +275,51 @@ const router = createBrowserRouter([
         granular error handling.
       </InfoBox>
 
-      <h2>Deferred Data with defer &amp; Await</h2>
+      <h2>Deferred Data — Return Promises, Render with Await</h2>
       <p>
-        For non-critical data, use <code>defer</code> to start fetching immediately
-        but render the page before it resolves. Wrap the deferred portion in{' '}
-        <code>&lt;Suspense&gt;</code> and <code>&lt;Await&gt;</code>.
+        For non-critical data, start the fetch immediately but render the page before it
+        resolves. In v7 you do this by simply <strong>returning a promise you did not
+        await</strong> from the loader, then unwrapping it with{' '}
+        <code>&lt;Suspense&gt;</code> + <code>&lt;Await&gt;</code>.
       </p>
 
-      <CodeBlock language="jsx" title="Streaming with defer">
-{`import { defer, Await, useLoaderData } from 'react-router-dom';
+      <InfoBox variant="danger" title="defer() and json() are GONE in v7">
+        <p>
+          If you have seen <code>return defer({'{ ... }'})</code> in a tutorial, that tutorial is
+          for v6. Both <code>defer()</code> and <code>json()</code> were deprecated during
+          6.x and <strong>removed in React Router v7</strong> — importing them now is a runtime{' '}
+          <code>undefined is not a function</code>, not a deprecation warning.
+        </p>
+        <ul style={{ marginBottom: 0 }}>
+          <li><code>defer({'{ a, b }'})</code> → just <code>return {'{ a, b }'}</code>. Any value that is a promise is automatically deferred.</li>
+          <li><code>json(data)</code> → return the plain object, or <code>Response.json(data)</code> when you genuinely need to control status/headers.</li>
+          <li><code>{'<Await>'}</code> and <code>useAsyncValue()</code> / <code>useAsyncError()</code> are <em>not</em> removed — they are still how you read a deferred value.</li>
+        </ul>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Streaming a loader in v7 — no defer() wrapper">
+{`import { Await, useLoaderData } from 'react-router-dom';
 import { Suspense } from 'react';
 
 export async function loader({ params }) {
-  // Critical data — awaited before render
+  // Critical data — awaited, so navigation waits for it
   const user = await fetch(\`/api/users/\${params.id}\`).then(r => r.json());
 
-  // Non-critical — start fetching but don't block render
+  // Non-critical — kick off the fetch but do NOT await it
   const postsPromise = fetch(\`/api/users/\${params.id}/posts\`).then(r => r.json());
   const statsPromise = fetch(\`/api/users/\${params.id}/stats\`).then(r => r.json());
 
-  return defer({
+  // Plain object. React Router sees the un-awaited promises and streams them.
+  return {
     user,                  // already resolved
     posts: postsPromise,   // still pending
     stats: statsPromise,   // still pending
-  });
+  };
 }
+
+// ⚠️ An un-awaited promise that rejects with nothing to catch it will crash the
+// app. Either render it inside <Await errorElement={...}> (as below), or attach
+// a .catch() in the loader. React Router cannot catch it for you before render.
 
 export default function UserProfile() {
   const { user, posts, stats } = useLoaderData();

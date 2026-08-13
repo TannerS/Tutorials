@@ -168,6 +168,33 @@ management:
   endpoint.health.probes.enabled: true`}
       </CodeBlock>
 
+      <h2>Config Imports & Profiles</h2>
+      <CodeBlock language="yaml" title="spring.config.import and multi-document profiles">
+{`spring:
+  config:
+    import:
+      # Each FILE in the directory is a property: filename = key, contents = value.
+      # Exactly how Kubernetes mounts a Secret/ConfigMap as a volume.
+      - optional:configtree:/etc/secrets/
+      - optional:configtree:/run/secrets/        # Docker/Compose secrets
+      - optional:vault://
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod          # modern key; in-document 'spring.profiles'
+                                # was deprecated in 2.4 and REMOVED in 3.0
+app:
+  cache:
+    ttl: PT10M
+
+# Precedence, highest first:
+#   devtools > @TestPropertySource > cmd-line args > SPRING_APPLICATION_JSON
+#   > system props > OS env vars > application-{profile}.yml > application.yml
+#   > @PropertySource > defaults`}
+      </CodeBlock>
+
       <h2>Type-Safe Config Property Class</h2>
       <CodeBlock language="java" title="@ConfigurationProperties on a record">
 {`@ConfigurationProperties(prefix = "app.external.catalog-api")
@@ -200,9 +227,17 @@ class OrderControllerTest {
 // Integration — full context + real dependencies via TestContainers
 @Testcontainers @SpringBootTest
 class OrderFlowIT {
-    @Container static PostgreSQLContainer<?> pg = new PostgreSQLContainer<>("postgres:16-alpine");
-    @DynamicPropertySource static void ds(DynamicPropertyRegistry r) { ... }
-}`}
+    @Container @ServiceConnection                       // auto-wires datasource props
+    static PostgreSQLContainer<?> pg = new PostgreSQLContainer<>("postgres:17-alpine");
+}
+
+// CONTEXT CACHING — the biggest lever on suite speed. A context is reused only
+// if ALL of these match: @ContextConfiguration, @ActiveProfiles, properties,
+// initializers, web environment, and the set of @MockitoBean definitions.
+// => Put shared setup in ONE abstract base class and extend it. Inline
+//    'properties = {...}' that differs per class forks a new context each time.
+// => @DirtiesContext evicts the cache; use it only when truly unavoidable.
+// Debug with: logging.level.org.springframework.test.context.cache=DEBUG`}
       </CodeBlock>
 
       <h2>Kafka Essentials</h2>
@@ -289,9 +324,12 @@ OrderV2 get(@PathVariable UUID id) { ... }
 
 // 2. Retry/resilience moved into core — drop the spring-retry dependency
 @EnableResilientMethods                       // replaces @EnableRetry
-@Retryable(includes = ApiException.class, maxAttempts = 4,
-           delay = 200, multiplier = 2.0)     // backoff attrs inline
+@Retryable(includes = ApiException.class,
+           maxRetries = 3,                    // NOT maxAttempts (that's spring-retry);
+                                              // counts retries AFTER the first call
+           delay = 200, multiplier = 2.0, jitter = 50)   // backoff attrs inline
 @ConcurrencyLimit(10)                         // cap in-flight calls
+// Core Spring has NO @Recover — the last exception just propagates.
 
 // 3. Declarative clients auto-register — no HttpServiceProxyFactory @Bean
 @ImportHttpServices(group = "catalog", types = CatalogApi.class)

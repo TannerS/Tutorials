@@ -93,7 +93,10 @@ function Semantic() {
 <footer>              <!-- contentinfo         "contentinfo landmark"     -->
 <section aria-label>  <!-- region              "region landmark"          -->
 <form aria-label>     <!-- form                "form landmark"            -->
-<search>              <!-- search (HTML5.2)    "search landmark"          -->
+<search>              <!-- search              "search landmark"          -->
+<!-- <search> is a 2023 addition to the HTML Living Standard, now in all
+     major browsers. Before it, you used <form role="search">. -->
+
 
 <!-- Rules: -->
 <!-- • Only ONE <main> per page -->

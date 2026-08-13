@@ -194,6 +194,24 @@ useNavigate   Navigation triggered by code, not a click:
       />
 
       <PosterCard
+        glyph="Aw"
+        title={<>Streaming<span className="dim"> — Await, not defer()</span></>}
+        code={`export async function loader({ params }) {
+  const user = await getUser(params.id);      // blocks navigation
+  const posts = getPosts(params.id);          // NOT awaited → deferred
+
+  return { user, posts };   // plain object. No defer() wrapper.
+}
+
+<Suspense fallback={<Spinner />}>
+  <Await resolve={posts} errorElement={<p>Failed</p>}>
+    {(list) => <PostList posts={list} />}
+  </Await>
+</Suspense>`}
+        caption="defer() and json() were REMOVED in v7, not deprecated — importing them is a runtime crash. Just return the object: any un-awaited promise in it streams automatically. <Await>, useAsyncValue() and useAsyncError() all survived. Give every deferred promise an errorElement or a .catch(), or an unhandled rejection takes down the app."
+      />
+
+      <PosterCard
         glyph="TS"
         title={<>Typing Loader Data</>}
         code={`import type { LoaderFunctionArgs } from 'react-router-dom';

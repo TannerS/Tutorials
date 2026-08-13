@@ -41,7 +41,7 @@ export default function Setup() {
         and your starter dependencies.
       </p>
 
-      <CodeBlock language="java" title="pom.xml">
+      <CodeBlock language="xml" title="pom.xml">
 {`<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -250,7 +250,7 @@ public class MyAppApplication {
         or Gradle from the command line, or by building a fat JAR and running it directly.
       </p>
 
-      <CodeBlock language="java" title="Running the Application (Terminal)">
+      <CodeBlock language="text" title="Running the Application (Terminal)">
 {`# Using Maven wrapper (recommended)
 ./mvnw spring-boot:run
 
@@ -279,8 +279,10 @@ java -jar target/my-app-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev`}
 ./gradlew bootBuildImage --imageName=myorg/my-app:1.0
 
 # The equivalent multi-stage Dockerfile, if you need full control.
-# The key idea is 'layertools extract' — it splits the fat JAR into layers
+# The key idea is layer extraction — it splits the fat JAR into layers
 # ordered by how often they change, so Docker can cache the stable ones.
+# (Boot 3.3+ spells this '-Djarmode=tools ... extract'. On Boot 3.2 and
+#  earlier it was '-Djarmode=layertools ... extract'.)
 
 FROM eclipse-temurin:21-jdk AS builder
 WORKDIR /app
@@ -290,6 +292,8 @@ RUN java -Djarmode=tools -jar target/*.jar extract --layers --destination extrac
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
+# Order matters: least-frequently-changed layer first, so a code-only change
+# invalidates just the last COPY.
 COPY --from=builder /app/extracted/dependencies/ ./
 COPY --from=builder /app/extracted/spring-boot-loader/ ./
 COPY --from=builder /app/extracted/snapshot-dependencies/ ./
@@ -297,7 +301,9 @@ COPY --from=builder /app/extracted/application/ ./
 # Never run as root.
 RUN useradd -r -u 1001 appuser
 USER appuser
-ENTRYPOINT ["java", "-jar", "app.jar"]`}
+# NOT "java -jar app.jar" — the layers are exploded on disk, there is no fat
+# JAR any more. Launch the exploded form through the Boot loader instead.
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="Let the JVM see the container's limits">

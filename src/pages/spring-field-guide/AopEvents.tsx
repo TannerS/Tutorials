@@ -281,18 +281,19 @@ class ResilienceConfig { }
 @Service
 public class CatalogClient {
     // backoff attributes are inline, not a nested @Backoff
+    // and it's maxRetries (retries AFTER the first call), NOT maxAttempts
     @Retryable(includes = RemoteApiException.class,
-               maxAttempts = 4,
-               delay = 200, multiplier = 2.0, maxDelay = 5000)
+               maxRetries = 3,
+               delay = 200, multiplier = 2.0, maxDelay = 5000, jitter = 50)
     public ProductDto get(String id) { ... }
 
-    @Recover                     // unchanged
-    public ProductDto recoverGet(RemoteApiException e, String id) { ... }
+    // NO @Recover — core Spring has no fallback method. The last
+    // exception propagates; catch it at the call site instead.
 
     @ConcurrencyLimit(10)        // no spring-retry equivalent
     public Report generate(ReportRequest req) { ... }
 }`}
-        caption="Same idea as spring-retry, now core: @EnableResilientMethods, flattened backoff attributes, plus @ConcurrencyLimit to cap in-flight calls without a thread pool. Still proxy-based, so self-invocation still silently gives you zero retries — and neither is a circuit breaker (that's Resilience4j)."
+        caption="Not a drop-in rename of spring-retry: maxRetries replaces maxAttempts, includes replaces retryFor, backoff is flattened — and @Recover does not exist in core Spring, so exhausted retries just rethrow. Still proxy-based, so self-invocation silently gives you zero retries, and neither is a circuit breaker (that's Resilience4j)."
       />
 
       <PosterQuickRef

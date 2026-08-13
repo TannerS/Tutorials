@@ -40,9 +40,11 @@ function Intro() {
           is what makes Java platform-independent.
         </li>
         <li>
-          <strong>JRE (Java Runtime Environment)</strong> — Includes the JVM plus the standard
-          class libraries and other resources needed to run Java applications. If you only need to
-          run Java programs, the JRE is sufficient.
+          <strong>JRE (Java Runtime Environment)</strong> — The JVM plus the standard class
+          libraries needed to <em>run</em> Java applications. Note that since Java 11 Oracle and
+          most vendors no longer ship a standalone JRE download: you install a JDK, and if you
+          need a trimmed runtime for deployment you build one with <code>jlink</code>. In practice
+          today, &quot;install Java&quot; means &quot;install a JDK.&quot;
         </li>
         <li>
           <strong>JDK (Java Development Kit)</strong> — Includes the JRE plus development tools
@@ -128,6 +130,45 @@ java HelloWorld
           capitalization) and end with <code>.java</code>. So a class called{' '}
           <code>HelloWorld</code> must be in a file called <code>HelloWorld.java</code>. This is
           enforced by the compiler and will cause an error if not followed.
+        </p>
+      </InfoBox>
+
+      <h2>The Shorter Way to Run Java</h2>
+      <p>
+        The two-command <code>javac</code> then <code>java</code> dance above is what actually
+        happens, and you should understand it. But modern Java has removed nearly all of that
+        ceremony for small programs, and you will want the short form while learning.
+      </p>
+
+      <CodeBlock language="java" title="Terminal">
+{`// Java 11+ : run a single source file directly. No .class file is produced —
+// the JDK compiles it in memory and runs it in one step.
+java HelloWorld.java
+
+// Java 25+ : the file itself can be this short. No class declaration,
+// no "public static void", no imports for common types.
+//   -- Hello.java --
+//   void main() {
+//       IO.println("Hello, World!");
+//   }
+java Hello.java`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="Compact source files (Java 25)">
+        <p>
+          Java 25 finalised <strong>compact source files and instance main methods</strong>. A
+          source file may declare <code>void main()</code> at the top level with no enclosing class
+          and no <code>String[] args</code>; the compiler wraps it for you. Those files also get
+          the <code>java.base</code> module imported implicitly (so <code>List</code>,{' '}
+          <code>Map</code>, and friends just work) plus a new <code>java.lang.IO</code> class with{' '}
+          <code>IO.println(...)</code> and <code>IO.readln(...)</code>.
+        </p>
+        <p>
+          This exists so that a first Java program does not require explaining{' '}
+          <code>public</code>, <code>static</code>, <code>void</code>, arrays, and classes before
+          printing a line. Real applications still use ordinary classes in packages — everything
+          else in this course does — but you can reach for the short form any time you are just
+          trying something out.
         </p>
       </InfoBox>
 

@@ -12,7 +12,11 @@
   --bg-active: #252a3f;
   --text-primary: #e4e6f0;
   --text-secondary: #9399b2;
-  --text-muted: #6c7293;
+  /* was #6c7293 — 4.01:1 on --bg-primary and only 3.55:1 on --bg-card, i.e.
+     below WCAG AA for the small text this token is used for (lesson counts,
+     TOC heading, sidebar strapline). #8288a5 keeps the same muted feel at
+     5.40:1 / 4.78:1. */
+  --text-muted: #8288a5;
   --border-color: #2a2e42;
   --accent-blue: #5b9cf6;
   --accent-green: #4ade80;
@@ -22,6 +26,10 @@
   --accent-cyan: #22d3ee;
   --accent-yellow: #facc15;
   --accent-pink: #f472b6;
+  /* Link hover. Used to be a hardcoded #7db4f8 in the `a:hover` rule, which is
+     a DARK-theme colour — on the light theme it hovered to 2.01:1, i.e. links
+     became unreadable the moment the pointer touched them. */
+  --accent-blue-hover: #7db4f8;
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
   --radius: 8px;
   --radius-sm: 4px;
@@ -70,16 +78,23 @@
   --bg-active: #dde1ea;
   --text-primary: #14161f;
   --text-secondary: #52586b;
-  --text-muted: #7d8298;
+  /* Contrast-corrected against the light surfaces — see the dark-theme note.
+     #7d8298 was 3.55:1 on --bg-primary; #6b7183 is 4.54:1. */
+  --text-muted: #6b7183;
   --border-color: #dde2ec;
   --accent-blue: #2563eb;
-  --accent-green: #16a34a;
+  /* #16a34a was 3.08:1 — this token colours the "Lesson completed" text and
+     the tip/success InfoBox headings, so it has to clear AA. */
+  --accent-green: #15803d;
   --accent-purple: #7c3aed;
   --accent-orange: #c2410c;
   --accent-red: #dc2626;
-  --accent-cyan: #0891b2;
+  /* This one is load-bearing: `code { color: var(--accent-cyan) }` styles every
+     inline code span on the site. #0891b2 read at 3.23:1 on --bg-code. */
+  --accent-cyan: #0e7490;
   --accent-yellow: #a16207;
-  --accent-pink: #db2777;
+  --accent-pink: #be185d;
+  --accent-blue-hover: #1d4ed8;
 
   --accent-emerald: #059669;
   --accent-amber: #92400e;
@@ -99,10 +114,13 @@
   --border-light: #94a3b8;
 
   --syn-keyword: #9333ea;
-  --syn-string: #16803d;
+  --syn-string: #146c34;
   --syn-function: #1d4ed8;
   --syn-number: #c2410c;
-  --syn-comment: #7d8298;
+  /* #7d8298 comments sat at 3.34:1 on --bg-code — the least readable thing in
+     a light-theme code block, which is the opposite of what you want when the
+     comments are the explanation. */
+  --syn-comment: #5f6577;
   --syn-punctuation: #3a3f52;
   --syn-property: #be185d;
   --syn-tag: #1d4ed8;
@@ -138,7 +156,7 @@ a {
 }
 
 a:hover {
-  color: #7db4f8;
+  color: var(--accent-blue-hover);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -245,6 +263,64 @@ li {
 @media print {
   @page { margin: 14mm 12mm; }
 
+  /* Flatten the palette to ink-on-paper values BEFORE anything else.
+     The rules below can force html/body/#root to white, but hundreds of
+     elements across the components and lesson pages carry inline
+     `color: var(--text-primary)` / `background: var(--bg-card)`, and those
+     kept resolving to the DARK theme's values when the reader printed while
+     in night mode — near-white text on white paper. Overriding the tokens
+     themselves fixes every consumer at once. This block sits after
+     `:root[data-theme="light"]` in the file, so it wins on source order at
+     equal specificity for both themes. */
+  :root,
+  :root[data-theme="dark"],
+  :root[data-theme="light"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #ffffff;
+    --bg-sidebar: #ffffff;
+    --bg-card: #ffffff;
+    --bg-code: #f6f6f6;
+    --bg-hover: #f4f4f6;
+    --bg-active: #eeeef2;
+    --text-primary: #111111;
+    --text-secondary: #222222;
+    --text-muted: #555555;
+    --text-light-gray: #333333;
+    --border-color: #cccccc;
+    --border-light: #999999;
+    --accent-blue: #14459c;
+    --accent-blue-alt: #14459c;
+    --accent-green: #14653a;
+    --accent-emerald: #14653a;
+    --accent-purple: #5b21b6;
+    --accent-violet: #5b21b6;
+    --accent-indigo: #3730a3;
+    --accent-orange: #9a3412;
+    --accent-amber: #7c2d12;
+    --accent-amber-dark: #7c2d12;
+    --accent-amber-deep: #7c2d12;
+    --accent-red: #991b1b;
+    --accent-red-bright: #991b1b;
+    --accent-red-deep: #7f1d1d;
+    --accent-cyan: #155e75;
+    --accent-yellow: #713f12;
+    --accent-pink: #9d174d;
+    --accent-blue-bg: #f2f5fc;
+    --accent-green-bg: #f1f8f3;
+    --accent-orange-bg: #fdf6ec;
+    --accent-purple-bg: #f6f2fd;
+    --accent-red-bg: #fdf1f1;
+    --shadow: none;
+    --syn-keyword: #111111;
+    --syn-string: #111111;
+    --syn-function: #111111;
+    --syn-number: #111111;
+    --syn-comment: #555555;
+    --syn-punctuation: #111111;
+    --syn-property: #111111;
+    --syn-tag: #111111;
+  }
+
   html, body, #root {
     height: auto !important;
     overflow: visible !important;
@@ -266,14 +342,26 @@ li {
   /* Interactive embeds (Sandpack, simulators, the six playgrounds) render as
      empty or half-loaded boxes on paper — replace each with a short note so
      the reader knows something was there rather than seeing a blank gap. */
-  .interactive-embed { display: none !important; }
+  /* NOTE: the embed itself must stay displayed — `display: none` on an element
+     suppresses its ::before/::after pseudo-elements entirely, so hiding the
+     wrapper also threw away the replacement note it was supposed to leave
+     behind. Hide the CHILDREN instead and let the wrapper carry the note. */
+  .interactive-embed > * { display: none !important; }
+  .interactive-embed {
+    display: block !important;
+    height: auto !important;
+    border: 0.75pt dashed #bbb !important;
+    background: none !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
   .interactive-embed::after {
     content: "[ Interactive example — open this page in a browser ]";
     display: block !important;
     font-style: italic;
     color: #555 !important;
     font-size: 9.5pt;
-    padding: 6pt 0;
+    padding: 6pt 8pt;
   }
 
   main {

@@ -16,8 +16,11 @@ export default function Distributed() {
       {/* ===== Section 1: CAP Theorem Deep Dive ===== */}
       <h2>CAP Theorem Deep Dive</h2>
       <p>
-        The CAP theorem, formulated by Eric Brewer, states that a distributed data store
-        can only guarantee two of the following three properties simultaneously:
+        The CAP theorem, formulated by Eric Brewer, is usually summarised as &quot;pick two of
+        three.&quot; That slogan is a useful memory aid and a poor statement of the theorem — the{' '}
+        <strong>Intro</strong> lesson explains why &quot;CA&quot; is not a real option and why the
+        choice only arises <em>during</em> a partition. Read the three properties below with that in
+        mind:
       </p>
       <ul>
         <li>
@@ -50,9 +53,23 @@ export default function Distributed() {
       <ul>
         <li><strong>MongoDB</strong> &mdash; Uses a primary node for writes; during a partition, minority partitions become unavailable.</li>
         <li><strong>HBase</strong> &mdash; Strong consistency via a single RegionServer per region; unavailable if that server is partitioned.</li>
-        <li><strong>Redis Cluster</strong> &mdash; In cluster mode, favors consistency; partitioned minority nodes reject writes.</li>
-        <li><strong>ZooKeeper</strong> &mdash; Uses Zab consensus; minority partitions cannot serve requests.</li>
+        <li><strong>ZooKeeper</strong> &mdash; Uses Zab consensus; minority partitions cannot serve requests. Along with etcd (Raft), this is the clearest genuine CP system here.</li>
       </ul>
+
+      <InfoBox variant="warning" title="Redis Cluster Is a Trap Answer">
+        <p>
+          Redis Cluster is often listed as CP because a minority partition stops accepting writes.
+          But replication between primary and replica is <strong>asynchronous</strong>: a primary
+          acknowledges a write immediately, and if it fails over before that write has reached a
+          replica, the write is simply lost. Redis&apos;s own documentation states plainly that
+          Redis Cluster is unable to guarantee strong consistency.
+        </p>
+        <p>
+          So it sacrifices availability during a partition <em>and</em> does not deliver
+          linearizable consistency — which makes it neither cleanly CP nor cleanly AP. Say that, not
+          &quot;Redis is CP.&quot;
+        </p>
+      </InfoBox>
       <p>
         <strong>AP Systems</strong> (Availability + Partition Tolerance): These systems
         remain available during partitions but may return stale or conflicting data.
@@ -62,6 +79,33 @@ export default function Distributed() {
         <li><strong>DynamoDB</strong> &mdash; Eventually consistent reads by default; always available across partitions.</li>
         <li><strong>CouchDB</strong> &mdash; Multi-master replication with conflict resolution; stays available during partitions.</li>
       </ul>
+
+      <InfoBox variant="danger" title="These Labels Describe a Configuration, Not a Product">
+        <p>
+          Treat the lists above as &quot;how this database behaves in its default
+          configuration,&quot; never as a fixed property. Reciting &quot;Cassandra is AP&quot; as an
+          absolute is the answer that gets followed up with a question you then cannot answer.
+        </p>
+        <p>
+          <strong>Cassandra</strong> is AP at <code>CONSISTENCY ONE</code>, but set reads and writes
+          to <code>QUORUM</code> (so that R + W &gt; N) and you get strong consistency at the cost of
+          availability during a partition — CP behaviour from an &quot;AP database.&quot;
+        </p>
+        <p>
+          <strong>MongoDB</strong> is CP with <code>readConcern: majority</code> and{' '}
+          <code>w: majority</code>, but reading from secondaries with{' '}
+          <code>readPreference: secondary</code> gives you stale reads and AP behaviour.
+        </p>
+        <p>
+          <strong>DynamoDB</strong> offers both on a per-request basis: eventually consistent reads
+          by default, or <code>ConsistentRead: true</code> for a strongly consistent read that costs
+          twice as much and is unavailable if the partition is unreachable.
+        </p>
+        <p>
+          The strong interview answer: <em>&quot;It depends on the consistency level configured.
+          Here is what changes when you turn that dial.&quot;</em>
+        </p>
+      </InfoBox>
 
       <InfoBox title="PACELC Theorem">
         <p>

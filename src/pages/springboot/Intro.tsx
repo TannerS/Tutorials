@@ -103,8 +103,10 @@ public class MyApplication {
       </p>
 
       <CodeBlock language="java" title="How Auto-Configuration Conditionals Work">
-{`// Spring Boot auto-config uses conditional annotations
-@Configuration
+{`// Spring Boot auto-config uses conditional annotations.
+// Note @AutoConfiguration, not plain @Configuration: it marks the class as an
+// auto-configuration and lets you order it with before/after attributes.
+@AutoConfiguration
 @ConditionalOnClass(DataSource.class)          // only if DataSource is on classpath
 @ConditionalOnMissingBean(DataSource.class)    // only if user hasn't defined one
 @EnableConfigurationProperties(DataSourceProperties.class)

@@ -62,6 +62,44 @@ export default function Errors() {
 // instance — A URI reference that identifies this specific occurrence`}
       </CodeBlock>
 
+      <InfoBox variant="danger" title="Send It as application/problem+json — Not application/json">
+        <p>
+          This is the half of the standard people skip, and it is the half that makes it a standard
+          at all. A Problem Details response must be served with the media type{' '}
+          <code>application/problem+json</code> (or <code>application/problem+xml</code>).
+        </p>
+        <p>
+          Without it you have merely adopted a JSON shape. With it, a generic client can look at the
+          <code> Content-Type</code> alone and know the body is a machine-readable problem it can
+          parse — no per-API special-casing, no guessing whether an error body follows your
+          convention or somebody else&apos;s. It is also what lets middleware, API gateways, and
+          client SDKs handle errors generically.
+        </p>
+        <p>
+          Spring&apos;s <code>ProblemDetail</code> sets this header for you. In Express you must set
+          it yourself:
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="http" title="A Complete Problem Details Response">
+        {`HTTP/1.1 422 Unprocessable Content
+Content-Type: application/problem+json      <-- NOT application/json
+Content-Language: en
+
+{
+  "type": "https://api.example.com/errors/insufficient-funds",
+  "title": "Insufficient Funds",
+  "status": 422,
+  "detail": "Your account balance of $10.00 is insufficient for the $25.00 transfer.",
+  "instance": "/transfers/abc-123"
+}
+
+# Express:
+#   res.status(422)
+#      .type('application/problem+json')
+#      .json(problem);`}
+      </CodeBlock>
+
       <InfoBox variant="tip" title="The type Field Is a Documentation Link">
         <p>
           The <code>type</code> field should be a real URI that points to documentation

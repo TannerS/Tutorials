@@ -313,8 +313,9 @@ type Store<T> = ReturnType<typeof createStore<T>>;
 const FormStoreContext = createContext<Store<FormState> | null>(null);
 
 export function FormStoreProvider({ children }: { children: ReactNode }) {
-  // useRef so the store is created once and its identity never changes
-  const storeRef = useRef<Store<FormState>>();
+  // useRef so the store is created once and its identity never changes.
+  // React 19 requires an explicit initial argument — useRef<T>() no longer compiles.
+  const storeRef = useRef<Store<FormState> | null>(null);
   storeRef.current ??= createStore<FormState>({ values: {}, errors: {} });
   return (
     <FormStoreContext.Provider value={storeRef.current}>

@@ -205,6 +205,26 @@ if (showAdmin) { const admin = use(AdminContext); }`}
       />
 
       <PosterCard
+        glyph="cch"
+        title={<>cache()<span className="dim"> — dedupe within one request</span></>}
+        code={`import { cache } from 'react';
+
+// Wrap ONCE at module scope — not inside a component.
+export const getUser = cache(async (id: string) =>
+  db.user.findUnique({ where: { id } })
+);
+
+// Header, Sidebar and Footer each call getUser('u_1')
+// during the same request → exactly ONE database query.
+// getUser('u_2') is a different key → its own call.
+
+// 19.2: abort the work if React discards the render
+import { cacheSignal } from 'react';
+await fetch(url, { signal: cacheSignal() });`}
+        caption="Server Components can't prop-drill data, so several of them independently ask for the same thing. cache() collapses those into one call. The cache lives for ONE request then is discarded — it is not a CDN cache and never leaks between users. Server-only: React ships no client equivalent, which is the gap TanStack Query fills."
+      />
+
+      <PosterCard
         glyph="Ca"
         title="fetch Caching & Revalidation"
         badge="Next.js"

@@ -57,14 +57,35 @@ export default function JsxCompilerLesson() {
 }`}
       </CodeBlock>
       <CodeBlock language="javascript" title="Classic runtime, target: ES2022">
-{`function Greeting({ name }) {
-    return React.createElement("h1", { className: "title" }, "Hello, ", name, "!");
+{`"use strict";
+function Greeting({ name }) {
+    return React.createElement("h1", { className: "title" },
+        "Hello, ",
+        name,
+        "!");
 }`}
       </CodeBlock>
       <CodeBlock language="javascript" title="Classic runtime, target: ES5">
-{`function Greeting(_a) {
+{`"use strict";
+function Greeting(_a) {
     var name = _a.name;
-    return React.createElement("h1", { className: "title" }, "Hello, ", name, "!");
+    return React.createElement("h1", { className: "title" },
+        "Hello, ",
+        name,
+        "!");
+}`}
+      </CodeBlock>
+      <p>
+        Switch the runtime to <strong>automatic</strong> and the same source becomes a{' '}
+        <code>_jsxs</code> call instead — <code>jsxs</code> (&quot;s&quot; for static
+        children) is the variant the compiler picks when an element has more than one
+        child, and children move <em>inside</em> the props object rather than trailing
+        after it:
+      </p>
+      <CodeBlock language="javascript" title="Automatic runtime, target: ES2022">
+{`import { jsxs as _jsxs } from "react/jsx-runtime";
+function Greeting({ name }) {
+    return _jsxs("h1", { className: "title", children: ["Hello, ", name, "!"] });
 }`}
       </CodeBlock>
 
@@ -74,9 +95,11 @@ export default function JsxCompilerLesson() {
           syntax you get) are two separate compiler settings that both apply to the same
           file. JSX always gets turned into function calls, on every target — that part
           never changes. What the target controls is everything <em>around</em> the JSX:
-          whether <code>{'{ name }'}</code> stays a destructured parameter or becomes a{' '}
-          <code>var _a = arguments[0]</code>-style unpack, whether arrow functions survive
-          or become <code>function</code> expressions, and so on.
+          whether <code>{'{ name }'}</code> stays a destructured parameter or gets
+          renamed to a placeholder parameter and unpacked on the next line (
+          <code>function Greeting(_a) {'{'} var name = _a.name; ... {'}'}</code>, since
+          ES5 has no destructuring), whether arrow functions survive or become{' '}
+          <code>function</code> expressions, and so on.
         </p>
       </InfoBox>
     </LessonLayout>

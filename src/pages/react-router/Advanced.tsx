@@ -405,8 +405,9 @@ function AnimatedLayout() {
 │ Separate Remix framework │ Remix merged INTO React Router       │
 │ No framework mode        │ Optional framework mode (Vite)       │
 │ useLoaderData (Remix)    │ useLoaderData (built-in)             │
-│ json() for responses     │ json() deprecated — return plain obj │
-│ defer() + Await          │ Still works, but Suspense preferred  │
+│ json() for responses     │ json() REMOVED — return a plain obj  │
+│ defer() + Await          │ defer() REMOVED — return the promise │
+│                          │   directly; <Await> still works      │
 │ No lazy() on routes      │ lazy() for code-split route modules  │
 │ No pre-rendering         │ Static pre-rendering support         │
 │ No typesafe routes       │ Typesafe route modules (framework)   │
@@ -418,9 +419,15 @@ function AnimatedLayout() {
 
       <InfoBox variant="note" title="Migration Tips">
         Moving from v6 to v7: (1) replace <code>json()</code> responses in
-        loaders with plain object returns, (2) remove future flags that are now
-        defaults, (3) adopt <code>lazy()</code> for code splitting, and (4) consider
+        loaders with plain object returns (or <code>Response.json()</code> when you need
+        to set a status), (2) replace <code>defer({'{ ... }'})</code> with a plain object —
+        any un-awaited promise in it is deferred automatically, (3) remove future flags that
+        are now defaults, (4) adopt <code>lazy()</code> for code splitting, and (5) consider
         the framework mode if you want file-based routing with Vite.
+        <br /><br />
+        <strong>Both <code>json()</code> and <code>defer()</code> are deleted, not
+        deprecated.</strong> They were removed in the v7 release, so the failure mode is a
+        broken import at runtime rather than a console warning.
       </InfoBox>
 
       <h2>Framework Mode (File-Based Routing)</h2>
@@ -508,7 +515,7 @@ Auth guard                    → Loader redirect (config-based)
 Data before render            → loader + useLoaderData
 Form mutation                 → action + Form component
 Inline mutation (no nav)      → useFetcher
-Non-critical data             → defer + Await + Suspense
+Non-critical data             → return an un-awaited promise + Await + Suspense
 Loading indicators            → useNavigation
 Route errors                  → errorElement + useRouteError
 URL breadcrumbs               → useMatches + handle.breadcrumb

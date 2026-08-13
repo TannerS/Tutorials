@@ -298,7 +298,16 @@ async function publishOrderEvent(order) {
       channel.ack(msg);  // acknowledge — message removed from queue
     } catch (error) {
       console.error('Payment failed:', error);
-      // Negative ack — requeue for retry (or send to DLQ)
+      // nack(msg, allUpTo, requeue).
+      // requeue=false is DELIBERATE: it routes the message to the
+      // dead-letter exchange configured on this queue.
+      //
+      // Do NOT pass requeue=true for a message that fails
+      // deterministically -- RabbitMQ puts it straight back at the
+      // head of the queue, you consume it again immediately, and you
+      // have an infinite hot loop that pins a CPU and blocks every
+      // other message. Requeue only for genuinely transient failures,
+      // and even then with a retry counter and a delay.
       channel.nack(msg, false, false);
     }
   });
@@ -316,7 +325,10 @@ const kafka = new Kafka({
 });
 
 const producer = kafka.producer({
-  idempotent: true,  // exactly-once delivery
+  // Idempotent producer: deduplicates the PRODUCER'S OWN retries so a
+  // network blip does not write the same record to the partition
+  // twice. It is NOT end-to-end exactly-once -- see the note below.
+  idempotent: true,
 });
 
 async function publishOrderEvent(order) {
@@ -362,6 +374,80 @@ async function startConsumer() {
     },
   });
 }`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="&quot;Exactly-Once&quot; Is the Most Over-Claimed Phrase in Messaging">
+        <p>
+          Enabling the idempotent producer does <strong>not</strong> give you exactly-once
+          processing, and believing it does is a common and expensive mistake. Be precise about the
+          three delivery guarantees, because interviewers probe exactly here:
+        </p>
+        <p>
+          <strong>At-most-once</strong> — commit the offset <em>before</em> processing. A crash
+          mid-processing loses the message. Rarely what you want.
+        </p>
+        <p>
+          <strong>At-least-once</strong> — commit the offset <em>after</em> processing. A crash
+          between processing and committing means the message is redelivered and processed twice.
+          This is the default in the consumer above, and the correct default for almost everything.
+        </p>
+        <p>
+          <strong>Exactly-once</strong> — genuinely achievable in Kafka, but only within a narrow
+          boundary: a Kafka-to-Kafka read-process-write pipeline using transactions
+          (<code>processing.guarantee=exactly_once_v2</code>), which atomically commits the output
+          records and the input offsets together.
+        </p>
+        <p>
+          <strong>The moment your side effect leaves Kafka</strong> — charging a card, sending an
+          email, writing to Postgres — that transaction cannot cover it, and exactly-once delivery
+          becomes impossible. The two-generals problem is not a Kafka limitation; it is a property of
+          distributed systems.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="tip" title="What to Do Instead: Idempotent Consumers">
+        <p>
+          Stop trying to guarantee each message arrives once, and instead make{' '}
+          <strong>processing it twice harmless</strong>. This is the practical answer and the one to
+          give in an interview.
+        </p>
+        <p>
+          Give every event a stable ID, and have the consumer record processed IDs in the same
+          database transaction as its business write. A redelivered event hits the unique constraint
+          and is skipped — the effect happens exactly once even though delivery was at-least-once.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="javascript" title="Idempotent Consumer — At-Least-Once Delivery, Exactly-Once Effect">
+{`await consumer.run({
+  eachMessage: async ({ message }) => {
+    const event = JSON.parse(message.value.toString());
+
+    await db.transaction(async (tx) => {
+      // The dedup insert and the business write commit TOGETHER.
+      // Either both happen or neither does -- which is what makes
+      // the redelivery safe.
+      try {
+        await tx.query(
+          'INSERT INTO processed_events (event_id) VALUES ($1)',
+          [event.id],
+        );
+      } catch (err) {
+        if (err.code === '23505') return;  // unique_violation: already
+        throw err;                          // done. Skip, commit offset.
+      }
+
+      await tx.query(
+        'UPDATE accounts SET balance = balance - $1 WHERE id = $2',
+        [event.amount, event.accountId],
+      );
+    });
+  },
+});
+
+// Note the ordering rule this depends on: the offset must be
+// committed AFTER the transaction commits. Commit it first and a
+// crash in between loses the message entirely (at-most-once).`}
       </CodeBlock>
 
       <h2>Service Discovery</h2>

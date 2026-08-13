@@ -27,6 +27,84 @@ export default function Intro() {
         slow, and give false confidence.
       </InfoBox>
 
+      <h2>What Is a Test, Concretely?</h2>
+      <p>
+        Strip away the frameworks and a test is just a function that runs some of your
+        code and then <strong>throws if the result is wrong</strong>. That&apos;s the
+        whole idea. You could write one with no library at all:
+      </p>
+
+      <CodeBlock language="javascript" title="A Test Framework in Four Lines">
+{`function add(a, b) { return a + b; }
+
+// The entire concept: run it, compare, throw on mismatch.
+const result = add(2, 3);
+if (result !== 5) {
+  throw new Error(\`Expected 5 but got \${result}\`);
+}`}
+      </CodeBlock>
+
+      <p>
+        A <strong>test framework</strong> (JUnit, Jest, Vitest) adds three things on
+        top of that: a way to <em>find</em> your test functions and run them all, a way
+        to keep going after one fails instead of stopping at the first throw, and a
+        library of <em>matchers</em> that produce readable failure messages. The same
+        test through a framework:
+      </p>
+
+      <CodeBlock language="javascript" title="The Same Test, With a Framework">
+{`test('adds two numbers', () => {
+  expect(add(2, 3)).toBe(5);
+});`}
+      </CodeBlock>
+
+      <h3>Every Test Has Three Parts</h3>
+      <p>
+        Regardless of language or framework, a test is <strong>Arrange, Act,
+        Assert</strong> (also called Given-When-Then). Get in the habit of separating
+        them visually — it makes a failing test far easier to read at 2am:
+      </p>
+
+      <CodeBlock language="javascript" title="Arrange / Act / Assert">
+{`test('applies a 10% discount to orders over $100', () => {
+  // Arrange — build the world the test needs
+  const cart = new Cart();
+  cart.add({ name: 'Keyboard', price: 150 });
+
+  // Act — do the one thing under test
+  const total = cart.total();
+
+  // Assert — state what must be true
+  expect(total).toBe(135);
+});`}
+      </CodeBlock>
+
+      <h3>Reading a Failure</h3>
+      <p>
+        A failing test tells you four things: which test, what you expected, what you
+        actually got, and where. Learning to read this output is most of debugging:
+      </p>
+
+      <CodeBlock language="bash" title="What a Failure Looks Like">
+{`FAIL  src/cart.test.js
+  ● applies a 10% discount to orders over $100
+
+    expect(received).toBe(expected)   // Object.is equality
+
+    Expected: 135
+    Received: 150                     <-- the discount never applied
+
+      at Object.<anonymous> (src/cart.test.js:9:17)
+
+Tests:  1 failed, 4 passed, 5 total`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Write the Assertion First">
+        Stuck on how to start a test? Write the <code>expect(...)</code> line before
+        anything else. It forces you to answer &quot;what does correct actually look
+        like here?&quot; — and that question, not the syntax, is the hard part of testing.
+      </InfoBox>
+
       <h2>The Testing Pyramid</h2>
       <p>
         The testing pyramid is a mental model for balancing test types. More tests at the
@@ -230,22 +308,30 @@ void adminCanAccessSettings() {
 
       <CodeBlock language="bash" title="Checking Coverage">
 {`# Java (JaCoCo via Maven)
-mvn test jacoco:report
+mvn test jacoco:report        # report: target/site/jacoco/index.html
 
-# JavaScript (Jest built-in)
+# JavaScript
 npx jest --coverage
+npx vitest run --coverage     # Vitest needs @vitest/coverage-v8 installed`}
+      </CodeBlock>
 
-# Coverage thresholds in jest.config.js
-module.exports = {
+      <CodeBlock language="javascript" title="Failing the Build Below a Threshold">
+{`// jest.config.js  — note: coverageThreshold, singular. The plural spelling
+// is a silent no-op, which is why suites "enforce" a threshold that never fails.
+export default {
   coverageThreshold: {
-    global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
+    global: { branches: 80, functions: 80, lines: 80, statements: 80 },
+  },
+};
+
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    coverage: {
+      thresholds: { branches: 80, functions: 80, lines: 80, statements: 80 },
     },
   },
-};`}
+});`}
       </CodeBlock>
 
       <h2>Testing Anti-Patterns</h2>

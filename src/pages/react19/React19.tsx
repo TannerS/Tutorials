@@ -154,9 +154,15 @@ function WithRef({ value }) {
         <p>
           As of React 19, the compiler is <strong>stable and production-ready</strong> but
           opt-in. It ships as a separate package. Meta uses it across their entire
-          codebase. Many violations are surfaced by the{' '}
-          <code>eslint-plugin-react-compiler</code> linter rule, which you should enable
-          first to catch issues before enabling compilation.
+          codebase. Most violations are surfaced by the compiler lint rules, which you
+          should enable first to catch issues before enabling compilation.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Those rules used to live in a standalone{' '}
+          <code>eslint-plugin-react-compiler</code> package. They were folded into{' '}
+          <code>eslint-plugin-react-hooks</code> in v6 — install that and use its{' '}
+          <code>recommended-latest</code> config. Don&apos;t add the old standalone plugin
+          to a new project.
         </p>
       </InfoBox>
 
@@ -393,6 +399,49 @@ function Dashboard({ showAdmin }) {
 // After: Pass promise as prop, use() to read, Suspense for loading`}
       </CodeBlock>
 
+      <InfoBox variant="danger" title="The trap: never create the promise during a client render">
+        <p>
+          <code>ProfilePage</code> above is written as a <strong>Server Component</strong>, where
+          the function body runs once per request. In a <em>client</em> component the exact same
+          code is a bug: every render calls <code>fetchUser(userId)</code> again, producing a{' '}
+          <strong>new promise</strong>. <code>use()</code> suspends on it, React re-renders when
+          it resolves, a new promise is created, it suspends again — an infinite fetch loop.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          On the client, the promise must come from somewhere stable: a Server Component passing
+          it down as a prop, a Suspense-aware cache (TanStack Query, a framework loader), or a
+          module-level memo keyed by the input. React deliberately does <em>not</em> give you a
+          client-side <code>cache()</code> for this — that gap is what a data library fills.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Client-side use(): stable promise, not a fresh one" showLineNumbers>
+{`// ❌ INFINITE LOOP — new promise every render
+'use client';
+function ProfilePage({ userId }) {
+  const userPromise = fetchUser(userId);   // new promise on EVERY render
+  return <Suspense fallback={<Skeleton />}><UserProfile userPromise={userPromise} /></Suspense>;
+}
+
+// ✅ Memoize by key so the same input yields the SAME promise object
+const userCache = new Map();
+function getUser(id) {
+  if (!userCache.has(id)) userCache.set(id, fetchUser(id));
+  return userCache.get(id);
+}
+
+function ProfilePage({ userId }) {
+  const userPromise = getUser(userId);   // stable per userId
+  return (
+    <Suspense fallback={<Skeleton />}>
+      <UserProfile userPromise={userPromise} />
+    </Suspense>
+  );
+}
+// In production, let a library own this cache — it also handles invalidation,
+// retries, and garbage collection, which the 6-line Map above does not.`}
+      </CodeBlock>
+
       <h2>Context as a Provider &mdash; <code>Context.Provider</code> Is Deprecated</h2>
 
       <p>
@@ -624,6 +673,110 @@ function Map() {
   );
 }`}
       </CodeBlock>
+
+      <h2>Added After 19.0 — <code>useEffectEvent</code> and <code>&lt;Activity&gt;</code></h2>
+
+      <p>
+        React 19 was not a single drop. Two additions in the 19.1/19.2 point releases are
+        significant enough that you should treat them as part of &quot;React 19&quot; when
+        writing new code.
+      </p>
+
+      <h3><code>useEffectEvent</code> — non-reactive logic inside a reactive effect</h3>
+
+      <p>
+        The oldest unsolved problem in hooks: an effect needs to <em>read</em> a value without{' '}
+        <em>reacting</em> to it. Put it in the deps and the effect re-runs too often; leave it
+        out and you get a stale closure plus a lint warning. Every codebase grew its own{' '}
+        <code>useLatest</code> / <code>useStableCallback</code> ref hack.{' '}
+        <code>useEffectEvent</code> is the official answer.
+      </p>
+
+      <CodeBlock language="jsx" title="useEffectEvent — the deps array finally says what you mean" showLineNumbers>
+{`import { useEffect, useEffectEvent } from 'react';
+
+// ❌ BEFORE — 'theme' is genuinely used, so the linter demands it in deps.
+// Result: changing the theme tears down and rebuilds the chat connection.
+function ChatRoom({ roomId, theme }) {
+  useEffect(() => {
+    const conn = createConnection(roomId);
+    conn.on('connected', () => showToast('Connected!', theme));
+    conn.connect();
+    return () => conn.disconnect();
+  }, [roomId, theme]);   // ← theme does not belong here, but omitting it lies
+}
+
+// ✅ AFTER — split the reactive part from the non-reactive part.
+function ChatRoom({ roomId, theme }) {
+  // Effect Event: stable identity, but its body always reads the LATEST render's
+  // props and state. It is not a dependency of anything.
+  const onConnected = useEffectEvent(() => {
+    showToast('Connected!', theme);
+  });
+
+  useEffect(() => {
+    const conn = createConnection(roomId);
+    conn.on('connected', onConnected);
+    conn.connect();
+    return () => conn.disconnect();
+  }, [roomId]);   // ← honest and complete: only roomId is reactive
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="The rules are stricter than a normal hook">
+        <ul style={{ marginBottom: 0 }}>
+          <li>Only call an Effect Event from inside an effect — never during render, never from an event handler where a plain function would do.</li>
+          <li>Declare it in the same component or custom hook that uses it. <strong>Never pass it to another component or hook</strong>, and never return it from a custom hook.</li>
+          <li><strong>Never put it in a dependency array.</strong> Its identity is stable by design; listing it defeats the purpose and the linter will flag it.</li>
+          <li>It is not a replacement for <code>useCallback</code>. <code>useCallback</code> stabilizes a function you hand to <em>children</em>; <code>useEffectEvent</code> de-reactifies a function your <em>own effect</em> calls.</li>
+        </ul>
+      </InfoBox>
+
+      <h3><code>&lt;Activity&gt;</code> — hide a subtree without destroying it</h3>
+
+      <p>
+        Conditional rendering (<code>{'{isOpen && <Panel />}'}</code>) unmounts the subtree:
+        state gone, refs gone, scroll position gone, every child remounts when it comes back.{' '}
+        <code>&lt;Activity&gt;</code> gives you the third option — visually gone, but alive.
+      </p>
+
+      <CodeBlock language="jsx" title="Activity — tabs that remember where you were" showLineNumbers>
+{`import { Activity } from 'react';
+
+function Tabs({ active }) {
+  return (
+    <>
+      <Activity mode={active === 'search' ? 'visible' : 'hidden'}>
+        <SearchTab />    {/* query text and scroll position survive tab switches */}
+      </Activity>
+      <Activity mode={active === 'settings' ? 'visible' : 'hidden'}>
+        <SettingsTab />  {/* half-filled form is still half-filled when you return */}
+      </Activity>
+    </>
+  );
+}
+
+// What "hidden" actually does:
+//   • DOM stays mounted, styled display: none
+//   • useState / useRef values are PRESERVED
+//   • Effects are cleaned up (as if unmounted) and re-run when it goes visible
+//   • Renders happen at a LOWER priority than anything visible
+//
+// Compare:
+//   {show && <Panel />}          → unmount. State destroyed. Cheapest memory.
+//   <div hidden><Panel /></div>  → state kept, but effects KEEP RUNNING (timers,
+//                                  subscriptions, fetches all still firing). Leaky.
+//   <Activity mode="hidden">     → state kept AND effects cleaned up. What you wanted.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The other use for Activity: pre-rendering">
+        <p style={{ marginBottom: 0 }}>
+          Because hidden subtrees render at low priority, you can mount the route the user is
+          most likely to visit next inside a hidden <code>&lt;Activity&gt;</code>. React builds
+          it during idle time; flipping it to <code>visible</code> is then instant. Do not do
+          this for more than one or two candidates — hidden trees still cost memory.
+        </p>
+      </InfoBox>
 
       <h2>What React 19 Removed</h2>
 

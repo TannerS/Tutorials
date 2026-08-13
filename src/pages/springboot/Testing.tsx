@@ -163,8 +163,12 @@ class CustomerRepositoryTest {
 @SpringBootTest
 class OrderFlowIT {
 
+    // @ServiceConnection (Boot 3.1+) wires spring.datasource.* automatically —
+    // prefer it over the @DynamicPropertySource block below when Boot knows the
+    // container type. The explicit form is shown here because you still need it
+    // for containers Boot has no support for.
     @Container
-    static PostgreSQLContainer<?> pg = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer<?> pg = new PostgreSQLContainer<>("postgres:17-alpine");
 
     @Container
     static ConfluentKafkaContainer kafka =

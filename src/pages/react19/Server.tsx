@@ -490,10 +490,215 @@ async function ReviewsList({ productId, children }) {
     </section>
   );
 }
-// ReviewsList is a Server Component but it renders a Client Component child —
-// this works because children are passed as props (pre-rendered RSC output),
-// not imported directly by the Server Component.`}
+// NOTE: a Server Component may import and render a Client Component directly —
+// that is exactly what <AddToCartButton /> above does. The direction that is
+// forbidden is the reverse: a Client Component cannot IMPORT a Server Component.
+// It can only receive already-rendered server output through children/props.`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="The composition rule, stated precisely">
+        <p>
+          People get this backwards constantly. There is only one hard restriction:
+        </p>
+        <ul>
+          <li>
+            <strong>Server → Client: allowed, by import.</strong> A Server Component can{' '}
+            <code>import</code> a Client Component and render it. The bundler swaps the import
+            for a reference the client runtime resolves. Props crossing that boundary must be{' '}
+            <strong>serializable</strong> — no functions (except Server Actions), no class
+            instances, no <code>Date</code>-with-methods expectations, no JSX-producing closures.
+          </li>
+          <li>
+            <strong>Client → Server: forbidden by import, allowed by slot.</strong> A Client
+            Component cannot <code>import</code> a Server Component — server code would end up in
+            the browser bundle. It <em>can</em> render one that a Server Component passed to it as{' '}
+            <code>children</code> or any other prop, because by then it is already-rendered output,
+            not code.
+          </li>
+        </ul>
+        <p style={{ marginBottom: 0 }}>
+          Practical consequence: put <code>&quot;use client&quot;</code> as <em>low</em> in the
+          tree as you can. Marking a layout as a Client Component drags every component it
+          imports into the client bundle with it.
+        </p>
+      </InfoBox>
+
+      <h2><code>cache()</code> — Request-Scoped Deduplication</h2>
+
+      <p>
+        Server Components have no props-drilling escape hatch for data: each component fetches
+        what it needs. Three components on one page all needing the current user means three
+        identical database round-trips. <code>cache()</code> collapses them into one.
+      </p>
+
+      <CodeBlock language="tsx" title="cache() — memoize an async function for the life of one request" showLineNumbers>
+{`import { cache } from 'react';
+import { db } from '@/lib/database';
+
+// Wrap ONCE, at module scope. Not inside a component.
+export const getUser = cache(async (id: string) => {
+  console.log('DB hit for', id);
+  return db.user.findUnique({ where: { id } });
+});
+
+// Now, in a single request:
+async function Header()  { const u = await getUser('u_1'); return <span>{u.name}</span>; }
+async function Sidebar() { const u = await getUser('u_1'); return <Avatar src={u.avatar} />; }
+async function Footer()  { const u = await getUser('u_1'); return <p>{u.email}</p>; }
+
+// Console prints "DB hit for u_1" exactly ONCE.
+// getUser('u_2') is a different cache key → its own call.`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="cache() is narrower than it looks">
+        <ul style={{ marginBottom: 0 }}>
+          <li>
+            <strong>Server Components only.</strong> Calling it in a Client Component does
+            nothing useful. React deliberately ships no client-side equivalent — that is what a
+            data library (TanStack Query, SWR) is for.
+          </li>
+          <li>
+            <strong>The cache lives for one request and is then discarded.</strong> It is not a
+            CDN cache, not an LRU, not shared between users. Two concurrent requests get two
+            independent caches — which is what makes it safe with per-user data.
+          </li>
+          <li>
+            <strong>Arguments are compared by reference/value like a memo key.</strong> Passing a
+            freshly-built object every call means you never get a hit. Pass primitives.
+          </li>
+          <li>
+            <strong>Framework <code>fetch</code> deduping is separate.</strong> Next.js already
+            dedupes identical <code>fetch()</code> calls in one render pass. Use{' '}
+            <code>cache()</code> for everything that <em>is not</em> a fetch — ORM calls, file
+            reads, expensive computations.
+          </li>
+        </ul>
+      </InfoBox>
+
+      <CodeBlock language="tsx" title="cacheSignal() — cancel work when React throws the cache away" showLineNumbers>
+{`import { cache, cacheSignal } from 'react';
+
+// If the request is aborted (user navigated away, a sibling errored and the
+// render was discarded), cacheSignal() aborts so you stop burning DB time.
+export const getReport = cache(async (id: string) => {
+  const res = await fetch(\`https://reports.internal/\${id}\`, {
+    signal: cacheSignal(),
+  });
+  return res.json();
+});
+
+// Outside a cache lifetime, cacheSignal() returns null — which fetch treats
+// as "no signal", so the same code is safe to call anywhere.`}
+      </CodeBlock>
+
+      <h2>Rendering Entry Points — Where SSR Actually Starts</h2>
+
+      <p>
+        Everything above assumes a framework wired up the server render for you. When you need to
+        do it yourself — a custom Express server, an edge worker, or just to understand what
+        Next.js is doing — these are the four functions involved.
+      </p>
+
+      <CodeBlock language="tsx" title="Server: renderToPipeableStream (Node) / renderToReadableStream (Web)" showLineNumbers>
+{`// ── Node.js streams — Express, Fastify, plain http ──
+import { renderToPipeableStream } from 'react-dom/server';
+
+app.get('/*', (req, res) => {
+  let didError = false;
+
+  const { pipe, abort } = renderToPipeableStream(<App url={req.url} />, {
+    bootstrapScripts: ['/main.js'],   // hydration entry — React injects the tag
+
+    // Fires as soon as everything OUTSIDE a Suspense boundary is ready.
+    // This is the moment you can start sending bytes.
+    onShellReady() {
+      res.statusCode = didError ? 500 : 200;
+      res.setHeader('Content-Type', 'text/html');
+      pipe(res);                       // shell now; Suspense content streams in after
+    },
+
+    // The shell itself failed — nothing renderable. Send a real error page.
+    onShellError() {
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'text/html');
+      res.send('<h1>Something went wrong</h1>');
+    },
+
+    // Any error, including ones inside a Suspense boundary that were recovered
+    // by streaming a fallback and letting the client retry.
+    onError(error) {
+      didError = true;
+      logToSentry(error);
+    },
+  });
+
+  // Never let a hung data source hold the socket open forever.
+  setTimeout(abort, 10_000);
+});
+
+// ── Web streams — Cloudflare Workers, Deno, Bun, Vercel Edge ──
+import { renderToReadableStream } from 'react-dom/server';
+
+export default async function handler(request) {
+  const stream = await renderToReadableStream(<App />, {
+    bootstrapScripts: ['/main.js'],
+    onError(error) { logToSentry(error); },
+  });
+  // await stream.allReady  → wait for EVERYTHING (use for crawlers/static export)
+  return new Response(stream, { headers: { 'Content-Type': 'text/html' } });
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="tsx" title="Client: hydrateRoot — attach to the server's HTML" showLineNumbers>
+{`import { hydrateRoot } from 'react-dom/client';
+import App from './App';
+
+// NOTE the shape: hydrateRoot takes the JSX as its SECOND ARGUMENT.
+// There is no .render() call — that's createRoot's API, not this one.
+const root = hydrateRoot(document.getElementById('root'), <App />, {
+  onCaughtError:     (err, info) => report(err, info.componentStack),
+  onUncaughtError:   (err, info) => report(err, info.componentStack),
+  onRecoverableError: (err) => report(err),   // hydration mismatches land here
+});
+
+// The returned root still supports root.render(<App />) for later client updates
+// and root.unmount().
+
+// createRoot vs hydrateRoot:
+//   createRoot(el).render(<App />)  → container must be EMPTY; React builds the DOM
+//   hydrateRoot(el, <App />)        → container has server HTML; React attaches listeners`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="Hydration mismatches — the error you will actually hit">
+        <p>
+          Hydration asserts that the client&apos;s <em>first</em> render produces the same tree
+          the server sent. React 19 improved the error message to show a diff, but the causes are
+          always the same short list:
+        </p>
+        <ul>
+          <li><code>Date.now()</code>, <code>Math.random()</code>, <code>new Date().toLocaleString()</code> — different on each side. Move them into an effect, or pass a server-computed value down as a prop.</li>
+          <li>Reading <code>window</code>, <code>localStorage</code>, or <code>matchMedia</code> during render. Render the server-safe default, then correct it in <code>useEffect</code>.</li>
+          <li>Invalid HTML nesting — a <code>&lt;div&gt;</code> inside a <code>&lt;p&gt;</code>. The browser silently repairs the server HTML, so the DOM no longer matches what React expects.</li>
+          <li>Browser extensions injecting nodes into <code>&lt;body&gt;</code>. Hydrate into a specific container element, not <code>document.body</code>.</li>
+        </ul>
+        <p style={{ marginBottom: 0 }}>
+          Escape hatch for genuinely unavoidable cases:{' '}
+          <code>&lt;span suppressHydrationWarning&gt;</code>. It only silences one level deep and
+          it silences <em>the warning</em>, not the mismatch — use it for timestamps, not to
+          paper over a real bug.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="note" title="renderToString and prerender">
+        <p style={{ marginBottom: 0 }}>
+          <code>renderToString</code> still exists and is synchronous — which means it{' '}
+          <strong>cannot wait for Suspense boundaries</strong>; it emits the fallback and moves
+          on. Avoid it in new code. For static generation, React 19 added{' '}
+          <code>prerender</code> (Web streams) and <code>prerenderToNodeStream</code> (Node):
+          same rendering, but the promise resolves only after <em>all</em> data has loaded,
+          which is what a build step wants.
+        </p>
+      </InfoBox>
     </LessonLayout>
   );
 }

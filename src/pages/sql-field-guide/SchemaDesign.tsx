@@ -9,7 +9,7 @@ export default function FieldGuideSchemaDesign() {
       eyebrow="SQL · Field Reference"
       title="Schema Design Patterns"
       tagline="Normalization, indexing, and the shapes that recur in every real-world PostgreSQL schema."
-      meta={['PostgreSQL 16', '12 patterns']}
+      meta={['PostgreSQL 17+', '15 patterns']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · Schema Design Patterns"
       prev={{ path: '/sql-field-guide/advanced-queries', label: 'Advanced Queries' }}
@@ -151,6 +151,45 @@ CREATE POLICY tenant_isolation ON orders
         caption="Store every state transition as an immutable row; current state becomes a derived value, not the source of truth. Snapshot periodically."
       />
 
+      <PosterCard
+        glyph="Gen"
+        title={<>GENERATED column <span className="dim">derived, never stale</span></>}
+        language="sql"
+        code={`line_total NUMERIC(12,2)
+  GENERATED ALWAYS AS (quantity * unit_price) STORED
+
+-- give a JSONB field a real type, then index it
+user_id INT GENERATED ALWAYS AS ((payload->>'user_id')::int) STORED`}
+        caption="Computed on write, and writing to it directly is an error — so it cannot drift from its inputs. The expression must be IMMUTABLE and may only reference the current row. Postgres has STORED only (no VIRTUAL), so it costs disk; use a VIEW if you'd rather pay CPU on read."
+      />
+
+      <PosterCard
+        glyph="Exc"
+        title={<>EXCLUDE <span className="dim">UNIQUE for overlaps</span></>}
+        language="sql"
+        code={`CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+CREATE TABLE bookings (
+  room_id INT NOT NULL,
+  during  TSTZRANGE NOT NULL,
+  EXCLUDE USING GIST (room_id WITH =, during WITH &&)
+);`}
+        caption="'No two bookings for one room may overlap' is not an equality rule, so UNIQUE can't express it. Unlike a SELECT-then-INSERT check in app code, this is race-proof: the check and the write are one operation. Use '[)' range bounds so 11:00-end doesn't collide with 11:00-start."
+      />
+
+      <PosterCard
+        glyph="Nnd"
+        title={<>NULLS NOT DISTINCT <span className="dim">PG15+</span></>}
+        language="sql"
+        code={`-- default: every NULL is distinct, so UNIQUE allows unlimited NULLs
+CREATE TABLE t (email TEXT UNIQUE);
+INSERT INTO t VALUES (NULL), (NULL), (NULL);  -- all accepted!
+
+-- PG15+: make NULLs collide with each other
+UNIQUE NULLS NOT DISTINCT (tenant_id, external_ref)`}
+        caption="The blind spot bites hardest on a nullable column inside a composite unique key — the same tenant silently accumulates duplicate NULL-ref rows. Pre-PG15 the workaround is two partial unique indexes, one WHERE col IS NULL and one WHERE col IS NOT NULL."
+      />
+
       <PosterQuickRef
         title="Which schema pattern do I need?"
         rows={[
@@ -164,6 +203,9 @@ CREATE POLICY tenant_isolation ON orders
           { need: 'Index only rows matching a common WHERE', answer: 'Partial index' },
           { need: 'SaaS app, thousands of tenants', answer: 'Shared schema + tenant_id + Row-Level Security' },
           { need: 'Need full audit trail + time travel on an entity', answer: 'Event-sourcing append-only table + periodic snapshots' },
+          { need: 'A derived value that must never disagree with its inputs', answer: 'GENERATED ALWAYS AS (...) STORED column' },
+          { need: 'Prevent overlapping time ranges / non-equality conflicts', answer: 'EXCLUDE USING GIST (key WITH =, range WITH &&)' },
+          { need: 'UNIQUE column is silently accepting many NULL rows', answer: 'UNIQUE NULLS NOT DISTINCT (PG15+), or two partial unique indexes' },
         ]}
       />
     </PosterLayout>

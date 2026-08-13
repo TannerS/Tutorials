@@ -261,13 +261,42 @@ public class ImportService {
       </p>
       <CodeBlock language="java" title="Bulletproof event handling">
 {`@Component
-public class OutboxRelay {
+public class OrderNotifier {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async
     public void onOrderPlaced(OrderPlacedEvent event) {
-        // Only runs if the order was persisted. Kafka publish here is safe.
+        // Only runs if the order actually committed — no side effects on rollback.
+        emailService.sendConfirmation(event.orderId());
     }
-}`}
+}
+
+// The phases, in the order they fire:
+//   BEFORE_COMMIT      still inside the tx — writes here are part of it
+//   AFTER_COMMIT       (default) committed and durable
+//   AFTER_ROLLBACK     the tx rolled back
+//   AFTER_COMPLETION   either outcome
+
+// IMPORTANT — this is NOT the transactional outbox.
+// AFTER_COMMIT fires after the database has already committed, so if this
+// method throws (broker down, pod killed mid-publish) the event is lost
+// FOREVER with no record that it should have been sent. That is acceptable
+// for a best-effort email; it is NOT acceptable for an event another service
+// depends on.
+//
+// For at-least-once delivery you must write the event to an outbox TABLE in
+// the same transaction as the order, and relay it separately:
+@Transactional
+public Order place(NewOrderRequest req) {
+    Order order = orders.save(Order.from(req));
+    outbox.save(new OutboxEvent("OrderPlaced", toJson(order)));  // same tx — atomic
+    return order;
+}
+// A separate poller (or Debezium CDC) reads unsent outbox rows and publishes
+// them, marking each sent. Crash anywhere and the row is still there to retry.
+
+// Also note: without @Async the AFTER_COMMIT listener runs on the SAME thread,
+// so a slow listener extends the caller's response time even though the
+// transaction is already closed.`}
       </CodeBlock>
 
       <h2>Testing Transactional Behavior</h2>

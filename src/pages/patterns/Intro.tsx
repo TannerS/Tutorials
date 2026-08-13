@@ -270,7 +270,7 @@ public class PaymentService {
       <h2>Patterns in the Real World</h2>
 
       <InfoBox variant="tip" title="Patterns You Use Every Day (Without Realizing)">
-        <p><strong>Observer:</strong> React's useState, JavaScript event listeners, Spring's ApplicationEvent</p>
+        <p><strong>Observer:</strong> JavaScript event listeners (<code>addEventListener</code>), React's <code>useSyncExternalStore</code>, RxJS subscriptions, Spring's ApplicationEvent</p>
         <p><strong>Strategy:</strong> Java's Comparator, Spring's AuthenticationProvider, sorting algorithms</p>
         <p><strong>Decorator:</strong> Java I/O streams (BufferedReader wrapping FileReader), Express middleware, Python decorators</p>
         <p><strong>Factory:</strong> Spring's BeanFactory, JDBC DriverManager.getConnection(), React.createElement()</p>

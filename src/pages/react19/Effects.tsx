@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Effects() {
@@ -432,9 +431,93 @@ function ChatRoom({ roomId, onMessage }) {
 }`}
       </CodeBlock>
 
+      <h2>The Modern Answer: <code>useEffectEvent</code></h2>
+
+      <InfoBox variant="success" title="React 19.2 replaced the ref hack with a real API">
+        <p>
+          Everything above — <code>useLatest</code>, <code>countRef.current = count</code>,{' '}
+          <code>useStableCallback</code> — is the community workaround for one specific
+          problem: <strong>an effect needs to read a value without re-running when it
+          changes.</strong> React 19.2 ships <code>useEffectEvent</code>, which solves exactly
+          that, and it is now the preferred fix.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Learn the ref pattern anyway — you will read it in every codebase written before
+          2026, and it is still the right tool when you need a mutable value that is <em>not</em>{' '}
+          tied to an effect. But reach for <code>useEffectEvent</code> first.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Same three bugs, solved with useEffectEvent" showLineNumbers>
+{`import { useEffect, useEffectEvent } from 'react';
+
+// ── The scroll logger from above ──
+function ScrollLogger() {
+  const [count, setCount] = useState(0);
+
+  // Stable identity. Body always reads the LATEST render's count.
+  const onScroll = useEffectEvent(() => {
+    console.log('Scrolled! Count is:', count);   // always fresh, no ref needed
+  });
+
+  useEffect(() => {
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);   // ← genuinely empty: nothing in here is reactive
+
+  return <button onClick={() => setCount(c => c + 1)}>Count: {count}</button>;
+}
+
+// ── The interval logger ──
+function Logger() {
+  const [count, setCount] = useState(0);
+  const logCount = useEffectEvent(() => console.log('Current count:', count));
+
+  useEffect(() => {
+    const id = setInterval(logCount, 2000);   // interval is NEVER torn down
+    return () => clearInterval(id);
+  }, []);
+}
+
+// ── The useLatest chat-room pattern ──
+function ChatRoom({ roomId, onMessage }) {
+  const handleMessage = useEffectEvent((msg) => onMessage(msg));
+
+  useEffect(() => {
+    const connection = createConnection(roomId);
+    connection.on('message', handleMessage);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId]);   // onMessage changing no longer reconnects the socket
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="What useEffectEvent does NOT solve">
+        <ul style={{ marginBottom: 0 }}>
+          <li>
+            <strong>The setInterval counter.</strong> If you are <em>writing</em> state based on
+            previous state, the functional updater (<code>setCount(prev =&gt; prev + 1)</code>)
+            is still the correct answer — simpler and it works everywhere.
+          </li>
+          <li>
+            <strong>Reading state after an <code>await</code> in an event handler.</strong> That
+            is not an effect, so an Effect Event is off-limits. Snapshot the value in a local
+            variable before the await, or use a ref.
+          </li>
+          <li>
+            <strong>Anything you need to pass to a child.</strong> Effect Events must not leave
+            the component that declares them. Use <code>useCallback</code> for that.
+          </li>
+          <li>
+            <strong>Race conditions in data fetching.</strong> Unrelated problem — you still need
+            the cleanup flag or <code>AbortController</code> from the top of this lesson.
+          </li>
+        </ul>
+      </InfoBox>
+
       <FlowChart
         title="Which Stale State Fix Should I Use?"
-        chart={"graph TD\n  A[I have stale state] --> B{Am I calling setState?}\n  B -->|Yes| C[Use functional update: setState prev => ...]\n  B -->|No, I am reading state| D{Where am I reading it?}\n  D -->|In a timer or event listener| E[Store in a ref, read ref.current]\n  D -->|In an effect body| F{Is the dep array correct?}\n  F -->|Missing dep| G[Add the missing dependency]\n  F -->|Deps correct but still stale| H[Use a ref for the value]\n  D -->|In an async function after await| I[Use a ref — read ref.current after the await]"}
+        chart={"graph TD\n  A[I have stale state] --> B{Am I calling setState?}\n  B -->|Yes| C[Use functional update: setState prev => ...]\n  B -->|No, I am reading state| D{Where am I reading it?}\n  D -->|Inside an effect or something it sets up| E[useEffectEvent - React 19.2]\n  D -->|In an effect body| F{Is the dep array correct?}\n  F -->|Missing dep| G[Add the missing dependency]\n  F -->|Dep is needed but must not re-trigger| E\n  D -->|In an event handler after await| I[Snapshot before the await, or use a ref]\n  D -->|Outside any effect - plain mutable value| J[Use a ref, read ref.current]"}
       />
 
       <h2>Stale State in Async Operations</h2>

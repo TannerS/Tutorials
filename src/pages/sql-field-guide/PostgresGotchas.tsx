@@ -9,7 +9,7 @@ export default function FieldGuidePostgresGotchas() {
       eyebrow="SQL · Field Reference"
       title="Postgres Gotchas & Pitfalls"
       tagline="The traps that don't show up until production — NULLs, MVCC, locking, and silent data loss."
-      meta={['PostgreSQL 16', '13 pitfalls']}
+      meta={['PostgreSQL 17+', '15 pitfalls']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · Postgres Gotchas & Pitfalls"
       prev={{ path: '/sql-field-guide/schema-design', label: 'Schema Design Patterns' }}
@@ -54,7 +54,9 @@ COMMIT;                       -- ROLLBACK happens anyway`}
         glyph="Ser"
         title={<>SERIALIZABLE <span className="dim">can abort — must retry</span></>}
         language="sql"
-        code={`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+        code={`BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+-- (SET TRANSACTION ... only works INSIDE a transaction block,
+--  before the first query. On its own it just warns and no-ops.)
 -- app code MUST catch error 40001 (serialization_failure)
 -- and retry the whole transaction`}
         caption="Postgres implements SERIALIZABLE via SSI: it aborts transactions it detects as unsafe, rather than silently corrupting data. Retrying is expected, not a bug."
@@ -96,10 +98,13 @@ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`}
         title={<>Deadlock <span className="dim">inconsistent lock order</span></>}
         language="sql"
         code={`-- TX1 locks row 1 then wants row 2; TX2 locks row 2 then wants row 1
--- fix: always lock in a consistent order
-UPDATE accounts SET balance = balance - 100 WHERE id = LEAST(a, b);
-UPDATE accounts SET balance = balance + 100 WHERE id = GREATEST(a, b);`}
-        caption="Deadlocks (error 40P01) happen when transactions acquire the same rows in different orders. Always sort and lock in a fixed order."
+-- FIX: take both locks up front, ordered by id, THEN do the work
+SELECT id FROM accounts WHERE id IN (:from, :to)
+ORDER BY id FOR UPDATE;
+
+UPDATE accounts SET balance = balance - 100 WHERE id = :from;
+UPDATE accounts SET balance = balance + 100 WHERE id = :to;`}
+        caption="Deadlocks (error 40P01) happen when transactions acquire the same rows in different orders. Order the LOCKING, never the money — debiting LEAST(a,b) runs a transfer from 7 to 3 backwards."
       />
 
       <PosterCard

@@ -180,20 +180,146 @@ SET balance = balance - 500
 WHERE account_id = 'A'
   AND balance >= 500;  -- Prevent overdraft
 
+-- CRITICAL: a WHERE clause that matches nothing is NOT an error.
+-- If A had $200, the UPDATE above affects 0 rows and SUCCEEDS.
+-- Without this check the transaction happily continues, credits B,
+-- and COMMITs -- creating $500 out of nothing. Atomicity did not
+-- save you, because nothing failed.
+IF ROW_COUNT() = 0 THEN
+    ROLLBACK;
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Insufficient funds';
+END IF;
+
 UPDATE accounts
 SET balance = balance + 500
 WHERE account_id = 'B';
+
+-- Same trap: if account B does not exist, this also affects 0 rows
+-- and succeeds, destroying $500 instead of creating it.
+IF ROW_COUNT() = 0 THEN
+    ROLLBACK;
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Destination account not found';
+END IF;
 
 -- Record the transfer
 INSERT INTO transfers (from_acct, to_acct, amount, created_at)
 VALUES ('A', 'B', 500, NOW());
 
--- If all three statements succeed, commit
 COMMIT;
 
--- If any statement fails, the DB rolls back all changes
--- ROLLBACK;`}
+-- Better still, let the schema enforce it so the DB raises a real
+-- error you cannot forget to check:
+--   ALTER TABLE accounts ADD CONSTRAINT non_negative_balance
+--     CHECK (balance >= 0);
+-- Now the debit itself fails and the transaction aborts on its own.`}
       />
+
+      <InfoBox variant="danger" title="Atomicity Protects You From Crashes, Not From Logic Errors">
+        <p>
+          The bug above is worth dwelling on because it is the single most common
+          misunderstanding of ACID. Atomicity guarantees that a transaction which{' '}
+          <em>fails</em> leaves no trace. It does not notice that your statements did something
+          nonsensical — an <code>UPDATE</code> matching zero rows is a perfectly successful
+          statement.
+        </p>
+        <p>
+          Either check the affected row count after every conditional write, or push the invariant
+          into the database as a <code>CHECK</code> constraint so a violation becomes an actual
+          error. Relying on <code>BEGIN</code>/<code>COMMIT</code> alone leaves the hole wide open.
+        </p>
+      </InfoBox>
+
+      <h3>Isolation Levels and the Anomalies They Prevent</h3>
+
+      <p>
+        &quot;Trade strictness for performance&quot; is the summary; here is what you are actually
+        trading. Each level permits a specific set of read anomalies.
+      </p>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Level</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Dirty Read</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Non-Repeatable Read</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Phantom Read</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}>Read Uncommitted</td>
+            <td style={{ padding: '0.75rem' }}>Possible</td>
+            <td style={{ padding: '0.75rem' }}>Possible</td>
+            <td style={{ padding: '0.75rem' }}>Possible</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}>Read Committed</td>
+            <td style={{ padding: '0.75rem' }}>Prevented</td>
+            <td style={{ padding: '0.75rem' }}>Possible</td>
+            <td style={{ padding: '0.75rem' }}>Possible</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}>Repeatable Read</td>
+            <td style={{ padding: '0.75rem' }}>Prevented</td>
+            <td style={{ padding: '0.75rem' }}>Prevented</td>
+            <td style={{ padding: '0.75rem' }}>Possible per the SQL standard (see below)</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}>Serializable</td>
+            <td style={{ padding: '0.75rem' }}>Prevented</td>
+            <td style={{ padding: '0.75rem' }}>Prevented</td>
+            <td style={{ padding: '0.75rem' }}>Prevented</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <InfoBox variant="info" title="What the Three Anomalies Actually Are">
+        <p>
+          <strong>Dirty read</strong> — you read a row another transaction wrote but has not
+          committed. It then rolls back, and you acted on data that never existed.
+        </p>
+        <p>
+          <strong>Non-repeatable read</strong> — you read the same <em>row</em> twice in one
+          transaction and get different values, because someone committed an update in between.
+        </p>
+        <p>
+          <strong>Phantom read</strong> — you run the same <em>query</em> twice and the second run
+          returns rows that were not there before, because someone committed an insert matching your
+          <code> WHERE</code> clause. The difference from a non-repeatable read is that it is about
+          the <em>set</em> of matching rows, not the contents of one row.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="The Defaults Differ, and So Do the Guarantees">
+        <p>
+          This is where interview answers go wrong, because the same level name means different
+          things in different engines.
+        </p>
+        <p>
+          <strong>PostgreSQL</strong> defaults to Read Committed. Its Repeatable Read is
+          implemented with snapshot isolation and therefore <em>does</em> prevent phantom reads —
+          stronger than the standard requires. Its Serializable adds true serializable snapshot
+          isolation, which detects conflicts and aborts one transaction with a serialization
+          failure, so your application <strong>must be prepared to retry</strong>.
+        </p>
+        <p>
+          <strong>MySQL/InnoDB</strong> defaults to Repeatable Read (unusual), and prevents phantoms
+          via next-key locking.
+        </p>
+        <p>
+          <strong>Oracle and SQL Server</strong> default to Read Committed. Oracle does not
+          implement Read Uncommitted at all.
+        </p>
+        <p>
+          One anomaly the table above does not cover: <strong>write skew</strong>, where two
+          transactions each read a consistent snapshot and write non-overlapping rows, together
+          breaking an invariant neither could see being violated. Snapshot isolation permits it;
+          only true Serializable prevents it. This is the classic &quot;both on-call doctors sign
+          out simultaneously&quot; problem.
+        </p>
+      </InfoBox>
 
       {/* ===== Section 3: BASE Properties ===== */}
       <h2>BASE Properties</h2>

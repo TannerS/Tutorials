@@ -9,7 +9,7 @@ export default function FieldGuideHooks() {
       eyebrow="React 19 · Field Reference"
       title="Hooks Cheat Sheet"
       tagline="What a hook actually is, the two rules that govern all of them, then every hook's signature and the one thing that trips people up."
-      meta={['React 19', 'Rules + 16 hooks']}
+      meta={['React 19.2', 'Rules + 18 hooks']}
       footerLabel="Personal study reference — React 19"
       pageLabel="React 19 Field Guide · Hooks"
       prev={{ path: '/react-field-guide/fundamentals', label: 'React Fundamentals' }}
@@ -249,6 +249,45 @@ const isStale = query !== deferred;
       />
 
       <PosterCard
+        glyph="19"
+        title={<>useEffectEvent<span className="dim">()</span></>}
+        badge="R19.2"
+        code={`// Splits an effect into "reactive" and "not reactive" halves.
+// Stable identity, but the body always sees the LATEST render.
+function ChatRoom({ roomId, theme }) {
+  const onConnected = useEffectEvent(() => {
+    showToast('Connected!', theme);   // reads latest theme...
+  });
+
+  useEffect(() => {
+    const c = createConnection(roomId);
+    c.on('connected', onConnected);
+    c.connect();
+    return () => c.disconnect();
+  }, [roomId]);   // ...but theme is NOT a dep → no reconnect on theme change
+}`}
+        caption="The official replacement for the useRef 'useLatest / useStableCallback' hack. Four hard rules: call it only from inside an effect, declare it in the component or hook that uses it, never pass it to a child or return it from a custom hook, and never put it in a deps array. For a stable function you hand to a CHILD, that's still useCallback."
+      />
+
+      <PosterCard
+        glyph="Ac"
+        title={<>&lt;Activity&gt;<span className="dim"> — hide, don't unmount</span></>}
+        badge="R19.2"
+        code={`<Activity mode={isOpen ? 'visible' : 'hidden'}>
+  <SettingsPanel />
+</Activity>
+
+// hidden:  DOM stays (display:none), state + refs PRESERVED,
+//          effects cleaned up, re-renders at low priority.
+//
+// {isOpen && <Panel />}         → unmount, state destroyed
+// <div hidden><Panel /></div>   → state kept, but effects KEEP
+//                                 RUNNING (timers, sockets) — leaky
+// <Activity mode="hidden">      → state kept AND effects cleaned up`}
+        caption="Not a hook, but it belongs next to them: it's the third option between 'mounted' and 'unmounted.' Use it for tab panels and wizard steps where losing scroll position and half-typed input is a bug — and for prerendering the route the user will probably visit next during idle time."
+      />
+
+      <PosterCard
         glyph="R"
         title={<>Ref <span className="dim">Cleanup &amp; ref-as-prop</span></>}
         badge="R19"
@@ -282,6 +321,8 @@ function MyInput({ ref, ...props }) {
           { need: 'Read a promise / conditional context', answer: 'use()' },
           { need: 'Pending state in a child of a form', answer: 'useFormStatus()' },
           { need: 'Forward a ref to a function component', answer: 'Just accept `ref` as a prop (R19)' },
+          { need: 'Effect must READ a value without RE-RUNNING on it', answer: 'useEffectEvent() (R19.2)' },
+          { need: 'Hide a subtree but keep its state', answer: '<Activity mode="hidden"> (R19.2)' },
         ]}
       />
     </PosterLayout>

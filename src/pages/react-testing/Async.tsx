@@ -94,10 +94,25 @@ describe('UserProfile async states', () => {
 
       <h2>MSW (Mock Service Worker)</h2>
       <p>
-        MSW intercepts network requests at the service worker level. Your
-        component code stays untouched — no mocking fetch or axios. This is the
-        gold standard for testing API interactions.
+        MSW intercepts requests at the <strong>network boundary</strong> rather than
+        replacing your HTTP client. Your component code stays untouched — the real{' '}
+        <code>fetch</code> or axios call runs, headers are set, the body is genuinely
+        serialized — and only the response is supplied by you. That is what makes it
+        the gold standard for testing API interactions: it catches the serialization
+        and header bugs that stubbing <code>fetch</code> structurally cannot.
       </p>
+
+      <InfoBox variant="note" title="Despite the Name, There's No Service Worker in Your Tests">
+        MSW has two setups, and mixing them up is the most common first-run confusion.
+        In the browser, <code>setupWorker()</code> registers an actual Service Worker
+        (hence the name). In Node — which is where Vitest and Jest run —{' '}
+        <code>setupServer()</code> from <code>msw/node</code> is used instead, and it
+        patches Node&apos;s own <code>http</code>/<code>https</code>/<code>fetch</code>{' '}
+        internals. Same handlers, same syntax, no worker and no{' '}
+        <code>mockServiceWorker.js</code> file involved. If a guide tells you to run{' '}
+        <code>npx msw init public/</code> to get tests working, it&apos;s describing the
+        browser setup.
+      </InfoBox>
 
       <CodeBlock language="jsx" title="MSW Setup">
 {`// mocks/handlers.js

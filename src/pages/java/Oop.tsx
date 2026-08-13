@@ -375,7 +375,9 @@ public enum Planet {
     EARTH  (5.976e+24, 6.37814e6),
     MARS   (6.421e+23, 3.3972e6);
 
-    private final double mass;      // fields are implicitly final in practice
+    // NOT implicitly final — enum fields are mutable unless you write 'final'.
+    // Always write it: a mutable enum constant is shared global state.
+    private final double mass;
     private final double radius;
 
     // Constructors are implicitly private — you cannot create new constants.
