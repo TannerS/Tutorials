@@ -85,8 +85,15 @@ ORDER BY customer_id, created_at DESC;`}
 FROM employees
 WHERE level = 'Senior'    -- filters ROWS
 GROUP BY department
-HAVING COUNT(*) > 5;       -- filters GROUPS`}
-        caption="WHERE runs before GROUP BY; HAVING runs after. Filtering on an aggregate always means HAVING, never WHERE."
+HAVING COUNT(*) > 5;       -- filters GROUPS
+
+-- Aliases: ORDER BY always sees them; WHERE and HAVING never do.
+-- GROUP BY is the Postgres exception — it ACCEPTS an output alias
+-- (and an ordinal) as a non-standard extension:
+SELECT date_trunc('month', ordered_at) AS m, SUM(total)
+FROM orders GROUP BY m;    -- equally legal: GROUP BY 1
+-- On a name clash, GROUP BY resolves to the INPUT column.`}
+        caption="WHERE runs before GROUP BY; HAVING runs after. Filtering on an aggregate always means HAVING, never WHERE. The one crack in the tidy 'aliases don't exist yet' story: Postgres does accept a SELECT alias or ordinal in GROUP BY — just never in WHERE or HAVING."
       />
 
       <PosterCard
@@ -184,6 +191,7 @@ PREPARE find_user (text) AS
           { need: 'Case-insensitive text match', answer: 'ILIKE' },
           { need: 'Latest row per group', answer: 'SELECT DISTINCT ON (group_col) * ORDER BY group_col, ts DESC' },
           { need: 'Filter after aggregation', answer: 'HAVING, never WHERE' },
+          { need: 'Group by a computed SELECT expression', answer: 'Postgres accepts the alias or ordinal in GROUP BY (never in WHERE/HAVING)' },
           { need: 'Conditional COUNT/SUM', answer: 'COUNT(*) FILTER (WHERE condition)' },
           { need: '"Not in this list" that handles NULLs safely', answer: 'NOT EXISTS, never NOT IN' },
           { need: 'Paginate past page 100 efficiently', answer: 'Keyset pagination, not OFFSET' },

@@ -72,11 +72,14 @@ export default function FieldGuideCssPatterns() {
         glyph="Fb"
         title={<>Full-Bleed<span className="dim"> Breakout</span></>}
         language="css"
-        code={`.wrapper { max-width: 65ch; margin-inline: auto; }
-.full-bleed {
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-}`}
+        code={`/* ⚠️ the classic one — overshoots by the scrollbar width */
+.wrapper { max-width: 65ch; margin-inline: auto; }
+.full-bleed { width: 100vw; margin-left: calc(50% - 50vw); }
+
+/* ✅ scrollbar-safe: let the grid own the gutters */
+.wrapper { display: grid; grid-template-columns: 1fr min(65ch, 100%) 1fr; }
+.wrapper > * { grid-column: 2; }
+.full-bleed  { grid-column: 1 / -1; }`}
         caption="calc(50% - 50vw) is the exact horizontal distance from the constrained container's edge to the viewport's edge. Caveat: 100vw INCLUDES a classic scrollbar gutter while 50% doesn't, so on desktop this overshoots by the scrollbar width and adds a horizontal scrollbar — prefer the scrollbar-safe grid breakout (grid-template-columns: 1fr min(65ch, 100%) 1fr, with .full-bleed { grid-column: 1 / -1 })."
       />
 
@@ -172,9 +175,9 @@ export default function FieldGuideCssPatterns() {
         rows={[
           { need: 'Header/sidebar/content/footer shell', answer: 'grid-template-areas — Holy Grail' },
           { need: 'Responsive cards, no breakpoints', answer: 'repeat(auto-fit, minmax(N, 1fr))' },
-          { need: 'Nav bar pinned while scrolling', answer: 'position: sticky; top: 0' },
+          { need: 'Nav bar pinned while scrolling', answer: 'position: sticky; top: 0 — no ancestor with overflow: hidden/clip' },
           { need: 'Centered dialog over a dimmed backdrop', answer: 'display: grid; place-items: center' },
-          { need: 'Break an element out of a max-width column', answer: 'width: 100vw; margin-left: calc(50% - 50vw)' },
+          { need: 'Break an element out of a max-width column', answer: 'Grid breakout: 1fr min(65ch, 100%) 1fr + grid-column: 1 / -1 — 100vw overshoots by the scrollbar' },
           { need: 'Cut off long text with an ellipsis', answer: '-webkit-line-clamp (multi-line) or text-overflow (1 line)' },
           { need: 'Reserve space for media before it loads', answer: 'aspect-ratio + object-fit: cover' },
           { need: 'Notifications stacking bottom-right', answer: 'flex-direction: column-reverse' },

@@ -9,7 +9,7 @@ export default function FieldGuideCssGotchas() {
       eyebrow="CSS · Field Reference"
       title="Gotchas & Specificity Pitfalls"
       tagline="The got-ya moments that pass code review and don't show up until someone else's screen — mostly about specificity, containment, and defaults nobody reads."
-      meta={['CSS3', '13 gotchas']}
+      meta={['CSS3', '15 gotchas']}
       footerLabel="Personal study reference — CSS Gotchas"
       pageLabel="CSS Field Guide · Gotchas"
       prev={{ path: '/css-field-guide/advanced', label: 'Advanced CSS & Modern Selectors' }}
@@ -105,13 +105,23 @@ export default function FieldGuideCssGotchas() {
 
       <PosterCard
         glyph="Fs"
-        title={<>flex-shrink<span className="dim"> Default Causes Overflow</span></>}
+        title={<>flex-shrink<span className="dim"> Is Weighted by flex-basis</span></>}
         language="css"
         code={`.row { display: flex; gap: 1rem; }
 .row img { flex-shrink: 0; }   /* WITHOUT this: images shrink past
                                    their intrinsic size to fit the row,
-                                   sometimes to near-0 width */`}
-        caption="flex-shrink: 1 is the default on every flex item, including images — a row that runs out of space will squash an <img> instead of wrapping, because images have no natural minimum width. flex-shrink: 0 or min-width on the item fixes it."
+                                   sometimes to near-0 width */
+
+/* Shrink factors are NOT a plain ratio the way grow factors are —
+   each one is weighted by that item's flex-basis. */
+.wide   { flex: 0 1 800px; }
+.narrow { flex: 0 1 200px; }
+/* Container 600px, so 400px has to come back off:
+     weighted factor = flex-shrink x flex-basis
+     .wide    1 x 800 = 800  loses 400 x 800/1000 = 320  ->  480px
+     .narrow  1 x 200 = 200  loses 400 x 200/1000 =  80  ->  120px
+   NOT 600 / 0, which is what an even 200-each split would give. */`}
+        caption="flex-shrink: 1 is the default on every flex item, images included — a row that runs out of space squashes an <img> instead of wrapping, because images have no natural minimum width. The basis weighting is why a small item barely moves while a big one gives up a lot, with nothing configured: you can only take from an item in proportion to what it has. So flex-shrink: 3 means '3x a sibling' only when both start from the same basis. flex-shrink: 0 or a min-width opts out."
       />
 
       <PosterCard
@@ -125,6 +135,36 @@ export default function FieldGuideCssGotchas() {
 .parent { height: 100vh; }
 .child { height: 100%; }  /* ✅ now 100% has something concrete to measure against */`}
         caption="A percentage height only works if the parent has an explicit (or otherwise definite) height — height: 100% cascading through a chain of auto-height parents resolves to 0 at every level, silently, with no error."
+      />
+
+      <PosterCard
+        glyph="Ui"
+        title={<>:invalid<span className="dim"> Fires Before Anyone Types</span></>}
+        language="css"
+        code={`/* ❌ a required field is invalid while it is still EMPTY, so every
+   input on the form turns red the instant the page loads */
+input:invalid { border-color: red; }
+
+/* ✅ matches only once the user has interacted AND left it bad */
+input:user-invalid { border-color: red; }
+input:user-valid   { border-color: green; }`}
+        caption=":invalid is a statement about the value alone and it is true from first paint; :user-invalid adds 'and the user has already had their turn with this field'. For error styling you almost always want the second — the first is why so many forms greet you entirely in red."
+      />
+
+      <PosterCard
+        glyph="Is"
+        title={<>height: auto<span className="dim"> Won&apos;t Animate</span></>}
+        language="css"
+        code={`.panel { height: 0; transition: height 300ms; }
+.panel.open { height: auto; }   /* ❌ snaps — auto is a keyword, and
+                                    the browser can't interpolate
+                                    toward a value it hasn't computed */
+
+/* ✅ opt the subtree into interpolating keyword sizes. Set once. */
+:root { interpolate-size: allow-keywords; }
+/* per-value opt-in instead of globally: */
+.drawer { max-height: calc-size(max-content, size + 2rem); }`}
+        caption="The max-height: 1000px guess makes the easing a lie (the growth finishes in the first fraction of the duration) and clips if you guess low. The grid 0fr → 1fr trick is the correct fallback and the safe default today; interpolate-size is the real answer for new code — feature-detect it with @supports if your baseline is conservative."
       />
 
       <PosterCard
@@ -197,15 +237,18 @@ li:not(:where(.active)) { color: gray; }  /* :where() zeroes it back out */`}
         title="Symptom → root cause"
         rows={[
           { need: 'z-index has no visible effect', answer: "Element isn't positioned — add position: relative/absolute/fixed" },
-          { need: 'position: sticky does nothing', answer: 'Some ancestor has overflow != visible' },
+          { need: 'position: sticky does nothing', answer: 'Ancestor has overflow: hidden or clip (auto/scroll are fine), or no height — it never falls back to static' },
           { need: 'width: 100% overflows its container', answer: 'Missing box-sizing: border-box' },
           { need: 'An <img> in a flex row gets squashed', answer: 'flex-shrink: 0 needed — images shrink by default' },
+          { need: 'One flex item collapsed, its sibling barely moved', answer: 'Shrink is weighted by flex-basis, not a plain ratio' },
           { need: 'height: 100% resolves to nothing', answer: 'Parent chain has no definite height' },
           { need: 'A child margin pushed the whole parent down', answer: 'Margin collapsed through the parent — add padding or a BFC' },
           { need: 'Cards are all the same height unexpectedly', answer: 'align-items: stretch is the flex default' },
           { need: 'New override rule refuses to win', answer: "Check for an unlayered rule beating your @layer, or an existing !important" },
           { need: 'Long content forces a horizontal scrollbar', answer: 'Flex/grid item needs min-width: 0 — min-width: auto is the default floor' },
           { need: "text-overflow: ellipsis does nothing in a flex row", answer: 'Same cause — add min-width: 0 to the flex item' },
+          { need: 'Every required field is red on page load', answer: ':invalid matches empty fields — use :user-invalid' },
+          { need: 'Transition to height: auto just snaps', answer: 'interpolate-size: allow-keywords (or the grid 0fr → 1fr trick)' },
         ]}
       />
     </PosterLayout>

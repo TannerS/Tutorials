@@ -9,7 +9,7 @@ export default function FieldGuideQuickReference() {
       eyebrow="SQL · Field Reference"
       title="What Do I Reach For?"
       tagline="A decision-first cheat sheet — the PostgreSQL tool for each recurring job, in one place."
-      meta={['PostgreSQL 17+', '12 decisions']}
+      meta={['PostgreSQL 17+', '13 decisions']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · What Do I Reach For?"
       prev={{ path: '/sql-field-guide/postgres-gotchas', label: 'Postgres Gotchas & Pitfalls' }}
@@ -107,9 +107,28 @@ CREATE INDEX ... USING GIN (search_vector);`}
         language="sql"
         code={`-- rare conflicts, high throughput: optimistic (version column)
 UPDATE t SET price = ?, version = version + 1
-WHERE id = ? AND version = ?;
--- frequent conflicts: SELECT ... FOR UPDATE`}
-        caption="Default to optimistic locking (a version column) when conflicts are rare. Reach for FOR UPDATE / SKIP LOCKED for queue-style contention."
+WHERE id = ? AND version = ?;   -- 0 rows updated = someone beat you
+
+-- frequent conflicts: pessimistic. Then choose HOW it fails:
+SELECT ... FOR UPDATE;              -- block until free (or lock_timeout)
+SELECT ... FOR UPDATE NOWAIT;       -- error 55P03 immediately
+SELECT ... FOR UPDATE SKIP LOCKED;  -- omit locked rows silently`}
+        caption="Default to optimistic locking (a version column) when conflicts are rare. NOWAIT when 'someone else is editing this' is an answer you can put in front of the user right now. SKIP LOCKED for work queues only — it returns a deliberately incomplete set, so never reach for it where the row count has to be correct."
+      />
+
+      <PosterCard
+        glyph="Adv"
+        title={<>Serialize something <span className="dim">that isn&apos;t a row</span></>}
+        language="sql"
+        code={`BEGIN;
+  -- released automatically at COMMIT/ROLLBACK — impossible to leak
+  SELECT pg_advisory_xact_lock(hashtext('nightly-billing'));
+  -- ... only one worker in the fleet is inside this block ...
+COMMIT;
+
+-- a cron that should SKIP rather than pile up: TRUE if acquired
+SELECT pg_try_advisory_xact_lock(hashtext('nightly-billing'));`}
+        caption="Advisory locks are named 64-bit mutexes Postgres tracks but attaches no meaning to — the distributed lock you already have, without adding Redis. Two jobs: single-runner enforcement, and locking a row that doesn't exist yet (FOR UPDATE can't lock what isn't there, so it can't serialize check-then-insert). Prefer the _xact_ variants: a session-scoped lock rides a pooled connection into the next request."
       />
 
       <PosterCard
@@ -142,6 +161,9 @@ WHERE id = ? AND version = ?;
           { need: 'Adding a column with a default to a huge table', answer: 'Safe since PG11 — a non-volatile DEFAULT is stored in the catalog, no table rewrite' },
           { need: 'Safest way to change isolation level app-wide', answer: "Don't — set it per-transaction only where the anomaly actually matters" },
           { need: 'How to avoid the N+1 query problem in Postgres', answer: 'LATERAL join or a single window-function query instead of one query per row' },
+          { need: 'Only one instance may run this job', answer: 'pg_try_advisory_xact_lock(hashtext(name)) — exit quietly on FALSE' },
+          { need: 'Pull jobs off a queue table with N workers', answer: 'FOR UPDATE SKIP LOCKED' },
+          { need: 'Fail fast instead of blocking on a locked row', answer: 'FOR UPDATE NOWAIT — raises 55P03 immediately' },
         ]}
       />
     </PosterLayout>

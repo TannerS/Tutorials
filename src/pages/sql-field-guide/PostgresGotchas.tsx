@@ -9,7 +9,7 @@ export default function FieldGuidePostgresGotchas() {
       eyebrow="SQL · Field Reference"
       title="Postgres Gotchas & Pitfalls"
       tagline="The traps that don't show up until production — NULLs, MVCC, locking, and silent data loss."
-      meta={['PostgreSQL 17+', '15 pitfalls']}
+      meta={['PostgreSQL 17+', '18 pitfalls']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · Postgres Gotchas & Pitfalls"
       prev={{ path: '/sql-field-guide/schema-design', label: 'Schema Design Patterns' }}
@@ -48,6 +48,22 @@ GROUP BY c.name;`}
   INSERT INTO b VALUES (2);  -- ERROR: current transaction is aborted
 COMMIT;                       -- ROLLBACK happens anyway`}
         caption="Unlike MySQL, one failed statement poisons the ENTIRE Postgres transaction — every later statement errors until ROLLBACK, unless you used a SAVEPOINT."
+      />
+
+      <PosterCard
+        glyph="Rc"
+        title={<>READ COMMITTED <span className="dim">snapshots per STATEMENT</span></>}
+        language="sql"
+        code={`BEGIN;  -- the default level takes NO transaction-wide snapshot
+  SELECT count(*) FROM orders;   -- 100
+  -- another session commits 5 inserts right here
+  SELECT count(*) FROM orders;   -- 105, SAME transaction
+COMMIT;
+
+-- REPEATABLE READ / SERIALIZABLE freeze ONE snapshot — and take
+-- it at the FIRST STATEMENT, not at BEGIN. An idle "BEGIN;" that
+-- sits for 10 minutes still sees data as of that first query.`}
+        caption="Postgres's default takes a fresh snapshot at the start of every statement, so two identical SELECTs inside one transaction can legitimately return different data. Non-repeatable reads aren't a defect at this level — they are its defining behaviour. BEGIN buys you atomicity, not a stable view; ask for REPEATABLE READ when you need the view frozen."
       />
 
       <PosterCard
@@ -193,12 +209,52 @@ ORDER BY duration DESC;`}
         caption="A 5ms query run 10 million times costs more than a 2s report run twice a day — always sort by total_exec_time. High stddev means one query shape hits two different plans, and the mean hides it entirely."
       />
 
+      <PosterCard
+        glyph="Exp"
+        title={<>Reading a plan <span className="dim">— three misreadings</span></>}
+        language="sql"
+        code={`HashAggregate  (cost=8123.44..8148.44 rows=2000 width=26)
+               (actual time=61.402..61.865 rows=1987 loops=1)
+  ->  Nested Loop  (actual time=0.5..0.9 rows=3 loops=10000)
+
+-- 1. cost=A..B is TWO numbers, not a range. A = startup (work
+--    before the first row can be emitted), B = total for all rows.
+--    The units are arbitrary PLANNER units anchored to "one
+--    sequential page fetch = 1.0" — NOT milliseconds, and they
+--    convert to none. They only compare against rejected plans.
+-- 2. The tree prints INSIDE-OUT: rows come from the most indented
+--    nodes and flow upward, so the top line runs LAST.
+-- 3. actual time and rows are PER LOOP. rows=3 loops=10000 is
+--    30,000 rows, and 0.9ms x 10,000 is ~9 seconds, not 0.9ms.`}
+        caption="Forgetting to multiply by loops is the most common misreading there is, and it hides exactly the nested-loop blowups you are hunting. Node timings are also inclusive of their children, so a node's own cost is its time minus its child's. Always pass BUFFERS — I/O volume is a far more stable signal than wall-clock on a shared machine."
+      />
+
+      <PosterCard
+        glyph="Sar"
+        title={<>Sargability <span className="dim">— the index is ignored</span></>}
+        language="sql"
+        code={`-- ❌ the indexed column is wrapped, so it cannot be seeked
+WHERE lower(email) = 'a@x.com'      -- index on (email) unusable
+WHERE created_at::date = DATE '2024-06-01'
+WHERE name LIKE '%foo'               -- no prefix to seek to
+
+-- ✅ leave the column bare, or index the expression itself
+WHERE email = lower('a@x.com')
+WHERE created_at >= '2024-06-01' AND created_at < '2024-06-02'
+CREATE INDEX ON users (lower(email));
+
+-- Type mismatch does it implicitly: a bigint column compared to a
+-- numeric parameter gets the cast applied on the COLUMN side.`}
+        caption="Postgres is cost-based, never rule-based — it never asks 'is there an index?', it prices every plan. So 'my index isn't used' has three answers: the predicate isn't sargable, the row estimate is wrong (ANALYZE, or raise SET STATISTICS), or a seq scan genuinely wins past roughly 5-10% selectivity. The tell is a Filter line where you expected an Index Cond."
+      />
+
       <PosterQuickRef
         title="What's actually going wrong here?"
         rows={[
           { need: 'NOT IN subquery returns nothing unexpectedly', answer: 'The subquery contains a NULL — switch to NOT EXISTS' },
           { need: 'SUM() looks way too high', answer: 'A 1:N join duplicated rows before aggregation — aggregate first' },
           { need: "Every statement after one failure errors too", answer: 'The transaction is aborted — ROLLBACK or use a SAVEPOINT' },
+          { need: 'Two identical SELECTs in one transaction disagree', answer: 'READ COMMITTED re-snapshots per statement — use REPEATABLE READ to freeze it' },
           { need: 'Transaction randomly fails with error 40001', answer: 'SERIALIZABLE conflict — catch it and retry, this is expected' },
           { need: 'A "no-op" UPDATE is surprisingly expensive', answer: 'MVCC writes a new row version regardless — normal, tune autovacuum' },
           { need: 'A join or cascade delete is a sequential scan', answer: 'Foreign keys are not auto-indexed — add the index manually' },
@@ -209,6 +265,9 @@ ORDER BY duration DESC;`}
           { need: 'A trivial migration froze the whole app', answer: 'DDL queued for a lock and everything queued behind it — SET lock_timeout' },
           { need: "Don't know which query to optimize", answer: 'pg_stat_statements ordered by total_exec_time' },
           { need: 'Query is usually fast but sometimes very slow', answer: 'High stddev_exec_time — one shape, two plans; check parameter selectivity' },
+          { need: 'A plan node looks fast but the query is slow', answer: 'actual time and rows are PER LOOP — multiply them by loops' },
+          { need: 'Reading cost= as a millisecond figure', answer: "It isn't one — startup..total in arbitrary planner units, comparable only to other plans" },
+          { need: 'Index exists but the planner refuses to use it', answer: 'Non-sargable predicate, stale estimates, or a seq scan is genuinely cheaper' },
         ]}
       />
     </PosterLayout>

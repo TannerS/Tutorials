@@ -9,7 +9,7 @@ export default function FieldGuideAdvancedQueries() {
       eyebrow="SQL · Field Reference"
       title="Advanced Queries"
       tagline="Joins, window functions, CTEs, and LATERAL — the toolkit for queries plain SELECTs can't express."
-      meta={['PostgreSQL 17+', '13 patterns']}
+      meta={['PostgreSQL 17+', '14 patterns']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · Advanced Queries"
       prev={{ path: '/sql-field-guide/basic-queries', label: 'Basic Queries' }}
@@ -50,6 +50,24 @@ SELECT * FROM ranked WHERE rn <= 3;`}
       />
 
       <PosterCard
+        glyph="Nt"
+        title={<>Ranking <span className="dim">ties &amp; NTILE buckets</span></>}
+        language="sql"
+        code={`-- salaries 500, 400, 400, 300, 200
+ROW_NUMBER()  -- 1, 2, 3, 4, 5   arbitrary tiebreak
+RANK()        -- 1, 2, 2, 4, 5   ties share, then rank SKIPS
+DENSE_RANK()  -- 1, 2, 2, 3, 4   ties share, no gap
+
+-- ROW_NUMBER's tiebreak is NON-DETERMINISTIC: without a unique
+-- column in ORDER BY, "top 3" can change between refreshes.
+ORDER BY salary DESC, id
+
+-- NTILE(4) over 10 rows -> bucket sizes 3, 3, 2, 2.
+-- The remainder goes to the EARLIER buckets, never the later ones.`}
+        caption="The three ranking functions differ only in how they treat ties, so the difference is invisible until you test with ties. NTILE's uneven buckets make it a poor percentile on small partitions — reach for PERCENT_RANK() or CUME_DIST() when the exact cut point matters."
+      />
+
+      <PosterCard
         glyph="Lg"
         title={<>LAG / LEAD <span className="dim">row comparison</span></>}
         language="sql"
@@ -61,15 +79,23 @@ FROM monthly_revenue;`}
 
       <PosterCard
         glyph="Fr"
-        title={<>Frame <span className="dim">running total</span></>}
+        title={<>Frame <span className="dim">— the default is RANGE</span></>}
         language="sql"
         code={`SELECT date, amount,
   SUM(amount) OVER (
     ORDER BY date
     ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
   ) AS running_total
-FROM transactions;`}
-        caption="The frame clause controls which rows the window function sees. Without ORDER BY, the default frame is the whole partition."
+FROM transactions;
+
+-- Omit the frame and you get RANGE BETWEEN UNBOUNDED PRECEDING
+-- AND CURRENT ROW — RANGE, not ROWS. Identical until ORDER BY
+-- has ties, then all tied peers enter the frame at once:
+--   rows (d, amt): (1,100) (2,200) (2,300) (3,400)
+--   default RANGE:  100, 600, 600, 1000   <- both d=2 rows
+--   explicit ROWS:  100, 300, 600, 1000
+-- Same reason LAST_VALUE() with no frame returns the current row.`}
+        caption="Spell the frame out whenever the ORDER BY column has duplicates: the implicit default is RANGE, so a 'running total' silently swallows every tied peer. Without ORDER BY at all, the default frame is the whole partition."
       />
 
       <PosterCard
@@ -156,8 +182,16 @@ WHERE EXISTS (
 FROM employees
 GROUP BY GROUPING SETS (
   (department, level), (department), ()
-);`}
-        caption="One query computes department+level totals, department-only totals, AND a grand total — no UNION of three separate queries."
+);
+
+-- A subtotal row's collapsed column prints as NULL — and so does
+-- genuinely missing data. GROUPING(col) returns 1 only for the rollup:
+SELECT CASE WHEN GROUPING(level) = 1 THEN 'subtotal'
+            ELSE COALESCE(level, '(unspecified)') END AS level,
+       COUNT(*)
+FROM employees GROUP BY ROLLUP (department, level)
+ORDER BY GROUPING(department), department;`}
+        caption="One query computes department+level totals, department-only totals, AND a grand total — no UNION of three separate queries. Always label the rows with GROUPING(), or a real NULL is indistinguishable from a subtotal; it's an aggregate-context function, so it's legal in ORDER BY and HAVING too."
       />
 
       <PosterCard
@@ -176,6 +210,8 @@ ORDER BY created_at DESC, id DESC;`}
           { need: 'Rows in A with no match in B', answer: 'LEFT JOIN B ... WHERE B.id IS NULL' },
           { need: 'Diff two datasets', answer: 'FULL OUTER JOIN + COALESCE' },
           { need: 'Top-N rows per group', answer: 'ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...) + filter' },
+          { need: 'Top-N changes between identical runs', answer: "ROW_NUMBER's tiebreak is arbitrary — add a unique column to ORDER BY" },
+          { need: 'Running total that stops at the current row', answer: 'Spell out ROWS BETWEEN — the implicit default is RANGE and swallows ties' },
           { need: 'Compare row to previous/next row', answer: 'LAG() / LEAD() OVER (ORDER BY ...)' },
           { need: 'Break a nested query into readable steps', answer: 'WITH ... AS (...) CTE' },
           { need: 'Traverse a tree or graph', answer: 'WITH RECURSIVE' },
@@ -183,6 +219,7 @@ ORDER BY created_at DESC, id DESC;`}
           { need: 'Correlated per-row subquery returning multiple rows', answer: 'CROSS/LEFT JOIN LATERAL' },
           { need: 'Rows-to-columns report', answer: 'SUM(x) FILTER (WHERE ...) per column' },
           { need: 'Subtotals + grand total in one query', answer: 'GROUP BY GROUPING SETS / ROLLUP / CUBE' },
+          { need: 'Tell a ROLLUP subtotal NULL from a real NULL', answer: 'GROUPING(col) = 1 means the column was rolled up' },
         ]}
       />
     </PosterLayout>

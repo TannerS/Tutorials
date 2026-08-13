@@ -9,7 +9,7 @@ export default function FieldGuideCssAdvanced() {
       eyebrow="CSS · Field Reference"
       title="Advanced CSS & Modern Selectors"
       tagline="Grid/flexbox tricks and the 2023+ selector toolkit — :has(), container queries, subgrid, native nesting."
-      meta={['CSS Grid Level 2', '18 techniques']}
+      meta={['CSS Grid Level 2', '19 techniques']}
       footerLabel="Personal study reference — Advanced CSS"
       pageLabel="CSS Field Guide · Advanced"
       prev={{ path: '/css-field-guide/basics', label: 'CSS Basics Cheat Sheet' }}
@@ -109,8 +109,12 @@ li:has(> a[aria-current="page"]) { background: var(--accent-dim); }`}
 }
 /* responds to the PARENT's width, not the viewport —
    the same .card component adapts in a 300px sidebar
-   AND a 900px main column, correctly, in both places */`}
-        caption="Media queries only ever see the viewport; container queries let a component respond to the space its own container actually gives it — the single biggest gap component-driven CSS had until 2023."
+   AND a 900px main column, correctly, in both places */
+
+/* ❌ a container can NEVER query ITSELF. @container only matches
+   DESCENDANTS, so container-type on .card + a rule for .card
+   silently matches nothing. That is why the wrapper exists. */`}
+        caption="Media queries only ever see the viewport; container queries let a component respond to the space its own container actually gives it — the single biggest gap component-driven CSS had until 2023. Note container-type is a CONTAINMENT switch, not a label: inline-size turns on inline-size + layout + style containment, so the element stops shrinking to fit and fills its parent, becomes a containing block for absolutely positioned descendants, and opens a stacking context that traps z-index inside. Put it on a dedicated wrapper, never on a component already carrying layout duties."
       />
 
       <PosterCard
@@ -152,6 +156,24 @@ li:has(> a[aria-current="page"]) { background: var(--accent-dim); }`}
 /* .card's own children now align to the OUTER grid's column
    tracks — no more independent, misaligned nested grids */`}
         caption="Without subgrid, a nested grid defines its own tracks from scratch, so nested-card contents rarely line up with siblings' contents. subgrid makes the child grid inherit the parent's actual track sizing."
+      />
+
+      <PosterCard
+        glyph="Sn"
+        title={<>span N<span className="dim"> — the gaps count too</span></>}
+        language="css"
+        code={`.grid { grid-auto-rows: 60px; gap: 16px; }
+
+/* Spanning N tracks also swallows the N-1 gaps BETWEEN them:
+   height = N x track + (N - 1) x gap   — not N x track. */
+.small  { grid-row: span 3; }   /* 3x60 + 2x16 = 212px */
+.medium { grid-row: span 4; }   /* 4x60 + 3x16 = 288px */
+.large  { grid-row: span 6; }   /* 6x60 + 5x16 = 440px */
+
+/* Target pixels -> span count, the other direction:
+     span = (target + gap) / (track + gap)
+   a 300px card -> (300 + 16) / (60 + 16) = 4.2, so span 4 (288px) */`}
+        caption="Forgetting the absorbed gaps is why hand-computed span counts land a track too tall. The +gap on both sides of the division is what makes the inverse exact — it counts a trailing gap after the last track, then divides it back out."
       />
 
       <PosterCard
@@ -263,8 +285,10 @@ li:has(> a[aria-current="page"]) { background: var(--accent-dim); }`}
           { need: 'Responsive card grid, no breakpoints', answer: 'repeat(auto-fit, minmax(240px, 1fr))' },
           { need: 'Style a parent based on its children', answer: ':has()' },
           { need: 'Zero-specificity reset selector', answer: ':where(...)' },
-          { need: "Component reacts to ITS container's width", answer: '@container query' },
+          { need: "Component reacts to ITS container's width", answer: '@container query — on a WRAPPER; a container cannot query itself' },
+          { need: 'Layout collapsed right after adding @container', answer: 'container-type is a containment switch — it kills shrink-to-fit' },
           { need: 'Nested grid columns aligned to parent', answer: 'grid-template-columns: subgrid' },
+          { need: 'Turn a target pixel height into a span count', answer: 'span = (target + gap) / (track + gap)' },
           { need: 'Font size that scales with viewport, bounded', answer: 'clamp(min, preferred, max)' },
           { need: 'Fixed-ratio box without the padding-top hack', answer: 'aspect-ratio: w / h' },
           { need: 'Hover shade computed from a live token', answer: 'color-mix(in oklch, var(--x) 85%, black)' },
