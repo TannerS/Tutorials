@@ -24,3 +24,6 @@ dist-pdf
 *.njsproj
 *.sln
 *.sw?
+
+# transient agent verification scratch — not part of the app
+.audit-scratch/

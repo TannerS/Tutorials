@@ -194,9 +194,12 @@ export default function LifecycleSim() {
           </li>
           <li>
             <strong>Does the child&apos;s useEffect cleanup run when the
-            PARENT updates?</strong> Yes — because useEffect re-runs on
-            every render by default if no deps array is specified, and cleanup
-            runs before each re-execution.
+            PARENT updates?</strong> No — not in this simulator. The child
+            re-renders, but every one of its effects declares a deps array whose
+            values are unchanged, so React skips them and no cleanup fires. It
+            <em>would</em> run on every render if an effect omitted its deps
+            array entirely — that is the case people are remembering when they
+            answer &quot;yes&quot;.
           </li>
           <li>
             <strong>What&apos;s the time gap between useLayoutEffect and
@@ -230,7 +233,7 @@ export default function LifecycleSim() {
 
       <FlowChart
         title="Unmount Order"
-        chart={"graph TD\n  A[Unmount Triggered] --> B[useEffect Cleanup Runs]\n  B --> C[useLayoutEffect Cleanup Runs]\n  C --> D[Component Removed from DOM]"}
+        chart={"graph TD\n  A[Unmount Triggered] --> B[useLayoutEffect Cleanup Runs - synchronous]\n  B --> C[Component Removed from DOM]\n  C --> D[useEffect Cleanup Runs - after commit]"}
       />
 
       <FlowChart

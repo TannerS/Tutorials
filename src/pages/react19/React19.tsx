@@ -168,8 +168,8 @@ function WithRef({ value }) {
 
       <CodeBlock language="bash" title="Install the Compiler">
 {`npm install --save-dev babel-plugin-react-compiler
-# or for Next.js:
-npm install --save-dev babel-plugin-react-compiler@rc`}
+# The compiler reached 1.0 (stable) — install the default 'latest' tag.
+# Do NOT use @rc: that tag still points at a pre-1.0 release candidate.`}
       </CodeBlock>
 
       <CodeBlock language="javascript" title="Enable in Vite (babel.config.js or vite.config.js)" showLineNumbers>

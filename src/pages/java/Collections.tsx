@@ -260,10 +260,27 @@ public class IterationPatterns {
       <InfoBox variant="warning" title="ConcurrentModificationException">
         <p>
           Never modify a collection (add or remove elements) while iterating over it with a
-          for-each loop — this throws a <code>ConcurrentModificationException</code>. Use an{' '}
+          for-each loop — it normally throws a <code>ConcurrentModificationException</code>. Use an{' '}
           <code>Iterator</code> and its <code>remove()</code> method for safe removal during
           iteration, or use <code>removeIf()</code> for simple predicate-based removal.
         </p>
+        <p>
+          The detection is <strong>fail-fast, not guaranteed</strong>, and the gap is worth knowing
+          because it is the dangerous case. Removing the <em>second-to-last</em> element of an{' '}
+          <code>ArrayList</code> throws nothing at all: <code>remove</code> decrements the size,{' '}
+          <code>hasNext()</code> compares cursor to the new size, finds them equal and reports the
+          loop is finished — so the check that would have thrown never runs, and the last element
+          is silently skipped.
+        </p>
+        <CodeBlock language="java" title="Verified on JDK 26 — no exception, and 'd' is never visited">
+{`List<String> b = new ArrayList<>(List.of("a", "b", "c", "d"));
+for (String s : b) {
+    if (s.equals("c")) b.remove(s);   // second-to-last
+}
+// No ConcurrentModificationException. b == [a, b, d]
+
+// Remove "a" instead and you DO get ConcurrentModificationException.`}
+        </CodeBlock>
       </InfoBox>
 
       <h2>Queue and Deque</h2>

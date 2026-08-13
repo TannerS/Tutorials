@@ -121,8 +121,11 @@ function Intro() {
       </p>
       <ul>
         <li>
-          <code>public</code> — the launcher lives outside your class and your package. If the
-          method were <code>private</code> or package-private, the JVM could not legally call it.
+          <code>public</code> — the launcher lives outside your class and your package, so it needs
+          access. Historically it required <code>public</code> exactly; since Java 25 the rule is
+          only that <code>main</code> must not be <code>private</code>, so package-private and{' '}
+          <code>protected</code> also launch. Keep writing <code>public</code> — it is the
+          convention everywhere, and <code>private</code> still fails.
         </li>
         <li>
           <code>static</code> — this is the big one. A non-static method must be called{' '}
@@ -134,10 +137,13 @@ function Intro() {
           than dodging it.)
         </li>
         <li>
-          <code>void</code> — there is no caller inside your program to hand a value back to. The
-          JVM discards a return value, so the language forbids one. To report success or failure
-          to the operating system you call <code>System.exit(1)</code>, which sets the process exit
-          code directly.
+          <code>void</code> — there is no caller inside your program to hand a value back to, so
+          the launcher only recognises a <code>main</code> that returns <code>void</code>. Note the
+          language does not forbid other return types: <code>static int main(String[] args)</code>{' '}
+          compiles perfectly well, it just is not an entry point, and you get the same
+          &quot;Main method not found&quot; error as any other wrong signature. To report success or
+          failure to the operating system you call <code>System.exit(1)</code>, which sets the
+          process exit code directly.
         </li>
         <li>
           <code>String[] args</code> — the command-line arguments after the class name. Running{' '}

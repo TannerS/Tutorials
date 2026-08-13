@@ -603,10 +603,11 @@ class UserCard {
   constructor(public name: string) {}
 }
 
-// 3. Per-instance setup via addInitializer
+// 3. Deferred setup via addInitializer — runs ONCE, immediately after the
+//    class definition is finalized, with 'this' bound to the CLASS itself.
 function sealed(target: Function, context: ClassDecoratorContext) {
   context.addInitializer(function () {
-    Object.seal(this);  // runs once per instance, after fields are set
+    Object.seal(this);  // seals the constructor — 'this' is not an instance
   });
 }`}
       </CodeBlock>
@@ -614,9 +615,18 @@ function sealed(target: Function, context: ClassDecoratorContext) {
       <InfoBox variant="warning" title="Class Decorators Run Once, Not Per Instance">
         <p>
           A class decorator fires a single time, when the <code>class</code> statement is
-          evaluated &mdash; not on every <code>new</code>. If you need per-instance work, use
-          <code> context.addInitializer()</code>, which runs in the constructor for each
-          instance created.
+          evaluated &mdash; not on every <code>new</code>. Its{' '}
+          <code>context.addInitializer()</code> does <em>not</em> change that: the callback
+          runs once more, right after the class definition is finalised, with{' '}
+          <code>this</code> bound to the <strong>class</strong>. That is the hook for
+          registering the class somewhere (<code>customElements.define(tag, this)</code>).
+        </p>
+        <p>
+          For per-instance work you need a <em>member</em> decorator instead. A field,
+          method, getter, setter, or accessor decorator&apos;s{' '}
+          <code>addInitializer()</code> runs once per instance during construction, with{' '}
+          <code>this</code> bound to the instance &mdash; which is exactly what the
+          validation example below depends on.
         </p>
       </InfoBox>
 
