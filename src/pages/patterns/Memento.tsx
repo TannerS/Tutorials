@@ -9,7 +9,7 @@ export default function Memento() {
     <LessonLayout
       title="Memento & Visitor Patterns"
       sectionId="patterns"
-      lessonIndex={10}
+      lessonIndex={11}
       prev={{ path: '/patterns/bridge', label: 'Bridge & Mediator' }}
       next={{ path: '/patterns/flyweight', label: 'Flyweight & Interpreter' }}
     >

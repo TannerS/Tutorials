@@ -260,7 +260,7 @@ service.printDocument(myDoc);`}
 public interface UserService {
     User findById(long id);              // used by the profile page
     List<User> search(String query);     // used by the admin console
-    void updateProfile(long id, Profile p);
+    void updateProfile(long id, Profile p); // used by the profile page
     void deactivate(long id);            // used by the admin console
     void grantRole(long id, Role role);  // used by the security module
     BillingAccount getBilling(long id);  // used by the billing module
@@ -278,6 +278,15 @@ public interface UserLookup {
     User findById(long id);
 }
 
+// The profile page reads AND edits the same record, so it depends on
+// UserLookup and this one. They stay separate because plenty of callers
+// need the read half without ever getting write access.
+public interface ProfileEditor {
+    void updateProfile(long id, Profile p);
+}
+
+// search() and deactivate() are both the admin console's, and the console
+// always uses them together — so they belong in one interface.
 public interface UserDirectory {
     List<User> search(String query);
     void deactivate(long id);
@@ -285,6 +294,10 @@ public interface UserDirectory {
 
 public interface RoleAssignment {
     void grantRole(long id, Role role);
+}
+
+public interface BillingLookup {
+    BillingAccount getBilling(long id);
 }
 
 public interface LoginRecorder {
@@ -295,7 +308,8 @@ public interface LoginRecorder {
 // that each CLIENT depends on only the slice it uses.
 @Service
 public class DefaultUserService
-        implements UserLookup, UserDirectory, RoleAssignment, LoginRecorder {
+        implements UserLookup, ProfileEditor, UserDirectory,
+                   RoleAssignment, BillingLookup, LoginRecorder {
     // ... single cohesive implementation
 }
 

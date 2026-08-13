@@ -9,7 +9,7 @@ export default function Error() {
     <LessonLayout
       title="Error Handling & Validation"
       sectionId="springboot"
-      lessonIndex={8}
+      lessonIndex={9}
       prev={{ path: '/springboot/config', label: 'Configuration & Profiles' }}
       next={{ path: '/springboot/advanced', label: 'Advanced Topics' }}
     >

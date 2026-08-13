@@ -135,7 +135,7 @@ test('renders correct user from route param', () => {
 
       <CodeBlock language="jsx" title="Testing Loaders with createMemoryRouter">
 {`import { render, screen, waitFor } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider, useLoaderData } from 'react-router-dom';
 
 function Dashboard() {
   const data = useLoaderData();
@@ -310,6 +310,80 @@ test('displays error boundary when loader throws', async () => {
 });`}
       </CodeBlock>
 
+      <h2>createRoutesStub — Testing a Component in Isolation</h2>
+      <p>
+        v7 ships <code>createRoutesStub</code>, built for the case where you want to
+        test <em>one component</em> that happens to use router hooks
+        (<code>useLoaderData</code>, <code>useActionData</code>,{' '}
+        <code>useNavigate</code>) without hand-assembling a whole router. You give it
+        stub routes with fake loaders/actions and it returns a component you render.
+      </p>
+
+      <CodeBlock language="jsx" title="createRoutesStub with stubbed loader and action">
+{`import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createRoutesStub } from 'react-router-dom';
+import LoginForm from './LoginForm';
+
+test('shows the validation error the action returns', async () => {
+  const user = userEvent.setup();
+
+  // Note: stub routes use Component / ErrorBoundary / HydrateFallback,
+  // NOT element / errorElement.
+  const Stub = createRoutesStub([
+    {
+      path: '/login',
+      Component: LoginForm,
+      action: async () => ({ errors: { email: 'Email is required' } }),
+    },
+  ]);
+
+  render(<Stub initialEntries={['/login']} />);
+
+  await user.click(screen.getByRole('button', { name: /sign in/i }));
+
+  await waitFor(() => {
+    expect(screen.getByText('Email is required')).toBeInTheDocument();
+  });
+});`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="Seeding loader data without running the loader">
+{`// hydrationData pre-populates loader/action data, keyed by ROUTE ID.
+// Give the route an explicit id so the key is stable.
+const Stub = createRoutesStub([
+  {
+    id: 'contact',
+    path: '/contact',
+    Component: ContactPage,
+    loader: () => ({ locale: 'en-US' }),
+  },
+]);
+
+render(
+  <Stub
+    initialEntries={['/contact']}
+    hydrationData={{ loaderData: { contact: { locale: 'en-US' } } }}
+  />
+);`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Which of the three do I reach for?">
+        <p>
+          <strong>MemoryRouter</strong> — component rendering and link navigation
+          only; no loaders or actions.
+        </p>
+        <p>
+          <strong>createMemoryRouter</strong> — you are testing the routing itself:
+          real route tree, real loaders/actions, error boundaries, redirects.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          <strong>createRoutesStub</strong> — you are testing one component that needs
+          router context, and the loader/action are just fixtures. It replaces the old
+          Remix <code>createRemixStub</code>.
+        </p>
+      </InfoBox>
+
       <h2>Reusable Test Wrapper</h2>
       <p>
         Create a utility function to reduce boilerplate across all your route
@@ -408,6 +482,8 @@ Test loader data                → createMemoryRouter + RouterProvider
 Test form actions               → createMemoryRouter + RouterProvider
 Test auth redirects             → createMemoryRouter + mock auth
 Test error boundaries           → createMemoryRouter + throwing loader
+One component + stub loader     → createRoutesStub
+Seed loader data, skip fetching → createRoutesStub + hydrationData
 Isolated component test         → jest.mock('react-router-dom')
 Reusable across test files      → Custom renderWithRouter utility
 */`}

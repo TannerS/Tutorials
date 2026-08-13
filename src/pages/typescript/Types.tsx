@@ -425,10 +425,26 @@ enum LogLevel {
 // Reverse mapping (numeric only)
 console.log(Direction[0]); // "Up"
 
-// const enum — inlined at compile time, no runtime object
+// const enum — inlined ONLY when tsc compiles the whole program at once
 const enum Feature { DarkMode = "DARK_MODE", Beta = "BETA" }
-// let f = Feature.DarkMode; // compiles to: let f = "DARK_MODE";`}
+// let f = Feature.DarkMode; // tsc emits: let f = "DARK_MODE";`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="const enum Does Not Inline Under a Bundler">
+        <p>
+          Inlining requires whole-program knowledge. Vite, esbuild, SWC and Babel compile one
+          file at a time, so under <code>isolatedModules</code> (the default for every bundler
+          setup in this course) a <code>const enum</code> is downgraded to an ordinary enum and
+          emits the same runtime object &mdash; you get none of the promised savings and a
+          subtly different build from <code>tsc</code>.
+        </p>
+        <p>
+          Separately, <code>erasableSyntaxOnly</code> (TS 5.8+, required if you want Node to
+          run your <code>.ts</code> files directly via its built-in type stripping) rejects
+          enums of any kind outright. Both point the same way: use the{' '}
+          <code>as const</code> pattern below.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="typescript" title="Preferred alternative: union types + as const">
 {`const LogLevel = {

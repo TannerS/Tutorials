@@ -9,7 +9,7 @@ export default function Contract() {
     <LessonLayout
       title="Contract & Property-Based Testing"
       sectionId="testing"
-      lessonIndex={5}
+      lessonIndex={6}
       prev={{ path: '/testing/testcontainers', label: 'Testcontainers & Test Data' }}
       next={{ path: '/testing/e2e', label: 'End-to-End Testing' }}
     >
@@ -118,12 +118,19 @@ class OrderClientPactTest {
       </CodeBlock>
 
       <CodeBlock language="java" title="Provider Verification Test">
-{`@Provider("order-service")
+{`// The provider test runs the REAL service, so it needs a real running
+// server — @LocalServerPort is only populated by a @SpringBootTest that
+// actually starts one (RANDOM_PORT), never by a slice test.
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Provider("order-service")
 @PactBroker(url = "https://pact-broker.internal.company.com")
 class OrderServiceProviderVerificationTest {
 
     @LocalServerPort
     int port;
+
+    @Autowired
+    OrderRepository orderRepository;
 
     @BeforeEach
     void setUp(PactVerificationContext context) {

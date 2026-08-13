@@ -94,18 +94,36 @@ export default function Intro() {
         your project root &mdash; the single source of truth for how TypeScript compiles your code.
       </p>
 
-      <CodeBlock language="json" title="Default tsconfig.json (abbreviated)">
+      <CodeBlock language="json" title="What tsc --init generates today (TypeScript 5.9+ / 6.x)">
         {'{\n' +
           '  "compilerOptions": {\n' +
-          '    "target": "es2016",\n' +
-          '    "module": "commonjs",\n' +
+          '    // Environment\n' +
+          '    "module": "nodenext",\n' +
+          '    "target": "esnext",\n' +
+          '    "types": [],\n' +
+          '\n' +
+          '    // Stricter type-checking\n' +
+          '    "noUncheckedIndexedAccess": true,\n' +
+          '    "exactOptionalPropertyTypes": true,\n' +
+          '\n' +
+          '    // Recommended\n' +
           '    "strict": true,\n' +
-          '    "esModuleInterop": true,\n' +
-          '    "skipLibCheck": true,\n' +
-          '    "forceConsistentCasingInFileNames": true\n' +
+          '    "jsx": "react-jsx",\n' +
+          '    "verbatimModuleSyntax": true,\n' +
+          '    "isolatedModules": true,\n' +
+          '    "noUncheckedSideEffectImports": true,\n' +
+          '    "moduleDetection": "force",\n' +
+          '    "skipLibCheck": true\n' +
           '  }\n' +
           '}'}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Old Blog Posts Show a Different tsc --init">
+        Up to TypeScript 5.7, <code>tsc --init</code> emitted a ~100-line file with every
+        option listed and commented out, defaulting to <code>&quot;target&quot;: &quot;es2016&quot;</code> and{' '}
+        <code>&quot;module&quot;: &quot;commonjs&quot;</code>. TypeScript 5.9 replaced it with the short,
+        opinionated file above. If a tutorial shows the long commented version, it predates 2025.
+      </InfoBox>
 
       {/* 4. tsconfig.json Deep Dive */}
       <h2>tsconfig.json Deep Dive</h2>
@@ -129,12 +147,20 @@ export default function Intro() {
           '    // "strictFunctionTypes": true,\n' +
           '    // "strictBindCallApply": true,\n' +
           '    // "strictPropertyInitialization": true,\n' +
+          '    // "strictBuiltinIteratorReturn": true,   // added in TS 5.6\n' +
           '    // "noImplicitThis": true,\n' +
-          '    // "useUnknownInCatchVariables": true,\n' +
-          '    // "alwaysStrict": true\n' +
+          '    // "useUnknownInCatchVariables": true\n' +
           '  }\n' +
           '}'}
       </CodeBlock>
+
+      <InfoBox variant="note" title="alwaysStrict Is No Longer Part of strict">
+        Older references list <code>alwaysStrict</code> as a member of the strict family.
+        It is not any more: it now defaults to <code>true</code> on its own and is only
+        disabled by setting it to <code>false</code> explicitly. Turning <code>strict</code> off
+        does not turn it off. (Run <code>npx tsc --showConfig</code> to see the resolved values
+        for your own project.)
+      </InfoBox>
 
       <InfoBox variant="warning" title="Always Enable strict">
         Starting a project without <code>strict: true</code> is a common mistake.
@@ -410,7 +436,9 @@ export default function Intro() {
         explanation={
           '"strict": true is a master switch that enables noImplicitAny, strictNullChecks, ' +
           'strictFunctionTypes, strictBindCallApply, strictPropertyInitialization, ' +
-          'noImplicitThis, useUnknownInCatchVariables, and alwaysStrict all at once.'
+          'strictBuiltinIteratorReturn, noImplicitThis, and useUnknownInCatchVariables all at ' +
+          'once. Note that alwaysStrict is NOT one of them any more — it defaults to true ' +
+          'independently of strict.'
         }
       />
 

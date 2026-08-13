@@ -11,7 +11,7 @@ export default function Singleton() {
       sectionId="patterns"
       lessonIndex={1}
       prev={{ path: '/patterns/intro', label: 'Patterns Overview' }}
-      next={{ path: '/patterns/strategy', label: 'Strategy & Observer' }}
+      next={{ path: '/patterns/abstract-factory', label: 'Abstract Factory' }}
     >
       <h2>Singleton Pattern</h2>
       <p>
@@ -253,55 +253,28 @@ public class PushDispatcher extends NotificationDispatcher {
         </p>
       </InfoBox>
 
-      <h3>Abstract Factory</h3>
-      <CodeBlock language="java" title="Abstract Factory - Cross-Platform UI" showLineNumbers={true}>
-{`// Abstract products
-public interface Button { void render(); }
-public interface TextField { void render(); }
-
-// Abstract factory
-public interface UIFactory {
-    Button createButton();
-    TextField createTextField();
-}
-
-// Concrete factory: Material Design
-public class MaterialUIFactory implements UIFactory {
-    public Button createButton() { return new MaterialButton(); }
-    public TextField createTextField() { return new MaterialTextField(); }
-}
-
-// Concrete factory: iOS style
-public class CupertinoUIFactory implements UIFactory {
-    public Button createButton() { return new CupertinoButton(); }
-    public TextField createTextField() { return new CupertinoTextField(); }
-}
-
-// Client code - works with ANY factory
-public class LoginForm {
-    private final Button submitBtn;
-    private final TextField emailField;
-
-    public LoginForm(UIFactory factory) {
-        this.submitBtn = factory.createButton();
-        this.emailField = factory.createTextField();
-    }
-
-    public void render() {
-        emailField.render();
-        submitBtn.render();
-    }
-}`}
-      </CodeBlock>
-
-      <InfoBox variant="tip" title="Factory Method vs. Abstract Factory">
-        Reach for Abstract Factory specifically when you're creating <em>families</em> of related
-        objects that must stay consistent with each other — a Material button must always pair
-        with a Material text field, never a Cupertino one. A single Factory Method is enough when
-        you're only choosing between variants of one product type (one notification channel).
-        Abstract Factory shows up most in UI toolkits and cross-cloud SDKs (e.g. swapping an
-        entire AWS vs. GCP client family behind one interface) — outside of those "whole family
-        must match" situations, it's usually overkill.
+      <h3>The Third One: Abstract Factory</h3>
+      <InfoBox variant="note" title="Covered in Full in the Next Lesson">
+        <p>
+          There is a third member of this family, and it is the one interviewers use to separate
+          people who memorised pattern names from people who have used them.{' '}
+          <strong>Abstract Factory</strong> creates <em>families</em> of related objects that have
+          to stay consistent with each other — a Material button must always pair with a Material
+          text field, never a Cupertino one; a Postgres query builder must never be paired with a
+          SQL Server paginator.
+        </p>
+        <p>
+          The short version of the distinction: both patterns above deal with <em>one</em> product
+          type. Factory Method varies it by subclassing the creator. Abstract Factory varies an
+          entire <em>set</em> of products at once, by which factory object you hold — composition,
+          not inheritance.
+        </p>
+        <p>
+          It gets its own lesson because that distinction, the family constraint, and the way
+          Spring&apos;s <code>@Configuration</code> classes quietly replace the hand-rolled
+          version all need room:{' '}
+          <a href="/patterns/abstract-factory">Abstract Factory Pattern →</a>
+        </p>
       </InfoBox>
 
       <InfoBox variant="warning" title="When to Avoid Singleton">

@@ -75,9 +75,12 @@ function UserProfile({ userId }) {
       <CodeBlock language="jsx" title="Production-Ready Alternative">
         {`// Extract data-fetching into a reusable hook
 function useUser(userId) {
-  return useQuery(['user', userId], () =>
-    fetch(\`/api/users/\${userId}\`).then(res => res.json())
-  );
+  // TanStack Query v5 takes a single options object. The older positional
+  // form — useQuery(['user', id], fn) — was removed in v5.
+  return useQuery({
+    queryKey: ['user', userId],
+    queryFn: () => fetch(\`/api/users/\${userId}\`).then(res => res.json()),
+  });
 }
 
 function UserProfile({ userId }) {

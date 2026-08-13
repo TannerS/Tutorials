@@ -28,8 +28,11 @@ export default function Tsconfig() {
         <code> tsconfig.json</code>. That config determines all compiler behavior.
       </p>
 
-      <CodeBlock language="bash" title="Generate a tsconfig with all options commented">
-{`# Creates tsconfig.json with every option listed and explained
+      <CodeBlock language="bash" title="Generate and inspect a tsconfig">
+{`# Creates a SHORT, opinionated tsconfig.json (module: nodenext,
+# target: esnext, strict, verbatimModuleSyntax, isolatedModules, ...).
+# The ~100-line "every option, commented out" file that older guides
+# show was replaced in TypeScript 5.9. Full list: https://aka.ms/tsconfig
 tsc --init
 
 # See the RESOLVED config (after extends, references)
@@ -145,9 +148,19 @@ function process(data) { return data.foo; } // no error, data is any
 function process(data: unknown) { /* must narrow first */ }
 
 // ─── strictFunctionTypes ────────────────────────────────
-// Prevents unsound function assignment (contravariance check)
+// Prevents unsound function assignment (contravariance check).
+// Parameters go the OPPOSITE way to what most people expect:
+// accepting something broader is safe; accepting something
+// narrower than you will be called with is the unsound case.
 type Handler = (e: MouseEvent) => void;
-const handler: Handler = (e: Event) => {}; // Error! Event is too broad
+const ok: Handler = (e: Event) => {};      // OK — handles any Event, so it
+                                           // certainly handles a MouseEvent
+type Loose = (e: Event) => void;
+const bad: Loose = (e: MouseEvent) => {};  // Error! Callers will hand it a
+                                           // plain Event with no clientX
+
+// Caveat: this check applies to function-TYPE syntax only. Method shorthand
+// -- interface A { on(cb: Handler): void } -- stays bivariant by design.
 
 // ─── strictPropertyInitialization ───────────────────────
 class User {
@@ -218,7 +231,7 @@ console.log(third?.toUpperCase()); // OK — safely handled
 
 // Same for objects:
 const map: Record<string, number> = { a: 1 };
-const val = map['missing']; // string | undefined (not just number)`}
+const val = map['missing']; // number | undefined (not just number)`}
       </CodeBlock>
 
       <h3>Path &amp; Resolution</h3>
@@ -292,11 +305,13 @@ export { User };            // Error if User is only a type!
 // Use: "export type { User }" for types, "export { User }" for values
 
 // ─── verbatimModuleSyntax ────────────────────────────────
-// The MODERN replacement for isolatedModules + esModuleInterop
-// Forces you to write explicit "import type" for type-only imports
-// Vite 5+ supports this. Use it in new projects:
+// Replaces the older importsNotUsedAsValues + preserveValueImports flags.
+// It does NOT replace isolatedModules or esModuleInterop — those solve
+// different problems, and you normally run all three together.
+// The rule is literal: an import WITHOUT the 'type' keyword is emitted
+// exactly as written; one WITH it is dropped. No compiler guessing.
 import type { User } from './types';     // erased at runtime
-import { fetchUser } from './api';       // kept at runtime`}
+import { fetchUser } from './api';       // kept at runtime — even if unused`}
       </CodeBlock>
 
       <h3>Declaration Options (Library Authors)</h3>
@@ -676,7 +691,11 @@ npx tsc --noEmit src/components/Button.tsx`}
 // vite.config.ts -> resolve.alias (for bundling)
 
 // For Vitest: also add in vitest.config.ts or vite.config.ts:
-// resolve: { alias: { '@': path.resolve(__dirname, './src') } }`}
+// import { fileURLToPath, URL } from 'node:url';
+// resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } }
+//
+// Do NOT reach for path.resolve(__dirname, './src') here — the Vite config
+// of an ESM package ("type": "module") has no __dirname and will throw.`}
       </CodeBlock>
 
       <CodeBlock language="typescript" title="Problem: Wrong module resolution">

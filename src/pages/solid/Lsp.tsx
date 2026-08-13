@@ -87,6 +87,8 @@ export default function Lsp() {
       <CodeBlock language="java" title="ContractViolations.java">
 {`// BAD — strengthened precondition.
 public class Account {
+    protected double balance;
+
     // Contract: accepts any amount > 0
     public void withdraw(double amount) {
         if (amount <= 0) throw new IllegalArgumentException();

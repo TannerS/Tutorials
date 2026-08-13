@@ -9,7 +9,7 @@ export default function Command() {
     <LessonLayout
       title="Command & Iterator Patterns"
       sectionId="patterns"
-      lessonIndex={7}
+      lessonIndex={8}
       prev={{ path: '/patterns/proxy', label: 'Proxy & Chain of Responsibility' }}
       next={{ path: '/patterns/state', label: 'State & Template Method' }}
     >

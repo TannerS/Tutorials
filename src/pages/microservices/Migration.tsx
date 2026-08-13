@@ -44,10 +44,10 @@ export default function Migration() {
 
       <FlowChart
         title="Migration Playbook"
-        chart={"graph TD\n  S1[1. Add Proxy Layer] --> S2[2. Identify Service Boundaries]\n  S2 --> S3[3. Extract First Service]\n  S3 --> S4[4. Migrate Data]\n  S4 --> S5[5. Route Traffic]\n  S5 --> S6[6. Verify and Monitor]\n  S6 --> S7{More to extract?}\n  S7 -->|Yes| S2\n  S7 -->|No| S8[8. Decommission Monolith]\n  style S1 fill:#6366f1,color:#fff\n  style S3 fill:#3b82f6,color:#fff\n  style S5 fill:#10b981,color:#fff\n  style S8 fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  S1[1. Add Proxy Layer] --> S2[2. Identify Service Boundaries]\n  S2 --> S3[3. Extract First Service]\n  S3 --> S4[4. Migrate Data]\n  S4 --> S5[5. Route Traffic]\n  S5 --> S6[6. Verify and Monitor]\n  S6 --> S7{More to extract?}\n  S7 -->|Yes| S2\n  S7 -->|No| S8[7. Decommission Monolith]\n  style S1 fill:#6366f1,color:#fff\n  style S3 fill:#3b82f6,color:#fff\n  style S5 fill:#10b981,color:#fff\n  style S8 fill:#ef4444,color:#fff"}
       />
 
-      <CodeBlock language="yaml" title="Nginx Proxy — Strangler Fig Router">
+      <CodeBlock language="nginx" title="Nginx Proxy — Strangler Fig Router">
 {`# Phase 1: All traffic goes to monolith
 upstream monolith {
   server monolith-app:8080;

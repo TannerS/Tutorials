@@ -11,7 +11,7 @@ export default function Intro() {
       sectionId="testing"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/testing/unit', label: 'Unit Testing (JUnit & Jest)' }}
+      next={{ path: '/testing/what-to-test', label: 'What to Test (and What Not To)' }}
     >
       <h2>Why Testing Matters</h2>
       <p>

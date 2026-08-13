@@ -133,7 +133,7 @@ public class EmployeeRepository {
         this.dataSource = dataSource;
     }
 
-    public void save(Employee employee) {
+    public void save(Employee employee) throws SQLException {
         try (Connection conn = dataSource.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO employees (name, salary, dept) VALUES (?, ?, ?)");

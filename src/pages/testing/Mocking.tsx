@@ -9,7 +9,7 @@ export default function Mocking() {
     <LessonLayout
       title="Mocking & Test Doubles"
       sectionId="testing"
-      lessonIndex={2}
+      lessonIndex={3}
       prev={{ path: '/testing/unit', label: 'Unit Testing (JUnit & Jest)' }}
       next={{ path: '/testing/integration', label: 'Integration Testing' }}
     >

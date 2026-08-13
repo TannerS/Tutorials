@@ -35,7 +35,7 @@ export default function BuildToolchain() {
     <LessonLayout
       title="React + TypeScript Build Toolchain"
       sectionId="react19"
-      lessonIndex={12}
+      lessonIndex={13}
       prev={{ path: '/react19/typescript', label: 'React + TypeScript' }}
       next={{ path: '/react19/cheat-sheet', label: 'Cheat Sheet' }}
     >
@@ -112,10 +112,50 @@ export default function BuildToolchain() {
         Because nothing uses ES module import/export, the file:// CORS restriction never applies. You can double-click index.html and it works.
       </p>
 
+      <InfoBox variant="danger" title="React 19 Removed UMD Builds — note the @18 pins above">
+        <p>
+          Those <code>unpkg.com/react@18/umd/...</code> URLs are pinned to 18 deliberately.
+          <strong> React 19 no longer publishes UMD builds at all</strong> — there is no{' '}
+          <code>umd/</code> directory in the <code>react</code> or <code>react-dom</code>{' '}
+          packages any more, so the classic global-script approach simply has no React 19
+          equivalent. Swapping the pin to <code>react@19</code> gives you a 404.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          To load React 19 from a script tag, use an ESM CDN and an import map instead.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="html" title="The React 19 equivalent — ESM CDN + import map" showLineNumbers>
+{`<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19",
+    "react-dom/client": "https://esm.sh/react-dom@19/client"
+  }
+}
+</script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<div id="root"></div>
+
+<!-- data-type="module" lets Babel emit ESM so the import map resolves -->
+<script type="text/babel" data-type="module">
+  import { createRoot } from 'react-dom/client';
+
+  function App() {
+    return <h1>Hello from React 19</h1>;
+  }
+  createRoot(document.getElementById('root')).render(<App />);
+</script>`}
+      </CodeBlock>
+
       <InfoBox variant="tip" title="When to Use">
-        <p><strong>Pros:</strong> Zero setup, works with file://, closest to CodePen style</p>
+        <p><strong>Pros:</strong> Zero setup, closest to CodePen style</p>
         <p><strong>Cons:</strong> Babel compiles in browser on every load (slow), no TypeScript, no bundling, not for production</p>
         <p><strong>Best for:</strong> Learning, quick demos, teaching</p>
+        <p style={{ marginBottom: 0 }}><strong>Note:</strong> the UMD version works from{' '}
+        <code>file://</code>; the ESM/import-map version above needs an HTTP server, because
+        ES module loading is subject to CORS.</p>
       </InfoBox>
 
       {/* ════════════════════════════════════════════════════
@@ -556,17 +596,30 @@ export default defineConfig({
 <head><title>React Babel Standalone</title></head>
 <body>
   <div id="root"></div>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- React 19 publishes no UMD build, so load it as ESM via an import map. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@19",
+      "react-dom/client": "https://esm.sh/react-dom@19/client"
+    }
+  }
+  </script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script type="text/babel">
+
+  <script type="text/babel" data-type="module">
+    import { createRoot } from 'react-dom/client';
+
     function App() {
       return <h1>Hello from Babel Standalone!</h1>;
     }
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
-</html>`}
+</html>
+
+<!-- Serve this over HTTP (npx serve .) — ES modules do not load from file://. -->`}
       </CodeBlock>
 
       <h3>esbuild</h3>

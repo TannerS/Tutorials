@@ -9,7 +9,7 @@ export default function ImperativeBridge() {
     <LessonLayout
       title="Imperative Bridge Patterns"
       sectionId="react19"
-      lessonIndex={15}
+      lessonIndex={16}
       prev={{ path: '/react19/adapters', label: 'API Adapters & Error Envelopes' }}
       next={{ path: '/react19/module-federation', label: 'Module Federation' }}
     >
@@ -377,7 +377,9 @@ Keep single-context when:
       <CodeBlock language="tsx" title="Sketch of a notification provider">
 {`function NotificationProvider({ authToken, children }: Props) {
   // 1) Split contexts for read (client instance) vs write (reconnect action).
-  const clientRef = useRef<NotificationClient>();
+  // NOTE: React 19 removed the zero-argument useRef overload — useRef<T>()
+  // is now a type error. Always pass an initial value, even if it's null.
+  const clientRef = useRef<NotificationClient | null>(null);
   const [client, setClient] = useState<NotificationClient | null>(null);
 
   // 2) Promise-bridge for server-initiated approvals (see pattern 1).

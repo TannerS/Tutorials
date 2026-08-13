@@ -9,8 +9,8 @@ export default function Patterns() {
     <LessonLayout
       title="Advanced Patterns"
       sectionId="react19"
-      lessonIndex={10}
-      prev={{ path: '/react19/server', label: 'Server Components & Actions' }}
+      lessonIndex={11}
+      prev={{ path: '/react19/ssr-hydration', label: 'SSR & Hydration' }}
       next={{ path: '/react19/typescript', label: 'React + TypeScript' }}
     >
       <p>These patterns solve recurring composition and flexibility challenges. Knowing when to apply each pattern—and when simpler approaches suffice—distinguishes senior React developers.</p>
@@ -198,12 +198,18 @@ function UserPage({ id }) {
 }
 
 // When render props still beat hooks:
-// 1. Conditional rendering: the <Fetch> component only mounts children
-//    when data is ready — hooks always run (you can't call a hook inside an if).
+// 1. Reuse at the SAME call site: you can render <Fetch> twice with two
+//    different urls in one component. A hook can't be called conditionally
+//    or in a loop, so two fetches means two hook calls written out by hand.
 // 2. Library APIs: Downshift, React Hook Form <Controller />, React Spring
-//    all use render props because they control the wrapper component.
+//    all use render props because they control the wrapper component
+//    (it owns state and/or a DOM node it must hand back to you).
 // 3. Scoping: the logic + its UI are co-located at one call site,
-//    rather than splitting into a hook call + JSX block further down.`}
+//    rather than splitting into a hook call + JSX block further down.
+
+// NOTE: render props do NOT delay running the logic. <Fetch> calls
+// children(state) immediately with { loading: true } — the caller just
+// chooses what to show for each state. Hooks behave the same way.`}
       </CodeBlock>
 
       <h2>Controlled vs Uncontrolled — The Hybrid Pattern</h2>

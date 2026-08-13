@@ -257,34 +257,62 @@ type Resource = Identifiable & Timestamped & {
 
       <CodeBlock language="typescript" title="Merging Interfaces">
 {`// Original interface
-interface Window {
+interface AppShell {
   title: string;
 }
 
 // Merged automatically — no error!
-interface Window {
+interface AppShell {
   appVersion: number;
 }
 
-// Result: Window has both title AND appVersion
-const w: Window = { title: "App", appVersion: 2 };`}
+// Result: AppShell has both title AND appVersion
+const shell: AppShell = { title: "App", appVersion: 2 };`}
       </CodeBlock>
 
-      <CodeBlock language="typescript" title="Extending Express Request">
-{`// Extend Express Request to include authenticated user
-declare namespace Express {
-  interface Request {
-    user?: { id: string; role: "admin" | "user" };
+      <InfoBox variant="warning" title="Do Not Demo This With a Name the DOM Already Owns">
+        <p>
+          Tutorials love to show this with <code>interface Window</code>. It appears to work
+          only because a file containing an <code>import</code> or <code>export</code> is a
+          module, so your <code>Window</code> shadows the DOM one instead of merging with it.
+          Paste the same two declarations into a script-scope <code>.ts</code> file and they
+          really do merge &mdash; with the global <code>Window</code> &mdash; and the object
+          literal fails with &quot;missing the following properties from type &apos;Window&apos;:
+          clientInformation, closed, ... and 212 more.&quot;
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="typescript" title="Extending Express Request — the form that actually works">
+{`// src/types/express.d.ts (or any file that is already a module)
+import "express";   // makes this file a module so 'declare global' is legal
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: { id: string; role: "admin" | "user" };
+    }
   }
 }
 
-// Now req.user is available in all handlers
+// Now req.user is available in every handler, app-wide.
 app.get("/profile", (req, res) => {
   if (req.user) {
     res.json({ id: req.user.id });
   }
 });`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="The Augmentation That Silently Does Nothing">
+        <p>
+          Writing a bare <code>declare namespace Express {'{ … }'}</code> inside a file that has
+          any import or export is the single most-copied broken snippet in the Express +
+          TypeScript world. In a module, that declares a brand-new{' '}
+          <em>local</em> namespace: no error, no warning, and <code>req.user</code> still
+          reports <code>Property &apos;user&apos; does not exist</code>. The <code>declare global</code>{' '}
+          wrapper above is what reaches the real global <code>Express</code> namespace that{' '}
+          <code>@types/express</code> declares.
+        </p>
+      </InfoBox>
 
       <InfoBox variant="info" title="Type Aliases Cannot Merge">
         <p>
@@ -547,7 +575,7 @@ db === same;  // true`}
   title: string;
 }
 
-// Three ways to satisfy the check:
+// Four ways to satisfy the check:
 class Fixed {
   a: string = "default";     // 1. initializer
   b: string;                 // 2. assigned in the constructor

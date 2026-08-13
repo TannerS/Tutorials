@@ -322,14 +322,30 @@ public class CsrfConfig {
                 // httpOnly=false is correct for this specific cookie.
                 .csrfTokenRepository(
                     CookieCsrfTokenRepository.withHttpOnlyFalse())
-                // Spring Security 6 defers token loading; this handler
-                // restores the plain-text token needed by SPAs.
-                .csrfTokenRequestHandler(
-                    new CsrfTokenRequestAttributeHandler())
+                // Keep the Xor handler — it randomises the token per
+                // response, which is what defends against BREACH.
+                // Setting the request-attribute name to null opts out of
+                // Security 6's DEFERRED token loading, which is the part
+                // that actually breaks SPAs: without it the cookie is
+                // never written until something reads the token.
+                .csrfTokenRequestHandler(spaCsrfHandler())
             )
             .build();
     }
+
+    private static CsrfTokenRequestHandler spaCsrfHandler() {
+        var handler = new XorCsrfTokenRequestAttributeHandler();
+        handler.setCsrfRequestAttributeName(null);
+        return handler;
+    }
 }
+
+// ⚠️ Do NOT "fix" a SPA by swapping in the plain
+// CsrfTokenRequestAttributeHandler. It is widely posted as the SPA fix,
+// but its actual effect is to turn OFF the per-response XOR masking —
+// you trade a BREACH mitigation for a deferred-loading problem it was
+// never the right tool for. Spring Security 7 adds .csrf(csrf -> csrf.spa())
+// which wires the correct combination for you.
 
 // Stateless JWT API using ONLY the Authorization header?
 // Then and only then is disabling CSRF correct:

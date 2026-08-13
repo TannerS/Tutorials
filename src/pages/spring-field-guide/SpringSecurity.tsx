@@ -64,7 +64,7 @@ JwtDecoder hmacDecoder(@Value("\${security.jwt.secret}") String s) {
     SecretKey key = new SecretKeySpec(s.getBytes(UTF_8), "HmacSHA256");
     return NimbusJwtDecoder.withSecretKey(key).build();
 }`}
-        caption="oauth2ResourceServer is the modern Spring name for JWT verification — the token can come from any issuer you trust, not just a full OAuth2 flow."
+        caption="oauth2ResourceServer is the modern Spring name for JWT verification — no full OAuth2 flow required. Note that a bare decoder checks the SIGNATURE and exp only: also validate iss and aud via a DelegatingOAuth2TokenValidator, or a token minted for a sibling service sails straight through yours."
       />
 
       <PosterCard

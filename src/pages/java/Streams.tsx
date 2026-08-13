@@ -47,7 +47,7 @@ public class LambdaBasics {
         names.sort(newWay);
         System.out.println("Sorted by length: " + names);
 
-        // Lambda with method reference (even shorter)
+        // A ready-made comparator — no lambda needed at all
         names.sort(Comparator.naturalOrder());
         System.out.println("Alphabetical: " + names);
 
@@ -208,7 +208,7 @@ lazy.findFirst();
 // Short-circuiting terminal operations stop early:
 boolean any   = numbers.stream().anyMatch(n -> n > 100);   // stops at first match
 boolean all   = numbers.stream().allMatch(n -> n > 0);     // stops at first failure
-boolean none  = numbers.stream().noneMatch(String::isBlank);
+boolean none  = numbers.stream().noneMatch(n -> n < 0);
 Optional<Integer> first = numbers.stream().filter(n -> n > 5).findFirst();
 
 // Short-circuiting INTERMEDIATE operations bound the work:
@@ -542,7 +542,9 @@ int totalLength = words.stream().mapToInt(String::length).sum();   // object -> 
 List<Integer> boxed = IntStream.range(0, 5).boxed().toList();      // int -> object
 IntStream chars = "hello".chars();                                 // String -> int stream
 
-// Careful: "hello".chars() yields int code points, not chars.
+// Careful: chars() yields UTF-16 CODE UNITS as ints, not code points.
+// For "a\\uD83D\\uDE00" it emits 97, 55357, 56832 — the emoji arrives as a
+// surrogate PAIR. Use codePoints() (97, 128512) for anything outside the BMP.
 String upper = "hello".chars()
     .mapToObj(c -> String.valueOf((char) c))
     .map(String::toUpperCase)

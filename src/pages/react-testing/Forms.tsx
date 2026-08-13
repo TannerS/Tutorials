@@ -63,11 +63,16 @@ describe('SettingsForm inputs', () => {
     const user = userEvent.setup();
     render(<SettingsForm />);
 
+    // selectOptions matches on the option's VALUE, not its visible label.
+    // For <option value="es">Spanish</option> you pass 'es', not 'Spanish'.
     await user.selectOptions(
       screen.getByRole('combobox', { name: /language/i }),
-      'Spanish'
+      'es'
     );
     expect(screen.getByRole('combobox', { name: /language/i })).toHaveValue('es');
+
+    // To select by the visible label instead, pass the option element:
+    // await user.selectOptions(select, screen.getByRole('option', { name: 'Spanish' }));
   });
 
   test('fills in textarea', async () => {
@@ -174,13 +179,52 @@ test('submits form data and shows success', async () => {
     message: 'Hello!',
   });
 
-  // Button disabled during submission
-  expect(screen.getByRole('button', { name: /sending/i })).toBeDisabled();
-
   // Success message after resolution
   await waitFor(() => {
     expect(screen.getByText(/message sent/i)).toBeInTheDocument();
   });
+});`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="Asserting the 'submitting' State Is a Classic Flake">
+        <p>
+          It is tempting to add{' '}
+          <code>expect(screen.getByRole(&apos;button&apos;, {"{ name: /sending/i }"})).toBeDisabled()</code>{' '}
+          right after the click. It will usually fail. <code>await user.click(...)</code>{' '}
+          wraps the interaction in <code>act()</code>, which flushes pending microtasks —
+          so an <code>onSubmit</code> stubbed with <code>mockResolvedValue</code> has
+          already resolved and the button is back to &quot;Send&quot; before your
+          assertion runs.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          If you genuinely need to assert the in-flight state, hold the promise open so
+          you control when it settles.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Asserting an in-flight state deterministically">
+{`import { render, screen, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+test('disables the button while the request is in flight', async () => {
+  const user = userEvent.setup();
+
+  // A promise WE resolve, so the pending state can't race us.
+  let resolveSubmit;
+  const handleSubmit = jest.fn(
+    () => new Promise((resolve) => { resolveSubmit = resolve; })
+  );
+
+  render(<ContactForm onSubmit={handleSubmit} />);
+  await user.type(screen.getByLabelText(/name/i), 'Alice');
+  await user.click(screen.getByRole('button', { name: /send/i }));
+
+  // Still pending — the button is in its submitting state.
+  expect(await screen.findByRole('button', { name: /sending/i })).toBeDisabled();
+
+  // Now let it finish.
+  await act(async () => { resolveSubmit({ ok: true }); });
+  expect(await screen.findByText(/message sent/i)).toBeInTheDocument();
 });`}
       </CodeBlock>
 
@@ -506,16 +550,10 @@ describe('LoginForm', () => {
     });
   });
 
-  test('disables button while submitting', async () => {
-    const user = userEvent.setup();
-    renderLogin();
-
-    await user.type(screen.getByLabelText(/email/i), 'alice@test.com');
-    await user.type(screen.getByLabelText(/password/i), 'correct-password');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
-
-    expect(screen.getByRole('button', { name: /signing in/i })).toBeDisabled();
-  });
+  // NOTE: no "disables button while submitting" test here — see the warning
+  // above. With a fast/auto-resolving mock the submit finishes inside the
+  // awaited click, so that assertion races. Assert it only when you control
+  // when the promise settles.
 });`}
       </CodeBlock>
 

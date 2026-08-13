@@ -194,6 +194,46 @@ const b: Options = { timeout: undefined }; // also compiles by default — same 
         caption="Without exactOptionalPropertyTypes, ? and 'explicitly set to undefined' are the same type but not the same runtime behavior — code using the 'in' operator or Object.keys to check presence can be silently wrong. See the Project Setup page for the flag."
       />
 
+      <PosterCard
+        glyph="dg"
+        title={<>Module Augmentation <span className="dim">That Silently Does Nothing</span></>}
+        language="typescript"
+        code={`// ❌ Inside any file with an import/export, this declares a brand-new
+//    LOCAL namespace. No error, no warning — req.user still doesn't exist.
+declare namespace Express {
+  interface Request { user?: { id: string } }
+}
+
+// ✅ Reach the real global namespace @types/express declares
+import 'express';
+declare global {
+  namespace Express {
+    interface Request { user?: { id: string } }
+  }
+}
+
+// Rule: 'declare module "X"' merges into what X EXPORTS.
+// It cannot reach a type X only declares globally — which is
+// exactly the case for Express.Request.`}
+        caption="The most-copied broken snippet in the Express + TypeScript world. A bare `declare namespace` in a module scope is a local declaration, not an augmentation — it compiles cleanly and does nothing. `declare global` (which itself requires the file to be a module) is what reaches the global Express namespace. Same trap in reverse: demoing declaration merging with `interface Window` only 'works' because your local Window shadows the DOM one."
+      />
+
+      <PosterCard
+        glyph="ce"
+        title={<>const enum <span className="dim">Doesn&apos;t Inline Under a Bundler</span></>}
+        language="typescript"
+        code={`const enum Feature { DarkMode = 'DARK_MODE' }
+const f = Feature.DarkMode;
+
+// tsc, whole-program:   const f = "DARK_MODE";   ← inlined, no runtime object
+// Vite / esbuild / SWC: emits the full enum IIFE, exactly like a plain enum
+
+// erasableSyntaxOnly (TS 5.8+, needed for Node's native type stripping)
+// rejects enums of ANY kind: "This syntax is not allowed when
+// 'erasableSyntaxOnly' is enabled."`}
+        caption="Inlining needs whole-program knowledge, and single-file transpilers don't have it — so under isolatedModules a const enum quietly degrades to an ordinary enum and you get the runtime object you were trying to avoid, plus a build that differs from tsc's. The as-const object + derived union has none of these failure modes."
+      />
+
       <PosterQuickRef
         title="What's the fix for this gotcha?"
         rows={[
@@ -205,6 +245,8 @@ const b: Options = { timeout: undefined }; // also compiles by default — same 
           { need: 'arr[i] typed as if it always exists', answer: 'noUncheckedIndexedAccess in tsconfig' },
           { need: "Callback typed as just Function", answer: 'Write the exact (args) => ReturnType signature' },
           { need: "'as' hides a wrong runtime shape", answer: 'typeof / instanceof / type predicate instead' },
+          { need: 'req.user still not on Express.Request', answer: 'declare global { namespace Express { ... } }' },
+          { need: 'const enum still emits a runtime object', answer: 'Expected under isolatedModules — use as const' },
         ]}
       />
     </PosterLayout>

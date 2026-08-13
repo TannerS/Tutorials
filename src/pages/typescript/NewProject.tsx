@@ -364,8 +364,8 @@ export default tseslint.config(
       "@components/*": ["./src/components/*"],
       "@hooks/*": ["./src/hooks/*"],
       "@services/*": ["./src/services/*"],
-      "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
+      // Deliberately NOT "@types/*" — see the warning below.
     }
   }
 }`}
@@ -374,22 +374,44 @@ export default tseslint.config(
       <CodeBlock language="typescript" title="vite.config.ts &mdash; Add resolve aliases">
 {`import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path'
+import { fileURLToPath, URL } from 'node:url'
+
+const from = (p: string) => fileURLToPath(new URL(p, import.meta.url))
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@hooks': path.resolve(__dirname, './src/hooks'),
-      '@services': path.resolve(__dirname, './src/services'),
-      '@types': path.resolve(__dirname, './src/types'),
-      '@utils': path.resolve(__dirname, './src/utils'),
+      '@': from('./src'),
+      '@components': from('./src/components'),
+      '@hooks': from('./src/hooks'),
+      '@services': from('./src/services'),
+      '@utils': from('./src/utils'),
     },
   },
 })`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="Two Traps in Every Copy-Pasted Alias Config">
+        <ul style={{ marginBottom: 0 }}>
+          <li>
+            <strong><code>__dirname</code> does not exist here.</strong> The Vite react-ts
+            template sets <code>&quot;type&quot;: &quot;module&quot;</code>, so{' '}
+            <code>vite.config.ts</code> is loaded as ESM and{' '}
+            <code>path.resolve(__dirname, ...)</code> throws{' '}
+            <code>ReferenceError: __dirname is not defined</code> the moment you run{' '}
+            <code>npm run dev</code>. Use{' '}
+            <code>fileURLToPath(new URL(..., import.meta.url))</code>.
+          </li>
+          <li>
+            <strong>Never alias <code>@types</code>.</strong> It collides with the{' '}
+            <code>@types/*</code> package scope that TypeScript itself resolves against, so a
+            <code> paths</code> entry for <code>&quot;@types/*&quot;</code> can shadow real
+            DefinitelyTyped packages. Name it <code>@app-types</code>, or just put your types
+            under <code>@/types</code> via the single <code>@</code> alias.
+          </li>
+        </ul>
+      </InfoBox>
 
       <h3>VS Code Settings</h3>
       <CodeBlock language="json" title=".vscode/settings.json">

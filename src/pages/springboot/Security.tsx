@@ -127,7 +127,7 @@ JwtAuthenticationConverter jwtAuthConverter() {
 JwtDecoder jwtDecoder(@Value("\${security.issuer-uri}") String issuerUri,
                       @Value("\${security.audience}") String audience) {
 
-    // withIssuerLocation performs OIDC discovery: it fetches
+    // fromIssuerLocation performs OIDC discovery: it fetches
     // /.well-known/openid-configuration and derives the JWKS URI for you.
     NimbusJwtDecoder decoder = JwtDecoders.fromIssuerLocation(issuerUri);
 

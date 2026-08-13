@@ -9,8 +9,8 @@ export default function Strategy() {
     <LessonLayout
       title="Strategy & Observer Patterns"
       sectionId="patterns"
-      lessonIndex={2}
-      prev={{ path: '/patterns/singleton', label: 'Singleton & Factory' }}
+      lessonIndex={3}
+      prev={{ path: '/patterns/abstract-factory', label: 'Abstract Factory' }}
       next={{ path: '/patterns/decorator', label: 'Decorator & Adapter' }}
     >
       <h2>Strategy Pattern</h2>

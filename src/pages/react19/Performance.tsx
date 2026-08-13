@@ -466,14 +466,24 @@ function Parent() {
 }
 
 // 3. Custom hooks that return functions — consumers might depend on them
-function useDebounce(callback, delay) {
+function useDebouncedCallback(callback, delay) {
   const callbackRef = useRef(callback);
-  callbackRef.current = callback;
+  const timerRef = useRef(null);
+
+  // Keep the latest callback without changing the returned function's identity
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
+  // Clear any pending timer on unmount
+  useEffect(() => () => clearTimeout(timerRef.current), []);
 
   // Returned function is stable — safe for consumers to use in deps
   return useCallback((...args) => {
-    const timer = setTimeout(() => callbackRef.current(...args), delay);
-    return () => clearTimeout(timer);
+    // The cancel is what makes this a DEBOUNCE: each new call
+    // discards the previous pending invocation.
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => callbackRef.current(...args), delay);
   }, [delay]);
 }`}
       </CodeBlock>
@@ -612,8 +622,9 @@ function LiveDashboard({ timestamp, value }) {
 // For expensive operations that skip often: YES — use the memo`}
       </CodeBlock>
 
-      <InfoBox variant="info" title="The React Compiler Will Change This">
-        <p>The React team is building the <strong>React Compiler</strong> (formerly React Forget), which automatically memoizes components and hooks at build time. When it ships, most manual <code>useMemo</code> and <code>useCallback</code> calls will become unnecessary. The compiler analyzes your code and inserts memoization only where it actually helps — something humans are notoriously bad at judging. Until then, follow the guidelines above: measure first, memoize only at proven bottlenecks.</p>
+      <InfoBox variant="info" title="The React Compiler Changes This Math">
+        <p>The <strong>React Compiler</strong> (formerly React Forget) reached a stable 1.0 release and automatically memoizes components and hooks at build time. With it enabled, most of the manual <code>useMemo</code> and <code>useCallback</code> calls on this page become unnecessary — the compiler analyzes your code and inserts the equivalent caching only where it actually helps, which humans are notoriously bad at judging.</p>
+        <p style={{ marginBottom: 0 }}>Two caveats keep this page relevant. First, the compiler <em>silently skips</em> any component that breaks the Rules of React, so run the compiler lint rules (now shipped inside <code>eslint-plugin-react-hooks</code> v6+) and fix what they report before trusting it. Second, it does nothing for the non-memoization items here: virtualization, code splitting, and context splitting are still your job. On a codebase without the compiler, the guidelines above apply unchanged — measure first, memoize only at proven bottlenecks.</p>
       </InfoBox>
 
       <h2>Common Memoization Mistakes</h2>
@@ -740,20 +751,27 @@ function App() {
   );
 }
 
-// Preloading: trigger load before user navigates
-function NavLink({ to, component, children }) {
-  const preload = () => component.preload?.(); // Vite/webpack support
+// Preloading: trigger load before the user navigates.
+// NOTE: lazy() does NOT give you a .preload() method — no bundler adds one.
+// You get preloading by keeping a reference to the import function and
+// calling it yourself. import() caches, so the second call is free.
+const importAdminPanel = () => import('./AdminPanel');
+const AdminPanelLazy = lazy(importAdminPanel);
 
+function PreloadingLink({ to, load, children }) {
   return (
     <Link
       to={to}
-      onMouseEnter={preload}  // Start loading on hover
-      onFocus={preload}       // Start loading on focus
+      onMouseEnter={load}  // Start downloading the chunk on hover
+      onFocus={load}       // ...and for keyboard users
     >
       {children}
     </Link>
   );
 }
+
+// <PreloadingLink to="/admin" load={importAdminPanel}>Admin</PreloadingLink>
+// By the time the click lands, the chunk is usually already parsed.
 
 // Named exports with lazy (need wrapper)
 const LazyNamed = lazy(() =>

@@ -9,7 +9,7 @@ export default function Integration() {
     <LessonLayout
       title="Integration Testing"
       sectionId="testing"
-      lessonIndex={3}
+      lessonIndex={4}
       prev={{ path: '/testing/mocking', label: 'Mocking & Test Doubles' }}
       next={{ path: '/testing/testcontainers', label: 'Testcontainers & Test Data' }}
     >

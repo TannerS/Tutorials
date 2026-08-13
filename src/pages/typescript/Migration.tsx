@@ -298,7 +298,8 @@ export default function Migration() {
         language="tsx"
         title={"Default Props \u2014 Before and After"}
         code={
-          "// Deprecated pattern\n" +
+          "// Dead pattern — React 19 REMOVED defaultProps on function components.\n" +
+          "// It is ignored at runtime, silently, with no warning: variant is undefined.\n" +
           "function Button({ label, variant }) { /* ... */ }\n" +
           "Button.defaultProps = { variant: 'primary' };\n\n" +
           "// Modern pattern — JS default parameters\n" +
@@ -354,23 +355,48 @@ export default function Migration() {
 
       {/* ── 9. ESLint + TypeScript ── */}
       <h2>ESLint + TypeScript</h2>
-      <CodeBlock language="bash" title="Install ESLint TS Plugins"
-        code={"npm install --save-dev @typescript-eslint/parser @typescript-eslint/eslint-plugin"} />
-      <CodeBlock language="json" title="ESLint Config Excerpt"
+      <CodeBlock language="bash" title="Install ESLint TS Support"
+        code={"npm install --save-dev eslint typescript-eslint"} />
+      <CodeBlock language="javascript" title="eslint.config.js — flat config (ESLint 9+)"
         code={
-          '{\n' +
-          '  "parser": "@typescript-eslint/parser",\n' +
-          '  "parserOptions": { "project": "./tsconfig.json" },\n' +
-          '  "plugins": ["@typescript-eslint"],\n' +
-          '  "rules": {\n' +
-          '    "@typescript-eslint/no-explicit-any": "warn",\n' +
-          '    "@typescript-eslint/no-unused-vars": "error",\n' +
-          '    "@typescript-eslint/consistent-type-imports": "warn",\n' +
-          '    "@typescript-eslint/no-non-null-assertion": "warn"\n' +
-          '  }\n' +
-          '}'
+          "import js from '@eslint/js';\n" +
+          "import tseslint from 'typescript-eslint';\n\n" +
+          "export default tseslint.config(\n" +
+          "  { ignores: ['dist'] },\n" +
+          "  js.configs.recommended,\n" +
+          "  ...tseslint.configs.recommended,\n" +
+          "  {\n" +
+          "    files: ['**/*.{ts,tsx}'],\n" +
+          "    languageOptions: {\n" +
+          "      // Only needed for type-aware rules (the *-type-checked presets):\n" +
+          "      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },\n" +
+          "    },\n" +
+          "    rules: {\n" +
+          "      '@typescript-eslint/no-explicit-any': 'warn',\n" +
+          "      '@typescript-eslint/no-unused-vars': 'error',\n" +
+          "      '@typescript-eslint/consistent-type-imports': 'warn',\n" +
+          "      '@typescript-eslint/no-non-null-assertion': 'warn',\n" +
+          "    },\n" +
+          "  },\n" +
+          ");"
         }
       />
+      <InfoBox variant="warning" title="Do Not Copy .eslintrc Snippets">
+        <p>
+          Almost every TypeScript-migration blog post still shows an{' '}
+          <code>.eslintrc.json</code> with <code>&quot;parser&quot;</code>,{' '}
+          <code>&quot;plugins&quot;</code> and <code>&quot;plugin:@typescript-eslint/...&quot;</code>{' '}
+          strings. That format has been the non-default since ESLint 9 and is <strong>removed
+          in ESLint 10</strong> &mdash; the config simply is not read any more. Flat config in{' '}
+          <code>eslint.config.js</code> is the only supported form.
+        </p>
+        <p>
+          Likewise, the separate <code>@typescript-eslint/parser</code> +{' '}
+          <code>@typescript-eslint/eslint-plugin</code> pair has been superseded by the single{' '}
+          <code>typescript-eslint</code> package, which re-exports both plus the{' '}
+          <code>config()</code> helper.
+        </p>
+      </InfoBox>
 
       {/* ── 10. CI/CD Integration ── */}
       <h2>CI/CD Integration</h2>
@@ -696,10 +722,13 @@ export default function Migration() {
           '  }\n' +
           '}\n\n' +
           '// vite.config.ts — mirror aliases in the bundler\n' +
-          'import path from \'path\';\n' +
+          "import { defineConfig } from 'vite';\n" +
+          "import { fileURLToPath, URL } from 'node:url';\n" +
           'export default defineConfig({\n' +
           '  resolve: {\n' +
-          "    alias: { '@': path.resolve(__dirname, './src') },\n" +
+          "    // NOT path.resolve(__dirname, ...): a Vite config in an ESM package\n" +
+          "    // ('type': 'module') has no __dirname and throws at startup.\n" +
+          "    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },\n" +
           '  },\n' +
           '});'
         }

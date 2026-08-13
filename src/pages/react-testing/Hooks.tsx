@@ -285,7 +285,8 @@ describe('useDebounce', () => {
     rerender({ value: 'abc', delay: 500 });
     act(() => jest.advanceTimersByTime(200));
 
-    // Only 400ms since last change — should still be 'a'
+    // 400ms of total elapsed time, but each rerender RESET the timer —
+    // only 200ms has run on the current one, so the value is still 'a'.
     expect(result.current).toBe('a');
 
     act(() => jest.advanceTimersByTime(300));

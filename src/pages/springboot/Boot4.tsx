@@ -8,7 +8,7 @@ export default function Boot4() {
     <LessonLayout
       title="Boot 4 Novelties"
       sectionId="springboot"
-      lessonIndex={13}
+      lessonIndex={14}
       prev={{ path: '/springboot/aop', label: 'AOP & Interceptors' }}
       next={{ path: '/springboot/observability', label: 'Observability' }}
     >

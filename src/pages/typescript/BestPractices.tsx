@@ -38,8 +38,10 @@ export default function BestPractices() {
     // What "strict" enables individually:
     // strictNullChecks, strictFunctionTypes,
     // strictBindCallApply, strictPropertyInitialization,
-    // noImplicitAny, noImplicitThis, alwaysStrict,
-    // useUnknownInCatchVariables
+    // strictBuiltinIteratorReturn, noImplicitAny,
+    // noImplicitThis, useUnknownInCatchVariables
+    // (alwaysStrict is NOT in this list any more — it is on by
+    //  default on its own, independent of "strict".)
 
     // Extra safety beyond "strict":
     "noUncheckedIndexedAccess": true,
@@ -54,11 +56,17 @@ export default function BestPractices() {
           <li><strong>strictFunctionTypes</strong> &mdash; enforces contravariant parameter checking on function types</li>
           <li><strong>strictBindCallApply</strong> &mdash; validates arguments to bind, call, and apply</li>
           <li><strong>strictPropertyInitialization</strong> &mdash; class properties must be set in the constructor or have a default</li>
+          <li><strong>strictBuiltinIteratorReturn</strong> &mdash; (TS 5.6+) built-in iterators return <code>undefined</code> rather than <code>any</code> for <code>TReturn</code>, so <code>it.next().value</code> is honestly typed</li>
           <li><strong>noImplicitAny</strong> &mdash; errors on expressions and declarations with an implied any type</li>
           <li><strong>noImplicitThis</strong> &mdash; errors on this expressions with an implied any type</li>
-          <li><strong>alwaysStrict</strong> &mdash; emits &quot;use strict&quot; in every output file</li>
           <li><strong>useUnknownInCatchVariables</strong> &mdash; catch clause variables are typed unknown instead of any</li>
         </ul>
+        <p>
+          <strong>Not</strong> in the family, despite what most references say:{' '}
+          <code>alwaysStrict</code> (emits <code>&quot;use strict&quot;</code>). It defaults to
+          <code> true</code> on its own now and is only turned off by setting it to{' '}
+          <code>false</code> explicitly.
+        </p>
       </InfoBox>
 
       {/* ── Section 2: Side-by-Side Comparisons ─────────────────── */}
@@ -175,15 +183,27 @@ function handle(data: UserPayload) { /* ... */ }`}
       {/* 2g. Non-null assertion */}
       <h3>g) Non-null Assertion vs Proper Handling</h3>
       <CodeBlock language="typescript" title="❌ BAD — the ! operator hides null crashes">
-{`function focusInput(ref: React.RefObject<HTMLInputElement>) {
-  ref.current!.focus();
+{`function focusInput(ref: React.RefObject<HTMLInputElement | null>) {
+  ref.current!.focus();   // throws if the node is unmounted or not yet attached
 }`}
       </CodeBlock>
       <CodeBlock language="typescript" title="✅ GOOD — optional chaining is safe">
-{`function focusInput(ref: React.RefObject<HTMLInputElement>) {
+{`function focusInput(ref: React.RefObject<HTMLInputElement | null>) {
   ref.current?.focus();
 }`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Put the null INSIDE RefObject on React 19">
+        <p>
+          Writing the parameter as <code>React.RefObject&lt;HTMLInputElement&gt;</code> &mdash;
+          which is what pre-19 code does &mdash; now rejects every ref you would actually pass:{' '}
+          <code>useRef&lt;HTMLInputElement&gt;(null)</code> produces{' '}
+          <code>RefObject&lt;HTMLInputElement | null&gt;</code>, and{' '}
+          <code>RefObject</code> is invariant in <code>T</code>. The call site fails with
+          &quot;Type &apos;null&apos; is not assignable to type &apos;HTMLInputElement&apos;&quot;,
+          which reads like a bug in your ref rather than in the signature.
+        </p>
+      </InfoBox>
 
       {/* 2h. Over-annotation */}
       <h3>h) Over-annotation vs Inference</h3>
@@ -348,30 +368,47 @@ const n = first([1, 2, 3]); // n is number | undefined`}
       <p>
         These @typescript-eslint rules catch common mistakes in CI.
       </p>
-      <CodeBlock language="json" title=".eslintrc.json &mdash; Key TypeScript Rules">
-{`{
-  "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/strict-type-checked"
-  ],
-  "rules": {
-    "@typescript-eslint/no-explicit-any": "error",
-    "@typescript-eslint/no-non-null-assertion": "warn",
-    "@typescript-eslint/prefer-nullish-coalescing": "error",
-    "@typescript-eslint/prefer-optional-chain": "error",
-    "@typescript-eslint/no-unnecessary-type-assertion": "error",
-    "@typescript-eslint/no-unsafe-assignment": "error",
-    "@typescript-eslint/no-unsafe-member-access": "error",
-    "@typescript-eslint/no-unsafe-return": "error",
-    "@typescript-eslint/consistent-type-imports": [
-      "error", { "prefer": "type-imports" }
-    ],
-    "@typescript-eslint/no-unused-vars": [
-      "error", { "argsIgnorePattern": "^_" }
-    ]
-  }
-}`}
+      <CodeBlock language="javascript" title="eslint.config.js &mdash; Key TypeScript Rules (flat config)">
+{`import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+  js.configs.recommended,
+  // strictTypeChecked needs type information — wire up the project service:
+  ...tseslint.configs.strictTypeChecked,
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/prefer-nullish-coalescing': 'error',
+      '@typescript-eslint/prefer-optional-chain': 'error',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      '@typescript-eslint/consistent-type-imports': [
+        'error', { prefer: 'type-imports' },
+      ],
+      '@typescript-eslint/no-unused-vars': [
+        'error', { argsIgnorePattern: '^_' },
+      ],
+    },
+  },
+);`}
       </CodeBlock>
+
+      <InfoBox variant="info" title="Flat config only">
+        The <code>.eslintrc.json</code> form &mdash; with <code>&quot;extends&quot;</code>{' '}
+        strings like <code>&quot;plugin:@typescript-eslint/strict-type-checked&quot;</code>{' '}
+        &mdash; stopped being the default in ESLint 9 and is <strong>removed in ESLint 10</strong>.
+        The type-checked presets also need type information, which comes from{' '}
+        <code>parserOptions.projectService</code> (the modern replacement for listing{' '}
+        <code>project: [&apos;./tsconfig.json&apos;]</code> by hand).
+      </InfoBox>
 
       {/* ── Section 10: tsconfig Strict Flags ────────────────────── */}
       <h2>10. tsconfig Strict Options Reference</h2>
@@ -382,9 +419,15 @@ let name: string = null;  // Error!
 // noImplicitAny — Requires explicit types where TS cannot infer
 function log(msg) {}  // Error: 'msg' implicitly has 'any'
 
-// strictFunctionTypes — Catches unsafe function subtyping
+// strictFunctionTypes — Catches unsafe function subtyping.
+// Parameters are checked CONTRAVARIANTLY, so widening is fine and
+// narrowing is the error. Get the direction the right way round:
 type Handler = (e: MouseEvent) => void;
-const handler: Handler = (e: Event) => {};  // Error!
+const ok: Handler = (e: Event) => {};       // OK — a handler that accepts
+                                            // any Event handles a MouseEvent
+type Loose = (e: Event) => void;
+const bad: Loose = (e: MouseEvent) => {};   // Error! It would be called with
+                                            // a plain Event and read e.clientX
 
 // strictPropertyInitialization — Class properties must be initialized
 class User {

@@ -9,8 +9,8 @@ export default function Testing() {
     <LessonLayout
       title="Testing in Spring Boot"
       sectionId="springboot"
-      lessonIndex={6}
-      prev={{ path: '/springboot/security', label: 'Spring Security & Auth' }}
+      lessonIndex={7}
+      prev={{ path: '/springboot/security-migration', label: 'Spring Security 7 & Boot 4 Changes' }}
       next={{ path: '/springboot/config', label: 'Configuration & Profiles' }}
     >
       <h2>The Testing Pyramid, Applied</h2>

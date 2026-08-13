@@ -165,8 +165,12 @@ echo "module.exports = { hello: () => 'world' };" > index.js
 # - node_modules/
 # - .npmrc (for security — may contain tokens)
 # - package-lock.json (consumers use their own)
-# - .gitignore'd files (if no .npmignore exists)
 # - .DS_Store, .wafpickle-*, *.swp, etc.
+
+# EXCLUDED BY DEFAULT, but recoverable:
+# - .gitignore'd files — only when there is no .npmignore AND no
+#   "files" field. Listing a path in "files" brings it back; this is
+#   exactly why a gitignored dist/ vanishes from published packages.
 
 # CONFIGURABLE via "files" field or .npmignore:
 # - src/ (source code — usually excluded)
@@ -227,21 +231,24 @@ npm pack
 
 # List what would be included (without creating the file)
 npm pack --dry-run
-# Output:
+# Output (npm 10+ dropped the === banners of older versions):
 # npm notice 📦  my-package@1.0.0
-# npm notice === Tarball Contents ===
-# npm notice 1.2kB  package.json
-# npm notice 856B   README.md
-# npm notice 1.1kB  LICENSE
-# npm notice 3.4kB  dist/index.mjs
-# npm notice 3.2kB  dist/index.cjs
-# npm notice 1.8kB  dist/index.d.ts
-# npm notice === Tarball Details ===
-# npm notice name:          my-package
-# npm notice version:       1.0.0
-# npm notice package size:  4.2 kB
+# npm notice Tarball Contents
+# npm notice 1.2kB package.json
+# npm notice 856B README.md
+# npm notice 1.1kB LICENSE
+# npm notice 3.4kB dist/index.mjs
+# npm notice 3.2kB dist/index.cjs
+# npm notice 1.8kB dist/index.d.ts
+# npm notice Tarball Details
+# npm notice name: my-package
+# npm notice version: 1.0.0
+# npm notice filename: my-package-1.0.0.tgz
+# npm notice package size: 4.2 kB
 # npm notice unpacked size: 11.5 kB
-# npm notice total files:   6
+# npm notice shasum: 7cbc49f4c58d7bbc78c3ec2a271916e829dd158c
+# npm notice integrity: sha512-Brywpe+oSlqko[...]JjzGiA85AygRQ==
+# npm notice total files: 6
 
 # Inspect the tarball contents
 tar tzf my-package-1.0.0.tgz
@@ -301,7 +308,8 @@ npm install ./my-package-1.0.0.tgz`}
 
 # GPL-3.0 — copyleft (viral)
 # "If you use this in your project, your project must also be GPL"
-# Used by: Linux, GCC — rare in npm packages for good reason
+# Used by: GCC, Bash (Linux itself is GPL-2.0-only, not 3.0)
+# Rare in npm packages for good reason
 
 # For a library you want widely adopted: MIT or ISC
 # For a company package: check with legal, usually MIT or Apache-2.0`}

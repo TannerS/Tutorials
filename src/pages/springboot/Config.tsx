@@ -8,7 +8,7 @@ export default function Config() {
     <LessonLayout
       title="Configuration & Profiles"
       sectionId="springboot"
-      lessonIndex={7}
+      lessonIndex={8}
       prev={{ path: '/springboot/testing', label: 'Testing in Spring Boot' }}
       next={{ path: '/springboot/error', label: 'Error Handling & Validation' }}
     >

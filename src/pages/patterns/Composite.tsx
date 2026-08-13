@@ -9,7 +9,7 @@ export default function Composite() {
     <LessonLayout
       title="Composite & Facade Patterns"
       sectionId="patterns"
-      lessonIndex={5}
+      lessonIndex={6}
       prev={{ path: '/patterns/builder', label: 'Builder & Prototype' }}
       next={{ path: '/patterns/proxy', label: 'Proxy & Chain of Responsibility' }}
     >

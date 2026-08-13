@@ -9,8 +9,8 @@ export default function BestPractices() {
     <LessonLayout
       title="Testing Best Practices"
       sectionId="testing"
-      lessonIndex={7}
-      prev={{ path: '/testing/e2e', label: 'End-to-End Testing' }}
+      lessonIndex={9}
+      prev={{ path: '/testing/performance', label: 'Test Performance & Parallelization' }}
       next={null}
     >
       <h2>Arrange-Act-Assert (AAA)</h2>

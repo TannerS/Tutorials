@@ -214,6 +214,10 @@ public class AreaCalculator {
 {`// GOOD — with a DI container, the registration point disappears too.
 // Spring injects every DiscountStrategy bean it can find, so adding a
 // new @Component is the ONLY change needed to add a customer type.
+
+// NOTE: this REPLACES the interface above. The map version needed the
+// calculator to know the lookup key; here each strategy answers for
+// itself, which is what removes the registration step.
 public interface DiscountStrategy {
     boolean appliesTo(Order order);
     double calculateDiscount(Order order);

@@ -9,7 +9,7 @@ export default function Realworld() {
     <LessonLayout
       title="Real-World Pattern Applications"
       sectionId="patterns"
-      lessonIndex={12}
+      lessonIndex={13}
       prev={{ path: '/patterns/flyweight', label: 'Flyweight & Interpreter' }}
       next={null}
     >

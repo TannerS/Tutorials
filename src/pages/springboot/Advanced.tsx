@@ -9,7 +9,7 @@ export default function Advanced() {
     <LessonLayout
       title="Advanced Topics"
       sectionId="springboot"
-      lessonIndex={9}
+      lessonIndex={10}
       prev={{ path: '/springboot/error', label: 'Error Handling & Validation' }}
       next={{ path: '/springboot/transactions', label: 'Transactions Deep-Dive' }}
     >

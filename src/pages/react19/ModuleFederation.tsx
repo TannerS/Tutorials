@@ -9,7 +9,7 @@ export default function ModuleFederation() {
     <LessonLayout
       title="Module Federation & MFEs"
       sectionId="react19"
-      lessonIndex={16}
+      lessonIndex={17}
       prev={{ path: '/react19/imperative-bridge', label: 'Imperative Bridge Patterns' }}
       next={{ path: '/react19/feature-folder', label: 'Feature-Based Architecture' }}
     >

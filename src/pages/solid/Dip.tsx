@@ -123,6 +123,16 @@ public interface OrderRepository {
 
 public interface EmailSender {
     void send(String to, String subject, String body);
+}
+
+// The failure mode belongs to the abstraction too. If OrderRepository
+// declared "throws SQLException", every caller would be coupled to JDBC
+// and a MongoDB implementation could not satisfy the interface — the
+// abstraction would depend on a detail, which is exactly what DIP forbids.
+public class OrderPersistenceException extends RuntimeException {
+    public OrderPersistenceException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }`}
       </CodeBlock>
 
@@ -161,12 +171,20 @@ public class MySqlOrderRepository implements OrderRepository {
 
     @Override
     public void save(Order order) {
+        // The abstraction must not leak SQLException — OrderRepository
+        // does not declare it, and OrderService must never learn that
+        // "persistence" happens to mean JDBC. Translate at the boundary.
+        // (Spring's @Repository does exactly this for you, converting
+        // SQLException into its DataAccessException hierarchy.)
         try (Connection conn = dataSource.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO orders (id, total) VALUES (?, ?)");
             ps.setLong(1, order.getId());
             ps.setDouble(2, order.getTotal());
             ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new OrderPersistenceException(
+                "Failed to save order " + order.getId(), e);
         }
     }
 
@@ -202,7 +220,22 @@ public class OrderServiceTest {
         List<Order> savedOrders = new ArrayList<>();
         List<String> sentEmails = new ArrayList<>();
 
-        OrderRepository fakeRepo = order -> savedOrders.add(order);
+        // OrderRepository has two methods, so it is NOT a functional
+        // interface — it needs a class (or an anonymous class), not a lambda.
+        OrderRepository fakeRepo = new OrderRepository() {
+            @Override
+            public void save(Order order) { savedOrders.add(order); }
+
+            @Override
+            public Order findById(long id) {
+                return savedOrders.stream()
+                    .filter(o -> o.getId() == id)
+                    .findFirst()
+                    .orElse(null);
+            }
+        };
+
+        // EmailSender has exactly one abstract method, so a lambda works here.
         EmailSender fakeSender = (to, subj, body) -> sentEmails.add(to);
 
         OrderService service = new OrderService(fakeRepo, fakeSender);
@@ -304,6 +337,50 @@ public class SmtpEmailSender implements EmailSender {
         code={"// DIP: depend on the interface\nprivate final OrderRepository repo;\n\n// DI: inject via constructor\npublic OrderService(OrderRepository repo) {\n    this.repo = repo;\n}"}
         language="java"
       />
+
+      <h2>SOLID — The Whole Picture</h2>
+      <p>
+        That completes all five principles. They are worth holding in your head as one
+        idea rather than five rules, because in practice you rarely apply just one:
+      </p>
+
+      <InfoBox variant="success" title="The Five in One Sentence Each">
+        <ul>
+          <li>
+            <strong>SRP</strong> — one class, one reason to change. Group what changes
+            together for the same stakeholder; separate what doesn&apos;t.
+          </li>
+          <li>
+            <strong>OCP</strong> — add behaviour by adding code, not by editing tested
+            code. It relocates the point of change to a composition root rather than
+            eliminating it.
+          </li>
+          <li>
+            <strong>LSP</strong> — a subtype must honour the parent&apos;s contract:
+            no strengthened preconditions, no weakened postconditions, no broken
+            invariants, no new state changes the parent forbade.
+          </li>
+          <li>
+            <strong>ISP</strong> — an interface states what a <em>caller needs</em>, not
+            what a class can do. Split by consumer role, keeping methods that are used
+            together in one place.
+          </li>
+          <li>
+            <strong>DIP</strong> — both sides depend on an abstraction that belongs to the
+            high-level module, including its failure modes.
+          </li>
+        </ul>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="The Cost Side — Say This in an Interview">
+        Every one of these principles buys flexibility with indirection, and indirection is
+        not free: more files, more interfaces, more hops in a stack trace, and abstractions
+        that were guessed before the requirement existed are usually the wrong shape. The
+        senior answer is not &quot;always apply SOLID&quot; — it is knowing which principle
+        a given piece of pain calls for, and being able to say why the simpler version was
+        not enough. Apply them when a second or third change of the same <em>kind</em> has
+        shown you where the real axis of variation is.
+      </InfoBox>
     </LessonLayout>
   );
 }

@@ -278,8 +278,11 @@ tsconfig.json
 # NOTE: Some files are ALWAYS included regardless:
 # - package.json
 # - README (any case/extension)
-# - LICENSE / LICENCE
-# - CHANGELOG
+# - LICENSE / LICENCE (any case/extension)
+# - the file named by "main"
+# - the file(s) named by "bin"
+# (CHANGELOG is NOT in this list — modern npm drops it unless you
+#  list it in "files" or leave it un-ignored.)
 
 # Some files are ALWAYS excluded:
 # - node_modules/

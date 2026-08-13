@@ -9,7 +9,7 @@ export default function State() {
     <LessonLayout
       title="State & Template Method Patterns"
       sectionId="patterns"
-      lessonIndex={8}
+      lessonIndex={9}
       prev={{ path: '/patterns/command', label: 'Command & Iterator' }}
       next={{ path: '/patterns/bridge', label: 'Bridge & Mediator' }}
     >
@@ -200,6 +200,30 @@ order.cancel();                 // throws Error`}
         every new state means editing every switch statement in the codebase. The State pattern
         moves each state's rules into its own class, so adding a new state means adding a new
         class, not touching existing ones (Open/Closed Principle).
+      </InfoBox>
+
+      <InfoBox variant="tip" title="When to Reach for State">
+        Reach for State when the <em>legal transitions</em> matter as much as the behaviour — when
+        &quot;can this operation happen right now?&quot; has a different answer per status, and the
+        answer is scattered across several methods. The tell is the same
+        <code>switch (status)</code> appearing in three or four different methods, each with a
+        slightly different set of cases; State collapses all of that into one class per status that
+        can be read top to bottom. Skip it when you have two or three states with a single
+        transition each, or when status is purely a label the code branches on once — an enum field
+        is smaller and clearer, and a class per state is pure ceremony. Also note that State does
+        not remove persistence mapping: if the status lives in a database column you still translate
+        the stored value back into a state object on load, so the pattern localises that mapping
+        rather than eliminating it.
+      </InfoBox>
+
+      <InfoBox variant="info" title="State Objects Should Be Stateless">
+        The Java example above allocates a fresh <code>new PaidState()</code> on every transition,
+        which reads clearly but is wasteful: these state classes hold no per-order data, so one
+        shared instance can serve every order. The JavaScript version already does this — its states
+        are plain module-level singletons. In Java the idiomatic version is an
+        <code>enum OrderState</code> whose constants implement the interface and override the
+        transition methods, giving you singletons and exhaustive <code>switch</code> support for
+        free. Keep the one-class-per-state form only if a state genuinely needs its own fields.
       </InfoBox>
 
       <h2>Template Method Pattern</h2>

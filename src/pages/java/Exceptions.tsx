@@ -282,7 +282,11 @@ Objects.requireNonNullElseGet(value, this::computeFallback);`}
       <h2>Throwing Exceptions and Custom Exceptions</h2>
 
       <CodeBlock language="java" title="CustomExceptions.java">
-{`// Custom checked exception
+{`// NOTE: these examples use double for balances to keep the exception
+// mechanics in focus. Real money code uses BigDecimal — see the
+// "double cannot represent money" box in Syntax & Data Types.
+
+// Custom checked exception
 public class InsufficientFundsException extends Exception {
     private final double amount;
     private final double balance;

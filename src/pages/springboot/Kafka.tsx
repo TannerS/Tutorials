@@ -9,7 +9,7 @@ export default function Kafka() {
     <LessonLayout
       title="Kafka in Spring"
       sectionId="springboot"
-      lessonIndex={11}
+      lessonIndex={12}
       prev={{ path: '/springboot/transactions', label: 'Transactions Deep-Dive' }}
       next={{ path: '/springboot/aop', label: 'AOP & Interceptors' }}
     >

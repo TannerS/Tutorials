@@ -9,7 +9,7 @@ export default function Proxy() {
     <LessonLayout
       title="Proxy & Chain of Responsibility"
       sectionId="patterns"
-      lessonIndex={6}
+      lessonIndex={7}
       prev={{ path: '/patterns/composite', label: 'Composite & Facade' }}
       next={{ path: '/patterns/command', label: 'Command & Iterator' }}
     >

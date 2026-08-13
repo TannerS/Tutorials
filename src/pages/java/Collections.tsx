@@ -69,7 +69,8 @@ public class ListExamples {
         System.out.println("Sorted: " + fruits);
 
         // LinkedList: doubly-linked list implementation
-        // Best for: frequent insertions/deletions at beginning/middle
+        // Best for: frequent insertions/deletions at the ENDS (or via an
+        // Iterator already positioned there) — not at an arbitrary index
         LinkedList<Integer> numbers = new LinkedList<>();
         numbers.add(10);
         numbers.add(20);
@@ -89,10 +90,13 @@ public class ListExamples {
       <InfoBox variant="tip" title="ArrayList vs LinkedList">
         <p>
           Use <code>ArrayList</code> for most cases — it provides O(1) random access by index and
-          is faster for iteration due to memory locality. Use <code>LinkedList</code> only when
-          you frequently insert or remove elements at the beginning or middle of the list, since
-          those operations are O(1) for LinkedList but O(n) for ArrayList. In practice, ArrayList
-          is the better default choice for the vast majority of use cases.
+          is faster for iteration due to memory locality. <code>LinkedList</code> is only O(1) for
+          work at the <em>ends</em> (<code>addFirst</code>/<code>removeFirst</code>) or through an{' '}
+          <code>Iterator</code> that is already positioned. Inserting or removing at an arbitrary
+          index is still O(n), because the list has to be walked to reach that position first —
+          only the link-rewiring is cheap, not the search. So LinkedList does not beat ArrayList
+          &quot;in the middle&quot;; in practice ArrayList is the better default almost every
+          time, and <code>ArrayDeque</code> beats LinkedList for end-based work.
         </p>
       </InfoBox>
 

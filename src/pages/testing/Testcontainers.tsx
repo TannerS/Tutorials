@@ -9,7 +9,7 @@ export default function Testcontainers() {
     <LessonLayout
       title="Testcontainers & Test Data"
       sectionId="testing"
-      lessonIndex={4}
+      lessonIndex={5}
       prev={{ path: '/testing/integration', label: 'Integration Testing' }}
       next={{ path: '/testing/contract', label: 'Contract & Property-Based Testing' }}
     >

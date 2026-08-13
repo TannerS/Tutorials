@@ -229,6 +229,8 @@ useFetcher()            { load, submit, data,           Fetch/submit without nav
                           state, Form }
 useNavigation()         { state, location, formData }   Global navigation state (pending,
                                                           loading, submitting)
+useRevalidator()        { revalidate, state }           Force this route's loaders to
+                                                          re-run without navigating
 useMatches()            array of matched routes         Breadcrumbs, route-aware logic`}
       </CodeBlock>
 
@@ -390,14 +392,42 @@ export default function ProductList() { ... }
 // The router config is the wiring — it's what connects loader to Component.
 // The file location is irrelevant; you could import them from separate files.
 
-// ✅ Wrap lazy routes in Suspense as close as possible (not at the root!)
-// A root-level Suspense replaces your entire app (nav, header, everything)
-// with the fallback. Per-route Suspense only replaces the content area.
-<Route path="/products" element={
-  <Suspense fallback={<PageSkeleton />}>
-    <ProductList />
-  </Suspense>
-} />`}
+// ⚠️ The route-level lazy property does NOT use Suspense.
+// The router awaits the import itself as part of the navigation, so
+// useNavigation().state === 'loading' already covers it — no <Suspense> needed.
+const navigation = useNavigation();
+// {navigation.state === 'loading' && <TopLoadingBar />}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Route lazy vs React.lazy — two different things">
+        <p>
+          <code>lazy:</code> on a route object is React Router&apos;s own code
+          splitting. It resolves <em>before</em> the route renders, so the fallback
+          is your normal pending-navigation UI (<code>useNavigation</code>), and it
+          can split the route&apos;s <code>loader</code>/<code>action</code> too — not
+          just the component.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          <code>React.lazy()</code> is React&apos;s component-level splitting and{' '}
+          <em>does</em> require a <code>&lt;Suspense&gt;</code> boundary. Use it for
+          chunks inside a page (a heavy chart, a modal) — and put the boundary close
+          to the component, not at the root, or the fallback replaces your whole app.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="React.lazy — the case that does need Suspense">
+{`const HeavyChart = React.lazy(() => import('./HeavyChart'));
+
+function Dashboard() {
+  return (
+    <div>
+      <DashboardHeader />          {/* stays visible */}
+      <Suspense fallback={<ChartSkeleton />}>
+        <HeavyChart />             {/* only this area swaps to the fallback */}
+      </Suspense>
+    </div>
+  );
+}`}
       </CodeBlock>
 
       {/* ══════════════════════════════════════════════
@@ -584,17 +614,48 @@ Read a parent route's loader data             useRouteLoaderData('route-id')
 Track global navigation state (loading bar)   useNavigation().state`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="Two things navigate() does NOT do">
-        <p>
-          <strong>1. It does not stop execution.</strong> Code after <code>navigate()</code>{' '}
-          still runs — always <code>return</code> after it when you want to stop.
-        </p>
-        <p style={{ marginBottom: 0 }}>
-          <strong>2. It does not reload loader data.</strong> If you mutate data and want
-          the current route's loader to re-run, use a <code>fetcher.submit()</code> or a{' '}
-          <code>{'<Form>'}</code> instead. <code>navigate(location.pathname)</code> feels
-          like it should re-run the loader but it won't if the URL hasn't actually changed.
-        </p>
+      <InfoBox variant="warning" title="navigate() does NOT stop execution">
+        Code after <code>navigate()</code> still runs — it queues a navigation, it
+        does not return or throw. Always <code>return</code> after it when you want
+        the rest of the function to stop.
+      </InfoBox>
+
+      <h2>Re-running Loaders (Revalidation)</h2>
+      <CodeBlock language="jsx" title="useRevalidator — refetch without navigating">
+{`// React Router revalidates automatically after any action runs
+// (<Form> submit or fetcher.submit). You rarely need to do it by hand.
+
+// To force the current route's loaders to re-run — e.g. a "Refresh" button,
+// or after a mutation that did NOT go through an action:
+import { useRevalidator } from 'react-router-dom';
+
+function RefreshButton() {
+  const revalidator = useRevalidator();
+  return (
+    <button
+      onClick={() => revalidator.revalidate()}
+      disabled={revalidator.state === 'loading'}
+    >
+      {revalidator.state === 'loading' ? 'Refreshing...' : 'Refresh'}
+    </button>
+  );
+}
+
+// Loaders also re-run when:
+//   - the route params change      /users/1 → /users/2
+//   - the search params change     ?page=1  → ?page=2
+//   - an action completes          <Form>, fetcher.submit()
+//   - you navigate to the SAME url navigate(location.pathname)`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="Navigating to the same URL DOES revalidate">
+        A common myth is that <code>navigate(location.pathname)</code> is a no-op for
+        data. It isn&apos;t — React Router special-cases it: when the incoming
+        pathname + search are identical to the current ones, the default
+        revalidation decision is <code>true</code> and the loaders re-run. It works,
+        but it also pushes a history entry, so{' '}
+        <code>useRevalidator().revalidate()</code> is the correct tool when all you
+        want is fresh data.
       </InfoBox>
 
       {/* ══════════════════════════════════════════════
@@ -603,9 +664,11 @@ Track global navigation state (loading bar)   useNavigation().state`}
       <h2>TypeScript Patterns</h2>
       <p>
         React Router 7 ships its own TypeScript types — no <code>@types/</code> package
-        needed. The key gotcha: <code>useLoaderData()</code> returns <code>unknown</code>{' '}
-        in library mode, so you must cast it. The cleanest pattern derives the type
-        directly from the loader so they always stay in sync.
+        needed. The key gotcha: in library mode <code>useLoaderData()</code> is typed{' '}
+        <code>&lt;T = any&gt;()</code>, so with no type argument it returns{' '}
+        <code>any</code> — not <code>unknown</code>. That means it will <em>not</em>{' '}
+        error on a typo; it silently gives up type safety. Always supply the type
+        yourself, derived from the loader so the two stay in sync.
       </p>
 
       <h3>Loader Function</h3>
@@ -644,9 +707,12 @@ export async function loader({ request, params }: LoaderFunctionArgs): Promise<P
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export default function ProductList() {
-  // useLoaderData() returns 'unknown' in library mode — cast it.
-  const { products, total, page } = useLoaderData() as LoaderData;
+  // ⚠️ Bare useLoaderData() is 'any' in library mode — no error on typos.
+  // Pass the type argument (preferred — it also checks the destructure):
+  const { products, total, page } = useLoaderData<LoaderData>();
   // products → Product[], total → number, page → number (all typed)
+
+  // 'as LoaderData' works too, but a cast can't catch a wrong shape.
 }`}
       </CodeBlock>
 
@@ -669,12 +735,14 @@ function ProductDetail() {
 }
 
 function ProductDetail() {
-  // useParams() always returns string | undefined for each param.
-  // If you need to use it, narrow it first or assert it.
-  const { id } = useParams<{ id: string }>();   // narrows to string (still runtime-unsafe)
-  // or:
-  const params = useParams();
-  if (!params.id) return null;   // runtime guard
+  // ⚠️ The type argument does NOT make params non-optional.
+  // useParams<{ id: string }>() returns Readonly<Partial<{ id: string }>>,
+  // so id is still string | undefined. The generic only names the keys.
+  const { id } = useParams<{ id: string }>();   // id: string | undefined
+
+  // So you still have to narrow at runtime:
+  if (!id) return null;            // ← guard, then id is string below
+  return <Product id={id} />;
 }`}
       </CodeBlock>
 
@@ -711,8 +779,9 @@ const from = location.state?.from ?? '/';  // from is any`}
       </CodeBlock>
       <CodeBlock language="tsx" title="TypeScript">
 {`const location = useLocation();
-// location.state is typed as 'unknown' — cast to the shape you expect.
-// Only do this cast where you know who set the state (e.g. the login page).
+// ⚠️ location.state is 'any', not 'unknown' — TypeScript will happily let you
+// write location.state.typo. Cast it to the shape you expect so you get
+// checking back, and only where you know who set the state (e.g. the login page).
 const from = (location.state as { from?: string } | null)?.from ?? '/';`}
       </CodeBlock>
 

@@ -8,7 +8,7 @@ export default function Typescript() {
     <LessonLayout
       title="TypeScript Crash Course"
       sectionId="react19"
-      lessonIndex={11}
+      lessonIndex={12}
       prev={{ path: '/react19/patterns', label: 'Advanced Patterns' }}
       next={{ path: '/react19/build-toolchain', label: 'Build Toolchain' }}
     >
@@ -288,7 +288,7 @@ type Result<T, E = Error> =
   | { ok: true; data: T }
   | { ok: false; error: E };
 
-async function safefetch<T>(url: string): Promise<Result<T>> {
+async function safeFetch<T>(url: string): Promise<Result<T>> {
   try {
     const res = await fetch(url);
     if (!res.ok) return { ok: false, error: new Error(\`HTTP \${res.status}\`) };
@@ -299,7 +299,7 @@ async function safefetch<T>(url: string): Promise<Result<T>> {
   }
 }
 
-const result = await safecheck<User[]>('/api/users');
+const result = await safeFetch<User[]>('/api/users');
 if (result.ok) {
   console.log(result.data); // User[] ✅
 } else {
@@ -703,8 +703,16 @@ const [user, setUser]   = useState<User | null>(null); // explicit: nullable
 const [items, setItems] = useState<Item[]>([]);        // explicit: typed array
 
 // useRef — two uses, two different types
-const inputRef = useRef<HTMLInputElement>(null);              // DOM ref — .current is read-only
-const timerRef = useRef<ReturnType<typeof setTimeout>>();     // mutable value, no DOM
+const inputRef = useRef<HTMLInputElement | null>(null);       // DOM ref
+const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null); // mutable value, no DOM
+
+// ⚠️ React 19 changed useRef's types in two ways:
+//   1. The zero-argument overload is GONE. useRef<T>() no longer compiles —
+//      "Expected 1 arguments, but got 0". Always pass an initial value,
+//      which for these two cases means an explicit null.
+//   2. RefObject<T>.current is now mutable. In React 18 and earlier,
+//      useRef<T>(null) produced a read-only .current; that distinction
+//      between RefObject and MutableRefObject is gone.
 
 // Access DOM element safely
 useEffect(() => {
@@ -909,12 +917,19 @@ interface FormProps {
       <h2>React.FC — Why Not to Use It</h2>
 
       <CodeBlock language="typescript" title="React.FC vs plain function">
-{`// React.FC — avoid it
+{`// React.FC — usually not worth it
 const Card: React.FC<CardProps> = ({ title }) => <div>{title}</div>;
 // Problems:
-// 1. Adds implicit children prop to every component even when you don't want it
-// 2. Generic components don't work: React.FC<ListProps<T>> is not valid syntax
-// 3. Hides that the component returns JSX — less explicit than needed
+// 1. Generic components don't work — you cannot write React.FC<ListProps<T>>
+//    and still have T inferred at the call site
+// 2. Hides that the component returns JSX — less explicit than needed
+// 3. Locks the return type to ReactNode, so it fights you if you ever want
+//    to return something the annotation didn't anticipate
+//
+// ⚠️ OUTDATED OBJECTION: "React.FC adds an implicit children prop."
+// That was true up to @types/react 17. It was REMOVED in @types/react 18 —
+// FunctionComponent<P> is now just (props: P) => ReactNode | Promise<ReactNode>.
+// If you want children today you must declare it yourself, with React.FC or without.
 
 // Plain function — preferred everywhere
 function Card({ title }: CardProps) {

@@ -64,7 +64,9 @@ function Card({ title, subtitle, maxWidth = 400 }: CardProps) {
     </div>
   );
 }
-// Use JS default parameters — NOT defaultProps (deprecated in React 18.3+)`
+// Use JS default parameters — NOT defaultProps. It was deprecated in 18.3 and
+// REMOVED for function components in React 19: it is now silently ignored,
+// with no warning. (Class components still honour it.)`
       }</CodeBlock>
 
       <CodeBlock language="tsx" title="Children prop types">{
@@ -155,7 +157,7 @@ dispatch({ type: 'FETCH_SUCCESS', payload: users });
 
       <h3>useRef</h3>
       <CodeBlock language="tsx" title="DOM refs vs mutable refs">{
-`// DOM ref — pass null, React manages .current (readonly)
+`// DOM ref — pass null; React assigns .current when the node mounts
 const inputRef = useRef<HTMLInputElement>(null);
 inputRef.current?.focus();  // optional chaining for null safety
 <input ref={inputRef} />
@@ -172,10 +174,22 @@ useEffect(() => {
 }, []);`
       }</CodeBlock>
 
-      <InfoBox variant="info" title="RefObject vs MutableRefObject">
-        Pass <code>null</code> with a non-null generic → <code>RefObject</code> (read-only .current).
-        Pass an initial value matching the generic → <code>MutableRefObject</code> (writable .current).
-        For DOM refs, always pass <code>null</code>.
+      <InfoBox variant="info" title="RefObject vs MutableRefObject — Gone in React 19">
+        <p>
+          Pre-19 tutorials draw a line between <code>RefObject</code> (read-only{' '}
+          <code>.current</code>) and <code>MutableRefObject</code> (writable). That distinction
+          no longer exists. In <code>@types/react</code> 19, <strong>every</strong>{' '}
+          <code>useRef</code> overload returns <code>RefObject&lt;T&gt;</code>,{' '}
+          <code>RefObject.current</code> is writable, and <code>MutableRefObject</code> is
+          marked <em>@deprecated — use RefObject instead</em>.
+        </p>
+        <p>
+          What the argument still controls is the <em>nullability</em> baked into the type:{' '}
+          <code>useRef&lt;HTMLInputElement&gt;(null)</code> gives{' '}
+          <code>RefObject&lt;HTMLInputElement | null&gt;</code>, while{' '}
+          <code>useRef&lt;number&gt;(0)</code> gives <code>RefObject&lt;number&gt;</code> with no{' '}
+          <code>null</code> to check.
+        </p>
       </InfoBox>
 
       <h3>useContext</h3>
@@ -890,19 +904,22 @@ export function useShoppingCart(
       <h2>15. Interactive Challenges</h2>
 
       <InteractiveChallenge
-        question={"You want to create a ref for an <input> that React manages. Which is correct?"}
+        question={"Under React 19's types, which of these does NOT give you a usable <input> ref?"}
         options={[
-          "useRef<HTMLInputElement>(undefined)",
           "useRef<HTMLInputElement>(null)",
           "useRef<HTMLInputElement | null>(null)",
-          "useRef(document.querySelector('input'))",
+          "useRef<HTMLInputElement>(undefined)",
+          "Both A and B work and produce the identical type",
         ]}
-        correctIndex={1}
-        explanation={"For DOM refs, pass null and provide the element type as the generic: useRef<HTMLInputElement>(null). This gives you a RefObject with readonly .current. Option C would create a MutableRefObject instead."}
+        correctIndex={2}
+        explanation={"A and B are indistinguishable in React 19 — both resolve to RefObject<HTMLInputElement | null>, so option D is a true statement and neither is 'wrong'. C is the odd one out: it selects the `initialValue: T | undefined` overload and yields RefObject<HTMLInputElement | undefined>, which JSX will not accept as a ref (a ref's current must be able to hold null). Note that pre-19 answers claiming option B creates a 'MutableRefObject' are stale — useRef has no MutableRefObject overload any more."}
         language="tsx"
-        code={`// Correct:
-const ref = useRef<HTMLInputElement>(null);
-ref.current?.focus();  // safe, typed`}
+        code={`const a = useRef<HTMLInputElement>(null);        // RefObject<HTMLInputElement | null>
+const b = useRef<HTMLInputElement | null>(null); // RefObject<HTMLInputElement | null>  — same
+const c = useRef<HTMLInputElement>(undefined);   // RefObject<HTMLInputElement | undefined>
+
+a.current?.focus();  // safe, typed
+<input ref={a} />    // c would be rejected here`}
       />
 
       <InteractiveChallenge

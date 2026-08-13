@@ -144,7 +144,7 @@ const router = createBrowserRouter([
 
       <h2>Auth Context Provider</h2>
       <CodeBlock language="jsx" title="Full AuthProvider Implementation">
-{`import { createContext, useContext, useState, useCallback } from 'react';
+{`import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext(null);
 

@@ -15,9 +15,9 @@ export default function Migration() {
     >
       <p>
         Migrating from React Router v5 to v7 is a two-step jump: v5 → v6
-        (breaking API changes) then v6 → v7 (new data APIs, Remix merge). This
-        guide covers every change with before/after examples so you can migrate
-        methodically.
+        (breaking API changes), then v6 → v7 (adopt the data APIs that landed in
+        v6.4, and drop the handful of APIs v7 removed). This guide covers every
+        change with before/after examples so you can migrate methodically.
       </p>
 
       <FlowChart
@@ -193,12 +193,60 @@ function DashboardLayout() {
 */`}
       </CodeBlock>
 
-      <h2>v6 → v7: New Data APIs</h2>
+      <h2>v6 → v7: Data APIs and Removals</h2>
       <p>
-        The jump from v6 to v7 is less about breakage and more about adopting
-        powerful new APIs. The Remix framework merged into React Router,
-        bringing loaders, actions, and <code>createBrowserRouter</code>.
+        Two things are commonly confused here. The data APIs —{' '}
+        <code>createBrowserRouter</code>, <code>RouterProvider</code>,{' '}
+        <code>loader</code>, <code>action</code>, <code>errorElement</code> — did{' '}
+        <strong>not</strong> arrive in v7. They landed in <strong>v6.4</strong>,
+        when the Remix data layer was ported over. What v7 adds is the full
+        framework mode (file-based routes, SSR, typegen) plus a round of
+        <em> removals</em> of APIs that v6.4 had introduced.
       </p>
+
+      <InfoBox variant="danger" title="v7 Removed defer(), json(), and fallbackElement">
+        <p>
+          These three shipped in the v6.4 data APIs and were <strong>deleted</strong>{' '}
+          in v7 — importing them now yields <code>undefined</code> and calling one
+          throws <code>TypeError: defer is not a function</code>. Any v6-era tutorial
+          you copy from will still use them.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          <code>defer()</code> → return a bare promise from the loader (still use{' '}
+          <code>&lt;Await&gt;</code> + <code>&lt;Suspense&gt;</code> to render it).{' '}
+          <code>json()</code> → return a plain object, or use <code>data()</code> when
+          you need to set a status/headers. <code>fallbackElement</code> →{' '}
+          <code>HydrateFallback</code> on the root route.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="v6 → v7: the removed APIs">
+{`// ❌ v6.4–v6.x — all three are GONE in v7
+import { defer, json } from 'react-router-dom';
+
+export async function loader() {
+  return defer({ reviews: fetchReviews() });     // TypeError in v7
+}
+export async function action() {
+  return json({ ok: true }, { status: 201 });    // TypeError in v7
+}
+<RouterProvider router={router} fallbackElement={<Spinner />} />  // prop ignored
+
+// ✅ v7 — return promises and plain objects directly
+export async function loader() {
+  return { reviews: fetchReviews() };            // bare promise, still works with <Await>
+}
+
+import { data } from 'react-router-dom';
+export async function action() {
+  return { ok: true };                           // plain object for a normal 200
+  // ...or when you need a status/headers:
+  // return data({ ok: true }, { status: 201 });
+}
+
+// HydrateFallback on the root route replaces fallbackElement
+{ path: '/', element: <RootLayout />, HydrateFallback: Spinner, children: [...] }`}
+      </CodeBlock>
 
       <h3>Adopting createBrowserRouter</h3>
       <CodeBlock language="jsx" title="v6 JSX Router → v7 Config Router">
@@ -401,7 +449,7 @@ v5 → v6 Syntax Changes
   [x] Absolute child paths → relative paths
   [x] history.listen → useLocation + useEffect
 
-v6 → v7 Data APIs
+Adopting the Data APIs (available since v6.4)
   [x] BrowserRouter → createBrowserRouter + RouterProvider
   [x] useEffect fetch → loader + useLoaderData
   [x] Manual form submit → action + <Form>
@@ -409,6 +457,11 @@ v6 → v7 Data APIs
   [x] Try/catch in components → errorElement + useRouteError
   [x] React.lazy → lazy() on route config
   [x] Manual scroll handling → <ScrollRestoration />
+
+v6 → v7 Removals (these WILL break at runtime)
+  [x] defer({...})              → return { ...promises } directly
+  [x] json(obj)                 → return obj  (or data(obj, { status }))
+  [x] RouterProvider fallbackElement → HydrateFallback on the root route
 */`}
       </CodeBlock>
 

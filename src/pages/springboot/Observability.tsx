@@ -9,7 +9,7 @@ export default function Observability() {
     <LessonLayout
       title="Observability"
       sectionId="springboot"
-      lessonIndex={14}
+      lessonIndex={15}
       prev={{ path: '/springboot/boot4', label: 'Boot 4 Novelties' }}
       next={{ path: '/springboot/cheatsheet', label: 'Cheat Sheet' }}
     >
@@ -138,6 +138,10 @@ startupProbe:
 @Component
 public class WarmupListener {
     private final ApplicationEventPublisher events;
+
+    public WarmupListener(ApplicationEventPublisher events) {
+        this.events = events;
+    }
 
     public void onCacheLoaded() {
         AvailabilityChangeEvent.publish(events, this,
@@ -372,12 +376,13 @@ public class CatalogHealthIndicator implements HealthIndicator {
 curl -s http://localhost:8081/actuator/loggers/com.example.orders | jq
 #   { "configuredLevel": "INFO", "effectiveLevel": "INFO" }
 
-# Turn on DEBUG for one package for the next hour
+# Turn on DEBUG for one package. There is no TTL — it stays until you
+# revert it or the process restarts, so pair it with a reminder.
 curl -X POST http://localhost:8081/actuator/loggers/com.example.orders \\
      -H "Content-Type: application/json" \\
      -d '{"configuredLevel":"DEBUG"}'
 
-# Revert
+# Revert to the configured default (inherits from the parent logger)
 curl -X POST http://localhost:8081/actuator/loggers/com.example.orders \\
      -H "Content-Type: application/json" \\
      -d '{"configuredLevel":null}'`}

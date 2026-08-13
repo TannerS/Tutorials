@@ -9,8 +9,8 @@ export default function Unit() {
     <LessonLayout
       title="Unit Testing (JUnit & Jest)"
       sectionId="testing"
-      lessonIndex={1}
-      prev={{ path: '/testing/intro', label: 'Testing Pyramid & Philosophy' }}
+      lessonIndex={2}
+      prev={{ path: '/testing/what-to-test', label: 'What to Test (and What Not To)' }}
       next={{ path: '/testing/mocking', label: 'Mocking & Test Doubles' }}
     >
       <h2>What Is a Unit Test?</h2>
@@ -272,7 +272,7 @@ expect(mockFn).toHaveBeenCalledTimes(3);`}
       </InfoBox>
 
       <CodeBlock language="jsx" title="Basic Component Test">
-{`import { render, screen, fireEvent } from '@testing-library/react';
+{`import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LoginForm from './LoginForm';
 

@@ -7,7 +7,7 @@ export default function Cheatsheet() {
     <LessonLayout
       title="Cheat Sheet"
       sectionId="springboot"
-      lessonIndex={15}
+      lessonIndex={16}
       prev={{ path: '/springboot/observability', label: 'Observability' }}
       next={null}
     >

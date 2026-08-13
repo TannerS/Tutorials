@@ -21,6 +21,7 @@ import SpringDi from './pages/springboot/Di'
 import SpringRest from './pages/springboot/Rest'
 import SpringData from './pages/springboot/Data'
 import SpringSecurity from './pages/springboot/Security'
+import SpringSecurityMigration from './pages/springboot/SecurityMigration'
 import SpringTesting from './pages/springboot/Testing'
 import SpringConfig from './pages/springboot/Config'
 import SpringError from './pages/springboot/Error'
@@ -43,6 +44,7 @@ import ReactPerformance from './pages/react19/Performance'
 import ReactProfiling from './pages/react19/Profiling'
 import ReactNew from './pages/react19/React19'
 import ReactServer from './pages/react19/Server'
+import ReactSsrHydration from './pages/react19/SsrHydration'
 import ReactPatterns from './pages/react19/Patterns'
 import ReactTypescript from './pages/react19/Typescript'
 import ReactBuildToolchain from './pages/react19/BuildToolchain'
@@ -86,6 +88,7 @@ import SolidDip from './pages/solid/Dip'
 // Design Patterns
 import PatternsIntro from './pages/patterns/Intro'
 import PatternsSingleton from './pages/patterns/Singleton'
+import PatternsAbstractFactory from './pages/patterns/AbstractFactory'
 import PatternsStrategy from './pages/patterns/Strategy'
 import PatternsDecorator from './pages/patterns/Decorator'
 import PatternsBuilder from './pages/patterns/Builder'
@@ -140,6 +143,8 @@ import AuthSecurity from './pages/auth/Security'
 
 // Testing Strategies
 import TestIntro from './pages/testing/Intro'
+import TestWhatToTest from './pages/testing/WhatToTest'
+import TestPerformance from './pages/testing/Performance'
 import TestUnit from './pages/testing/Unit'
 import TestMocking from './pages/testing/Mocking'
 import TestIntegration from './pages/testing/Integration'
@@ -178,6 +183,7 @@ import TsTsconfig from './pages/typescript/Tsconfig'
 import TsInteractive from './pages/typescript/Playground'
 import TsEnterprise from './pages/typescript/EnterprisePatterns'
 import TsCheatsheet from './pages/typescript/Cheatsheet'
+import TsNativeCompiler from './pages/typescript/NativeCompiler'
 
 // React Router v7
 import RRIntro from './pages/react-router/Intro'
@@ -361,6 +367,7 @@ function App() {
         <Route path="springboot/rest" element={<SpringRest />} />
         <Route path="springboot/data" element={<SpringData />} />
         <Route path="springboot/security" element={<SpringSecurity />} />
+        <Route path="springboot/security-migration" element={<SpringSecurityMigration />} />
         <Route path="springboot/testing" element={<SpringTesting />} />
         <Route path="springboot/config" element={<SpringConfig />} />
         <Route path="springboot/error" element={<SpringError />} />
@@ -382,6 +389,7 @@ function App() {
         <Route path="react19/profiling" element={<ReactProfiling />} />
         <Route path="react19/react19" element={<ReactNew />} />
         <Route path="react19/server" element={<ReactServer />} />
+        <Route path="react19/ssr-hydration" element={<ReactSsrHydration />} />
         <Route path="react19/patterns" element={<ReactPatterns />} />
         <Route path="react19/typescript" element={<ReactTypescript />} />
         <Route path="react19/build-toolchain" element={<ReactBuildToolchain />} />
@@ -416,6 +424,7 @@ function App() {
         {/* Design Patterns */}
         <Route path="patterns/intro" element={<PatternsIntro />} />
         <Route path="patterns/singleton" element={<PatternsSingleton />} />
+        <Route path="patterns/abstract-factory" element={<PatternsAbstractFactory />} />
         <Route path="patterns/strategy" element={<PatternsStrategy />} />
         <Route path="patterns/decorator" element={<PatternsDecorator />} />
         <Route path="patterns/builder" element={<PatternsBuilder />} />
@@ -461,6 +470,8 @@ function App() {
         <Route path="auth/security" element={<AuthSecurity />} />
         {/* Testing Strategies */}
         <Route path="testing/intro" element={<TestIntro />} />
+        <Route path="testing/what-to-test" element={<TestWhatToTest />} />
+        <Route path="testing/performance" element={<TestPerformance />} />
         <Route path="testing/unit" element={<TestUnit />} />
         <Route path="testing/mocking" element={<TestMocking />} />
         <Route path="testing/integration" element={<TestIntegration />} />
@@ -495,6 +506,7 @@ function App() {
         <Route path="typescript/interactive" element={<TsInteractive />} />
         <Route path="typescript/enterprise" element={<TsEnterprise />} />
         <Route path="typescript/cheatsheet" element={<TsCheatsheet />} />
+        <Route path="typescript/native-compiler" element={<TsNativeCompiler />} />
         {/* React Router v7 */}
         <Route path="react-router/intro" element={<RRIntro />} />
         <Route path="react-router/nested" element={<RRNested />} />

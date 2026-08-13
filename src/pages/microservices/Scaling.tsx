@@ -94,7 +94,7 @@ $ node --inspect app.js  # then use Chrome DevTools
         databases and can buy you months or years of headroom with zero code changes.
       </p>
 
-      <CodeBlock language="yaml" title="AWS RDS — Vertical Scaling Example">
+      <CodeBlock language="hcl" title="AWS RDS — Vertical Scaling Example">
 {`# Before: db.t3.medium (2 vCPU, 4GB RAM) — $50/month
 # After:  db.r6g.xlarge (4 vCPU, 32GB RAM) — $250/month
 # Result: 8x more memory for caching, 2x more CPU
@@ -287,12 +287,17 @@ spec:
           type: AverageValue
           averageValue: "100"  # scale when > 100 RPS per pod
   behavior:
+    # Scale UP fast: react immediately, and allow doubling every 15s.
+    # (stabilizationWindowSeconds: 0 is the Kubernetes default here —
+    # raising it would make scale-up SLOWER, which is the wrong direction.)
     scaleUp:
-      stabilizationWindowSeconds: 60
+      stabilizationWindowSeconds: 0
       policies:
         - type: Percent
-          value: 50
-          periodSeconds: 60
+          value: 100
+          periodSeconds: 15
+    # Scale DOWN slow: wait 5 minutes of sustained low load, then shed
+    # at most 25% of the pods every 2 minutes.
     scaleDown:
       stabilizationWindowSeconds: 300
       policies:
@@ -304,8 +309,8 @@ spec:
       <InfoBox variant="tip" title="Auto-Scaling Best Practices">
         <ul>
           <li>Set <code>minReplicas</code> to at least 2 for high availability</li>
-          <li>Use <code>stabilizationWindow</code> to prevent flapping (rapid scale up/down)</li>
-          <li>Scale up aggressively (fast), scale down conservatively (slow)</li>
+          <li>Scale up aggressively (fast), scale down conservatively (slow) — a burst of traffic that is under-served costs users, a few extra pods for five minutes costs cents</li>
+          <li>Put the long <code>stabilizationWindowSeconds</code> on <code>scaleDown</code>, not <code>scaleUp</code> — that is what stops flapping. Lengthening the scale-up window just delays your response to load</li>
           <li>Use readiness probes so new pods only receive traffic when ready</li>
           <li>Test auto-scaling with load testing tools (k6, Locust, Artillery)</li>
         </ul>
@@ -321,6 +326,16 @@ spec:
         title="Database Scaling Progression"
         chart={"graph LR\n  A[1. Vertical Scale] --> B[2. Read Replicas]\n  B --> C[3. Connection Pooling]\n  C --> D[4. Caching Layer]\n  D --> E[5. Sharding - Last Resort]\n  style A fill:#10b981,color:#fff\n  style B fill:#3b82f6,color:#fff\n  style C fill:#6366f1,color:#fff\n  style D fill:#8b5cf6,color:#fff\n  style E fill:#ef4444,color:#fff"}
       />
+
+      <h3>1. Vertical Scale</h3>
+      <p>
+        Same first move as the application tier, and it goes further for a database than for
+        anything else: more RAM means a larger buffer pool, so the working set stays in memory and
+        the disk stops being the bottleneck. A single instance resize is a maintenance-window
+        reboot with zero application changes, and it is fully reversible. Exhaust it before adding
+        moving parts — the <code>db.t3.medium</code> → <code>db.r6g.xlarge</code> jump shown
+        earlier is often a year of headroom for a few hundred dollars a month.
+      </p>
 
       <h3>2. Read Replicas</h3>
       <p>
@@ -452,14 +467,22 @@ server_idle_timeout = 300`}
 # Shard 3: customer_id % 4 == 3 → db-shard-3
 
 # Good shard keys:
-# ✅ customer_id — queries are usually per-customer
+# ✅ customer_id — queries are usually per-customer, so a read
+#    touches exactly one shard
 # ✅ tenant_id — multi-tenant SaaS
 # ✅ region — geographic sharding
 
 # Bad shard keys:
-# ❌ created_at — hot shard on latest date
-# ❌ order_id — no locality for customer queries
-# ❌ auto-increment — always writes to last shard`}
+# ❌ order_id — no locality for customer queries. "All orders for
+#    customer X" has to fan out to every shard and merge.
+# ❌ created_at / auto-increment id, WITH RANGE SHARDING — every new
+#    row lands in the newest range, so one shard takes 100% of writes
+#    while the others idle. (Under the hash scheme above these two
+#    spread writes evenly — the problem is the range split, not the
+#    column. Monotonic keys and range sharding are what don't mix.)
+# ❌ a key you cannot query by — if most reads filter on something
+#    other than the shard key, every read fans out and you have paid
+#    for sharding without getting the benefit.`}
       </CodeBlock>
 
       <InteractiveChallenge

@@ -60,7 +60,7 @@ public record CatalogApiProperties(
 @SpringBootApplication
 @ConfigurationPropertiesScan
 public class Application { }`}
-        caption="A record makes config immutable with a free copy constructor for tests. @Validated is what turns a bad value into a startup failure your deploy pipeline catches — never skip it."
+        caption="A record makes config immutable, and its canonical constructor is what tests instantiate directly — no builder, no setters. @Validated is what turns a bad value into a startup failure your deploy pipeline catches — never skip it."
       />
 
       <PosterCard

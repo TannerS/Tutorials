@@ -10,7 +10,7 @@ export default function Server() {
       sectionId="react19"
       lessonIndex={9}
       prev={{ path: '/react19/react19', label: 'React 19 New Features' }}
-      next={{ path: '/react19/patterns', label: 'Advanced Patterns' }}
+      next={{ path: '/react19/ssr-hydration', label: 'SSR & Hydration' }}
     >
       <p>Server Components represent a fundamental shift in React architecture. Components can now run exclusively on the server, sending only their rendered output to the client — zero JavaScript for those components ships to the browser.</p>
 
@@ -591,112 +591,26 @@ export const getReport = cache(async (id: string) => {
 // as "no signal", so the same code is safe to call anywhere.`}
       </CodeBlock>
 
-      <h2>Rendering Entry Points — Where SSR Actually Starts</h2>
+      <h2>Where SSR Fits — and Why It Is a Different Thing</h2>
 
       <p>
-        Everything above assumes a framework wired up the server render for you. When you need to
-        do it yourself — a custom Express server, an edge worker, or just to understand what
-        Next.js is doing — these are the four functions involved.
+        Everything above assumes a framework wired up the server render for you. Server Components
+        and server-side rendering are separate technologies that people conflate constantly: RSC
+        removes component code from the client bundle and produces a serialized element tree, while
+        SSR produces HTML for a fast first paint and then hydrates it. In an App Router request both
+        run, in that order.
       </p>
 
-      <CodeBlock language="tsx" title="Server: renderToPipeableStream (Node) / renderToReadableStream (Web)" showLineNumbers>
-{`// ── Node.js streams — Express, Fastify, plain http ──
-import { renderToPipeableStream } from 'react-dom/server';
-
-app.get('/*', (req, res) => {
-  let didError = false;
-
-  const { pipe, abort } = renderToPipeableStream(<App url={req.url} />, {
-    bootstrapScripts: ['/main.js'],   // hydration entry — React injects the tag
-
-    // Fires as soon as everything OUTSIDE a Suspense boundary is ready.
-    // This is the moment you can start sending bytes.
-    onShellReady() {
-      res.statusCode = didError ? 500 : 200;
-      res.setHeader('Content-Type', 'text/html');
-      pipe(res);                       // shell now; Suspense content streams in after
-    },
-
-    // The shell itself failed — nothing renderable. Send a real error page.
-    onShellError() {
-      res.statusCode = 500;
-      res.setHeader('Content-Type', 'text/html');
-      res.send('<h1>Something went wrong</h1>');
-    },
-
-    // Any error, including ones inside a Suspense boundary that were recovered
-    // by streaming a fallback and letting the client retry.
-    onError(error) {
-      didError = true;
-      logToSentry(error);
-    },
-  });
-
-  // Never let a hung data source hold the socket open forever.
-  setTimeout(abort, 10_000);
-});
-
-// ── Web streams — Cloudflare Workers, Deno, Bun, Vercel Edge ──
-import { renderToReadableStream } from 'react-dom/server';
-
-export default async function handler(request) {
-  const stream = await renderToReadableStream(<App />, {
-    bootstrapScripts: ['/main.js'],
-    onError(error) { logToSentry(error); },
-  });
-  // await stream.allReady  → wait for EVERYTHING (use for crawlers/static export)
-  return new Response(stream, { headers: { 'Content-Type': 'text/html' } });
-}`}
-      </CodeBlock>
-
-      <CodeBlock language="tsx" title="Client: hydrateRoot — attach to the server's HTML" showLineNumbers>
-{`import { hydrateRoot } from 'react-dom/client';
-import App from './App';
-
-// NOTE the shape: hydrateRoot takes the JSX as its SECOND ARGUMENT.
-// There is no .render() call — that's createRoot's API, not this one.
-const root = hydrateRoot(document.getElementById('root'), <App />, {
-  onCaughtError:     (err, info) => report(err, info.componentStack),
-  onUncaughtError:   (err, info) => report(err, info.componentStack),
-  onRecoverableError: (err) => report(err),   // hydration mismatches land here
-});
-
-// The returned root still supports root.render(<App />) for later client updates
-// and root.unmount().
-
-// createRoot vs hydrateRoot:
-//   createRoot(el).render(<App />)  → container must be EMPTY; React builds the DOM
-//   hydrateRoot(el, <App />)        → container has server HTML; React attaches listeners`}
-      </CodeBlock>
-
-      <InfoBox variant="danger" title="Hydration mismatches — the error you will actually hit">
-        <p>
-          Hydration asserts that the client&apos;s <em>first</em> render produces the same tree
-          the server sent. React 19 improved the error message to show a diff, but the causes are
-          always the same short list:
-        </p>
-        <ul>
-          <li><code>Date.now()</code>, <code>Math.random()</code>, <code>new Date().toLocaleString()</code> — different on each side. Move them into an effect, or pass a server-computed value down as a prop.</li>
-          <li>Reading <code>window</code>, <code>localStorage</code>, or <code>matchMedia</code> during render. Render the server-safe default, then correct it in <code>useEffect</code>.</li>
-          <li>Invalid HTML nesting — a <code>&lt;div&gt;</code> inside a <code>&lt;p&gt;</code>. The browser silently repairs the server HTML, so the DOM no longer matches what React expects.</li>
-          <li>Browser extensions injecting nodes into <code>&lt;body&gt;</code>. Hydrate into a specific container element, not <code>document.body</code>.</li>
-        </ul>
+      <InfoBox variant="info" title="Covered in its own lesson">
         <p style={{ marginBottom: 0 }}>
-          Escape hatch for genuinely unavoidable cases:{' '}
-          <code>&lt;span suppressHydrationWarning&gt;</code>. It only silences one level deep and
-          it silences <em>the warning</em>, not the mismatch — use it for timestamps, not to
-          paper over a real bug.
-        </p>
-      </InfoBox>
-
-      <InfoBox variant="note" title="renderToString and prerender">
-        <p style={{ marginBottom: 0 }}>
-          <code>renderToString</code> still exists and is synchronous — which means it{' '}
-          <strong>cannot wait for Suspense boundaries</strong>; it emits the fallback and moves
-          on. Avoid it in new code. For static generation, React 19 added{' '}
-          <code>prerender</code> (Web streams) and <code>prerenderToNodeStream</code> (Node):
-          same rendering, but the promise resolves only after <em>all</em> data has loaded,
-          which is what a build step wants.
+          The rendering entry points (<code>renderToPipeableStream</code>,{' '}
+          <code>renderToReadableStream</code>, <code>prerender</code>, and why{' '}
+          <code>renderToString</code> is effectively legacy), <code>hydrateRoot</code> versus{' '}
+          <code>createRoot</code>, hydration mismatches and how to fix them, streaming with{' '}
+          <code>&lt;Suspense&gt;</code>, and selective hydration are all covered in{' '}
+          <a href="/react19/ssr-hydration">SSR &amp; Hydration</a>. One thing worth carrying back
+          here: <code>&quot;use client&quot;</code> does <strong>not</strong> mean client-only —
+          Client Components are still server-rendered to produce the initial HTML.
         </p>
       </InfoBox>
     </LessonLayout>

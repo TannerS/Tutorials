@@ -502,13 +502,40 @@ interface User extends Entity {
 }
 
 class UserRepository implements Repository<User> {
-  async findById(id: string): Promise<User | null> { /* ... */ }
-  async findAll(filter?: Partial<User>): Promise<User[]> { /* ... */ }
-  async create(data: Omit<User, "id" | "createdAt" | "updatedAt">) { /* ... */ }
-  async update(id: string, data: Partial<Omit<User, "id">>) { /* ... */ }
-  async delete(id: string): Promise<void> { /* ... */ }
+  constructor(private db: Db) {}
+
+  async findById(id: string): Promise<User | null> {
+    return this.db.one<User>("SELECT * FROM users WHERE id = $1", [id]);
+  }
+  async findAll(filter?: Partial<User>): Promise<User[]> {
+    return this.db.many<User>("SELECT * FROM users", filter);
+  }
+  // Annotate the return type here too — without it TS infers Promise<void>
+  // from an empty body and 'implements Repository<User>' fails.
+  async create(data: Omit<User, "id" | "createdAt" | "updatedAt">): Promise<User> {
+    return this.db.insert<User>("users", data);
+  }
+  async update(id: string, data: Partial<Omit<User, "id">>): Promise<User> {
+    return this.db.update<User>("users", id, data);
+  }
+  async delete(id: string): Promise<void> {
+    await this.db.delete("users", id);
+  }
 }`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="An Empty Body Is Not a Valid Stub Here">
+        <p>
+          <code>async findById(id: string): Promise&lt;User | null&gt; {'{ }'}</code> does not
+          compile: <em>&quot;A function whose declared type is neither &apos;undefined&apos;,
+          &apos;void&apos;, nor &apos;any&apos; must return a value.&quot;</em> And an unannotated{' '}
+          <code>async create(...) {'{ }'}</code> is worse &mdash; it infers{' '}
+          <code>Promise&lt;void&gt;</code>, so the class quietly stops satisfying{' '}
+          <code>Repository&lt;User&gt;</code> and the error surfaces on the <code>create</code>{' '}
+          member rather than where you were looking. When sketching a class against an
+          interface, annotate every return type.
+        </p>
+      </InfoBox>
 
       {/* ── Section 11: Built-in Utility Types ── */}
       <h2>Built-in Utility Types Deep Dive</h2>
@@ -867,18 +894,38 @@ if (recipeRes.ok && recipeRes.data) {
 const res = await fetchRecipe(42);
 if (res.ok) {
   res.data.title;  // ✅ T is narrowed — TS now KNOWS data is not null
-  res.error;       // ❌ TS error: error doesn't exist on the 'ok: true' branch
+  res.error;       // ✅ compiles — but its type is 'undefined', so there is nothing to read
 } else {
   res.error;       // ✅ string — required on the failure branch
   res.data;        // ✅ null — narrowed
-}`}
+}
+
+// What 'error?: never' actually buys you is on the WRITE side:
+const bad: ApiResponse<Recipe> = {
+  ok: true, data: recipe, error: "boom",  // ❌ 'string' is not assignable to type 'undefined'
+};`}
       </CodeBlock>
 
       <p>
         Same pattern as the discriminated union you've seen for events, reducers, etc. — applied to API responses.
-        The <code>error?: never</code> on the success branch is what makes TS reject <code>res.error</code> when{' '}
-        <code>res.ok</code> is true.
       </p>
+
+      <InfoBox variant="warning" title="What error?: never really does">
+        <p>
+          A common misreading is that <code>error?: never</code> makes <code>res.error</code> a{' '}
+          <em>compile error</em> on the success branch. It does not. The <code>?</code> adds{' '}
+          <code>undefined</code>, and <code>never | undefined</code> collapses to{' '}
+          <code>undefined</code> — so the property exists, reads fine, and is simply always{' '}
+          <code>undefined</code>.
+        </p>
+        <p>
+          Its actual job is on the write side and on narrowing: it lets you build a success
+          object without excess-property errors, and it rejects any attempt to attach a real
+          error to a successful response. If you want <em>reading</em> it to fail too, omit{' '}
+          <code>error</code> from the success branch entirely — then{' '}
+          <code>res.error</code> genuinely does not exist there.
+        </p>
+      </InfoBox>
 
       <h3>Typed errors with a second generic</h3>
 

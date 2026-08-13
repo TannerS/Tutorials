@@ -66,7 +66,7 @@ const config: Config = {
   return a.length >= b.length ? a : b;
 }
 
-longest("hello", 42);`,
+longest<number>(10, 42);`,
   },
   {
     id: 'scratch',

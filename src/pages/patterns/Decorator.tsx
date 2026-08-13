@@ -9,7 +9,7 @@ export default function Decorator() {
     <LessonLayout
       title="Decorator & Adapter Patterns"
       sectionId="patterns"
-      lessonIndex={3}
+      lessonIndex={4}
       prev={{ path: '/patterns/strategy', label: 'Strategy & Observer' }}
       next={{ path: '/patterns/builder', label: 'Builder & Prototype' }}
     >

@@ -9,7 +9,7 @@ export default function Transactions() {
     <LessonLayout
       title="Transactions Deep-Dive"
       sectionId="springboot"
-      lessonIndex={10}
+      lessonIndex={11}
       prev={{ path: '/springboot/advanced', label: 'Advanced Topics' }}
       next={{ path: '/springboot/kafka', label: 'Kafka in Spring' }}
     >

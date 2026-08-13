@@ -683,15 +683,30 @@ export { createClient };
       </p>
 
       <CodeBlock language="typescript" title="Augmenting Third-Party Types">
-{`// Extend Express Request with custom fields
-declare module "express" {
-  interface Request {
-    userId?: string;
-    role?: "admin" | "user";
+{`import "@tanstack/react-query";
+import "express";
+
+// 1. Module augmentation — merges into an interface the module EXPORTS.
+//    The module specifier must be exactly what you would import.
+declare module "@tanstack/react-query" {
+  interface Register {
+    defaultError: { code: string; message: string };
   }
 }
 
-// Extend the global Window
+// 2. Global namespace augmentation — what Express actually needs.
+//    Request is declared on the global 'Express' namespace, not exported
+//    from "express", so 'declare module "express"' will NOT reach it.
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: string;
+      role?: "admin" | "user";
+    }
+  }
+}
+
+// 3. Extend a global interface from lib.dom
 declare global {
   interface Window {
     analytics: { track: (event: string, data?: object) => void };
@@ -699,9 +714,19 @@ declare global {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="File Must Be a Module">
-        For module augmentation to work, the file must contain at least one
-        top-level import or export. Otherwise the declarations become global.
+      <InfoBox variant="tip" title="File Must Be a Module — And You Must Target the Right Thing">
+        <p>
+          For <code>declare module</code> / <code>declare global</code> to augment rather than
+          shadow, the file must contain at least one top-level import or export. Otherwise the
+          declarations become plain globals and <code>declare global</code> is an error.
+        </p>
+        <p>
+          The second half of getting this right is aiming at the correct declaration.{' '}
+          <code>declare module &quot;X&quot;</code> merges into what module <code>X</code>{' '}
+          exports; it cannot reach a type that <code>X</code> only declares in the global scope.
+          Express is the classic trap &mdash; its <code>Request</code> lives on a global{' '}
+          <code>Express</code> namespace, so it needs form 2 above, not form 1.
+        </p>
       </InfoBox>
 
       {/* ── 11. Branded / Opaque Types ── */}
@@ -742,37 +767,60 @@ getOrder(oid); // OK
       </p>
 
       <CodeBlock language="typescript" title="Type-Safe Builder Pattern">
-{`type BuilderState = { host: boolean; port: boolean; db: boolean };
-type Initial = { host: false; port: false; db: false };
+{`type Field = "host" | "port" | "db";
 
-class ConnBuilder<S extends BuilderState> {
+class ConnBuilder<Missing extends Field = Field> {
+  // Phantom field. Never assigned at runtime — 'declare' emits nothing.
+  // Without it the type parameter is invisible to assignability checks
+  // and the whole pattern silently stops working. See the note below.
+  declare private readonly __missing: Missing;
+
   private config: Record<string, unknown> = {};
 
-  setHost(h: string): ConnBuilder<S & { host: true }> {
+  setHost(h: string) {
     this.config.host = h;
-    return this as any;
+    return this as unknown as ConnBuilder<Exclude<Missing, "host">>;
   }
-  setPort(p: number): ConnBuilder<S & { port: true }> {
+  setPort(p: number) {
     this.config.port = p;
-    return this as any;
+    return this as unknown as ConnBuilder<Exclude<Missing, "port">>;
   }
-  setDb(db: string): ConnBuilder<S & { db: true }> {
+  setDb(db: string) {
     this.config.db = db;
-    return this as any;
+    return this as unknown as ConnBuilder<Exclude<Missing, "db">>;
   }
-  // build() only available when all fields are set
-  build(this: ConnBuilder<{ host: true; port: true; db: true }>): string {
+
+  // build() is callable only when nothing is still missing
+  build(this: ConnBuilder<never>): string {
     return JSON.stringify(this.config);
   }
 }
 
-const conn = new ConnBuilder<Initial>()
+const conn = new ConnBuilder()
   .setHost("localhost").setPort(5432).setDb("mydb")
-  .build(); // OK - all fields set
+  .build(); // OK — nothing missing
 
-// new ConnBuilder<Initial>().setHost("localhost").build();
-// Error! port and db not set`}
+// new ConnBuilder().setHost("localhost").build();
+// Error: The 'this' context of type 'ConnBuilder<"port" | "db">' is not
+//        assignable to method's 'this' of type 'ConnBuilder<never>'.`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Why the Phantom Field Is Not Optional">
+        <p>
+          Track the state as the set of keys still <em>missing</em>, not as boolean flags. An
+          intersection like <code>{'{ host: false } & { host: true }'}</code> collapses to{' '}
+          <code>never</code>, and <code>never</code> is assignable to <code>true</code> &mdash; so a
+          flag-based builder happily accepts a half-built object.
+        </p>
+        <p>
+          The phantom field matters just as much. If <code>Missing</code> appears only inside{' '}
+          <code>Exclude&lt;...&gt;</code> in return positions, TypeScript cannot measure the
+          type parameter&apos;s variance, falls back to a structural (and effectively bivariant)
+          comparison of the two instantiations, and <code>build()</code> compiles on an
+          incomplete builder with no error at all. Giving <code>Missing</code> one ordinary
+          property position makes the check real.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="typescript" title="Type-Safe State Machine">
 {`type Transitions = {
@@ -836,10 +884,16 @@ interface Collection<in out T> {
 // Fast:
 interface UserProps extends User {}
 
-// 2. Limit recursive type depth
+// 2. Limit recursive type depth — the counter must actually count DOWN.
+//    Type-level decrement: index into a tuple of the preceding numbers.
+type Prev = [never, 0, 1, 2, 3, 4, 5];
 type DeepReadonly<T, Depth extends number = 5> =
-  Depth extends 0 ? T
-    : { readonly [K in keyof T]: DeepReadonly<T[K]> };
+  Depth extends 0
+    ? T
+    : { readonly [K in keyof T]: DeepReadonly<T[K], Prev[Depth]> };
+//                                              ^^^^^^^^^^^^^^ pass Depth - 1.
+// Forgetting this is the classic bug: the inner call re-defaults Depth to 5,
+// 'Depth extends 0' is never true, and the "limit" limits nothing.
 
 // 3. Profile slow types with --generateTrace
 // npx tsc --generateTrace ./trace-output
@@ -851,9 +905,13 @@ type Good<T> = HandleA<T> | HandleB<T>;`}
       </CodeBlock>
 
       <InfoBox variant="warning" title="Type Instantiation Depth">
-        TypeScript has a recursion limit of ~50 levels for type instantiation.
-        If you hit &quot;Type instantiation is excessively deep and possibly infinite&quot;,
-        add a depth counter to your recursive type or simplify the structure.
+        TypeScript bails out at an instantiation depth of <strong>100</strong> (or a total of
+        5,000,000 instantiations in one check) and reports &quot;Type instantiation is
+        excessively deep and possibly infinite.&quot; If you hit it, add a real depth counter
+        to your recursive type &mdash; one that decrements, as above &mdash; or simplify the
+        structure. Note that tail-recursive conditional types get a much higher budget, which
+        is why <code>type Join&lt;T&gt;</code>-style accumulator patterns survive far deeper
+        input than naive recursion does.
       </InfoBox>
 
       {/* ── 15. Interactive Challenges ── */}

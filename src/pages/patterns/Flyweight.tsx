@@ -9,7 +9,7 @@ export default function Flyweight() {
     <LessonLayout
       title="Flyweight & Interpreter Patterns"
       sectionId="patterns"
-      lessonIndex={11}
+      lessonIndex={12}
       prev={{ path: '/patterns/memento', label: 'Memento & Visitor' }}
       next={{ path: '/patterns/realworld', label: 'Real-World Applications' }}
     >

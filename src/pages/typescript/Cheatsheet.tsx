@@ -9,7 +9,7 @@ export default function Cheatsheet() {
       sectionId="typescript"
       lessonIndex={12}
       prev={{ path: '/typescript/enterprise', label: 'Enterprise TypeScript Patterns' }}
-      next={null}
+      next={{ path: '/typescript/native-compiler', label: 'TypeScript 6 → 7: The Native Compiler' }}
     >
       <h2>Primitives &amp; Literals</h2>
       <CodeBlock language="ts" title="The types you use every day">

@@ -40,6 +40,19 @@ export default function Security() {
 # - Author added code that wiped files on Russian/Belarusian IPs
 # - "Protestware" — political motivation
 
+# chalk / debug / ansi-styles et al. (September 2025)
+# - Maintainer phished via a fake "npmjs.help" 2FA-reset email
+# - ~18 packages totalling billions of weekly downloads republished
+#   with a browser crypto-clipper that rewrote wallet addresses
+# - Caught within hours — but shows blast radius of one account
+
+# Shai-Hulud worm (September 2025, again in November 2025)
+# - First SELF-REPLICATING npm worm
+# - postinstall scanned the host for credentials, then used any stolen
+#   npm token to publish trojanized versions of that victim's OWN
+#   packages — so each infection seeded the next
+# - Exfiltrated secrets into public GitHub repos; hundreds of packages
+
 # Common attack vectors:
 # 1. Typosquatting (publish 'lodassh' hoping for typos)
 # 2. Account takeover (compromise maintainer credentials)
@@ -64,17 +77,20 @@ export default function Security() {
 {`# Run an audit
 npm audit
 
-# Example output:
-# ┌───────────────┬──────────────────────────────────────────────────────────┐
-# │ Moderate      │ Prototype Pollution in lodash                           │
-# ├───────────────┼──────────────────────────────────────────────────────────┤
-# │ Package       │ lodash                                                   │
-# │ Vulnerability │ https://github.com/advisories/GHSA-jf85-cpcp-j695       │
-# │ Patched in    │ >=4.17.21                                               │
-# │ Dependency of │ my-old-lib                                              │
-# │ Path          │ my-old-lib > lodash                                      │
-# │ Severity      │ moderate                                                 │
-# └───────────────┴──────────────────────────────────────────────────────────┘
+# Example output. This is the npm 7+ format; older tutorials show a
+# box-drawing table, which no supported npm has printed for years:
+# # npm audit report
+#
+# lodash  <4.17.21
+# Severity: moderate
+# Prototype Pollution in lodash - https://github.com/advisories/GHSA-jf85-cpcp-j695
+# fix available via \`npm audit fix\`
+# node_modules/lodash
+#   my-old-lib  *
+#   Depends on vulnerable versions of lodash
+#   node_modules/my-old-lib
+#
+# 2 moderate severity vulnerabilities
 
 # Severity levels:
 # - critical: remotely exploitable, no user interaction needed
@@ -188,6 +204,47 @@ npm audit signatures
 # 847 packages have verified registry signatures
 # 212 packages have verified attestations`}
       </CodeBlock>
+
+      <h2>Trusted Publishing — Publishing Without a Token</h2>
+      <p>
+        Almost every large npm compromise has the same root cause: a long-lived publish token
+        that leaked, or a maintainer account that got phished. Trusted publishing removes the
+        token entirely. Your CI proves its identity to npm with a short-lived OIDC token that
+        the CI provider mints per run, so there is no secret in the repo, in CI settings, or in
+        anyone&apos;s <code>~/.npmrc</code> for an attacker to steal.
+      </p>
+
+      <CodeBlock language="yaml" title="Trusted publishing from GitHub Actions">
+{`# On npmjs.com: package Settings -> Publishing access -> add a trusted
+# publisher (repo + workflow filename + optional environment).
+# Then the workflow needs NO NPM_TOKEN at all:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write          # required — lets the job mint an OIDC token
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm publish        # provenance is attached automatically
+`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Tokens got shorter-lived too">
+        <p>
+          After the 2025 worm incidents npm tightened token policy: classic (never-expiring)
+          tokens were deprecated and revoked, and granular access tokens now carry a short
+          default lifetime with a hard maximum. If you still publish from a laptop, use a
+          granular token scoped to the single package, and prefer moving the publish step into
+          CI with trusted publishing so there is no standing credential at all.
+        </p>
+      </InfoBox>
 
       <h2>.npmrc Security</h2>
 
@@ -397,6 +454,7 @@ npm install  # install the new versions
         <li><code>npm audit fix</code> is safe; <code>--force</code> is dangerous — always dry-run first</li>
         <li>Integrity hashes in lockfiles detect tampered packages</li>
         <li>Provenance attestations verify packages were built from known source in trusted CI</li>
+        <li>Trusted publishing (OIDC) beats any token — there is no standing credential to steal</li>
         <li>Never commit auth tokens; use environment variables in CI</li>
         <li>Review new dependencies: check downloads, maintenance, repo quality, and dep count</li>
         <li>Use overrides for stuck transitive vulnerabilities</li>

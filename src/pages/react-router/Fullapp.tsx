@@ -350,12 +350,37 @@ import { router } from './router';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <RouterProvider
-      router={router}
-      fallbackElement={<div className="app-spinner">Loading app...</div>}
-    />
+    <RouterProvider router={router} />
   </StrictMode>
 );`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="fallbackElement Was Removed in v7">
+        Older tutorials mount the router with{' '}
+        <code>&lt;RouterProvider fallbackElement={'{<Spinner />}'} /&gt;</code>. That
+        prop <strong>no longer exists</strong> in React Router v7 — it is not part of{' '}
+        <code>RouterProviderProps</code>, so it is silently ignored and your initial
+        loading UI never appears. The replacement is a{' '}
+        <code>HydrateFallback</code> component (or{' '}
+        <code>hydrateFallbackElement</code>) on the <em>root route</em>, which renders
+        while the root loaders run on the very first load.
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="router.jsx — the v7 replacement for fallbackElement">
+{`function AppSpinner() {
+  return <div className="app-spinner">Loading app...</div>;
+}
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootLayout />,
+    errorElement: <RootError />,
+    HydrateFallback: AppSpinner,      // ← shown during initial hydration
+    // or: hydrateFallbackElement: <AppSpinner />,
+    children: [ /* ...as above... */ ],
+  },
+]);`}
       </CodeBlock>
 
       <h2>Code Organization</h2>

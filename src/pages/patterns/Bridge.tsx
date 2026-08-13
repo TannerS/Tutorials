@@ -9,7 +9,7 @@ export default function Bridge() {
     <LessonLayout
       title="Bridge & Mediator Patterns"
       sectionId="patterns"
-      lessonIndex={9}
+      lessonIndex={10}
       prev={{ path: '/patterns/state', label: 'State & Template Method' }}
       next={{ path: '/patterns/memento', label: 'Memento & Visitor' }}
     >

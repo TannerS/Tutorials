@@ -9,7 +9,7 @@ export default function Aop() {
     <LessonLayout
       title="AOP & Interceptors"
       sectionId="springboot"
-      lessonIndex={12}
+      lessonIndex={13}
       prev={{ path: '/springboot/kafka', label: 'Kafka in Spring' }}
       next={{ path: '/springboot/boot4', label: 'Boot 4 Novelties' }}
     >

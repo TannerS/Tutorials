@@ -89,10 +89,20 @@ class OrderControllerSecurityTest {
 
       <InfoBox variant="warning" title="401 vs 403 — Test Them as Distinct Cases">
         <strong>401 Unauthorized</strong> means &quot;I don&apos;t know who you are&quot; (missing or
-        invalid credentials). <strong>403 Forbidden</strong> means &quot;I know exactly who you
-        are, and you&apos;re not allowed to do this.&quot; Conflating them in tests — or in the
-        API itself — leaks information (a 403 confirms the resource exists; a 401 might
-        not). Always write both cases as separate tests, never assume one implies the other.
+        invalid credentials — the fix is to authenticate and retry). <strong>403 Forbidden</strong>{' '}
+        means &quot;I know exactly who you are, and you&apos;re not allowed to do this&quot; —
+        retrying with the same credentials will never work. Conflating them in the API misleads
+        clients into pointless token refresh loops on a 403, or into giving up on a recoverable
+        401; conflating them in tests means a config change that downgrades real authorization to
+        plain authentication passes unnoticed. Always write both cases as separate tests, never
+        assume one implies the other.
+        <br /><br />
+        The information-disclosure question is a <em>different</em> axis: <strong>403 vs 404</strong>.
+        A 403 confirms the resource exists, which for something like{' '}
+        <code>/api/orders/ORD-1</code> tells an attacker that order ORD-1 is real. Where existence
+        itself is sensitive, return 404 for both &quot;missing&quot; and &quot;not yours&quot; — and
+        then assert that 404 in a test, because it looks like a bug to anyone who doesn&apos;t know
+        it was deliberate.
       </InfoBox>
 
       <h2>Custom Principals with @WithSecurityContext</h2>
@@ -316,7 +326,7 @@ void deleteOrderAccessMatrix(String role, int expectedStatus) throws Exception {
           "400 — treat it as a malformed request"
         ]}
         correctIndex={1}
-        explanation="401 is reserved for missing/invalid credentials — this user IS authenticated. 403 correctly signals 'I know who you are, and you're not allowed to do this.' Conflating 401 and 403 is a common bug that both tests and code reviews should catch."
+        explanation="401 is reserved for missing/invalid credentials — this user IS authenticated. 403 correctly signals 'I know who you are, and you're not allowed to do this.' Conflating 401 and 403 is a common bug that both tests and code reviews should catch. (404 is a legitimate deliberate choice when the mere existence of a resource is sensitive, but it is a hardening decision made per-endpoint — not the default answer for a failed role check on a known endpoint.)"
         language="java"
       />
 
