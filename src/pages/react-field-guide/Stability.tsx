@@ -9,7 +9,7 @@ export default function FieldGuideStability() {
       eyebrow="React 19 · Field Reference"
       title="Re-Renders, Memo & Stability"
       tagline="What actually causes a re-render, what 'stable' means, and exactly what breaks memo — the mental model, not just the syntax."
-      meta={['React 19', '12 concepts']}
+      meta={['React 19', '14 concepts']}
       footerLabel="Personal study reference — React Rendering Model"
       pageLabel="React 19 Field Guide · Stability"
       prev={{ path: '/react-field-guide/testing', label: 'Testing Quick Reference' }}
@@ -88,14 +88,34 @@ const onSelect = useCallback((id) => setSelectedId(id), []);
       <PosterCard
         glyph="!{}"
         title={<>Inline Object Prop<span className="dim"> — same problem</span></>}
-        code={`// ❌ New object every render, even with identical values
+        code={`// Only a problem if Panel is memo'd. If it isn't, Panel
+// re-renders from the parent cascade anyway and the inline
+// object changed nothing.
+const Panel = memo(function Panel({ style, config }) { /* ... */ });
+
+// ❌ New object every render, even with identical values
 <Panel style={{ padding: 16 }} config={{ mode: 'edit' }} />
 
 // ✅ Stabilize with useMemo — same ref until deps change
 const style = useMemo(() => ({ padding: 16 }), []);
 const config = useMemo(() => ({ mode: 'edit' }), []);
 <Panel style={style} config={config} />`}
-        caption="{ padding: 16 } creates a fresh object on the heap every render. It doesn't matter that the values inside are identical — Object.is compares the reference, not the contents, so memo treats it as changed."
+        caption="{ padding: 16 } creates a fresh object on the heap every render, and Object.is compares the reference, not the contents — so memo treats it as changed. But note the precondition: an inline object prop does not cause a re-render on its own. Without memo on the receiver there is nothing to defeat, and the useMemo is pure overhead."
+      />
+
+      <PosterCard
+        glyph="1+1"
+        title={<>memo + stable props<span className="dim"> = ONE technique</span></>}
+        language="text"
+        code={`memo, no stable props   → memo bails every render. No gain.
+stable props, no memo   → child re-renders anyway. No gain.
+memo + stable props     → the child actually skips. ✅
+
+Neither half does anything alone. Half-applying it is the
+most common "I optimized it and nothing got faster" bug —
+and useCallback/useMemo on props nobody memoized is
+strictly negative: allocation + deps checks, zero payoff.`}
+        caption="Treat these as one inseparable technique, never as two separate tips. The corollary matters just as much in reverse: an inline object or arrow function is not a performance bug by itself — it only costs anything when the receiving component is memo'd."
       />
 
       <PosterCard
@@ -160,6 +180,24 @@ useEffect(() => {
       />
 
       <PosterCard
+        glyph="Rd"
+        title={<>Reducers must preserve<span className="dim"> identity on no-ops</span></>}
+        code={`// ❌ filter() ALWAYS allocates a new array — even when it
+// removes nothing. Every REMOVE for a missing id re-renders.
+case 'REMOVE': return { ...s, todos: s.todos.filter(t => t.id !== id) };
+
+// ✅ Bail out when the action changed nothing
+case 'REMOVE': {
+  const todos = s.todos.filter(t => t.id !== id);
+  return todos.length === s.todos.length ? s : { ...s, todos };
+}
+
+// Make it a contract your tests enforce:
+expect(reducer(state, { type: 'REMOVE', id: 'missing' })).toBe(state);`}
+        caption="Returning the SAME state object lets React skip the re-render entirely. filter/map/slice/spread allocate unconditionally, so a no-op action silently produces a new reference and defeats every memo downstream. toBe (reference equality), not toEqual, is what makes it a real test."
+      />
+
+      <PosterCard
         glyph="Ch"
         title={<>children as Props<span className="dim"> — the escape hatch</span></>}
         code={`function App() {
@@ -198,6 +236,9 @@ function Counter({ initial }) {
           { need: 'value={{ a, b }} on a Provider', answer: 'New object every render — useMemo it' },
           { need: 'useEffect fires every render', answer: 'Unstable value in the deps array' },
           { need: 'onClick={() => fn()} passed to memo child', answer: 'New function ref — useCallback it' },
+          { need: 'I stabilized the props and nothing improved', answer: 'The child was never memo’d — you need both halves' },
+          { need: 'Inline object prop on a NON-memo child', answer: 'Costs nothing — do not useMemo it' },
+          { need: 'Dispatching a no-op action still re-renders', answer: 'Reducer returned a fresh object — return the same state' },
           { need: 'Should I memo this at all?', answer: 'Only if: expensive + parent renders often + props rarely change' },
         ]}
       />

@@ -9,7 +9,7 @@ export default function FieldGuideTsProjectSetup() {
       eyebrow="TypeScript · Field Reference"
       title="Project Setup & tsconfig"
       tagline="Scaffolding a project and the compiler flags that matter — what each one does and why you'd flip it."
-      meta={['TS 5+', '14 flags']}
+      meta={['TS 6', '16 flags']}
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · Project Setup & tsconfig"
       prev={{ path: '/typescript-field-guide/fundamentals', label: 'TypeScript Fundamentals' }}
@@ -84,6 +84,49 @@ tsconfig.node.json    // vite.config.ts — targets Node, no DOM lib
       />
 
       <PosterCard
+        glyph="S6"
+        title={<>strict defaults to true<span className="dim"> in TS 6</span></>}
+        badge="TS6"
+        language="typescript"
+        code={`// TypeScript 6: a config that never MENTIONS strict is strict.
+{ "compilerOptions": { "target": "esnext" } }
+//                     ^ no strict key — you still get strictNullChecks,
+//                       noImplicitAny, and the rest of the family.
+
+const x: string = null;   // Error: 'null' not assignable to 'string'
+function f(a) { return a; } // Error: 'a' implicitly has an 'any' type
+
+// To opt OUT you must now say so explicitly:
+{ "compilerOptions": { "strict": false } }`}
+        caption="This inverts the old default and it is the single highest-impact upgrade change. Pre-6, omitting strict meant loose; from 6, omitting it means strict. An inherited config that simply never mentioned the flag starts erroring the moment you bump the compiler — the fix is to set strict: false deliberately and migrate, not to be surprised by it."
+      />
+
+      <PosterCard
+        glyph="ini"
+        title={<>tsc --init<span className="dim"> — the modern output</span></>}
+        badge="TS6"
+        language="typescript"
+        code={`// The generated file is now SHORT and opinionated, not a wall
+// of commented-out options. What it turns on by default:
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "target": "esnext",
+    "strict": true,
+    "jsx": "react-jsx",
+    "noUncheckedIndexedAccess": true,      // ← on by default now
+    "exactOptionalPropertyTypes": true,    // ← on by default now
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true
+  }
+}`}
+        caption="Rewritten in 5.9 and carried into 6. The two flags people used to have to discover and add by hand — noUncheckedIndexedAccess and exactOptionalPropertyTypes — are now scaffolded on. If a tutorial shows tsc --init producing 100+ commented lines with target: es2016, it predates 5.9."
+      />
+
+      <PosterCard
         glyph="St"
         title={<>strict<span className="dim"> — what each flag actually catches</span></>}
         language="typescript"
@@ -94,8 +137,11 @@ tsconfig.node.json    // vite.config.ts — targets Node, no DOM lib
 // strictBindCallApply   — .call/.bind/.apply args are checked against the signature
 // noImplicitThis        — "this" inside a function must have a known type
 // useUnknownInCatchVariables — catch (e) types e as unknown, not any
-// alwaysStrict           — emits "use strict" in output`}
-        caption="strict: true flips all eight at once. Retrofitting it onto an unstyped codebase later means fixing hundreds of errors in one sitting — turning it on for a brand-new project costs nothing and prevents that pain entirely."
+// strictBuiltinIteratorReturn — IteratorResult from built-ins is typed precisely
+
+// NOT in the family: alwaysStrict. It emits "use strict" and now
+// defaults to true on its own, independent of strict.`}
+        caption="strict: true flips exactly these eight. alwaysStrict is commonly miscounted as the eighth member — it isn't one, and it's on by default regardless. Verify the real list any time with: tsc --showConfig, or check which options carry the strict flag in the compiler's own option table."
       />
 
       <PosterCard
@@ -215,7 +261,9 @@ import { fetchUser } from './api';    // kept at runtime`}
       <PosterQuickRef
         title="Which tsconfig flag do I need?"
         rows={[
-          { need: 'Stop out-of-bounds array/object reads from lying', answer: 'noUncheckedIndexedAccess' },
+          { need: 'Config never mentions strict — am I strict?', answer: 'TS 6: yes. Opt out with strict: false' },
+          { need: 'Which flags does strict actually turn on?', answer: 'Eight — and alwaysStrict is NOT one of them' },
+          { need: 'Stop out-of-bounds array/object reads from lying', answer: 'noUncheckedIndexedAccess (scaffolded by tsc --init)' },
           { need: 'Enforce optional vs explicitly-undefined', answer: 'exactOptionalPropertyTypes' },
           { need: 'Fix "not a module" default imports from CJS', answer: 'esModuleInterop' },
           { need: "A broken 3rd-party .d.ts breaks your build", answer: 'skipLibCheck' },

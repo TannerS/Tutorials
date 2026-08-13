@@ -11,7 +11,7 @@ export default function NativeCompiler() {
       sectionId="typescript"
       lessonIndex={13}
       prev={{ path: '/typescript/cheatsheet', label: 'TypeScript Cheat Sheet' }}
-      next={null}
+      next={{ path: '/typescript/runtime-validation', label: 'Runtime Validation & Schemas' }}
     >
       <p>
         TypeScript 7 is a <strong>ground-up rewrite of the compiler in Go</strong>. It is

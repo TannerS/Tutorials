@@ -275,7 +275,8 @@ async function loadCustomer(id: string): Promise<Customer> {
           take back. Type predicates make you write the check <em>and</em> get the
           narrowing. For high-stakes boundaries (form input, third-party APIs, LocalStorage
           reads) prefer <code>zod</code>, <code>valibot</code>, or another schema library
-          — the same predicate story, but the check code is generated from the schema.
+          — the same predicate story, but the check code is generated from the schema.{' '}
+          <em>Runtime Validation &amp; Schemas</em> covers that pattern in full.
         </p>
       </InfoBox>
 

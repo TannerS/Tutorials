@@ -9,7 +9,7 @@ export default function FieldGuideTesting() {
       eyebrow="React 19 · Field Reference"
       title="Testing Quick Reference"
       tagline="React Testing Library + Vitest — queries, user-event, hooks, async, and the test smells to avoid."
-      meta={['RTL · Vitest', '12 patterns']}
+      meta={['RTL · Vitest', '14 patterns']}
       footerLabel="Personal study reference — React Testing"
       pageLabel="React 19 Field Guide · Testing"
       prev={{ path: '/react-field-guide/recipes', label: 'Common Recipes' }}
@@ -137,7 +137,41 @@ render(
   </MemoryRouter>
 );
 expect(screen.getByText(/user #42/i)).toBeInTheDocument();`}
-        caption="MemoryRouter with initialEntries sets the starting URL without a real browser — it works with useParams, useSearchParams, and every router hook. Don't mock useNavigate/useParams directly; test real navigation."
+        caption="MemoryRouter with initialEntries sets the starting URL without a real browser — it works with useParams, useSearchParams, useNavigate and the rest of the location hooks. Don't mock useNavigate/useParams directly; test real navigation. It does NOT run loaders or actions — see the next card."
+      />
+
+      <PosterCard
+        glyph="3R"
+        title={<>Which test router?<span className="dim"> — all three</span></>}
+        code={`// 1. MemoryRouter — declarative. NO loaders/actions.
+//    useLoaderData() throws "must be used within a data router".
+<MemoryRouter initialEntries={['/users/42']}><App /></MemoryRouter>
+
+// 2. createMemoryRouter — a REAL data router in memory.
+//    Loaders, actions, errorElement, fetchers all run for real.
+const router = createMemoryRouter(routes, { initialEntries: ['/users/42'] });
+render(<RouterProvider router={router} />);
+
+// 3. createRoutesStub — returns a component; stub loaders per test.
+const Stub = createRoutesStub([
+  { path: '/users/:id', Component: UserPage, loader: () => ({ name: 'Alice' }) },
+]);
+render(<Stub initialEntries={['/users/42']} />);`}
+        caption="Pick by what the component reads. Only location hooks → MemoryRouter, the lightest option. Real loaders/actions you want to exercise → createMemoryRouter with your actual route config. A component that needs loader data but whose real loader you'd rather not run → createRoutesStub, which takes the same route objects but lets you swap in a per-test loader."
+      />
+
+      <PosterCard
+        glyph="S/M"
+        title={<>Spy vs Mock<span className="dim"> — pick deliberately</span></>}
+        code={`// SPY — observes, real implementation still runs
+const spy = vi.spyOn(analytics, 'track');
+await user.click(saveButton);
+expect(spy).toHaveBeenCalledWith('save_clicked');
+spy.mockRestore();          // always restore a spy
+
+// MOCK — replaces, real implementation does NOT run
+vi.mock('./api', () => ({ saveUser: vi.fn().mockResolvedValue({ id: 1 }) }));`}
+        caption="A spy observes; a mock asserts. Spy when the real behavior should still happen and you only want to record that a call occurred. Mock when the real thing is slow, networked, or non-deterministic and you are substituting its behavior outright. Prefer MSW over mocking fetch — it replaces the network, not your code, so the component's real request path still runs."
       />
 
       <PosterCard
@@ -175,7 +209,11 @@ expect(await screen.findByText(/success/i)).toBeInTheDocument();`}
           { need: 'Simulate a real user interaction', answer: 'userEvent, not fireEvent' },
           { need: 'Test a hook in isolation', answer: 'renderHook + act()' },
           { need: 'Mock API responses', answer: 'MSW (setupServer + handlers)' },
-          { need: 'Test a routed component', answer: 'MemoryRouter + initialEntries' },
+          { need: 'Test a routed component (location only)', answer: 'MemoryRouter + initialEntries' },
+          { need: 'Test a route with real loaders/actions', answer: 'createMemoryRouter + RouterProvider' },
+          { need: 'Test loader data without the real loader', answer: 'createRoutesStub' },
+          { need: 'Record that a call happened', answer: 'Spy — real code still runs' },
+          { need: 'Replace behavior entirely', answer: 'Mock — real code does not run' },
           { need: 'App has multiple providers', answer: 'Custom render() wrapper' },
         ]}
       />

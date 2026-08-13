@@ -9,7 +9,7 @@ export default function FieldGuideTypescriptTypes() {
       eyebrow="TypeScript · Field Reference"
       title="TypeScript Types & Generics"
       tagline="The type-level tools that make illegal states unrepresentable — condensed for offline study."
-      meta={['TS 5+', '12 concepts']}
+      meta={['TS 6', '16 concepts']}
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · TypeScript Types"
       prev={{ path: '/typescript-field-guide/best-practices-gotchas', label: 'Best Practices & Gotchas' }}
@@ -50,6 +50,25 @@ function keys<T extends object>(obj: T): (keyof T)[] {
 
 type Box<T = string> = { value: T };`}
         caption="`extends` constrains what T can be; a default type parameter (T = string) makes the generic optional to specify at the call site."
+      />
+
+      <PosterCard
+        glyph="NI"
+        title={<>NoInfer&lt;T&gt;<span className="dim"> — remove an inference site</span></>}
+        language="typescript"
+        code={`// EVERY parameter mentioning C votes on what C is. So a wrong
+// argument can widen C until it fits, instead of erroring.
+function light<C extends string>(colors: C[], fallback?: C) {}
+light(['red', 'yellow', 'green'], 'blue');
+// ✅ No error. C inferred as 'red'|'yellow'|'green'|'blue' —
+//    'blue' was allowed to contribute its own candidate.
+
+// NoInfer strips that position out of the vote:
+function lightSafe<C extends string>(colors: C[], fallback?: NoInfer<C>) {}
+lightSafe(['red', 'yellow', 'green'], 'blue');
+// ❌ Argument of type '"blue"' is not assignable to parameter of
+//    type '"red" | "yellow" | "green" | undefined'.`}
+        caption="TS 5.4+. C is now fixed by the colors argument alone, and fallback is merely checked against it. Reach for NoInfer whenever one parameter should define the type and the others should only conform to it — defaults, fallbacks, and initial values are the usual cases."
       />
 
       <PosterCard
@@ -136,6 +155,71 @@ type X = ElementOf<number[]>;  // number
 
 type PromiseValue<T> = T extends Promise<infer U> ? U : T;`}
         caption="`infer` captures a piece of a type inside a conditional — the mechanism behind ReturnType, Awaited, and most library-level type utilities."
+      />
+
+      <PosterCard
+        glyph="∥"
+        title={<>Distribution<span className="dim"> — and the IsNever trap</span></>}
+        language="typescript"
+        code={`// A conditional over a NAKED type parameter distributes over unions:
+type ToArray<T> = T extends any ? T[] : never;
+type R = ToArray<string | number>;   // string[] | number[]  — NOT (string|number)[]
+
+// Wrap both sides in a tuple to switch distribution OFF:
+type ToArrayN<T> = [T] extends [any] ? T[] : never;
+type R2 = ToArrayN<string | number>; // (string | number)[]
+
+// THE TRAP: never is the EMPTY union. Distributing over zero
+// members produces zero results — so the branch never runs.
+type IsNever<T>  = T extends never ? true : false;
+type Bad  = IsNever<never>;   // never  ← not true. Silently wrong.
+type Good = IsNever2<never>;  // true
+type IsNever2<T> = [T] extends [never] ? true : false;`}
+        caption="Distribution is why Exclude<T,U> filters a union member-by-member instead of comparing the whole union at once. It only happens for a bare type parameter on the left of extends. never being the empty union makes every naive T extends never check evaluate to never rather than true — always tuple-wrap when the type you are testing for is never."
+      />
+
+      <PosterCard
+        glyph="±"
+        title={<>Variance<span className="dim"> — the two unsound holes</span></>}
+        language="typescript"
+        code={`class Animal { name = '' }
+class Dog extends Animal { bark() {} }
+
+// HOLE 1 — arrays are covariant, and mutable. TS allows this:
+const dogs: Dog[] = [new Dog()];
+const animals: Animal[] = dogs;   // ✅ allowed
+animals.push(new Animal());       // ✅ allowed — dogs now holds a non-Dog 💥
+// Use readonly Dog[] when you only read: covariance is safe there.
+
+// HOLE 2 — METHOD syntax is bivariant; PROPERTY syntax is not.
+interface A { handle(x: Dog): void }      // method   → bivariant (unsound)
+interface B { handle: (x: Dog) => void }  // property → contravariant (checked)
+
+const a: A = { handle: (x: Dog & { id: 1 }) => {} };  // ✅ no error 💥
+const b: B = { handle: (x: Dog & { id: 1 }) => {} };  // ❌ correctly rejected`}
+        caption="Parameters are normally contravariant — a handler may accept a WIDER type than required, never a narrower one. Two deliberate exceptions survive for compatibility: mutable arrays are covariant, and methods declared with method syntax stay bivariant even under strictFunctionTypes. If you want a callback's parameter type actually checked, declare it as a property, not a method."
+      />
+
+      <PosterCard
+        glyph="k[]"
+        title={<>keyof<span className="dim"> &amp; indexed access T[K]</span></>}
+        language="typescript"
+        code={`interface User { id: string; age: number }
+
+type K = keyof User;        // 'id' | 'age'   — union of key names
+type V = User['age'];       // number         — indexed access
+type Any = User[keyof User]; // string | number — union of all value types
+
+// The pair that makes a type-safe getter:
+function get<T, K extends keyof T>(obj: T, key: K): T[K] {
+  return obj[key];
+}
+get(user, 'age');   // returns number, not string | number
+
+// Related: {} is "anything not nullish", NOT "empty object" —
+// it accepts 42 and 'hi', rejects only null/undefined.
+// Full breakdown on the Best Practices & Gotchas page.`}
+        caption="keyof gives the key union, T[K] looks up the value type at those keys, and constraining K extends keyof T is what keeps the two in lockstep so the return type is exact — without the constraint the return widens to the union of every value type."
       />
 
       <PosterCard
@@ -233,6 +317,11 @@ class Product {
           { need: 'Narrow unknown/external data', answer: 'Type predicate (is) or assertion (asserts)' },
           { need: 'Transform every key of a type', answer: 'Mapped type' },
           { need: 'Extract a piece of another type', answer: 'Conditional type + infer' },
+          { need: 'Stop a conditional distributing over a union', answer: 'Tuple-wrap both sides: [T] extends [U]' },
+          { need: 'Test whether a type is never', answer: '[T] extends [never] — the naive form returns never' },
+          { need: 'One argument should define T, others conform', answer: 'NoInfer<T> on the others' },
+          { need: 'Callback param types actually checked', answer: 'Property syntax, not method syntax' },
+          { need: 'Type a getter so the value type is exact', answer: '<T, K extends keyof T>(o: T, k: K) => T[K]' },
           { need: 'Build string unions', answer: 'Template literal type' },
           { need: 'Lock in literal values', answer: 'as const' },
           { need: 'Add cross-cutting behaviour to a method', answer: 'Decorator (or a factory, if it needs args)' },

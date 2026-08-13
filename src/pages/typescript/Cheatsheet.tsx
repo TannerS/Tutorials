@@ -609,7 +609,7 @@ declare namespace Express { interface Request { user?: User } }`}
     "moduleResolution": "bundler",
     // On TS 6 'strict' already DEFAULTS to true — write it anyway, as
     // documentation and for older compilers. Only "strict": false opts out.
-    "strict": true,                     // = the seven flags listed below
+    "strict": true,                     // = the eight flags listed below
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,

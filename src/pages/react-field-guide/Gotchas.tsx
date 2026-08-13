@@ -58,16 +58,18 @@ setTodos(prev => [...prev, newTodo]);`}
       <PosterCard
         glyph="∞"
         title="Infinite Re-render Loops"
-        code={`// ❌ No deps — runs after EVERY render, sets state, re-renders, forever
-useEffect(() => {
-  setCount(count + 1);
-});
+        code={`// THE TEST: an effect loops only if it WRITES its own dependency.
+// Compare the deps array against what the body sets. Overlap = loop.
 
-// ❌ A growing array as its own dependency
-useEffect(() => {
-  setItems([...items, newItem]);
-}, [items]); // items changes → effect runs → items changes...`}
-        caption="Both patterns create a render-effect-render cycle with no exit. Any setState call inside an effect must either avoid depending on the value it changes, or be wrapped in a condition that eventually stops firing."
+// ❌ No deps = every value is a dependency; it writes count
+useEffect(() => { setCount(count + 1); });
+
+// ❌ Writes items, depends on items
+useEffect(() => { setItems([...items, newItem]); }, [items]);
+
+// ✅ Writes items, depends on query — no overlap, no loop
+useEffect(() => { setItems(fetchFor(query)); }, [query]);`}
+        caption="Read the deps array, read what the body sets, and look for overlap — that one test explains every infinite-loop effect without needing to trace the cycle. No deps array means EVERY value is a dependency, which is why it's the easiest way to trigger this. Watch for the indirect form too: writing state that an unstable dep is derived from counts as writing the dep."
       />
 
       <PosterCard
@@ -183,6 +185,7 @@ const config = useMemo(() => ({ mode: 'edit' }), []);
         title="What broke, and why?"
         rows={[
           { need: 'Effect reads a stale prop/state forever', answer: 'Missing dependency — add it, or read from a ref' },
+          { need: 'Effect fires forever / infinite loop', answer: 'It writes its own dependency — break the overlap' },
           { need: 'Deleting a list item corrupts other rows', answer: 'Index as key — use a stable id' },
           { need: 'console.log fires twice in dev only', answer: 'StrictMode double-invoke — expected, not a bug' },
           { need: 'Hook order error mid-render', answer: 'Hook called conditionally — hoist above the branch' },

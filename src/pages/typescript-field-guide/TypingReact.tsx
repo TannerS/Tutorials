@@ -72,13 +72,17 @@ const [state, dispatch] = useReducer(reducer, initial);`}
       <PosterCard
         glyph="Rf"
         title={<>useRef<span className="dim"> — DOM vs mutable</span></>}
-        code={`// DOM ref — pass null, readonly .current
+        code={`// DOM ref — pass null. Type is RefObject<HTMLInputElement | null>
 const inputRef = useRef<HTMLInputElement>(null);
 inputRef.current?.focus();
 
-// mutable ref — pass initial value, writable .current
-const renderCount = useRef<number>(0);`}
-        caption="Passing null with a non-null generic gives a read-only DOM ref; passing a real initial value gives a writable mutable ref. Always null for DOM refs."
+// Instance ref — pass the initial value. RefObject<number>
+const renderCount = useRef<number>(0);
+
+// ❌ useRef();  — the zero-argument overload was REMOVED in
+//    @types/react 19. "Expected 1 arguments, but got 0."
+// ❌ MutableRefObject<T> — deprecated; no useRef overload returns it.`}
+        caption="An argument is now mandatory — pass null for DOM refs, a real value for instance refs. Both return RefObject<T>, and in React 19 its .current is writable in every case: the old readonly-vs-mutable split (RefObject vs MutableRefObject) is gone, so reach for RefObject<T> in your own annotations and never MutableRefObject."
       />
 
       <PosterCard
@@ -195,7 +199,7 @@ const [state, formAction, isPending] = useActionState(submitAction, initial);`}
         rows={[
           { need: "Type a component's props", answer: 'Inline destructured interface, not React.FC' },
           { need: "Type a hook's initial null state", answer: 'useState<T | null>(null)' },
-          { need: 'Type a DOM ref', answer: 'useRef<HTMLElement>(null)' },
+          { need: 'Type a DOM ref', answer: 'useRef<HTMLElement>(null) — the arg is required' },
           { need: 'Type a context with a guard', answer: 'createContext<T | undefined>(undefined) + guard hook' },
           { need: 'Type a form input change', answer: 'React.ChangeEvent<HTMLInputElement>' },
           { need: 'Type a submit handler', answer: 'React.FormEvent<HTMLFormElement>' },

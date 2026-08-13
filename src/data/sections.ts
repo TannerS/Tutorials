@@ -281,6 +281,8 @@ export const sections: Section[] = [
       { id: 'enterprise', title: 'Enterprise Patterns', path: '/typescript/enterprise' },
       { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/typescript/cheatsheet' },
       { id: 'native-compiler', title: 'TypeScript 6 → 7: The Native Compiler', path: '/typescript/native-compiler' },
+      { id: 'runtime-validation', title: 'Runtime Validation & Schemas', path: '/typescript/runtime-validation' },
+      { id: 'node', title: 'TypeScript on Node', path: '/typescript/node' },
     ],
   },
   {

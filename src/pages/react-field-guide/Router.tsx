@@ -9,7 +9,7 @@ export default function FieldGuideRouter() {
       eyebrow="React 19 · Field Reference"
       title="React Router v7"
       tagline="Route config, loaders, actions, and guards — the config-based API that replaced fetch-in-useEffect."
-      meta={['v7', '13 patterns']}
+      meta={['v7', '17 patterns']}
       footerLabel="Personal study reference — React Router v7"
       pageLabel="React 19 Field Guide · Router"
       prev={{ path: '/react-field-guide/styling', label: 'Styling Approaches' }}
@@ -43,6 +43,23 @@ export default function FieldGuideRouter() {
   errorElement: <Err />,   // catches loader/action/render throws
 }`}
         caption="loader and action are v7's data APIs — the router runs them and hands the result to useLoaderData()/useActionData(), eliminating manual loading state and useEffect fetch chains."
+      />
+
+      <PosterCard
+        glyph="Rk"
+        title={<>Route Ranking<span className="dim"> — order does not matter</span></>}
+        code={`// Declaration order is irrelevant — v6+ scores every route
+// and picks the most SPECIFIC match, not the first one listed.
+[
+  { path: '*',         element: <NotFound /> },   // listed FIRST
+  { path: 'users/:id', element: <User /> },
+  { path: 'users/new', element: <NewUser /> },
+]
+
+// /users/new → NewUser   (static segment outranks a param)
+// /users/42  → User      (param outranks a splat)
+// /nope      → NotFound  (splat only wins when nothing else matches)`}
+        caption='"Put the catch-all last" and "order your routes most-specific-first" are React Router v5 rules — v5 matched in declaration order, v6 and v7 do not. Static segments beat dynamic :params, which beat splats. You can list * first and it still only matches when nothing else does, so never reorder routes hoping to fix a match.'
       />
 
       <PosterCard
@@ -136,7 +153,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const session = await requireAuth(request);
   return fetch('/api/dashboard', { headers: { Authorization: \`Bearer \${session.token}\` } });
 }`}
-        caption="Checking auth in the loader means the protected component never renders, not even for a flash — a component-based guard briefly mounts the page (firing its effects) before redirecting."
+        caption="Checking auth in the loader means the protected component never renders, not even for a flash — a component-based guard briefly mounts the page (firing its effects) before redirecting. Note the throw: see the next card for why return would not work here."
+      />
+
+      <PosterCard
+        glyph="Th"
+        title={<>throw redirect()<span className="dim"> vs return redirect()</span></>}
+        code={`// ✅ Returning works ONLY from the loader/action itself
+export async function loader() {
+  if (!user) return redirect('/login');   // fine — router sees it
+}
+
+// ❌ Returning from a HELPER just returns a value to the caller
+async function requireAuth() {
+  if (!user) return redirect('/login');   // returns to loader...
+}
+export async function loader() {
+  await requireAuth();          // ...which IGNORES it and continues
+  return loadSecretData();      // runs anyway. Silent auth bypass.
+}
+
+// ✅ throw unwinds the whole loader — works at any depth
+async function requireAuth() { if (!user) throw redirect('/login'); }`}
+        caption="redirect() only builds a Response object; it does not navigate. Returning it works when the loader itself returns it, because the router inspects the return value — but a helper's return value goes to its caller, not the router. Always throw from shared guard helpers: throw is the only form that unwinds through call frames. This one fails silently and open."
+      />
+
+      <PosterCard
+        glyph="!Sec"
+        title={<>Client guards are UX<span className="dim">, not security</span></>}
+        language="text"
+        code={`In library mode, loaders run IN THE BROWSER.
+A loader guard is code the user fully controls:
+  • DevTools can edit the bundle and skip the check
+  • The data endpoint is still reachable via curl
+  • Redirects are cosmetic — nothing was enforced
+
+The guard's real job: don't show a page that will fail.
+Authorization belongs on the SERVER, on every endpoint —
+the route guard is a nicety layered on top of that.`}
+        caption="A route guard prevents a broken-looking UI, not unauthorized access. If /api/dashboard returns data to any caller with no token check, the app is wide open no matter how good the loader guard looks. In framework mode a server loader can enforce it — in library mode it never can."
       />
 
       <PosterCard
@@ -232,7 +287,9 @@ const data = useLoaderData() as LoaderData;`}
           { need: 'Submit a form / mutate data', answer: 'action + <Form>' },
           { need: 'Mutate without changing the URL', answer: 'useFetcher' },
           { need: 'Navigate from code, not a click', answer: 'useNavigate (+ return after it)' },
-          { need: 'Auth-protect a route', answer: 'throw redirect() in a loader' },
+          { need: 'Auth-protect a route', answer: 'throw redirect() in a loader — never return, from a helper' },
+          { need: 'Actually enforce authorization', answer: 'The server. A client guard is UX only' },
+          { need: 'A wrong route is matching', answer: 'Not order — v6+ ranks by specificity' },
           { need: 'Read URL params / query string', answer: 'useParams / useSearchParams' },
           { need: 'Catch loader/action/render errors', answer: 'errorElement + useRouteError' },
           { need: 'Split a route into its own chunk', answer: 'lazy property on the route' },

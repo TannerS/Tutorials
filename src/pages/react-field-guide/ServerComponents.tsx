@@ -9,7 +9,7 @@ export default function FieldGuideServerComponents() {
       eyebrow="React 19 · Field Reference"
       title="Server Components & Actions"
       tagline="Server vs Client Components, the 'use client'/'use server' boundary, Server Actions, and streaming — what's React 19 core vs Next.js on top of it."
-      meta={['React 19 · RSC', '12 concepts']}
+      meta={['React 19 · RSC', '13 concepts']}
       footerLabel="Personal study reference — React 19"
       pageLabel="React 19 Field Guide · Server Components"
       prev={{ path: '/react-field-guide/gotchas', label: 'Gotchas & Anti-Patterns' }}

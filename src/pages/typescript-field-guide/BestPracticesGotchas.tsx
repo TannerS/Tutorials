@@ -9,7 +9,7 @@ export default function FieldGuideTsBestPracticesGotchas() {
       eyebrow="TypeScript · Field Reference"
       title="Best Practices & Gotchas"
       tagline="The got-ya moments that separate production-grade TypeScript from any-driven development."
-      meta={['TS 5+', '12 gotchas']}
+      meta={['TS 6', '17 gotchas']}
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · Best Practices & Gotchas"
       prev={{ path: '/typescript-field-guide/project-setup', label: 'Project Setup & tsconfig' }}
@@ -166,6 +166,73 @@ function getLength(value: unknown): number {
       />
 
       <PosterCard
+        glyph="Nr"
+        title={<>Narrowing Evaporates <span className="dim">at a Closure Boundary</span></>}
+        language="typescript"
+        code={`let name: string | null = 'x';
+function reset() { name = null; }   // an assignment exists SOMEWHERE
+
+if (name !== null) {
+  name.toUpperCase();               // ✅ narrowed here
+  setTimeout(() => name.toUpperCase());
+  //                ~~~~ TS18047: 'name' is possibly 'null'
+}
+
+// Same thing for a narrowed PROPERTY inside any callback:
+if (box.v) {
+  run(() => box.v.toUpperCase());
+  //         ~~~~~ TS18048: 'box.v' is possibly 'undefined'
+}
+
+// ✅ Fix both: copy into a const FIRST, then narrow the const
+const v = box.v;
+if (v) run(() => v.toUpperCase());`}
+        caption="Narrowing is control-flow analysis, and a callback has no knowable execution time — TypeScript cannot prove the value is still narrowed when it eventually runs, so it discards the narrowing at the function boundary. This is a correctness feature, not a limitation: reset() really could run first. A const can never be reassigned, so its narrowing survives into any closure. Note the trigger is that an assignment exists anywhere; a let that is never reassigned keeps its narrowing."
+      />
+
+      <PosterCard
+        glyph="Ea"
+        title={<>Error Anatomy <span className="dim">— read the chain bottom-up</span></>}
+        language="text"
+        code={`error TS2345: Argument of type '{ retry: { policy: { attempts: string; }; }; }'
+              is not assignable to parameter of type 'Config'.
+  The types of 'retry.policy.attempts' are incompatible between these types.
+    Type 'string' is not assignable to type 'number'.
+    ^^^^ START HERE — the last line is the ACTUAL problem
+
+Structure of every TS error:
+  TS####          the code — stable, searchable
+  line 1          the OUTERMOST failure: what you passed, what was wanted
+  each indent     one level deeper into WHY
+  last line       the root cause, in primitive terms
+
+Read: bottom line = the real fix (attempts is a string, make it a number).
+      top line    = where to look (the argument to init()).`}
+        caption="A wall of text is really a stack trace through the type structure. The first line names the widest mismatch, each nested line drills one level in, and the deepest line is the only one that tells you what to actually change. Read bottom-up to find the fix, then top-down to find the file position. Long chains of nested object types are the reason a one-character typo can produce twenty lines of output."
+      />
+
+      <PosterCard
+        glyph="##"
+        title={<>The Error Codes <span className="dim">You&apos;ll Actually Hit</span></>}
+        language="text"
+        code={`TS2322  Type 'X' is not assignable to type 'Y'
+        → an ASSIGNMENT / return value is wrong
+TS2345  Argument of type 'X' is not assignable to parameter of type 'Y'
+        → same problem, but at a CALL SITE
+TS2339  Property 'x' does not exist on type 'Y'
+        → typo, or you have not narrowed a union yet
+TS2353  Object literal may only specify known properties
+        → excess property check on a FRESH literal
+TS2741  Property 'x' is missing in type 'A' but required in type 'B'
+TS2554  Expected N arguments, but got M
+TS7006  Parameter 'x' implicitly has an 'any' type      (noImplicitAny)
+TS18047 'x' is possibly 'null'                          (strictNullChecks)
+TS18048 'x' is possibly 'undefined'                     (strictNullChecks)
+TS2341  Property 'x' is private and only accessible within class 'C'`}
+        caption="Codes are stable across releases and far better search terms than the message text, which gets reworded. The number also tells you which flag is talking: the 18xxx family is strictNullChecks, 7xxx is the implicit-any family, and 2322 vs 2345 is purely assignment-position vs call-position — same underlying check, so the fix is identical."
+      />
+
+      <PosterCard
         glyph="Ov"
         title={<>Over-Annotation <span className="dim">Adds Noise</span></>}
         language="typescript"
@@ -247,6 +314,9 @@ const f = Feature.DarkMode;
           { need: "'as' hides a wrong runtime shape", answer: 'typeof / instanceof / type predicate instead' },
           { need: 'req.user still not on Express.Request', answer: 'declare global { namespace Express { ... } }' },
           { need: 'const enum still emits a runtime object', answer: 'Expected under isolatedModules — use as const' },
+          { need: 'Narrowed value is "possibly null" in a callback', answer: 'Copy to a const first, then narrow the const' },
+          { need: 'A 20-line type error and no idea where to start', answer: 'Read the LAST line — that is the root cause' },
+          { need: 'Searching for an error message finds nothing', answer: 'Search the TS#### code instead — it is stable' },
         ]}
       />
     </PosterLayout>

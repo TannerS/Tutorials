@@ -596,8 +596,8 @@ data.name;   // error TS18046: 'data' is of type 'unknown'.`}
         <p>
           Wrapping it in a function annotated <code>: unknown</code>, exactly as above, is
           the cheapest fix: one line that converts a silent runtime crash into a compile error
-          you cannot ignore. (A schema validator such as Zod is the fuller answer &mdash; see
-          Best Practices.)
+          you cannot ignore. (A schema validator such as Zod is the fuller answer &mdash; see{' '}
+          <em>Runtime Validation &amp; Schemas</em>, which covers it end to end.)
         </p>
       </InfoBox>
 

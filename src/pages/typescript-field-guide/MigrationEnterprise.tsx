@@ -9,7 +9,7 @@ export default function FieldGuideTsMigrationEnterprise() {
       eyebrow="TypeScript · Field Reference"
       title="Migration & Enterprise Patterns"
       tagline="Converting a JS codebase without stopping the world, and the patterns that hold up at scale."
-      meta={['TS 5+', '12 patterns']}
+      meta={['TS 6', '12 patterns']}
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · Migration & Enterprise Patterns"
       prev={{ path: '/typescript-field-guide/typing-react', label: 'Typing React' }}
@@ -37,13 +37,13 @@ export default function FieldGuideTsMigrationEnterprise() {
   "compilerOptions": {
     "allowJs": true,     // .js and .ts files coexist
     "checkJs": false,    // don't type-check the .js files yet
-    "strict": false,     // relax during migration — tighten later
+    "strict": false,     // MUST be explicit — TS 6 defaults it to TRUE
     "noImplicitAny": false
   }
 }
 // Phase 4, once every file is converted:
-// allowJs: false, strict: true, noImplicitAny: true`}
-        caption="allowJs lets TypeScript compile a mixed JS/TS project without touching untouched files; checkJs: false means those .js files aren't type-checked yet, just parsed for imports. Flip both once the last file is converted."
+// allowJs: false, delete "strict": false, noImplicitAny: true`}
+        caption="allowJs lets TypeScript compile a mixed JS/TS project without touching untouched files; checkJs: false means those .js files aren't type-checked yet, just parsed for imports. Under TypeScript 6 the strict line is no longer optional boilerplate: strict defaults to true, so a migration config that simply omits it lands you in full strict mode on day one — the opposite of what you want mid-migration. Finishing the migration now means DELETING that line rather than flipping it to true."
       />
 
       <PosterCard
@@ -198,6 +198,7 @@ function total(items: readonly Item[]): number {
         rows={[
           { need: 'Convert a large JS codebase safely', answer: 'Incremental migration, not Big Bang' },
           { need: 'Let .js and .ts coexist during migration', answer: 'allowJs: true, checkJs: false' },
+          { need: 'Stop TS 6 forcing strict on a half-migrated repo', answer: 'Set "strict": false explicitly' },
           { need: 'Suppress an error but not forget about it', answer: '@ts-expect-error with a reason, never @ts-ignore' },
           { need: 'Stop migration debt from creeping back up', answer: 'CI ratchet on any-count / unconverted files' },
           { need: 'Prevent mixing IDs from different entities', answer: 'Branded ID type + parse() constructor' },

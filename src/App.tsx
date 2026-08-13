@@ -184,6 +184,8 @@ import TsInteractive from './pages/typescript/Playground'
 import TsEnterprise from './pages/typescript/EnterprisePatterns'
 import TsCheatsheet from './pages/typescript/Cheatsheet'
 import TsNativeCompiler from './pages/typescript/NativeCompiler'
+import TsRuntimeValidation from './pages/typescript/RuntimeValidation'
+import TsNodeTypescript from './pages/typescript/NodeTypescript'
 
 // React Router v7
 import RRIntro from './pages/react-router/Intro'
@@ -507,6 +509,8 @@ function App() {
         <Route path="typescript/enterprise" element={<TsEnterprise />} />
         <Route path="typescript/cheatsheet" element={<TsCheatsheet />} />
         <Route path="typescript/native-compiler" element={<TsNativeCompiler />} />
+        <Route path="typescript/runtime-validation" element={<TsRuntimeValidation />} />
+        <Route path="typescript/node" element={<TsNodeTypescript />} />
         {/* React Router v7 */}
         <Route path="react-router/intro" element={<RRIntro />} />
         <Route path="react-router/nested" element={<RRNested />} />

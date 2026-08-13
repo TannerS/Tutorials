@@ -174,16 +174,33 @@ function Intro() {
         the first match in this order:
       </p>
       <ol>
-        <li><code>static void main(String[] args)</code> — the classic form.</li>
-        <li><code>static void main()</code> — no parameters.</li>
-        <li><code>void main(String[] args)</code> — an instance method.</li>
-        <li><code>void main()</code> — an instance method with no parameters.</li>
+        <li><code>main(String[] args)</code> — static or instance, whichever exists.</li>
+        <li><code>main()</code> — static or instance, whichever exists.</li>
       </ol>
       <p>
-        A <code>String[]</code> version always beats a no-parameter version, and a static version
-        always beats an instance version at the same arity. If it lands on one of the instance
-        forms, the launcher constructs your class first — which is why <em>that</em> class needs a
-        non-private zero-argument constructor:
+        <strong>Arity is the primary key, not <code>static</code>.</strong> A{' '}
+        <code>String[]</code> version wins over a no-parameter version even when the no-parameter
+        one is <code>static</code> and declared right there in your class, and even when the{' '}
+        <code>String[]</code> one is an instance method inherited from a superclass. It is worth
+        being precise about this, because &quot;static first&quot; is the intuitive guess and it is
+        wrong:
+      </p>
+      <CodeBlock language="java" title="Verified on JDK 26 — the instance String[] form wins">
+{`public class D {
+    public static void main() {
+        System.out.println("LOCAL STATIC main()");
+    }
+    public void main(String[] a) {
+        System.out.println("LOCAL INSTANCE main(String[])");
+    }
+}
+
+// $ java D
+// LOCAL INSTANCE main(String[])`}
+      </CodeBlock>
+      <p>
+        If the launcher lands on an instance form, it constructs your class first — which is why{' '}
+        <em>that</em> class needs a non-private zero-argument constructor:
       </p>
 
       <CodeBlock language="java" title="Instance main — what the launcher does for you">

@@ -9,7 +9,7 @@ export default function FieldGuideTsFundamentals() {
       eyebrow="TypeScript · Field Reference"
       title="TypeScript Fundamentals"
       tagline="Primitives, inference, and the interface/type-alias split — the base every other page builds on."
-      meta={['TS 5+', '14 concepts']}
+      meta={['TS 6', '16 concepts']}
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · Fundamentals"
       prev={null}
@@ -41,6 +41,47 @@ const doubled = nums.map(n => n * 2); // inferred: number[]
 function log(msg: string) {}       // param — always annotate
 export function fetchUser(id: string): Promise<User> { /* ... */ } // public return`}
         caption="TypeScript infers from initializers and return statements. Annotate function parameters (never inferred) and exported function returns (locks the public API) — let inference handle everything else."
+      />
+
+      <PosterCard
+        glyph="Wd"
+        title={<>Literal <span className="dim">Widening</span></>}
+        language="typescript"
+        code={`type Method = 'GET' | 'POST';
+
+const a = 'GET';            // type is 'GET'  — const, immutable, stays narrow
+let   b = 'GET';            // type is string — could be reassigned, so it widens
+const c = { method: 'GET' }; // c.method is string — PROPERTIES widen even in a const
+
+const m1: Method = a;        // ✅
+const m2: Method = c.method; // ❌ Type 'string' is not assignable to type 'Method'
+
+// Three fixes, narrowest first:
+const c2 = { method: 'GET' as const };        // just that property
+const c3 = { method: 'GET' } as const;         // whole object, deeply readonly
+const c4: { method: Method } = { method: 'GET' }; // annotate the target`}
+        caption="const only freezes the BINDING, not the object's contents — so a property initialized with a string literal is still mutable and TypeScript widens it to string. This is the usual reason a config object mysteriously stops matching a literal union. Reach for `as const` on the property, or annotate the variable, and the literal survives."
+      />
+
+      <PosterCard
+        glyph="≤"
+        title={<>Assignability<span className="dim"> = subset checking</span></>}
+        language="typescript"
+        code={`// "Is A assignable to B?" means: is every value of A also a valid B?
+type Pet = { name: string };
+type Dog = { name: string; bark(): void };
+declare let pet: Pet, dog: Dog;
+pet = dog;   // ✅ every Dog IS a Pet (Dog is the SMALLER set — more specific)
+dog = pet;   // ❌ not every Pet is a Dog
+
+// any opts out of the check in BOTH directions (that's the danger)
+declare let a: any, s: string;
+s = a;  // ✅    a = s;  // ✅
+
+// unknown is the safe top type — everything flows IN, nothing flows OUT
+declare let u: unknown;
+u = s;  // ✅    s = u;  // ❌ must narrow first`}
+        caption="Think in sets, not hierarchies: more properties = fewer possible values = a smaller, more specific set, and small sets flow into big ones. That one idea explains excess property checks, narrowing and variance. any is assignable both directions, which is exactly why one any quietly disables checking everywhere it spreads; unknown accepts anything but forces you to narrow before use."
       />
 
       <PosterCard
@@ -237,16 +278,17 @@ class Db {
         glyph="St"
         title={<>strict<span className="dim"> Mode — the master switch</span></>}
         language="typescript"
-        code={`{
-  "compilerOptions": {
-    "strict": true
-    // Turns on: noImplicitAny, strictNullChecks,
-    // strictFunctionTypes, strictBindCallApply,
-    // strictPropertyInitialization, noImplicitThis,
-    // useUnknownInCatchVariables, alwaysStrict
-  }
-}`}
-        caption="strict is a bundle of eight flags, not one check — enable it from day one on a new project. Each flag is broken down individually, with what it catches and why, on the Project Setup & tsconfig page."
+        code={`// TS 6: strict is TRUE unless you say otherwise.
+{ "compilerOptions": {} }            // ← already strict
+{ "compilerOptions": { "strict": false } }  // ← the only way out
+
+// The eight flags it bundles:
+// noImplicitAny, strictNullChecks, strictFunctionTypes,
+// strictBindCallApply, strictPropertyInitialization,
+// noImplicitThis, useUnknownInCatchVariables,
+// strictBuiltinIteratorReturn
+// (alwaysStrict is NOT one of them — it defaults true separately)`}
+        caption="From TypeScript 6 the default flipped: a tsconfig that never mentions strict gets strict null checks and the rest of the family. Each flag is broken down individually, with what it catches and why, on the Project Setup & tsconfig page."
       />
 
       <PosterQuickRef
@@ -262,7 +304,10 @@ class Db {
           { need: 'Declare and assign a field in one step', answer: 'Parameter property — modifier on the ctor arg' },
           { need: 'Share implementation AND force subclasses to fill gaps', answer: 'abstract class with abstract members' },
           { need: 'A field truly inaccessible from outside at runtime', answer: '#private, not private' },
-          { need: 'Catch bugs before day one', answer: '"strict": true in tsconfig' },
+          { need: 'Catch bugs before day one', answer: 'TS 6 is strict by default — just do not disable it' },
+          { need: 'const object no longer matches a literal union', answer: 'Property widened to string — use as const' },
+          { need: '"Object literal may only specify known properties"', answer: 'Excess property check — see Best Practices & Gotchas' },
+          { need: 'A safe alternative to any', answer: 'unknown — accepts anything, forces narrowing on read' },
         ]}
       />
     </PosterLayout>

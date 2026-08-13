@@ -104,9 +104,10 @@ Tabs.Panel = TabPanel;`}
 <input value={value} onChange={e => setValue(e.target.value)} />
 
 // uncontrolled — DOM owns the value
-const ref = useRef();
-<input ref={ref} defaultValue="hello" />`}
-        caption="Controlled inputs need state + onChange for every keystroke; uncontrolled inputs read from the DOM only when you actually need to, e.g. on submit."
+const ref = useRef<HTMLInputElement>(null);   // arg is REQUIRED
+<input ref={ref} defaultValue="hello" />
+// read it when you need it: ref.current?.value`}
+        caption="Controlled inputs need state + onChange for every keystroke; uncontrolled inputs read from the DOM only when you actually need to, e.g. on submit. Note the argument: the zero-arg useRef() overload was removed in @types/react 19 — useRef() with no argument is now a compile error, so always pass null for a DOM ref."
       />
 
       <PosterCard

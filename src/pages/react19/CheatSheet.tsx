@@ -156,6 +156,9 @@ Expensive initial computation    useState(() => expensiveCompute())`}
 Child re-renders but nothing changed?         → Wrap in React.memo + stabilize props
 Memo'd child STILL re-renders?               → Check: inline props? context? setState inside?
 useEffect runs every render?                  → Unstable value in dependency array
+useEffect loops forever?                      → It WRITES its own dependency. Compare deps vs
+                                                 what the body sets — overlap is the whole cause.
+                                                 (No deps array = everything is a dependency.)
 Context consumers re-render too often?        → useMemo the provider value object
 Should I memo this component?                 → Only if: expensive + parent re-renders often + props rarely change
 Should I useMemo this value?                  → Only if: passed to memo'd child, in deps array, or in context value
@@ -719,6 +722,11 @@ KEY RULE FOR LISTS:
 // conditional or loop. Suspends the component until the promise resolves.
 const user  = use(userPromise);   // parent creates the promise, child reads it
 const theme = use(ThemeContext);  // conditional context read is legal
+// The promise MUST be stable across renders. Creating it during the render
+// that reads it is itself an infinite loop: render → new promise → suspend →
+// re-render → new promise → forever. Create it in the parent, in a cache, or
+// in a framework loader — never inline:
+//   const user = use(fetch('/api/me').then(r => r.json()));  // ❌ never resolves
 
 // useActionState(action, initialState) => [state, formAction, isPending]
 // Wraps an async action; React tracks pending + result state for you.
@@ -781,6 +789,8 @@ String refs (ref="input")                        →  useRef or a callback ref
 ReactDOM.render / .hydrate / unmountComponentAtNode → createRoot / hydrateRoot / root.unmount()
 ReactDOM.findDOMNode                             →  refs
 react-test-renderer/shallow                      →  React Testing Library
+useRef() with no argument (@types/react 19)      →  useRef<T>(null) — arg now required
+MutableRefObject (@types/react 19)               →  RefObject<T> — no overload returns it
 
 Deprecated but still working (migrate at leisure):
 forwardRef            →  ref as a plain prop

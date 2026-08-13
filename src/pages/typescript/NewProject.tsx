@@ -441,6 +441,7 @@ npm install @reduxjs/toolkit react-redux  # Full-featured, enterprise
 # Forms
 npm install react-hook-form zod  # zod for schema validation
 npm install @hookform/resolvers  # Connects zod to react-hook-form
+# (Zod is taught in the "Runtime Validation & Schemas" lesson.)
 
 # HTTP
 npm install axios                # Or use native fetch with typed wrappers
@@ -532,7 +533,8 @@ export async function fetchUserById(id: string): Promise<User> {
           This is fine for a first project &mdash; just know it is the one line in this file
           the compiler is not guarding. The upgrade path is a runtime schema validator (Zod,
           Valibot, ArkType), which parses the response and gives you back a type it actually
-          verified. Best Practices covers the pattern under DTO boundaries.
+          verified. <em>Runtime Validation &amp; Schemas</em> teaches that pattern from this
+          exact failure &mdash; it is the lesson to read next if this paragraph worries you.
         </p>
       </InfoBox>
 
