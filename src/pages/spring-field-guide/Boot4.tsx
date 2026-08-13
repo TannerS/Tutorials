@@ -149,7 +149,8 @@ long-term), reflection-heavy libs without native support.`}
         language="text"
         code={`javax.*                       -> jakarta.*
 WebSecurityConfigurerAdapter  -> SecurityFilterChain @Bean
-@MockBean (deprecated 3.4)    -> @MockitoBean (6.2+)
+@MockBean (deprecated 3.4,    -> @MockitoBean (6.2+)
+           REMOVED in Boot 4)
 RestTemplate (not removed)    -> RestClient for new code
 antMatchers(...)              -> requestMatchers(...)
 Sleuth                        -> Micrometer Tracing`}
@@ -194,7 +195,7 @@ Boot 4 also moves to Jackson 3 (com.fasterxml.jackson
           { need: 'One call, metrics + tracing', answer: 'Observation API' },
           { need: 'Fork/join with auto-cancel', answer: 'StructuredTaskScope (final in Java 25; preview 21-24)' },
           { need: 'Fast cold start', answer: 'GraalVM native image via ./mvnw -Pnative' },
-          { need: 'Test double bean', answer: '@MockitoBean, not deprecated @MockBean' },
+          { need: 'Test double bean', answer: '@MockitoBean — @MockBean was REMOVED in Boot 4' },
         ]}
       />
     </PosterLayout>

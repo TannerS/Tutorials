@@ -9,7 +9,7 @@ export default function FieldGuideSpringConfigTransactions() {
       eyebrow="Spring Boot 4 · Field Reference"
       title="Config & Transactions"
       tagline="Property precedence, typed config, profiles, and the propagation/isolation mechanics behind @Transactional — condensed for offline study."
-      meta={['Spring Boot 4', '12 patterns']}
+      meta={['Spring Boot 4', '14 patterns']}
       footerLabel="Personal study reference — Spring Boot"
       pageLabel="Spring Field Guide · Config & Transactions"
       prev={{ path: '/spring-field-guide/spring-data', label: 'Spring Data & JPA' }}
@@ -27,6 +27,31 @@ application.yml            (outside the jar beats inside)
 @PropertySource on @Configuration
 Default properties (SpringApplication.setDefaultProperties)`}
         caption="Two rules cover 90% of 'why is this value X in dev and Y in prod' debugging: env vars beat files, and profile-specific files beat the base application.yml."
+      />
+
+      <PosterCard
+        glyph="Rb"
+        title={<>Relaxed binding<span className="dim"> — and where it stops</span></>}
+        language="text"
+        code={`An env var can't contain a dot. So how does SPRING_DATASOURCE_URL
+become spring.datasource.url? Relaxed binding: one property, many
+accepted spellings.
+
+Canonical (use this in YAML):   app.catalog-api.max-retries
+  app.catalog-api.max-retries   kebab-case  <- canonical
+  app.catalogApi.maxRetries     camelCase
+  app.catalog_api.max_retries   snake_case
+  APP_CATALOG_API_MAX_RETRIES   upper snake <- environment variables
+
+THE ENV-VAR RULE, precisely: uppercase it, then replace every character
+that is not a letter or digit with '_'. Dots AND dashes both become '_'.
+  spring.datasource.url          -> SPRING_DATASOURCE_URL
+  spring.jpa.hibernate.ddl-auto  -> SPRING_JPA_HIBERNATE_DDLAUTO
+  app.servers[0].host            -> APP_SERVERS_0_HOST
+
+So you can override anything in a container with no file:
+  docker run -e SPRING_DATASOURCE_URL=jdbc:postgresql://db/orders my-app`}
+        caption={<><strong>@ConfigurationProperties gets relaxed binding; @Value does not.</strong> Properties classes bind through the <code>Binder</code>, which tries every spelling above. <code>@Value(&quot;${'{'}...{'}'}&quot;)</code> is a plain placeholder lookup against the <code>Environment</code> — it matches the exact string you wrote and nothing else. The classic failure: <code>@Value(&quot;${'{'}app.maxRetries{'}'}&quot;)</code> works locally where the YAML spells it <code>maxRetries</code>, then fails in prod where the value arrives as <code>APP_MAX_RETRIES</code>. One more reason typed properties are the default.</>}
       />
 
       <PosterCard
@@ -185,6 +210,41 @@ NESTED                JDBC savepoint — rollback undoes only this segment`}
       />
 
       <PosterCard
+        glyph="!"
+        badge="Gotcha"
+        title={<>UnexpectedRollbackException<span className="dim"> — &quot;I caught it, why did it roll back?&quot;</span></>}
+        language="java"
+        code={`@Transactional                              // outer: starts the tx
+public void importAll(List<Row> rows) {
+    for (var row : rows) {
+        try {
+            importer.importOne(row);        // separate bean -> proxy DOES apply
+        } catch (Exception e) {
+            log.warn("skipping bad row", e);  // "handled" — carry on
+        }
+    }
+}                                            // commit -> BOOM
+
+@Transactional                               // inner: REQUIRED (the default)
+public void importOne(Row row) { ... }       // so it JOINS the outer tx
+
+// org.springframework.transaction.UnexpectedRollbackException:
+//   Transaction silently rolled back because it has been marked as rollback-only
+
+// WHY it follows from REQUIRED: the inner method did not get its own
+// transaction — it joined yours. When it threw, Spring could not roll back
+// "just the inner part", so it set rollbackOnly on the SHARED transaction.
+// Your catch swallowed the exception but not the flag. At commit time the
+// tx manager sees rollbackOnly and refuses.
+
+// FIXES — pick by intent:
+//   inner work is independent   -> @Transactional(propagation = REQUIRES_NEW)
+//   this exception is benign    -> @Transactional(noRollbackFor = X.class)
+//   it needn't be in a tx       -> move it outside the boundary`}
+        caption={<>Not a mystery once you follow the propagation: <code>REQUIRED</code> means the inner method <em>joins</em> the caller&apos;s transaction rather than getting its own, so its failure is your failure. Catching the exception hides the symptom and leaves the <code>rollbackOnly</code> flag set — the whole batch dies at commit, after every log line said it succeeded.</>}
+      />
+
+      <PosterCard
         glyph="Is"
         title={<>Isolation levels<span className="dim"> — leave at the DB default</span></>}
         language="text"
@@ -218,12 +278,15 @@ public class ImportService {
         title="Which config/transaction tool do I need?"
         rows={[
           { need: 'Value differs dev vs prod', answer: 'Env var — beats every file-based source' },
+          { need: 'Override a property from a container', answer: 'UPPER_SNAKE env var — non-alphanumerics become _' },
+          { need: 'Property binds under @ConfigurationProperties but not @Value', answer: 'Only the former gets relaxed binding — write the exact key' },
           { need: 'Custom config, 3+ related values', answer: '@ConfigurationProperties record + @Validated' },
           { need: 'Fail fast on bad config', answer: '@Validated + no default on the placeholder' },
           { need: 'Different bean per environment', answer: '@Profile("prod") / @Profile("!prod")' },
           { need: 'Feature toggle, not an environment', answer: '@ConditionalOnProperty, not a new profile' },
           { need: 'A secret value', answer: 'Env var / secret manager — never committed yaml' },
           { need: '"Commit even if caller fails"', answer: 'Propagation.REQUIRES_NEW' },
+          { need: 'Caught the exception, still got UnexpectedRollbackException', answer: 'Inner REQUIRED joined your tx and set rollbackOnly — use REQUIRES_NEW/noRollbackFor' },
           { need: 'Partial rollback inside a larger tx', answer: 'Propagation.NESTED (JDBC savepoint)' },
           { need: 'Concurrent write conflict', answer: '@Version optimistic locking, not SERIALIZABLE' },
           { need: 'Transaction boundary not = method boundary', answer: 'TransactionTemplate' },

@@ -9,7 +9,7 @@ export default function FieldGuideJavaExceptionsIo() {
       eyebrow="Java · Field Reference"
       title="Exceptions & I/O"
       tagline="Checked vs unchecked, custom exception hierarchies, and the NIO.2 file API that replaced java.io — condensed for offline study."
-      meta={['Java 21+', '16 patterns']}
+      meta={['Java 21+', '17 patterns']}
       footerLabel="Personal study reference — Java"
       pageLabel="Java Field Guide · Exceptions & I/O"
       prev={{ path: '/java-field-guide/collections-streams', label: 'Collections & Streams' }}
@@ -28,6 +28,37 @@ export default function FieldGuideJavaExceptionsIo() {
         ├── NullPointerException      // UNCHECKED
         └── IllegalArgumentException  // UNCHECKED`}
         caption="Checked exceptions (Exception minus RuntimeException) are for conditions a caller can reasonably recover from — the compiler enforces handling. Unchecked (RuntimeException) usually signal a programming bug, so the compiler doesn't force a catch."
+      />
+
+      <PosterCard
+        glyph="St"
+        title={<>Reading a stack trace<span className="dim"> — bottom-up</span></>}
+        language="text"
+        code={`Exception in thread "main" java.lang.IndexOutOfBoundsException: Index: 2 Size: 2
+	at java.base/java.util.ImmutableCollections$List12.get(...:600)
+	at Report.lengthOfThird(Report.java:10)     <- TOPMOST frame that is YOUR code
+	at Report.main(Report.java:6)               <- where execution started
+
+1. First line = the WHAT: thread, exception type, and the message.
+   The message carries the specifics — read it before anything else.
+2. Frames are bottom-to-top in TIME ORDER. The bottom ran first; the top
+   is where it blew up. Reading the top line and blaming the JDK is the
+   classic beginner move — it almost never is.
+3. Put the breakpoint on the topmost frame you wrote. Frames prefixed with
+   a module (java.base/) show you HOW you got there, not what's wrong.
+
+// Helpful NPEs — default since Java 15. The message names the expression:
+Cannot invoke "User.name()" because the return value of
+  "java.util.Map.get(Object)" is null
+// Names the failing call AND why the receiver was null. A bare NPE with no
+// explanation means an old JVM or the feature was disabled.
+
+// "Caused by:" = the exception was caught and rewrapped on the way up.
+ServiceException: could not load customer     <- outermost wrapper, least useful
+Caused by: DataAccessException: loading customer 42
+Caused by: java.sql.SQLException: connection reset by peer   <- ROOT CAUSE
+// The LAST "Caused by:" is the root cause. Read it first.`}
+        caption={<>Two inversions do all the work: frames read <em>bottom-up</em> in time, but <code>Caused by:</code> blocks read <em>top-down</em> into the cause — so in both cases the line furthest from where you started looking is the one that matters. A trace with no <code>Caused by:</code> under a generic wrapper means somebody swallowed the cause; that is the bug to fix first.</>}
       />
 
       <PosterCard
@@ -112,8 +143,14 @@ catch (IOException e) {
     }
 } catch (IOException e) {
     System.out.println("Error reading file: " + e.getMessage());
-}`}
-        caption="Always wrap FileReader/FileWriter in a Buffered* class — without it, every readLine()/write() is a separate OS system call. The buffer batches reads/writes and cuts that overhead by orders of magnitude."
+}
+
+// How much does the buffer actually buy? Reading ~2 MB one call at a time:
+//   new FileInputStream(f)                 680 ms
+//   new BufferedInputStream(new FIS(f))     10 ms   <- 66x
+//   new FileReader(f)                       31 ms
+//   new BufferedReader(new FileReader(f))    9 ms   <- only 3x`}
+        caption={<>Buffer anyway — but know why the two numbers differ. A raw <code>FileInputStream</code> really does issue one syscall per byte, hence 66x. <code>FileReader</code> is <em>already partly buffered</em>: it decodes through an internal <code>StreamDecoder</code> that pulls in blocks, so wrapping it wins a more modest 3x (removing per-call synchronization and decoder overhead). &quot;I already buffered it&quot; is never the right answer, but neither is expecting 66x from every wrapper.</>}
       />
 
       <PosterCard
@@ -238,12 +275,8 @@ Objects.requireNonNullElseGet(value, this::computeFallback);
 // Which unchecked exception says what:
 //   IllegalArgumentException  a parameter's VALUE is unacceptable
 //   NullPointerException      a parameter was null
-//   IllegalStateException     the OBJECT is in the wrong state for this call
-
-// Helpful NPE messages — default since Java 15:
-// "Cannot invoke \\"C.getD()\\" because the return value of \\"B.getC()\\" is null"
-// Older JVMs: -XX:+ShowCodeDetailsInExceptionMessages`}
-        caption="The cheapest exception to debug is the one thrown where bad data entered, not fifteen frames later. Never use exceptions for expected control flow — building one captures the whole stack."
+//   IllegalStateException     the OBJECT is in the wrong state for this call`}
+        caption={<>The cheapest exception to debug is the one thrown where bad data entered, not fifteen frames later — and a precondition failure names the parameter, where the eventual NPE would only name an expression. Never use exceptions for expected control flow; building one captures the whole stack.</>}
       />
 
       <PosterCard
@@ -292,10 +325,13 @@ client.send(req, BodyHandlers.ofFile(Path.of("download.bin")));`}
       <PosterQuickRef
         title="Which exceptions/I/O tool do I need?"
         rows={[
+          { need: 'Find the bug in a stack trace', answer: 'Topmost frame that is YOUR code — frames read bottom-up' },
+          { need: 'Trace has several Caused by: blocks', answer: 'The LAST one is the root cause' },
           { need: 'Caller has a real recovery path', answer: 'checked exception (extends Exception)' },
           { need: 'Programming bug / precondition violation', answer: 'unchecked exception (extends RuntimeException)' },
           { need: 'Preserve the original failure when wrapping', answer: 'pass cause to the exception constructor' },
           { need: 'Auto-close a resource on any exit path', answer: 'try-with-resources' },
+          { need: 'Speed up a raw stream', answer: 'Buffered* wrapper — 66x on FileInputStream, 3x on FileReader' },
           { need: 'Read a whole small file', answer: 'Files.readString / Files.readAllLines' },
           { need: 'Stream a large file lazily', answer: 'Files.lines(...) in try-with-resources' },
           { need: 'Overwrite vs append to a file', answer: 'default overwrites; add StandardOpenOption.APPEND' },

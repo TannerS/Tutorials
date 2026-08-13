@@ -9,7 +9,7 @@ export default function FieldGuideSpringData() {
       eyebrow="Spring Boot 4 · Field Reference"
       title="Spring Data & JPA"
       tagline="Repositories, derived queries, the N+1 trap, and @Transactional boundaries — condensed for offline study."
-      meta={['Spring Boot 4', '13 patterns']}
+      meta={['Spring Boot 4', '14 patterns']}
       footerLabel="Personal study reference — Spring Boot"
       pageLabel="Spring Field Guide · Data & JPA"
       prev={{ path: '/spring-field-guide/error-handling', label: 'Error Handling & Validation' }}
@@ -77,6 +77,30 @@ List<Customer> findRecentByStatus(
         @Param("status") CustomerStatus status,
         @Param("since") Instant since);`}
         caption="For anything beyond a trivial derived query. Named parameters via @Param keep the JPQL readable and safe from injection, same as a prepared statement."
+      />
+
+      <PosterCard
+        glyph="Md"
+        title={<>@Modifying<span className="dim"> — bulk update, and both flags</span></>}
+        language="java"
+        code={`// A bulk UPDATE/DELETE goes STRAIGHT TO SQL. It bypasses the persistence
+// context entirely — Hibernate never sees which entities it touched.
+@Modifying(flushAutomatically = true, clearAutomatically = true)
+@Transactional
+@Query("update Order o set o.status = :s where o.customerId = :c")
+int markAll(@Param("s") Status s, @Param("c") UUID customerId);
+// returns the ROW COUNT, not entities
+
+// flushAutomatically — push pending in-memory changes DOWN first, or your
+//   UPDATE runs against rows that don't yet reflect them.
+// clearAutomatically — detach everything AFTER, or already-loaded entities
+//   keep their STALE values and write them back at commit, silently
+//   undoing the bulk update you just ran.
+
+// The cost of clearAutomatically: every managed entity is detached, so any
+// reference you were holding is now stale/detached. Do the bulk update
+// FIRST in the method, or in its own transaction.`}
+        caption={<>Both flags default to <code>false</code>, and each omission is its own silent bug: without <code>flushAutomatically</code> the statement can run against pre-flush data, and without <code>clearAutomatically</code> the first-level cache still holds the old values and happily overwrites your update at commit. <code>@Modifying</code> also requires a write transaction — a <code>readOnly = true</code> boundary will reject it.</>}
       />
 
       <PosterCard
@@ -239,6 +263,7 @@ Order applyDiscountTx(UUID id, BigDecimal pct) { }`}
         rows={[
           { need: 'Simple lookup by field', answer: 'Derived query method — findByX' },
           { need: 'Complex / multi-condition query', answer: '@Query with JPQL' },
+          { need: 'Update many rows in one statement', answer: '@Modifying(flushAutomatically, clearAutomatically) — both default to false' },
           { need: 'List view, don’t need total count', answer: 'Slice<T> or List<T>, not Page<T>' },
           { need: 'Lean read-only column set', answer: 'A record projection via @Query' },
           { need: 'Service method logs N queries', answer: 'You have N+1 — check for lazy associations' },

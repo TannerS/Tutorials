@@ -9,7 +9,7 @@ export default function FieldGuideSpringRest() {
       eyebrow="Spring Boot 4 · Field Reference"
       title="Spring REST & Validation"
       tagline="Controllers, request binding, Bean Validation, and the throw-at-the-fault-line error-handling pattern — condensed for offline study."
-      meta={['Spring Boot 4', '12 patterns']}
+      meta={['Spring Boot 4', '13 patterns']}
       footerLabel="Personal study reference — Spring Boot"
       pageLabel="Spring Field Guide · REST & Validation"
       prev={{ path: '/spring-field-guide/spring-di', label: 'Spring DI & Beans' }}
@@ -106,6 +106,42 @@ public UserDto create(@Valid @RequestBody CreateUserRequest req) {
 // Failure -> MethodArgumentNotValidException -> your
 // global handler converts it to a structured 400.`}
         caption="Combine @Valid on the parameter with Jakarta constraints on the DTO's record components — validation runs before your method body executes."
+      />
+
+      <PosterCard
+        glyph="!"
+        badge="Gotcha"
+        title={<>@Valid<span className="dim"> — two machines, one annotation</span></>}
+        language="java"
+        code={`// MACHINE 1 — the ARGUMENT RESOLVER (controllers). No proxy involved.
+@PostMapping
+public UserDto create(@Valid @RequestBody CreateUserRequest req) { ... }
+// Spring MVC deserialises the body, sees an annotation whose simple name
+// starts with "Valid", and runs the Validator BEFORE entering your method.
+// Part of argument resolution -> always happens, nothing can bypass it.
+// Failure -> MethodArgumentNotValidException -> your @RestControllerAdvice.
+
+// MACHINE 2 — the AOP PROXY (everywhere else). Opt-in, and easy to miss.
+@Service
+public class UserService {
+    public void register(@Valid CreateUserRequest req) { ... }   // NO-OP!
+}
+// Outside the web layer nobody resolves arguments — the caller just invokes
+// the method. Constraint checking on an arbitrary bean method is done by
+// MethodValidationPostProcessor, which only wraps classes it was told to:
+
+@Service
+@Validated                       // <- CLASS LEVEL. This is what turns it on.
+public class UserService {
+    public void register(@Valid CreateUserRequest req) { ... }   // now checked
+}
+
+// Two consequences fall straight out of "it's a proxy":
+//   1. Failures are ConstraintViolationException, NOT
+//      MethodArgumentNotValidException — needs its own @ExceptionHandler
+//      or it surfaces as a 500.
+//   2. Self-invocation bypasses it, exactly like @Transactional.`}
+        caption={<>&quot;<code>@Valid</code> validates the object&quot; is true and useless the first time it silently does nothing. On a controller parameter it is bulletproof; on a service parameter it validates nothing at all until the class carries <code>@Validated</code>. The division of labour: <code>@Valid</code> for parameters and nested fields (the only one that cascades), <code>@Validated</code> on the class to switch on method validation, or on a parameter when you need a validation group.</>}
       />
 
       <PosterCard
@@ -240,6 +276,7 @@ public class CustomerRepository {
           { need: 'Bind a URL segment', answer: '@PathVariable' },
           { need: 'Bind a query param', answer: '@RequestParam' },
           { need: 'Bind the JSON body', answer: '@RequestBody + @Valid' },
+          { need: '@Valid on a service parameter does nothing', answer: 'Add @Validated on the CLASS — outside MVC it needs the AOP proxy' },
           { need: 'Many query params', answer: '@ModelAttribute into a record' },
           { need: 'Status depends on logic', answer: 'ResponseEntity<T>' },
           { need: 'Any error response', answer: 'Throw a domain exception, never return an error DTO' },

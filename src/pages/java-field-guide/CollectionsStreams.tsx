@@ -9,7 +9,7 @@ export default function FieldGuideJavaCollectionsStreams() {
       eyebrow="Java · Field Reference"
       title="Collections & Streams"
       tagline="Which collection to reach for, and the stream/Collectors chains you'll write on repeat — condensed for offline study."
-      meta={['Java 21+', '19 patterns']}
+      meta={['Java 21+', '20 patterns']}
       footerLabel="Personal study reference — Java"
       pageLabel="Java Field Guide · Collections & Streams"
       prev={{ path: '/java-field-guide/oop-generics', label: 'OOP & Generics' }}
@@ -49,6 +49,38 @@ Map<String,Integer> linked = new LinkedHashMap<>();  // O(1), insertion order
 Map<String,Integer> tree = new TreeMap<>();          // O(log n), key-sorted
 Map<String,Integer> concurrent = new ConcurrentHashMap<>(); // thread-safe`}
         caption="Same decision tree as Set. Only ConcurrentHashMap is safe to share across threads without external locking — concurrent writes to a plain HashMap silently lose updates and can corrupt its internal state. (The notorious infinite loop on resize was a pre-Java-8 failure mode; the modern one is quieter and harder to spot.)"
+      />
+
+      <PosterCard
+        glyph="hE"
+        title={<>hashCode before equals<span className="dim"> — the lookup order</span></>}
+        language="java"
+        code={`// A hash lookup is TWO steps, and they run in this order:
+//   1. hashCode()  decides WHICH BUCKET to look in
+//   2. equals()    settles ties among the few entries found there
+
+class BadPoint {                       // equals overridden, hashCode NOT
+    @Override public boolean equals(Object o) { /* careful, correct */ }
+    // inherits Object.hashCode() -> identity-derived, arbitrary
+}
+
+var set = new HashSet<BadPoint>();
+set.add(new BadPoint(1, 2));
+set.contains(new BadPoint(1, 2));   // false — and equals() NEVER RAN
+
+// Worse than "lookups return false":
+set.size();                 // 2 for two objects that are equals() — a Set
+                            // no longer de-duplicates
+map.put(key, v);            // twice -> two entries instead of a replace
+set.remove(equalObject);    // can't find it -> leaks
+
+// Reverse omission (hashCode without equals) is harmless but useless:
+// right bucket, then Object.equals rejects on identity anyway.
+
+// Mutating a hash-relevant field after insertion strands the object in the
+// wrong bucket: unreachable by contains/remove, still visible when iterating.
+// Keys must be immutable — which is why records make ideal keys.`}
+        caption={<>Your carefully-written <code>equals()</code> is not being <em>overruled</em> — it is never reached, because a broken <code>hashCode</code> sends the lookup to the wrong bucket entirely. That is the whole reason the language ties the two methods together: they are one mechanism, and overriding either alone breaks it.</>}
       />
 
       <PosterCard
@@ -301,6 +333,8 @@ items.parallelStream().map(this::render).toList();`}
           { need: 'Ordered list, fast random access', answer: 'ArrayList' },
           { need: 'Unique elements, sorted', answer: 'TreeSet' },
           { need: 'Thread-safe map', answer: 'ConcurrentHashMap' },
+          { need: 'contains() false on an equal object', answer: 'hashCode is missing/broken — equals never ran' },
+          { need: 'Object stranded in a HashMap/Set', answer: 'A hash-relevant field mutated — keys must be immutable' },
           { need: 'Stack or FIFO queue', answer: 'ArrayDeque' },
           { need: 'Counter / accumulator map', answer: 'map.merge(k, 1, Integer::sum)' },
           { need: 'Group elements by key', answer: 'Collectors.groupingBy' },

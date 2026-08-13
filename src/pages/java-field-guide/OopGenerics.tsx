@@ -184,16 +184,27 @@ public static <T extends Number & Comparable<T>> T clamp(T v, T lo, T hi) { ... 
         glyph="Wc"
         title={<>Wildcards<span className="dim"> — PECS</span></>}
         language="java"
-        code={`// Producer Extends — reading Number values OUT of the list
-public static double sumAll(List<? extends Number> numbers) { ... }
-// numbers.add(42);  // COMPILE ERROR — can't write to "? extends"
+        code={`// DON'T memorise the mnemonic — DERIVE it. Read a wildcard as
+// "some ONE SPECIFIC type I don't know", never "any type".
 
-// Consumer Super — writing Integer values INTO the list
+// ? extends Number = an unknown SUBTYPE. Might be List<Integer>,
+// List<Double>, or List<Number> — the compiler doesn't know which.
+public static double sumAll(List<? extends Number> numbers) { ... }
+//   READ  ok: whatever comes out is at least a Number.
+//   WRITE no: add(1) into an actual List<Double> would corrupt it.
+
+// ? super Integer = an unknown SUPERTYPE. Might be List<Integer>,
+// List<Number>, or List<Object>. Everything inverts:
 public static void addNumbers(List<? super Integer> list) {
-    list.add(1);
-    // Integer n = list.get(0);  // COMPILE ERROR — get() only returns Object
-}`}
-        caption="PECS: Producer Extends, Consumer Super. Use ? extends T when you only read T out; ? super T when you only write T in; a plain T when you do both. Getting this backwards is the #1 source of confusing generics compile errors."
+    list.add(1);                 // WRITE ok: an Integer fits all of those.
+    // Integer n = list.get(0);  // READ  no: it might be List<Object>,
+}                                //           so get() only promises Object.
+
+// javac even NAMES the unknown type when it rejects you:
+//   incompatible types: Integer cannot be converted to CAP#1
+//   where CAP#1 extends Number from capture of ? extends Number
+// CAP#1 *is* "the one specific type I don't know".`}
+        caption={<>PECS is easy to apply backwards because &quot;producer&quot; and &quot;consumer&quot; are named from the <em>collection&apos;s</em> point of view, not yours. One idea replaces the mnemonic: a wildcard is one specific unknown type, so you can never prove a value fits an unknown <em>subtype</em>, and you can never prove an unknown <em>supertype</em> hands back anything narrower than <code>Object</code>. Plain <code>T</code> when you do both.</>}
       />
 
       <PosterCard
@@ -316,8 +327,8 @@ flexible(List.of(1, 2, 3));         // OK — wildcards restore the flexibility`
           { need: 'Type-safe container for any type', answer: 'generic class <T>' },
           { need: 'One-off generic type param on a method', answer: 'generic method <T> before return type' },
           { need: 'Restrict a type param to Number/Comparable/etc', answer: 'bounded type <T extends X>' },
-          { need: 'Read-only param that accepts subtypes', answer: '? extends T (Producer Extends)' },
-          { need: 'Write-only param that accepts supertypes', answer: '? super T (Consumer Super)' },
+          { need: 'Read-only param that accepts subtypes', answer: '? extends T — unknown subtype, so writes are banned' },
+          { need: 'Write-only param that accepts supertypes', answer: '? super T — unknown supertype, so reads give Object' },
           { need: 'Check generic type at runtime', answer: "can't — type erasure; use List<?> instead" },
         ]}
       />

@@ -9,12 +9,41 @@ export default function FieldGuideJavaSyntax() {
       eyebrow="Java · Field Reference"
       title="Modern Java Syntax"
       tagline="Primitives and variables through records, sealed types, and pattern matching — the language fundamentals plus the Java 21+ idioms that replaced the Java 8 you remember."
-      meta={['Java 21+', '22 features']}
+      meta={['Java 21+', '24 features']}
       footerLabel="Personal study reference — Java"
       pageLabel="Java Field Guide · Syntax"
       prev={null}
       next={{ path: '/java-field-guide/oop-generics', label: 'OOP & Generics' }}
     >
+      <PosterCard
+        glyph="mn"
+        title={<>main<span className="dim"> — the Java 25 launcher protocol</span></>}
+        language="java"
+        code={`// The launcher takes ANY non-private method named main returning void.
+// Four candidate forms — but precedence is BY ARITY FIRST, not by static:
+static void main(String[] args)    // the classic
+       void main(String[] args)    // instance
+static void main()
+       void main()                 // instance, no args
+
+// main(String[]) ALWAYS wins over main() — even when the String[] form is
+// an inherited instance method and main() is declared right here.
+// static and instance at the SAME arity can't coexist: that is a compile
+// error ("method main(String[]) is already defined").
+
+// So forgetting 'static' no longer stops it launching:
+public class App {
+    App() { }                 // instance form -> launcher constructs you first,
+                              // so a non-private NO-ARG ctor is required
+    void main() { IO.println("runs"); }     // not even public
+}
+// java App.java  ->  runs
+
+// Compact source file (Java 25) — no class declaration at all:
+void main() { IO.println("Hello"); }`}
+        caption={<>Before Java 25 a mistyped signature still <em>compiled</em> — it was a perfectly legal method, just not the one the launcher wanted — and only failed at <code>java</code> time. The relaxed rules exist mainly so compact source files work; keep writing <code>public static void main(String[] args)</code> in real code, because that is what every IDE, codebase, and reviewer expects.</>}
+      />
+
       <PosterCard
         glyph="int"
         title={<>Primitives<span className="dim"> — sizes, ranges, defaults</span></>}
@@ -39,8 +68,15 @@ float f     = 1.5f;             // without the f it is a double literal -> error
 // Autoboxing: the compiler inserts int <-> Integer conversions for you
 Integer a = 127, b = 127;   a == b;   // true  — cached range -128..127
 Integer x = 128, y = 128;   x == y;   // false — two objects. Use .equals()
-int n = someInteger;                   // NullPointerException if it is null`}
-        caption={<>Defaults only apply to fields and array elements — a local variable has no default and must be assigned before use or it won&apos;t compile. Prefer primitives in hot code; every wrapper is a heap object, and <code>==</code> on wrappers compares references, not values.</>}
+int n = someInteger;                   // NullPointerException if it is null
+
+// char is a UTF-16 CODE UNIT, not "a Unicode character". Anything above
+// U+FFFF (emoji, rarer CJK) is TWO chars — a surrogate pair.
+"😀".length()             // 2   <- chars, not characters
+"😀".codePointCount(0, 2) // 1   <- actual characters
+"😀".chars().count()      // 2   code UNITS as ints
+"😀".codePoints().count() // 1   code POINTS — the one you usually want`}
+        caption={<>Defaults only apply to fields and array elements — a local variable has no default and must be assigned before use or it won&apos;t compile. Two traps live here: the <code>Integer</code> cache makes <code>==</code> look correct up to 127 and silently wrong at 128, and unboxing a <code>null</code> wrapper throws an NPE on a line with no visible dereference. Prefer primitives in hot code; every wrapper is a heap object.</>}
       />
 
       <PosterCard
@@ -225,8 +261,20 @@ var p = new Point(3, 4);
 p.x();   // 3 — accessor, not getX()
 p.y();   // 4
 
-record NamedPoint(String name, int x, int y) implements Serializable {}`}
-        caption="Auto-generates a canonical constructor, accessors, equals/hashCode, and toString from the components. Records implicitly extend java.lang.Record, so they can't extend anything else."
+record NamedPoint(String name, int x, int y) implements Serializable {}
+
+// "Records are immutable" means the REFERENCE is final — nothing more.
+record Team(String name, List<String> members) {}
+var roster = new ArrayList<>(List.of("Ada"));
+var t = new Team("eng", roster);
+roster.add("Alan");        // t is now Team[name=eng, members=[Ada, Alan]]
+t.members().add("Grace");  // and the accessor is a second way in
+
+// Defensive copy in the compact constructor closes BOTH leaks:
+record SafeTeam(String name, List<String> members) {
+    SafeTeam { members = List.copyOf(members); }   // copies AND makes it unmodifiable
+}`}
+        caption={<>Auto-generates a canonical constructor, accessors, <code>equals</code>/<code>hashCode</code>, and <code>toString</code>. Records implicitly extend <code>java.lang.Record</code>, so they can&apos;t extend anything else. Immutability is <strong>shallow</strong>: a mutable component leaks both through the constructor argument and back out through the accessor — copy it in the compact constructor. (<code>List.copyOf</code> rejects nulls; use <code>Collections.unmodifiableList(new ArrayList&lt;&gt;(x))</code> if null elements are legal.)</>}
       />
 
       <PosterCard
@@ -395,6 +443,30 @@ var sb = new StringBuilder(); for (var w : words) sb.append(w);`}
       />
 
       <PosterCard
+        glyph="Pl"
+        title={<>String pool<span className="dim"> — why == sometimes works</span></>}
+        language="java"
+        code={`// The JVM keeps a POOL of unique string objects. Every literal in your
+// source resolves to the SAME object — safe only because strings are
+// immutable. So == ("same object?") accidentally answers "same text?".
+
+String a = "java";
+String b = "java";             // a == b  -> TRUE   same pooled literal
+String c = new String("java"); // a == c  -> false  'new' forces a fresh object
+String d = c.intern();         // a == d  -> TRUE   intern() returns the pooled one
+
+String e = "ja" + "va";        // a == e  -> TRUE   both operands are compile-time
+                               //                   constants, so javac folds it
+String part = "ja";
+String f = part + "va";        // a == f  -> FALSE  built at RUNTIME = new object
+a.equals(f);                   //         -> true   the question you meant to ask
+
+// This is exactly why == "works" in every toy example and then fails the
+// moment the string comes from a file, a request, or a StringBuilder.`}
+        caption={<>Literals are pooled, runtime-built strings are not — so <code>==</code> passes on hardcoded test data and fails on real input. There is no version of this you can rely on: use <code>equals</code>, and put the constant first (<code>&quot;java&quot;.equals(input)</code>) so a null input can&apos;t NPE.</>}
+      />
+
+      <PosterCard
         glyph="0.1"
         title={<>Numeric traps<span className="dim"> — overflow &amp; BigDecimal</span></>}
         language="java"
@@ -444,9 +516,12 @@ switch (cmd) { case START -> svc.start(); default -> log.warn("?"); }`}
       <PosterQuickRef
         title="Which modern syntax do I need?"
         rows={[
+          { need: 'Entry point the launcher will find', answer: 'Any non-private void main; main(String[]) beats main()' },
           { need: 'Whole number, normal range', answer: 'int (long past +/-2.1 billion)' },
           { need: 'Money or exact decimals', answer: 'BigDecimal — never float/double' },
           { need: 'Compare two Integers', answer: '.equals() — == only caches -128..127' },
+          { need: 'Compare two Strings', answer: '.equals() — == only works on pooled literals' },
+          { need: 'Count real characters, not chars', answer: 'codePoints() — char is a UTF-16 code unit' },
           { need: 'Constant that never changes', answer: 'static final, SCREAMING_SNAKE' },
           { need: 'Stop a variable being reassigned', answer: 'final (the object can still mutate)' },
           { need: 'Divide two ints and keep the fraction', answer: '(double) sum / count — cast first' },
@@ -455,7 +530,7 @@ switch (cmd) { case START -> svc.start(); default -> log.warn("?"); }`}
           { need: 'Remove while looping', answer: 'list.removeIf(...), not for + remove' },
           { need: 'Exit two nested loops at once', answer: 'labelled break outer;' },
           { need: 'Print an array readably', answer: 'Arrays.toString / deepToString' },
-          { need: 'Immutable data carrier', answer: 'record' },
+          { need: 'Immutable data carrier', answer: 'record (shallow — copy mutable components)' },
           { need: 'Closed type hierarchy', answer: 'sealed interface/class + permits' },
           { need: 'Type-safe branch on a value', answer: 'switch pattern matching' },
           { need: 'Deconstruct nested records', answer: 'record patterns' },

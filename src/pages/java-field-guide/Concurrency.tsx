@@ -234,8 +234,14 @@ private final AtomicInteger count;  count.incrementAndGet();   // correct
 //   t.start()         happens-before  everything t does
 //   everything t does happens-before  t.join() returning
 //   final fields of a properly-constructed object: visible with NO sync
-//   put to a BlockingQueue / submit to an Executor happens-before the take/run`}
-        caption="Stale reads, not deadlocks, are the concurrency bugs that survive for months. Every rule here exists to manage shared MUTABLE state — immutable objects and records sidestep all of it."
+//   put to a BlockingQueue / submit to an Executor happens-before the take/run
+
+// happens-before is a VISIBILITY guarantee, NOT a chronology. "A happens-
+// before B" does not mean A ran first on a wall clock — it means everything
+// A had written is GUARANTEED VISIBLE to B. With no such edge, the JIT and
+// the CPU may reorder and cache freely, and B can legally see stale values
+// forever even though A "already" ran.`}
+        caption={<>The name misleads everyone once: <code>happens-before</code> says nothing about <em>when</em> code runs, only about what one thread is guaranteed to <em>see</em> of another&apos;s writes. Stale reads, not deadlocks, are the concurrency bugs that survive for months. Every rule here exists to manage shared MUTABLE state — immutable objects and records sidestep all of it.</>}
       />
 
       <PosterCard

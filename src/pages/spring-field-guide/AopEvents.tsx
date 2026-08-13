@@ -246,9 +246,12 @@ public class CustomerService {
 
       <PosterCard
         glyph="Rt"
+        badge="spring-retry"
         title={<>Spring Retry<span className="dim"> — @Retryable</span></>}
         language="java"
-        code={`@Configuration
+        code={`// The SEPARATE spring-retry project. Same simple name as core Spring's
+// @Retryable (next card), different members — check your import.
+@Configuration
 @EnableRetry
 public class RetryConfig { }
 
@@ -266,7 +269,7 @@ public class CatalogClient {
         return ProductDto.unavailable(id);
     }
 }`}
-        caption="Don't hand-roll a retry aspect for the common case — spring-retry gives you exponential backoff and a typed @Recover fallback declaratively, same proxy mechanism as everything else here."
+        caption={<>Don&apos;t hand-roll a retry aspect for the common case — spring-retry gives you exponential backoff and a typed <code>@Recover</code> fallback declaratively, same proxy mechanism as everything else here. <code>@Recover</code> and <code>maxAttempts</code> are <strong>spring-retry only</strong>; neither exists in the core Spring version on the next card, so copying this shape onto Boot 4 without the dependency silently changes the semantics.</>}
       />
 
       <PosterCard
@@ -310,8 +313,10 @@ public class CatalogClient {
           { need: 'Decouple a side effect', answer: 'ApplicationEventPublisher + @EventListener' },
           { need: "Side effect shouldn't roll back the tx", answer: '@TransactionalEventListener(AFTER_COMMIT)' },
           { need: 'Cache a slow read', answer: '@Cacheable — evict with @CacheEvict on writes' },
-          { need: 'Retry a flaky remote call', answer: '@Retryable + @Recover, not a hand-rolled aspect' },
+          { need: 'Retry a flaky remote call', answer: '@Retryable, not a hand-rolled aspect — check WHICH one you have' },
           { need: 'Retry on Boot 4', answer: 'Core org.springframework.resilience — drop the spring-retry dep' },
+          { need: 'Fallback when retries are exhausted', answer: '@Recover — spring-retry ONLY. Core Spring has none; catch at the call site' },
+          { need: 'Attribute is maxAttempts or maxRetries?', answer: 'spring-retry: maxAttempts (total). Core: maxRetries (after the first call)' },
           { need: 'Cap in-flight calls to a fragile dependency', answer: '@ConcurrencyLimit (Boot 4)' },
         ]}
       />

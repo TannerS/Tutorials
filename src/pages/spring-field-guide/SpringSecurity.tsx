@@ -9,12 +9,46 @@ export default function FieldGuideSpringSecurity() {
       eyebrow="Spring Boot 4 · Field Reference"
       title="Spring Security"
       tagline="The modern SecurityFilterChain, JWT resource servers, and method-level auth — condensed for offline study."
-      meta={['Spring Boot 4', '12 patterns']}
+      meta={['Spring Boot 4', '13 patterns']}
       footerLabel="Personal study reference — Spring Boot"
       pageLabel="Spring Field Guide · Security"
       prev={{ path: '/spring-field-guide/config-transactions', label: 'Config & Transactions' }}
       next={{ path: '/spring-field-guide/aop-events', label: 'AOP & Async Events' }}
     >
+      <PosterCard
+        glyph="Wh"
+        title={<>Where security runs<span className="dim"> — before Spring MVC exists</span></>}
+        language="text"
+        code={`Servlet container (Tomcat)
+   |
+DelegatingFilterProxy   plain servlet Filter named "springSecurityFilterChain"
+   |
+FilterChainProxy        holds a LIST of SecurityFilterChain beans. Walks them
+   |                    in order, uses the FIRST whose matcher accepts the
+   |                    request. FIRST MATCH WINS — exactly ONE chain runs.
+   |
+that chain's filters    CsrfFilter, authentication filter, AuthorizationFilter...
+   |                    Any of them may reject: the request STOPS HERE.
+   |
+DispatcherServlet       only NOW does Spring MVC exist — HandlerMapping,
+   |                    argument resolvers, @RestControllerAdvice
+   |
+your controller method
+
+TWO CONSEQUENCES:
+ * A 401/403 from a URL rule happens BEFORE MVC runs, so
+   @RestControllerAdvice STRUCTURALLY CANNOT CATCH IT. Configure an
+   AuthenticationEntryPoint / AccessDeniedHandler instead.
+   (A 403 from @PreAuthorize is different — that IS inside MVC, so an
+   advice can catch AccessDeniedException there.)
+ * permitAll() does NOT mean "skip security". The request still traverses
+   the whole chain; the authorization filter just votes to allow it.
+
+// Two chains with no securityMatcher and no @Order = whichever sorts first
+// swallows every request and the other silently never runs.`}
+        caption={<>Spring Security is not wired into Spring MVC at all — it is a servlet filter sitting entirely outside it. That single fact explains two otherwise baffling symptoms: a global exception handler that cannot intercept a URL-level 403 no matter what it catches, and a second <code>SecurityFilterChain</code> bean that appears to be ignored completely.</>}
+      />
+
       <PosterCard
         glyph="Fc"
         title={<>SecurityFilterChain<span className="dim"> bean</span></>}
@@ -227,6 +261,8 @@ class OrderControllerSecurityTest {
         title="Security checklist at a glance"
         rows={[
           { need: 'Stateless bearer API', answer: 'SessionCreationPolicy.STATELESS + csrf disabled' },
+          { need: 'Second SecurityFilterChain never runs', answer: 'First match wins — scope it with securityMatcher + @Order' },
+          { need: '@RestControllerAdvice cannot catch a 403', answer: 'URL rules run in a filter, before MVC — use AccessDeniedHandler' },
           { need: 'Verify JWT', answer: 'oauth2ResourceServer(jwt(decoder))' },
           { need: 'Role check on a method', answer: '@PreAuthorize("hasRole(...)")' },
           { need: 'Check return value owner', answer: '@PostAuthorize("returnObject...")' },

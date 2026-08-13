@@ -106,6 +106,34 @@ Apply with:
 public UserDto create(@Valid @RequestBody CreateUserRequest req) { ... }`}
       </CodeBlock>
 
+      <CodeBlock language="java" title="@Valid runs via TWO different machines — know which one you're in">
+{`// 1. ARGUMENT RESOLVER (controllers only). No proxy. Runs during argument
+//    resolution, so nothing can bypass it. Reliable.
+public UserDto create(@Valid @RequestBody CreateUserRequest req) { ... }
+//    Failure -> MethodArgumentNotValidException
+
+// 2. AOP PROXY (everywhere else). Opt-in, and silent when you forget.
+@Service
+public class UserService {
+    public void register(@Valid CreateUserRequest req) { ... }   // NO-OP
+}
+// Outside the web layer nothing resolves arguments. MethodValidationPost-
+// Processor does the checking, and it only wraps classes marked @Validated:
+
+@Service
+@Validated                          // <- CLASS LEVEL. This turns it on.
+public class UserService {
+    public void register(@Valid CreateUserRequest req) { ... }   // checked
+}
+//    Failure -> ConstraintViolationException (a DIFFERENT type — needs its
+//    own @ExceptionHandler or it becomes a 500)
+//    And self-invocation bypasses it, exactly like @Transactional.
+
+// @Valid    = Jakarta. Cascades into nested objects. Parameters + fields.
+// @Validated = Spring. Carries validation GROUPS, and on a class switches
+//              on method validation outside controllers.`}
+      </CodeBlock>
+
       <h2>@Transactional</h2>
       <CodeBlock language="java" title="Propagation and rollback rules">
 {`@Transactional                          // REQUIRED, rollback on RuntimeException
@@ -188,6 +216,34 @@ SecurityFilterChain chain(HttpSecurity http, JwtDecoder decoder) throws Exceptio
 @PreAuthorize("hasRole('ADMIN') or @ownerCheck.isOwner(#id, authentication.name)")`}
       </CodeBlock>
 
+      <CodeBlock language="text" title="Where the chain sits — and what that rules out">
+{`Tomcat -> DelegatingFilterProxy -> FilterChainProxy -> that chain's filters
+       -> DispatcherServlet -> your controller
+
+FilterChainProxy holds a LIST of SecurityFilterChain beans, walks them in
+order, and uses the FIRST whose matcher accepts the request. FIRST MATCH
+WINS — exactly one chain runs. Two chains with no securityMatcher and no
+@Order means whichever sorts first swallows everything and the other is
+silently dead.
+
+Because the filters run BEFORE DispatcherServlet:
+  * A 401/403 from a URL rule is produced before Spring MVC exists, so
+    @RestControllerAdvice STRUCTURALLY CANNOT CATCH IT. Configure an
+    AuthenticationEntryPoint / AccessDeniedHandler on the chain instead.
+    (A 403 from @PreAuthorize IS inside MVC — an advice can catch that one.)
+  * permitAll() does not mean "skip security". The request still traverses
+    the whole chain; the authorization filter just votes to allow it, and
+    an anonymous Authentication is still populated.
+
+// Two policies in one app: scope + order them explicitly.
+@Bean @Order(1) SecurityFilterChain api(HttpSecurity http) throws Exception {
+    return http.securityMatcher("/api/**") /* ... */ .build();
+}
+@Bean @Order(2) SecurityFilterChain ui(HttpSecurity http) throws Exception {
+    return http /* everything else */ .build();
+}`}
+      </CodeBlock>
+
       <h2>Config</h2>
       <CodeBlock language="yaml" title="application.yml essentials">
 {`spring:
@@ -241,6 +297,35 @@ app:
 #   devtools > @TestPropertySource > cmd-line args > SPRING_APPLICATION_JSON
 #   > system props > OS env vars > application-{profile}.yml > application.yml
 #   > @PropertySource > defaults`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Relaxed binding — how an env var sets a dotted property">
+{`Canonical form (use this in YAML):   app.catalog-api.max-retries
+
+  app.catalog-api.max-retries     kebab-case   <- canonical
+  app.catalogApi.maxRetries       camelCase
+  app.catalog_api.max_retries     snake_case
+  APP_CATALOG_API_MAX_RETRIES     upper snake  <- environment variables
+
+THE ENV-VAR RULE, precisely: uppercase it, then replace every character
+that is not a letter or digit with '_'. Dots AND dashes both become '_'.
+
+  spring.datasource.url         ->  SPRING_DATASOURCE_URL
+  spring.jpa.hibernate.ddl-auto ->  SPRING_JPA_HIBERNATE_DDLAUTO
+  app.servers[0].host           ->  APP_SERVERS_0_HOST
+
+  docker run -e SPRING_DATASOURCE_URL=jdbc:postgresql://db/orders my-app
+
+!! @ConfigurationProperties GETS relaxed binding. @Value DOES NOT. !!
+   Properties classes bind through the Binder, which tries every spelling
+   above. @Value("\${...}") is a plain placeholder lookup against the
+   Environment — the exact string you wrote, nothing else.
+
+   @Value("\${app.maxRetries}") works locally where application.yml spells
+   it maxRetries, then fails in prod where it arrives as APP_MAX_RETRIES.
+   One more reason typed properties are the default, not a preference.
+
+# Which source won? Ask the app:  /actuator/env/spring.datasource.url`}
       </CodeBlock>
 
       <h2>Type-Safe Config Property Class</h2>
@@ -311,6 +396,42 @@ Rules:
 - acks=all + enable.idempotence=true for producers.
 - Idempotent consumers — Kafka is at-least-once.
 - Transactional outbox for atomic DB + publish.`}
+      </CodeBlock>
+
+      <h2>Container Image</h2>
+      <CodeBlock language="text" title="Buildpacks, or the layered Dockerfile">
+{`# No Dockerfile needed — Boot builds a layered OCI image directly.
+./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=myorg/app:1.0
+./gradlew bootBuildImage --imageName=myorg/app:1.0
+
+# The hand-written equivalent. The point is LAYER EXTRACTION: split the fat
+# jar by how often each part changes so Docker caches the stable layers.
+FROM eclipse-temurin:21-jdk AS builder
+WORKDIR /builder
+COPY . .
+RUN ./mvnw -DskipTests clean package
+RUN cp target/*.jar application.jar
+# Boot 3.3+ spelling. Boot 3.2 and earlier used -Djarmode=layertools.
+RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
+
+FROM eclipse-temurin:21-jre
+WORKDIR /application
+# Least-frequently-changed FIRST, so a code-only change invalidates one COPY.
+COPY --from=builder /builder/extracted/dependencies/ ./
+COPY --from=builder /builder/extracted/spring-boot-loader/ ./
+COPY --from=builder /builder/extracted/snapshot-dependencies/ ./
+COPY --from=builder /builder/extracted/application/ ./
+RUN useradd -r -u 1001 appuser
+USER appuser
+# This application.jar is NOT the fat jar — extraction rewrote it as a THIN
+# jar whose manifest Class-Path points at the ./lib directory that landed in
+# the dependencies layer. So plain 'java -jar' is correct; do NOT invoke
+# JarLauncher, and do NOT copy the original fat jar in alongside it.
+ENTRYPOINT ["java", "-jar", "application.jar"]
+
+# Let the JVM see the cgroup limit: -XX:MaxRAMPercentage=75
+# (the default ceiling is 25%). Never hardcode -Xmx in a container — it
+# ignores the limit and is the usual cause of a pod being OOM-killed.`}
       </CodeBlock>
 
       <h2>Modern HTTP Clients</h2>

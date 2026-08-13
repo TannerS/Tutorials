@@ -250,7 +250,7 @@ void anyStatusRendersToJson(OrderStatus status) { /* ... */ }`}
           { need: 'DTO serialization', answer: '@JsonTest + JacksonTester' },
           { need: 'External HTTP dependency', answer: 'WireMock or MockRestServiceServer' },
           { need: 'Full startup + wiring smoke test', answer: '@SpringBootTest (sparingly)' },
-          { need: 'Replace a bean in the context', answer: '@MockitoBean, not deprecated @MockBean' },
+          { need: 'Replace a bean in the context', answer: '@MockitoBean — @MockBean was REMOVED in Boot 4' },
           { need: 'Many similar test cases', answer: '@ParameterizedTest + @CsvSource/@EnumSource' },
         ]}
       />

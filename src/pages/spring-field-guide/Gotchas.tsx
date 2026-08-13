@@ -9,12 +9,48 @@ export default function FieldGuideSpringGotchas() {
       eyebrow="Spring Boot 4 · Field Reference"
       title="Gotchas & Pitfalls"
       tagline="The got-ya moments — things that compile clean, pass code review, and still silently break in production."
-      meta={['Spring Boot 4', '9 gotchas']}
+      meta={['Spring Boot 4', '10 gotchas']}
       footerLabel="Personal study reference — Spring Boot Gotchas"
       pageLabel="Spring Field Guide · Gotchas"
       prev={{ path: '/spring-field-guide/boot4', label: 'Spring Boot 4 Novelties' }}
       next={null}
     >
+      <PosterCard
+        glyph="Su"
+        title={<>Startup-failure triage<span className="dim"> — read the message, not the trace</span></>}
+        language="text"
+        code={`Boot prints a Description/Action block above the stack trace.
+That block is the answer; the trace almost never is.
+
+"required a bean of type X that could not be found"
+   -> X isn't annotated, OR it lives outside the package tree under your
+      @SpringBootApplication class, so component scan never saw it.
+
+"required a single bean, but 2 were found"  (it lists both)
+   -> @Primary on the default, or @Qualifier at the injection point.
+
+"...form a cycle"  (with an ASCII diagram of the loop)
+   -> extract the shared concern into a third bean. Do NOT set
+      spring.main.allow-circular-references=true.
+
+"Port 8080 was already in use"
+   -> a previous run:  lsof -i :8080   or  --server.port=8081
+
+"No property 'emial' found for type 'Customer'"
+   -> typo in a derived query method name; the message lists the valid ones.
+
+"There is no PasswordEncoder mapped for the id \\"null\\""
+   -> stored hashes lack the {bcrypt} prefix DelegatingPasswordEncoder needs.
+
+"Failed to bind properties under 'app.x'"
+   -> @ConfigurationProperties + @Validated doing its job. Fix the yaml.
+
+--debug  prints the CONDITIONS EVALUATION REPORT: every auto-configuration
+         with the condition that let it in (Positive) or kept it out
+         (Negative). The answer to "why does this bean exist / not exist?".`}
+        caption={<>Spring Boot&apos;s startup failures are unusually well-diagnosed — a <code>FailureAnalyzer</code> turns the common ones into a plain-English Description and Action. Scrolling past that to read a 200-frame reflection trace is the single biggest time-waster in Spring debugging.</>}
+      />
+
       <PosterCard
         glyph="!"
         title={<>Self-invocation<span className="dim"> breaks every proxy annotation</span></>}
@@ -147,10 +183,12 @@ public record CatalogApiProperties(@NotBlank String baseUrl) { }`}
       <PosterQuickRef
         title="Gotcha -> fix, fast lookup"
         rows={[
+          { need: "App won't start", answer: 'Read the Description/Action block, not the trace. --debug for the conditions report' },
           { need: '@Transactional silently no-ops', answer: 'Called via this. — extract to another bean' },
           { need: 'Private method annotation ignored', answer: 'Spring AOP only weaves public methods' },
           { need: '1000+ queries for a list endpoint', answer: 'N+1 — add @EntityGraph or JOIN FETCH' },
           { need: 'Old rows change meaning after a deploy', answer: 'Enum ORDINAL mapping — always use STRING' },
+          { need: 'Connection pool exhausted under load', answer: 'HTTP/Kafka call inside @Transactional — move it outside' },
           { need: 'Checked exception but no rollback', answer: '@Transactional(rollbackFor = ...)' },
           { need: 'JPA test passes, prod query fails', answer: 'H2 lies — retest on TestContainers' },
           { need: 'Nightly job runs N times', answer: 'Shedlock or move it to an external scheduler' },
