@@ -220,7 +220,7 @@ import './analytics';  // side effect import — always included
 
       <h2>Image Optimization</h2>
 
-      <CodeBlock language="javascript" title="Modern Image Practices">
+      <CodeBlock language="html" title="Modern Image Practices">
 {`// 1. Use next-gen formats (WebP, AVIF)
 <picture>
   <source srcSet="/hero.avif" type="image/avif" />
@@ -245,7 +245,7 @@ import './analytics';  // side effect import — always included
 
       <h2>Font Loading Strategies</h2>
 
-      <CodeBlock language="javascript" title="Optimal Font Loading">
+      <CodeBlock language="html" title="Optimal Font Loading">
 {`/* 1. Preload the critical font in HTML head */
 <link rel="preload" href="/fonts/inter-var.woff2"
   as="font" type="font/woff2" crossOrigin="anonymous" />
@@ -269,7 +269,7 @@ import './analytics';  // side effect import — always included
 
       <h2>Resource Hints</h2>
 
-      <CodeBlock language="javascript" title="Preload, Prefetch, and Preconnect">
+      <CodeBlock language="html" title="Preload, Prefetch, and Preconnect">
 {`<!-- Preload: Critical resource needed NOW -->
 <link rel="preload" href="/critical.css" as="style" />
 <link rel="preload" href="/hero.webp" as="image" />

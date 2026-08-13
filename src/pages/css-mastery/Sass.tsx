@@ -203,12 +203,16 @@ $primary: #6366f1;
 // again, and if two partials both define $primary, last one silently wins`}
       </CodeBlock>
 
-      <CodeBlock language="scss" title="@use — Namespaced, Loaded Once, Explicit">
+      <CodeBlock language="scss" title="@use — the partial being loaded (_tokens.scss)">
 {`// _tokens.scss
 $primary: #6366f1;
-@function spacing($n) { @return $n * 0.25rem; }
+@function spacing($n) { @return $n * 0.25rem; }`}
+      </CodeBlock>
 
-// button.scss — every @use goes at the TOP, before any style rule
+      <CodeBlock language="scss" title="@use — Namespaced, Loaded Once, Explicit (button.scss)">
+{`// button.scss — every @use goes at the TOP, before any style rule.
+// Sass enforces this: a @use after any style rule is a compile error,
+// "@use rules must be written before any other rules."
 @use 'tokens';            // loaded exactly once, namespaced as "tokens."
 @use 'tokens' as t;       // alias the namespace if you want it shorter
 
