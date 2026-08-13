@@ -303,6 +303,16 @@ All 6 lessons written AND wired into `sections.ts` + `App.tsx` (I wired each as 
 
 **Typecheck confirmed clean repo-wide (`tsc exit=0`) once this lane's in-flight file landed.**
 
+**Sweep B (React — 24 files) — DONE.** 13 files had real errors, 11 genuinely clean.
+- **Answered the targeted question: YES, another react-router file repeated the removed-API problem.** `Fullapp.tsx` taught `<RouterProvider fallbackElement>`, removed in v7 — not in `RouterProviderProps`, silently ignored, so the loading UI simply never appears. Replaced with `HydrateFallback`. `Migration.tsx` compounded it by *omission*: it credited loaders/actions/`createBrowserRouter` to v7 (they shipped in v6.4) and called v6→v7 "less about breakage" while listing none of the actual removals.
+- **`react-router/CheatSheet.tsx` claimed `navigate()` does not reload loader data — backwards.** Verified against router source, which explicitly special-cases same-path navigation to `defaultShouldRevalidate = true`.
+- **That cheat sheet's TypeScript section was wrong on 3 of 3 claims**, each disproven by compiling probes against installed types: `useLoaderData()` is `any` not `unknown`; `useParams<{id:string}>()` returns `Readonly<Partial<…>>` so the generic does **not** narrow `id` to `string`; `location.state` is `any` not `unknown`.
+- **`BuildToolchain.tsx` taught `react@18/umd` script tags in the React 19 section — React 19 ships no `umd/` directory at all.** Replaced with the import-map/esm.sh equivalent.
+- `Performance.tsx`'s `useDebounce` never cleared its timer (so it wasn't a debounce), plus a fabricated `component.preload?.()` "bundler-supported" API.
+- Two more zero-arg `useRef` (confirmed `TS2554`), `React.FC` implicit-children (removed in @types/react 18), DOM ref `.current` described as read-only (mutable in 19), and `useQuery([key], fn)` positional form removed in TanStack Query v5.
+- Added `createRoutesStub`, v7's purpose-built route-testing utility, entirely absent from `Testing.tsx`.
+- **Important verification caveat it surfaced**: `tsc` skips semantic checks when *any* file has a syntax error, so a plain `npx tsc --noEmit` can mask real type errors while another lane's file is mid-write. A clean `exit=0` is trustworthy; a non-zero exit with syntax errors means type errors elsewhere are hidden. Worth remembering for future parallel runs.
+
 ### Remaining plan
-1. Collect the remaining 2 sweep reports (TypeScript, React) → verify typecheck/lint/build → commit + push round 6.
+1. Collect the last sweep report (TypeScript) → verify typecheck/lint/build → commit + push round 6.
 2. Dispatch round 7 as weighted lanes — roughly 3 lanes on React (react19 / react-field-guide / react-router / react-antipatterns / react-testing / state-mgmt), 2 on TypeScript (typescript / typescript-field-guide), 2 on Java+Spring (java / springboot / both field guides), and 2–3 covering the remainder (SQL, CSS, architecture/security, testing, tooling, playgrounds) — each with an explicit final step of reconciling its section's cheat sheet against everything the repo now contains.
