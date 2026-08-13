@@ -270,14 +270,65 @@ function FilteredList({ items }) {
 }`}
       </CodeBlock>
 
-      <h3>2. Don&apos;t Use useEffect for Synchronization</h3>
+      <h3>2. Don&apos;t Chain Effects to React to User Actions</h3>
 
       <InfoBox variant="warning" title="You Might Not Need an Effect">
         <p>
-          If you are using <code>useEffect</code> only to keep two pieces of
-          state in sync, you are doing extra work. Compute the value inline or
-          use an event handler instead.
+          Item 1 covered deriving a <em>value</em>. This is the other half:
+          deriving a <em>consequence</em>. If something should happen because the
+          user did something, write it in the event handler. An effect only knows
+          that a value changed — it cannot know <em>why</em>, and that lost
+          information is where the bugs come from.
         </p>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Effect Chain Anti-Pattern">
+        {`// ❌ Bad — a chain of effects, each triggering the next
+function Checkout() {
+  const [items, setItems] = useState([]);
+  const [subtotal, setSubtotal] = useState(0);
+  const [tax, setTax] = useState(0);
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => { setSubtotal(items.reduce((s, i) => s + i.price, 0)); }, [items]);
+  useEffect(() => { setTax(subtotal * 0.2); }, [subtotal]);
+  useEffect(() => { setTotal(subtotal + tax); }, [subtotal, tax]);
+
+  // Adding one item takes FOUR renders to settle, and every intermediate
+  // render shows an inconsistent total on screen. Worse: "total" is briefly
+  // computed from the NEW subtotal and the OLD tax.
+}
+
+// ✅ Good — one state, everything else derived in a single pass
+function Checkout() {
+  const [items, setItems] = useState([]);
+
+  const subtotal = items.reduce((s, i) => s + i.price, 0);
+  const tax = subtotal * 0.2;
+  const total = subtotal + tax;
+  // One render. The three values are never out of step with each other,
+  // because they cannot be — they are recomputed together, from one source.
+}
+
+// ❌ Bad — using an effect to respond to a user action
+useEffect(() => {
+  if (submitted) { showToast('Saved!'); navigate('/done'); }
+}, [submitted]);
+
+// ✅ Good — the handler already knows the action happened
+async function handleSubmit() {
+  await save();
+  showToast('Saved!');
+  navigate('/done');
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The Tell-Tale Sign">
+        A state variable that exists <em>only</em> so an effect can watch it —{' '}
+        <code>submitted</code>, <code>shouldRefetch</code>,{' '}
+        <code>pendingAction</code> — is almost always a function call trying to
+        escape. You wrote a flag, waited a render, then read the flag, when you
+        could have just called the function.
       </InfoBox>
 
       <h3>3. Don&apos;t Mutate State Directly</h3>

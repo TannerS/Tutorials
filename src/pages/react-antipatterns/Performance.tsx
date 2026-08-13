@@ -85,16 +85,21 @@ function Parent() {
       </p>
 
       <CodeBlock language="jsx" title="❌ BAD — New function every render">
-        {`function TodoList({ todos }) {
+        {`function TodoList() {
+  const [todos, setTodos] = useState([]);
+
   return (
     <ul>
       {todos.map((todo) => (
         <MemoizedTodoItem
           key={todo.id}
           todo={todo}
-          // New function reference each render
-          onDelete={() => deleteTodo(todo.id)}
-          onToggle={() => toggleTodo(todo.id)}
+          // A new closure per row, per render. Even if only ONE todo changed,
+          // every row gets a fresh onDelete/onToggle, so memo's shallow
+          // comparison fails for all 500 rows and all 500 re-render.
+          onDelete={() => setTodos((prev) => prev.filter((t) => t.id !== todo.id))}
+          onToggle={() => setTodos((prev) => prev.map((t) =>
+            t.id === todo.id ? { ...t, done: !t.done } : t))}
         />
       ))}
     </ul>
@@ -102,9 +107,32 @@ function Parent() {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="note" title="Why the Fix Is a Signature Change, Not a Wrapper">
+        Notice what actually changed. You cannot fix the version above by wrapping
+        those arrows in <code>useCallback</code> — they are created inside{' '}
+        <code>.map()</code>, so there is one per row, and hooks cannot be called in a
+        loop anyway. The closure over <code>todo.id</code> is the problem itself.
+        <br />
+        <br />
+        The fix moves that argument across the boundary: the parent supplies one
+        id-agnostic handler, and the child — which already knows its own{' '}
+        <code>todo</code> — supplies the id at call time. The inline arrow does not
+        disappear, it just relocates <em>inside</em> the memoized child, where
+        creating it fresh costs nothing because that component is re-rendering
+        anyway. Recognising which side of a memo boundary an allocation lands on is
+        most of what performance work in React actually is.
+      </InfoBox>
+
       <CodeBlock language="jsx" title="✅ GOOD — useCallback with stable identity">
-        {`function TodoList({ todos }) {
+        {`function TodoList() {
+  const [todos, setTodos] = useState([]);
+
+  // Note the shape change: the handler now takes an \`id\` parameter instead
+  // of closing over one. That is what lets a SINGLE function instance serve
+  // every row — the identity no longer varies per item.
   const handleDelete = useCallback((id) => {
+    // The prev => updater is what makes [] a correct dep array: we never
+    // read \`todos\` from the closure, so the callback never goes stale.
     setTodos((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
@@ -253,7 +281,9 @@ const Label = memo(function Label({ text }) {
 });
 
 function Form() {
-  // Unnecessary — simple handler, child is not memoized
+  // Unnecessary — this goes to a plain <button>. DOM elements are not
+  // memoized components; React never compares their prop identity to decide
+  // whether to re-render, so a stable handler buys literally nothing.
   const handleClick = useCallback(() => {
     console.log('clicked');
   }, []);
@@ -451,7 +481,8 @@ function App() {
 
   return (
     <div>
-      <SearchBar value={search} onChange={(e) => setSearch(e.target.value)} />
+      {/* New function every render */}
+      <SearchBar value={search} onChange={(value) => setSearch(value)} />
       <CategoryFilter
         categories={categories}
         selected={selectedCategory}
@@ -471,7 +502,22 @@ function App() {
       </CodeBlock>
 
       <CodeBlock language="jsx" title="✅ GOOD — ProductDashboard fully optimized">
-        {`const StatsPanel = memo(function StatsPanel({ stats }) {
+        {`// Every child that receives a stabilised prop must itself be memo'd,
+// otherwise the useMemo/useCallback below is pure overhead. See §5.
+const SearchBar = memo(function SearchBar({ value, onChange }) {
+  // Contract: this component calls onChange(nextString), NOT onChange(event).
+  return <input value={value} onChange={(e) => onChange(e.target.value)} />;
+});
+
+const CategoryFilter = memo(function CategoryFilter({ categories, selected, onSelect }) {
+  return (
+    <select value={selected} onChange={(e) => onSelect(e.target.value)}>
+      {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+    </select>
+  );
+});
+
+const StatsPanel = memo(function StatsPanel({ stats }) {
   return (
     <div>
       <span>Total: {stats.total}</span>
@@ -546,6 +592,64 @@ function ProductDashboard({ products, categories }) {
           <li><strong>React.memo</strong> — skips re-render when props are shallowly equal.</li>
           <li>All three must work together; any missing link breaks the chain.</li>
         </ul>
+        <p style={{ marginBottom: 0 }}>
+          That last point is why the &ldquo;optimized&rdquo; version had to add{' '}
+          <code>memo</code> to <code>SearchBar</code> and <code>CategoryFilter</code>{' '}
+          too. Had they stayed unmemoized, <code>handleCategorySelect</code>{' '}
+          would have been dead weight — you would be paying for a dependency array to
+          stabilise a prop that nothing ever compares.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="question" title="Trace It: What Still Re-Renders When You Type?">
+        Worth walking through, because &ldquo;fully optimized&rdquo; does not mean
+        &ldquo;nothing re-renders.&rdquo; Type one character into the search box:
+        <ul>
+          <li>
+            <code>search</code> changes, so <code>ProductDashboard</code> re-renders.
+            Memoization never prevents a component from re-rendering due to{' '}
+            <em>its own</em> state.
+          </li>
+          <li>
+            <code>SearchBar</code> re-renders — its <code>value</code> prop genuinely
+            changed. Correct and unavoidable.
+          </li>
+          <li>
+            <code>filtered</code> is in <code>search</code>&apos;s dep list, so it
+            recomputes and returns a new array. <code>stats</code> depends on{' '}
+            <code>filtered</code>, so it recomputes too. Both{' '}
+            <code>ProductGrid</code> and <code>StatsPanel</code> re-render.
+          </li>
+          <li>
+            <code>CategoryFilter</code> is the one that is actually skipped: its three
+            props are all unchanged and it is memoized.
+          </li>
+        </ul>
+        <p style={{ marginBottom: 0 }}>
+          So the entire elaborate setup saves exactly one small component on this
+          interaction. That is the honest yield, and it is why{' '}
+          <strong>§5 comes before this section</strong>: measure first. The
+          memoization earns its keep here only if <code>ProductGrid</code> renders
+          hundreds of cards and the category filter is expensive — otherwise the
+          unoptimized version was fine and considerably easier to read.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="info" title="A Note on the React Compiler">
+        Much of this lesson describes manual work that the React Compiler (stable as
+        of React 19) automates: it analyses your components and inserts the
+        equivalent of <code>useMemo</code>/<code>useCallback</code>/<code>memo</code>{' '}
+        for you, which is why you will see new codebases with almost no manual
+        memoization.
+        <br />
+        <br />
+        Learn the manual version anyway, for two reasons. First, you will maintain
+        pre-compiler code for years. Second — and this is the part that matters in
+        interviews — the compiler can only memoize code that follows the Rules of
+        React. Mutating props, writing to a ref during render, or reading state
+        outside a hook all cause it to silently bail out on that component. Debugging
+        &ldquo;why did the compiler skip this?&rdquo; requires exactly the model this
+        lesson builds.
       </InfoBox>
 
       {/* ------------------------------------------------------------------ */}

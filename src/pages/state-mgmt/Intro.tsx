@@ -21,7 +21,8 @@ export default function Intro() {
       </p>
 
       <CodeBlock language="jsx" title="Basic Context Pattern">
-{`const ThemeContext = createContext('light');
+{`// Default is undefined ON PURPOSE — see the note below.
+const ThemeContext = createContext(undefined);
 
 function ThemeProvider({ children }) {
   const [theme, setTheme] = useState('light');
@@ -40,6 +41,34 @@ function useTheme() {
   return ctx;
 }`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Why the Default Value Is undefined, Not 'light'">
+        <p>
+          A plausible-looking <code>createContext('light')</code> quietly disables the
+          guard on the next line. The default is returned only when there is{' '}
+          <strong>no matching provider above</strong> — which is exactly the case the
+          guard exists to catch. Give it a truthy default and{' '}
+          <code>if (!ctx)</code> can never fire.
+        </p>
+        <p>
+          The failure is not a clean crash, either. A component rendered outside the
+          provider gets the string <code>'light'</code>, destructures it as{' '}
+          <code>{'const { theme, setTheme } = useTheme()'}</code>, and receives{' '}
+          <code>undefined</code> for both — because strings have no{' '}
+          <code>.theme</code> property. You then get{' '}
+          <em>&ldquo;setTheme is not a function&rdquo;</em> from somewhere deep in a
+          click handler, far from the missing provider that actually caused it.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Hence the rule: <strong>make the default value unusable.</strong> Pass{' '}
+          <code>undefined</code> (or <code>null</code>) and let the custom hook throw a
+          message that names the missing provider. A context default is genuinely
+          useful only when a component is <em>designed</em> to work without a provider
+          — which is rarer than it sounds. In TypeScript this is enforced for you:
+          typing the context as <code>ThemeValue | undefined</code> makes the guard the
+          only way to narrow it before use.
+        </p>
+      </InfoBox>
 
       <h2>The Performance Problem</h2>
       <p>
@@ -108,8 +137,12 @@ function UserAvatar() {
 </UserProvider>
 
 // 3. External Store — selector-based, surgical re-renders
+// (This selector shape is what Zustand and Redux both give you. It is
+//  rung 5 of the ladder in the next lesson — shown here only for contrast.)
 function UserMenu() {
-  // Only re-renders when user.name actually changes
+  // The store calls this selector on every change and re-renders ONLY if
+  // the SELECTED slice differs. That extra comparison step is the thing
+  // Context structurally cannot do.
   const name = useStore(state => state.user.name);
   return <span>{name}</span>;
 }`}
@@ -137,8 +170,11 @@ function UserMenu() {
       <h3>Server Cache</h3>
       <p>
         Data fetched from APIs is <em>not your state</em> — it&apos;s a cache of someone else&apos;s
-        state. TanStack Query (React Query) handles caching, background refetching, stale-while-revalidate,
-        pagination, optimistic updates, and deduplication out of the box. Copying server data into
+        state. TanStack Query (React Query) handles caching, background refetching,
+        <strong> stale-while-revalidate</strong> — serve the cached copy instantly, then quietly
+        refetch and swap in fresh data if it changed, so the user never waits on a spinner for
+        data you already had — plus pagination, optimistic updates, and deduplication out of
+        the box. Copying server data into
         your own client state — a Context, a reducer, a store — and then hand-maintaining it is the
         single most common over-engineering mistake in React apps.
       </p>

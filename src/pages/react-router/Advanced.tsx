@@ -69,11 +69,32 @@ export function ErrorBoundary() {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="lazy() vs React.lazy()">
-        React Router&apos;s <code>lazy</code> property loads the entire route module
-        (element, loader, action, errorElement) in one import. <code>React.lazy()</code>{' '}
-        only lazy-loads the component. Prefer the route-level <code>lazy</code> for
-        full code splitting — it also parallelizes loader execution with chunk loading.
+      <InfoBox variant="tip" title="lazy vs React.lazy() — and Why the Difference Matters">
+        <p>
+          React Router&apos;s <code>lazy</code> property loads the entire route module
+          — <code>Component</code>, <code>loader</code>, <code>action</code>,{' '}
+          <code>ErrorBoundary</code> — in one import. <code>React.lazy()</code> only
+          defers the component.
+        </p>
+        <p>
+          That distinction has teeth. With <code>React.lazy()</code> the route&apos;s
+          loader must stay in the main bundle, because React Router needs it to start
+          fetching <em>before</em> it renders anything. So the data-fetching code for
+          every route ships on first load, and the component chunk only starts
+          downloading once React renders the <code>Suspense</code> boundary — after
+          navigation has already begun. Route-level <code>lazy</code> keeps them
+          together and starts the download the moment the route matches.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          One honest caveat about parallelism: when the loader lives{' '}
+          <em>inside</em> the lazy module, React Router obviously cannot call it until
+          that chunk arrives — the download and that loader are sequential. What runs
+          in parallel is everything else: sibling routes&apos; loaders in the same
+          match, and any <code>loader</code> you declared statically on the route
+          object alongside <code>lazy</code>. If a route&apos;s data is slow and its
+          chunk is large, declaring the loader statically and lazy-loading only the
+          rest is the trick that overlaps them.
+        </p>
       </InfoBox>
 
       <h3>Fallback with React.lazy (Classic Pattern)</h3>
@@ -100,33 +121,46 @@ function LazyRoute({ component: Component }) {
 
       <h2>Code Splitting with Vite</h2>
       <CodeBlock language="jsx" title="Vite Chunk Naming for Routes">
-{`// Vite automatically code-splits dynamic imports.
-// Name chunks for better debugging:
+{`// Vite code-splits every dynamic import automatically — no annotation needed.
+// It derives the chunk name from the module's own filename, so Dashboard.jsx
+// already emits something like assets/Dashboard-a1b2c3d4.js.
 const router = createBrowserRouter([
-  {
-    path: 'dashboard',
-    lazy: () => import(/* webpackChunkName: "dashboard" */ './routes/Dashboard'),
-  },
-  {
-    path: 'reports',
-    lazy: () => import(/* webpackChunkName: "reports" */ './routes/Reports'),
-  },
+  { path: 'dashboard', lazy: () => import('./routes/Dashboard') },
+  { path: 'reports',   lazy: () => import('./routes/Reports') },
 ]);
 
-// vite.config.js — control chunk output
+// ⚠️ Do NOT copy /* webpackChunkName: "dashboard" */ from webpack guides.
+// It is a webpack magic comment. Vite uses Rollup, which ignores it entirely —
+// the build succeeds, the comment is stripped, and nothing is renamed.
+
+// vite.config.js — the actual Vite/Rollup controls
 export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        // Group shared dependencies into stable, long-cached chunks
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
           'router': ['react-router-dom'],
         },
+        // Rename the auto-generated route chunks if the defaults aren't clear
+        chunkFileNames: 'assets/[name]-[hash].js',
       },
     },
   },
 });`}
       </CodeBlock>
+
+      <InfoBox variant="info" title="Is manualChunks Actually Worth It?">
+        Splitting <code>react-vendor</code> out is a caching optimisation, not a
+        size one — the bytes still ship, they just land in a chunk whose hash does
+        not change when your app code does, so returning visitors reuse it. It is
+        the <em>route</em> splitting above that reduces what a first-time visitor
+        downloads. Reach for <code>manualChunks</code> only after you have looked at
+        a bundle visualiser; grouping the wrong modules can easily make things worse
+        by pulling a big dependency into the initial load that would otherwise have
+        stayed inside a lazy route.
+      </InfoBox>
 
       <FlowChart
         title="Lazy Route Loading Sequence"

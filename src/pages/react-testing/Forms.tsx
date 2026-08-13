@@ -563,6 +563,42 @@ describe('LoginForm', () => {
         actual navigation behavior. Mocking router internals is fragile and
         doesn't test real behavior.
       </InfoBox>
+
+      <InfoBox variant="danger" title="MemoryRouter Only Covers Half of React Router 7">
+        <p>
+          Everything above uses <code>MemoryRouter</code> wrapped around{' '}
+          <code>&lt;Routes&gt;</code>, which is the right tool for the{' '}
+          <strong>declarative</strong> API. It does <em>not</em> work for the{' '}
+          <strong>data</strong> API. A component that calls{' '}
+          <code>useLoaderData</code>, <code>useActionData</code>,{' '}
+          <code>useNavigation</code>, or renders <code>&lt;Form&gt;</code> will throw
+          inside a <code>MemoryRouter</code> — those hooks require a data router, and
+          the error message (&ldquo;useLoaderData must be used within a data
+          router&rdquo;) is easy to misread as a missing provider.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          For those, build the router the same way your app does and render it
+          through <code>RouterProvider</code>:
+        </p>
+        <CodeBlock language="jsx" title="Testing a route that has a loader">
+          {`import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+
+const router = createMemoryRouter(
+  [{ path: '/users/:id', element: <UserPage />, loader: userLoader }],
+  { initialEntries: ['/users/42'] },   // note: an OPTION here, not a prop
+);
+
+render(<RouterProvider router={router} />);
+expect(await screen.findByText(/user #42/i)).toBeInTheDocument();`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          Note where <code>initialEntries</code> moved: it is a prop on{' '}
+          <code>MemoryRouter</code> but an option in the second argument of{' '}
+          <code>createMemoryRouter</code>. The <strong>Testing Routes</strong> lesson
+          in the React Router section covers loaders, actions, and error boundaries in
+          full.
+        </p>
+      </InfoBox>
     </LessonLayout>
   );
 }

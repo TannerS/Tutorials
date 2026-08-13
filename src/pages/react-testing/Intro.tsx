@@ -109,8 +109,12 @@ import '@testing-library/jest-dom/vitest';
       <h2>The render Function</h2>
       <p>
         <code>render()</code> mounts your component into a virtual DOM (jsdom) and
-        returns utilities for querying it. Always destructure <code>screen</code>
-        from the import instead — it's bound to the latest render automatically.
+        returns an object of query utilities scoped to that render. You can use
+        those, but prefer <code>screen</code>, imported directly from the library:
+        its queries run against <code>document.body</code>, so there is nothing to
+        destructure, nothing to thread through helper functions, and no stale
+        reference if a test renders more than once. The RTL docs treat{' '}
+        <code>screen</code> as the default for exactly this reason.
       </p>
 
       <CodeBlock language="jsx" title="Basic render + screen">
@@ -272,6 +276,49 @@ test('submits form with user credentials', async () => {
   });
 });`}
       </CodeBlock>
+
+      <InfoBox variant="note" title="Vocabulary: What jest.fn() Actually Is">
+        <p>
+          That <code>jest.fn()</code> above appeared without introduction, and the
+          words around it get used loosely everywhere you will read about testing.
+          The umbrella term is <strong>test double</strong> — any stand-in you put in
+          place of a real dependency, the way a stunt double stands in for an actor.
+          The varieties worth distinguishing:
+        </p>
+        <ul>
+          <li>
+            <strong>Stub</strong> — returns canned answers. It exists so the code
+            under test can run.{' '}
+            <code>jest.fn().mockReturnValue(42)</code>.
+          </li>
+          <li>
+            <strong>Spy</strong> — records how it was called (arguments, call count)
+            while leaving behaviour alone. <code>jest.spyOn(obj, 'method')</code>{' '}
+            wraps a <em>real</em> method so it still runs, but you can now assert on
+            it.
+          </li>
+          <li>
+            <strong>Mock</strong> — strictly, a double you assert{' '}
+            <em>against</em>: the expectation of how it should be called is part of
+            the test. <code>expect(handleSubmit).toHaveBeenCalledWith(...)</code> is
+            using the double as a mock.
+          </li>
+          <li>
+            <strong>Fake</strong> — a real, working implementation that is simply
+            unsuitable for production: an in-memory database, or MSW standing in for
+            your HTTP API.
+          </li>
+        </ul>
+        <p style={{ marginBottom: 0 }}>
+          In practice <code>jest.fn()</code> / <code>vi.fn()</code> is all four at
+          once — it records calls <em>and</em> can be given a return value — which is
+          why nobody is careful about the terms. Interviewers do ask for the spy/mock
+          distinction, though, and the short answer is: <strong>a spy observes, a mock
+          asserts.</strong> The RTL-specific guidance is to reach for doubles as
+          rarely as you can. Every double is a claim that the real thing behaves a
+          certain way, and that claim is not itself tested.
+        </p>
+      </InfoBox>
 
       <InfoBox variant="warning" title="fireEvent Is Low-Level">
         <code>fireEvent.click(button)</code> fires only the click event.

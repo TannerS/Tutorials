@@ -287,11 +287,18 @@ function useProduct(productId) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let ignore = false;
     setLoading(true);
+
     fetch(\`/api/products/\${productId}\`)
       .then(res => res.json())
-      .then(setProduct)
-      .finally(() => setLoading(false));
+      .then(data => { if (!ignore) setProduct(data); })
+      .finally(() => { if (!ignore) setLoading(false); });
+
+    // Same race-condition guard from the useEffect lesson. Extracting logic
+    // into a hook does not make the race go away — but it does mean you fix
+    // it ONCE here instead of in every component that fetches a product.
+    return () => { ignore = true; };
   }, [productId]);
 
   return { product, loading };
@@ -498,10 +505,36 @@ function SearchBar() {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="danger" title="Context Performance Trap">
-        Every component that calls <code>useContext(SomeContext)</code> re-renders
-        whenever <strong>any</strong> value in that context changes. Splitting contexts
-        by domain and change frequency is critical for performance.
+      <InfoBox variant="danger" title="Context Performance Trap — The Exact Mechanism">
+        <p>
+          Stated precisely, because the loose version misleads: a consumer re-renders
+          when the provider&apos;s <code>value</code> <strong>prop identity</strong>{' '}
+          changes, compared with <code>Object.is</code>. React does not look inside
+          the object. There is no way to subscribe to just the <code>theme</code> key
+          of a context and ignore the rest.
+        </p>
+        <p>
+          Two consequences follow, and the second is the one that bites:
+        </p>
+        <ul>
+          <li>
+            Bundling fast-changing values with stable ones drags every consumer along
+            for the ride — the problem the refactor above fixes.
+          </li>
+          <li>
+            An inline <code>value={'{{ user, setUser }}'}</code> allocates a new
+            object on <em>every provider render</em>, so consumers re-render even
+            when nothing they read has changed. This is why each provider above
+            wraps its value in <code>useMemo</code>. Splitting contexts without
+            adding that <code>useMemo</code> fixes almost nothing.
+          </li>
+        </ul>
+        <p style={{ marginBottom: 0 }}>
+          Note also that <code>memo</code> cannot save you here.{' '}
+          <code>useContext</code> subscribes the component directly, so a context
+          change re-renders it regardless of whether its props were equal — which is
+          exactly why option 4 in the quiz below is wrong.
+        </p>
       </InfoBox>
 
       {/* ─── Summary Flow ─── */}

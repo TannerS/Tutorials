@@ -59,6 +59,35 @@ describe('Badge', () => {
 });`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Those Two Class Assertions Are a Compromise — Know What You Are Trading">
+        <p>
+          <code>toHaveClass('badge-danger')</code> asserts a CSS class name, which is
+          exactly the kind of implementation detail this section warns against at the
+          bottom of the page. Rename the class in your stylesheet and the test breaks
+          even though nothing a user can perceive has changed.
+        </p>
+        <p>
+          It is still the pragmatic choice here, because &ldquo;is this badge
+          red?&rdquo; has no accessible representation to query — and that is the real
+          lesson. When appearance carries <em>meaning</em>, the meaning should be in
+          the markup, and then you can test the meaning instead:
+        </p>
+        <CodeBlock language="jsx" title="Prefer asserting the meaning, not the styling hook">
+          {`// The component renders <span role="status" data-variant="danger">
+// Better still, if it conveys an error: role="alert"
+expect(screen.getByRole('status')).toHaveAttribute('data-variant', 'danger');`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          One hard gotcha with the sibling matcher: <code>toHaveStyle</code> reads{' '}
+          <strong>computed</strong> styles, and jsdom does not load your external
+          stylesheets or CSS Modules. The <code>line-through</code> assertion in the
+          list example below only passes if that rule arrives as an{' '}
+          <em>inline</em> <code>style</code> prop. Applied via a class, the computed
+          value is empty and the test fails with a confusing diff — a very common way
+          to lose an hour.
+        </p>
+      </InfoBox>
+
       <h2>Conditional Rendering</h2>
 
       <CodeBlock language="jsx" title="Testing Conditional Display">

@@ -129,13 +129,32 @@ function UserProfile({ userId }) {
 
       <h3>Performance Impact</h3>
       <p>
-        Many anti-patterns cause unnecessary re-renders. A single misplaced
-        inline function or object literal in a prop can cascade into hundreds
-        of wasted render cycles across a component tree.
+        Many anti-patterns cause unnecessary re-renders. In a tree that has
+        been deliberately memoized, a single inline function or object literal
+        in a prop can defeat that memoization and cascade into wasted render
+        cycles across an entire subtree — the optimization silently stops
+        working while still costing you the code to maintain it.
+      </p>
+
+      <p>
+        Before the example, one piece of vocabulary that the rest of this
+        section leans on. A <strong>stable reference</strong> is a value whose
+        identity (the thing <code>===</code> compares) survives across renders.
+        Primitives like <code>16</code> or <code>'red'</code> are always stable
+        — <code>16 === 16</code>. Objects, arrays and functions are not: every
+        render evaluates <code>{'{ color: \'red\' }'}</code> afresh and produces
+        a <em>new</em> object that is <code>!==</code> the last one, even though
+        it looks identical. That distinction is the entire mechanism behind the
+        next few pages.
       </p>
 
       <CodeBlock language="jsx" title="Unnecessary Re-Renders (Anti-Pattern)">
-        {`function ParentComponent() {
+        {`// Precondition: these children are wrapped in React.memo. That is what
+// makes prop identity matter at all — see the note below.
+const ExpensiveChild = React.memo(function ExpensiveChild({ style }) { /* ... */ });
+const AnotherChild = React.memo(function AnotherChild({ onAction }) { /* ... */ });
+
+function ParentComponent() {
   const [count, setCount] = useState(0);
 
   return (
@@ -143,10 +162,10 @@ function UserProfile({ userId }) {
       <button onClick={() => setCount(c => c + 1)}>
         Count: {count}
       </button>
-      {/* This object is recreated every render,
-          causing ExpensiveChild to re-render too */}
+      {/* New object identity every render, so memo's props comparison
+          fails and ExpensiveChild re-renders anyway */}
       <ExpensiveChild style={{ color: 'red', fontSize: 16 }} />
-      {/* This function is recreated every render */}
+      {/* Same story: a new function identity every render */}
       <AnotherChild onAction={() => console.log('clicked')} />
     </div>
   );
@@ -154,11 +173,18 @@ function UserProfile({ userId }) {
       </CodeBlock>
 
       <CodeBlock language="jsx" title="Stable References (Clean Pattern)">
-        {`const stableStyle = { color: 'red', fontSize: 16 };
+        {`// Hoisted out of the component: created once for the module's lifetime,
+// so every render passes the identical object.
+const stableStyle = { color: 'red', fontSize: 16 };
+
+const ExpensiveChild = React.memo(function ExpensiveChild({ style }) { /* ... */ });
+const AnotherChild = React.memo(function AnotherChild({ onAction }) { /* ... */ });
 
 function ParentComponent() {
   const [count, setCount] = useState(0);
 
+  // useCallback with an empty dep array returns the same function
+  // instance on every render.
   const handleAction = useCallback(() => {
     console.log('clicked');
   }, []);
@@ -168,12 +194,33 @@ function ParentComponent() {
       <button onClick={() => setCount(c => c + 1)}>
         Count: {count}
       </button>
+      {/* Both props are now === their previous value, so memo's
+          comparison passes and neither child re-renders. */}
       <ExpensiveChild style={stableStyle} />
       <AnotherChild onAction={handleAction} />
     </div>
   );
 }`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Stable References Do Nothing Without memo">
+        This is the most commonly mis-taught point in React performance work,
+        so it is worth stating plainly. If <code>ExpensiveChild</code> were a
+        plain component, <strong>both versions above would render exactly the
+        same number of times</strong>. A parent re-render re-renders all of its
+        children by default; React does not compare props to decide. Prop
+        identity only becomes load-bearing once a child is wrapped in{' '}
+        <code>React.memo</code>, because <code>memo</code> is the thing that
+        opts into a props comparison in the first place.
+        <br />
+        <br />
+        So the rule is not &ldquo;always hoist objects and wrap callbacks.&rdquo;
+        It is: <code>memo</code> plus stable props is a pair, and neither half
+        works alone. Reaching for <code>useCallback</code> around an unmemoized
+        child is pure overhead — you pay for the dependency array and get no
+        skipped renders. The <strong>Performance Mistakes</strong> lesson
+        develops this properly.
+      </InfoBox>
 
       <h3>Maintainability Impact</h3>
       <p>

@@ -211,6 +211,30 @@ function ThemeToggle() {
         Before reaching for Context, consider component composition — passing
         components as <code>children</code> or using render props can often
         eliminate prop drilling without adding a provider.
+        <br />
+        <br />
+        And note that prop drilling is not automatically a bug. Threading a prop
+        through one or two layers is clearer than a provider, because the data flow
+        stays visible in the code. The anti-pattern is drilling through components
+        that have no interest in the value — roughly three or more layers of pure
+        forwarding, as above, where every intermediate component's signature is
+        coupled to a decision made far away from it.
+      </InfoBox>
+
+      <InfoBox variant="warning" title="One Catch in That Provider">
+        <code>value={'{{ theme, setTheme }}'}</code> builds a new object on every
+        render of <code>App</code>. Every consumer re-renders whenever that object's
+        identity changes, and identity changes on every <code>App</code> render — not
+        only when <code>theme</code> does. Here it happens to be harmless, since{' '}
+        <code>theme</code> is the only state <code>App</code> has, so the only thing
+        that re-renders <code>App</code> is the very change consumers care about.
+        <br />
+        <br />
+        It stops being harmless the moment <code>App</code> gains unrelated state.
+        The fix is <code>useMemo(() =&gt; ({'{ theme, setTheme }'}), [theme])</code>.
+        The <strong>Performance Mistakes</strong> lesson covers this, and it is the
+        single most common way a Context refactor makes performance worse than the
+        prop drilling it replaced.
       </InfoBox>
 
       {/* ---- 4. State for Non-Rendering Values ---- */}
@@ -252,6 +276,10 @@ function ThemeToggle() {
   const intervalRef = useRef(null);
 
   const start = () => {
+    // Guard: without this, clicking Start twice orphans the first interval
+    // (its id is overwritten, so nothing can ever clear it) and the clock
+    // starts ticking twice per second.
+    if (intervalRef.current !== null) return;
     intervalRef.current = setInterval(() => setTime(t => t + 1), 1000);
   };
 
@@ -259,6 +287,12 @@ function ThemeToggle() {
     clearInterval(intervalRef.current);
     intervalRef.current = null;
   };
+
+  // Cleanup on unmount. A running interval holds a reference to setTime
+  // and keeps firing after the component is gone.
+  useEffect(() => {
+    return () => clearInterval(intervalRef.current);
+  }, []);
 
   return (
     <div>
@@ -269,6 +303,19 @@ function ThemeToggle() {
   );
 }`}
       </CodeBlock>
+
+      <InfoBox variant="note" title="Why the Ref Is Also the Right Tool Here — Not Just the Faster One">
+        The re-render saving is the headline, but there is a correctness angle worth
+        noticing. In the <code>useState</code> version, <code>stop</code> reads{' '}
+        <code>intervalId</code> from the closure of the render in which it was
+        created. State updates are asynchronous, so a rapid Start → Stop sequence can
+        run <code>stop</code> against a render that has not yet seen the new id, and{' '}
+        <code>clearInterval(null)</code> quietly does nothing — leaving the timer
+        running. A ref has no such lag: <code>intervalRef.current</code> is a single
+        mutable box that every closure reads at call time, so it is always the
+        current value. That is the deeper reason refs suit &ldquo;handles to
+        imperative things&rdquo; — not merely that they skip renders.
+      </InfoBox>
 
       <InfoBox variant="tip" title="useRef Cheat Sheet">
         Use <code>useRef</code> for timer IDs, previous prop/state snapshots, DOM
@@ -408,9 +455,29 @@ function ThemeToggle() {
       <h2>6. Single Mega-State Object vs Granular States</h2>
 
       <p>
-        Cramming every piece of state into one giant object makes updates verbose,
-        error-prone, and forces unnecessary re-renders of unrelated UI.
+        Cramming every unrelated piece of state into one giant object makes updates
+        verbose and error-prone: every write has to spread the whole object, and
+        forgetting a spread silently deletes fields.
       </p>
+
+      <InfoBox variant="warning" title="This One Is About Correctness, Not Re-Renders">
+        It is tempting to say &ldquo;one big object causes extra re-renders.&rdquo;
+        It does not, and believing so will lead you to the wrong refactor.{' '}
+        <strong>All of this state lives inside one component</strong>, so any update
+        re-renders <code>RegistrationForm</code> and everything it returns — whether
+        that state is one object or seven separate <code>useState</code> calls. React
+        has no mechanism for re-rendering &ldquo;only the part that changed&rdquo;
+        within a single component.
+        <br />
+        <br />
+        The real costs of the mega-object are: (1) every handler must remember to
+        spread, and a missed spread wipes out fields; (2) a stale closure over{' '}
+        <code>state</code> instead of the <code>prev =&gt; </code> updater clobbers
+        concurrent updates; and (3) unrelated concerns get tangled, so you cannot move
+        one field elsewhere without touching every handler. If you genuinely want to
+        cut re-renders, the tool is <em>splitting the component</em> (or memoizing
+        children), not splitting the <code>useState</code> call.
+      </InfoBox>
 
       <CodeBlock language="jsx" title="❌ BAD — One object to rule them all">
         {`function RegistrationForm() {
@@ -446,11 +513,13 @@ function RegistrationForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [step, setStep] = useState(1);
 
-  // Each setter is simple and only re-renders what depends on it.
+  // Each setter takes the value directly — no spread to forget, and no way
+  // for a name update to accidentally drop the email. (This does NOT reduce
+  // re-renders; setName re-renders the whole component either way.)
 }
 
 // Option B: useReducer when transitions are complex
-function RegistrationForm() {
+function RegistrationFormWithReducer() {
   const [state, dispatch] = useReducer(formReducer, initialState);
 
   return (

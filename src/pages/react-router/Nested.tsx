@@ -226,9 +226,43 @@ function FileBrowser() {
   return <h1>Viewing: /{filePath || 'root'}</h1>;
 }
 
-// 404 catch-all (place last in your route config)
+// 404 catch-all. Conventionally written last for readability — but unlike
+// React Router v5, its POSITION does not affect matching. See the note below.
 { path: '*', element: <NotFound /> }`}
       </CodeBlock>
+
+      <InfoBox variant="success" title="Route Order Does Not Matter in v6/v7 — This Trips Up Everyone">
+        <p>
+          In React Router v5, routes were tested top-to-bottom and the{' '}
+          <em>first</em> match won. That is why v5 code is full of{' '}
+          <code>&lt;Switch&gt;</code> blocks carefully ordered most-specific-first,
+          with <code>exact</code> sprinkled everywhere to stop <code>/</code> from
+          swallowing every URL.
+        </p>
+        <p>
+          <strong>v6 replaced that with a ranking algorithm.</strong> React Router
+          scores every route that could match and picks the <em>most specific</em>{' '}
+          one, wherever it sits in the array. Static segments outrank dynamic{' '}
+          <code>:params</code>, which outrank splats. So:
+        </p>
+        <CodeBlock language="jsx" title="Both orderings behave identically in v7">
+          {`// '*' first — still correct. /users/42 matches ':userId', not '*'.
+children: [
+  { path: '*', element: <NotFound /> },
+  { path: 'users/:userId', element: <UserDetail /> },
+  { path: 'users/new', element: <NewUser /> },   // wins over :userId for /users/new
+]`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          The practical payoff is that <code>/users/new</code> beats{' '}
+          <code>/users/:userId</code> automatically — you no longer have to remember
+          to place it first, and the <code>exact</code> prop no longer exists because
+          nothing needs it. Keep writing <code>*</code> last as a readability
+          convention, just do not believe it is load-bearing. Ranking is also why the
+          decision chart below is a simplification: React Router does not fall through
+          the options in sequence, it scores them all and takes the winner.
+        </p>
+      </InfoBox>
 
       <h2>Relative Paths</h2>
       <p>

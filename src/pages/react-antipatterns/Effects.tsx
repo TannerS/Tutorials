@@ -319,10 +319,43 @@ function UserProfile({ userId }) {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="React 19: use() Replaces Fetch-in-Effect">
-        React 19 introduces the <code>use()</code> hook which can read a Promise directly
-        during render. Combined with Suspense, this eliminates the need for useEffect-based
-        data fetching entirely — no loading state, no race conditions, no cleanup.
+      <InfoBox variant="tip" title="React 19: use() — and the Trap Everyone Hits First">
+        <p>
+          React 19&apos;s <code>use()</code> hook reads a Promise during render and
+          suspends until it settles, so the nearest <code>&lt;Suspense&gt;</code>
+          boundary shows the fallback and the nearest error boundary catches
+          failures. That removes the hand-rolled <code>isLoading</code> and{' '}
+          <code>error</code> state from the component.
+        </p>
+        <p>
+          <strong>What it does not do is let you create the promise during
+          render.</strong> This is the first thing nearly everyone tries, and it is an
+          infinite loop:
+        </p>
+        <CodeBlock language="jsx" title="The trap">
+          {`// ❌ Infinite loop — a NEW promise on every render
+function Profile({ userId }) {
+  const user = use(fetch(\`/api/users/\${userId}\`).then(r => r.json()));
+  // render → new promise → suspend → retry render → new promise → ...
+}`}
+        </CodeBlock>
+        <p>
+          <code>use()</code> needs a promise that is <em>stable across renders</em>,
+          which means something else has to own its lifetime and cache it. In
+          practice that is a Server Component that starts the fetch and passes the
+          promise down as a prop, a framework route loader (React Router&apos;s{' '}
+          <code>loader</code>, covered in the React Router section), or a cache from a
+          library like React Query. React deliberately ships no built-in fetch cache
+          for this.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          So <code>use()</code> changes <em>who owns the fetch</em>; it does not
+          delete the problem. Race conditions and cancellation still exist — they have
+          moved into the loader or cache layer, which is exactly where they are easier
+          to get right once, rather than in every component. Until you have one of
+          those owners in place, the <code>AbortController</code> pattern above is
+          still the correct thing to write.
+        </p>
       </InfoBox>
 
       <h2>Anti-Pattern 5: Infinite Loops</h2>
@@ -341,17 +374,22 @@ useEffect(() => {
   }).then(r => r.json()).then(setData);
 }, [{ token }]); // ❌ New object every render! Reference changes = infinite loop
 
-// ❌ BAD — infinite loop (array/object state in dependency)
+// ⚠️ NOT a loop — but still wrong (this is derived state, Anti-Pattern 1)
 function App() {
   const [items, setItems] = useState([]);
   const [processed, setProcessed] = useState([]);
 
   useEffect(() => {
     setProcessed(items.map(i => ({ ...i, processed: true })));
-  }, [items]); // Seems fine, but if items is set elsewhere with same values
-  // but new reference, this loops
+  }, [items]);
+  // Trace it: the effect writes "processed", which is NOT in its own deps.
+  // Re-render → "items" is the same reference → deps unchanged → effect does
+  // not re-run. It settles after one extra render. The cost is a wasted
+  // render and a stale frame, not a hang.
+  //
+  // The rule: an effect only loops if it changes something it depends on.
 
-  // Even worse:
+  // ❌ THIS one is a real infinite loop — it writes to its own dependency:
   useEffect(() => {
     setItems([...items, { id: Date.now() }]); // ❌ Grows forever
   }, [items]); // items changes → effect runs → items changes → ...
@@ -370,6 +408,20 @@ function App() {
   return <div>{processed.length} items</div>;
 }`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="The One Test for &ldquo;Will This Effect Loop?&rdquo;">
+        An effect loops if and only if running it changes something in its own
+        dependency array. Walk the cycle out loud: <em>effect writes X → X is in my
+        deps → deps changed → effect runs again</em>. If you cannot close that circle,
+        you do not have a loop — you have at most one wasted render.
+        <br />
+        <br />
+        This matters because the two problems have different fixes. A genuine loop
+        means the effect is doing something it should not be doing at all. A wasted
+        render usually means you are computing derived state and should delete the
+        effect in favour of a calculation during render. Guessing &ldquo;probably a
+        loop&rdquo; and bolting on a <code>useRef</code> guard hides both.
+      </InfoBox>
 
       <h2>Anti-Pattern 6: Syncing Parent-Child State</h2>
 

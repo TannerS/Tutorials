@@ -125,6 +125,24 @@ function App() {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="note" title="Why the children Trick Works — and When It Stops">
+        The mechanism is one line of React&apos;s reconciler. When <code>Shell</code>{' '}
+        re-renders, the element it returns for <code>{'{children}'}</code> is the exact
+        same object it saw last time, because <code>App</code> — the component that{' '}
+        <em>created</em> that element — did not re-render. React compares the incoming
+        props to the previous props, finds them reference-identical, and bails out of
+        the entire subtree without calling <code>ExpensiveSidebar</code> at all.
+        <br />
+        <br />
+        So the precondition is: <strong>the state must live below the component that
+        creates the children</strong>. Move <code>open</code> up into{' '}
+        <code>App</code> and the trick evaporates — <code>App</code> re-renders,
+        builds a fresh <code>&lt;ExpensiveSidebar /&gt;</code> element, and the bailout
+        no longer applies. This is the same identity rule behind <code>memo</code>,
+        applied to elements instead of props, and it needs no <code>memo</code> because
+        reference equality is doing the work for free.
+      </InfoBox>
+
       <p>
         Prop drilling only becomes a genuine problem past roughly three hops, or when intermediate
         components have to accept props they never read. Two hops of explicit props are usually

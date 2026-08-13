@@ -94,6 +94,44 @@ function App() {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="note" title="First, the Vocabulary: loader, action, fetcher">
+        <p>
+          Those three words are about to appear constantly, so here they are before
+          the code assumes them. Each is a plain function you attach to a route, and
+          React Router calls it for you at the right moment.
+        </p>
+        <ul>
+          <li>
+            <strong>loader</strong> — a <em>read</em>. It runs{' '}
+            <strong>before</strong> the route&apos;s component renders, and whatever it
+            returns is handed to that component via <code>useLoaderData()</code>. This
+            is the important part: the component never renders in a &ldquo;no data
+            yet&rdquo; state, so it needs no <code>isLoading</code> flag and no{' '}
+            <code>useEffect</code>.
+          </li>
+          <li>
+            <strong>action</strong> — a <em>write</em>. It runs when a{' '}
+            <code>&lt;Form&gt;</code> on that route is submitted, receives the form
+            data, and typically POSTs it somewhere. Afterwards React Router
+            automatically re-runs the loaders on screen so the UI reflects the change.
+          </li>
+          <li>
+            <strong>fetcher</strong> — calls a loader or action{' '}
+            <em>without navigating</em>: a &ldquo;mark as read&rdquo; button, an
+            autosave, a like button. Same machinery, no URL change.
+          </li>
+        </ul>
+        <p style={{ marginBottom: 0 }}>
+          The shift worth internalising: with <code>useEffect</code> fetching, the
+          component renders <em>first</em> and then asks for data, which is what forces
+          every component to handle empty and loading states. With loaders the router
+          fetches <em>first</em> and renders once — and because it knows which route
+          you are heading to before rendering it, it can start that fetch the moment
+          you click, in parallel across nested routes. That is the whole reason the
+          data API exists.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="info" title="When to Use Which?">
         Use <code>createBrowserRouter</code> for new projects — it enables loaders,
         actions, fetchers, and error boundaries at the route level.{' '}

@@ -450,11 +450,24 @@ test('calls navigate on button click', async () => {
 });`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="Prefer Integration Tests">
-        Mocking hooks is brittle — if the component switches from{' '}
-        <code>useNavigate</code> to <code>&lt;Link&gt;</code>, your mock breaks
-        even though the behavior is the same. Prefer <code>MemoryRouter</code>{' '}
-        integration tests and reserve hook mocks for truly isolated unit tests.
+      <InfoBox variant="warning" title="Prefer Integration Tests — and in v7, You Rarely Need This At All">
+        <p>
+          Mocking hooks is brittle. If the component switches from{' '}
+          <code>useNavigate</code> to <code>&lt;Link&gt;</code>, your mock breaks even
+          though the behaviour is identical — the test was pinned to <em>how</em> the
+          component navigates rather than <em>that</em> it navigates. The mock can also
+          drift: <code>useLocation.mockReturnValue({'{ pathname: \'/users/7\' }'})</code>{' '}
+          returns an object missing <code>search</code>, <code>hash</code>,{' '}
+          <code>state</code> and <code>key</code>, so any code reaching for those gets{' '}
+          <code>undefined</code> in a way the real router would never produce.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          The reason this section exists is that you <em>will</em> meet it in older
+          codebases. For new tests, <strong><code>createRoutesStub</code> has
+          essentially replaced it</strong>: you get real hooks backed by a real (if
+          tiny) router, so nothing can drift, with the same amount of setup. Reach for{' '}
+          <code>jest.mock</code> only when you cannot render a router at all.
+        </p>
       </InfoBox>
 
       <InteractiveChallenge
@@ -484,7 +497,7 @@ Test auth redirects             → createMemoryRouter + mock auth
 Test error boundaries           → createMemoryRouter + throwing loader
 One component + stub loader     → createRoutesStub
 Seed loader data, skip fetching → createRoutesStub + hydrationData
-Isolated component test         → jest.mock('react-router-dom')
+Isolated component test         → createRoutesStub  (jest.mock only in legacy code)
 Reusable across test files      → Custom renderWithRouter utility
 */`}
       </CodeBlock>

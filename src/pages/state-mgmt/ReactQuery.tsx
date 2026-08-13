@@ -161,11 +161,18 @@ function AddTodoForm() {
     }).then(r => r.json()),
 
     onSuccess: (data) => {
-      // Invalidate so the list refetches with the new item
+      // Pick ONE of these two — they are alternatives, not a sequence.
+      // (Doing both writes the item, then immediately throws that write away
+      //  when the refetch returns. Harmless, but pointless.)
+
+      // (a) Invalidate: simplest and always correct. Costs a round-trip.
       queryClient.invalidateQueries({ queryKey: ['todos'] });
 
-      // OR: directly update the cache without refetching (faster)
-      queryClient.setQueryData(['todos'], (old) => [...old, data]);
+      // (b) Write the cache directly: no round-trip, but YOU are now
+      //     responsible for matching what the server would have returned.
+      //     Note the ?? [] — 'old' is undefined if nothing is cached yet,
+      //     and spreading undefined throws.
+      // queryClient.setQueryData(['todos'], (old) => [...(old ?? []), data]);
     },
 
     onError: (error) => {
@@ -196,12 +203,41 @@ function AddTodoForm() {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="note" title="Invalidate or Write? A Rule You Can Apply">
+        <p>
+          Default to <code>invalidateQueries</code>. It is one line, it cannot drift
+          from the server, and the refetch is usually invisible because the stale data
+          stays on screen while it runs. Reach for <code>setQueryData</code> only when
+          you can answer yes to both: <em>is the round-trip actually noticeable?</em>{' '}
+          and <em>can I reproduce the server&apos;s result exactly?</em>
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          That second question is the one people skip. If the server assigns the id,
+          stamps <code>createdAt</code>, computes a derived total, or applies its own
+          sort order, then a hand-written cache entry is a <em>guess</em> at the
+          server&apos;s state — and the UI will show that guess until something else
+          invalidates it. Using the mutation&apos;s <em>response</em> (as above, where{' '}
+          <code>data</code> is what the POST returned) rather than the values you sent
+          avoids most of this.
+        </p>
+      </InfoBox>
+
       <h2>Optimistic Updates — Instant UI Feedback</h2>
 
       <p>
         Optimistic updates show the result of a mutation immediately, then roll back if the server
         rejects it. TanStack Query's <code>onMutate</code> callback enables this pattern cleanly.
       </p>
+
+      <InfoBox variant="info" title="Two Different Things Both Called &ldquo;Optimistic&rdquo;">
+        The <code>onSuccess</code> + <code>setQueryData</code> pattern above writes the
+        cache <strong>after</strong> the server confirms — the user still waits for the
+        request. What follows is different: <code>onMutate</code> runs{' '}
+        <strong>before</strong> the request is even sent, so the UI updates on the same
+        frame as the click and the network round-trip happens invisibly behind it.
+        That speed is why it needs the snapshot-and-rollback machinery: you have
+        shown the user something that may yet turn out to be false.
+      </InfoBox>
 
       <CodeBlock language="jsx" title="Optimistic Updates — Toggle Todo" showLineNumbers>
 {`const queryClient = useQueryClient();

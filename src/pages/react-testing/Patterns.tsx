@@ -258,6 +258,42 @@ describe('ErrorBoundary', () => {
 });`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="What Error Boundaries Do Not Catch">
+        <p>
+          Before writing these tests, be clear on the boundary&apos;s actual scope,
+          because a passing suite here can create false confidence. An error boundary
+          catches errors thrown <strong>during rendering</strong>, in lifecycle
+          methods, and in constructors of the tree below it. It does{' '}
+          <strong>not</strong> catch:
+        </p>
+        <ul>
+          <li>
+            <strong>Event handlers.</strong> A throw inside <code>onClick</code>{' '}
+            happens outside the render cycle — React has nothing to unwind, so the
+            error propagates to <code>window.onerror</code> and your fallback never
+            appears. Use a <code>try/catch</code> in the handler.
+          </li>
+          <li>
+            <strong>Async code.</strong> A rejected promise or a throw inside{' '}
+            <code>setTimeout</code> or a <code>useEffect</code> callback is not part
+            of any render. (Throwing while <em>rendering</em> the state that a failed
+            fetch produced <em>is</em> caught — which is how libraries surface query
+            errors to boundaries.)
+          </li>
+          <li>
+            <strong>Errors in the boundary component itself.</strong> Those bubble to
+            the next boundary up.
+          </li>
+        </ul>
+        <p style={{ marginBottom: 0 }}>
+          The <code>console.error</code> suppression above is not cosmetic either.
+          React deliberately logs every caught error even when a boundary handles it,
+          so without the stub your suite prints an alarming stack trace on a{' '}
+          <em>passing</em> run. Note that it is saved and restored by hand — assigning
+          over a global is not something <code>restoreAllMocks()</code> can undo.
+        </p>
+      </InfoBox>
+
       <h2>Testing Portals and Modals</h2>
 
       <CodeBlock language="jsx" title="Modal/Portal Test">

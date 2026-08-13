@@ -30,10 +30,30 @@ export default function Guards() {
       <h2>Pattern 1: Redirect in Loaders (Recommended)</h2>
       <p>
         In the config-based router, check authentication inside the route&apos;s{' '}
-        <code>loader</code>. If the user isn&apos;t authenticated, return a{' '}
-        <code>redirect()</code>. The protected component never renders — not even
-        for a flash.
+        <code>loader</code>. If the user isn&apos;t authenticated, redirect. The
+        protected component never renders — not even for a flash.
       </p>
+
+      <InfoBox variant="danger" title="Read This Before Anything Else on This Page">
+        <p>
+          Every technique on this page runs <strong>in the user&apos;s browser</strong>,
+          which means it is <strong>user experience, not security</strong>. A loader is
+          just JavaScript you shipped to a machine you do not control. Anyone can open
+          devtools, edit the auth state, and render your admin panel — and no amount of
+          guarding the route changes that.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          What it <em>does</em> protect is the honest majority: nobody lands on a
+          broken dashboard, sees a flash of admin UI, or bookmarks a page they cannot
+          use. The actual enforcement is on the server — every{' '}
+          <code>/api/*</code> endpoint must independently verify the session and the
+          role, and behave correctly even if the request was hand-crafted with{' '}
+          <code>curl</code>. Get that wrong and a perfect client-side guard buys you
+          nothing; get it right and a missing client-side guard is only ugly. This is
+          a favourite interview question, and &ldquo;the route guard stops
+          them&rdquo; is the wrong answer.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="jsx" title="Auth Check in Loader">
 {`import { redirect } from 'react-router-dom';
@@ -74,6 +94,35 @@ export async function loader({ request }) {
         component-based guard, React briefly renders the protected component
         (triggering effects, subscriptions) before redirecting. Loaders avoid
         this entirely.
+      </InfoBox>
+
+      <InfoBox variant="warning" title="throw redirect() vs return redirect() — Not Interchangeable">
+        <p>
+          Notice that <code>requireAuth</code> above uses{' '}
+          <code>throw redirect(...)</code>, not <code>return</code>. Both forms exist
+          and both are valid, but they are not substitutes for one another:
+        </p>
+        <ul>
+          <li>
+            <code>return redirect(&apos;/login&apos;)</code> works only in the{' '}
+            <strong>loader itself</strong>, and only as the last thing it does.
+            Returning hands the value back to React Router, which acts on it.
+          </li>
+          <li>
+            <code>throw redirect(&apos;/login&apos;)</code> works{' '}
+            <strong>anywhere</strong>, including nested helpers. Throwing unwinds the
+            whole call stack straight to the router.
+          </li>
+        </ul>
+        <p style={{ marginBottom: 0 }}>
+          That is why a shared guard has to throw. If <code>requireAuth</code>{' '}
+          <em>returned</em> the redirect, it would return it to the loader that called
+          it — the loader would carry on, fetch <code>/api/dashboard</code> with no
+          token, and probably crash on the 401. The redirect would be silently
+          discarded as an unused return value. Same rule applies to{' '}
+          <code>throw new Response(..., {'{ status: 403 }'})</code> in the RBAC helper
+          below: throwing is what makes an early exit from a helper actually exit.
+        </p>
       </InfoBox>
 
       <h2>Pattern 2: ProtectedRoute Wrapper Component</h2>

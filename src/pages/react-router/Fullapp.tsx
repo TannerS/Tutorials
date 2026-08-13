@@ -159,6 +159,18 @@ export function requireAuth({ request }) {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="note" title="localStorage Here Is a Demo Shortcut">
+        This walkthrough keeps the session in <code>localStorage</code> so the example
+        stays runnable with no backend. Real apps should put the session in an{' '}
+        <strong>HTTP-only cookie</strong> set by the server, as the{' '}
+        <strong>Auth Guards</strong> lesson covers: anything in{' '}
+        <code>localStorage</code> is readable by any script on the page, so a single
+        XSS bug hands over the token. The routing structure below is unchanged either
+        way — <code>requireAuth</code> just reads the session from a different place,
+        and with cookies the loader typically calls <code>/api/auth/me</code> instead
+        of parsing anything client-side.
+      </InfoBox>
+
       <h2>Step 5: Dashboard Layout with Sidebar</h2>
       <CodeBlock language="jsx" title="layouts/DashboardLayout.jsx">
 {`import { Outlet, NavLink, useNavigation } from 'react-router-dom';
@@ -174,16 +186,57 @@ export default function DashboardLayout() {
         <NavLink to="/dashboard/settings">Settings</NavLink>
       </aside>
 
-      <section className="dashboard-content">
-        {navigation.state === 'loading'
-          ? <div className="spinner">Loading...</div>
-          : <Outlet />
-        }
+      {/* Keep the Outlet MOUNTED and dim it while the next route loads.
+          Do NOT swap it out for a spinner — see the note below. */}
+      <section
+        className="dashboard-content"
+        style={{
+          opacity: navigation.state === 'loading' ? 0.6 : 1,
+          transition: 'opacity 150ms',
+        }}
+      >
+        <Outlet />
       </section>
     </div>
   );
 }`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Why Not <spinner> : <Outlet /> — the Instinct to Resist">
+        <p>
+          The obvious version of that block is{' '}
+          <code>{'navigation.state === \'loading\' ? <Spinner /> : <Outlet />'}</code>.
+          It is worth understanding why that is the wrong shape, because it throws away
+          the main thing the data router bought you.
+        </p>
+        <ul>
+          <li>
+            <strong>It unmounts the current page.</strong> The user is reading
+            Overview, clicks Settings, and Overview vanishes instantly — replaced by a
+            spinner, then Settings. Every navigation becomes a blank flash. Loaders
+            exist precisely so the <em>old</em> screen can stay on-screen until the new
+            one is ready, the way a server-rendered site behaves.
+          </li>
+          <li>
+            <strong>Local state in the subtree is destroyed.</strong> Unmounting
+            discards scroll position, expanded rows, and any in-progress input in the
+            outgoing route.
+          </li>
+          <li>
+            <strong><code>navigation.state</code> is global, not scoped.</strong> It
+            is <code>'loading'</code> for <em>any</em> pending navigation in the app —
+            so a click in the top-level nav heading somewhere else entirely also blanks
+            the dashboard on the way out.
+          </li>
+        </ul>
+        <p style={{ marginBottom: 0 }}>
+          Dimming, a top progress bar, or <code>NavLink</code>&apos;s{' '}
+          <code>isPending</code> flag all signal &ldquo;working on it&rdquo; without
+          destroying anything. Reserve a real replacement spinner for the{' '}
+          <em>first</em> paint, where there is genuinely nothing to keep —{' '}
+          <code>HydrateFallback</code> covers that case.
+        </p>
+      </InfoBox>
 
       <h2>Step 6: Dashboard Sub-Routes</h2>
       <CodeBlock language="jsx" title="Dashboard Pages">

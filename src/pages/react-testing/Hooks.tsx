@@ -50,11 +50,46 @@ test('increments the counter', () => {
 });`}
       </CodeBlock>
 
-      <InfoBox variant="info" title="When Do You Need act()?">
-        Wrap state updates in <code>act()</code> when calling functions returned by
-        your hook. RTL's <code>render</code> and <code>userEvent</code> handle this
-        automatically, but <code>renderHook</code> requires explicit <code>act()</code>
-        for synchronous state changes.
+      <InfoBox variant="info" title="Two Things That Look Like Boilerplate But Are Not">
+        <p>
+          <strong>Why <code>result.current</code> and not just <code>result</code>?</strong>{' '}
+          Because a hook has no return value that persists — it returns a fresh value
+          on every render. <code>renderHook</code> therefore hands you a stable box and
+          overwrites <code>.current</code> after each render, which is the same trick{' '}
+          <code>useRef</code> uses. The practical consequence:
+        </p>
+        <CodeBlock language="jsx" title="The mistake this design invites">
+          {`// ❌ Snapshots the value from the FIRST render. It will never change,
+//    and your assertion fails with a baffling "expected 1, received 0".
+const { count, increment } = renderHook(() => useCounter()).result.current;
+act(() => increment());
+expect(count).toBe(1);        // still 0 — 'count' is a stale copy
+
+// ✅ Re-read through the box every time you assert.
+const { result } = renderHook(() => useCounter());
+act(() => result.current.increment());
+expect(result.current.count).toBe(1);`}
+        </CodeBlock>
+        <p>
+          <strong>What does <code>act()</code> actually do?</strong> React batches state
+          updates and flushes effects <em>asynchronously</em>. Outside a browser, nothing
+          would otherwise force that flush before your next line runs.{' '}
+          <code>act()</code> marks a block as &ldquo;a unit of user interaction&rdquo;:
+          run this code, then process every resulting re-render and effect before
+          returning. Without it you assert against the state as it was <em>before</em>{' '}
+          React caught up — and React logs the familiar{' '}
+          <em>&ldquo;An update to X inside a test was not wrapped in act(...)&rdquo;</em>{' '}
+          warning.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          You rarely write it by hand in component tests because{' '}
+          <code>render</code>, <code>fireEvent</code> and every{' '}
+          <code>userEvent</code> call are already wrapped in it. Calling a hook&apos;s
+          returned function directly, as here, is the case nothing wraps for you. Treat
+          the warning as a real signal rather than noise to silence: it means an update
+          landed outside the window your assertions were watching, which is also how
+          genuinely flaky tests begin.
+        </p>
       </InfoBox>
 
       <h2>Testing useState-Based Hooks</h2>

@@ -63,9 +63,18 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           : [...state.items, { ...action.item, qty: 1 }],
       };
     }
-    case 'removed':
-      return { ...state, items: state.items.filter((i) => i.id !== action.id) };
-    case 'qtyChanged':
+    case 'removed': {
+      const items = state.items.filter((i) => i.id !== action.id);
+      // filter() ALWAYS allocates a new array, even when it removed nothing.
+      // Bail out to the original state so identities stay stable — see the
+      // note under "Testing" for why this is a contract, not a micro-opt.
+      if (items.length === state.items.length) return state;
+      return { ...state, items };
+    }
+    case 'qtyChanged': {
+      const target = state.items.find((i) => i.id === action.id);
+      if (!target) return state;                       // unknown id: no-op
+      if (target.qty === action.qty) return state;     // already there: no-op
       return {
         ...state,
         items: action.qty <= 0
@@ -73,6 +82,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           : state.items.map((i) =>
               i.id === action.id ? { ...i, qty: action.qty } : i),
       };
+    }
     case 'couponApplied':
       return { ...state, coupon: action.code };
     case 'cleared':
@@ -762,6 +772,36 @@ test('unrelated actions preserve state identity', () => {
   expect(cartReducer(state, { type: 'removed', id: 'nope' }).items).toBe(state.items);
 });`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="That Last Test Fails Against the Obvious Reducer">
+        <p>
+          It is worth writing that third test precisely because the naive
+          implementation does not pass it. This looks completely reasonable:
+        </p>
+        <CodeBlock language="tsx" title="Looks fine, silently breaks memoization">
+          {`case 'removed':
+  return { ...state, items: state.items.filter((i) => i.id !== action.id) };`}
+        </CodeBlock>
+        <p>
+          But <code>filter</code>, <code>map</code>, and spread <em>always allocate</em>{' '}
+          — they have no idea whether they changed anything. Dispatching{' '}
+          <code>removed</code> with an id that is not in the cart still hands back a
+          brand-new <code>items</code> array with identical contents. Every{' '}
+          <code>memo</code>&apos;d list child sees a changed prop and re-renders, and
+          every <code>useMemo</code> keyed on <code>items</code> recomputes — for an
+          action that did nothing at all.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Hence the guard added in the reducer above: compare, and{' '}
+          <code>return state</code> untouched when the action was a no-op. React
+          applies the same rule one level up — <code>useReducer</code> compares the
+          returned state with <code>Object.is</code> and skips the re-render entirely
+          if the reducer handed back the identical object. So this single{' '}
+          <code>return state</code> can cancel a render of the whole subtree.{' '}
+          <strong>Identity preservation is a behavioural contract of your reducer</strong>,
+          which is exactly why it deserves a test rather than a comment.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="tsx" title="Component and hook tests with a provider wrapper">
 {`import { render, screen, renderHook, act } from '@testing-library/react';

@@ -201,12 +201,16 @@ test('handles server error', async () => {
       </p>
 
       <CodeBlock language="jsx" title="Mocking Global fetch">
-{`beforeEach(() => {
-  global.fetch = jest.fn();
+{`// Use spyOn, NOT 'global.fetch = jest.fn()'. jest.restoreAllMocks() only
+// knows how to undo mocks that spyOn created — it cannot restore a property
+// you overwrote by hand, so a direct assignment leaks a fake fetch into every
+// later test in the file.
+beforeEach(() => {
+  jest.spyOn(global, 'fetch');
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  jest.restoreAllMocks();   // now this genuinely puts the real fetch back
 });
 
 test('fetches and displays data', async () => {
@@ -227,6 +231,28 @@ test('handles fetch failure', async () => {
   expect(await screen.findByRole('alert')).toBeInTheDocument();
 });`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="What This Test Cannot Catch — and Why MSW Exists">
+        <p>
+          Look at what the stub actually asserts: that your code called{' '}
+          <code>fetch('/api/users')</code> and then read <code>.json()</code> off the
+          result. Both facts are <em>invented by the test</em>. The fake response is a
+          bare object with <code>ok</code> and <code>json</code> — it is not a{' '}
+          <code>Response</code>, so <code>headers</code>, <code>status</code> text,{' '}
+          <code>redirected</code> and <code>.text()</code> are all missing.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Which means this test passes even if the component sends the wrong HTTP
+          method, omits the <code>Content-Type</code> header, serializes the body
+          incorrectly, or ignores a non-200 status. A stub can only confirm that your
+          code called the function you told it to expect — it can never confirm the
+          request was <em>correct</em>. That is the whole argument for MSW: because
+          the real <code>fetch</code> runs and a real <code>Response</code> comes back,
+          those bugs surface instead of being assumed away. Use direct stubbing when
+          you want a quick unit test of render logic; use MSW when the request itself
+          is part of what you are testing.
+        </p>
+      </InfoBox>
 
       <h2>Testing Components That Fetch on Mount</h2>
 

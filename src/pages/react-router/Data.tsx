@@ -39,12 +39,19 @@ export default function Data() {
 {`// routes/UserProfile.jsx
 import { useLoaderData } from 'react-router-dom';
 
-// Loader runs before the component renders
+// Loader runs before the component renders.
+//   params  — the :placeholders from the matched path, e.g. { userId: '42' }
+//   request — a real Request object, so the URL and query string are available
 export async function loader({ params, request }) {
-  const url = new URL(request.url);
-  const tab = url.searchParams.get('tab') || 'overview';
+  // Read ?tab=… so the loader can fetch only the section being shown
+  const tab = new URL(request.url).searchParams.get('tab') || 'overview';
 
-  const response = await fetch(\`/api/users/\${params.userId}\`);
+  const response = await fetch(
+    \`/api/users/\${params.userId}?tab=\${tab}\`
+  );
+
+  // Throwing a Response (rather than returning it) hands control to the
+  // nearest errorElement — see "Error Handling" below.
   if (!response.ok) {
     throw new Response('User not found', { status: 404 });
   }
@@ -150,6 +157,36 @@ export default function EditUser() {
         <strong>loader</strong> (like a search).{' '}
         <code>&lt;Form method=&quot;post&quot;&gt;</code> (or put/patch/delete)
         triggers the route&apos;s <strong>action</strong>.
+      </InfoBox>
+
+      <InfoBox variant="note" title="Defining &ldquo;Revalidation&rdquo; — the Word Doing the Most Work Here">
+        <p>
+          <strong>Revalidation</strong> means: re-run the loaders for every route
+          currently on screen, and re-render with what they return. React Router does
+          this automatically after any action completes.
+        </p>
+        <p>
+          It matters because it is what lets an action get away with returning almost
+          nothing. In the example above, the action PUTs the new name and redirects —
+          it never tells the UI what changed. It does not have to. The loaders re-run,
+          re-fetch, and whatever the server now says becomes what you see. There is no
+          client-side cache to update and no chance of the screen disagreeing with the
+          database, because the screen is always a fresh read.
+        </p>
+        <p>
+          This is deliberately the old <strong>POST / redirect / GET</strong> cycle
+          from server-rendered apps, kept intact but without the full page reload. If
+          you have used React Query, revalidation is the equivalent of{' '}
+          <code>invalidateQueries</code> — except the router already knows exactly
+          which loaders are on screen, so nothing needs a cache key.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Revalidation also fires after a <code>fetcher</code> submission, and you can
+          trigger it yourself with <code>useRevalidator()</code> — useful when data
+          went stale for a reason the router cannot observe, such as a WebSocket
+          message or the window regaining focus. To opt a route <em>out</em> of a
+          particular revalidation, give it a <code>shouldRevalidate</code> function.
+        </p>
       </InfoBox>
 
       <h2>useFetcher — Mutations Without Navigation</h2>
