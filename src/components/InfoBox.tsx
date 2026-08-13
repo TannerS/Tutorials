@@ -22,7 +22,7 @@ export function InfoBox({ variant = 'info', title, children }: InfoBoxProps) {
   const v = variants[variant];
 
   return (
-    <div style={{
+    <div className="info-box" style={{
       background: v.bg,
       border: '1px solid var(--border-color)',
       borderLeft: `4px solid ${v.border}`,

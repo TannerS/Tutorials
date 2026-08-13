@@ -28,7 +28,7 @@ export function LiveExample({
     files ?? (code ? DEFAULT_FILES(code) : { '/App.tsx': "export default () => <h1>Hello</h1>;" });
 
   return (
-    <div style={{ margin: '1.5rem 0' }}>
+    <div className="interactive-embed" style={{ margin: '1.5rem 0' }}>
       {title && (
         <div style={{
           fontSize: '0.78rem',

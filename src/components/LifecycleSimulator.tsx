@@ -254,7 +254,7 @@ export default function LifecycleSimulator() {
 
   return (
     <LogContext.Provider value={pushLog}>
-      <div style={styles.wrapper}>
+      <div className="interactive-embed" style={styles.wrapper}>
         {/* ─── Title ─── */}
         <h2 style={styles.title}>⚛️ React Lifecycle Simulator</h2>
         <p style={styles.subtitle}>

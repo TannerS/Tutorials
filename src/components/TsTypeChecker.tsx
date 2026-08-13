@@ -224,7 +224,7 @@ export default function TsTypeChecker() {
   const errorCount = diagnostics.filter((d) => d.category === 'error').length;
 
   return (
-    <div style={{
+    <div className="interactive-embed" style={{
       border: '1px solid var(--border-color)',
       borderRadius: '12px',
       background: 'var(--bg-secondary)',

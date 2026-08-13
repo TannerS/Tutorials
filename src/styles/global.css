@@ -243,20 +243,37 @@ li {
    from splitting across a page break.
    ============================================================ */
 @media print {
+  @page { margin: 14mm 12mm; }
+
   html, body, #root {
     height: auto !important;
     overflow: visible !important;
     background: #fff !important;
     color: #111 !important;
   }
-  body { font-size: 11pt; }
+  body { font-size: 10.5pt; line-height: 1.45; }
 
+  /* Site chrome and anything interactive that can't work on paper. */
   .sidebar-container,
   .mobile-backdrop,
   aside,
   [role="dialog"],
-  button[aria-label="Open menu"] {
+  button[aria-label="Open menu"],
+  .no-print {
     display: none !important;
+  }
+
+  /* Interactive embeds (Sandpack, simulators, the six playgrounds) render as
+     empty or half-loaded boxes on paper — replace each with a short note so
+     the reader knows something was there rather than seeing a blank gap. */
+  .interactive-embed { display: none !important; }
+  .interactive-embed::after {
+    content: "[ Interactive example — open this page in a browser ]";
+    display: block !important;
+    font-style: italic;
+    color: #555 !important;
+    font-size: 9.5pt;
+    padding: 6pt 0;
   }
 
   main {
@@ -267,35 +284,139 @@ li {
     padding: 0 !important;
     margin: 0 !important;
   }
-  /* LessonLayout's flex row (content + TOC) and its content column */
-  main > div { display: block !important; overflow: visible !important; height: auto !important; max-width: none !important; width: 100% !important; gap: 0 !important; }
-  main > div > div:first-child { max-width: none !important; width: 100% !important; flex: initial !important; min-width: 0 !important; overflow: visible !important; }
+
+  /* LessonLayout is a flex row (content + sticky TOC). Collapse to one
+     full-width column; the TOC itself is already hidden via `aside`. */
+  .lesson-shell {
+    display: block !important;
+    gap: 0 !important;
+  }
+  .lesson-content {
+    max-width: none !important;
+    width: 100% !important;
+    flex: initial !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+  /* Same collapse for any other flex/grid wrapper between main and content. */
+  main > div {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-width: none !important;
+    width: 100% !important;
+    gap: 0 !important;
+  }
 
   h1, h2, h3, h4 { color: #000 !important; background: none !important; -webkit-text-fill-color: initial !important; }
-  h1 { font-size: 20pt; }
-  h2 { font-size: 15pt; page-break-after: avoid; }
-  h3 { font-size: 12.5pt; page-break-after: avoid; }
+  h1 { font-size: 19pt; }
+  h2 { font-size: 14.5pt; page-break-after: avoid; break-after: avoid; margin-top: 14pt; }
+  h3 { font-size: 12pt; page-break-after: avoid; break-after: avoid; }
+  h4 { font-size: 11pt; page-break-after: avoid; break-after: avoid; }
   p, li { color: #222 !important; orphans: 3; widows: 3; }
 
-  a { color: #111 !important; }
+  a { color: #111 !important; text-decoration: none !important; }
   a[href^="http"]::after {
     content: " (" attr(href) ")";
-    font-size: 9pt;
+    font-size: 8.5pt;
     color: #555;
     word-break: break-all;
   }
 
-  pre, code {
-    background: #f4f4f4 !important;
-    color: #111 !important;
-    font-size: 9pt !important;
-    page-break-inside: avoid;
+  /* THE CUT-OFF FIX. On screen, code scrolls sideways inside its own box.
+     Paper has no scrollbar, so any line wider than the page was silently
+     clipped. Force wrapping and let every ancestor overflow visibly. */
+  .code-block,
+  .code-block > div,
+  pre[class*="language-"],
+  pre {
+    overflow: visible !important;
+    max-width: 100% !important;
   }
-  pre { border: 1pt solid #ccc !important; padding: 6pt 8pt !important; }
+  pre, pre code, code, .site-code {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+  pre, code {
+    background: #f6f6f6 !important;
+    color: #111 !important;
+    font-size: 8.5pt !important;
+    line-height: 1.4 !important;
+  }
+  pre {
+    border: 0.75pt solid #ccc !important;
+    padding: 6pt 8pt !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  /* Prism emits per-token colour classes; flatten them all to black so code
+     stays legible printed in greyscale. */
+  pre [class*="token"], code [class*="token"] { color: #111 !important; background: none !important; }
+  /* Line numbers: keep them, but stop them stretching the wrapped lines. */
+  .linenumber { color: #999 !important; font-style: normal !important; }
 
-  svg { max-width: 100% !important; height: auto !important; page-break-inside: avoid; }
+  /* Tables were overflowing the same way code did. */
+  table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    font-size: 9pt !important;
+  }
+  th, td {
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    border: 0.75pt solid #ccc !important;
+    padding: 3pt 5pt !important;
+    color: #222 !important;
+  }
+  th { background: #f0f0f0 !important; }
+
+  /* Mermaid renders an SVG with hardcoded pixel width/height attributes that
+     routinely exceed the page. Constrain both axes and keep each diagram on
+     one page. */
+  .flow-chart {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    background: none !important;
+    border: 0.75pt solid #ddd !important;
+    overflow: visible !important;
+  }
+  .flow-chart svg,
+  svg {
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* InfoBox / callouts: keep intact across page breaks, drop the dark fills. */
+  .info-box {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    border: 0.75pt solid #bbb !important;
+    background: #fafafa !important;
+    color: #222 !important;
+  }
+  .info-box * { color: #222 !important; }
 
   button { background: transparent !important; border: none !important; color: #111 !important; }
+
+  /* Anything still styled with a dark surface prints as a black slab and
+     drains the cartridge — force the common containers to white. */
+  [style*="var(--bg-card)"],
+  [style*="var(--bg-secondary)"],
+  [style*="var(--bg-active)"],
+  [style*="var(--bg-hover)"] {
+    background: #fff !important;
+  }
+
+  ul, ol { page-break-inside: auto; }
+  li { page-break-inside: avoid; break-inside: avoid; }
+  img { max-width: 100% !important; height: auto !important; page-break-inside: avoid; }
 }
 
 /* Mobile responsive */

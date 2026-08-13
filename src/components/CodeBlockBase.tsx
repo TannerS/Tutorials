@@ -34,7 +34,7 @@ export function CodeBlock({
   };
 
   return (
-    <div style={{ position: 'relative', margin: '1rem 0' }}>
+    <div className="code-block" style={{ position: 'relative', margin: '1rem 0' }}>
       {title && (
         <div style={{
           background: 'var(--bg-active)',
@@ -62,6 +62,7 @@ export function CodeBlock({
       )}
       <button
         onClick={handleCopy}
+        className="no-print"
         style={{
           position: 'absolute',
           top: title ? '3rem' : '0.5rem',

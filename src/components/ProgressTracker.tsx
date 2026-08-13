@@ -53,7 +53,7 @@ export default function ProgressTracker({ sectionId, lessonIndex, onComplete }: 
   };
 
   return (
-    <div style={{
+    <div className="no-print" style={{
       margin: '2rem 0',
       padding: '1rem',
       background: done ? 'var(--accent-green-bg)' : 'var(--bg-secondary)',

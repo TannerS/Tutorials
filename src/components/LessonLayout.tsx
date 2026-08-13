@@ -44,8 +44,8 @@ export default function LessonLayout({
   }, [prev, next, navigate]);
 
   return (
-    <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-      <div ref={contentRef} style={{ maxWidth: '900px', flex: 1, minWidth: 0 }}>
+    <div className="lesson-shell" style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+      <div ref={contentRef} className="lesson-content" style={{ maxWidth: '900px', flex: 1, minWidth: 0 }}>
         <h1 style={{
           fontSize: '2rem',
           fontWeight: 700,
@@ -68,7 +68,7 @@ export default function LessonLayout({
 
         <ProgressTracker sectionId={sectionId} lessonIndex={lessonIndex} />
 
-        <div style={{
+        <div className="no-print" style={{
           display: 'flex',
           justifyContent: 'space-between',
           marginTop: '1rem',

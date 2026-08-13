@@ -258,7 +258,7 @@ export default function SassPlayground() {
   const activeSnippet = SNIPPETS.find((s) => s.id === snippetId);
 
   return (
-    <div style={{
+    <div className="interactive-embed" style={{
       border: '1px solid var(--border-color)',
       borderRadius: '12px',
       background: 'var(--bg-secondary)',

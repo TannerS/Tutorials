@@ -102,7 +102,7 @@ export default function FlowChart({ chart, title }: FlowChartProps) {
   }, [chart, theme]);
 
   return (
-    <div style={{
+    <div className="flow-chart" style={{
       margin: '1.5rem 0',
       background: 'var(--bg-secondary)',
       borderRadius: '8px',
