@@ -302,6 +302,30 @@ public void relay() {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Yes, that relay does I/O inside a transaction — deliberately">
+        <p>
+          The Transactions lesson states the rule flatly: never make a network call inside{' '}
+          <code>@Transactional</code>. The relay above breaks it, and it is worth being explicit
+          about why rather than leaving you to spot the contradiction.
+        </p>
+        <p>
+          That rule is about the <strong>request path</strong>, where the cost is a pooled
+          connection held while a user waits, multiplied by your concurrency — the failure mode
+          is pool exhaustion for the whole application. The relay is a single background job on
+          a scheduler thread, processing a bounded batch, and it <em>must</em> hold the
+          transaction across the send: the whole point is that <code>markSent</code> commits
+          only if the publish succeeded. One connection, one thread, a known ceiling.
+        </p>
+        <p>
+          Make that bound explicit rather than assuming it: give the relay a small timeout (the{' '}
+          <code>get(5, SECONDS)</code> above), a batch size you have measured, and — if it runs
+          hot — its own small <code>DataSource</code> so it can never compete with request
+          traffic for connections. The rule is really &quot;never hold a connection across an
+          unbounded wait&quot;; the request-path version is just the case where the bound is
+          impossible to guarantee.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="tip" title="Or use Debezium">
         <p>
           For high-volume services, Debezium tails the database's write-ahead log and

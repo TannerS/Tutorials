@@ -64,6 +64,93 @@ public class ReportService {
       <p>Fixes: extract the inner method into a separate bean, inject yourself with
       <code>@Lazy</code>, or use <code>TransactionTemplate</code> programmatically.</p>
 
+      <InfoBox variant="warning" title="The same mechanism has a second, quieter consequence: visibility">
+        <p>
+          A proxy can only intercept a call it is able to see and override. Spring&apos;s CGLIB
+          proxy is a <em>subclass</em> of your bean, so it can only override methods a subclass
+          could override. <code>@Transactional</code> on a <code>private</code>,{' '}
+          <code>protected</code>, or package-private method is therefore <strong>silently
+          ignored</strong> — no warning, no error, just no transaction. Same for{' '}
+          <code>final</code> methods and <code>final</code> classes, which cannot be overridden
+          at all.
+        </p>
+        <p>
+          This is not a rule to memorise separately. It is the <em>same</em> fact as
+          self-invocation, seen from the other side: everything depends on the call going
+          through an overridable, externally-invoked method.
+        </p>
+      </InfoBox>
+
+      <h2>UnexpectedRollbackException — &quot;I caught the exception, why did it still roll back?&quot;</h2>
+      <p>
+        The most confusing transaction error in Spring, and it follows inevitably from how
+        <code> REQUIRED</code> works. Once you have seen the mechanism it stops being
+        mysterious.
+      </p>
+      <CodeBlock language="java" title="The setup that produces it">
+{`@Service
+class OrderService {
+    @Transactional                       // starts the physical transaction
+    public void placeAll(List<Req> reqs) {
+        for (Req r : reqs) {
+            try {
+                audit.record(r);         // separate bean, @Transactional(REQUIRED)
+            } catch (Exception e) {
+                log.warn("audit failed, carrying on", e);   // deliberate: audit
+            }                                               // is not critical
+        }
+        orders.saveAll(...);
+    }
+}
+
+@Service
+class AuditService {
+    @Transactional                       // REQUIRED — JOINS the caller's tx,
+    public void record(Req r) {          // it does NOT start its own
+        throw new IllegalStateException("boom");
+    }
+}
+
+// Result: placeAll() returns normally, you swallowed the exception on
+// purpose... and the commit throws:
+//
+//   org.springframework.transaction.UnexpectedRollbackException:
+//     Transaction silently rolled back because it has been marked as
+//     rollback-only`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="Why — and it is not Spring being difficult">
+        <p>
+          <code>REQUIRED</code> means <em>join the existing transaction</em>. There is only one
+          physical transaction here, so when <code>record()</code> fails there is nothing to
+          roll back independently — its work and yours are the same transaction. Spring cannot
+          honour &quot;roll back the inner one, keep the outer one&quot;, so it does the only
+          safe thing: it sets the <strong>rollback-only</strong> flag on the shared transaction
+          and lets the exception propagate. Your <code>catch</code> stops the exception, but
+          the flag has already been set. At commit, the transaction manager sees the flag,
+          refuses to commit, and tells you it happened rather than silently discarding your
+          data.
+        </p>
+      </InfoBox>
+      <CodeBlock language="java" title="Three fixes, by what you actually meant">
+{`// (a) "The audit really is independent." Give it its own physical
+//     transaction, so its failure has somewhere to roll back TO.
+@Transactional(propagation = Propagation.REQUIRES_NEW)
+public void record(Req r) { ... }
+
+// (b) "This exception is expected and shouldn't roll anything back."
+//     Tell the transaction manager so, rather than hiding it from Spring.
+@Transactional(noRollbackFor = AuditUnavailableException.class)
+public void record(Req r) { ... }
+
+// (c) "The audit isn't part of this unit of work at all." Move it out of
+//     the transaction entirely — a post-commit event is the usual answer.
+//     See @TransactionalEventListener below.
+
+// And a diagnostic: to find out mid-method whether the flag is already set,
+//   TransactionAspectSupport.currentTransactionStatus().isRollbackOnly()`}
+      </CodeBlock>
+
       <h2>Propagation — What Happens When You're Already in a Transaction</h2>
       <p>
         Every <code>@Transactional</code> method decides how to handle an <em>existing</em>
@@ -190,17 +277,22 @@ public Order place(NewOrderRequest req) {
 }
 
 // FIX: shrink the transaction. Only the DB operations live inside it.
+// Note this method is NOT annotated — no transaction is open while the two
+// HTTP calls run, so no connection is held.
 public Order place(NewOrderRequest req) {
     // Do external work first, or after.
     inventory.reserve(req.items());
     var confirmation = payments.charge(req.total(), req.card());
 
-    return orderService.saveOrder(req, confirmation);   // small @Transactional
+    // Separate bean, so the call goes through its proxy and the
+    // @Transactional actually applies. (Annotating a private helper in this
+    // same class would do nothing — see the self-invocation section.)
+    return orderPersistence.saveOrder(req, confirmation);
 }
 
 @Service
 class OrderPersistence {
-    @Transactional
+    @Transactional                      // opens and commits within this call
     public Order saveOrder(NewOrderRequest req, PaymentConfirmation conf) {
         return orders.save(Order.from(req, conf));
     }
@@ -297,6 +389,41 @@ public Order place(NewOrderRequest req) {
 // Also note: without @Async the AFTER_COMMIT listener runs on the SAME thread,
 // so a slow listener extends the caller's response time even though the
 // transaction is already closed.`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="&quot;My @TransactionalEventListener never fires&quot;">
+        <p>
+          Overwhelmingly one cause: <strong>the event was published outside a
+          transaction</strong>. The listener is registered as a transaction{' '}
+          <em>synchronization</em> — it attaches itself to the transaction that is active at
+          publish time and asks to be called back at that transaction&apos;s commit. No active
+          transaction means nothing to attach to, so the event is <strong>dropped
+          silently</strong>: no exception, no log line, nothing.
+        </p>
+        <p>
+          So check the publisher, not the listener. Common versions of the mistake: the
+          publishing method lost its <code>@Transactional</code>; it is being called via
+          self-invocation so the annotation never applied; or the event is published from a{' '}
+          <code>@Scheduled</code> or test method that has no transaction at all. If you
+          genuinely want it delivered either way, set{' '}
+          <code>@TransactionalEventListener(fallbackExecution = true)</code> — then it runs
+          immediately when no transaction is present.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="java" title="Ordinary @EventListener vs @TransactionalEventListener">
+{`// Both are SYNCHRONOUS by default. The difference is only WHEN.
+//
+// @EventListener               -> runs at publishEvent(), inside the caller's
+//                                 transaction. Throwing here rolls the
+//                                 caller's transaction back.
+// @TransactionalEventListener  -> runs at the chosen transaction phase, after
+//                                 commit by default. Throwing here cannot
+//                                 roll anything back — it is already committed.
+//
+// Neither of them is asynchronous. "Publishing an event" is a plain method
+// call on every listener, on your thread, and the publisher does not resume
+// until they all return. Add @Async when you want otherwise.`}
       </CodeBlock>
 
       <h2>Testing Transactional Behavior</h2>

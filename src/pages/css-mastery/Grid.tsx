@@ -189,7 +189,16 @@ export default function Grid() {
       </InfoBox>
 
       <h2>Subgrid</h2>
-      <p>Subgrid lets a nested grid item adopt its parent&apos;s track sizing, solving the problem of aligning content across sibling items (e.g., card headers lining up).</p>
+      <p>
+        The problem subgrid solves is worth stating precisely, because the feature looks pointless
+        until you have hit it. A nested grid normally has <strong>no relationship whatsoever</strong>{' '}
+        to its parent&apos;s tracks — each card sizes its own rows from its own content. So in a row
+        of three cards, a two-line title in card 1 pushes card 1&apos;s body down while cards 2 and
+        3 keep theirs high, and the footers land at three different heights. Cards <em>stretch</em>{' '}
+        to equal outer height; their <em>internal</em> rows do not line up. <code>subgrid</code>{' '}
+        makes the child stop inventing its own tracks and use the parent&apos;s instead — so all
+        three cards are laid out against one shared set of rows and everything aligns.
+      </p>
 
       <CodeBlock language="css" title="Subgrid for Aligned Cards">
 {`.card-grid {
@@ -199,11 +208,34 @@ export default function Grid() {
 }
 .card {
   display: grid;
+
+  /* A subgrid can only borrow tracks it actually SPANS, so the card must
+     first claim as many parent rows as it has children to place. Three
+     children (header, body, footer) -> span 3. Get this number wrong and
+     the children silently pile into too few tracks. */
   grid-row: span 3;
-  grid-template-rows: subgrid;   /* inherit parent's row tracks */
+
+  grid-template-rows: subgrid;   /* use the parent's 3 row tracks, don't
+                                    create my own from my own content */
 }
-/* All card headers, bodies, and footers now share the same row heights */`}
+/* Now every card's header sits in parent row 1, body in row 2, footer in
+   row 3 — and each of those rows is sized by the TALLEST content across
+   all three cards, which is exactly the alignment you wanted. */`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="Two things that trip people up with subgrid">
+        <p>
+          <strong>It works per axis.</strong> <code>grid-template-rows: subgrid</code> adopts row
+          tracks only; columns still come from the child&apos;s own definition unless you also say{' '}
+          <code>grid-template-columns: subgrid</code>. Most card layouts want rows only.
+        </p>
+        <p>
+          <strong>Gaps come from the parent by default.</strong> The subgrid inherits the
+          parent&apos;s <code>gap</code> for the adopted axis, which is usually right — but it means
+          setting <code>gap</code> on the card is what you do to override it, not what you do to
+          create it.
+        </p>
+      </InfoBox>
 
       <h2>Dashboard Layout</h2>
 
@@ -272,11 +304,19 @@ export default function Grid() {
   grid-auto-flow: dense;
   gap: 16px;
 }
-.masonry-item.small  { grid-row: span 3; }  /* ~180px */
-.masonry-item.medium { grid-row: span 4; }  /* ~240px */
-.masonry-item.large  { grid-row: span 6; }  /* ~360px */
+/* Spanning N rows also swallows the N-1 gaps BETWEEN those rows, so the
+   height is  N x row-size + (N - 1) x gap  — not just N x row-size.
+   With 60px rows and a 16px gap: */
+.masonry-item.small  { grid-row: span 3; }  /* 3x60 + 2x16 = 212px */
+.masonry-item.medium { grid-row: span 4; }  /* 4x60 + 3x16 = 288px */
+.masonry-item.large  { grid-row: span 6; }  /* 6x60 + 5x16 = 440px */
 .masonry-item.wide   { grid-column: span 2; grid-row: span 4; }
-.masonry-item img    { width: 100%; height: 100%; object-fit: cover; }`}
+.masonry-item img    { width: 100%; height: 100%; object-fit: cover; }
+
+/* Forgetting the absorbed gaps is why hand-computed span counts always come
+   out short. Work backwards from the height you want:
+   span = (target + gap) / (row-size + gap)
+   e.g. a 300px card -> (300 + 16) / (60 + 16) = 4.2, so span 4 (288px). */`}
       </CodeBlock>
 
       <h2>Responsive Card Grid (No Media Queries)</h2>

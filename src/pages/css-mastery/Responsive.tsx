@@ -182,10 +182,70 @@ export default function Responsive() {
 </div>`}
       </CodeBlock>
 
+      <InfoBox variant="danger" title="A container cannot query itself — this is bug #1">
+        <p>
+          The intuitive first attempt is to put <code>container-type</code> on the card and then
+          write <code>@container</code> rules for that same card. It matches nothing, silently:
+        </p>
+        <p>
+          <code>
+            .card {'{'} container-type: inline-size; {'}'} @container (min-width: 400px) {'{'} .card
+            {'{'} ... {'}'} {'}'}
+          </code>
+        </p>
+        <p>
+          <code>@container</code> rules only ever apply to <strong>descendants</strong> of the
+          container. And the restriction is not an oversight — it prevents a circular definition. If
+          a size query could restyle the element it measured, the new styles could change that
+          element&apos;s size, which would change whether the query matches, which would change the
+          styles. The browser refuses to enter that loop.
+        </p>
+        <p>
+          <strong>The fix is always the same shape: one extra wrapper.</strong> Put{' '}
+          <code>container-type</code> on the parent that <em>gives</em> the card its width, and query
+          from there — the card is then a descendant and is free to restyle itself completely. This
+          is why component libraries ship a <code>&lt;Card&gt;</code> as a wrapper plus an inner
+          element rather than a single div.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="info" title="container-type Values">
         <p><strong>inline-size</strong> — containment on the inline axis only (width in horizontal writing modes). This is what you want 95% of the time.</p>
         <p><strong>size</strong> — containment on both axes. Rarely needed and more expensive; requires the element to have an explicit size on both axes.</p>
         <p><strong>normal</strong> — no containment (default). The element can&apos;t be queried.</p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="container-type is a containment switch, and containment has side effects">
+        <p>
+          The name hides what the property does. <code>container-type: inline-size</code> turns on{' '}
+          <strong>inline-size, layout, and style containment</strong> — it is not merely a label
+          saying &quot;queryable.&quot; Three consequences follow, and each one has caught people
+          out:
+        </p>
+        <p>
+          <strong>1. The container&apos;s width stops depending on its contents.</strong> That is the
+          whole mechanism — a query can only measure a size that was settled without consulting the
+          things being restyled. So an element that was shrink-to-fit (<code>inline-block</code>, a
+          float, a grid/flex item sized by content) will stop shrinking to fit the moment you add{' '}
+          <code>container-type: inline-size</code>, and will fill its parent instead. If a layout
+          collapses or stretches unexpectedly right after you added container queries, this is why.
+        </p>
+        <p>
+          <strong>2. It becomes a containing block for absolutely positioned descendants</strong>{' '}
+          — layout containment does this, exactly like <code>position: relative</code> or a{' '}
+          <code>transform</code>. A child positioned against some further-up ancestor will
+          suddenly anchor to the container instead.
+        </p>
+        <p>
+          <strong>3. It creates a new stacking context</strong>, so a high <code>z-index</code>{' '}
+          inside can no longer escape it. A dropdown that used to overlay the page can end up
+          trapped inside its card.
+        </p>
+        <p>
+          None of this is a reason to avoid container queries — it is a reason to add{' '}
+          <code>container-type</code> to a dedicated wrapper element rather than to a component
+          that is already carrying layout responsibilities.
+        </p>
       </InfoBox>
 
       <h3>Container Query Units</h3>

@@ -34,6 +34,82 @@ export default function Design() {
         </p>
       </InfoBox>
 
+      <h2>What Normalization Is Actually For</h2>
+
+      <p>
+        The normal forms are usually taught as a checklist to satisfy, which makes them feel like
+        homework. They are better understood as <em>consequences</em> of one idea: every fact should
+        be stored in exactly one place. Store a fact twice and the two copies can disagree, and
+        &quot;can disagree&quot; always eventually means &quot;does disagree.&quot;
+      </p>
+
+      <p>
+        The vocabulary you need first is the <strong>functional dependency</strong>, written{' '}
+        <code>A → B</code> and read &quot;A determines B&quot;: if you know the value of A, there is
+        exactly one possible value of B. <code>order_id → customer_email</code> holds — one order
+        has one customer email. <code>customer_email → order_id</code> does not — one customer can
+        have many orders. Every normal form below is a rule about <em>which</em> functional
+        dependencies are allowed to live in a table, and each one exists to kill a specific,
+        nameable failure.
+      </p>
+
+      <InfoBox variant="danger" title="The three anomalies — the actual damage">
+        <p>
+          Look at <code>orders_bad</code> in the next code block, where every order row carries the
+          customer&apos;s name, email, and city.
+        </p>
+        <p>
+          <strong>Update anomaly.</strong> A customer changes their email. That fact is duplicated
+          across all 400 of their order rows, so the update must touch all 400 — and if it touches
+          399, the database now holds two contradictory emails for one person with nothing to say
+          which is right.
+        </p>
+        <p>
+          <strong>Insert anomaly.</strong> You cannot record a customer who has not ordered yet.
+          There is no row to put them in; the only place customer facts live is inside an order. You
+          would have to invent a fake order, which then pollutes every revenue report.
+        </p>
+        <p>
+          <strong>Delete anomaly.</strong> Deleting a customer&apos;s last order deletes the
+          customer. The fact &quot;this person exists and lives in Denver&quot; had no independent
+          home, so removing an unrelated fact destroyed it. This is the one that silently loses real
+          data.
+        </p>
+        <p>
+          Splitting customers into their own table fixes all three at once, and that is the entire
+          argument. The normal forms are just a systematic way of finding where this is about to
+          happen to you.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="info" title="The forms, stated as dependency rules">
+        <p>
+          <strong>1NF — values are atomic.</strong> One cell holds one value, not{' '}
+          <code>&apos;Widget x3, Gadget x1&apos;</code> and not a comma-separated list of IDs.
+          Violate it and you cannot filter, join, or constrain the contents without string surgery.
+        </p>
+        <p>
+          <strong>2NF — no partial dependencies.</strong> A <em>partial</em> dependency is a non-key
+          column determined by only <em>part</em> of a composite primary key. With PK{' '}
+          <code>(student_id, course_id)</code>, a column determined by <code>course_id</code> alone
+          is partial — it will be repeated once per student on that course. Only relevant when the
+          key is composite; a single-column key cannot have partial dependencies.
+        </p>
+        <p>
+          <strong>3NF — no transitive dependencies.</strong> A <em>transitive</em> dependency is a
+          non-key column determined by <em>another non-key column</em>:{' '}
+          <code>order_id → customer_city → customer_state</code>. The state is really a fact about
+          the city, not about the order, so it belongs in a cities table. The classic mnemonic:
+          every non-key column must depend on <strong>the key, the whole key, and nothing but the
+          key</strong> — which is 1NF, 2NF and 3NF respectively.
+        </p>
+        <p>
+          <strong>BCNF — every determinant is a candidate key.</strong> The tightening of 3NF for
+          the rare case where a non-key column determines part of a key. If you have never
+          knowingly hit it, that is normal; 3NF catches almost everything in practice.
+        </p>
+      </InfoBox>
+
       <h2>Normalization by Example</h2>
 
       <CodeBlock language="sql" title="From Denormalized Mess to 3NF" showLineNumbers={true}>
@@ -274,6 +350,7 @@ VALUES (1, '[2026-03-01 10:00, 2026-03-01 12:00)');
 -- so a "unique" column happily accepts unlimited NULL rows:
 CREATE TABLE contacts (email TEXT UNIQUE, tenant_id INT);
 INSERT INTO contacts VALUES (NULL, 1), (NULL, 1), (NULL, 1);   -- all accepted!
+DROP TABLE contacts;
 
 -- PG15+ lets you say what you usually meant: NULLs collide with each other.
 CREATE TABLE contacts (
@@ -285,15 +362,24 @@ INSERT INTO contacts VALUES (NULL, 1);
 INSERT INTO contacts VALUES (NULL, 1);   -- ERROR: duplicate key value
 
 -- Where this actually bites: a nullable column in a composite unique key.
---   UNIQUE (tenant_id, external_ref)  with external_ref sometimes NULL
--- lets the same tenant accumulate unlimited NULL-ref rows, and the duplicate
--- data shows up months later in a report rather than at insert time.
+-- The same shape, on a table syncing rows from an external system:
+CREATE TABLE crm_contacts (
+  tenant_id    INT  NOT NULL,
+  external_ref TEXT,                      -- NULL for manually-created rows
+  UNIQUE (tenant_id, external_ref)        -- looks safe, isn't
+);
+-- Because every NULL is distinct from every other NULL, that constraint lets
+-- ONE tenant accumulate unlimited NULL-ref rows. The duplicate data shows up
+-- months later in a report rather than at insert time.
 --
--- Before PG15 the workaround was two partial unique indexes:
-CREATE UNIQUE INDEX ON contacts (tenant_id, external_ref)
+-- Before PG15 the workaround was two partial unique indexes: one for the rows
+-- that have a ref, one that permits at most a single NULL-ref row per tenant.
+CREATE UNIQUE INDEX ON crm_contacts (tenant_id, external_ref)
   WHERE external_ref IS NOT NULL;
-CREATE UNIQUE INDEX ON contacts (tenant_id)
-  WHERE external_ref IS NULL;`}
+CREATE UNIQUE INDEX ON crm_contacts (tenant_id)
+  WHERE external_ref IS NULL;
+-- From PG15 that whole pair collapses to:
+--   UNIQUE NULLS NOT DISTINCT (tenant_id, external_ref)`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="Why Push These Down Into the Schema">

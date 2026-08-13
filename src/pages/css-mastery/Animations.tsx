@@ -228,10 +228,23 @@ export default function Animations() {
 /* Skew — slants the element */
 .slant   { transform: skew(10deg, 5deg); }
 
-/* Combining transforms — order matters!
-   Transforms apply RIGHT to LEFT (like matrix multiplication) */
+/* Combining transforms — ORDER MATTERS, and this is the mental model that
+   actually predicts the result: read LEFT TO RIGHT, and treat each function
+   as moving the element's own coordinate system, taking the element with it.
+   After a rotate, "right" no longer means screen-right. */
+
+.a { transform: translateX(100px) rotate(45deg); }
+/*   move 100px right, THEN spin in place -> ends 100px right, tilted */
+
+.b { transform: rotate(45deg) translateX(100px); }
+/*   spin the axes first, THEN move 100px along the NOW-DIAGONAL x axis
+     -> ends down-and-right at ~71px, 71px. Same two functions, different
+     place on screen. This is the pair to remember. */
+
+/* (The equivalent formal statement is that the matrices multiply left to
+   right, so the RIGHTMOST function is applied to the point first. Both
+   descriptions are correct; the coordinate-system one is easier to use.) */
 .combined {
-  /* First scales, then rotates, then translates */
   transform: translateX(100px) rotate(45deg) scale(1.2);
 }
 
@@ -493,6 +506,65 @@ dialog:not([open])::backdrop { background: rgb(0 0 0 / 0); }
         top layer immediately and appears to vanish behind other content mid-exit.
       </InfoBox>
 
+      <h2>Animating to height: auto</h2>
+      <p>
+        The other classic &quot;this should be one line and somehow isn&apos;t&quot;: expanding an
+        accordion or disclosure panel to the height of its content. The reason it fails is worth
+        understanding rather than memorising, because it explains a whole family of transitions that
+        silently do nothing.
+      </p>
+      <p>
+        A transition interpolates between two <em>values of the same type</em>. <code>auto</code> is
+        not a length — it is an instruction meaning &quot;work it out from the content during
+        layout.&quot; The browser has no number to start from, so there is nothing to interpolate and
+        the change simply snaps. The same is true of <code>min-content</code>,{' '}
+        <code>max-content</code>, and <code>fit-content</code>.
+      </p>
+
+      <CodeBlock language="css" title="Three answers, oldest to newest">{`/* ❌ Does nothing. Not a bug in your code — there is no start value. */
+.panel        { height: 0; transition: height 300ms ease; }
+.panel.is-open { height: auto; }
+
+/* ⚠️ The max-height guess. Works, but the easing is a lie: if content is
+   200px tall and you cap at 1000px, the visible growth finishes in the
+   first 20% of the duration and the remaining 240ms animates nothing.
+   Guess too low and the content is clipped outright. */
+.panel        { max-height: 0; overflow: hidden; transition: max-height 300ms ease; }
+.panel.is-open { max-height: 1000px; }
+
+/* ✅ The grid 0fr -> 1fr trick. Widely supported today and genuinely
+   content-sized — fr units ARE interpolatable, so the row track animates
+   from nothing to exactly the content height, no guessing. */
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms ease;
+}
+.panel.is-open { grid-template-rows: 1fr; }
+.panel > .inner { overflow: hidden; min-height: 0; }  /* both lines required:
+                    min-height: 0 defeats the automatic minimum size, exactly
+                    as it does for a flex item */
+
+/* ✅✅ The real fix: interpolate-size opts the subtree into interpolating
+   keyword sizes, so height: auto just works. Set it once at the root. */
+:root { interpolate-size: allow-keywords; }
+.panel        { height: 0; overflow: hidden; transition: height 300ms ease; }
+.panel.is-open { height: auto; }   /* now animates, and to the RIGHT height */
+
+/* calc-size() is the same machinery, opted into per-value rather than
+   globally — useful for "content height plus some padding": */
+.drawer { max-height: calc-size(max-content, size + 2rem); }`}</CodeBlock>
+
+      <InfoBox variant="tip" title="Pick by support target, not by novelty">
+        <code>interpolate-size</code> is the correct answer and the one to write in new code, but it
+        is newer than most of this page — feature-detect with{' '}
+        <code>@supports (interpolate-size: allow-keywords)</code> if your baseline is conservative.
+        The grid <code>0fr</code>/<code>1fr</code> technique is the safe default in the meantime and
+        is the only one of the three that was ever <em>correct</em> as well as supported: it never
+        guesses a height, so the easing curve you asked for is the easing curve you get. The{' '}
+        <code>max-height</code> hack should be retired.
+      </InfoBox>
+
       <h2>Scroll-Driven Animations</h2>
       <p>
         <code>animation-timeline</code> re-drives an existing <code>@keyframes</code> animation off
@@ -653,8 +725,16 @@ dialog:not([open])::backdrop { background: rgb(0 0 0 / 0); }
 .shake {
   animation: shake 0.6s ease-in-out;
 }
-/* Trigger on invalid input */
-.input:invalid { animation: shake 0.4s ease-in-out; }`}</CodeBlock>
+
+/* ❌ :invalid matches IMMEDIATELY — a required field is invalid while it is
+   still empty, so every input on the form shakes the moment the page loads,
+   before the user has typed anything. */
+.input:invalid { animation: shake 0.4s ease-in-out; }
+
+/* ✅ :user-invalid only matches AFTER the user has interacted with the field
+   and left it in a bad state. This is the selector you actually want for
+   error feedback — same for :user-valid on the success side. */
+.input:user-invalid { animation: shake 0.4s ease-in-out; }`}</CodeBlock>
 
       <h3>Hover Lift with Shadow</h3>
       <CodeBlock language="css" title="Hover Lift">{`.card {

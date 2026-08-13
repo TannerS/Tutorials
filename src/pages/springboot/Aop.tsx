@@ -181,29 +181,49 @@ public class LogSanitizingAspect {
             Object result = pjp.proceed();
             log.info("{}({}) -> ok in {}ms",
                 sig.toShortString(),
-                sanitize(pjp.getArgs(), spec),
+                sanitize(pjp, spec),
                 (System.nanoTime() - start) / 1_000_000);
             return result;
         } catch (Throwable t) {
             log.warn("{}({}) -> {} in {}ms",
                 sig.toShortString(),
-                sanitize(pjp.getArgs(), spec),
+                sanitize(pjp, spec),
                 t.getClass().getSimpleName(),
                 (System.nanoTime() - start) / 1_000_000);
             throw t;
         }
     }
 
-    private String sanitize(Object[] args, LogSanitized spec) {
-        return Arrays.stream(args)
-            .map(a -> a == null ? "null" : shortenIfEmail(a))
+    // Mask by POSITION, using the parameter names the annotation declares.
+    // Guessing from the value ("does it contain an @?") is what you write
+    // first and regret later: it masks an order note that happens to contain
+    // an @, and it misses a phone number entirely. The annotation is the
+    // declaration of intent — use it.
+    private String sanitize(ProceedingJoinPoint pjp, LogSanitized spec) {
+        // Requires -parameters at compile time (Spring Boot's Maven/Gradle
+        // plugin sets it for you) so names survive into the bytecode.
+        String[] names = ((MethodSignature) pjp.getSignature()).getParameterNames();
+        Set<String> sensitive = Set.of(spec.sensitiveArgs());
+        Object[] args = pjp.getArgs();
+
+        return IntStream.range(0, args.length)
+            .mapToObj(i -> {
+                String name = names[i];
+                Object value = args[i];
+                if (value == null) return name + "=null";
+                if (!sensitive.contains(name)) return name + "=" + value;
+                return name + "=" + MaskUtil.maskEmail(value.toString());
+            })
             .collect(Collectors.joining(", "));
     }
+}
 
-    private String shortenIfEmail(Object v) {
-        String s = v.toString();
-        return s.contains("@") ? MaskUtil.maskEmail(s) : s;
-    }
+// Declaring exactly which arguments are sensitive:
+@Service
+public class AccountService {
+    @LogSanitized(sensitiveArgs = { "email", "ssn" })
+    public Account register(String email, String ssn, String displayName) { ... }
+    // logs: register(email=a***e@example.com, ssn=***6789, displayName=Alice)
 }`}
       </CodeBlock>
 

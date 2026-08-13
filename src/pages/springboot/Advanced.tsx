@@ -40,13 +40,21 @@ public class SchedulingConfig { }
 @Component
 public class Housekeeping {
 
-    // Fixed rate — starts every 60 seconds, regardless of how long the previous run took.
-    // If the previous run is still executing, the next fires anyway (subject to pool size).
+    // Fixed rate — the schedule is measured from each run's START time, so
+    // ticks are at 0s, 60s, 120s... regardless of how long a run takes.
+    //
+    // A run that OVERRUNS its period does NOT overlap itself: the scheduler
+    // uses scheduleAtFixedRate, which guarantees a given task never executes
+    // concurrently with itself. The late run simply starts as soon as the
+    // previous one finishes, so the schedule drifts and can "catch up" in a
+    // burst. (If you genuinely want overlap, add @Async — then each tick is
+    // handed to the async executor and returns immediately.)
     @Scheduled(fixedRate = 60_000)
     public void cleanupTempFiles() { /* ... */ }
 
-    // Fixed delay — waits N ms AFTER the previous run completes.
-    // The safe default when runs may overlap or backpressure the DB.
+    // Fixed delay — waits N ms AFTER the previous run COMPLETES, so the gap
+    // between runs is constant and the period isn't. No catch-up bursts.
+    // The safer default: it self-throttles when the job gets slow.
     @Scheduled(fixedDelay = 60_000)
     public void computeStatistics() { /* ... */ }
 
@@ -380,7 +388,12 @@ public class CatalogApiHealthIndicator implements HealthIndicator {
 @Component
 public class TimingAspect {
 
-    @Around("@annotation(Timed)")
+    // The name inside @annotation(...) is read as a METHOD PARAMETER name if
+    // one matches, and otherwise as a TYPE — in which case it must be fully
+    // qualified. "@annotation(Timed)" is the classic silent mistake: no
+    // parameter is called 'Timed', and the simple type name doesn't resolve,
+    // so the pointcut matches nothing and the aspect never runs.
+    @Around("@annotation(com.example.Timed)")
     public Object time(ProceedingJoinPoint pjp) throws Throwable {
         long start = System.nanoTime();
         try {

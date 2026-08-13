@@ -11,6 +11,37 @@ export default function Cheatsheet() {
       prev={{ path: '/springboot/observability', label: 'Observability' }}
       next={null}
     >
+      <h2>Startup Failure Triage</h2>
+      <CodeBlock language="text" title="Read the Description/Action block, not the stack trace">
+{`"required a bean of type X that could not be found"
+    -> X isn't annotated, OR it lives outside the package tree under your
+       @SpringBootApplication class (component scan never saw it).
+
+"required a single bean, but 2 were found"  (lists both)
+    -> @Primary on the default, or @Qualifier at the injection point.
+
+"Port 8080 was already in use"
+    -> a previous run. lsof -i :8080, or --server.port=8081
+
+"...form a cycle"  (with an ASCII diagram of the loop)
+    -> extract the shared concern into a third bean. Don't set
+       spring.main.allow-circular-references=true.
+
+"No property 'emial' found for type 'Customer'"
+    -> typo in a derived query method name; the message lists valid ones.
+
+"There is no PasswordEncoder mapped for the id \\"null\\""
+    -> stored hashes lack the {bcrypt} prefix DelegatingPasswordEncoder needs.
+
+"Transaction silently rolled back because it has been marked as rollback-only"
+    -> an inner REQUIRED method threw and you caught it. Use REQUIRES_NEW,
+       noRollbackFor, or move the work out of the transaction.
+
+--debug   prints the CONDITIONS EVALUATION REPORT: every auto-configuration
+          with the condition that let it in (Positive) or kept it out
+          (Negative). The answer to "why does this bean exist?".`}
+      </CodeBlock>
+
       <h2>Stereotype Annotations</h2>
       <CodeBlock language="java" title="One-line reference">
 {`@Component      Generic Spring-managed bean
@@ -85,8 +116,13 @@ public UserDto create(@Valid @RequestBody CreateUserRequest req) { ... }`}
 
 Traps:
 - Self-invocation (this.method()) bypasses the proxy → annotation ignored.
-- Checked exceptions do NOT roll back by default.
-- Never do HTTP or Kafka calls inside a transaction (holds a DB connection).`}
+- Non-public / final methods are ignored too — a subclass proxy can't
+  override them. Same fact as self-invocation, other side of the coin.
+- Checked exceptions do NOT roll back by default (RuntimeException + Error do).
+- Never do HTTP or Kafka calls inside a request-path transaction (holds a
+  DB connection for the length of the remote call).
+- Inner REQUIRED method threw and you caught it? The shared tx is already
+  marked rollback-only → UnexpectedRollbackException at commit.`}
       </CodeBlock>
 
       <h2>Repository Query Shapes</h2>
@@ -97,8 +133,17 @@ Page<Customer>     findByStatus(Status s, Pageable p);         // pageable
 @Query(value = "SELECT * FROM customer WHERE ...", nativeQuery = true)  // native
 @EntityGraph(attributePaths = { "customer", "items" })         // fixes N+1
 List<Order>       findByStatus(OrderStatus s);
-@Modifying @Query("update Order set status = :s where id = :id")
-int markStatus(@Param("s") Status s, @Param("id") UUID id);    // bulk update`}
+
+// Bulk update — bypasses the persistence context, so BOTH flags matter:
+//   flushAutomatically  push pending changes down BEFORE the UPDATE runs
+//   clearAutomatically  detach everything AFTER, or loaded entities keep
+//                       stale values and write them back at commit
+@Modifying(flushAutomatically = true, clearAutomatically = true)
+@Query("update Order o set o.status = :s where o.id = :id")
+int markStatus(@Param("s") Status s, @Param("id") UUID id);    // returns row count
+
+// Escape hatch when a derived name is ambiguous: '_' spells the traversal
+Optional<Order> findByAddress_ZipCode(String zip);`}
       </CodeBlock>
 
       <h2>Error Handling</h2>

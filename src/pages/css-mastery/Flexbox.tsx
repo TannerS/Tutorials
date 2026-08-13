@@ -199,6 +199,66 @@ export default function Flexbox() {
 .equal-share { flex-grow: 1; flex-basis: 0; }    /* start from nothing */
 .natural     { flex-grow: 1; flex-basis: auto; } /* use content size */`}</CodeBlock>
 
+      <h2>How the Three Properties Actually Combine</h2>
+      <p>
+        <code>flex-grow</code>, <code>flex-shrink</code> and <code>flex-basis</code> are usually
+        taught as three independent knobs, which is why flex layouts feel unpredictable. They are
+        not independent: they are three inputs to <em>one</em> algorithm the browser runs per flex
+        line. Learn the algorithm once and every &quot;why is this item that width&quot; question
+        answers itself.
+      </p>
+
+      <FlowChart
+        title="The Flex Sizing Algorithm, per line"
+        chart={"graph TD\n  A[\"1. Give each item a hypothetical size\\nfrom flex-basis\"] --> B[\"2. Add them up, plus gaps\"]\n  B --> C{\"Compare to the container's\\ninner main size\"}\n  C -->|\"Sum is SMALLER — free space\"| G[\"3a. Hand out free space\\nby flex-grow ratios\"]\n  C -->|\"Sum is BIGGER — overflow\"| S[\"3b. Take the deficit back\\nby flex-shrink x flex-basis\"]\n  C -->|\"Exactly equal\"| N[\"Nothing to distribute\"]\n  G --> M[\"4. Clamp to min/max sizes\\n(min-width: auto bites here)\"]\n  S --> M\n  N --> M\n  style G fill:#1a3329,stroke:#4ade80\n  style S fill:#3d2f14,stroke:#d97706\n  style M fill:#1a2744,stroke:#5b9cf6"}
+      />
+
+      <CodeBlock language="css" title="Step 3a — growing is a plain ratio">{`/* Container 600px. Three items, flex-basis: 0 (so they contribute nothing
+   to the sum), which means ALL 600px is free space to hand out. */
+.a { flex: 3 1 0; }   /* 3/6 of 600 = 300px */
+.b { flex: 2 1 0; }   /* 2/6 of 600 = 200px */
+.c { flex: 1 1 0; }   /* 1/6 of 600 = 100px */
+
+/* Same factors but flex-basis: auto changes the answer completely, because
+   now the items' own content sizes are subtracted FIRST and only the
+   leftover is shared. This is the single most common flex surprise, and
+   it is why flex: 1 (which forces basis 0) gives equal columns while
+   flex-grow: 1 alone (basis stays auto) gives content-proportional ones. */`}</CodeBlock>
+
+      <CodeBlock language="css" title="Step 3b — shrinking is weighted by flex-basis">{`/* Container 600px. Two items that DON'T fit: */
+.wide   { flex: 0 1 800px; }
+.narrow { flex: 0 1 200px; }
+/* Sum = 1000px, container = 600px, so 400px must come back off. */
+
+/* If shrink were a plain ratio like grow, each item would give up 200px:
+     .wide   -> 600px
+     .narrow -> 0px      <-- annihilated
+   That is obviously wrong, so the spec weights each shrink factor by the
+   item's flex-basis — you can only take from an item in proportion to how
+   much it has: */
+
+/* weighted factor = flex-shrink x flex-basis
+     .wide   = 1 x 800 = 800      .narrow = 1 x 200 = 200     total = 1000
+     .wide   loses 400 x 800/1000 = 320  ->  480px
+     .narrow loses 400 x 200/1000 =  80  ->  120px
+     480 + 120 = 600  ✅  */
+
+/* Practical consequence: a big item shrinks a lot and a small item barely
+   moves, WITHOUT you configuring anything. And flex-shrink: 0 opts out
+   entirely — it is how a fixed sidebar survives a narrow window. */`}</CodeBlock>
+
+      <InfoBox variant="tip" title="The two-question debugging routine">
+        When an item is the wrong width, ask these in order. <strong>1. Is there free space or a
+        deficit?</strong> Sum the items&apos; <code>flex-basis</code> values (remember{' '}
+        <code>auto</code> means &quot;use my <code>width</code>, or my content if I have no
+        width&quot;) and compare to the container. Positive free space means only{' '}
+        <code>flex-grow</code> is doing anything and <code>flex-shrink</code> is irrelevant;
+        negative means the reverse. Half of all flex confusion is tuning the property that
+        isn&apos;t running. <strong>2. Is a minimum clamping it?</strong> If the maths says an item
+        should be 80px and it renders at 240px, step 4 overrode you — see{' '}
+        <code>min-width: auto</code> below.
+      </InfoBox>
+
       <h2>flex Shorthand</h2>
       <p>
         The <code>flex</code> shorthand sets <code>flex-grow</code>, <code>flex-shrink</code>,

@@ -229,9 +229,11 @@ HashAggregate  (cost=8123.44..8148.44 rows=2000 width=26)
                (actual time=61.402..61.865 rows=1987 loops=1)
   Group Key: c.name
   Batches: 1  Memory Usage: 401kB
+  Buffers: shared hit=1204 read=3288
   ->  Hash Join  (cost=71.00..7873.44 rows=50000 width=18)
                  (actual time=1.104..48.213 rows=49812 loops=1)
         Hash Cond: (o.customer_id = c.id)
+        Buffers: shared hit=1204 read=3288
         ->  Index Scan using idx_orders_created_at on orders o
                  (cost=0.43..6698.60 rows=50000 width=8)
                  (actual time=0.061..24.417 rows=49812 loops=1)
