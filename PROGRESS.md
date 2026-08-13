@@ -90,4 +90,17 @@ User request, verbatim intent, numbered as given:
 
 **Phase 3 — done.** Evaluated Spring Boot 4 field guide (11 lessons) and SQL field guide (5 lessons) orderings directly against their titles/scope. Both are already in a defensible beginner→advanced progression: Spring is DI/beans → REST → error-handling → data/JPA → config/transactions → security → AOP/events → testing → Kafka/observability → Boot4-novelties → gotchas; SQL is basic queries → advanced queries → schema design → Postgres gotchas → quick reference. No reordering needed — didn't force artificial churn just to show activity. This satisfies the Spring/SQL portion of #6.
 
-**Next**: Phase 4 — dispatching parallel background agents for the content-heavy lanes (Java field guide, CSS, React field guide, TypeScript, Auth reorder, State-mgmt content expansion, New playgrounds).
+**Phase 4 — in progress.** Before dispatching, verified two new libraries actually work client-side rather than guessing (learned this lesson from the earlier `typescript`/`@typescript/vfs` playground work): `sass` (Dart Sass) compiles correctly under `node --conditions=browser` with zero Node-builtin errors — its package.json has a conditional export (`sass.default.js` for non-node resolution) that sidesteps the fs/chokidar-dependent CLI entry; `sql.js` (WASM SQLite) bundles cleanly via `vite build` with the `.wasm` asset resolving through Vite's `?url` import convention. Both added as dependencies (`c6d618a`), pushed.
+
+Dispatched 7 parallel background agents:
+- **Lane A** — Java field guide: add basics/variables PosterCards to `Syntax.tsx` + verify/fix lesson order (#1, part of #6)
+- **Lane B** — CSS: Mastery ground-up basics (likely new `Fundamentals.tsx` lesson) + css-field-guide completeness + verify/fix order (#3, #4, part of #6)
+- **Lane C** — React field guide: add basics + verify/fix order (part of #6)
+- **Lane D** — TypeScript: audit/expand `typescript/Cheatsheet.tsx` + verify/fix typescript-field-guide order (#7, part of #6)
+- **Lane E** — Auth & Security: reorder into one coherent login/session/token flow + connective-tissue sentences between lessons (#10)
+- **Lane F** — State management: repurpose the now-pointless "Library Comparison" lesson, check intro/patterns for dangling Redux/Zustand references, refocus on Context/useReducer (rest of #5)
+- **Lane G** — New playgrounds: CSS playground (iframe srcDoc live preview), Sass/SCSS playground (`sass.compileString`), SQL playground (`sql.js` WASM SQLite with seeded users/orders tables) — this lane is the sole exception allowed to touch `sections.ts`/`App.tsx` directly, since it owns all of the Playground section's routing and no other lane touches it (#12)
+
+All 7 instructed: read fully before editing, checkpoint with `tsc --noEmit` after each file, verify claims against real output (not just eyeball), and (except Lane G) don't touch `sections.ts`/`App.tsx` — report exact wiring data instead so the coordinator consolidates centrally, avoiding the file-conflict risk multiple lanes touching the same routing files would create.
+
+**Next**: wait for all 7 lanes, consolidate wiring into `sections.ts`/`App.tsx`, full verification, commit, push.
