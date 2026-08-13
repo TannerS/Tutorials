@@ -280,6 +280,17 @@ All 6 lessons written AND wired into `sections.ts` + `App.tsx` (I wired each as 
 
 **Still running at handoff**: the 4 sweep lanes over the 66 never-audited files. Typecheck is transiently red from files being mid-written (`npm-deep-dive/Security.tsx`, earlier `react-router/CheatSheet.tsx`) — this is expected, NOT a real breakage. Verify with `npx tsc --noEmit` once lanes report; do not edit those files underneath a running lane.
 
+### Round-6 sweep results (as they land)
+
+**Sweep C (SOLID / patterns / micro / testing / a11y — 16 files) — DONE.** Read all line-by-line.
+- **`solid/Dip.tsx`'s flagship "DIP makes testing trivial" example does not compile** — `OrderRepository fakeRepo = order -> ...` used a lambda for a 2-method interface (not functional). Replaced with an anonymous class.
+- **`api-testing/Security.tsx`** justified 401-vs-403 with the *403-vs-404* rationale ("a 403 confirms the resource exists"), and contradicted its own challenge which marks 404 wrong. Rewritten around retry-ability.
+- **`microservices/Scaling.tsx` HPA sample contradicted its own stated rule** — text said "scale up aggressively", manifest set values *slower* than Kubernetes defaults. Also claimed auto-increment keys hot-spot the last shard, but the block establishes *hash* sharding, where that's a range-sharding property.
+- **`testing/Contract.tsx`** Pact provider test used `@LocalServerPort` without `webEnvironment = RANDOM_PORT` — port stays 0, every interaction fails to connect.
+- Two more non-compiling SOLID examples (try-with-resources over `getConnection()` with unhandled `SQLException`), and `solid/Isp.tsx`'s role-interface refactor silently dropped 2 of 7 methods.
+- Verdict on SOLID rigor: solid overall, LSP strongest; DIP was least rigorous (now fixed). Named 5 files genuinely clean after full reads, including independently re-verifying every WCAG 2.2 citation in `accessibility/Intro.tsx` against number *and* level.
+- Attribution rigor worth noting: it confirmed the repo-wide tsc errors belonged to a concurrent lane by stashing that single file, re-running tsc clean, then popping the stash.
+
 ### Remaining plan
-1. Collect the 4 sweep reports → verify typecheck/lint/build → commit + push round 6.
+1. Collect the remaining 3 sweep reports → verify typecheck/lint/build → commit + push round 6.
 2. Dispatch round 7 as weighted lanes — roughly 3 lanes on React (react19 / react-field-guide / react-router / react-antipatterns / react-testing / state-mgmt), 2 on TypeScript (typescript / typescript-field-guide), 2 on Java+Spring (java / springboot / both field guides), and 2–3 covering the remainder (SQL, CSS, architecture/security, testing, tooling, playgrounds) — each with an explicit final step of reconciling its section's cheat sheet against everything the repo now contains.
