@@ -258,13 +258,21 @@ export default function Migration() {
         language="tsx"
         title="Null Checks"
         code={
-          "// Problem: Object is possibly 'null'\n" +
+          "// Problem: .find() returns User | undefined — it may match nothing\n" +
           "const user = users.find(u => u.id === id);\n" +
-          "console.log(user.name); // Error!\n\n" +
-          "// Fix: guard against null\n" +
+          "console.log(user.name);\n" +
+          "//          ~~~~\n" +
+          "// error TS18048: 'user' is possibly 'undefined'.\n\n" +
+          "// Fix: eliminate the undefined branch, then use it\n" +
           "const user = users.find(u => u.id === id);\n" +
           "if (!user) throw new Error('User not found');\n" +
-          "console.log(user.name); // OK — narrowed"
+          "console.log(user.name); // OK — narrowed to User\n\n" +
+          "// NOTE the code: TS18048 is 'possibly undefined', TS18047 is\n" +
+          "// 'possibly null'. They are different flags on the same idea —\n" +
+          "// under strictNullChecks, null and undefined are members of a\n" +
+          "// type only when the type actually says so. Most migration noise\n" +
+          "// is this one error, repeated: the type was always honest, you\n" +
+          "// were just handling the absent case by habit rather than proof."
         }
       />
 

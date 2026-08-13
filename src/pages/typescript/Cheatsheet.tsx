@@ -75,7 +75,14 @@ type Handler<T> = (event: T) => Promise<void>;`}
 {`// ONLY interfaces can do:
 interface Box { w: number }
 interface Box { h: number }          // declaration merging -> { w, h }
-declare module 'express' { interface Request { userId?: string } }  // augmentation
+
+// module augmentation — merges into what the module EXPORTS
+declare module '@tanstack/react-query' {
+  interface Register { defaultError: { code: string } }
+}
+// Express's Request is NOT exported — it lives on a global namespace,
+// so 'declare module "express"' misses it. Use declare global instead:
+declare global { namespace Express { interface Request { userId?: string } } }
 
 // ONLY type aliases can do:
 type Id       = string | number;     // unions
@@ -436,6 +443,15 @@ type Z = ToArray<string | number>;        // string[] | number[]   (not (string|
 type NoDist<T> = [T] extends [any] ? T[] : never;
 type W = NoDist<string | number>;         // (string | number)[]
 
+// Distribution is how the union utilities work:
+//   Exclude<T,U> = T extends U ? never : T   — 'never' deletes a member
+// ...and the trap it creates: 'never' is the EMPTY union, so there is
+// nothing to distribute over and the conditional never runs.
+type IsNever<T>  = T extends never ? true : false;
+type N1 = IsNever<never>;                 // never   <- NOT true
+type IsNever2<T> = [T] extends [never] ? true : false;
+type N2 = IsNever2<never>;                // true    <- wrap to fix
+
 // Recursive conditional types
 type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
 type Flatten<T> = T extends readonly (infer U)[] ? Flatten<U> : T;
@@ -591,14 +607,18 @@ declare namespace Express { interface Request { user?: User } }`}
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "strict": true,                     // enables all strict flags below
+    // On TS 6 'strict' already DEFAULTS to true — write it anyway, as
+    // documentation and for older compilers. Only "strict": false opts out.
+    "strict": true,                     // = the seven flags listed below
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
     "strictPropertyInitialization": true,
+    "strictBuiltinIteratorReturn": true,
     "noImplicitThis": true,
-    "alwaysStrict": true,
+    "useUnknownInCatchVariables": true,
+    // NOT in the strict family: alwaysStrict now defaults to true on its own.
     "noUncheckedIndexedAccess": true,   // arr[i] is T | undefined
     "noImplicitOverride": true,         // 'override' keyword required
     "isolatedModules": true,
@@ -614,13 +634,49 @@ declare namespace Express { interface Request { user?: User } }`}
       <CodeBlock language="bash" title="Type-check and diagnose">
 {`tsc --noEmit                 # type-check only — this is your CI gate
 tsc --watch --noEmit         # re-check on save
-tsc --init                   # generate a fully commented tsconfig
+tsc --init                   # short, opinionated tsconfig (TS 5.9+ — the
+                             #   old ~100-line commented file is gone)
 tsc --showConfig             # print the FINAL merged config (after extends)
 tsc --listFiles              # every file actually included — "why is this compiled?"
 tsc --traceResolution        # why an import resolved (or didn't)
 tsc --extendedDiagnostics    # where compile time is going
 tsc --generateTrace out/     # perf trace, open in edge://tracing
 tsc -b                       # build mode — respects project references`}
+      </CodeBlock>
+
+      <h2>Reading Compiler Errors</h2>
+      <CodeBlock language="text" title="Decode any diagnostic in ten seconds">
+{`file.ts(6,7): error TS2345: Argument of type 'X' is not assignable to
+                            parameter of type 'Y'.
+              ^ where it GAVE UP (not always where the mistake is)
+
+"Type A is not assignable to type B"
+  B = what this position requires. A = what you supplied.
+  The order carries the whole meaning — never read it backwards.
+
+NESTED CHAINS: read BOTTOM-UP.
+  error TS2322: Type '{ user: { age: string } }' is not assignable to 'Account'.
+    The types of 'user.age' are incompatible between these types.   <- WHERE
+      Type 'string' is not assignable to type 'number'.             <- WHAT
+  The headline is the least useful line. Start at the deepest indent.
+
+CODES WORTH KNOWING BY SIGHT
+  TS2322  bad assignment                TS2345  bad argument
+  TS2339  property does not exist       TS2353  excess property on a literal
+  TS2561  ...same, with a "did you mean" suggestion — it is a typo
+  TS7006  parameter implicitly 'any'    TS2741  required property is missing
+  TS18046 value is 'unknown' — narrow it before use
+  TS18048 value is possibly 'undefined' TS2367  comparison is always false
+  TS2589  "excessively deep" — a recursive type has no working depth limit
+  TS2636  a variance annotation (in/out) contradicts the declaration
+
+FIRST MOVES WHEN STUCK
+  1. Suspect the ANNOTATION, not just the value — the mistake is often
+     in a type you declared several lines up.
+  2. Narrowing vanished? Pull the value into a local const first.
+  3. Conditional type resolving to 'never'? Its input can be 'never';
+     wrap the check in [T] extends [U].
+  4. tsc --showConfig / --listFiles when the error makes no sense at all.`}
       </CodeBlock>
 
       <h2>Gotchas That Bite</h2>

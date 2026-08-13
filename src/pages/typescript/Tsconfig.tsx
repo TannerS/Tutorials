@@ -131,6 +131,59 @@ tsc --listFiles`}
         Here is what each one catches:
       </p>
 
+      <InfoBox variant="success" title="On TypeScript 6, strict Is the Default">
+        <p>
+          Every tutorial written before 2026 tells you to add{' '}
+          <code>&quot;strict&quot;: true</code> because the answer was <em>false</em> if you
+          said nothing. That flipped. Give TypeScript 6 a <code>tsconfig.json</code> that never
+          mentions <code>strict</code> and the whole family is on:
+        </p>
+        <CodeBlock language="bash" title="Verified against typescript@6.0.3">
+{`$ cat tsconfig.json
+{ "compilerOptions": { "target": "esnext", "noEmit": true } }
+
+$ cat probe.ts
+let s: string = null;
+
+$ npx tsc --noEmit
+probe.ts(1,5): error TS2322: Type 'null' is not assignable to type 'string'.
+
+# Only an explicit opt-out silences it:
+$ npx tsc --noEmit --strict false      # no errors`}
+        </CodeBlock>
+        <p>
+          Two practical consequences. Keep writing <code>&quot;strict&quot;: true</code>{' '}
+          anyway &mdash; it is documentation, and it pins the behaviour if the project is ever
+          opened by an older compiler. And when a stray <code>tsconfig.json</code> in a
+          sub-folder suddenly produces a flood of null errors, remember that a config
+          inheriting nothing is now a <em>strict</em> config, not a lax one.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="question" title="The Model Behind strictNullChecks">
+        <p>
+          It is the flag with the largest blast radius, and it is easiest to understand as a
+          change to what a type <em>contains</em> rather than as extra checking.
+        </p>
+        <p>
+          <strong>Without it</strong>, <code>null</code> and <code>undefined</code> are silently
+          members of <em>every single type</em>. <code>string</code> really means{' '}
+          <code>string | null | undefined</code>; you were just never shown the rest of it. Every
+          annotation in the codebase is quietly lying by omission, and the compiler is fine with{' '}
+          <code>s.length</code> on a value that is <code>null</code> because, as far as the type
+          says, that is a legal <code>string</code>.
+        </p>
+        <p>
+          <strong>With it</strong>, <code>null</code> and <code>undefined</code> get their own
+          types and belong to nothing else. <code>string</code> finally means only strings, and
+          a value that might be absent has to say so: <code>string | null</code>. Everything
+          people describe as &quot;strictNullChecks makes you handle null&quot; is downstream of
+          that one change &mdash; you narrow the union because it <em>is</em> a union, using
+          exactly the narrowing from the fundamentals lesson. No new machinery, just types that
+          stopped hiding two of their members.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="typescript" title="What each strict flag prevents">
 {`// ─── strictNullChecks ────────────────────────────────────
 // WITHOUT: string could secretly be null/undefined

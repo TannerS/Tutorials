@@ -152,6 +152,41 @@ type Status = typeof STATUS[keyof typeof STATUS];`}
 function handle(data: Object) { /* ... */ }
 // Both accept strings, numbers, booleans!`}
       </CodeBlock>
+
+      <InfoBox variant="question" title="What {} Actually Means (It Is Not &quot;An Empty Object&quot;)">
+        <p>
+          The name misleads everyone. <code>{'{}'}</code> does not mean &quot;an object with no
+          properties&quot; &mdash; it means <strong>&quot;anything that is not{' '}
+          <code>null</code> or <code>undefined</code>&quot;</strong>. That falls straight out of
+          structural typing: a type demanding zero properties is satisfied by every value that{' '}
+          <em>has</em> properties, and in JavaScript that is everything except the two you cannot
+          dot into.
+        </p>
+        <CodeBlock language="typescript" title="Verified on TypeScript 6.0">
+{`declare function process(data: {}): void;
+
+process("hello");     // ✓
+process(42);          // ✓
+process(true);        // ✓
+process([1, 2]);      // ✓
+process(() => {});    // ✓
+
+process(null);        // ✗ error TS2345: Argument of type 'null' is not
+process(undefined);   //   assignable to parameter of type '{}'.`}
+        </CodeBlock>
+        <p>
+          Which makes <code>{'{}'}</code> genuinely useful for exactly one thing: as{' '}
+          <code>NonNullable</code>, e.g. <code>{'T extends {}'}</code> to say &quot;T is not
+          nullish&quot;. As a parameter type it is <code>any</code> wearing a disguise.
+        </p>
+        <p>
+          Lowercase <code>object</code> is the different one: it means &quot;a non-primitive&quot;,
+          so it rejects <code>string</code> and <code>number</code> but still accepts arrays and
+          functions. And capital-<code>Object</code> is the boxed wrapper interface &mdash; behaves
+          almost like <code>{'{}'}</code>, and is a mistake in every case. Reach for{' '}
+          <code>{'Record<string, unknown>'}</code> or a real interface instead.
+        </p>
+      </InfoBox>
       <CodeBlock language="typescript" title="✅ GOOD — Be explicit about the shape you expect">
 {`function process(data: Record<string, unknown>) { /* ... */ }
 
@@ -221,6 +256,42 @@ const doubled = nums.map(n => n * 2); // inferred as number[]`}
       <InfoBox variant="warning" title="When to annotate explicitly">
         Annotate return types on exported/public functions and complex derived
         types. Let inference handle local variables, callbacks, and simple expressions.
+      </InfoBox>
+
+      <InfoBox variant="question" title="The Reason Behind That Rule: Where Do You Want the Error?">
+        <p>
+          &quot;Annotate exports, infer locals&quot; is repeated everywhere without its
+          justification, which makes it feel arbitrary. It is not about noise. An annotation
+          decides <strong>where a mistake is reported</strong>.
+        </p>
+        <CodeBlock language="typescript" title="Same bug, two very different failure modes">
+{`// Inferred return type
+export function getUser(id: string) {
+  return { id, nmae: "Alice" };      // typo
+}
+// No error here. The return type simply BECOMES { id: string; nmae: string },
+// and the failure surfaces later, in every consumer, as
+// "Property 'name' does not exist on type ..." — far from the actual typo.
+
+// Annotated return type
+export function getUser(id: string): User {
+  return { id, nmae: "Alice" };
+  //           ~~~~
+  // error TS2353: Object literal may only specify known properties,
+  //               and 'nmae' does not exist in type 'User'.
+}`}
+        </CodeBlock>
+        <p>
+          An annotation is a <em>checkpoint</em>: it stops a wrong type propagating outward and
+          reports it at the source. On an exported function it also pins the public contract, so
+          an accidental change to the return shape breaks the build in one place instead of
+          silently rippling through every caller.
+        </p>
+        <p>
+          For a local <code>const</code> the same annotation buys nothing &mdash; the value and
+          its use are three lines apart, and the annotation is one more thing that can go stale.
+          Hence the rule. It is about error <em>locality</em>, not about typing effort.
+        </p>
       </InfoBox>
 
       {/* ── Section 3: Discriminated Unions ──────────────────────── */}

@@ -512,6 +512,30 @@ export async function fetchUserById(id: string): Promise<User> {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Be Honest About What That Annotation Proves">
+        <p>
+          <code>{'const json: ApiResponse<User[]> = await response.json();'}</code> is the
+          normal way to write this and you will see it everywhere &mdash; but understand
+          exactly what it does, because it is not what it looks like.{' '}
+          <code>response.json()</code> is typed as returning <code>any</code>, and{' '}
+          <code>any</code> is assignable to anything, so the annotation is accepted without a
+          single check. It is a type <em>assertion</em> wearing the syntax of a declaration.
+        </p>
+        <p>
+          Ship a backend change that renames <code>data</code> to <code>results</code> and
+          nothing fails at the boundary. It fails three components deep, as{' '}
+          <em>Cannot read properties of undefined</em>, and you will go looking in the wrong
+          file. TypeScript never promised otherwise: types are erased, and the checker was not
+          present when that response arrived.
+        </p>
+        <p>
+          This is fine for a first project &mdash; just know it is the one line in this file
+          the compiler is not guarding. The upgrade path is a runtime schema validator (Zod,
+          Valibot, ArkType), which parses the response and gives you back a type it actually
+          verified. Best Practices covers the pattern under DTO boundaries.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="typescript" title="src/hooks/useUsers.ts &mdash; Typed custom hook">
 {`import { useState, useEffect } from 'react';
 import type { User } from '@/types/user';

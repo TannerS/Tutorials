@@ -55,6 +55,163 @@ const item: Product = {
 // item.id = "xyz"; // Error: Cannot assign to 'id' because it is read-only`}
       </CodeBlock>
 
+      <InfoBox variant="question" title="Wait — Where Is &quot;implements User&quot;?">
+        <p>
+          Nothing in that object literal mentions <code>User</code>. It just has the right
+          properties, and TypeScript accepted it. If you have written Java or C#, that should
+          look wrong: there, a class is compatible with an interface only if it explicitly
+          declares <code>implements</code>. TypeScript works on a different principle
+          entirely, and it is the single most important thing to understand about the
+          language. It gets its own section, right now, before anything else.
+        </p>
+      </InfoBox>
+
+      <h2>Structural Typing &mdash; the Rule Behind Everything</h2>
+      <p>
+        TypeScript is <strong>structurally typed</strong>: two types are compatible when their{' '}
+        <em>shapes</em> are compatible. Names are labels for humans; the checker only ever
+        compares members. Java, C#, and Kotlin are <strong>nominally</strong> typed &mdash;
+        compatibility is decided by the declared name and inheritance chain. Same word,
+        &quot;interface&quot;; opposite mechanic.
+      </p>
+
+      <CodeBlock language="typescript" title="No declaration of intent required">
+{`interface Point { x: number; y: number }
+
+function distanceFromOrigin(p: Point) {
+  return Math.sqrt(p.x ** 2 + p.y ** 2);
+}
+
+// A class that has never heard of Point:
+class Vector3 {
+  constructor(public x: number, public y: number, public z: number) {}
+}
+
+distanceFromOrigin(new Vector3(1, 2, 3));  // ✓ accepted
+
+// A plain object held in a variable:
+const reading = { x: 3, y: 4, z: 5, label: "sensor-1" };
+distanceFromOrigin(reading);               // ✓ accepted`}
+      </CodeBlock>
+
+      <p>
+        Both are accepted because both <em>have</em> an <code>x: number</code> and a{' '}
+        <code>y: number</code>. The extra members are irrelevant: <code>Point</code> is a
+        contract about what must be present, never about what must be absent. In set terms
+        (from the last lesson) a type with <em>more</em> properties describes a{' '}
+        <em>smaller</em> set of objects, so it fits inside the one that demands less.
+      </p>
+
+      <InfoBox variant="tip" title="Why This Design, and What It Buys You">
+        <p>
+          Structural typing is why TypeScript could be retrofitted onto JavaScript at all.
+          JavaScript objects come from JSON responses, object literals, spreads, and libraries
+          that never imported your types &mdash; none of which can declare{' '}
+          <code>implements</code>. A nominal system would have rejected all of it.
+        </p>
+        <p>
+          Day to day this means you can describe someone else&apos;s data without owning it,
+          and you can write an interface for the three fields a function actually needs rather
+          than demanding the caller hand you a whole <code>User</code>. Narrow parameter types
+          are free here in a way they are not in Java.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="implements Is a Check, Not a Connection">
+        <p>
+          Class <code>implements</code> still exists, but it does far less than the Java
+          keyword that shares its spelling. It <em>verifies</em> that the class satisfies the
+          interface and changes nothing else &mdash; the class was already compatible with any
+          interface whose shape it matched, and removing <code>implements</code> would not
+          break a single call site.
+        </p>
+        <p>
+          One practical consequence surprises everyone: <code>implements</code> supplies{' '}
+          <strong>no contextual types</strong> to the members.
+        </p>
+        <CodeBlock language="typescript" title="The interface does not type your parameters">
+{`interface Greeter { greet(name: string): string }
+
+class Console implements Greeter {
+  greet(name) { return name; }
+  //    ~~~~
+  // error TS7006: Parameter 'name' implicitly has an 'any' type.
+}`}
+        </CodeBlock>
+        <p>
+          You must annotate <code>name: string</code> yourself. <code>implements</code> checks
+          your work afterwards; it does not do the work for you.
+        </p>
+      </InfoBox>
+
+      <h2>Excess Property Checking</h2>
+      <p>
+        Structural typing says extra properties are harmless &mdash; and it means it. So this
+        looks like a contradiction:
+      </p>
+
+      <CodeBlock language="typescript" title="Two lines that should behave identically. They do not.">
+{`interface Point { x: number; y: number }
+declare function distanceFromOrigin(p: Point): number;
+
+const reading = { x: 3, y: 4, z: 5 };
+distanceFromOrigin(reading);          // ✓ fine
+
+distanceFromOrigin({ x: 3, y: 4, z: 5 });
+//                               ~
+// error TS2353: Object literal may only specify known properties,
+//               and 'z' does not exist in type 'Point'.`}
+      </CodeBlock>
+
+      <p>
+        The same value, rejected only when written inline. This is not an inconsistency, it is
+        a deliberate extra rule called <strong>excess property checking</strong>, and it fires
+        on exactly one thing: a <em>fresh object literal</em> assigned directly to a typed
+        position. Assign that literal to a variable first and its &quot;freshness&quot; is
+        gone, so only ordinary structural rules apply.
+      </p>
+
+      <InfoBox variant="question" title="Why Have the Exception at All?">
+        <p>
+          Because of what an inline literal means. If you write{' '}
+          <code>{'{ x: 3, y: 4, z: 5 }'}</code> right at the call, that object exists for no
+          other purpose &mdash; nobody else will read <code>z</code>. So <code>z</code> is
+          either dead weight or, far more likely, a mistake. TypeScript pays back the
+          strictness immediately:
+        </p>
+        <CodeBlock language="typescript" title="The case this rule exists to catch">
+{`interface RequestOptions { url: string; timeout?: number }
+declare function send(o: RequestOptions): void;
+
+send({ url: "/api", timout: 3000 });
+//                  ~~~~~~
+// error TS2561: Object literal may only specify known properties,
+//               but 'timout' does not exist in type 'RequestOptions'.
+//               Did you mean to write 'timeout'?`}
+        </CodeBlock>
+        <p>
+          Without the rule this typo would be silently legal &mdash; <code>timeout</code> is
+          optional, so the object still structurally satisfies{' '}
+          <code>RequestOptions</code> &mdash; and your request would quietly use the default
+          timeout forever. Note the error code too: <strong>TS2561 is the typo variant</strong>{' '}
+          of TS2353 and it tells you the intended name.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="note" title="When You Hit This For Real">
+        <p>
+          The useful takeaway is diagnostic. Seeing TS2353 means one of three things, in
+          order of likelihood: you typed a property name wrong; the target type is missing a
+          property it should have; or you genuinely want the extra field, in which case the
+          honest fix is to widen the type, not to reach for <code>as</code>.
+        </p>
+        <p>
+          Assigning to an intermediate variable also makes the error go away &mdash; but that
+          is a loophole, not a solution. It suppresses the check without answering the
+          question of why an unexpected property is there.
+        </p>
+      </InfoBox>
+
       {/* ── Section 2: Type Alias Declaration ── */}
       <h2>Type Alias Declaration</h2>
       <p>
@@ -196,6 +353,56 @@ const config: AppConfig = {
   maxRetries: 3,
 };`}
       </CodeBlock>
+
+      <p>
+        There is a rule hiding in that example that catches people the first time:{' '}
+        <strong>every named property must be assignable to the index signature&apos;s
+        type.</strong> It works above only because <code>string</code> is assignable to{' '}
+        <code>unknown</code>. Narrow the index type and the named properties start failing:
+      </p>
+
+      <CodeBlock language="typescript" title="The constraint an index signature imposes">
+{`interface Scores {
+  average: string;
+  //~~~~~
+  // error TS2411: Property 'average' of type 'string' is not
+  //               assignable to 'string' index type 'number'.
+  [subject: string]: number;
+}`}
+      </CodeBlock>
+
+      <p>
+        The logic is that <code>config[someRuntimeKey]</code> must have a single predictable
+        type, and <code>someRuntimeKey</code> could be <code>&quot;average&quot;</code>. If the
+        signature promises <code>number</code>, a <code>string</code> property would make that
+        promise false. The fix is to widen the index type to cover both
+        (<code>number | string</code>), or to drop the index signature and use{' '}
+        <code>Record</code> for the open-ended part separately.
+      </p>
+
+      <InfoBox variant="warning" title="An Index Signature Switches Off Typo Protection">
+        <p>
+          Adding <code>[key: string]: unknown</code> makes <em>every</em> key a known key, so
+          the excess property check from earlier in this lesson has nothing left to reject:
+        </p>
+        <CodeBlock language="typescript" title="Same typo, opposite outcomes">
+{`interface Tight  { appName: string; verbose?: boolean }
+interface Open   { appName: string; verbose?: boolean; [key: string]: unknown }
+
+const a: Tight = { appName: "x", vrebose: true };
+//                               ~~~~~~~
+// error TS2561: ... 'vrebose' does not exist in type 'Tight'.
+//               Did you mean to write 'verbose'?
+
+const b: Open  = { appName: "x", vrebose: true };  // no error at all`}
+        </CodeBlock>
+        <p>
+          That is a real cost, not a formality &mdash; you traded your typo protection for
+          flexibility. Reach for an index signature only when the keys are genuinely
+          open-ended (a translations map, a feature-flag bag); for a fixed set of options,
+          list them.
+        </p>
+      </InfoBox>
 
       {/* ── Section 7: Extending Interfaces ── */}
       <h2>Extending Interfaces</h2>
@@ -738,6 +945,51 @@ const permissions: RolePermissions = {
 
       {/* ── Section 15: Interactive Challenges ── */}
       <h2>Test Your Knowledge</h2>
+
+      <InteractiveChallenge
+        question={"Why does the second call fail when the first one succeeds with the exact same data?"}
+        code={`interface Point { x: number; y: number }
+declare function plot(p: Point): void;
+
+const data = { x: 1, y: 2, z: 3 };
+plot(data);                  // OK
+plot({ x: 1, y: 2, z: 3 });  // error TS2353`}
+        language="typescript"
+        options={[
+          "Structural typing does not apply to object literals",
+          "Excess property checking: a fresh literal assigned straight to a typed position is checked for unknown keys",
+          "'data' was inferred as any, so the first call skipped checking",
+          "Interfaces require exact property matches; type aliases would allow both",
+        ]}
+        correctIndex={1}
+        explanation={
+          "Structurally, both values satisfy Point — extra properties never break compatibility. " +
+          "Excess property checking is a deliberate extra rule that fires only on a FRESH object " +
+          "literal written directly at the typed position, on the reasoning that an inline literal " +
+          "exists for nobody else, so an unrecognised key is almost certainly a typo. Assigning to " +
+          "a variable first removes the literal's 'freshness' and the check no longer applies — " +
+          "which is a loophole, not a fix."
+        }
+      />
+
+      <InteractiveChallenge
+        question={"Removing 'implements Serializable' from a class that already has a matching serialize() method would…"}
+        options={[
+          "break every call site that passes it where Serializable is expected",
+          "change nothing about which functions accept the class",
+          "make the class incompatible with Serializable until it is re-declared",
+          "cause a runtime error the first time serialize() is called",
+        ]}
+        correctIndex={1}
+        explanation={
+          "TypeScript is structurally typed: compatibility is decided by shape, so the class was " +
+          "already assignable to Serializable before the keyword was there and stays assignable " +
+          "after it is gone. 'implements' is a self-check — it makes the compiler verify the class " +
+          "really satisfies the interface, and it gives you a clear error at the class rather than " +
+          "at every call site. Worth keeping for that reason, but it creates no connection. Note " +
+          "it also supplies no contextual types: parameters still need their own annotations."
+        }
+      />
 
       <InteractiveChallenge
         question={"You are designing a public SDK. Users should be able to add custom properties to your Config type. Which should you use?"}

@@ -199,9 +199,53 @@ stringStack.push(42); // ✅ Compile error! Expected string`}
       {/* ── Section 6: Generic Constraints ── */}
       <h2>Generic Constraints</h2>
       <p>
-        Sometimes you need a generic type to have certain properties. The <code>extends</code> keyword
-        constrains a type parameter to types that match a specific shape.
+        Start with the wall you hit without them. An unconstrained <code>T</code> could be{' '}
+        <em>anything</em>, so the checker will not let you assume a single thing about it:
       </p>
+
+      <CodeBlock language="typescript" title="The problem: T means 'literally any type'">
+{`function logLength<T>(item: T) {
+  console.log(item.length);
+  //               ~~~~~~
+  // error TS2339: Property 'length' does not exist on type 'T'.
+}
+
+function findById<T>(items: T[], id: number) {
+  return items.find(item => item.id === id);
+  //                             ~~
+  // error TS2339: Property 'id' does not exist on type 'T'.
+}`}
+      </CodeBlock>
+
+      <p>
+        These errors are correct and worth sitting with. <code>T</code> is a promise{' '}
+        <em>you</em> made to your callers: &quot;this works for every type&quot;. Someone will
+        call <code>logLength(42)</code>, and numbers have no <code>length</code>. The compiler
+        is holding you to the promise you wrote.
+      </p>
+      <p>
+        A constraint is how you narrow that promise: <em>&quot;this works for every type{' '}
+        <strong>that has</strong> a length&quot;</em>. You give up some callers and gain the
+        right to use the members you asked for.
+      </p>
+
+      <InfoBox variant="warning" title="This &quot;extends&quot; Does Not Mean Inheritance">
+        <p>
+          The keyword is reused and the meaning is different. In{' '}
+          <code>class Dog extends Animal</code>, <code>extends</code> means &quot;inherits
+          from&quot;. In <code>{'<T extends { length: number }>'}</code> it means{' '}
+          <strong>&quot;is assignable to&quot;</strong> &mdash; the same relation from the last
+          two lessons, nothing more.
+        </p>
+        <p>
+          That is why <code>{'logLength<string>'}</code> is legal even though{' '}
+          <code>string</code> is a primitive that inherits from nothing you wrote: it is a
+          structural check, not a lookup of a base class. Read{' '}
+          <code>T extends U</code> as <em>&quot;every T is a valid U&quot;</em> everywhere it
+          appears &mdash; in constraints here, and in the conditional types coming in the next
+          lesson, where the same phrase becomes a question rather than a requirement.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="typescript" title="Constraining with extends">
 {`// T must have an 'id' property
@@ -246,9 +290,55 @@ logLength(42);         // ❌ number has no length`}
 
       {/* ── Section 7: keyof with Generics ── */}
       <h2>keyof with Generics</h2>
+
+      <h3>Two operators you have been shown but never taught</h3>
       <p>
-        Combining <code>keyof</code> with generics creates type-safe property access — one of
-        the most powerful patterns in TypeScript.
+        <code>keyof</code> and <code>T[K]</code> appear all over TypeScript code (including
+        earlier in this course, in <code>typeof STATUS[keyof typeof STATUS]</code>). They are
+        both far simpler than they look, and everything in this section is just the two of
+        them combined.
+      </p>
+
+      <CodeBlock language="typescript" title="keyof — the union of a type's keys">
+{`interface User { id: number; name: string; active: boolean }
+
+type UserKeys = keyof User;
+// "id" | "name" | "active"      — a union of string literal types
+
+// It is a TYPE-level operator. There is no runtime equivalent:
+// Object.keys(user) gives you string[] at runtime and knows nothing
+// about which keys are actually there.`}
+      </CodeBlock>
+
+      <CodeBlock language="typescript" title="T[K] — indexed access, or 'look up a property's type'">
+{`type NameType = User["name"];        // string
+type IdType   = User["id"];          // number
+
+// Index with a union and you get a union back:
+type Either = User["id" | "name"];   // number | string
+
+// Index with keyof and you get every value type:
+type AnyValue = User[keyof User];    // number | string | boolean`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Read T[K] Exactly Like Value-Level Property Access">
+        <p>
+          The syntax is deliberate. At the value level, <code>user[&quot;name&quot;]</code>{' '}
+          gets you a value; at the type level, <code>User[&quot;name&quot;]</code> gets you
+          that value&apos;s type. The bracket even works with a union in the same way a{' '}
+          <code>switch</code> over several keys would.
+        </p>
+        <p>
+          One trap: it is <code>User[&quot;name&quot;]</code>, never{' '}
+          <code>User.name</code>. Dot notation on a type is a syntax error &mdash; types are
+          not objects.
+        </p>
+      </InfoBox>
+
+      <p>
+        Now combine them with a generic. <code>K extends keyof T</code> says &quot;K is one of
+        T&apos;s keys&quot;, and <code>T[K]</code> says &quot;the type stored under that
+        key&quot;. Together they give you property access that the compiler can verify:
       </p>
 
       <CodeBlock language="typescript" title="Type-Safe Property Access">
@@ -686,12 +776,23 @@ function makeClient(...args: ConstructorParameters<typeof HttpClient>) {
   return new HttpClient(...args);
 }
 
-// NoInfer<T> (TS 5.4+) — block a parameter from driving inference
-function pick<T>(items: T[], fallback: NoInfer<T>): T {
-  return items[0] ?? fallback;
-}
-pick(["a", "b"], "c");   // T inferred as string from 'items' only
-// pick(["a", "b"], 42);  // Error — without NoInfer, T would widen to string | number`}
+// NoInfer<T> (TS 5.4+) — stop a parameter from voting on what T is.
+// By default EVERY parameter mentioning T is an inference site, so a
+// bad argument can quietly widen T until it fits, instead of erroring.
+
+// ── Before: the fallback widens C to include its own mistake ──
+function light<C extends string>(colors: C[], defaultColor?: C) {}
+light(["red", "yellow", "green"], "blue");
+// No error. C was inferred as "red" | "yellow" | "green" | "blue",
+// because "blue" was allowed to contribute a candidate.
+
+// ── After: NoInfer removes it from the vote ──
+function lightSafe<C extends string>(colors: C[], defaultColor?: NoInfer<C>) {}
+lightSafe(["red", "yellow", "green"], "blue");
+//                                    ~~~~~~
+// error TS2345: Argument of type '"blue"' is not assignable to
+//               parameter of type '"red" | "yellow" | "green" | undefined'.
+// C is now fixed by 'colors' alone, and 'defaultColor' is merely checked.`}
       </CodeBlock>
 
       <CodeBlock language="typescript" title="String manipulation types and 'this' helpers">

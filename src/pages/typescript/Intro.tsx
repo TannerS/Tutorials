@@ -43,9 +43,25 @@ export default function Intro() {
       {/* 2. TypeScript vs JavaScript */}
       <h2>TypeScript vs JavaScript</h2>
       <p>
-        TypeScript is a strict superset of JavaScript. All JS is valid TS, but TS adds
+        TypeScript is a superset of JavaScript. All JS is valid TS, but TS adds
         types, interfaces, enums, generics, and more.
       </p>
+
+      <InfoBox variant="note" title="&quot;Superset&quot; Means Syntax, Not Acceptance">
+        <p>
+          The superset claim is about <em>grammar</em>: TypeScript can parse any JavaScript
+          file. It does not promise that TypeScript will <em>accept</em> it. Paste a working
+          JS file into a <code>.ts</code> file with <code>strict: true</code> and you will
+          usually get errors immediately &mdash; implicit <code>any</code> on every unannotated
+          parameter, possibly-null values you were handling by convention.
+        </p>
+        <p>
+          That is not TypeScript being broken. Those errors are the point: the code always had
+          those assumptions, they were just invisible. Keep the distinction in mind, because
+          &quot;all JS is valid TS&quot; is the sentence that makes people expect a clean
+          migration and then feel ambushed.
+        </p>
+      </InfoBox>
 
       <FlowChart
         title="TypeScript as a Superset of JavaScript"
@@ -73,11 +89,110 @@ export default function Intro() {
           '  return `Hello, ${name.toUpperCase()}!`;\n' +
           '}\n\n' +
           '// Compile-time error:\n' +
-          '// Argument of type \'undefined\' is not assignable to parameter of type \'string\'\n' +
+          '// error TS2345: Argument of type \'undefined\' is not assignable\n' +
+          '//               to parameter of type \'string\'.\n' +
           'greet(undefined);'}
       </CodeBlock>
 
-      {/* 3. Installation & Getting Started */}
+      <InfoBox variant="warning" title="TypeScript Did Not Stop the Crash">
+        <p>
+          Run <code>tsc</code> on that file and you get the error &mdash; and, by default, you
+          also get the compiled <code>.js</code>, which still calls{' '}
+          <code>greet(undefined)</code> and still throws the same{' '}
+          <code>TypeError</code> at runtime. TypeScript inserted no check. There is no
+          <code> if (typeof name !== &quot;string&quot;) throw</code> in the output; the
+          annotation <code>: string</code> is deleted entirely.
+        </p>
+        <p>
+          This is the mental model everything else in this section rests on:{' '}
+          <strong>the type checker and your running program are two separate things</strong>.
+          The checker is a linter that proves claims about your code before it ships. It
+          changes what you are allowed to <em>write</em>, never what the code <em>does</em>.
+          Whenever a type is wrong at runtime &mdash; a bad API response, a mis-parsed JSON
+          blob &mdash; the compiler is not there to catch it. You will see this again as the
+          reason <code>as</code> assertions are dangerous and why validating at the boundary
+          matters.
+        </p>
+      </InfoBox>
+
+      {/* 3. How to Read a TypeScript Error */}
+      <h2>How to Read a TypeScript Error</h2>
+      <p>
+        TypeScript&apos;s errors have a reputation for being unreadable. They are not &mdash; they
+        are just verbose and structured, and almost nobody is taught the structure. Learning
+        it now pays off on every single lesson that follows, so spend two minutes here.
+      </p>
+      <p>Every diagnostic has the same four parts:</p>
+
+      <CodeBlock language="text" title="Anatomy of a diagnostic">
+        {'src/greet.ts(6,7): error TS2345: Argument of type \'undefined\' is not\n' +
+          '                   assignable to parameter of type \'string\'.\n' +
+          '│            │ │           │\n' +
+          '│            │ │           └─ 4. the message: what the checker tried to prove\n' +
+          '│            │ └───────────── 3. the error code — stable, and googleable\n' +
+          '│            └─────────────── 2. line 6, column 7 — where it gave up,\n' +
+          '│                                NOT necessarily where you made the mistake\n' +
+          '└──────────────────────────── 1. the file'}
+      </CodeBlock>
+
+      <p>
+        The message itself is nearly always a variation on one sentence:{' '}
+        <strong>&quot;Type <em>A</em> is not assignable to type <em>B</em>.&quot;</strong>{' '}
+        Read it as: <em>B is what this position requires; A is what you supplied; the checker
+        could not show that every A is a valid B.</em> The order matters &mdash; swapping A and
+        B changes the meaning completely, and misreading the direction is the most common
+        source of &quot;this error makes no sense&quot;.
+      </p>
+
+      <h3>Nested errors: read the last line first</h3>
+      <p>
+        When the mismatch is buried inside an object, TypeScript prints a chain: a headline
+        followed by increasingly indented lines that drill toward the real culprit.
+      </p>
+
+      <CodeBlock language="typescript" title="The code that produces a chain">
+        {'interface Config { server: { host: { name: string } } }\n\n' +
+          'declare const fromEnv: { server: { host: { name: number } } };\n\n' +
+          'const config: Config = fromEnv;'}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="The chain tsc actually prints">
+        {'error TS2322: Type \'{ server: { host: { name: number; }; }; }\' is not\n' +
+          '              assignable to type \'Config\'.\n' +
+          '  The types of \'server.host.name\' are incompatible between these types.\n' +
+          '    Type \'number\' is not assignable to type \'string\'.'}
+      </CodeBlock>
+
+      <p>
+        The first line is the least useful: it restates the whole assignment, which is why
+        long chains look terrifying. <strong>Start at the bottom.</strong> The last line is
+        always the actual conflict &mdash; here, <code>number</code> vs <code>string</code>.
+        The middle lines are the <em>path</em> the checker walked to find it:{' '}
+        <code>server.host.name</code>. Bottom line tells you <em>what</em> is wrong; middle
+        lines tell you <em>where</em>. The headline you can usually ignore.
+      </p>
+
+      <InfoBox variant="tip" title="Three Habits That Defuse Most Errors">
+        <ul>
+          <li>
+            <strong>Read bottom-up.</strong> The innermost, most-indented line is the real
+            error; everything above it is context.
+          </li>
+          <li>
+            <strong>Trust the code, not the wording.</strong> <code>TS2345</code> is always
+            &quot;bad argument&quot;, <code>TS2322</code> is always &quot;bad assignment&quot;,{' '}
+            <code>TS2339</code> is always &quot;property does not exist&quot;. You will learn
+            a handful of these by sight and they never change.
+          </li>
+          <li>
+            <strong>Suspect the annotation, not just the value.</strong> The reported position
+            is where the checker <em>gave up</em>. The mistake is often in the type you
+            declared several lines earlier.
+          </li>
+        </ul>
+      </InfoBox>
+
+      {/* 4. Installation & Getting Started */}
       <h2>Installation &amp; Getting Started</h2>
 
       <CodeBlock language="bash" title="Install TypeScript">
@@ -162,10 +277,18 @@ export default function Intro() {
         for your own project.)
       </InfoBox>
 
-      <InfoBox variant="warning" title="Always Enable strict">
-        Starting a project without <code>strict: true</code> is a common mistake.
-        Retroactively enabling it on a large codebase means fixing hundreds of errors
-        at once. Turn it on from day one.
+      <InfoBox variant="warning" title="Always Enable strict — Even Though It Is Now the Default">
+        <p>
+          Retroactively enabling <code>strict</code> on a large codebase means fixing hundreds
+          of errors at once. Turn it on from day one.
+        </p>
+        <p>
+          On TypeScript 6 (what this course runs) it already <em>is</em> on: a config that
+          never mentions <code>strict</code> gets the strict behaviour, and only an explicit{' '}
+          <code>&quot;strict&quot;: false</code> turns it off. Write the line anyway &mdash;
+          it documents the intent and survives being opened by an older compiler. The
+          tsconfig lesson shows the verified before/after.
+        </p>
       </InfoBox>
 
       <h3>target</h3>
@@ -439,6 +562,29 @@ export default function Intro() {
           'strictBuiltinIteratorReturn, noImplicitThis, and useUnknownInCatchVariables all at ' +
           'once. Note that alwaysStrict is NOT one of them any more — it defaults to true ' +
           'independently of strict.'
+        }
+      />
+
+      <InteractiveChallenge
+        question={"tsc prints the chain below. Which line tells you what is actually wrong?"}
+        code={`error TS2322: Type '{ user: { profile: { age: string; }; }; }' is not
+              assignable to type 'Account'.
+  The types of 'user.profile.age' are incompatible between these types.
+    Type 'string' is not assignable to type 'number'.`}
+        language="text"
+        options={[
+          "The first line — it names the two types involved",
+          "The last, most-indented line — 'string' is not assignable to 'number'",
+          "The middle line — it names the property path",
+          "None of them; you need the source file to know",
+        ]}
+        correctIndex={1}
+        explanation={
+          "Read TypeScript chains bottom-up. The last line is always the real conflict: you " +
+          "supplied a string where a number was required. The middle line is the path the " +
+          "checker walked to reach it (user.profile.age), so it tells you WHERE to look. The " +
+          "headline just restates the whole assignment and is the least useful part — which " +
+          "is exactly why long chains feel unreadable if you start at the top."
         }
       />
 

@@ -67,7 +67,17 @@ export const OrderId = {
 
 const user = await fetchUser(/* ... */);
 updateOrder(user.id, patch);
-//         ^^^^^^^ Argument of type 'UserId' is not assignable to parameter of type 'OrderId'.
+//          ~~~~~~~
+// error TS2345: Argument of type 'UserId' is not assignable to
+//               parameter of type 'OrderId'.
+//   Type 'UserId' is not assignable to type '{ readonly [brand]: "OrderId"; }'.
+//     Types of property '[brand]' are incompatible.
+//       Type '"UserId"' is not assignable to type '"OrderId"'.
+//
+// Read it bottom-up and the whole trick is visible: the two types differ
+// ONLY in the phantom brand property, and that is the line that fails.
+// Nothing exists at runtime — the brand is a type-level tag, which is why
+// the check costs nothing and why you must never widen back to plain string.
 
 // Still a string at runtime — no wrapper overhead.
 console.log(user.id);                    // 'usr_...'

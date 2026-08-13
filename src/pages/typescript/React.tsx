@@ -118,6 +118,67 @@ function ActionButton(props: Props) {
       />
 
       <h3>useState</h3>
+      <p>
+        There is no React magic here &mdash; <code>useState</code> is a generic function, and
+        everything it does follows from the inference rules you already know. Its signature is
+        effectively <code>{'useState<S>(initial: S): [S, Dispatch<SetStateAction<S>>]'}</code>,
+        so <strong>whatever you pass as the initial value decides <code>S</code></strong>. Two
+        consequences cause nearly every <code>useState</code> type complaint.
+      </p>
+
+      <CodeBlock language="tsx" title="Consequence 1: a null initial value infers S = null">{
+`const [user, setUser] = useState(null);   // S inferred as null
+
+setUser({ id: 1, name: 'Alice' });
+//        ~~
+// error TS2353: Object literal may only specify known properties, and
+//               'id' does not exist in type '(prevState: null) => null'.`
+      }</CodeBlock>
+
+      <p>
+        That error is worth decoding, because it looks like nonsense the first time. Why is it
+        talking about a <em>function</em>? Because the setter accepts{' '}
+        <code>{'SetStateAction<null>'}</code>, which is{' '}
+        <code>{'null | ((prev: null) => null)'}</code>. Your object matched neither member, and
+        when an argument fails against a union, TypeScript reports the failure against the last
+        candidate it tried &mdash; here, the updater-function form. The real message is
+        simply: <em>S is <code>null</code>, and your object is not.</em>
+      </p>
+      <p>
+        The fix is to tell it the type the state will eventually hold, since the initial value
+        cannot: <code>{'useState<User | null>(null)'}</code>. That is the whole reason the
+        generic argument exists.
+      </p>
+
+      <CodeBlock language="tsx" title="Consequence 2: initial values widen, exactly as in any other position">{
+`const [status, setStatus] = useState('idle');   // S inferred as string, NOT 'idle'
+
+const s: 'idle' | 'loading' = status;
+// error TS2322: Type 'string' is not assignable to type '"idle" | "loading"'.
+
+setStatus('lodaing');   // typo — accepted, because any string is valid
+
+// Fix: state the union you actually mean.
+const [ok, setOk] = useState<'idle' | 'loading' | 'error'>('idle');
+setOk('lodaing');
+// error TS2345: Argument of type '"lodaing"' is not assignable to parameter
+//               of type SetStateAction<"idle" | "loading" | "error">.`
+      }</CodeBlock>
+
+      <InfoBox variant="tip" title="The Rule, Derived Rather Than Memorised">
+        <p>
+          Pass the generic argument whenever the initial value is a <em>poorer</em> description
+          of the state than the state deserves &mdash; <code>null</code> before data arrives,{' '}
+          <code>[]</code> before items arrive, one member of a union you will move through. Let
+          inference do it when the initial value already is a faithful example
+          (<code>useState(0)</code>, <code>useState(false)</code>).
+        </p>
+        <p>
+          Same widening rule as the <code>as const</code> lesson: a value that can be reassigned
+          gets the base type. <code>useState</code> is not an exception to anything.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="tsx" title="useState typing patterns">{
 `const [count, setCount] = useState(0);           // inferred as number
 const [name, setName] = useState('');             // inferred as string
@@ -246,6 +307,57 @@ useEffect(() => {
       }</CodeBlock>
 
       <h2>4. Event Handling Types</h2>
+
+      <p>
+        The table below is worth having, but memorising it is the wrong goal &mdash; there are
+        dozens of elements and you will always hit one that is not listed. Learn to{' '}
+        <em>derive</em> the type instead. Three techniques, in order of how often you should
+        reach for them:
+      </p>
+
+      <CodeBlock language="tsx" title="How to find an event type without looking it up">{
+`// 1. Write the handler INLINE first. In a JSX attribute the parameter is
+//    contextually typed, so TypeScript already knows it — hover to read it,
+//    then copy the annotation out to a named function.
+<input onChange={(e) => { /* e: React.ChangeEvent<HTMLInputElement> */ }} />
+
+// 2. Ask the element's props for it. This always works, for any element and
+//    any handler, and never goes stale:
+type InputChange = React.ComponentProps<'input'>['onChange'];
+//   → React.ChangeEventHandler<HTMLInputElement> | undefined
+
+const handleChange: NonNullable<InputChange> = (e) => {
+  e.target.value;   // string — fully typed, nothing memorised
+};
+
+// 3. Recognise the naming scheme. It is completely regular:
+//      React.<Kind>Event<TElement>          — the event object
+//      React.<Kind>EventHandler<TElement>   — the whole handler function
+//    so Change / Mouse / Keyboard / Focus / Form / Drag / Pointer / Wheel
+//    / Clipboard / Touch / Animation / Transition all follow the same shape.`
+      }</CodeBlock>
+
+      <InfoBox variant="warning" title="Two Traps Worth Knowing Before They Bite">
+        <p>
+          <strong>The element parameter is not decoration.</strong>{' '}
+          <code>{'ChangeEvent<HTMLInputElement>'}</code> is what makes{' '}
+          <code>e.target.value</code> a <code>string</code>. Write plain{' '}
+          <code>{'ChangeEvent<Element>'}</code> and <code>e.target</code> has no{' '}
+          <code>value</code> at all &mdash; you get{' '}
+          <em>TS2339: Property &apos;value&apos; does not exist on type &apos;EventTarget
+          &amp; Element&apos;</em>, which reads like a React problem and is really a missing
+          type argument.
+        </p>
+        <p>
+          <strong><code>currentTarget</code> is typed; <code>target</code> often is not.</strong>{' '}
+          On most React event types <code>currentTarget</code> is the element you attached the
+          handler to (known statically), while <code>target</code> is whatever was actually
+          clicked (not knowable) and is typed as a bare <code>EventTarget</code>.{' '}
+          <code>ChangeEvent</code> is the friendly exception that types both. When{' '}
+          <code>e.target.something</code> will not compile, reach for{' '}
+          <code>e.currentTarget</code> before reaching for a cast.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="tsx" title="All common event types">{
 `function handleChange(e: React.ChangeEvent<HTMLInputElement>) { }

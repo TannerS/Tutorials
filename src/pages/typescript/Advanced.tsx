@@ -51,10 +51,75 @@ type StringProps<T> = {
 
       {/* ── 2. Conditional Types ── */}
       <h2>Conditional Types</h2>
+
+      <h3>The problem they exist to solve</h3>
       <p>
-        Conditional types follow the pattern <code>T extends U ? X : Y</code>.
-        They act like ternary expressions at the type level &mdash; choosing one
-        branch or another based on whether a type relationship holds.
+        Conditional types are usually introduced with a toy like{' '}
+        <code>{'IsString<T>'}</code>, which nobody has ever needed. Here is a job you
+        genuinely cannot do without them.
+      </p>
+      <p>
+        You are writing a helper that unwraps a value: hand it a{' '}
+        <code>{'Promise<User>'}</code> and it awaits it; hand it a plain{' '}
+        <code>User</code> and it returns it as-is. Trivial at runtime. Now type the return
+        value:
+      </p>
+
+      <CodeBlock language="typescript" title="Everything you know so far falls short">
+{`declare const user: User;
+
+// Attempt 1 — a union. Callers now have to narrow a value that is
+// never actually ambiguous. You made THEM do work.
+declare function unwrap1<T>(value: T | Promise<T>): T | Promise<T>;
+const a = unwrap1(Promise.resolve(user));   // User | Promise<User>  ✗
+
+// Attempt 2 — an overload. Works, but you write it again for every
+// wrapper type, and the implementation signature is still a lie.
+declare function unwrap2<T>(value: Promise<T>): T;
+declare function unwrap2<T>(value: T): T;
+
+// Attempt 3 — 'any'. Gives up.
+declare function unwrap3(value: any): any;`}
+      </CodeBlock>
+
+      <p>
+        What you actually want to say is a <em>rule</em>: &quot;if the incoming type is a
+        Promise of something, the result is that something; otherwise the result is the
+        incoming type unchanged.&quot; That is a branch, evaluated by the compiler, on a type
+        you do not know yet. Nothing you have met so far can express it, because every tool
+        so far describes a <em>fixed</em> shape. A conditional type is the language&apos;s{' '}
+        <code>if</code> statement:
+      </p>
+
+      <CodeBlock language="typescript" title="The tool that fits">
+{`type Unwrapped<T> = T extends Promise<infer U> ? U : T;
+
+declare function unwrap<T>(value: T): Unwrapped<T>;
+
+const a = unwrap(Promise.resolve(user));   // User   ✓
+const b = unwrap(user);                    // User   ✓`}
+      </CodeBlock>
+
+      <p>
+        (<code>infer U</code> means &quot;capture whatever the <code>Promise</code> is wrapping
+        and call it <code>U</code>&quot;. It gets a full section two headings down &mdash; for
+        now, read it as a blank the compiler fills in.)
+      </p>
+      <p>
+        One line, works for any type, no overloads to maintain. That is the shape of every
+        good use of conditional types: a <em>relationship</em> between an input type and an
+        output type that no fixed annotation can capture. Keep that framing as you read the
+        mechanics below &mdash; if a conditional type is not expressing a relationship, it is
+        probably not earning its complexity.
+      </p>
+
+      <h3>The mechanics</h3>
+      <p>
+        The pattern is <code>T extends U ? X : Y</code>: a ternary at the type level. And{' '}
+        <code>extends</code> means what it meant in the Generics lesson &mdash;{' '}
+        <strong>&quot;is assignable to&quot;</strong>. The only difference is that there it
+        was a <em>requirement</em> the compiler enforced, and here it is a{' '}
+        <em>question</em> the compiler answers.
       </p>
 
       <CodeBlock language="typescript" title="Simple Conditional Types">
@@ -80,9 +145,97 @@ type Result2 = ToArrayNonDist<string | number>;
 // (string | number)[]`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="Distribution Gotcha">
-        Distributive conditional types only apply when the checked type is a
-        naked type parameter. Wrapping in a tuple suppresses distribution.
+      <h3>What &quot;distributes&quot; actually means</h3>
+      <p>
+        That result surprises everyone the first time. <code>{'ToArray<string | number>'}</code>{' '}
+        looks like it should substitute the union in and give{' '}
+        <code>{'(string | number)[]'}</code>. Instead it gives{' '}
+        <code>{'string[] | number[]'}</code>. Here is the rule that produces it.
+      </p>
+      <p>
+        When the type being tested is a <strong>bare type parameter</strong> &mdash; just{' '}
+        <code>T</code>, not <code>T[]</code> or <code>[T]</code> or{' '}
+        <code>{'Promise<T>'}</code> &mdash; and you hand it a union, the compiler does not
+        evaluate the conditional once. It <em>splits the union apart, evaluates the
+        conditional separately for each member, and unions the results back together</em>:
+      </p>
+
+      <CodeBlock language="typescript" title="Distribution, step by step">
+{`type ToArray<T> = T extends unknown ? T[] : never;
+
+ToArray<string | number>
+  → ToArray<string> | ToArray<number>     // 1. split the union
+  → (string extends unknown ? string[] : never)
+    | (number extends unknown ? number[] : never)
+                                          // 2. evaluate each branch
+  → string[] | number[]                   // 3. union the results
+
+// Wrap either side in a tuple and the parameter is no longer "bare",
+// so no split happens and the union goes in whole:
+type ToArrayND<T> = [T] extends [unknown] ? T[] : never;
+ToArrayND<string | number>  →  (string | number)[]`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="This Is Not a Quirk — It Is How the Utility Types Work">
+        <p>
+          Distribution is the entire mechanism behind the union-filtering utilities you
+          already use. <code>{'Exclude<T, U>'}</code> is literally{' '}
+          <code>T extends U ? never : T</code>. Run it on a union and watch:
+        </p>
+        <CodeBlock language="typescript" title="Exclude is one line, and distribution does the work">
+{`Exclude<"a" | "b" | "c", "b">
+  → ("a" extends "b" ? never : "a")     // "a"
+    | ("b" extends "b" ? never : "b")   // never
+    | ("c" extends "b" ? never : "c")   // "c"
+  → "a" | never | "c"
+  → "a" | "c"        // never vanishes from a union — it contributes no members`}
+        </CodeBlock>
+        <p>
+          Note the last step: <code>never</code> is the empty set, so adding it to a union
+          adds nothing. That is why <code>never</code> is the &quot;delete this member&quot;
+          value in every filtering type, including the{' '}
+          <code>{'[K in keyof T as ... ? K : never]'}</code> key-remapping trick above.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="danger" title="The never Trap Everyone Hits Once">
+        <p>
+          Distribution splits a union into its members and evaluates each one. So what happens
+          when the union has <em>no</em> members?
+        </p>
+        <CodeBlock language="typescript" title="Verified on TypeScript 6.0">
+{`type IsNever<T> = T extends never ? true : false;
+
+type A = IsNever<string>;   // false   ✓ as expected
+type B = IsNever<never>;    // never   ✗ — not 'true'!
+
+// Zero members to iterate → zero results → the empty union → never.
+// The conditional never ran at all.
+
+// Fix: switch off distribution by wrapping both sides.
+type IsNeverFixed<T> = [T] extends [never] ? true : false;
+type C = IsNeverFixed<never>;   // true   ✓`}
+        </CodeBlock>
+        <p>
+          The same trap hits any conditional you feed a possibly-<code>never</code> type: it
+          silently returns <code>never</code> instead of taking a branch, and because{' '}
+          <code>never</code> is assignable to everything, the wrong result usually does not
+          error where you would notice. If a conditional type is mysteriously producing{' '}
+          <code>never</code>, check whether its input can be <code>never</code> and reach for
+          the <code>[T]</code> wrapper.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="note" title="Deciding Which One You Want">
+        <p>
+          Ask what the type means for a union input. &quot;Transform each member&quot;
+          (<code>Exclude</code>, <code>Extract</code>, <code>NonNullable</code>) wants
+          distribution &mdash; leave <code>T</code> bare. &quot;Ask one question about the
+          union as a whole&quot; (is this exactly <code>never</code>? is this{' '}
+          <em>every</em> member a string?) does not &mdash; wrap it in <code>[T]</code>. The
+          tuple brackets are not a magic incantation; they simply stop <code>T</code> from
+          being the bare thing on the left.
+        </p>
       </InfoBox>
 
       {/* ── 3. The infer Keyword ── */}
@@ -843,32 +996,188 @@ transition("loading", "error");    // OK
       </CodeBlock>
 
       {/* ── 13. Variance Annotations ── */}
-      <h2>Variance Annotations</h2>
+      <h2>Variance</h2>
       <p>
-        TypeScript 4.7 added <code>in</code> and <code>out</code> keywords
-        to declare whether a type parameter is covariant, contravariant,
-        or invariant.
+        &quot;Covariant&quot; and &quot;contravariant&quot; are two words that get dropped into
+        TypeScript discussions constantly and explained almost never. The concept underneath
+        is small, and once you have it you can predict assignability errors around functions
+        and generics instead of guessing at them. It is also a standard senior interview
+        question.
+      </p>
+
+      <h3>The question variance answers</h3>
+      <p>
+        You know <code>Dog</code> is assignable to <code>Animal</code>. Variance asks the
+        follow-up: <strong>if <code>Dog</code> is assignable to <code>Animal</code>, what
+        happens to <code>{'Box<Dog>'}</code> and <code>{'Box<Animal>'}</code>?</strong> There
+        are only three possible answers, and which one you get is decided entirely by{' '}
+        <em>where <code>T</code> appears</em> inside <code>Box</code>.
+      </p>
+
+      <CodeBlock language="typescript" title="Case 1: T only comes OUT — covariant">
+{`interface Animal { name: string }
+interface Dog extends Animal { breed: string }
+
+type Producer<T> = () => T;          // T appears only in the RETURN position
+
+declare const dogFactory: Producer<Dog>;
+
+const p: Producer<Animal> = dogFactory;   // ✓ OK
+// Anyone expecting "a function that gives me an Animal" is perfectly
+// served by one that gives Dogs. Every Dog is an Animal.
+
+declare const animalFactory: Producer<Animal>;
+const q: Producer<Dog> = animalFactory;
+// error TS2322: Type 'Producer<Animal>' is not assignable to type 'Producer<Dog>'.
+//   Property 'breed' is missing in type 'Animal' but required in type 'Dog'.
+// Correct: the caller expects breed, and a generic Animal may not have one.`}
+      </CodeBlock>
+
+      <p>
+        <code>Producer</code> preserved the direction: <code>Dog → Animal</code> gave{' '}
+        <code>{'Producer<Dog>'} → {'Producer<Animal>'}</code>. That is{' '}
+        <strong>covariance</strong> &mdash; &quot;varies with&quot;. Producers are covariant.
+      </p>
+
+      <CodeBlock language="typescript" title="Case 2: T only goes IN — contravariant, and the direction flips">
+{`type Consumer<T> = (value: T) => void;   // T appears only as a PARAMETER
+
+declare const handleAnyAnimal: Consumer<Animal>;   // reads only .name
+
+const c: Consumer<Dog> = handleAnyAnimal;   // ✓ OK — and this is the surprise
+// Somewhere expecting "a function I can hand a Dog to" is safely satisfied by
+// one that accepts ANY Animal. It will be handed Dogs; it copes; it asked for
+// less than it will receive.
+
+const d: Consumer<Animal> = (dog: Dog) => console.log(dog.breed);
+// error TS2322: Type '(dog: Dog) => void' is not assignable to type 'Consumer<Animal>'.
+//   Types of parameters 'dog' and 'value' are incompatible.
+//     Property 'breed' is missing in type 'Animal' but required in type 'Dog'.
+// Correct: this callback will be handed cats, and it reads .breed.`}
+      </CodeBlock>
+
+      <p>
+        <code>Consumer</code> <em>reversed</em> the direction: <code>Dog → Animal</code> gave{' '}
+        <code>{'Consumer<Animal>'} → {'Consumer<Dog>'}</code>. That is{' '}
+        <strong>contravariance</strong>, and it is the part people find unintuitive. The
+        one-line intuition to keep:
+      </p>
+
+      <InfoBox variant="tip" title="Why Parameters Flip">
+        <p>
+          For a function to be a safe <em>substitute</em> for another, it must{' '}
+          <strong>demand no more and promise no less</strong>.
+        </p>
+        <ul>
+          <li>
+            <strong>Return types promise.</strong> Promising something more specific than
+            required is always fine. → covariant.
+          </li>
+          <li>
+            <strong>Parameters demand.</strong> Demanding something more specific than you
+            will be given is not fine; demanding <em>less</em> is. → contravariant.
+          </li>
+        </ul>
+        <p>
+          This is exactly the rule <code>strictFunctionTypes</code> enforces, and it is why
+          reading a chain that says <em>&quot;Types of parameters are incompatible&quot;</em>{' '}
+          followed by an assignment that looks backwards is not a compiler bug.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="typescript" title="Case 3: T goes both ways — invariant">
+{`interface Collection<T> {
+  get(): T;              // out
+  add(value: T): void;   // in
+}
+// Neither direction is safe, so neither is allowed. Collection<Dog> and
+// Collection<Animal> are simply unrelated types.`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="Arrays Are Covariant, and That Is a Deliberate Hole">
+        <p>
+          <code>{'Array<T>'}</code> is read <em>and</em> written, so by the rules above it
+          ought to be invariant. TypeScript makes it covariant anyway, because requiring
+          invariance would reject an enormous amount of ordinary, almost-always-correct
+          JavaScript. The cost is a genuine unsoundness you can trigger in four lines:
+        </p>
+        <CodeBlock language="typescript" title="No errors. Crashes at runtime.">
+{`const dogs: Dog[] = [{ name: "Rex", breed: "lab" }];
+
+const animals: Animal[] = dogs;      // allowed — arrays are covariant
+animals.push({ name: "Whiskers" });  // allowed — it IS an Animal[]
+
+dogs[1].breed.toUpperCase();
+// TypeError: Cannot read properties of undefined (reading 'toUpperCase')
+// 'dogs' and 'animals' are the same array. A cat is now in your Dog[].`}
+        </CodeBlock>
+        <p>
+          Worth knowing not as trivia but as a boundary: the checker is a very good assistant,
+          not a proof system. <code>readonly T[]</code> closes this particular hole, which is
+          one more reason to prefer it for parameters you do not mutate.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="Methods Are Bivariant — Another Deliberate Hole">
+        <p>
+          <code>strictFunctionTypes</code> only applies to function-<em>type</em> positions,
+          not to methods declared with method shorthand. These two look equivalent and are
+          checked differently:
+        </p>
+        <CodeBlock language="typescript" title="Same intent, different strictness">
+{`interface A { handle(e: Animal): void }        // method shorthand → BIVARIANT
+interface B { handle: (e: Animal) => void }    // property syntax  → contravariant
+
+const a: A = { handle(d: Dog) { d.breed; } };  // ✓ compiles, unsound
+const b: B = { handle: (d: Dog) => d.breed };  // ✗ error TS2322`}
+        </CodeBlock>
+        <p>
+          The exemption exists so that <code>Array</code>, <code>Promise</code> and friends
+          stay usable. In your own code, writing callbacks as{' '}
+          <code>{'handler: (e: E) => void'}</code> rather than{' '}
+          <code>{'handler(e: E): void'}</code> gets you the stricter check for free.
+        </p>
+      </InfoBox>
+
+      <h3>Variance annotations (TypeScript 4.7+)</h3>
+      <p>
+        TypeScript infers all of the above automatically. The <code>in</code> and{' '}
+        <code>out</code> keywords let you <em>state</em> the variance you intend, which does
+        two things: it errors if the declaration ever stops matching, and it lets the compiler
+        skip the structural comparison it would otherwise perform &mdash; a real speed-up in
+        large type graphs.
       </p>
 
       <CodeBlock language="typescript" title="Variance with in / out Keywords">
-{`// out = covariant (producer)
-interface Producer<out T> { get(): T; }
+{`// out = covariant (produces T)
+interface Producer<out T> { get(): T }
 
-// in = contravariant (consumer)
-interface Consumer<in T> { accept(value: T): void; }
+// in = contravariant (consumes T)
+interface Consumer<in T> { accept(value: T): void }
 
-// in out = invariant (both read and write)
+// in out = invariant (both)
 interface Collection<in out T> {
   get(): T;
   add(value: T): void;
 }
-// Producer<Dog> assignable to Producer<Animal> (covariance)
-// Consumer<Animal> assignable to Consumer<Dog> (contravariance)`}
+
+// Annotating wrongly is an error at the DECLARATION, not at some
+// distant call site:
+interface Broken<in T> { get(): T }
+//               ~~~~
+// error TS2636: Type 'Broken<super-T>' is not assignable to type
+//               'Broken<sub-T>' as implied by variance annotation.
+//   The types returned by 'get()' are incompatible between these types.
+// (T is produced, so it is covariant — 'out', not 'in'.)`}
       </CodeBlock>
 
-      <InfoBox variant="note" title="When to Use Variance Annotations">
-        These are most useful in library code where you want to enforce correct
-        usage patterns and produce clearer error messages.
+      <InfoBox variant="note" title="When to Reach for Them">
+        <p>
+          Almost never in application code &mdash; inference is correct and free. They pay off
+          in library code and in large shared type packages, where an accidental variance
+          change is a silent breaking change for consumers, and where the skipped structural
+          checks measurably improve compile time.
+        </p>
       </InfoBox>
 
       {/* ── 14. Performance Tips ── */}
