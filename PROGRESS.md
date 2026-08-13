@@ -31,8 +31,51 @@ User confirmed demo-react/demo-spring (referenced in the old README/package.json
 
 Found and reverted one thing along the way: `eslint.config.js` only lints `.js`/`.jsx` files, never `.tsx` — confirmed by testing that widening the glob throws parser errors across the codebase, since there's no `typescript-eslint` parser/plugin installed. Left as-is; fixing it properly means adding a new dependency and is a separate task, not part of the flatten.
 
-## Nothing left in the queue
+## Round 2 — Playground section (uncommitted, built since the last commit)
 
-Both rounds of user-requested fixes, the full-repo audit, and the monorepo flatten are all done, committed, and pushed. Only open item is the `typescript-eslint` gap noted above, if ever wanted.
+Built a new "Playground" section (currently nested in the Frontend group's `sectionIds`, see Round 3 task #37 to move it to root) with 3 lessons, all verified via typecheck/build/route-smoke-test:
+1. **JS/TS Compiler Comparison** (`/playground/compiler`) — split-screen, pick a year (ES3→ES2025/ESNext), see actual `ts.transpileModule` downleveled output. 12 example snippets (10 plain JS, 2 optional TS).
+2. **TypeScript Type Checker** (`/playground/type-checker`) — real semantic type-checking via `@typescript/vfs` (fetches real lib.d.ts from TS's CDN, cached in localStorage) + `ts.createVirtualTypeScriptEnvironment`. 6 examples, strict-mode toggle, clickable diagnostics list that jumps the editor selection to the error.
+3. **JSX Compiler Comparison** (`/playground/jsx-compiler`) — same pattern, React-focused: JSX runtime selector (Classic `React.createElement` vs Automatic `jsx-runtime`) combined with the year-target selector, 6 JSX examples.
 
-Use `TaskList` for the structured tracker; this file is the narrative version.
+All 3 lazy-load the `typescript` package (~3.5MB) and `@typescript/vfs` as separate async chunks — zero weight added to any other page. `typescript` moved from devDependencies to dependencies (genuine runtime dep now). Every example snippet's expected output was independently verified against the real compiler via Node before being wired into the UI, not just eyeballed.
+
+**Bug fix (also uncommitted)**: `Sidebar.tsx` determined the active/expanded section via `pathname.startsWith('/' + sectionId)` — a raw substring check, so `/java-field-guide/...` matched the `java` section (since the string "java-field-guide" starts with "java"). Same bug hit `typescript`/`typescript-field-guide`. Fixed with an `isSectionActive()` helper requiring an exact path-segment match. Verified programmatically against all 34 section IDs — zero collisions remain.
+
+**Not yet committed/pushed** — will checkpoint this at the start of Round 3 below.
+
+## Round 3 — 12-item batch from user (in progress)
+
+User request, verbatim intent, numbered as given:
+1. Java field guide missing a basics/variables cheat sheet
+2. Support N-level nested sidebar groups (e.g. Frontend → React → TypeScript), not just Group→Section→Lesson
+3. CSS Mastery lacking true from-scratch basics (other sections assume CSS knowledge)
+4. Add a complete CSS cheat sheet (the css-field-guide already exists from Round 1 — treat this as "make sure it's genuinely complete," especially once #3 lands)
+5. State management: remove Redux/Zustand, refocus on React's own state tools (Context, useReducer, etc.)
+6. React field guide missing basics + **sort every field guide beginner→advanced** (React, TS, Java, Spring, SQL, CSS — all 6)
+7. Double-check TypeScript cheat sheet — user suspects it's thin
+8. Move Playground to its own root-level sidebar group (not nested in Frontend)
+9. Remove Webpack and Vite sections entirely
+10. Reorder Auth & Security section into one coherent login/session flow, not isolated topics
+11. Remove Docker section (for now)
+12. Add a CSS playground + Sass/SCSS playground, plus more playgrounds for whatever else seems valuable
+
+### Execution plan (phases, in order)
+
+- **Phase 0**: Commit + push the uncommitted Round 2 Playground work above, as a checkpoint before this next big batch.
+- **Phase 1 (mechanical, done directly by me)**: #8 move Playground to root group; #9 remove webpack/vite; #11 remove docker; #5's mechanical half (delete Redux/Zustand lesson files).
+- **Phase 2 (architecture, done directly by me — highest risk, most care)**: #2 — extend the `Group`/`Section` data model to support recursive nested child-groups, update `Sidebar.tsx` rendering to recurse, then reorganize the Frontend group into a nested tree (CSS/Sass, React, TypeScript, etc. as sub-groups) as the concrete example the user asked for.
+- **Phase 3 (mechanical, done directly by me)**: Reorder Spring Boot 4 field guide and SQL field guide lessons beginner→advanced (part of #6) — lower content-generation need than React/TS/Java/CSS field guides, more just reordering/verifying, so handled directly rather than delegated.
+- **Phase 4 (parallel background agents, content-heavy)**:
+  - Lane A — Java field guide: add basics/variables cheat sheet (#1) + sort beginner→advanced (#6)
+  - Lane B — CSS: Mastery ground-up basics (#3) + css-field-guide completeness audit (#4) + sort beginner→advanced (#6)
+  - Lane C — React field guide: add missing basics + sort beginner→advanced (#6)
+  - Lane D — TypeScript: audit/expand cheat sheet (#7) + sort typescript-field-guide beginner→advanced (#6)
+  - Lane E — Auth & Security: reorder into one coherent login/session/token flow (#10)
+  - Lane F — State management: expand remaining React-state content now that Redux/Zustand are gone, so the section doesn't feel thin (#5's content half)
+  - Lane G — New playgrounds: CSS playground (live edit/preview) + Sass/SCSS playground (live compile) + 1-2 more of my judgment (#12)
+- **Phase 5**: Consolidate all lane reports into `sections.ts`/`App.tsx`, run full verification (typecheck, build, orphan/consistency checks), commit, push.
+
+### Status
+
+Not yet started — this entry is the plan, about to begin Phase 0.
