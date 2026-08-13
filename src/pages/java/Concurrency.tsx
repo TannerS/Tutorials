@@ -658,7 +658,7 @@ List<Listener> listeners = new CopyOnWriteArrayList<>();
 Task is CPU-bound (parallel compute) ................. fixed thread pool ~ CPU count
 Coordinate N tasks that all must succeed ............. StructuredTaskScope + allSuccessfulOrThrow
                                                       (ShutdownOnFailure on Java 21-24)
-Race N tasks, first success wins ..................... StructuredTaskScope + anySuccessfulResultOrThrow
+Race N tasks, first success wins ..................... StructuredTaskScope + anySuccessfulOrThrow
                                                       (ShutdownOnSuccess on Java 21-24)
 Per-request immutable context (traceId, userId) ...... ScopedValue
 Legacy per-thread mutable context .................... ThreadLocal (last resort)
