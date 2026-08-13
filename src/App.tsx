@@ -266,6 +266,11 @@ import CSSTokens from './pages/css-mastery/Tokens'
 import CSSStyleInclusion from './pages/css-mastery/StyleInclusion'
 import CSSPatterns from './pages/css-mastery/Patterns'
 
+// Playground
+import PlaygroundCompiler from './pages/playground/Compiler'
+import PlaygroundTypeChecker from './pages/playground/TypeChecker'
+import PlaygroundJsxCompiler from './pages/playground/JsxCompiler'
+
 // CSS Field Guide
 import CFGBasics from './pages/css-field-guide/Basics'
 import CFGAdvanced from './pages/css-field-guide/Advanced'
@@ -592,6 +597,9 @@ function App() {
         <Route path="css-mastery/tokens" element={<CSSTokens />} />
         <Route path="css-mastery/style-inclusion" element={<CSSStyleInclusion />} />
         <Route path="css-mastery/patterns" element={<CSSPatterns />} />
+        <Route path="playground/compiler" element={<PlaygroundCompiler />} />
+        <Route path="playground/type-checker" element={<PlaygroundTypeChecker />} />
+        <Route path="playground/jsx-compiler" element={<PlaygroundJsxCompiler />} />
         <Route path="css-field-guide/basics" element={<CFGBasics />} />
         <Route path="css-field-guide/advanced" element={<CFGAdvanced />} />
         <Route path="css-field-guide/gotchas" element={<CFGGotchas />} />

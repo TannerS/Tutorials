@@ -468,6 +468,17 @@ export const sections: Section[] = [
     ],
   },
   {
+    id: 'playground',
+    label: 'Playground',
+    icon: '🧪',
+    color: '#14b8a6',
+    lessons: [
+      { id: 'compiler', title: 'JS/TS Compiler Comparison', path: '/playground/compiler' },
+      { id: 'type-checker', title: 'TypeScript Type Checker', path: '/playground/type-checker' },
+      { id: 'jsx-compiler', title: 'JSX Compiler Comparison', path: '/playground/jsx-compiler' },
+    ],
+  },
+  {
     id: 'css-field-guide',
     label: 'CSS Field Guide',
     icon: '🃏',
@@ -529,7 +540,7 @@ export const groups: Group[] = [
     label: 'Frontend',
     icon: '⚛️',
     color: '#22d3ee',
-    sectionIds: ['css-mastery', 'typescript', 'react19', 'react-antipatterns', 'state-mgmt', 'react-testing', 'react-router', 'react-field-guide', 'typescript-field-guide', 'css-field-guide', 'frontend-tooling', 'vite', 'webpack', 'npm-deep-dive', 'npm-packages'],
+    sectionIds: ['css-mastery', 'typescript', 'react19', 'react-antipatterns', 'state-mgmt', 'react-testing', 'react-router', 'react-field-guide', 'typescript-field-guide', 'playground', 'css-field-guide', 'frontend-tooling', 'vite', 'webpack', 'npm-deep-dive', 'npm-packages'],
   },
   {
     id: 'database',

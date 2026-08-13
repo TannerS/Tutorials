@@ -9,6 +9,14 @@ import { useTheme } from './ThemeProvider';
 const sectionGroupMap: Record<string, string> = {};
 groups.forEach((g) => g.sectionIds.forEach((id) => { sectionGroupMap[id] = g.id; }));
 
+// Exact path-segment match — a plain `pathname.startsWith('/' + id)` would
+// wrongly match e.g. "/java-field-guide/..." against the "java" section,
+// since "java-field-guide" also starts with the substring "java".
+function isSectionActive(pathname: string, sectionId: string): boolean {
+  const prefix = `/${sectionId}`;
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
 export default function Sidebar() {
   const location = useLocation();
   const { getSectionProgress } = useProgress();
@@ -17,7 +25,7 @@ export default function Sidebar() {
 
   // Which section is open (one at a time)
   const [expandedSection, setExpandedSection] = useState<string | null>(() => {
-    const current = sections.find((s) => location.pathname.startsWith(`/${s.id}`));
+    const current = sections.find((s) => isSectionActive(location.pathname, s.id));
     return current ? current.id : null;
   });
 
@@ -28,7 +36,7 @@ export default function Sidebar() {
 
   // Auto-expand current section + its group on navigation
   useEffect(() => {
-    const current = sections.find(s => location.pathname.startsWith(`/${s.id}`));
+    const current = sections.find(s => isSectionActive(location.pathname, s.id));
     if (current) {
       setExpandedSection(current.id);
       const groupId = sectionGroupMap[current.id];
