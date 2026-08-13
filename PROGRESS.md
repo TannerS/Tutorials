@@ -374,4 +374,19 @@ The repo also goes **beyond** the course: variance with the array-covariance hol
 3. **TypeScript with Node/Express** — a full module in the course, absent here. Lower priority: this user's backend is Java/Spring, so the TS section is deliberately React-leaning. Worth a short lesson rather than a module.
 
 Deliberately **not** adopting from the syllabus: the Drag & Drop and Google Maps project builds (project-based, not reference material), the Webpack workflow module (that section was removed from this repo at the user's request), and the Linked List practice (the repo teaches generics through other examples).
+
+**Methodology note worth keeping**: my first coverage grep reported *zero* files covering function overloads. That was a **false negative** — I searched for an exact phrase, and the content exists in four files under different wording. A sloppier check would have "found" a gap and added a duplicate lesson. When grepping for coverage, search concepts several ways before concluding absence.
+
+### User decision (stepping out again, work continues autonomously)
+*"fill in the gaps in order of priority, if somethings are good to know but not that critical or used a lot you can leave it out for now and follow up with me about it later, for nodejs, ya lets add that there also, and cheat sheet updates!"*
+
+So: fill in priority order, Node.js **is** wanted, cheat sheets must be updated, and genuinely-marginal material can be deferred with a follow-up note rather than padded in.
+
+**Round 9 dispatched** — one lane writing two lessons at the end of the `typescript` section:
+1. `typescript/RuntimeValidation.tsx` — the Zod gap. Framed concept-first (types are erased, so everything entering from outside is unvalidated at runtime; `const data: User = await res.json()` is an assertion, not a check), with the schema-as-single-source-of-truth idea and `z.infer`. Told to verify the current zod major version rather than write its API from memory, since v3→v4 changed meaningfully. Also repoints the four dangling "see…" references.
+2. `typescript/NodeTypescript.tsx` — native type stripping (**why** Node can only strip, never transform: stripping needs no type information, which is exactly why `enum`/parameter properties/namespaces can't be stripped and what `erasableSyntaxOnly` polices) plus practical Node+Express TS setup. Told to verify Node's actual behaviour on the installed runtime rather than assert version numbers, since support moved fast across Node 22/23/24.
+
+The lane is explicitly barred from `typescript/Cheatsheet.tsx` and `typescript-field-guide/` because the round-8 reconciliation lanes still own them — it reports what to mirror and I apply it centrally afterwards.
+
+**Deferred for follow-up** (told the user I'd raise these rather than silently skip): nothing yet beyond the three project-build modules above; if the lane finds Node/Express material too thin to justify its own lesson it will say so.
 2. Dispatch round 7 as weighted lanes — roughly 3 lanes on React (react19 / react-field-guide / react-router / react-antipatterns / react-testing / state-mgmt), 2 on TypeScript (typescript / typescript-field-guide), 2 on Java+Spring (java / springboot / both field guides), and 2–3 covering the remainder (SQL, CSS, architecture/security, testing, tooling, playgrounds) — each with an explicit final step of reconciling its section's cheat sheet against everything the repo now contains.
