@@ -12,8 +12,8 @@ export default function FieldGuideTesting() {
       meta={['RTL · Vitest', '12 patterns']}
       footerLabel="Personal study reference — React Testing"
       pageLabel="React 19 Field Guide · Testing"
-      prev={{ path: '/react-field-guide/gotchas', label: 'Gotchas & Anti-Patterns' }}
-      next={null}
+      prev={{ path: '/react-field-guide/recipes', label: 'Common Recipes' }}
+      next={{ path: '/react-field-guide/stability', label: 'Re-Renders, Memo & Stability' }}
     >
       <PosterCard
         glyph="Rn"

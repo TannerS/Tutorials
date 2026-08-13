@@ -11,7 +11,7 @@ export default function Intro() {
       sectionId="state-mgmt"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/state-mgmt/comparison', label: 'Library Comparison' }}
+      next={{ path: '/state-mgmt/comparison', label: 'The State Escalation Ladder' }}
     >
       <h2>React Context Recap</h2>
       <p>
@@ -124,7 +124,7 @@ function UserMenu() {
 
       <FlowChart
         title="State Categories and Best-Fit Tools"
-        chart={"graph TD\n  S[Application State] --> UI[UI State]\n  S --> SC[Server Cache]\n  S --> FS[Form State]\n  S --> URL[URL State]\n  UI --> UI1[Local: useState/useReducer]\n  UI --> UI2[Shared: Zustand/Redux/Context]\n  SC --> SC1[TanStack Query]\n  SC --> SC2[RTK Query / SWR]\n  FS --> FS1[React Hook Form]\n  FS --> FS2[Formik / useState]\n  URL --> URL1[React Router]\n  URL --> URL2[nuqs / useSearchParams]\n  style UI fill:#3b82f6,color:#fff\n  style SC fill:#10b981,color:#fff\n  style FS fill:#f59e0b,color:#fff\n  style URL fill:#8b5cf6,color:#fff"}
+        chart={"graph TD\n  S[Application State] --> UI[UI State]\n  S --> SC[Server Cache]\n  S --> FS[Form State]\n  S --> URL[URL State]\n  UI --> UI1[Local: useState/useReducer]\n  UI --> UI2[Shared: Context + useReducer]\n  SC --> SC1[TanStack Query]\n  SC --> SC2[SWR]\n  FS --> FS1[React Hook Form]\n  FS --> FS2[Formik / useState]\n  URL --> URL1[React Router]\n  URL --> URL2[nuqs / useSearchParams]\n  style UI fill:#3b82f6,color:#fff\n  style SC fill:#10b981,color:#fff\n  style FS fill:#f59e0b,color:#fff\n  style URL fill:#8b5cf6,color:#fff"}
       />
 
       <h3>UI State</h3>
@@ -138,8 +138,9 @@ function UserMenu() {
       <p>
         Data fetched from APIs is <em>not your state</em> — it&apos;s a cache of someone else&apos;s
         state. TanStack Query (React Query) handles caching, background refetching, stale-while-revalidate,
-        pagination, optimistic updates, and deduplication out of the box. Putting server data in Redux
-        is the single most common over-engineering mistake in React apps.
+        pagination, optimistic updates, and deduplication out of the box. Copying server data into
+        your own client state — a Context, a reducer, a store — and then hand-maintaining it is the
+        single most common over-engineering mistake in React apps.
       </p>
 
       <CodeBlock language="jsx" title="Server State with TanStack Query">
@@ -170,8 +171,8 @@ function useAddTodo() {
       <h3>Form State</h3>
       <p>
         Form state is inherently local and ephemeral. Libraries like React Hook Form use
-        uncontrolled inputs and refs to avoid re-renders on every keystroke — something neither
-        Context nor Redux can match for performance.
+        uncontrolled inputs and refs to avoid re-renders on every keystroke — something no
+        Context-based or global store solution can match for performance.
       </p>
 
       <h3>URL State</h3>
@@ -181,7 +182,7 @@ function useAddTodo() {
         libraries like <code>nuqs</code> handle this natively.
       </p>
 
-      <InfoBox variant="tip" title="You Might Not Need Redux">
+      <InfoBox variant="tip" title="You Might Not Need a Store At All">
         Before reaching for any state library, audit your state. If 80% of it is server cache
         (use TanStack Query), 15% is form state (use React Hook Form), and 5% is UI toggles
         (use useState) — you might not need a global store at all. The best state management
@@ -192,7 +193,7 @@ function useAddTodo() {
 
       <FlowChart
         title="Do You Need a State Management Library?"
-        chart={"graph TD\n  START[New State Requirement] --> Q1{Is it server data?}\n  Q1 -->|Yes| TQ[Use TanStack Query / RTK Query]\n  Q1 -->|No| Q2{Is it form data?}\n  Q2 -->|Yes| RHF[Use React Hook Form]\n  Q2 -->|No| Q3{Is it URL state?}\n  Q3 -->|Yes| RR[Use Router / useSearchParams]\n  Q3 -->|No| Q4{Shared across 2+ unrelated components?}\n  Q4 -->|No| US[Use useState / useReducer]\n  Q4 -->|Yes| Q5{High-frequency updates?}\n  Q5 -->|No| CTX[Context might be fine]\n  Q5 -->|Yes| EXT[Use Zustand / Redux Toolkit]\n  style TQ fill:#10b981,color:#fff\n  style RHF fill:#f59e0b,color:#fff\n  style RR fill:#8b5cf6,color:#fff\n  style US fill:#6b7280,color:#fff\n  style CTX fill:#3b82f6,color:#fff\n  style EXT fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  START[New State Requirement] --> Q1{Is it server data?}\n  Q1 -->|Yes| TQ[Use TanStack Query]\n  Q1 -->|No| Q2{Is it form data?}\n  Q2 -->|Yes| RHF[Use React Hook Form]\n  Q2 -->|No| Q3{Is it URL state?}\n  Q3 -->|Yes| RR[Use Router / useSearchParams]\n  Q3 -->|No| Q4{Shared across 2+ unrelated components?}\n  Q4 -->|No| US[Use useState / useReducer]\n  Q4 -->|Yes| Q5{High-frequency updates?}\n  Q5 -->|No| CTX[Context + useReducer]\n  Q5 -->|Yes| EXT[Split contexts, or an external store]\n  style TQ fill:#10b981,color:#fff\n  style RHF fill:#f59e0b,color:#fff\n  style RR fill:#8b5cf6,color:#fff\n  style US fill:#6b7280,color:#fff\n  style CTX fill:#3b82f6,color:#fff\n  style EXT fill:#ef4444,color:#fff"}
       />
 
       <h2>Signals and the Future of React State</h2>
@@ -245,10 +246,11 @@ function Counter() {
 
       <h2>What&apos;s Next</h2>
       <p>
-        Now that you understand <em>when</em> you need external state management, the next lessons
-        dive into the <em>how</em>. We&apos;ll build the same todo app in Redux Toolkit and Zustand,
-        then compare every major library side-by-side so you can make an informed choice for your
-        next project.
+        Now that you can categorize state, the next lesson walks the escalation ladder rung by
+        rung — <code>useState</code>, lifting state up, <code>useReducer</code>, Context, and finally
+        a dedicated store — with the real re-render cost of each and an honest test for when to
+        climb. After that we cover the production Context + <code>useReducer</code> patterns, and
+        finish with TanStack Query for the server cache, which is a different problem entirely.
       </p>
     </LessonLayout>
   );

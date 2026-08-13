@@ -13,7 +13,7 @@ export default function FieldGuideStyling() {
       footerLabel="Personal study reference — React 19"
       pageLabel="React 19 Field Guide · Styling"
       prev={{ path: '/react-field-guide/component-patterns', label: 'Component Patterns' }}
-      next={{ path: '/react-field-guide/state-management', label: 'State Management' }}
+      next={{ path: '/react-field-guide/router', label: 'React Router v7' }}
     >
       <PosterCard
         glyph="CM"

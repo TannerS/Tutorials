@@ -15,7 +15,7 @@ export default function ReactQuery() {
       <p>
         TanStack Query (formerly React Query) is the gold standard for managing server state in React.
         It handles caching, background refetching, stale data, loading/error states, pagination, and
-        optimistic updates — things that are painful to build manually and error-prone with Redux.
+        optimistic updates — things that are painful to hand-roll in a reducer and easy to get wrong.
       </p>
 
       <InfoBox variant="success" title="The Core Insight: Server State Is Not Your State">

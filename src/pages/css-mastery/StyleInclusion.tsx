@@ -9,7 +9,7 @@ export default function StyleInclusion() {
     <LessonLayout
       title="Style-Inclusion Methods"
       sectionId="css-mastery"
-      lessonIndex={7}
+      lessonIndex={8}
       prev={{ path: '/css-mastery/tokens', label: 'Design Tokens & Theming Architecture' }}
       next={{ path: '/css-mastery/patterns', label: 'Layout Patterns & Recipes' }}
     >

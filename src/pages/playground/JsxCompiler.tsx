@@ -10,7 +10,7 @@ export default function JsxCompilerLesson() {
       sectionId="playground"
       lessonIndex={2}
       prev={{ path: '/playground/type-checker', label: 'TypeScript Type Checker' }}
-      next={null}
+      next={{ path: '/playground/css-playground', label: 'CSS Playground' }}
     >
       <p>
         JSX isn&apos;t JavaScript — browsers have never executed{' '}

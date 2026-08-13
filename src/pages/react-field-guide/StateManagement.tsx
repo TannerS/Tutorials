@@ -12,8 +12,8 @@ export default function FieldGuideStateManagement() {
       meta={['Redux · Zustand · Query', '12 patterns']}
       footerLabel="Personal study reference — State Management"
       pageLabel="React 19 Field Guide · State Management"
-      prev={{ path: '/react-field-guide/styling', label: 'Styling Approaches' }}
-      next={{ path: '/react-field-guide/router', label: 'React Router v7' }}
+      prev={{ path: '/react-field-guide/router', label: 'React Router v7' }}
+      next={{ path: '/react-field-guide/recipes', label: 'Common Recipes' }}
     >
       <PosterCard
         glyph="RTK"

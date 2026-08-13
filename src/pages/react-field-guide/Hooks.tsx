@@ -8,13 +8,46 @@ export default function FieldGuideHooks() {
       accent="sky"
       eyebrow="React 19 · Field Reference"
       title="Hooks Cheat Sheet"
-      tagline="Every hook's signature and the one thing that trips people up — condensed for offline study."
-      meta={['React 19', '16 hooks & APIs']}
+      tagline="What a hook actually is, the two rules that govern all of them, then every hook's signature and the one thing that trips people up."
+      meta={['React 19', 'Rules + 16 hooks']}
       footerLabel="Personal study reference — React 19"
       pageLabel="React 19 Field Guide · Hooks"
-      prev={null}
-      next={{ path: '/react-field-guide/stability', label: 'Re-Renders, Memo & Stability' }}
+      prev={{ path: '/react-field-guide/fundamentals', label: 'React Fundamentals' }}
+      next={{ path: '/react-field-guide/component-patterns', label: 'Component Patterns' }}
     >
+      <PosterCard
+        glyph="?"
+        title={<>What Is <span className="dim">a Hook?</span></>}
+        code={`// A hook is a function starting with "use" that lets a
+// component tap into React features between renders.
+
+function Counter() {
+  const [n, setN] = useState(0);   // ← remembers n across renders
+  useEffect(() => { document.title = n; }, [n]);
+  return <button onClick={() => setN(n + 1)}>{n}</button>;
+}
+
+// React tracks hooks BY CALL ORDER, per component instance.
+// Two <Counter /> elements have two completely separate n values.`}
+        caption="Plain function calls forget everything when they return; hooks are how React gives your function a memory and a way to reach outside itself. The 'use' prefix isn't decoration — the linter uses it to know these rules apply."
+      />
+
+      <PosterCard
+        glyph="!"
+        title={<>The Rules <span className="dim">of Hooks</span></>}
+        code={`// 1. Only at the TOP LEVEL — never in a condition, loop, or nested fn
+if (isOpen) { const [x, setX] = useState(0); }   // ❌ order shifts
+const [x, setX] = useState(0);                    // ✅ always runs
+
+// 2. Only inside a component or another hook
+function formatDate() { useState(); }             // ❌ plain function
+function useMyThing() { const [a] = useState(); } // ✅ custom hook
+
+// A custom hook is just a function that calls other hooks.
+// It shares LOGIC, never state — each caller gets its own copy.`}
+        caption="Because hooks are matched up by call order, skipping one on a later render hands the next hook the wrong slot. Keeping every call unconditional at the top is what makes that impossible — enable eslint-plugin-react-hooks and let it enforce it."
+      />
+
       <PosterCard
         glyph="S"
         title={<>useState<span className="dim">()</span></>}
@@ -235,6 +268,7 @@ function MyInput({ ref, ...props }) {
       <PosterQuickRef
         title="Which hook do I need?"
         rows={[
+          { need: 'Reuse stateful logic across components', answer: 'Write a custom use* hook' },
           { need: 'Component state', answer: 'useState / useReducer' },
           { need: 'Side effect', answer: 'useEffect / useLayoutEffect' },
           { need: 'Stable reference', answer: 'useRef' },

@@ -9,7 +9,7 @@ export default function Responsive() {
     <LessonLayout
       title="Responsive Design"
       sectionId="css-mastery"
-      lessonIndex={2}
+      lessonIndex={3}
       prev={{ path: '/css-mastery/grid', label: 'CSS Grid Complete Guide' }}
       next={{ path: '/css-mastery/animations', label: 'Animations & Transitions' }}
     >

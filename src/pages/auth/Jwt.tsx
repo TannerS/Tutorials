@@ -9,15 +9,22 @@ export default function Jwt() {
     <LessonLayout
       title="JWT Deep Dive"
       sectionId="auth"
-      lessonIndex={3}
+      lessonIndex={4}
       prev={{ path: '/auth/cookies', label: 'Cookies & Sessions' }}
       next={{ path: '/auth/oauth', label: 'OAuth 2.0 & OIDC' }}
     >
       <p>
-        JSON Web Tokens (JWTs) are self-contained, signed tokens that encode user identity and claims.
-        Unlike server-side sessions, JWTs can be verified without a database lookup — the token itself
-        contains all the information needed. This makes them popular in stateless architectures, but
-        they come with important trade-offs and security considerations.
+        This lesson answers the same question as the last one — <em>how does the server remember you on
+        the next request?</em> — with the opposite design. A session ID is a pointer to state the server
+        holds; a JSON Web Token <strong>is</strong> the state, carried by the client and signed so it
+        cannot be edited. Verification becomes a signature check the receiver can do alone, with no
+        shared store and no network hop.
+      </p>
+
+      <p>
+        That signature is the digital-signature primitive from the Encryption lesson, applied to a small
+        JSON document. Everything good about JWTs and everything painful about them comes from the same
+        property: nothing needs to be looked up, so nothing can be taken back.
       </p>
 
       <h2>JWT Structure</h2>
@@ -554,6 +561,23 @@ app.post('/auth/refresh', async (req, res) => {
           matter how recently the token was used.
         </p>
       </InfoBox>
+
+      <h2>Who Actually Checked the Password?</h2>
+
+      <p>
+        You now have both ways to keep a user logged in — a session pointer or a signed token — and the
+        refresh-token dance that keeps either one alive. Notice what both lessons quietly assumed: some
+        <code> authenticate(email, password)</code> call that already knows the user, meaning you store
+        passwords, handle resets, and build MFA yourself.
+      </p>
+
+      <p>
+        The next lesson removes that assumption. OAuth 2.0 and OIDC let someone else verify the user and
+        hand you a signed statement about who they are — and that statement, the <code>id_token</code>,
+        is an ordinary JWT that you verify with exactly the rules on this page: check the signature
+        against a published key, pin the algorithm, and validate <code>iss</code>, <code>aud</code>, and{' '}
+        <code>exp</code>. This lesson is what makes the next one readable.
+      </p>
 
       <InteractiveChallenge
         question={"Why should JWTs be stored in HttpOnly cookies instead of localStorage?"}

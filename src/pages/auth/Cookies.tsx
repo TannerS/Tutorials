@@ -9,15 +9,21 @@ export default function Cookies() {
     <LessonLayout
       title="Cookies & Sessions"
       sectionId="auth"
-      lessonIndex={2}
+      lessonIndex={3}
       prev={{ path: '/auth/tls', label: 'TLS & HTTPS' }}
       next={{ path: '/auth/jwt', label: 'JWT Deep Dive' }}
     >
       <p>
-        HTTP is stateless — each request is independent with no memory of previous requests. Cookies and
-        sessions are the mechanisms that give HTTP the illusion of state. Understanding these is critical
-        because they underpin authentication, shopping carts, user preferences, and virtually every
-        personalized web experience.
+        HTTP is stateless — each request is independent, with no memory of the one before it. That is the
+        problem the last lesson left open: TLS secured the channel and the user successfully sent their
+        password, and then the next request arrives looking exactly like an anonymous one. Cookies and
+        sessions are the classic answer, and they are Phase 3 of the login flow.
+      </p>
+
+      <p>
+        The idea is deliberately simple: the server keeps the real state and gives the browser nothing
+        but a meaningless <strong>pointer</strong> to it. Everything in this lesson follows from that one
+        decision — including why logout is trivial here and hard in the next lesson.
       </p>
 
       <h2>How Cookies Work</h2>
@@ -349,6 +355,22 @@ res.cookie('sessionId', sessionId, {
           </tr>
         </tbody>
       </table>
+
+      <h2>The Bill for Server-Side State</h2>
+
+      <p>
+        Look back at the cons above, because they are the entire motivation for the next lesson. Every
+        request costs a lookup in a shared store, that store has to be highly available, and once you run
+        services across several teams and machines they all need to reach it. The session ID is
+        meaningless on its own — its meaning lives in Redis.
+      </p>
+
+      <p>
+        So the obvious question is: what if the token carried its own meaning, signed so it cannot be
+        tampered with, so any service could verify it locally with no lookup at all? That is a JWT. It is
+        not a replacement for what you just learned — it is the same problem solved from the opposite
+        end, and it trades away the one thing sessions are best at: instant revocation.
+      </p>
 
       <InteractiveChallenge
         question={"Which cookie attribute prevents JavaScript from accessing a session cookie, mitigating XSS attacks?"}

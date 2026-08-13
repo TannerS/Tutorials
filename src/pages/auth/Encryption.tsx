@@ -9,15 +9,21 @@ export default function Encryption() {
     <LessonLayout
       title="Encryption Fundamentals"
       sectionId="auth"
-      lessonIndex={0}
-      prev={null}
+      lessonIndex={1}
+      prev={{ path: '/auth/authz', label: 'AuthN vs AuthZ' }}
       next={{ path: '/auth/tls', label: 'TLS & HTTPS' }}
     >
       <p>
-        Encryption is the foundation of everything in security. Before you can understand TLS, JWTs,
-        OAuth, or any authentication system, you need to understand how data is protected. This lesson
-        covers symmetric and asymmetric encryption, digital signatures, and how they all come together
-        in the hybrid approach that powers the modern internet.
+        Phase 1 of the login flow you just saw is a single line — &quot;the browser and server establish
+        an encrypted channel.&quot; Everything after it depends on that line being true, so this is where
+        we start. Encryption is the primitive underneath the whole section: TLS is built from it, cookies
+        and JWTs are trusted because of it, and OAuth assumes it exists.
+      </p>
+
+      <p>
+        This lesson covers symmetric and asymmetric encryption, digital signatures, the hybrid approach
+        that powers the modern internet, and — the one place where all of this logic runs backwards —
+        password hashing.
       </p>
 
       <h2>Symmetric Encryption (AES-256)</h2>
@@ -485,6 +491,14 @@ async function checkPassword(plaintext, storedHash) {
         <p><strong>Hybrid (TLS)</strong>: Asymmetric for key exchange, symmetric for data. Best of both worlds.</p>
         <p><strong>Quantum</strong>: Breaks RSA/ECC. AES-256 survives. Post-quantum standards coming.</p>
       </InfoBox>
+
+      <p>
+        You now have the pieces but not the protocol. Knowing that ECDH can produce a shared secret does
+        not tell you how a browser and a server you have never spoken to before agree on one, or how the
+        browser knows it is talking to the real <code>bank.com</code> rather than an impostor performing
+        a perfectly valid key exchange. That is exactly what the next lesson assembles: TLS is the hybrid
+        approach above, plus an identity check, turned into a real handshake.
+      </p>
 
       <InteractiveChallenge
         question={"Why does TLS use a hybrid approach (asymmetric + symmetric encryption) rather than just asymmetric encryption for everything?"}

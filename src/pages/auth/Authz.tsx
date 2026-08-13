@@ -9,15 +9,22 @@ export default function Authz() {
     <LessonLayout
       title="AuthN vs AuthZ"
       sectionId="auth"
-      lessonIndex={5}
-      prev={{ path: '/auth/oauth', label: 'OAuth 2.0 & OIDC' }}
-      next={{ path: '/auth/gateway', label: 'Gateway Auth: Envoy, Redis & the Auth Wall' }}
+      lessonIndex={0}
+      prev={null}
+      next={{ path: '/auth/encryption', label: 'Encryption Fundamentals' }}
     >
       <p>
-        Authentication and authorization are the two pillars of access control. They are often confused
-        because they work together, but they solve fundamentally different problems. This lesson clarifies
-        both concepts, covers the major authorization models, and then brings everything together with the
-        full browser login flow showing how all the pieces from previous lessons connect.
+        This section is one continuous story: what actually happens when a user logs in, and what keeps
+        them logged in afterwards. Before any of that machinery makes sense you need two things — the
+        vocabulary, and the map.
+      </p>
+
+      <p>
+        Authentication and authorization are the two pillars of access control. They are constantly
+        confused because they always appear together, but they answer different questions. This lesson
+        defines both, covers the authorization models you will actually implement, and then lays out the
+        complete browser login flow that every remaining lesson in this section unpacks one phase at a
+        time.
       </p>
 
       <h2>Authentication (AuthN): Who Are You?</h2>
@@ -202,8 +209,9 @@ public class ArticleController {
       <h2>The Full Browser Login Flow</h2>
 
       <p>
-        Now let&#39;s connect ALL the pieces from the previous lessons into one complete flow. This is what
-        happens when a user logs into a modern web application:
+        Here is the entire story on a single page. Not all of it will land yet — that is deliberate.
+        Every phase below is a lesson in this section, and each of those lessons opens by pointing back
+        at the phase it explains. Come back to this diagram whenever you lose the thread.
       </p>
 
       <FlowChart
@@ -246,6 +254,14 @@ Phase 6: Logout
   - Optionally: revoke refresh token at Google
   - User is fully logged out`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="Which Lesson Covers Which Phase">
+        <p><strong>Phase 1 — the encrypted channel.</strong> <em>Encryption Fundamentals</em> gives you the primitives (symmetric keys, key exchange, signatures, password hashing); <em>TLS &amp; HTTPS</em> shows how they combine into the handshake that makes it safe to send a password at all.</p>
+        <p><strong>Phases 3 and 4 — staying logged in.</strong> <em>Cookies &amp; Sessions</em> is the stateful answer; <em>JWT Deep Dive</em> is the stateless one. They solve the same problem in opposite directions, which is why they are taught back to back.</p>
+        <p><strong>Phases 2 and 5 — delegating login and refreshing it.</strong> <em>OAuth 2.0 &amp; OIDC</em> covers what actually happens behind &quot;Login with Google,&quot; including where that <code>id_token</code> comes from and how the refresh works.</p>
+        <p><strong>Phases 4 and 6 in a real distributed system.</strong> <em>Gateway Auth</em> moves the whole check to the edge and makes logout instant.</p>
+        <p><strong>Everything that breaks if you get the above wrong.</strong> <em>Web Security</em> closes the section with the attack surface this flow exposes: CORS, CSRF, XSS.</p>
+      </InfoBox>
 
       <h2>Architecture Patterns</h2>
 
@@ -294,7 +310,8 @@ Phase 6: Logout
 
       <InfoBox variant="tip" title="Want the Full Gateway Pattern?">
         <p>
-          The next lesson walks through this exact &quot;Gateway-Validated Session&quot; row in detail — Envoy&#39;s
+          The <strong>Gateway Auth</strong> lesson, near the end of this section, walks through this exact
+          &quot;Gateway-Validated Session&quot; row in detail — Envoy&#39;s
           <code> ext_authz</code> filter, the Redis session schema, instant revocation, and why backend
           services can be entirely invisible to the public internet.
         </p>
@@ -317,6 +334,16 @@ Phase 6: Logout
         <p><strong>OIDC</strong>: Authentication layer on OAuth (ID tokens, user identity)</p>
         <p><strong>Together</strong>: OIDC authenticates the user, OAuth authorizes the app, your app uses RBAC for fine-grained authorization</p>
       </InfoBox>
+
+      <h2>Where the Next Lesson Starts</h2>
+
+      <p>
+        Look at the relationship map again and notice that every path traces back to one box:{' '}
+        <strong>encryption</strong>. None of this works if the password can be read off the wire, if a
+        session cookie can be forged, or if a token signature can be faked. So the next lesson starts at
+        the bottom of the stack — symmetric and asymmetric keys, digital signatures, and password
+        hashing — the primitives that TLS, cookies, JWTs, and OAuth all assume you already have.
+      </p>
 
       <InteractiveChallenge
         question={"What is the correct relationship between authentication and authorization?"}

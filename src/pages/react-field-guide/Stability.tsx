@@ -12,7 +12,7 @@ export default function FieldGuideStability() {
       meta={['React 19', '12 concepts']}
       footerLabel="Personal study reference — React Rendering Model"
       pageLabel="React 19 Field Guide · Stability"
-      prev={{ path: '/react-field-guide/hooks', label: 'Hooks' }}
+      prev={{ path: '/react-field-guide/testing', label: 'Testing Quick Reference' }}
       next={{ path: '/react-field-guide/advanced-rendering', label: 'Scaling Re-Render Performance' }}
     >
       <PosterCard

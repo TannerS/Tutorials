@@ -34,6 +34,25 @@ type Named = readonly [name: string, age: number];  // labeled tuples
 Array<T>   |   T[]   |   ReadonlyArray<T>   |   readonly T[]`}
       </CodeBlock>
 
+      <h2>any / unknown / never / void</h2>
+      <CodeBlock language="ts" title="The four that trip people up">
+{`any      // disables checking — and infects everything derived from it. Ban it.
+unknown  // "I don't know yet" — you MUST narrow before you can touch it
+never    // no valid value: a function that always throws, an impossible branch
+void     // "ignore my return value" — not the same as undefined
+
+let a: any     = JSON.parse(s);  a.whatever.deep;      // compiles, crashes
+let u: unknown = JSON.parse(s);  u.whatever;           // ERROR — narrow first
+if (typeof u === 'string') u.trim();                   // OK
+
+function fail(m: string): never { throw new Error(m); }
+const _exhaustive: never = value;   // exhaustiveness check (see below)
+
+// void vs undefined: void lets a callback return anything, and it's discarded
+const cb: () => void = () => 42;    // OK
+const cd: () => undefined = () => 42;  // ERROR`}
+      </CodeBlock>
+
       <h2>Object &amp; Function Types</h2>
       <CodeBlock language="ts" title="Interfaces and type aliases">
 {`interface User {
@@ -49,6 +68,71 @@ Array<T>   |   T[]   |   ReadonlyArray<T>   |   readonly T[]`}
 type Fn1 = (x: number) => number;
 interface Fn2 { (x: number): number }
 type Handler<T> = (event: T) => Promise<void>;`}
+      </CodeBlock>
+
+      <h2>Interface vs Type Alias</h2>
+      <CodeBlock language="ts" title="Pick by capability, not by taste">
+{`// ONLY interfaces can do:
+interface Box { w: number }
+interface Box { h: number }          // declaration merging -> { w, h }
+declare module 'express' { interface Request { userId?: string } }  // augmentation
+
+// ONLY type aliases can do:
+type Id       = string | number;     // unions
+type Pair     = [a: string, b: number];
+type Elem<T>  = T extends (infer U)[] ? U : never;   // conditionals
+type Getters<T> = { [K in keyof T as \`get\${string & K}\`]: () => T[K] };  // mapped
+
+// Both can do: object shapes, generics, extending
+interface Admin extends User { role: 'admin' }     // extends
+type Admin2 = User & { role: 'admin' };            // intersection
+
+// Rule of thumb:
+//   public/extensible object shapes and library types -> interface
+//   unions, tuples, mapped/conditional, anything computed -> type
+// Interface extends gives BETTER error messages and caches faster than &.`}
+      </CodeBlock>
+
+      <h2>Type Operators — keyof, typeof, indexed access</h2>
+      <CodeBlock language="ts" title="Derive types instead of duplicating them">
+{`interface User { id: string; age: number; tags: string[] }
+
+keyof User            // 'id' | 'age' | 'tags'
+User['age']           // number          — indexed access
+User['id' | 'age']    // string | number — indexed access with a union
+User['tags'][number]  // string          — element type of an array
+
+const config = { retries: 3, mode: 'strict' } as const;
+typeof config              // { readonly retries: 3; readonly mode: 'strict' }
+keyof typeof config        // 'retries' | 'mode'   <- the workhorse combo
+
+const roles = ['admin', 'user'] as const;
+typeof roles[number]       // 'admin' | 'user'     <- union from an array
+
+// Type-safe property getter
+function get<T, K extends keyof T>(obj: T, key: K): T[K] { return obj[key]; }
+
+// NOTE: two different 'typeof's.
+//   value position -> JS runtime operator ('string', 'object', ...)
+//   type  position -> TS operator, lifts a VALUE into its type`}
+      </CodeBlock>
+
+      <h2>Enums</h2>
+      <CodeBlock language="ts" title="What they do — and what to use instead">
+{`enum Direction { Up, Down }        // numeric: Up = 0, Down = 1
+enum Status { Active = 'ACTIVE' }   // string enum
+const enum Fast { A = 1 }           // inlined; breaks under isolatedModules
+
+// Problems: emits runtime JS (not type-only), numeric enums accept ANY number,
+// reverse mappings bloat output, and they don't play well with bundlers.
+const d: Direction = 99;            // compiles! numeric enums are not exhaustive
+
+// PREFER — zero runtime cost, exhaustive, autocompletes the same:
+const STATUS = { Active: 'ACTIVE', Archived: 'ARCHIVED' } as const;
+type Status2 = typeof STATUS[keyof typeof STATUS];   // 'ACTIVE' | 'ARCHIVED'
+
+// Or just the union, when you don't need the value object:
+type Direction2 = 'up' | 'down';`}
       </CodeBlock>
 
       <h2>Classes</h2>
@@ -162,8 +246,10 @@ NoInfer<T>              (TS 5.4+) exclude this position from inference`}
       <CodeBlock language="ts" title="Generics essentials">
 {`function first<T>(xs: T[]): T | undefined { return xs[0]; }
 
-// Constrained generic
+// Constrained generic — 'extends' means "at least this shape"
 function keys<T extends object>(obj: T): (keyof T)[] { return Object.keys(obj) as (keyof T)[]; }
+function len<T extends { length: number }>(x: T) { return x.length; }
+function get<T, K extends keyof T>(o: T, k: K): T[K] { return o[k]; }
 
 // Default type param
 type Box<T = string> = { value: T };
@@ -171,8 +257,24 @@ type Box<T = string> = { value: T };
 // Multiple params + inference
 function pair<A, B>(a: A, b: B): [A, B] { return [a, b]; }
 
-// Higher-order utility
-type Nullable<T> = { [K in keyof T]: T[K] | null };`}
+// Generic interface / type alias / class
+interface ApiResponse<T> { data: T; error: string | null }
+type Nullable<T> = { [K in keyof T]: T[K] | null };
+class Stack<T> {
+  #items: T[] = [];
+  push(x: T) { this.#items.push(x); }
+  pop(): T | undefined { return this.#items.pop(); }
+}
+
+// In .tsx files <T> parses as JSX — disambiguate with a trailing comma:
+const identity = <T,>(x: T): T => x;          // or: <T extends unknown>(x: T) => x
+
+// Variance annotations (TS 4.7+) — document and speed up checking
+interface Producer<out T> { get(): T }        // covariant  (read-only position)
+interface Consumer<in  T> { set(v: T): void } // contravariant (write-only)
+interface Collection<in out T> { get(): T; set(v: T): void }  // invariant
+
+// Naming: T (type) K (key) V (value) E (element/error) R (return) P (props)`}
       </CodeBlock>
 
       <h2>Discriminated Unions</h2>
@@ -228,9 +330,32 @@ const flags = {
 type FlagName = keyof typeof flags;   // 'darkmode' | 'ai-suggest'`}
       </CodeBlock>
 
-      <h2>Type Predicates &amp; Narrowing</h2>
-      <CodeBlock language="ts" title="Runtime guards that also narrow the type">
-{`function isUser(v: unknown): v is User {
+      <h2>Narrowing — Every Mechanism</h2>
+      <CodeBlock language="ts" title="How the compiler follows control flow">
+{`// typeof — primitives only
+if (typeof x === 'string') x.trim();
+// 'string' 'number' 'boolean' 'bigint' 'symbol' 'undefined' 'object' 'function'
+// GOTCHA: typeof null === 'object', and so is any array
+
+// instanceof — classes and built-ins
+if (err instanceof Error) err.message;
+
+// 'in' — does this key exist?
+if ('radius' in shape) shape.radius;
+
+// truthiness — beware 0 and ''
+if (s) {}                 // excludes '' and 0 too!
+if (s !== undefined) {}   // usually what you actually meant
+
+// equality / discriminant
+if (a === b) {}                       // narrows BOTH sides
+switch (shape.kind) { case 'circle': /* narrowed */ }
+
+// Array.isArray, plus filtering with a predicate
+const defined = list.filter((x): x is string => x != null);
+
+// Type predicate — a function whose return type teaches the compiler
+function isUser(v: unknown): v is User {
   return typeof v === 'object' && v !== null
     && 'id' in v && 'email' in v;
 }
@@ -247,6 +372,26 @@ assertUser(raw);
 raw.email;      // narrowed`}
       </CodeBlock>
 
+      <h2>Assertions &amp; Escape Hatches</h2>
+      <CodeBlock language="ts" title="Use sparingly — each one silences the compiler">
+{`const el = document.getElementById('x') as HTMLInputElement;  // 'as' — you promise
+const el2 = <HTMLInputElement>document.getElementById('x');   // same, illegal in .tsx
+
+value!            // non-null assertion — "trust me, not null". Crashes if wrong.
+prop!: string     // definite assignment — "assigned before use, elsewhere"
+
+// Double assertion — required when the types don't overlap at all
+const n = ('5' as unknown) as number;   // a giant red flag
+
+// @ts-expect-error > @ts-ignore: it FAILS when the error goes away,
+// so it can't rot silently in the codebase.
+// @ts-expect-error — API returns snake_case until v3 ships (TICKET-421)
+doThing(payload.user_id);
+
+// Preference order, best to worst:
+//   narrowing / type predicate  >  satisfies  >  as  >  !  >  as unknown as  >  any`}
+      </CodeBlock>
+
       <h2>Mapped Types</h2>
       <CodeBlock language="ts" title="Transform every key of a type">
 {`type ReadonlyDeep<T> = T extends object
@@ -258,8 +403,18 @@ type Getters<T> = {
 };
 
 type UserGetters = Getters<{ name: string; age: number }>;
-// { getName(): string; getAge(): number }`}
+// { getName(): string; getAge(): number }
+
+// Modifiers: add with + (implicit), REMOVE with -
+type Mutable<T>  = { -readonly [K in keyof T]: T[K] };   // strip readonly
+type Concrete<T> = { [K in keyof T]-?: T[K] };           // strip optional
+type Loose<T>    = { [K in keyof T]?: T[K] };            // == Partial<T>
+
+// Key remapping with 'as' — return never to DROP a key
+type OmitByType<T, U> = { [K in keyof T as T[K] extends U ? never : K]: T[K] };
+type NoFns = OmitByType<{ id: string; run(): void }, Function>;  // { id: string }`}
       </CodeBlock>
+
 
       <h2>Conditional Types &amp; infer</h2>
       <CodeBlock language="ts" title="Types as functions">
@@ -272,7 +427,22 @@ type ElementOf<T> = T extends (infer U)[] ? U : never;
 type X = ElementOf<number[]>;  // number
 
 type PromiseValue<T> = T extends Promise<infer U> ? U : T;
-type Y = PromiseValue<Promise<string>>;  // string`}
+type Y = PromiseValue<Promise<string>>;  // string
+
+// DISTRIBUTIVE: a naked type param distributes over a union
+type ToArray<T> = T extends any ? T[] : never;
+type Z = ToArray<string | number>;        // string[] | number[]   (not (string|number)[])
+// Opt OUT by wrapping both sides in a tuple:
+type NoDist<T> = [T] extends [any] ? T[] : never;
+type W = NoDist<string | number>;         // (string | number)[]
+
+// Recursive conditional types
+type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
+type Flatten<T> = T extends readonly (infer U)[] ? Flatten<U> : T;
+type Path = Flatten<string[][][]>;        // string
+
+// Recursive data shapes
+type Json = string | number | boolean | null | Json[] | { [k: string]: Json };`}
       </CodeBlock>
 
       <h2>Template Literal Types</h2>
@@ -296,6 +466,26 @@ type Role = typeof roles[number];  // 'admin' | 'user' | 'guest'
 const config = { retries: 3, mode: 'strict' } as const;
 config.retries;   // 3, not number
 config.mode;      // 'strict', not string`}
+      </CodeBlock>
+
+      <h2>using — Automatic Resource Cleanup</h2>
+      <CodeBlock language="ts" title="TS 5.2+ — like try/finally, but declarative">
+{`class Conn implements Disposable {
+  [Symbol.dispose]() { this.close(); }         // sync cleanup
+}
+class Handle implements AsyncDisposable {
+  async [Symbol.asyncDispose]() { await this.flush(); }
+}
+
+function query() {
+  using conn = new Conn();        // disposed at end of BLOCK, even on throw
+  return conn.run('select 1');
+}
+
+async function write() {
+  await using h = new Handle();   // awaits asyncDispose on the way out
+}
+// Needs "lib": ["ESNext.Disposable"] (or ES2022+ with the polyfill).`}
       </CodeBlock>
 
       <h2>React + TS Essentials</h2>
@@ -332,7 +522,32 @@ function Input({ label, ref, ...rest }: InputProps) { return <input ref={ref} {.
 
 // useReducer typed
 type Action = { type: 'inc' } | { type: 'set'; value: number };
-function reducer(state: number, action: Action): number { /* ... */ }`}
+function reducer(state: number, action: Action): number { /* ... */ }
+
+// useState — annotate only when inference can't reach
+const [user, setUser] = useState<User | null>(null);   // null alone infers 'null'
+const [ids, setIds]   = useState<string[]>([]);        // [] alone infers 'never[]'
+
+// useRef — three distinct shapes
+const dom  = useRef<HTMLInputElement>(null);   // DOM ref -> .current readonly-ish
+const box  = useRef<number>(0);                // mutable box -> .current writable
+const tid  = useRef<ReturnType<typeof setTimeout> | null>(null);  // timers
+
+// useContext — guarded pattern kills the "| undefined" at every call site
+const Ctx = createContext<AuthValue | undefined>(undefined);
+export function useAuth() {
+  const v = useContext(Ctx);
+  if (!v) throw new Error('useAuth must be used inside <AuthProvider>');
+  return v;                     // narrowed to AuthValue
+}
+
+// Props from an element, spread-friendly
+type BtnProps = ComponentPropsWithoutRef<'button'> & { variant?: 'primary' };
+
+// React 19 hooks
+const [state, action, pending] = useActionState(fn, initialState);
+const { pending: p } = useFormStatus();
+const [optimistic, addOptimistic] = useOptimistic(items);`}
       </CodeBlock>
 
       <h2>Result Type — When Not to Throw</h2>
@@ -393,6 +608,53 @@ declare namespace Express { interface Request { user?: User } }`}
     "skipLibCheck": true
   }
 }`}
+      </CodeBlock>
+
+      <h2>tsc CLI</h2>
+      <CodeBlock language="bash" title="Type-check and diagnose">
+{`tsc --noEmit                 # type-check only — this is your CI gate
+tsc --watch --noEmit         # re-check on save
+tsc --init                   # generate a fully commented tsconfig
+tsc --showConfig             # print the FINAL merged config (after extends)
+tsc --listFiles              # every file actually included — "why is this compiled?"
+tsc --traceResolution        # why an import resolved (or didn't)
+tsc --extendedDiagnostics    # where compile time is going
+tsc --generateTrace out/     # perf trace, open in edge://tracing
+tsc -b                       # build mode — respects project references`}
+      </CodeBlock>
+
+      <h2>Gotchas That Bite</h2>
+      <CodeBlock language="ts" title="Surprising-but-correct compiler behavior">
+{`// 1. Excess property checks fire ONLY on fresh object literals
+interface Opts { name: string }
+const a: Opts = { name: 'x', extra: 1 };     // ERROR
+const tmp = { name: 'x', extra: 1 };
+const b: Opts = tmp;                          // OK — not a literal anymore
+
+// 2. Structural typing: shape matches = type matches. No 'implements' needed.
+class Dog { name = '' }  class Person { name = '' }
+const d: Dog = new Person();                  // OK. Brand types to prevent this.
+
+// 3. readonly is SHALLOW
+const u: Readonly<{ tags: string[] }> = { tags: [] };
+u.tags.push('x');                             // allowed! use ReadonlyArray
+
+// 4. Optional (?) vs explicitly undefined
+interface P { x?: number }
+const p: P = { x: undefined };                // OK unless exactOptionalPropertyTypes
+
+// 5. Index signatures don't guarantee presence
+const m: Record<string, number> = {};
+m.missing.toFixed();                          // compiles, crashes
+// -> turn on noUncheckedIndexedAccess: value becomes number | undefined
+
+// 6. Object.keys returns string[], not (keyof T)[] — by design, because
+//    the object may structurally have MORE keys than its type declares.
+
+// 7. Function param bivariance: method shorthand is bivariant (unsound),
+//    property syntax is contravariant (checked) under strictFunctionTypes.
+interface A { on(cb: (e: MouseEvent) => void): void }   // bivariant
+interface B { on: (cb: (e: MouseEvent) => void) => void }  // strictly checked`}
       </CodeBlock>
 
       <h2>The Rules</h2>

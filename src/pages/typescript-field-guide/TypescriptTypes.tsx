@@ -12,7 +12,7 @@ export default function FieldGuideTypescriptTypes() {
       meta={['TS 5+', '12 concepts']}
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · TypeScript Types"
-      prev={{ path: '/typescript-field-guide/fundamentals', label: 'TypeScript Fundamentals' }}
+      prev={{ path: '/typescript-field-guide/best-practices-gotchas', label: 'Best Practices & Gotchas' }}
       next={{ path: '/typescript-field-guide/typing-react', label: 'Typing React' }}
     >
       <PosterCard

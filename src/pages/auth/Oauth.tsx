@@ -9,15 +9,23 @@ export default function Oauth() {
     <LessonLayout
       title="OAuth 2.0 & OIDC"
       sectionId="auth"
-      lessonIndex={4}
+      lessonIndex={5}
       prev={{ path: '/auth/jwt', label: 'JWT Deep Dive' }}
-      next={{ path: '/auth/authz', label: 'AuthN vs AuthZ' }}
+      next={{ path: '/auth/gateway', label: 'Gateway Auth: Envoy, Redis & the Auth Wall' }}
     >
       <p>
-        OAuth 2.0 is an authorization framework that allows applications to obtain limited access to user
-        accounts on third-party services without the user sharing their password. When you click
-        &quot;Login with Google,&quot; you are using OAuth 2.0. OpenID Connect (OIDC) adds an identity layer on
-        top, providing standardized user authentication.
+        This is Phase 2 of the login flow — the part the last two lessons took for granted. Instead of
+        checking a password yourself, you delegate: another party verifies the user and returns signed
+        proof of who they are. When you click &quot;Login with Google,&quot; that is OAuth 2.0 obtaining
+        limited access to an account on a third-party service without your app ever seeing the password.
+        OpenID Connect (OIDC) adds the identity layer on top.
+      </p>
+
+      <p>
+        Watch for two things you have already met. The <code>id_token</code> you receive at the end is a
+        plain JWT, verified with the exact rules from the previous lesson. And once it verifies, you are
+        right back at Phase 3 — the app still has to mint its own session cookie or token, because a
+        Google token is not a login to <em>your</em> app.
       </p>
 
       <h2>The Four Roles</h2>
@@ -483,6 +491,21 @@ public class SecurityConfig {
         <p><strong>Never use the Implicit Flow</strong> — Tokens in URL fragments are visible in browser history, referrer headers, and server logs.</p>
         <p><strong>Store tokens securely</strong> — Access tokens in HttpOnly cookies. Refresh tokens server-side or in secure HttpOnly cookies with restricted path.</p>
       </InfoBox>
+
+      <h2>Now Scale It to Forty Services</h2>
+
+      <p>
+        The complete login is now on the table: an encrypted channel, an identity verified (by you or by
+        a provider), a session or token issued, and a permission check on each request. Every lesson so
+        far has quietly assumed one server doing all of it.
+      </p>
+
+      <p>
+        Real systems are a fleet of services behind one edge, and repeating token verification in each of
+        them means every team ships its own JWT library, its own JWKS cache, and its own subtly different
+        bug. The next lesson moves the entire check to the gateway — one wall, checked once, with the raw
+        credential stripped before anything internal ever sees it.
+      </p>
 
       <InteractiveChallenge
         question={"In the OAuth 2.0 Authorization Code Flow, why is the authorization code exchanged server-to-server rather than directly returning the access token to the browser?"}

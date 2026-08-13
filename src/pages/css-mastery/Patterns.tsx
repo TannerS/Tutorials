@@ -9,7 +9,7 @@ export default function Patterns() {
     <LessonLayout
       title="Layout Patterns & Recipes"
       sectionId="css-mastery"
-      lessonIndex={8}
+      lessonIndex={9}
       prev={{ path: '/css-mastery/style-inclusion', label: 'Style-Inclusion Methods' }}
       next={null}
     >

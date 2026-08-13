@@ -9,15 +9,22 @@ export default function Tls() {
     <LessonLayout
       title="TLS & HTTPS"
       sectionId="auth"
-      lessonIndex={1}
+      lessonIndex={2}
       prev={{ path: '/auth/encryption', label: 'Encryption Fundamentals' }}
       next={{ path: '/auth/cookies', label: 'Cookies & Sessions' }}
     >
       <p>
-        TLS (Transport Layer Security) is what turns HTTP into HTTPS. It encrypts data in transit,
-        authenticates the server (and optionally the client), and ensures data integrity. Every time
-        you see that padlock icon in your browser, TLS is working behind the scenes. This lesson
-        covers everything from certificates to the TLS 1.3 handshake.
+        TLS (Transport Layer Security) is the previous lesson made real. It takes ECDH key exchange,
+        AES-256-GCM, and digital signatures — the exact primitives you just met — and wires them into a
+        protocol that turns HTTP into HTTPS: encrypted in transit, server identity verified, tampering
+        detectable. Every time you see the padlock, this is what happened.
+      </p>
+
+      <p>
+        This is still Phase 1 of the login flow, and it has to come before everything else in this
+        section for a simple reason: <strong>a password, a session cookie, or a token sent over plain
+        HTTP is already compromised.</strong> Nothing built on top matters until the wire is safe. This
+        lesson covers certificates, the chain of trust, and the TLS 1.3 handshake step by step.
       </p>
 
       <h2>What TLS Provides</h2>
@@ -291,6 +298,21 @@ https.get(options, (res) => {
           </tr>
         </tbody>
       </table>
+
+      <h2>What TLS Still Does Not Solve</h2>
+
+      <p>
+        The channel is now private and the server is who it claims to be, so the user can finally send a
+        password safely. But TLS protects a <em>connection</em>, not a <em>user</em> — and HTTP itself is
+        stateless, so the very next request arrives with no memory that a login ever happened. Handing
+        over your password on every single request is obviously not the answer.
+      </p>
+
+      <p>
+        That is Phase 3 of the flow: the server needs to hand the browser something it can present again
+        later. The next two lessons are the two competing answers to that one question — the classic
+        stateful one first.
+      </p>
 
       <InteractiveChallenge
         question={"In the TLS 1.3 handshake, why is the shared secret never transmitted over the network?"}

@@ -9,7 +9,7 @@ export default function Tokens() {
     <LessonLayout
       title="Design Tokens & Theming Architecture"
       sectionId="css-mastery"
-      lessonIndex={6}
+      lessonIndex={7}
       prev={{ path: '/css-mastery/sass', label: 'Sass & SCSS Fundamentals' }}
       next={{ path: '/css-mastery/style-inclusion', label: 'Style-Inclusion Methods' }}
     >

@@ -9,7 +9,7 @@ export default function Sass() {
     <LessonLayout
       title="Sass &amp; SCSS Fundamentals"
       sectionId="css-mastery"
-      lessonIndex={5}
+      lessonIndex={6}
       prev={{ path: '/css-mastery/variables', label: 'Custom Properties & Modern CSS' }}
       next={{ path: '/css-mastery/tokens', label: 'Design Tokens & Theming Architecture' }}
     >

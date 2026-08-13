@@ -13,7 +13,7 @@ export default function FieldGuideAdvancedRendering() {
       footerLabel="Personal study reference — Rendering at Scale"
       pageLabel="React 19 Field Guide · Scaling Renders"
       prev={{ path: '/react-field-guide/stability', label: 'Re-Renders, Memo & Stability' }}
-      next={{ path: '/react-field-guide/server-components', label: 'Server Components & Actions' }}
+      next={{ path: '/react-field-guide/gotchas', label: 'Gotchas & Anti-Patterns' }}
     >
       <PosterCard
         glyph="Co"

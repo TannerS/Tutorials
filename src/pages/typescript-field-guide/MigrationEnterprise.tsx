@@ -12,8 +12,8 @@ export default function FieldGuideTsMigrationEnterprise() {
       meta={['TS 5+', '12 patterns']}
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · Migration & Enterprise Patterns"
-      prev={{ path: '/typescript-field-guide/project-setup', label: 'Project Setup & tsconfig' }}
-      next={{ path: '/typescript-field-guide/best-practices-gotchas', label: 'Best Practices & Gotchas' }}
+      prev={{ path: '/typescript-field-guide/typing-react', label: 'Typing React' }}
+      next={null}
     >
       <PosterCard
         glyph="Bb"

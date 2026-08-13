@@ -9,7 +9,7 @@ export default function FieldGuideCssBasics() {
       eyebrow="CSS · Field Reference"
       title="CSS Basics Cheat Sheet"
       tagline="Box model, cascade, units, positioning — the fundamentals condensed for a fast lookup, not a first read."
-      meta={['CSS3', '12 fundamentals']}
+      meta={['CSS3', '14 fundamentals']}
       footerLabel="Personal study reference — CSS Basics"
       pageLabel="CSS Field Guide · Basics"
       prev={null}
@@ -59,6 +59,42 @@ style="color:red"      /* (1,0,0,0) — always wins over any selector */
    2. Specificity
    3. Source order (last wins on a tie) */`}
         caption="!important flips a declaration into its own higher-priority bucket — two !important rules on the same property still fall back to specificity, then source order, to break the tie. Treat it as a last resort, not a specificity shortcut."
+      />
+
+      <PosterCard
+        glyph="Ih"
+        title={<>Inheritance<span className="dim"> — and the four global keywords</span></>}
+        language="css"
+        code={`/* INHERITED by default: text-ish properties */
+color, font-*, line-height, text-align, visibility, letter-spacing
+
+/* NOT inherited: box & layout properties */
+margin, padding, border, background, width, display, position
+
+body { color: #333; font-family: system-ui; } /* every descendant gets these free */
+
+.a { color: inherit; }  /* force-take the parent's computed value */
+.a { color: initial; }  /* the spec default for that property */
+.a { color: unset; }    /* inherit if inheritable, else initial */
+.a { all: revert; }     /* roll back to the browser's own stylesheet */
+
+input, button, select, textarea { font: inherit; } /* form controls DON'T inherit font */`}
+        caption="Setting color and font once on body is inheritance doing the work for you — but form controls are the famous exception, they opt out of font inheritance entirely, which is why `font: inherit` on inputs is in every reset ever written."
+      />
+
+      <PosterCard
+        glyph="Cb"
+        title={<>Combinators<span className="dim"> — space, &gt;, +, ~</span></>}
+        language="css"
+        code={`.card p    { }  /* DESCENDANT — any depth below */
+.menu > li { }  /* CHILD — direct children only, one level */
+h2 + p     { }  /* ADJACENT SIBLING — the very NEXT sibling element */
+h2 ~ p     { }  /* GENERAL SIBLING — any LATER sibling, same parent */
+
+/* Combinators add ZERO specificity — only the selectors around them count */
+.a .b  /* (0,0,2,0) */
+.a > .b /* (0,0,2,0) — identical score */`}
+        caption="The descendant space is the one people forget is a combinator at all — which is why `.menu li` accidentally catching a nested submenu's items is such a common bug, and `>` is the fix. Note that siblings only look forward: there is no previous-sibling combinator, that job belongs to :has()."
       />
 
       <PosterCard
@@ -182,6 +218,9 @@ a[href^="https://"][target="_blank"] { }      /* chain multiple */`}
         rows={[
           { need: 'Make width include padding + border', answer: 'box-sizing: border-box' },
           { need: 'Font size that never compounds', answer: 'rem, not em' },
+          { need: 'Direct children only, not all descendants', answer: '> child combinator' },
+          { need: 'Style the element right after another', answer: '+ adjacent sibling' },
+          { need: 'Make inputs match the page font', answer: 'font: inherit' },
           { need: 'Pin an element to the viewport', answer: 'position: fixed' },
           { need: 'Pin until scrolled past, then stick', answer: 'position: sticky' },
           { need: 'Remove from layout AND a11y tree', answer: 'display: none' },

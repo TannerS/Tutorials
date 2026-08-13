@@ -14,10 +14,17 @@ export default function Security() {
       next={null}
     >
       <p>
-        Even with perfect authentication and authorization, web applications face a variety of attacks
-        that exploit the browser&#39;s trust model. This lesson covers the three most critical web security
-        topics — CORS, CSRF, and XSS — along with security headers, input validation, and a comprehensive
-        security checklist for API developers.
+        Every mechanism in this section works exactly as designed and the user can still be robbed,
+        because all three of the attacks below abuse the browser&#39;s trust model rather than breaking
+        your auth. They map directly onto what you just built: <strong>XSS</strong> steals or misuses the
+        credential from the Cookies and JWT lessons, <strong>CSRF</strong> weaponises the fact that the
+        browser attaches that cookie automatically, and <strong>CORS</strong> is the mechanism everyone
+        mistakes for a defence against the other two.
+      </p>
+
+      <p>
+        This closes the section: the three critical browser-security topics, plus security headers, input
+        validation, and a checklist that collects every rule from the previous seven lessons in one place.
       </p>
 
       <h2>CORS (Cross-Origin Resource Sharing)</h2>
@@ -594,6 +601,21 @@ app.post('/register',
           layer catches what the others might miss. If one layer fails, the others still protect you.
         </p>
       </InfoBox>
+
+      <h2>Closing the Loop</h2>
+
+      <p>
+        Read that checklist next to the six-phase diagram from the first lesson and the section closes on
+        itself. TLS 1.3 and HSTS are Phase 1. Argon2 and OAuth with PKCE are Phase 2.{' '}
+        <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite</code>, and short token lifetimes are
+        Phase 3. CSRF tokens, CORS allowlists, and CSP protect Phase 4. Refresh-token rotation with reuse
+        detection is Phase 5, and server-side session invalidation is Phase 6.
+      </p>
+
+      <p>
+        None of these are separate topics. They are one flow, and every item above is a specific way one
+        step of it fails.
+      </p>
 
       <InteractiveChallenge
         question={"A CORS preflight request is triggered when the browser needs to send a non-simple request (like DELETE or a request with custom headers). What HTTP method does the browser use for the preflight?"}

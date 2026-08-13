@@ -10,9 +10,16 @@ export default function Gateway() {
       title="Gateway Auth: Envoy, Redis & the Auth Wall"
       sectionId="auth"
       lessonIndex={6}
-      prev={{ path: '/auth/authz', label: 'AuthN vs AuthZ' }}
+      prev={{ path: '/auth/oauth', label: 'OAuth 2.0 & OIDC' }}
       next={{ path: '/auth/security', label: 'Web Security (CORS, CSRF, XSS)' }}
     >
+      <p>
+        This is the &quot;Gateway-Validated Session&quot; row from the architecture table in the first
+        lesson, filled in. It is also where the two answers from earlier in this section stop being
+        rivals: the opaque session ID from the Cookies lesson comes back, precisely because it can be
+        revoked instantly, while JWT-style statelessness gets pushed inward to where it is cheap.
+      </p>
+
       <p>
         Every previous lesson assumed the backend itself validates a JWT or looks up a session. Many
         real production systems do it differently: <strong>nothing behind the edge ever sees a token at
@@ -470,6 +477,21 @@ spec:
           </tr>
         </tbody>
       </table>
+
+      <h2>One Thing None of This Protects</h2>
+
+      <p>
+        That is the login flow complete, from the TLS handshake to instant revocation at the edge. Every
+        phase of the diagram in the first lesson now has an implementation behind it.
+      </p>
+
+      <p>
+        And all of it can still be bypassed in the browser. The auth wall guarantees that a request
+        arriving without a valid session is denied — it says nothing about a request that carries a
+        perfectly valid session because the attacker got the victim&#39;s own browser to send it, or
+        because injected JavaScript is making the calls from inside the page. The last lesson covers that
+        attack surface: CORS, CSRF, and XSS, and what each of them breaks in the flow you just built.
+      </p>
 
       <InteractiveChallenge
         question={"In the Envoy + Redis auth wall pattern, why is revoking access (e.g., an admin force-logging-out a compromised account) instant, while it's hard with a self-contained JWT?"}

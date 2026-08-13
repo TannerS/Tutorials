@@ -9,8 +9,8 @@ export default function Flexbox() {
     <LessonLayout
       title="Flexbox Complete Guide"
       sectionId="css-mastery"
-      lessonIndex={0}
-      prev={null}
+      lessonIndex={1}
+      prev={{ path: '/css-mastery/fundamentals', label: 'CSS Fundamentals from Scratch' }}
       next={{ path: '/css-mastery/grid', label: 'CSS Grid Complete Guide' }}
     >
       <h2>Flex Container vs Flex Items</h2>

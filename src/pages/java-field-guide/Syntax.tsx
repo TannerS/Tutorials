@@ -8,13 +8,68 @@ export default function FieldGuideJavaSyntax() {
       accent="amber"
       eyebrow="Java · Field Reference"
       title="Modern Java Syntax"
-      tagline="Records, sealed types, and pattern matching condensed for offline study — Java 21+ idioms, not the Java 8 you remember."
-      meta={['Java 21+', '13 features']}
+      tagline="Primitives and variables through records, sealed types, and pattern matching — the language fundamentals plus the Java 21+ idioms that replaced the Java 8 you remember."
+      meta={['Java 21+', '22 features']}
       footerLabel="Personal study reference — Java"
       pageLabel="Java Field Guide · Syntax"
       prev={null}
       next={{ path: '/java-field-guide/oop-generics', label: 'OOP & Generics' }}
     >
+      <PosterCard
+        glyph="int"
+        title={<>Primitives<span className="dim"> — sizes, ranges, defaults</span></>}
+        language="java"
+        code={`// 8 primitives. Sizes are fixed on every JVM. No unsigned types.
+// type    size   range                        field default
+byte      1 byte  -128 .. 127                  0
+short     2 byte  -32,768 .. 32,767            0
+int       4 byte  ~ +/-2.1 billion             0
+long      8 byte  ~ +/-9.2 quintillion         0L
+float     4 byte  ~7 decimal digits            0.0f
+double    8 byte  ~16 decimal digits           0.0d
+char      2 byte  0 .. 65,535 (UTF-16 unit)    '\\u0000'
+boolean   JVM-dep true / false                 false
+
+Integer.MAX_VALUE   Long.MIN_VALUE   Double.MAX_VALUE   // limits live on wrappers
+
+int million = 1_000_000;        // underscores are legal digit separators
+long big    = 10_000_000_000L;  // without the L this is an int literal -> error
+float f     = 1.5f;             // without the f it is a double literal -> error
+
+// Autoboxing: the compiler inserts int <-> Integer conversions for you
+Integer a = 127, b = 127;   a == b;   // true  — cached range -128..127
+Integer x = 128, y = 128;   x == y;   // false — two objects. Use .equals()
+int n = someInteger;                   // NullPointerException if it is null`}
+        caption={<>Defaults only apply to fields and array elements — a local variable has no default and must be assigned before use or it won&apos;t compile. Prefer primitives in hot code; every wrapper is a heap object, and <code>==</code> on wrappers compares references, not values.</>}
+      />
+
+      <PosterCard
+        glyph="x="
+        title={<>Variables<span className="dim"> — declaration, final, scope</span></>}
+        language="java"
+        code={`int count = 0;                  // local — no default, assign before use
+final int MAX = 100;             // cannot be reassigned
+static final int LIMIT = 500;    // class constant, SCREAMING_SNAKE by convention
+
+class User {
+    private String name;              // instance field — defaults to null
+    private static int instances;     // static field — one copy for the class
+    void rename(String name) {        // parameter SHADOWS the field
+        this.name = name;             // 'this.' disambiguates
+    }
+}
+
+// final binds the REFERENCE, not the object's contents
+final List<String> names = new ArrayList<>();
+names.add("a");                  // fine — the list itself is still mutable
+// names = new ArrayList<>();    // compile error — cannot reassign
+
+// Scope ends at the closing brace it was declared in
+for (int i = 0; i < 3; i++) { }
+// i is not visible here`}
+        caption={<>Declare locals <code>final</code> (or just never reassign them) — an &quot;effectively final&quot; local is the only kind a lambda or inner class can capture. Fields get zero/false/null automatically; locals deliberately do not, so the compiler can catch a forgotten assignment.</>}
+      />
+
       <PosterCard
         glyph="var"
         title={<>var<span className="dim"> — Java 10+</span></>}
@@ -25,6 +80,124 @@ var map = Map.of("a", 1, "b", 2);     // Map<String, Integer>
 // cannot use var for:
 // fields, parameters, return types, or with no initializer`}
         caption="Infers the exact type from the initializer — never Object, never a supertype. Restricted to local variables that have an initializer."
+      />
+
+      <PosterCard
+        glyph="+-"
+        title={<>Operators<span className="dim"> — and precedence traps</span></>}
+        language="java"
+        code={`7 / 2        // 3   — int division TRUNCATES. Use 7 / 2.0 for 3.5
+-7 % 2       // -1  — % takes the sign of the LEFT operand
+i++          // post: use the old value, then increment
+++i          // pre:  increment, then use the new value
+
+&&  ||  !    // SHORT-CIRCUIT — the right side may never be evaluated
+&   |   ^    // no short-circuit on booleans; bitwise on integers
+if (s != null && s.isEmpty())   // safe;  a single '&' here would NPE
+
+~x           // bitwise NOT
+x << 1       // * 2
+x >> 1       // / 2, sign-extending (keeps negatives negative)
+x >>> 1      // unsigned shift, always fills with 0 (there is no <<< — only >>>)
+
+cond ? a : b                     // ternary — an expression, not a statement
+byte b = 10;  b += 300;          // COMPILES: compound assign hides a narrowing cast
+// b = b + 300;                  // same thing spelled out — compile error
+
+// Precedence, high to low:
+// unary  >  * / %  >  + -  >  << >>  >  < >  >  == !=  >  &  >  ^  >  |
+//        >  &&  >  ||  >  ?:  >  = += -=
+"sum: " + 1 + 2      // "sum: 12" — '+' is left-associative, not summed first
+"sum: " + (1 + 2)    // "sum: 3"  — parenthesise when mixing concat and math
+1 + 2 << 3           // (1+2)<<3 = 24 — '+' binds tighter than '<<'`}
+        caption={<>Two traps do most of the damage: integer division silently truncating (<code>sum / count</code> before any cast to double), and compound assignment (<code>+=</code>) inserting an implicit narrowing cast that the equivalent long-hand would reject. When precedence isn&apos;t obvious at a glance, add parentheses — the compiler doesn&apos;t charge for them.</>}
+      />
+
+      <PosterCard
+        glyph="(T)"
+        title={<>Casting<span className="dim"> — widening &amp; narrowing</span></>}
+        language="java"
+        code={`// WIDENING — implicit, no cast needed, cannot lose magnitude
+byte -> short -> int -> long -> float -> double
+         char -> int
+int i = 100;   long l = i;   double d = l;
+
+// NARROWING — explicit cast required, silently discards data
+double price = 9.99;
+int whole = (int) price;      // 9  — truncates toward zero, never rounds
+long big = 300L;
+byte b = (byte) big;          // 44 — keeps the low 8 bits, wraps
+int rounded = Math.round(9.99f);   // 10 — round, don't cast, if you meant that
+
+// The classic average bug — cast BEFORE the division, not after
+double avg  = (double) sum / count;    // right
+double bad  = (double) (sum / count);  // wrong — divides as ints first
+
+// Reference casts are checked at RUNTIME, not compile time
+Object o = "text";
+String s = (String) o;                  // fine
+Integer n = (Integer) o;                // ClassCastException
+if (o instanceof Integer num) { }       // guard first (Java 16+ pattern)
+
+// Text <-> number conversions
+int p = Integer.parseInt("42");         // NumberFormatException on bad input
+String t = String.valueOf(42);          // null-safe, unlike 42 + ""`}
+        caption={<>Widening is automatic because it can&apos;t lose information; every narrowing conversion needs a cast, which is you telling the compiler you accept the truncation. A cast never rounds — reach for <code>Math.round</code>, <code>Math.floorDiv</code>, or <code>BigDecimal</code> when the arithmetic actually matters.</>}
+      />
+
+      <PosterCard
+        glyph="{}"
+        title={<>Control flow<span className="dim"> — if / loops / break</span></>}
+        language="java"
+        code={`if (x > 0) { ... } else if (x < 0) { ... } else { ... }
+
+for (int i = 0; i < n; i++) { }     // classic — when you need the index
+for (var item : items) { }           // enhanced for — arrays and any Iterable
+while (cond) { }                     // may run zero times
+do { } while (cond);                 // always runs at least once
+
+break;      // leave the nearest loop or switch
+continue;   // skip to the next iteration
+
+outer:
+for (var row : grid) {
+    for (var cell : row) {
+        if (cell == target) break outer;   // labelled break exits BOTH loops
+    }
+}
+
+// Mutating a collection inside an enhanced for -> ConcurrentModificationException
+for (var s : list) if (s.isBlank()) list.remove(s);   // WRONG
+list.removeIf(String::isBlank);                        // RIGHT
+
+// if with no braces binds only the NEXT statement — always use braces
+if (ready) start(); log("started");   // log() runs unconditionally`}
+        caption={<>The enhanced for is the default: it can&apos;t run off the end of the collection and it reads as intent rather than arithmetic. Keep the classic three-part form only when you genuinely need the index, a stride, or reverse iteration.</>}
+      />
+
+      <PosterCard
+        glyph="[]"
+        title={<>Arrays<span className="dim"> — fixed length, zero-based</span></>}
+        language="java"
+        code={`int[] nums = new int[5];              // zero-filled: [0, 0, 0, 0, 0]
+int[] init = {1, 2, 3};                // literal — declaration only
+String[] names = new String[]{"a"};    // literal usable anywhere
+
+nums.length      // FIELD, no parentheses (String uses the method .length())
+nums[0] = 10;    // 0-based; nums[5] -> ArrayIndexOutOfBoundsException
+
+int[][] grid = new int[3][4];          // array of arrays — rows may differ in length
+
+Arrays.sort(nums);
+Arrays.fill(nums, 7);
+Arrays.toString(nums);        // "[1, 2, 3]" — println(nums) prints "[I@6d06d69c"
+Arrays.deepToString(grid);    // for nested arrays
+Arrays.equals(a, b);          // element-wise; a == b compares references
+Arrays.copyOf(nums, 10);      // arrays are FIXED length — "resize" means copy
+
+List<String> fixed = Arrays.asList(names);          // fixed-size VIEW, writes through
+List<String> real  = new ArrayList<>(fixed);        // independent, resizable`}
+        caption={<>Arrays are fixed-length and covariant (which is why <code>Object[] o = new String[3]</code> compiles and then throws at runtime); a <code>List</code> is resizable and invariant. Use an array for primitives in hot code or when an API demands one — otherwise reach for <code>List</code>.</>}
       />
 
       <PosterCard
@@ -271,6 +444,17 @@ switch (cmd) { case START -> svc.start(); default -> log.warn("?"); }`}
       <PosterQuickRef
         title="Which modern syntax do I need?"
         rows={[
+          { need: 'Whole number, normal range', answer: 'int (long past +/-2.1 billion)' },
+          { need: 'Money or exact decimals', answer: 'BigDecimal — never float/double' },
+          { need: 'Compare two Integers', answer: '.equals() — == only caches -128..127' },
+          { need: 'Constant that never changes', answer: 'static final, SCREAMING_SNAKE' },
+          { need: 'Stop a variable being reassigned', answer: 'final (the object can still mutate)' },
+          { need: 'Divide two ints and keep the fraction', answer: '(double) sum / count — cast first' },
+          { need: 'Shrink a wider numeric type', answer: 'explicit cast (T) — truncates, never rounds' },
+          { need: 'Loop over a collection or array', answer: 'enhanced for (var x : xs)' },
+          { need: 'Remove while looping', answer: 'list.removeIf(...), not for + remove' },
+          { need: 'Exit two nested loops at once', answer: 'labelled break outer;' },
+          { need: 'Print an array readably', answer: 'Arrays.toString / deepToString' },
           { need: 'Immutable data carrier', answer: 'record' },
           { need: 'Closed type hierarchy', answer: 'sealed interface/class + permits' },
           { need: 'Type-safe branch on a value', answer: 'switch pattern matching' },

@@ -12,8 +12,8 @@ export default function FieldGuideRouter() {
       meta={['v7', '13 patterns']}
       footerLabel="Personal study reference — React Router v7"
       pageLabel="React 19 Field Guide · Router"
-      prev={{ path: '/react-field-guide/state-management', label: 'State Management' }}
-      next={{ path: '/react-field-guide/recipes', label: 'Common Recipes' }}
+      prev={{ path: '/react-field-guide/styling', label: 'Styling Approaches' }}
+      next={{ path: '/react-field-guide/state-management', label: 'State Management' }}
     >
       <PosterCard
         glyph="R7"

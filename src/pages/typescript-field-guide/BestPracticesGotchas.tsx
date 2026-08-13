@@ -12,8 +12,8 @@ export default function FieldGuideTsBestPracticesGotchas() {
       meta={['TS 5+', '12 gotchas']}
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · Best Practices & Gotchas"
-      prev={{ path: '/typescript-field-guide/migration-enterprise', label: 'Migration & Enterprise Patterns' }}
-      next={null}
+      prev={{ path: '/typescript-field-guide/project-setup', label: 'Project Setup & tsconfig' }}
+      next={{ path: '/typescript-field-guide/typescript-types', label: 'TypeScript Types & Generics' }}
     >
       <PosterCard
         glyph="a/u"

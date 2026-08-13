@@ -9,6 +9,7 @@ export default function CheatSheet() {
       sectionId="react19"
       lessonIndex={13}
       prev={{ path: '/react19/build-toolchain', label: 'Build Toolchain' }}
+      next={{ path: '/react19/adapters', label: 'API Adapters & Envelopes' }}
     >
 
       <h2>📋 Cheat Sheet — Re-Renders, Memo &amp; Stability</h2>

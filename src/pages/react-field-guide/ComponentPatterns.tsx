@@ -12,7 +12,7 @@ export default function FieldGuideComponentPatterns() {
       meta={['React 19', '11 patterns']}
       footerLabel="Personal study reference — React 19"
       pageLabel="React 19 Field Guide · Component Patterns"
-      prev={{ path: '/react-field-guide/server-components', label: 'Server Components & Actions' }}
+      prev={{ path: '/react-field-guide/hooks', label: 'Hooks' }}
       next={{ path: '/react-field-guide/styling', label: 'Styling Approaches' }}
     >
       <PosterCard

@@ -12,8 +12,8 @@ export default function FieldGuideServerComponents() {
       meta={['React 19 · RSC', '12 concepts']}
       footerLabel="Personal study reference — React 19"
       pageLabel="React 19 Field Guide · Server Components"
-      prev={{ path: '/react-field-guide/advanced-rendering', label: 'Scaling Re-Render Performance' }}
-      next={{ path: '/react-field-guide/component-patterns', label: 'Component Patterns' }}
+      prev={{ path: '/react-field-guide/gotchas', label: 'Gotchas & Anti-Patterns' }}
+      next={null}
     >
       <PosterCard
         glyph="RSC"

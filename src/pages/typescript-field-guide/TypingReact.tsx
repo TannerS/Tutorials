@@ -13,7 +13,7 @@ export default function FieldGuideTypingReact() {
       footerLabel="Personal study reference — React + TypeScript"
       pageLabel="TypeScript Field Guide · Typing React"
       prev={{ path: '/typescript-field-guide/typescript-types', label: 'TypeScript Types & Generics' }}
-      next={{ path: '/typescript-field-guide/project-setup', label: 'Project Setup & tsconfig' }}
+      next={{ path: '/typescript-field-guide/migration-enterprise', label: 'Migration & Enterprise Patterns' }}
     >
       <PosterCard
         glyph="FC"

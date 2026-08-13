@@ -12,8 +12,8 @@ export default function FieldGuideTsProjectSetup() {
       meta={['TS 5+', '14 flags']}
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · Project Setup & tsconfig"
-      prev={{ path: '/typescript-field-guide/typing-react', label: 'Typing React' }}
-      next={{ path: '/typescript-field-guide/migration-enterprise', label: 'Migration & Enterprise Patterns' }}
+      prev={{ path: '/typescript-field-guide/fundamentals', label: 'TypeScript Fundamentals' }}
+      next={{ path: '/typescript-field-guide/best-practices-gotchas', label: 'Best Practices & Gotchas' }}
     >
       <PosterCard
         glyph="Sc"

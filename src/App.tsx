@@ -191,6 +191,7 @@ import RRMigration from './pages/react-router/Migration'
 import RRCheatSheet from './pages/react-router/CheatSheet'
 
 // React + TS Field Guide
+import FGFundamentals from './pages/react-field-guide/Fundamentals'
 import FGHooks from './pages/react-field-guide/Hooks'
 import FGStability from './pages/react-field-guide/Stability'
 import FGAdvancedRendering from './pages/react-field-guide/AdvancedRendering'
@@ -246,6 +247,7 @@ import A11yKeyboard from './pages/accessibility/Keyboard'
 import A11yTesting from './pages/accessibility/Testing'
 
 // CSS Mastery
+import CSSFundamentals from './pages/css-mastery/Fundamentals'
 import CSSFlexbox from './pages/css-mastery/Flexbox'
 import CSSGrid from './pages/css-mastery/Grid'
 import CSSResponsive from './pages/css-mastery/Responsive'
@@ -260,6 +262,9 @@ import CSSPatterns from './pages/css-mastery/Patterns'
 import PlaygroundCompiler from './pages/playground/Compiler'
 import PlaygroundTypeChecker from './pages/playground/TypeChecker'
 import PlaygroundJsxCompiler from './pages/playground/JsxCompiler'
+import PlaygroundCssPlayground from './pages/playground/CssPlayground'
+import PlaygroundSassPlayground from './pages/playground/SassPlayground'
+import PlaygroundSqlPlayground from './pages/playground/SqlPlayground'
 
 // CSS Field Guide
 import CFGBasics from './pages/css-field-guide/Basics'
@@ -502,6 +507,7 @@ function App() {
         <Route path="react-router/cheatsheet" element={<RRCheatSheet />} />
 
         {/* React + TS Field Guide */}
+        <Route path="react-field-guide/fundamentals" element={<FGFundamentals />} />
         <Route path="react-field-guide/hooks" element={<FGHooks />} />
         <Route path="react-field-guide/stability" element={<FGStability />} />
         <Route path="react-field-guide/advanced-rendering" element={<FGAdvancedRendering />} />
@@ -554,6 +560,7 @@ function App() {
         <Route path="accessibility/keyboard" element={<A11yKeyboard />} />
         <Route path="accessibility/testing" element={<A11yTesting />} />
         {/* CSS Mastery */}
+        <Route path="css-mastery/fundamentals" element={<CSSFundamentals />} />
         <Route path="css-mastery/flexbox" element={<CSSFlexbox />} />
         <Route path="css-mastery/grid" element={<CSSGrid />} />
         <Route path="css-mastery/responsive" element={<CSSResponsive />} />
@@ -566,6 +573,9 @@ function App() {
         <Route path="playground/compiler" element={<PlaygroundCompiler />} />
         <Route path="playground/type-checker" element={<PlaygroundTypeChecker />} />
         <Route path="playground/jsx-compiler" element={<PlaygroundJsxCompiler />} />
+        <Route path="playground/css-playground" element={<PlaygroundCssPlayground />} />
+        <Route path="playground/sass-playground" element={<PlaygroundSassPlayground />} />
+        <Route path="playground/sql-playground" element={<PlaygroundSqlPlayground />} />
         <Route path="css-field-guide/basics" element={<CFGBasics />} />
         <Route path="css-field-guide/advanced" element={<CFGAdvanced />} />
         <Route path="css-field-guide/gotchas" element={<CFGGotchas />} />

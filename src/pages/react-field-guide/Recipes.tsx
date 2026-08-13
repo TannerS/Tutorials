@@ -12,8 +12,8 @@ export default function FieldGuideRecipes() {
       meta={['React 19', '12 recipes']}
       footerLabel="Personal study reference — React 19"
       pageLabel="React 19 Field Guide · Recipes"
-      prev={{ path: '/react-field-guide/router', label: 'React Router v7' }}
-      next={{ path: '/react-field-guide/gotchas', label: 'Gotchas & Anti-Patterns' }}
+      prev={{ path: '/react-field-guide/state-management', label: 'State Management' }}
+      next={{ path: '/react-field-guide/testing', label: 'Testing Quick Reference' }}
     >
       <PosterCard
         glyph="Db"

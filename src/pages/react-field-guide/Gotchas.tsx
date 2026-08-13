@@ -12,8 +12,8 @@ export default function FieldGuideGotchas() {
       meta={['React 19', '12 gotchas']}
       footerLabel="Personal study reference — React Gotchas"
       pageLabel="React 19 Field Guide · Gotchas"
-      prev={{ path: '/react-field-guide/recipes', label: 'Common Recipes' }}
-      next={{ path: '/react-field-guide/testing', label: 'Testing Quick Reference' }}
+      prev={{ path: '/react-field-guide/advanced-rendering', label: 'Scaling Re-Render Performance' }}
+      next={{ path: '/react-field-guide/server-components', label: 'Server Components & Actions' }}
     >
       <PosterCard
         glyph="SC"

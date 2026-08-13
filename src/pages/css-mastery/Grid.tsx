@@ -9,7 +9,7 @@ export default function Grid() {
     <LessonLayout
       title="CSS Grid Complete Guide"
       sectionId="css-mastery"
-      lessonIndex={1}
+      lessonIndex={2}
       prev={{ path: '/css-mastery/flexbox', label: 'Flexbox Complete Guide' }}
       next={{ path: '/css-mastery/responsive', label: 'Responsive Design' }}
     >

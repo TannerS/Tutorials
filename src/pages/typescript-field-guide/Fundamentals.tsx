@@ -13,7 +13,7 @@ export default function FieldGuideTsFundamentals() {
       footerLabel="Personal study reference — TypeScript"
       pageLabel="TypeScript Field Guide · Fundamentals"
       prev={null}
-      next={{ path: '/typescript-field-guide/typescript-types', label: 'TypeScript Types & Generics' }}
+      next={{ path: '/typescript-field-guide/project-setup', label: 'Project Setup & tsconfig' }}
     >
       <PosterCard
         glyph="Pr"
