@@ -408,6 +408,25 @@ The interrupted React/TS lane was relaunched after the limit reset and finished 
 
 Both new lessons are now mirrored into `typescript/Cheatsheet.tsx` and two field-guide pages. Job-2 items were checked and found already covered by the interrupted lane, so nothing was duplicated. `react-field-guide/Hooks.tsx`'s meta was genuinely stale ("Rules + 18 hooks" against 20 cards documenting 17 distinct hooks); the other 15 pages verified matching.
 
+## Round 10 — executable verification of code samples (done; mostly a negative result)
+
+User's framing: *"this repo is just a way to learn... the information, lessons and etc should be correct, the code samples should also be correct, since we don't want to learn things that are incorrect."* Also clarified it's a **local learning app — no unit tests or CI wanted**, correctness of information is the whole goal. I dropped my earlier CI/deploy/bundle-size suggestions accordingly; unit-testing a component that renders a lesson proves nothing about whether the lesson is true.
+
+**Approach**: extracted all **2,799** code samples (2,295 `<CodeBlock>` + poster-card `code=` props) into a manifest with file/line/language, then ran them through real toolchains.
+
+**Found and fixed (2 real defects):**
+- `css-mastery/Sass.tsx` concatenated `_tokens.scss` and `button.scss` into one block, putting `@use` after a variable and a `@function`. Sass rejects that outright, so the block errors if copied — while the comment directly above insists `@use` goes at the top. Split into two individually-compiling blocks. Verified 0 ordering errors remain across all 24 SCSS samples.
+- 3 HTML blocks in `frontend-tooling/Performance.tsx` tagged `javascript` (one is nothing but an HTML comment). Retagged.
+
+**⚠️ Negative result — do not retry blindly.** Bulk compilation does **not** fit this repo:
+- **Java**: wrapped and compiled 555 candidate samples with progressive fallbacks (as-is → class body → method body, with common imports). **550 "failed"** — that is a broken harness, not broken content. Error breakdown: `cannot find symbol` ×118 (snippets referencing types declared in *other* snippets — `OrderService`, `Customer`, repositories, Spring annotations with no classpath), `class X is public, should be declared in a file named X.java` ×22+ (my fixed `T.java` filename), plus fragment artifacts. These samples are *deliberately* excerpts from a larger imagined codebase; isolated compilation is the wrong instrument. Making it work would need per-snippet filename derivation, a stubbed Spring/Jakarta classpath, and inter-snippet dependency resolution — large effort, uncertain yield.
+- **Raw syntax-checking of display samples**: 146 initial hits across TS/JS/JSX/JSON, nearly all false positives — config excerpts (`rules: { … }`), deliberately elided compiler output (`function (...)`), annotated JSON carrying `//` comments (a normal doc convention), and deliberately-wrong examples. Only the 3 mislabels were real.
+- **SQL was not bulk-checked** on purpose: the site targets PostgreSQL and the only local engine is SQLite (`sql.js`), so valid Postgres would fail en masse. Signal would be swamped.
+
+**What actually works, and is what rounds 4–7 already did**: *claim-directed* verification — read what a sample asserts, then build a faithful minimal repro. Every serious find came that way (the Java launcher rule, `String.chars()` code units, the express augmentation needing `declare global`, the RANGE-vs-ROWS default frame, NTILE remainder distribution, Node's strip-only failures). It requires understanding the claim, so it is a reading-plus-judgment task, not something a bulk compiler pass can replace.
+
+**Artifacts** (regenerable in seconds; scratchpad only): `extract.mjs`, `syntax.mjs`, `javacheck.mjs`, `samples/manifest.json`.
+
 ### Remaining work (nothing blocking; repo is green)
 1. **Deferred by agreement, to raise with the user later** (they said marginal items can wait): the course's Drag & Drop, Google Maps and Linked List project builds — project-based rather than reference material; and the Webpack module, moot since that section was removed at their request.
 2. **Operational note**: `npx tsc --noEmit` now takes >2 min and `npx eslint .` >5 min on this repo. Both timed out on me during verification — that is slowness, not failure. Use generous timeouts, or lint only the touched files.
