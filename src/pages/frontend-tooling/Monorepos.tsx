@@ -26,6 +26,31 @@ export default function Monorepos() {
         chart={"graph TD\n  subgraph Polyrepo\n    A[web-app repo] -->|npm publish| D[shared-ui v1.2.3]\n    B[mobile-app repo] -->|npm install| D\n    C[dashboard-app repo] -->|npm install| D\n  end\n  subgraph Monorepo\n    E[apps/web-app] -->|direct import| H[libs/shared-ui]\n    F[apps/mobile-app] -->|direct import| H\n    G[apps/dashboard-app] -->|direct import| H\n  end"}
       />
 
+      <h3>The Problem Monorepos Exist to Solve</h3>
+      <p>
+        The benefits below are abstract until you have lived the alternative once. So here
+        is the concrete version. You have three apps and a shared <code>Button</code>{' '}
+        component in its own repo, and you need to add one prop. In a polyrepo that is:
+      </p>
+      <ol>
+        <li>PR to <code>shared-ui</code>, get it reviewed, merge.</li>
+        <li>Publish <code>shared-ui@1.3.0</code> to npm — and wait for the release job.</li>
+        <li>Three more PRs, one per app, each bumping the version in package.json.</li>
+        <li>
+          Discover <code>dashboard-app</code> was pinned to <code>1.1.x</code> and has
+          eighteen months of drift to work through before it can take your one-line
+          change.
+        </li>
+      </ol>
+      <p>
+        Four PRs and a publish for a one-prop change — and at no point did CI ever test
+        your change against all three consumers <em>together</em>. The change is atomic in
+        intent but spread across four repos and several days in practice, so &quot;is
+        anything broken?&quot; has no single answer. In a monorepo the same change is one
+        PR, one diff, one CI run that builds every consumer against the new code. That is
+        the whole pitch; everything below is a consequence of it.
+      </p>
+
       <h3>Why Monorepos?</h3>
       <ul>
         <li><strong>Atomic changes</strong> — Update a shared library and all consumers in a single PR</li>

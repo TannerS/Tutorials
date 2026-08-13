@@ -34,6 +34,45 @@ export default function SassPlaygroundLesson() {
       </InfoBox>
 
       <h2>Playground</h2>
+      <InfoBox variant="question" title="Read the right-hand pane, not the left">
+        <p>
+          The output pane is the whole point of a preprocessor playground — it is the
+          only place you can see what your abstraction actually costs. Three things to
+          look for:
+        </p>
+        <ol>
+          <li>
+            <strong>Watch <code>$brand</code> cease to exist.</strong> Compile{' '}
+            <em>Variables</em> and search the output for a <code>$</code> — there
+            isn&apos;t one. <code>.button</code> comes out as{' '}
+            <code>background: #6366f1</code>, the literal value pasted in, while{' '}
+            <code>.card</code> keeps <code>var(--brand)</code> verbatim for the browser
+            to resolve later. Then look at <code>padding</code>: you wrote{' '}
+            <code>$space ($space * 2)</code> and got <code>1rem 2rem</code>. Sass did
+            that multiplication on your machine at build time; the browser never sees
+            arithmetic. That is the entire compile-time/runtime split in one rule.
+          </li>
+          <li>
+            <strong>Find the <code>&amp;</code> that moves backwards.</strong> Compile{' '}
+            <em>Nesting &amp; the &amp; parent selector</em> and match each input line to
+            its output. <code>.title</code> nests into <code>.card .title</code>, as
+            expected. <code>&amp;--featured</code> becomes <code>.card--featured</code> —{' '}
+            one selector, no space, which is the only reason BEM names can be written
+            nested. Now find <code>.dark-mode &amp;</code>: it compiles to{' '}
+            <code>.dark-mode .card</code>, with the parent on the <em>right</em>.{' '}
+            <code>&amp;</code> is not &quot;prepend the parent&quot;, it is &quot;paste
+            the parent selector exactly here&quot;.
+          </li>
+          <li>
+            <strong>Make nesting hurt, on purpose.</strong> Still in that example, wrap
+            everything in two more levels (<code>.page {'{'} .sidebar {'{'} …{' '}
+            {'}'} {'}'}</code>) and recompile. Every single output selector grows by{' '}
+            <code>.page .sidebar</code> — the file gets meaningfully bigger and
+            every rule gets harder to override, all from indentation that looked tidy in
+            the source. This is why the usual advice is to stop at about three levels.
+          </li>
+        </ol>
+      </InfoBox>
       <SassPlaygroundWidget />
 
       <h2>The one distinction worth memorizing</h2>

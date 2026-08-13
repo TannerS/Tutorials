@@ -97,11 +97,41 @@ export default function Resolution() {
 # Equivalent to ^4.0.0`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="Why Caret Is the Default">
-        When you run <code>npm install lodash</code>, npm writes <code>"lodash": "^4.17.21"</code>
-        to package.json (with a caret). This lets you automatically get bug fixes and new features
-        without breaking changes. If you want exact versions, set <code>save-exact=true</code> in
-        your .npmrc.
+      <InfoBox variant="tip" title="Why Caret Is the Default — and What It Costs">
+        <p>
+          When you run <code>npm install lodash</code>, npm writes{' '}
+          <code>&quot;lodash&quot;: &quot;^4.17.21&quot;</code> to package.json (with a
+          caret). The upside is that security patches and new features arrive without you
+          editing anything. If you want exact versions, set <code>save-exact=true</code>{' '}
+          in your .npmrc.
+        </p>
+        <p>
+          <strong>Now read the range as a permission slip, because that is what it
+          is.</strong> <code>^4.17.21</code> says: &quot;install any code this author
+          publishes for the next several years, up to 5.0.0, without asking me.&quot; That
+          is a real grant, and it is why the two failure modes below happen at all:
+        </p>
+        <ul>
+          <li>
+            <strong>A minor release breaks you.</strong> Semver is a promise, not a
+            mechanism — nothing stops a 4.18.0 from shipping a breaking change by
+            accident. Your code did not change, your package.json did not change, and the
+            build fails.
+          </li>
+          <li>
+            <strong>Someone else&apos;s account gets compromised.</strong> A malicious
+            4.17.22 published at 3am is inside your caret range. Every fresh install —
+            every CI run, every new laptop — picks it up automatically.
+          </li>
+        </ul>
+        <p>
+          This is the entire reason the <strong>Lockfiles &amp; Reproducibility</strong>{' '}
+          lesson exists. The caret lives in
+          package.json and describes what you would <em>accept</em>; the lockfile records
+          what you actually <em>got</em>. Ranges give you upgrades on purpose; lockfiles
+          stop those upgrades happening by surprise. You need both, and neither one
+          substitutes for the other.
+        </p>
       </InfoBox>
 
       <h2>How npm Resolves the Dependency Tree</h2>

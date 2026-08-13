@@ -122,6 +122,32 @@ CREATE TABLE orders (
           returns 0. Swap them in the playground and watch the number change.
         </p>
       </InfoBox>
+
+      <InfoBox variant="tip" title="What a window function does that GROUP BY can't">
+        <p>
+          Example 5 introduces CTEs, <code>ROW_NUMBER()</code>, <code>PARTITION BY</code>{' '}
+          and <code>OVER</code> all at once, which is a lot. Take it apart in two runs.
+        </p>
+        <p>
+          First, see the CTE&apos;s own contents by removing the filter — run just the{' '}
+          inner query, selecting <code>rank_in_group</code> too. All <strong>eight</strong>{' '}
+          order rows come back, still one row per order, but each now carries its user&apos;s{' '}
+          <code>user_total</code> beside it: Grace&apos;s three orders each show{' '}
+          <code>637.95</code>. Nothing was collapsed. That is the definition of a window
+          function — it computes <em>across</em> a group of rows while leaving those rows
+          intact.
+        </p>
+        <p>
+          Now contrast: <code>SELECT u.name, SUM(o.amount) … GROUP BY u.id</code> returns{' '}
+          <strong>five</strong> rows and the product names are simply gone — aggregation
+          destroyed the detail to produce the total. Both queries compute the same sums;
+          only the window version can show you a total and the individual order that
+          produced it on the same line. That is also why the outer{' '}
+          <code>WHERE rank_in_group = 1</code> has to live outside the CTE:{' '}
+          <code>ROW_NUMBER()</code> is assigned at <code>SELECT</code> time, so there is no
+          rank to filter on until the CTE has finished.
+        </p>
+      </InfoBox>
     </LessonLayout>
   );
 }

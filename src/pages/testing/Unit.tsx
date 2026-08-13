@@ -367,9 +367,22 @@ it('should match snapshot', () => {
       </CodeBlock>
 
       <InfoBox variant="warning" title="Snapshot Testing Caveats">
-        Snapshots are easy to write but can become a maintenance burden. Large snapshots
-        get blindly updated. Use them sparingly — prefer explicit assertions for critical
-        behavior. Snapshots work best for small, stable UI components.
+        <p>
+          Snapshots are easy to write but can become a maintenance burden. Large snapshots
+          get blindly updated. Use them sparingly — prefer explicit assertions for critical
+          behavior. Snapshots work best for small, stable UI components.
+        </p>
+        <p>
+          Note what the example above actually asserts: <em>this button renders the same
+          markup it rendered last time</em> — not that it is correct, and not that it does
+          anything a user needs. Nobody can tell from the test name whether it is passing
+          for a good reason. The decisive question, from{' '}
+          <strong>What to Test (and What Not To)</strong>: can you say out loud what this
+          snapshot is protecting? If yes, write those one or two explicit expectations
+          instead and delete the snapshot. If no, the snapshot is not protecting anything —
+          when it goes red the reflex is <code>-u</code>, and a reflexively updated
+          snapshot is an assertion you have quietly deleted.
+        </p>
       </InfoBox>
 
       <h2>JUnit vs Jest Comparison</h2>

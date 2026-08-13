@@ -46,6 +46,41 @@ export default function CompilerComparison() {
       </InfoBox>
 
       <h2>Playground</h2>
+      <InfoBox variant="question" title="Three experiments worth running">
+        <p>
+          Don&apos;t just skim the widget — the point isn&apos;t that output changes,
+          it&apos;s <em>where</em> it changes and how violently. Run these three in order:
+        </p>
+        <ol>
+          <li>
+            <strong>Find the cliff edge.</strong> Load <em>Optional Chaining &amp; Nullish
+            Coalescing</em> and set the target to <strong>ES2020</strong> — the output is your
+            source, untouched. Now step down one single year to <strong>ES2019</strong>. That
+            same one-line function becomes a nest of <code>_a</code>/<code>_b</code> temporaries
+            and <code>!== void 0</code> checks. Nothing gradual happened: one year either side of a
+            feature&apos;s standardisation is the difference between free and expensive.
+          </li>
+          <li>
+            <strong>Watch a feature get re-implemented, not just rewritten.</strong> Load{' '}
+            <em>Async/Await</em> at <strong>ES2017</strong> (native — <code>async</code> and{' '}
+            <code>await</code> survive verbatim), then drop to <strong>ES5</strong>. You get
+            ~40 lines of injected <code>__awaiter</code>/<code>__generator</code> helpers and your
+            function body turned inside out into a <code>switch</code>-based state machine. Notice
+            your logic is no longer readable in the output — that is what a source map is for, and
+            why debugging without one is miserable.
+          </li>
+          <li>
+            <strong>Confirm types are erased, not compiled.</strong> Load <em>Type Annotations</em>{' '}
+            and set the target to <strong>ESNext</strong> — the highest target, so nothing gets
+            downleveled at all. The <code>interface User</code> block does not appear in the output
+            in any form; it isn&apos;t converted to a runtime check, it&apos;s simply deleted along
+            with every <code>: User</code> annotation. This is the single most useful fact about
+            TypeScript: <strong>no type you write survives to runtime</strong>, which is why
+            validating untrusted JSON needs an actual runtime validator, not an{' '}
+            <code>interface</code>.
+          </li>
+        </ol>
+      </InfoBox>
       <JsCompilerPlayground />
 
       <h2>A quick example</h2>
@@ -72,10 +107,7 @@ var Counter = /** @class */ (function () {
     function Counter() {
         _Counter_count.set(this, 0);
     }
-    Counter.prototype.increment = function () {
-        var _a;
-        return __classPrivateFieldSet(this, _Counter_count, (_a = __classPrivateFieldGet(this, _Counter_count, "f"), ++_a), "f");
-    };
+    Counter.prototype.increment = function () { var _a; return __classPrivateFieldSet(this, _Counter_count, (_a = __classPrivateFieldGet(this, _Counter_count, "f"), ++_a), "f"); };
     return Counter;
 }());
 _Counter_count = new WeakMap();`}

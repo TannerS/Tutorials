@@ -35,6 +35,46 @@ export default function CssPlaygroundLesson() {
       </InfoBox>
 
       <h2>Playground</h2>
+      <InfoBox variant="question" title="Change one value, watch what moves">
+        <p>
+          Reading CSS teaches you very little; breaking it teaches you a lot. Three
+          edits worth making, each aimed at a rule that is hard to believe until you
+          see it:
+        </p>
+        <ol>
+          <li>
+            <strong>Discover that flexbox&apos;s axes are relative, not vertical and
+            horizontal.</strong> Load <em>Flexbox — centering anything</em>. The comments
+            claim <code>align-items</code> is vertical and <code>justify-content</code> is
+            horizontal. Now add <code>flex-direction: column;</code> to{' '}
+            <code>.stage</code>. The comments are now wrong — the two properties have
+            swapped meaning. <code>justify-content</code> always works along the{' '}
+            <em>main</em> axis and <code>align-items</code> along the <em>cross</em> axis,
+            and <code>flex-direction</code> decides which is which. Nearly every &quot;why
+            won&apos;t this center&quot; bug is this.
+          </li>
+          <li>
+            <strong>Rearrange a page without touching the HTML.</strong> Load{' '}
+            <em>CSS Grid — a page layout</em> and look at{' '}
+            <code>grid-template-areas</code> — the layout is literally ASCII art. Swap{' '}
+            <code>nav</code> and <code>aside</code> in that string and the sidebars trade
+            places, while the HTML source order is untouched. Useful, and also a warning:
+            screen readers and keyboard tab order follow the <em>DOM</em>, not the grid, so
+            a visual reorder that contradicts source order is an accessibility bug.
+          </li>
+          <li>
+            <strong>Feel the difference between a transition and an animation.</strong>{' '}
+            Load <em>Transitions &amp; keyframe animation</em>. The pink circle pulses
+            immediately and forever without you doing anything; the button only grows when
+            you hover. That is the whole distinction — a <code>@keyframes</code> animation
+            runs on its own schedule, while a <code>transition</code> is inert until some
+            property actually changes. Delete the <code>transition</code> line from{' '}
+            <code>.grow</code> and hover again: the size still changes, just instantly.
+            Transitions never cause a change; they only smooth one that was already
+            happening.
+          </li>
+        </ol>
+      </InfoBox>
       <CssPlaygroundWidget />
 
       <h2>The three layout systems, in one sentence each</h2>

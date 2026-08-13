@@ -30,6 +30,8 @@ export default function Intro() {
           <li><code>@WebMvcTest</code> / <code>@DataJpaTest</code> slice basics, <code>@SpringBootTest</code> → <strong>Spring Boot → Testing in Spring Boot</strong></li>
           <li>Real-database testing with Docker → <strong>Testing Strategies → Testcontainers &amp; Test Data</strong></li>
           <li>Consumer-driven contract testing with Pact → <strong>Testing Strategies → Contract &amp; Property-Based Testing</strong></li>
+          <li>Deciding which cases are worth a test, and what to skip → <strong>Testing Strategies → What to Test (and What Not To)</strong></li>
+          <li>Suite speed, parallelism and container reuse in general → <strong>Testing Strategies → Test Performance &amp; Parallelization</strong></li>
         </ul>
         This section is the <strong>hands-on, API-layer companion</strong> — the same role
         React Testing plays for components. It goes deep on the things those pages only

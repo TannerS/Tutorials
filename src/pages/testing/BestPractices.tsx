@@ -599,9 +599,9 @@ npx stryker run
             <td>Parameterized tests or shared helpers</td>
           </tr>
           <tr>
-            <td>Chasing 100% coverage</td>
-            <td>Diminishing returns, brittle tests</td>
-            <td>Cover critical paths, aim for ~80%</td>
+            <td>Chasing a coverage percentage</td>
+            <td>The cheapest way to raise it is assertion-free tests</td>
+            <td>Read the uncovered branches and judge each one; grade depth with mutation score</td>
           </tr>
         </tbody>
       </table>
@@ -628,7 +628,7 @@ npx stryker run
           <li>✅ Tests are deterministic — no flakiness</li>
           <li>✅ Test names clearly describe the scenario</li>
           <li>✅ No over-mocking — real objects used where possible</li>
-          <li>✅ Coverage meets team threshold (~80%)</li>
+          <li>✅ Newly uncovered branches in the diff have been looked at and consciously accepted</li>
           <li>✅ Tests run fast (unit tests &lt; 10s total)</li>
         </ul>
       </InfoBox>
@@ -643,7 +643,7 @@ npx stryker run
         <li>Test error paths as thoroughly as happy paths</li>
         <li>Run tests in CI stages: lint → unit → integration → E2E</li>
         <li>Use JaCoCo (Java) or Istanbul (JS) for coverage, mutation testing for depth</li>
-        <li>Aim for ~80% coverage — quality over quantity</li>
+        <li>Track branch coverage over line coverage, and read it as a report of gaps rather than a target to hit</li>
       </ul>
     </LessonLayout>
   );

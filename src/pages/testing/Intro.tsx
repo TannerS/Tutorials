@@ -285,6 +285,9 @@ void adminCanAccessSettings() {
       </InfoBox>
 
       <h3>What NOT to Test</h3>
+      <p>
+        A first sketch of the categories that reliably cost more than they return:
+      </p>
       <ul>
         <li>Framework code (Spring, React internals) — trust the framework</li>
         <li>Simple getters/setters with no logic</li>
@@ -292,6 +295,13 @@ void adminCanAccessSettings() {
         <li>Implementation details — test behavior, not how it&apos;s done</li>
         <li>Third-party library internals</li>
       </ul>
+      <p>
+        Each of these has a &quot;test this instead&quot; that matters more than the
+        prohibition — you do not skip a third-party library and write nothing, you test
+        your adapter around it. The next lesson works through that mapping in full, along
+        with how to tell an implementation detail from a behaviour <em>before</em> you
+        have written the test.
+      </p>
 
       <h2>Code Coverage Philosophy</h2>
       <p>
@@ -299,11 +309,27 @@ void adminCanAccessSettings() {
         It&apos;s a useful metric but can be misleading if used as a target.
       </p>
 
-      <InfoBox variant="warning" title="The 80% Rule">
-        Aim for around 80% code coverage. Going from 80% to 100% often means writing
-        low-value tests for trivial code. The last 20% typically takes 80% of the effort
-        and provides diminishing returns. Coverage tells you what&apos;s NOT tested — it
-        doesn&apos;t tell you if your tests are any good.
+      <InfoBox variant="warning" title="Why ~80% Is Where Teams Land — Not a Target to Chase">
+        <p>
+          Most healthy suites settle somewhere around 80%, and it is worth understanding
+          why that happens rather than treating it as a quota. Past that point the
+          remaining lines are mostly trivial accessors, generated code, and defensive
+          branches that cannot realistically be hit — so the last 20% costs the most
+          effort and buys the least confidence.
+        </p>
+        <p>
+          The direction of the reasoning matters. <strong>80% is an observation about
+          where diminishing returns kick in, not a number to aim at.</strong> The moment a
+          percentage becomes the goal, the cheapest way to raise it is to write tests that
+          execute lots of lines without asserting anything — which is precisely the least
+          valuable test you can write. Coverage tells you what is <em>not</em> tested; it
+          never tells you whether what <em>is</em> tested is any good.
+        </p>
+        <p>
+          The next lesson, <strong>What to Test (and What Not To)</strong>, replaces the
+          percentage with a decision procedure for choosing which code deserves a test in
+          the first place.
+        </p>
       </InfoBox>
 
       <CodeBlock language="bash" title="Checking Coverage">
@@ -396,7 +422,7 @@ export default defineConfig({
         <li>Follow the testing pyramid: many unit tests, fewer integration, fewest E2E</li>
         <li>Use TDD (Red-Green-Refactor) to drive design and catch bugs early</li>
         <li>Write BDD-style tests for better readability and documentation</li>
-        <li>Aim for ~80% coverage but focus on quality over quantity</li>
+        <li>Treat coverage as a report that finds gaps, not a target to hit — ~80% is where returns diminish, not a goal</li>
         <li>Avoid anti-patterns: flaky tests, ice cream cones, testing implementation details</li>
         <li>Test behavior, not implementation</li>
       </ul>

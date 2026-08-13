@@ -43,6 +43,44 @@ export default function JsxCompilerLesson() {
       </InfoBox>
 
       <h2>Playground</h2>
+      <InfoBox variant="question" title="Three experiments worth running">
+        <p>
+          The widget starts on <strong>Automatic</strong> at <strong>ES2022</strong>. Each of
+          these explains a React rule you have probably followed without knowing why:
+        </p>
+        <ol>
+          <li>
+            <strong>Why <code>key</code> is not a prop.</strong> Load <em>List Rendering</em>.
+            Every attribute you write lands inside the props object — except one. The output is{' '}
+            <code>{'_jsx("li", { children: user.name }, user.id)'}</code>: <code>key</code> is
+            passed as a <em>third argument</em>, entirely outside props. That is the mechanical
+            reason <code>props.key</code> is always <code>undefined</code> inside your component,
+            and why React can read a key before it ever renders the element.
+          </li>
+          <li>
+            <strong>Why <code>{'{count && <p/>}'}</code> renders a stray 0.</strong> Load{' '}
+            <em>Conditional Rendering</em>. Your <code>{'isOnline && <p>…</p>'}</code> compiles to
+            plain JavaScript <code>&amp;&amp;</code> — the compiler adds no truthiness helper
+            whatsoever. So <code>&amp;&amp;</code> keeps its normal JS semantics and returns the{' '}
+            <em>left</em> operand when it is falsy. With <code>0</code> on the left, React receives
+            the number <code>0</code> as a child and dutifully renders it. Hence{' '}
+            <code>{'count > 0 && …'}</code> rather than <code>{'count && …'}</code>.
+          </li>
+          <li>
+            <strong>Watch the import list rewrite itself.</strong> Keep an eye on line 1 as you
+            switch snippets. <em>Basic Component</em> imports only <code>jsxs</code>;{' '}
+            <em>List Rendering</em> only <code>jsx</code> (singular — one child);{' '}
+            <em>Fragments</em> pulls in <code>jsx</code>, <code>jsxs</code> <em>and</em>{' '}
+            <code>Fragment</code>. The compiler imports exactly what each file uses, which is why{' '}
+            <code>{'<>…</>'}</code> works without you importing anything. Now flip the runtime to{' '}
+            <strong>Classic</strong>: the import vanishes and every call becomes{' '}
+            <code>React.createElement</code> — with <em>no</em> <code>import React</code> added for
+            you. That missing import is precisely the{' '}
+            <code>&quot;React is not defined&quot;</code> error that made pre-17 codebases put{' '}
+            <code>import React from &quot;react&quot;</code> at the top of every single file.
+          </li>
+        </ol>
+      </InfoBox>
       <JsxCompilerPlayground />
 
       <h2>A quick example</h2>

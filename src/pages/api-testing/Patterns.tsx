@@ -182,6 +182,14 @@ void orderResponseMatchesPublishedSchema() {
         isolation problems that pure unit tests never hit — shared databases, shared
         ports, shared static container fields.
       </p>
+      <p>
+        The properties below are repeated here only so this lesson stands on its own. What
+        each knob does, how to pick a thread count, and why adding workers can make a suite{' '}
+        <em>slower</em> belong to <strong>Testing Strategies → Test Performance &amp;
+        Parallelization</strong>. What follows is the part that is genuinely specific to
+        HTTP-level tests: the three things that break the moment two API test classes run
+        at the same time.
+      </p>
 
       <CodeBlock language="properties" title="junit-platform.properties — Enabling Parallelism">
 {`junit.jupiter.execution.parallel.enabled = true
@@ -341,6 +349,8 @@ jobs:
           <li>Real-database integration testing with Testcontainers (JVM-level setup) → <strong>Testing Strategies → Testcontainers &amp; Test Data</strong> and <strong>Spring Boot → Testing in Spring Boot</strong></li>
           <li>General flaky-test causes and CI staging (lint → unit → integration → e2e) → <strong>Testing Strategies → Testing Best Practices</strong></li>
           <li>Frontend E2E testing against this same API (Playwright) → <strong>Testing Strategies → End-to-End Testing</strong></li>
+          <li>The general performance model — what actually costs time in a suite, JUnit/Vitest parallelism knobs, container reuse, sharding and eliminating sleeps → <strong>Testing Strategies → Test Performance &amp; Parallelization</strong></li>
+          <li>Deciding which endpoints and cases deserve a test at all, and what to skip → <strong>Testing Strategies → What to Test (and What Not To)</strong></li>
         </ul>
         This lesson only adds what&apos;s specific to API-layer black-box tooling and the
         parallel/flaky concerns unique to running real HTTP tests at CI scale.
