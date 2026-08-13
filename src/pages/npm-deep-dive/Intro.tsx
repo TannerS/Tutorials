@@ -26,10 +26,12 @@ export default function Intro() {
 
       <h3>The Registry</h3>
       <p>
-        The npm registry is a massive CouchDB-backed database hosted at <code>registry.npmjs.org</code>.
-        Every package is stored as a JSON document containing metadata (versions, dependencies,
+        The npm registry is a document-oriented package database hosted at <code>registry.npmjs.org</code>.
+        Every package is exposed as a JSON document containing metadata (versions, dependencies,
         maintainers) plus a tarball (.tgz file) for each published version. When you run
         <code>npm install lodash</code>, the CLI hits this registry to figure out what to download.
+        The registry originally ran on CouchDB, and its public API still has that shape — but the
+        storage behind it has since been re-platformed and is not a detail you can rely on.
       </p>
 
       <CodeBlock language="bash" title="Query the registry directly">

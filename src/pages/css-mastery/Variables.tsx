@@ -477,9 +477,12 @@ article {
   scroll-snap-align: start;
 }
 
-/* Full-page vertical snap */
-.page-snap { height: 100vh; overflow-y: auto; scroll-snap-type: y proximity; }
-.page-snap section { height: 100vh; scroll-snap-align: start; }`}
+/* Full-page vertical snap.
+   svh, not vh: 100vh ignores the mobile URL bar, so each section overflows
+   while the bar is on screen. dvh would fit, but it changes height as the bar
+   hides/reveals — resizing mid-scroll fights the snap. svh is the stable one. */
+.page-snap { height: 100svh; overflow-y: auto; scroll-snap-type: y proximity; }
+.page-snap section { height: 100svh; scroll-snap-align: start; }`}
       </CodeBlock>
 
       <h2>content-visibility</h2>

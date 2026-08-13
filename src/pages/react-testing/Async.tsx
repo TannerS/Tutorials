@@ -264,11 +264,33 @@ describe('DataTable', () => {
       .filter((_, i) => i % 3 === 1) // price is 2nd column
       .map(c => c.textContent);
 
-    // Verify sorted ascending
-    expect(prices).toEqual([...prices].sort());
+    // Assert the ACTUAL expected order, not a re-derived one.
+    // See the warning below for why [...prices].sort() is a broken assertion.
+    expect(prices).toEqual(['$9.99', '$10.00', '$24.50']);
   });
 });`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Never assert against a value you re-derived from the output">
+        <p>
+          The tempting version of that last assertion is{' '}
+          <code>expect(prices).toEqual([...prices].sort())</code>. It is broken twice over.
+        </p>
+        <p>
+          First, <code>Array.prototype.sort()</code> with no comparator coerces to string and
+          sorts <strong>lexicographically</strong>. On <code>[&apos;$9.99&apos;, &apos;$10.00&apos;]</code>{' '}
+          it compares <code>&quot;9&quot;</code> against <code>&quot;1&quot;</code> and decides{' '}
+          <code>$10.00</code> comes first — so a correctly sorted table <em>fails</em> and an
+          incorrectly sorted one can <em>pass</em>.
+        </p>
+        <p>
+          Second, and more importantly: it derives the expectation from the very output it is
+          checking. Any test shaped like{' '}
+          <code>expect(actual).toEqual(transform(actual))</code> only proves{' '}
+          <code>transform</code> is idempotent — it can never tell you the component produced the
+          right answer. Write the expected values out literally.
+        </p>
+      </InfoBox>
 
       <h2>Testing Pagination</h2>
 

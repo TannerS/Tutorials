@@ -105,8 +105,16 @@ h2 ~ p     { }  /* GENERAL SIBLING — any LATER sibling, same parent */
 .title { font-size: 2rem; }      /* relative to ROOT font-size, always */
 .title .sub { font-size: 0.8em; } /* relative to PARENT's font-size — compounds! */
 .box { width: 50%; }             /* relative to parent's width */
-.hero { height: 100vh; }         /* relative to viewport height */`}
-        caption="rem is the safe default for type scale — it never compounds because it always reads the root. em compounds through nesting, which is a feature for component-local scaling and a footgun everywhere else."
+
+/* Viewport units — vh is the mobile footgun */
+.a { height: 100vh; }  /* LARGE viewport: ignores the URL bar, so content
+                          is clipped while the bar is showing */
+.b { height: 100svh; } /* SMALL viewport: assumes the bar is visible — safe,
+                          never clips, but leaves a gap once it hides */
+.c { height: 100dvh; } /* DYNAMIC: tracks the bar live. Best for a full-height
+                          body; avoid for scroll-snap, since resizing
+                          mid-scroll fights the snap. */`}
+        caption="rem is the safe default for type scale — it never compounds because it always reads the root; em compounds through nesting, a feature for component-local scaling and a footgun everywhere else. For full-height layouts reach for dvh, not vh: 100vh measures the viewport as if the mobile URL bar were hidden, so it overflows while the bar is on screen."
       />
 
       <PosterCard

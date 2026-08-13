@@ -34,10 +34,13 @@ export default function ReactQuery() {
 
       <h2>Setup</h2>
 
-      <CodeBlock language="jsx" title="Install and configure QueryClientProvider" showLineNumbers>
+      <CodeBlock language="bash" title="Install" showLineNumbers={false}>
 {`npm install @tanstack/react-query
+npm install -D @tanstack/react-query-devtools`}
+      </CodeBlock>
 
-// main.jsx — wrap app with QueryClientProvider
+      <CodeBlock language="jsx" title="Configure QueryClientProvider" showLineNumbers>
+{`// main.jsx — wrap app with QueryClientProvider
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
