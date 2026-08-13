@@ -11,7 +11,7 @@ export default function Intro() {
       sectionId="state-mgmt"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/state-mgmt/redux', label: 'Redux Toolkit' }}
+      next={{ path: '/state-mgmt/comparison', label: 'Library Comparison' }}
     >
       <h2>React Context Recap</h2>
       <p>

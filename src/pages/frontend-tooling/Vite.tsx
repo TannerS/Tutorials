@@ -15,11 +15,7 @@ export default function Vite() {
     >
       <InfoBox variant="info" title="This Is the Toolchain-Level Tour">
         This lesson covers Vite as <em>one tool in your frontend toolchain</em> — enough to read
-        and modify a <code>vite.config.ts</code>, wire up env vars, and ship a build. The
-        dedicated <strong>Vite</strong> section goes considerably deeper on the same ground:
-        the two-pipeline architecture, dependency pre-bundling internals, the plugin hook system,
-        the HMR API, SSR primitives, library mode, and a full Webpack/CRA migration checklist.
-        Read this page for the working knowledge; go there when you need the mechanism.
+        and modify a <code>vite.config.ts</code>, wire up env vars, and ship a build.
       </InfoBox>
 
       <h2>Why Vite?</h2>

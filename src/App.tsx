@@ -155,14 +155,6 @@ import ApiTestValidation from './pages/api-testing/Validation'
 import ApiTestSecurity from './pages/api-testing/Security'
 import ApiTestPatterns from './pages/api-testing/Patterns'
 
-// Docker
-import DockerIntro from './pages/docker/Intro'
-import DockerDockerfile from './pages/docker/Dockerfile'
-import DockerCompose from './pages/docker/Compose'
-import DockerNetworking from './pages/docker/Networking'
-import DockerSecurity from './pages/docker/Security'
-import DockerProduction from './pages/docker/Production'
-
 // System Design
 import SysIntro from './pages/systemdesign/Intro'
 import SysScaling from './pages/systemdesign/Scaling'
@@ -242,8 +234,6 @@ import SFGGotchas from './pages/spring-field-guide/Gotchas'
 
 // State Management
 import SMIntro from './pages/state-mgmt/Intro'
-import SMRedux from './pages/state-mgmt/Redux'
-import SMZustand from './pages/state-mgmt/Zustand'
 import SMComparison from './pages/state-mgmt/Comparison'
 import SMPatterns from './pages/state-mgmt/Patterns'
 import SMReactQuery from './pages/state-mgmt/ReactQuery'
@@ -309,21 +299,6 @@ import NpkgPackageJson from './pages/npm-packages/PackageJson'
 import NpkgModules from './pages/npm-packages/Modules'
 import NpkgPublishing from './pages/npm-packages/Publishing'
 import NpkgAdvanced from './pages/npm-packages/Advanced'
-
-// Webpack
-import WpIntro from './pages/webpack/Intro'
-import WpCore from './pages/webpack/Core'
-import WpLoaders from './pages/webpack/Loaders'
-import WpPlugins from './pages/webpack/Plugins'
-import WpDevserver from './pages/webpack/Devserver'
-import WpAdvanced from './pages/webpack/Advanced'
-
-// Vite
-import ViteIntro from './pages/vite/Intro'
-import ViteCore from './pages/vite/Core'
-import VitePlugins from './pages/vite/Plugins'
-import ViteDevserver from './pages/vite/Devserver'
-import ViteAdvanced from './pages/vite/Advanced'
 
 function NotFound() {
   return (
@@ -493,13 +468,6 @@ function App() {
         <Route path="api-testing/validation" element={<ApiTestValidation />} />
         <Route path="api-testing/security" element={<ApiTestSecurity />} />
         <Route path="api-testing/patterns" element={<ApiTestPatterns />} />
-        {/* Docker */}
-        <Route path="docker/intro" element={<DockerIntro />} />
-        <Route path="docker/dockerfile" element={<DockerDockerfile />} />
-        <Route path="docker/compose" element={<DockerCompose />} />
-        <Route path="docker/networking" element={<DockerNetworking />} />
-        <Route path="docker/security" element={<DockerSecurity />} />
-        <Route path="docker/production" element={<DockerProduction />} />
         {/* System Design */}
         <Route path="systemdesign/intro" element={<SysIntro />} />
         <Route path="systemdesign/scaling" element={<SysScaling />} />
@@ -576,8 +544,6 @@ function App() {
         <Route path="spring-field-guide/gotchas" element={<SFGGotchas />} />
         {/* State Management */}
         <Route path="state-mgmt/intro" element={<SMIntro />} />
-        <Route path="state-mgmt/redux" element={<SMRedux />} />
-        <Route path="state-mgmt/zustand" element={<SMZustand />} />
         <Route path="state-mgmt/comparison" element={<SMComparison />} />
         <Route path="state-mgmt/patterns" element={<SMPatterns />} />
         <Route path="state-mgmt/react-query" element={<SMReactQuery />} />
@@ -633,19 +599,6 @@ function App() {
         <Route path="npm-packages/modules" element={<NpkgModules />} />
         <Route path="npm-packages/publishing" element={<NpkgPublishing />} />
         <Route path="npm-packages/advanced" element={<NpkgAdvanced />} />
-        {/* Webpack */}
-        <Route path="webpack/intro" element={<WpIntro />} />
-        <Route path="webpack/core" element={<WpCore />} />
-        <Route path="webpack/loaders" element={<WpLoaders />} />
-        <Route path="webpack/plugins" element={<WpPlugins />} />
-        <Route path="webpack/devserver" element={<WpDevserver />} />
-        <Route path="webpack/advanced" element={<WpAdvanced />} />
-        {/* Vite */}
-        <Route path="vite/intro" element={<ViteIntro />} />
-        <Route path="vite/core" element={<ViteCore />} />
-        <Route path="vite/plugins" element={<VitePlugins />} />
-        <Route path="vite/devserver" element={<ViteDevserver />} />
-        <Route path="vite/advanced" element={<ViteAdvanced />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

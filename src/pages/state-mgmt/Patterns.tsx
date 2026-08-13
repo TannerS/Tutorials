@@ -9,7 +9,7 @@ export default function Patterns() {
     <LessonLayout
       title="Real-World Patterns"
       sectionId="state-mgmt"
-      lessonIndex={4}
+      lessonIndex={2}
       prev={{ path: '/state-mgmt/comparison', label: 'Library Comparison' }}
       next={{ path: '/state-mgmt/react-query', label: 'TanStack Query' }}
     >

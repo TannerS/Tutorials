@@ -9,8 +9,8 @@ export default function Comparison() {
     <LessonLayout
       title="Library Comparison"
       sectionId="state-mgmt"
-      lessonIndex={3}
-      prev={{ path: '/state-mgmt/zustand', label: 'Zustand' }}
+      lessonIndex={1}
+      prev={{ path: '/state-mgmt/intro', label: "When Context Isn't Enough" }}
       next={{ path: '/state-mgmt/patterns', label: 'Real-World Patterns' }}
     >
       <h2>The Landscape at a Glance</h2>
