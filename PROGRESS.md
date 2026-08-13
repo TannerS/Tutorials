@@ -237,4 +237,21 @@ Round 4's audit explicitly reported a set of files as receiving **grep-level sca
 2. **`Context.Provider` → `<Context>` sweep** — 78 JSX occurrences across 22 files. Deliberately NOT swept: the old form still works in React 19 (deprecated, not broken), and `react19/Context.tsx` alone holds 25 because it *teaches the old-vs-new contrast*. A blind codemod would damage the best page on the topic. Your call.
 3. Smaller: stale Maven versions (correct fix is a BOM, not guessed pins); `springboot/Aop.tsx` and `css-mastery/Variables.tsx` may still hold single specificity/notation outliers; `microservices/Data.tsx` mentions event-store snapshots without demonstrating them; main bundle is 5.9 MB; no SPA-fallback deploy config.
 
-**Audit is now complete** — every file in `src/pages/` has had a full line-by-line read across rounds 4 and 5, plus the app's own source (components, styles, config, build script) in round 4.
+## Round 6 — add the 6 proposed lessons + close the REAL audit gap (in progress)
+
+User: "add the proposed sections, make sure all repo for all sections were audited for correct, missing, and needed info, i want it to be thorough."
+
+**Important correction to what round 5 claimed.** Round 5's log asserted the audit was complete. I verified that claim instead of trusting it, by diffing every audit commit (`5b21b0b..HEAD`) against the tree: **66 of 237 lesson files were never modified during any audit round.** Some are genuinely clean (several lanes explicitly named clean files), but for most I could not distinguish "read and found clean" from "never reached before the lane ran out of budget." Coverage by *section* was complete; coverage by *file* was not. Those 66 are now being treated as unaudited.
+
+Never-modified counts by section: typescript 12, react19 9, react-router 7, solid 6, react-antipatterns 5, patterns 4, java 4, spring-field-guide 3, react-testing 3, testing 2, springboot 2, npm-deep-dive 2, microservices 2, playground 1, npm-packages 1, frontend-tooling 1, api-testing 1, accessibility 1.
+
+**9 lanes dispatched.**
+
+*Five creating the proposed lessons* (each also rewires `prev`/`next`/`lessonIndex` within its own section; none touch `sections.ts`/`App.tsx` — I wire those centrally):
+- `react19/SsrHydration.tsx` — lifts the SSR material out of `Server.tsx` (a prior lane noted it had outgrown that page) and goes deeper: streaming APIs, hydration mismatch causes, selective hydration, and the SSR-vs-RSC distinction people conflate.
+- `typescript/NativeCompiler.tsx` — the TS 6→7 Go-native port. Told explicitly to establish ground truth from the installed package and npm registry rather than writing a release timeline from memory, and to hedge honestly where things are in flux. Includes what a compiler rewrite means for API consumers — this repo is one, since the playgrounds drive `transpileModule` and the language service.
+- `springboot/SecurityMigration.tsx` — Spring Security 7 / Boot 4 delta (lambda-DSL-only, `PathPatternRequestMatcher`, `DelegatingPasswordEncoder` migration, CSRF for SPAs). Accuracy bar set explicitly against the earlier incident where Framework 7 retry docs were written from memory with a `@Recover` annotation that doesn't exist.
+- `patterns/AbstractFactory.tsx` — the 23rd GoF pattern, which only existed as a subsection inside `Singleton.tsx`. Core job is the Abstract Factory vs Factory Method vs simple-factory distinction.
+- `testing/WhatToTest.tsx` + `testing/Performance.tsx` — the beginner "what do I actually write here" lesson, and parallelization/isolation/suite-speed.
+
+*Four sweeping the 66 unaudited files*, each pointed at the specific defect classes prior rounds found nearby (e.g. the react lane is told that `react-router/Data.tsx` taught `defer()`/`json()` which were removed in v7, and to check the rest of that section for the same problem). All four are told to name files they find genuinely clean, and NOT to touch navigation, since lesson lanes are concurrently renumbering three of those sections.
