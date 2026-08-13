@@ -354,7 +354,24 @@ Its message describes only the LifecycleSim + Bridge fixes, but I staged it with
 - Added a beginner on-ramp to `Intro.tsx` defining bean/container/context before first use, and **how to read a startup failure**.
 - Named `SecurityMigration.tsx` the strongest page in the section — every risky claim survived verification.
 
-### Remaining plan
-1. Relaunched after the infra recovery: **Java**, **TypeScript**, **React-ecosystem**. Still to relaunch: **SQL+CSS** (partially landed via `c67b412`), **architecture**, **testing+tooling**.
-2. Then the field-guide/cheat-sheet reconciliation lane(s), using the accumulated additions from rounds 4–7. Spring's list for mirroring: startup-failure triage, relaxed-binding env-var rule + the `@Value` exception, `UnexpectedRollbackException`, `@Valid` resolver-vs-proxy, filter-chain first-match-wins, `@Modifying` flush/clear, corrected `jarmode=tools` Dockerfile.
+### Round 7 — ALL 8 pedagogy lanes COMPLETE and committed
+`cf31350` SQL/CSS/Spring · `5a3e83a` architecture · `6595868` Java · `16590a1` testing+tooling · `0b9c074` TypeScript · `a6a7865` React ecosystem. Repo verified clean after each: tsc 0, eslint 0 errors / 2 known warnings, build clean, working tree empty.
+
+### Round 8 — cheat-sheet reconciliation (3 lanes, IN PROGRESS)
+React/TS guides · Java/Spring guides · SQL/CSS guides. Each carries its content lane's reported additions, plus two instructions beyond "add things": **remove stale entries** (a guide still asserting a corrected claim is now actively wrong), and **check every QuickRef row, not just the cards** — that's exactly where drift hid twice before (java-field-guide/Concurrency's cards were fixed while its QuickRef kept the obsolete pinning advice; spring-field-guide/SpringSecurity's JWT card contradicted its own tutorial's DANGER box).
+
+## Round 9 — cross-check against the "Understanding TypeScript" syllabus (QUEUED)
+
+User pasted the full 25-section / 339-lecture syllabus of the Udemy course they're learning from, and asked me to cross-check it against the repo and fill any gaps in both lessons and cheat sheets. **Read-only gap analysis done** (safe to run while lanes write); the fill work must wait until the reconciliation lanes release `typescript-field-guide/` and `typescript/Cheatsheet.tsx`.
+
+**Already covered, often deeper than the course** — verified by grep across `typescript/` + `typescript-field-guide/`: core/union/literal/tuple/enum/Record types, `any`/`unknown`/`never`/`void`, narrowing + type predicates, optional chaining, nullish coalescing, type casting, tsconfig (target/libs/strict/quality), ES6 features, classes (public/private/protected/readonly/static/abstract/getters/setters/parameter properties), interfaces incl. declaration merging and interfaces-vs-aliases, intersection types, discriminated unions, **function overloads** (an early grep gave a false zero — the phrase differs, the content exists), index signatures, `as const`, `satisfies`, generics + constraints + generic classes, `typeof`/`keyof`/indexed access, mapped types, template literal types, conditional types, `infer`, utility types, decorators (both modern and legacy), modules vs namespaces, `.d.ts`/`declare`/`@types`, Vite, React+TS.
+
+The repo also goes **beyond** the course: variance with the array-covariance hole, conditional-type distribution incl. the `IsNever<never>` trap, error-message decoding, assignability-as-subsets, and the TS 6→7 native compiler.
+
+**Genuine gaps found — to fill in round 9:**
+1. **Zod / runtime schema validation — strongest gap.** It is name-dropped in four places as "the fuller answer — see…" but **never actually taught anywhere**. That's a dangling promise the reader can't cash. The course gives it 4 lectures, and the concept behind it (compile-time types vanish at runtime, so data crossing a trust boundary needs a runtime guard) is genuinely important.
+2. **Node's native TypeScript support — type stripping vs type transformation.** Only a passing `erasableSyntaxOnly` mention exists. Node 22+/24 can execute `.ts` directly, and *why* it can only strip (not transform) is what makes `enum`/parameter-properties fail there. Distinct from the existing NativeCompiler lesson, which is about the TS 7 compiler rewrite.
+3. **TypeScript with Node/Express** — a full module in the course, absent here. Lower priority: this user's backend is Java/Spring, so the TS section is deliberately React-leaning. Worth a short lesson rather than a module.
+
+Deliberately **not** adopting from the syllabus: the Drag & Drop and Google Maps project builds (project-based, not reference material), the Webpack workflow module (that section was removed from this repo at the user's request), and the Linked List practice (the repo teaches generics through other examples).
 2. Dispatch round 7 as weighted lanes — roughly 3 lanes on React (react19 / react-field-guide / react-router / react-antipatterns / react-testing / state-mgmt), 2 on TypeScript (typescript / typescript-field-guide), 2 on Java+Spring (java / springboot / both field guides), and 2–3 covering the remainder (SQL, CSS, architecture/security, testing, tooling, playgrounds) — each with an explicit final step of reconciling its section's cheat sheet against everything the repo now contains.
