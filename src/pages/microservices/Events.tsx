@@ -141,22 +141,36 @@ async function setupRabbitMQ() {
   const conn = await amqp.connect('amqp://rabbitmq:5672');
   const channel = await conn.createChannel();
 
-  // Dead Letter Exchange — for failed messages
+  // Main exchange
+  await channel.assertExchange('orders', 'topic', { durable: true });
+
+  // Dead Letter Exchange — terminal failures land here for a human to look at
   await channel.assertExchange('dlx', 'direct', { durable: true });
   await channel.assertQueue('dead-letter-queue', {
     durable: true,
-    arguments: { 'x-message-ttl': 86400000 },  // retain for 24 hours
+    arguments: { 'x-message-ttl': 86400000 },  // keep failures 24 hours
   });
   await channel.bindQueue('dead-letter-queue', 'dlx', '');
 
-  // Main exchange and queue
-  await channel.assertExchange('orders', 'topic', { durable: true });
+  // Retry queue — NOTHING consumes this. Messages park here until their
+  // per-message TTL expires, at which point RabbitMQ dead-letters them back
+  // onto the main exchange. This is how you get a retry that survives a
+  // consumer restart; an in-process setTimeout loses every pending retry.
+  await channel.assertQueue('payment-processor.retry', {
+    durable: true,
+    arguments: {
+      'x-dead-letter-exchange': 'orders',
+      'x-dead-letter-routing-key': 'order.created',
+    },
+  });
+
   await channel.assertQueue('payment-processor', {
     durable: true,
     arguments: {
-      'x-dead-letter-exchange': 'dlx',       // send failed messages here
+      'x-dead-letter-exchange': 'dlx',       // where nack(requeue=false) sends it
       'x-dead-letter-routing-key': '',
-      'x-max-retries': 3,                     // max retry attempts
+      // NOTE: RabbitMQ has no 'x-max-retries' argument — counting attempts is
+      // the consumer's job (below). Quorum queues do offer x-delivery-limit.
     },
   });
   await channel.bindQueue('payment-processor', 'orders', 'order.created');
@@ -188,7 +202,7 @@ async function publishEvent(channel, event) {
 
   channel.consume('payment-processor', async (msg) => {
     const event = JSON.parse(msg.content.toString());
-    const retryCount = msg.properties.headers['x-retry-count'] || 0;
+    const retryCount = msg.properties.headers?.['x-retry-count'] ?? 0;
 
     try {
       console.log(\`Processing \${event.eventType}: \${event.aggregateId}\`);
@@ -198,20 +212,17 @@ async function publishEvent(channel, event) {
       console.error(\`Failed to process: \${error.message}\`);
 
       if (retryCount < 3) {
-        // Retry with exponential backoff
+        // Exponential backoff via the retry queue's per-message TTL.
+        // 'expiration' must be a STRING of milliseconds — a number is ignored.
         const delay = Math.pow(2, retryCount) * 1000;
-        setTimeout(() => {
-          channel.publish('orders', 'order.created',
-            msg.content,
-            {
-              ...msg.properties,
-              headers: { ...msg.properties.headers, 'x-retry-count': retryCount + 1 },
-            }
-          );
-          channel.ack(msg);
-        }, delay);
+        channel.sendToQueue('payment-processor.retry', msg.content, {
+          ...msg.properties,
+          expiration: String(delay),
+          headers: { ...msg.properties.headers, 'x-retry-count': retryCount + 1 },
+        });
+        channel.ack(msg);  // ack the original — the retry copy now owns it
       } else {
-        // Max retries exceeded — send to Dead Letter Queue
+        // Max retries exceeded — requeue=false routes it to the DLX
         channel.nack(msg, false, false);
       }
     }
@@ -252,14 +263,25 @@ const kafka = new Kafka({
 });
 
 const producer = kafka.producer({
-  idempotent: true,                    // exactly-once semantics
-  maxInFlightRequests: 5,
-  transactionalId: 'order-producer',   // for transactions
+  // Idempotent producer: the broker de-duplicates PRODUCER RETRIES using a
+  // producer ID + per-partition sequence number. That is NOT end-to-end
+  // exactly-once — it only stops a retried send from appending twice. A
+  // consumer can still see the same event twice after a rebalance, so
+  // consumers must STILL be idempotent (see the consumer below).
+  idempotent: true,
+  // kafkajs THROWS at producer creation if idempotent is true and this is > 1
+  // ("Idempotent producer requires maxInFlightRequests to be <= 1").
+  // Leaving the default of 5 here means the service will not start.
+  maxInFlightRequests: 1,
 });
 
-async function publishOrderEvent(order) {
+// Connect ONCE at startup — not per message. Calling connect() on every
+// publish adds a round trip to the hot path.
+async function start() {
   await producer.connect();
+}
 
+async function publishOrderEvent(order) {
   await producer.send({
     topic: 'order-events',
     compression: CompressionTypes.Snappy,  // compress for throughput
@@ -267,6 +289,10 @@ async function publishOrderEvent(order) {
       // Key determines partition — same customer always same partition
       key: order.customerId,
       value: JSON.stringify({
+        // The per-event unique ID — this, NOT the correlation ID, is what
+        // consumers de-duplicate on. One request (one correlationId) routinely
+        // produces several distinct events.
+        eventId: crypto.randomUUID(),
         eventType: 'OrderPlaced',
         aggregateId: order.id,
         data: {
@@ -277,7 +303,7 @@ async function publishOrderEvent(order) {
         timestamp: new Date().toISOString(),
       }),
       headers: {
-        'correlation-id': order.correlationId,
+        'correlation-id': order.correlationId,  // trace ID — shared by many events
         'event-type': 'OrderPlaced',
       },
     }],
@@ -300,16 +326,23 @@ async function startConsumer() {
   });
 
   await consumer.run({
-    // Process one message at a time per partition
+    // Fan out across 3 partitions at once. Within ONE partition, eachMessage
+    // still runs strictly one message at a time, so per-key ordering holds.
     partitionsConsumedConcurrently: 3,
 
     eachMessage: async ({ topic, partition, message }) => {
       const event = JSON.parse(message.value.toString());
-      const eventId = message.headers['correlation-id']?.toString();
 
-      // Idempotency check — skip already-processed events
-      const alreadyProcessed = await redis.exists(\`processed:\${eventId}\`);
-      if (alreadyProcessed) {
+      // De-duplicate on the EVENT id. Using the correlation ID here is a
+      // classic bug: one request produces many events that share a
+      // correlation ID, so the 2nd, 3rd... events would be silently dropped.
+      const { eventId } = event;
+
+      // Claim the event ATOMICALLY. A plain EXISTS-then-SETEX has a race:
+      // two consumers can both see "not processed" and both charge the card.
+      // SET NX returns null if another worker already claimed this eventId.
+      const claimed = await redis.set(\`processed:\${eventId}\`, '1', 'NX', 'EX', 604800);
+      if (!claimed) {
         console.log(\`Skipping duplicate event: \${eventId}\`);
         return;
       }
@@ -323,11 +356,10 @@ async function startConsumer() {
             await refundPayment(event.data);
             break;
         }
-
-        // Mark as processed (with 7-day TTL)
-        await redis.setex(\`processed:\${eventId}\`, 604800, '1');
       } catch (error) {
         console.error(\`Error processing event: \${error.message}\`);
+        // Release the claim so the retry is not swallowed as a "duplicate".
+        await redis.del(\`processed:\${eventId}\`);
         throw error;  // kafkajs will retry
       }
     },
@@ -368,7 +400,7 @@ async function startConsumer() {
           </tr>
           <tr>
             <td>Replay</td>
-            <td>No — messages deleted after consumption</td>
+            <td>Not with classic queues (deleted after ack); possible with RabbitMQ Streams</td>
             <td>Yes — consumer can seek to any offset</td>
           </tr>
           <tr>
@@ -468,7 +500,7 @@ const stateTransfer = {
           'Amazon SQS — for managed queuing'
         ]}
         correctIndex={1}
-        explanation={"Kafka retains events for a configurable period (or forever). The analytics team can create a consumer group and replay from the beginning of the topic, while the notification team runs its own consumer group processing events in real-time. RabbitMQ deletes messages after acknowledgment, so replay is not possible."}
+        explanation={"Kafka retains events for a configurable period (or forever). The analytics team can create a consumer group and replay from the beginning of the topic, while the notification team runs its own consumer group processing events in real-time. A classic RabbitMQ queue deletes messages after acknowledgment, so it cannot do this. (RabbitMQ Streams, added in 3.9, is a log-structured queue type that does support offset-based replay — but for a year of retention at this scale, Kafka is still the natural fit.)"}
       />
 
       <h2>Summary</h2>

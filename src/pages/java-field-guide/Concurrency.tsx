@@ -9,7 +9,7 @@ export default function FieldGuideJavaConcurrency() {
       eyebrow="Java · Field Reference"
       title="Concurrency & Virtual Threads"
       tagline="Threads, locks, virtual threads, and the pitfalls that actually bite in production — condensed for offline study."
-      meta={['Java 21+', '14 patterns']}
+      meta={['Java 21+', '18 patterns']}
       footerLabel="Personal study reference — Java"
       pageLabel="Java Field Guide · Concurrency"
       prev={{ path: '/java-field-guide/exceptions-io', label: 'Exceptions & I/O' }}
@@ -314,7 +314,9 @@ if (!lock.tryLock(2, TimeUnit.SECONDS)) throw new BusyException();
           { need: 'Single-value thread-safe counter', answer: 'AtomicInteger / LongAdder' },
           { need: 'Chain async calls', answer: 'CompletableFuture.thenCompose' },
           { need: 'Producer-consumer pipeline', answer: 'BlockingQueue' },
-          { need: 'Blocking call inside a virtual thread', answer: 'avoid synchronized — use ReentrantLock' },
+          { need: 'Blocking call inside a virtual thread', answer: "Don't hold ANY lock across it (JDK-independent). Only pre-24: swap synchronized for ReentrantLock" },
+          { need: 'Bound concurrency against a fragile downstream', answer: 'Semaphore — not a smaller thread pool' },
+          { need: 'Fan out and cancel siblings on first failure', answer: 'StructuredTaskScope' },
           { need: 'Wait for several async tasks', answer: 'CompletableFuture.allOf' },
         ]}
       />

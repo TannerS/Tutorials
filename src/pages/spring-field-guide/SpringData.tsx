@@ -183,8 +183,9 @@ SUPPORTS              join if a tx exists, else run without one`}
         code={`@Transactional
 public void placeOrder(NewOrderRequest req) throws OrderException {
     orders.save(order);
-    throw new OrderException("...");     // checked — COMMITS!
-    throw new IllegalStateException(""); // RuntimeException — ROLLS BACK
+
+    if (a) throw new OrderException("...");      // checked — COMMITS!
+    if (b) throw new IllegalStateException("");  // unchecked — ROLLS BACK
 }
 
 // Fix: declare the checked type as a rollback trigger.
@@ -219,11 +220,18 @@ private Long version;
 // Two clients read the same row, both write — the second
 // commit throws OptimisticLockException, Spring translates
 // it to ObjectOptimisticLockingFailureException.
+
+// spring-retry flavour (retryFor/maxAttempts). Core Spring's
+// own @Retryable uses includes/maxRetries — see AOP & Events.
 @Retryable(retryFor = ObjectOptimisticLockingFailureException.class,
            maxAttempts = 3)
+public Order applyDiscount(UUID id, BigDecimal pct) {
+    return self.applyDiscountTx(id, pct);   // retry OUTSIDE the tx
+}
+
 @Transactional
-public Order applyDiscount(UUID id, BigDecimal pct) { }`}
-        caption="@Version auto-detects concurrent updates without taking a database lock. Retry the operation or surface a 409 Conflict to the client — don't reach for SERIALIZABLE isolation first."
+Order applyDiscountTx(UUID id, BigDecimal pct) { }`}
+        caption="@Version auto-detects concurrent updates without taking a database lock. Retry or surface a 409 Conflict — don't reach for SERIALIZABLE first. Keep the retry OUTSIDE the transaction: if @Transactional ends up the outer advice, every retry reuses the same already-rolled-back transaction and fails identically. Separate beans (or explicit @Order) make the nesting deliberate."
       />
 
       <PosterQuickRef

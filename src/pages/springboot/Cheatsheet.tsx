@@ -34,8 +34,11 @@ public OrderService(@Qualifier("stripeGateway") PaymentGateway gw) { ... }
 
 // Conditional beans:
 @ConditionalOnProperty("features.notifications.enabled")
-@ConditionalOnMissingBean(NotificationService.class)
 @ConditionalOnClass(name = "com.example.optional.Lib")
+@ConditionalOnMissingBean(NotificationService.class)
+//   ^ auto-configuration ONLY. On a component-scanned @Service the result
+//     depends on registration order, so it silently works until it doesn't.
+//     For your own beans use the inverse @ConditionalOnProperty instead.
 
 // Collection injection (plugin pattern):
 public Foo(List<Exporter> all) { ... }

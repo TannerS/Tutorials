@@ -159,11 +159,14 @@ public class PaypalPaymentGateway implements PaymentGateway { }
 public class RealNotificationService
         implements NotificationService { }
 
-@Service
-@ConditionalOnMissingBean(NotificationService.class)
+@Service   // the EXACT INVERSE condition — exactly one always exists
+@ConditionalOnProperty(prefix = "features.notifications",
+    name = "enabled", havingValue = "false", matchIfMissing = true)
 public class NoopNotificationService
-        implements NotificationService { }  // fallback`}
-        caption="Beans exist or not based on runtime config — no if-branches in consumer code. The no-op fallback is wired in automatically whenever the real bean is absent."
+        implements NotificationService { }  // fallback
+
+// ❌ NOT @ConditionalOnMissingBean here — see caption`}
+        caption="Beans exist or not based on runtime config — no if-branches in consumer code. Pair the fallback with the INVERSE property condition, not @ConditionalOnMissingBean: that one only sees beans already registered when it runs, and component-scan order isn't guaranteed, so you can get both beans or neither. It is reliable only in auto-configuration classes, which run after all user beans are registered."
       />
 
       <PosterCard
@@ -250,7 +253,8 @@ public class ReportBuilder { }
           { need: 'Wire a dependency', answer: 'Constructor injection — never field injection' },
           { need: 'Third-party class as a bean', answer: '@Bean inside @Configuration' },
           { need: 'Two beans, same interface', answer: '@Qualifier (specific) or @Primary (default)' },
-          { need: 'Toggle a bean by config', answer: '@ConditionalOnProperty / @ConditionalOnMissingBean' },
+          { need: 'Toggle a bean by config', answer: '@ConditionalOnProperty (inverse condition for the fallback)' },
+          { need: 'Back off if the user defined their own bean', answer: '@ConditionalOnMissingBean — auto-configuration only' },
           { need: 'Plugin / strategy pattern', answer: 'Inject List<T> or Map<String,T>' },
           { need: 'Optional dependency', answer: 'Optional<T> or ObjectProvider<T>' },
           { need: '@Transactional not firing', answer: 'Check for self-invocation via this.method()' },

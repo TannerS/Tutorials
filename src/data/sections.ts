@@ -173,7 +173,7 @@ export const sections: Section[] = [
     color: '#38bdf8',
     lessons: [
       { id: 'intro', title: 'Monolith vs Microservices', path: '/microservices/intro' },
-      { id: 'patterns', title: 'Core Patterns (10)', path: '/microservices/patterns' },
+      { id: 'patterns', title: 'Core Patterns (11)', path: '/microservices/patterns' },
       { id: 'communication', title: 'Service Communication', path: '/microservices/communication' },
       { id: 'data', title: 'Data Patterns & CQRS', path: '/microservices/data' },
       { id: 'scaling', title: 'Scaling Strategies', path: '/microservices/scaling' },

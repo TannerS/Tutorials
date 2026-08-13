@@ -338,10 +338,13 @@ DELETE /api/users/42/addresses/3   # Two-level nesting`}
 @RequestMapping("/api/users")
 public class UserController {
 
-    // GET /api/users — list with filtering and pagination
+    // GET /api/users — list with filtering and pagination.
+    // Page numbering is 1-based here to match the URLs and _links in the
+    // examples above. Spring's own PageRequest is 0-based, so convert at the
+    // boundary rather than leaking two conventions into one API.
     @GetMapping
     public ResponseEntity<PagedResponse<UserDto>> listUsers(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String sort) {

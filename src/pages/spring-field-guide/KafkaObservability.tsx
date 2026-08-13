@@ -28,9 +28,9 @@ export default function FieldGuideSpringKafkaObservability() {
       acks: all                        # wait for all in-sync replicas
       retries: 5
       properties:
-        enable.idempotence: true       # exactly-once producer semantics
+        enable.idempotence: true       # no duplicates from producer retries
         compression.type: zstd`}
-        caption="acks=all + enable.idempotence=true is the pair that prevents silent message loss and duplicate sends on retry — treat it as the non-negotiable starting config for anything that matters."
+        caption="acks=all + enable.idempotence=true is the pair that prevents silent message loss and duplicate sends on retry — treat it as the non-negotiable starting config for anything that matters. Note idempotence is a PRODUCER-side guarantee only: it de-duplicates broker-side retries, it does not give you end-to-end exactly-once (that needs transactions plus an idempotent consumer — see the consumer gotcha below)."
       />
 
       <PosterCard

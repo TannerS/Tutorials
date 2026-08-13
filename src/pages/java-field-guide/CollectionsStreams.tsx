@@ -9,7 +9,7 @@ export default function FieldGuideJavaCollectionsStreams() {
       eyebrow="Java · Field Reference"
       title="Collections & Streams"
       tagline="Which collection to reach for, and the stream/Collectors chains you'll write on repeat — condensed for offline study."
-      meta={['Java 21+', '14 patterns']}
+      meta={['Java 21+', '19 patterns']}
       footerLabel="Personal study reference — Java"
       pageLabel="Java Field Guide · Collections & Streams"
       prev={{ path: '/java-field-guide/oop-generics', label: 'OOP & Generics' }}
@@ -48,7 +48,7 @@ var inter = new HashSet<>(a); inter.retainAll(b);`}
 Map<String,Integer> linked = new LinkedHashMap<>();  // O(1), insertion order
 Map<String,Integer> tree = new TreeMap<>();          // O(log n), key-sorted
 Map<String,Integer> concurrent = new ConcurrentHashMap<>(); // thread-safe`}
-        caption="Same decision tree as Set. Only ConcurrentHashMap is safe to share across threads without external locking — HashMap under concurrent writes can infinite-loop."
+        caption="Same decision tree as Set. Only ConcurrentHashMap is safe to share across threads without external locking — concurrent writes to a plain HashMap silently lose updates and can corrupt its internal state. (The notorious infinite loop on resize was a pre-Java-8 failure mode; the modern one is quieter and harder to spot.)"
       />
 
       <PosterCard

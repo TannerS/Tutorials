@@ -195,15 +195,34 @@ class CustomerControllerErrorTest {
 
       <PosterCard
         glyph="Cf"
-        title={<>Cross-field validation<span className="dim"> — @ScriptAssert</span></>}
+        title={<>Cross-field validation<span className="dim"> — a class-level constraint</span></>}
         language="java"
-        code={`@ScriptAssert(lang = "javascript",
-    script = "_this.password.equals(_this.passwordConfirm)",
-    message = "passwords must match")
+        code={`@Target(TYPE) @Retention(RUNTIME)          // TYPE, not FIELD
+@Constraint(validatedBy = PasswordsMatchValidator.class)
+public @interface PasswordsMatch {
+    String message() default "passwords must match";
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default {};
+}
+
+public class PasswordsMatchValidator
+        implements ConstraintValidator<PasswordsMatch, SignupRequest> {
+    public boolean isValid(SignupRequest r, ConstraintValidatorContext ctx) {
+        if (r.password() == null || r.passwordConfirm() == null) return true;
+        if (r.password().equals(r.passwordConfirm())) return true;
+        ctx.disableDefaultConstraintViolation();      // attach to a FIELD so the
+        ctx.buildConstraintViolationWithTemplate(ctx.getDefaultConstraintMessageTemplate())
+           .addPropertyNode("passwordConfirm")        // client can highlight it
+           .addConstraintViolation();
+        return false;
+    }
+}
+
+@PasswordsMatch
 public record SignupRequest(
         @NotBlank String password,
         @NotBlank String passwordConfirm) { }`}
-        caption="Field-level constraints (@NotBlank, @Email) can't compare two fields against each other — @ScriptAssert evaluates against the whole object, useful sparingly for cheap cross-field rules."
+        caption="Field-level constraints can't compare two fields, so the comparison moves to a TYPE-level constraint whose validator receives the whole object. Avoid Hibernate's @ScriptAssert for this: it needs a JSR-223 engine, and Nashorn was REMOVED from the JDK in Java 15 — on Java 17/21 it throws unless you add GraalVM JS yourself, and evaluating a script against user input is a needless injection risk. Re-attaching the violation to a property node is what makes the error land on a field instead of the whole object."
       />
 
       <PosterQuickRef
@@ -217,7 +236,7 @@ public record SignupRequest(
           { need: 'Authorization refusal vs business rule', answer: 'Separate AuthorizationException — logs at WARN' },
           { need: 'Log level should match severity', answer: 'Branch on exception class, not status code' },
           { need: 'Client needs a stable machine code', answer: 'ProblemDetail.setProperty("code", ...)' },
-          { need: 'Compare two fields against each other', answer: '@ScriptAssert on the object, not the field' },
+          { need: 'Compare two fields against each other', answer: 'TYPE-level @Constraint — not @ScriptAssert (no JDK script engine since Java 15)' },
           { need: 'Prove the mapping is correct', answer: '@WebMvcTest + jsonPath on the ProblemDetail body' },
         ]}
       />

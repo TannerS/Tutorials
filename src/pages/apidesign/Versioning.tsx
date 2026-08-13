@@ -123,6 +123,36 @@ Accept: application/vnd.example.v2+json
 # ❌ Caching becomes more complex (Vary: Accept header needed)`}
       </CodeBlock>
 
+      <h3>5. Date-Based Versioning</h3>
+      <p>
+        The approach used by the APIs people most often (and wrongly) cite as examples of path
+        versioning. Instead of <code>v1</code>/<code>v2</code>, each release is stamped with the
+        date it shipped. A consumer is <em>pinned</em> to the version that was current when they
+        integrated, and stays there until they explicitly upgrade — so the provider can ship a
+        breaking change on Tuesday without breaking a single existing client.
+      </p>
+
+      <CodeBlock language="http" title="Date-Based Versioning">
+        {`# Stripe: the /v1/ in the path has not changed in over a decade. The
+# version that actually governs behaviour is a dated header, pinned per account.
+POST https://api.stripe.com/v1/charges
+Stripe-Version: 2024-06-20
+
+# GitHub's REST API does the same thing with its own header
+GET https://api.github.com/repos/octocat/hello-world
+X-GitHub-Api-Version: 2022-11-28
+
+# Pros:
+# ✅ Breaking changes ship without a new URL surface or a v2/v3 fork
+# ✅ Existing clients keep working untouched — upgrading is opt-in
+# ✅ The version reads as a changelog entry, not an opaque integer
+
+# Cons:
+# ❌ The provider maintains many concurrent behaviours at once
+# ❌ Needs real infrastructure: per-version request/response transforms
+# ❌ Overkill unless you have many external consumers you cannot coordinate`}
+      </CodeBlock>
+
       <FlowChart
         title="Choosing a Versioning Strategy"
         chart={"graph TD\n    START[Need API Versioning] --> Q1{Is simplicity the top priority?}\n    Q1 -->|Yes| URL[URL Path Versioning /api/v1/]\n    Q1 -->|No| Q2{Is URL purity important?}\n    Q2 -->|Yes| Q3{Want full REST compliance?}\n    Q3 -->|Yes| CONTENT[Content Negotiation Accept header]\n    Q3 -->|No| HEADER[Custom Header X-API-Version]\n    Q2 -->|No| Q4{Need easy default version?}\n    Q4 -->|Yes| QUERY[Query Param ?v=1]\n    Q4 -->|No| URL\n    URL --> REC1[Most recommended for public APIs]\n    HEADER --> REC2[Good for internal APIs]\n    CONTENT --> REC3[Purest but most complex]\n    QUERY --> REC4[Simple but easy to forget]"}
@@ -131,9 +161,58 @@ Accept: application/vnd.example.v2+json
       <InfoBox variant="tip" title="Recommendation: URL Path Versioning">
         <p>
           For most teams and most APIs, URL path versioning is the best choice. It is the
-          simplest to implement, easiest to understand, and most widely adopted. Companies
-          like Stripe, GitHub, Twitter, and Google all use URL path versioning. Save the
-          more exotic approaches for situations with specific requirements.
+          simplest to implement, easiest to understand, and most widely adopted — Twitter/X
+          (<code>/2/tweets</code>) and Twilio (<code>/2010-04-01/</code>) route this way.
+          Be careful with the two examples everyone reaches for, though: <strong>Stripe and
+          GitHub are not path-versioned</strong>. Stripe&apos;s <code>/v1/</code> has been
+          frozen for years and the real version travels in the <code>Stripe-Version</code>
+          header; GitHub uses <code>X-GitHub-Api-Version</code>. Both are date-based. Reach
+          for that only when you have external consumers you cannot coordinate a migration
+          with — otherwise the operational cost is not worth it.
+        </p>
+      </InfoBox>
+
+      <h2>Retiring a Version: Deprecation &amp; Sunset</h2>
+      <p>
+        Shipping <code>v2</code> is the easy half. The half that actually costs money is turning
+        <code> v1</code> off, and you cannot do that safely if the only warning your consumers get
+        is a changelog entry nobody read. HTTP has two dedicated response headers for this, so the
+        warning arrives in-band, on every single call, where a client&apos;s monitoring can see it.
+      </p>
+
+      <CodeBlock language="http" title="Announcing a Deprecation in the Response Itself">
+        {`GET /api/v1/users/42
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+# Deprecation (RFC 9745) — this endpoint IS deprecated, as of this date.
+Deprecation: @1717200000
+
+# Sunset (RFC 8594) — the date it will actually stop working.
+Sunset: Wed, 31 Dec 2025 23:59:59 GMT
+
+# Link relations point at the migration guide and the replacement, so a
+# developer who sees this in a log has somewhere to go.
+Link: <https://api.example.com/docs/migrating-v1-to-v2>; rel="deprecation",
+      <https://api.example.com/v2/users/42>; rel="successor-version"
+
+{ "id": 42, "name": "Alice" }`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Announce Loudly, Then Measure Before You Delete">
+        <p>
+          Headers alone are not a migration plan — most clients never look at response headers.
+          Pair them with per-version usage metrics so you know <em>who</em> is still on the old
+          version and can contact them directly. Never switch a version off on a date alone;
+          switch it off when the traffic graph reaches zero, or when the only callers left are
+          ones you have talked to.
+        </p>
+        <p>
+          A useful forcing function is the <strong>brownout</strong>: shortly before sunset,
+          deliberately fail a small percentage of v1 requests (or add several seconds of latency)
+          for a few hours. Teams that ignored a year of emails tend to notice a brownout the same
+          afternoon — while there is still time to migrate, rather than after the shutdown.
         </p>
       </InfoBox>
 
@@ -287,7 +366,11 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<PagedResponse<ProductDto>> listProducts(
-            @RequestParam(defaultValue = "0") int page,
+            // The public API is 1-based (?page=1 is the first page), matching
+            // the JSON examples above. Spring's PageRequest is 0-based, so the
+            // conversion has to happen HERE — passing this straight through
+            // silently serves page 2 to a client that asked for page 1.
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) BigDecimal minPrice,
@@ -300,16 +383,19 @@ public class ProductController {
                 .maxPrice(maxPrice)
                 .build();
 
+        // Clamp page size so a client cannot ask for ?size=1000000
+        int safeSize = Math.min(Math.max(size, 1), 100);
+
         Sort sortSpec = parseSortParameter(sort);
-        PageRequest pageRequest = PageRequest.of(page, size, sortSpec);
+        PageRequest pageRequest = PageRequest.of(Math.max(page, 1) - 1, safeSize, sortSpec);
 
         Page<ProductDto> result = productService.findAll(filter, pageRequest);
 
         return ResponseEntity.ok(PagedResponse.<ProductDto>builder()
                 .data(result.getContent())
                 .meta(PaginationMeta.builder()
-                        .page(page)
-                        .size(size)
+                        .page(pageRequest.getPageNumber() + 1)  // report back in 1-based terms
+                        .size(safeSize)
                         .total(result.getTotalElements())
                         .totalPages(result.getTotalPages())
                         .build())
@@ -325,8 +411,11 @@ public class ProductController {
                             ? Sort.Direction.DESC : Sort.Direction.ASC;
                     return Sort.Order.by(field).with(dir);
                 })
+                // Sort::by is a METHOD REFERENCE. Writing Sort.by() here — a call
+                // — does not compile: collectingAndThen needs a Function to apply
+                // to the collected List<Order>, not an already-built Sort.
                 .collect(Collectors.collectingAndThen(
-                        Collectors.toList(), Sort.by()));
+                        Collectors.toList(), Sort::by));
     }
 }`}
       </CodeBlock>
@@ -354,17 +443,26 @@ public class ProductController {
       </p>
 
       <CodeBlock language="http" title="Rate Limiting Headers">
-        {`# Standard rate limit headers in a response
+        {`# The X-RateLimit-* trio is a DE FACTO convention, not a standard. It is
+# still the most widely emitted form, so most clients understand it.
 HTTP/1.1 200 OK
 X-RateLimit-Limit: 100         # Max requests per window
 X-RateLimit-Remaining: 73      # Requests remaining in this window
 X-RateLimit-Reset: 1699900060  # Unix timestamp when the window resets
 
-# When rate limited
+# The IETF is standardising the un-prefixed spelling (draft-ietf-httpapi-
+# ratelimit-headers). Note Reset is a DELTA IN SECONDS here, not a timestamp —
+# a real difference, not just a renaming. Emit one convention consistently.
+RateLimit-Limit: 100
+RateLimit-Remaining: 73
+RateLimit-Reset: 45            # Seconds until the window resets
+
+# When rate limited. Retry-After (RFC 9110) is the one every well-behaved
+# client already honours — always send it.
 HTTP/1.1 429 Too Many Requests
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 1699900060
+RateLimit-Limit: 100
+RateLimit-Remaining: 0
+RateLimit-Reset: 30
 Retry-After: 30                 # Seconds until the client should retry
 
 {
@@ -435,7 +533,7 @@ app.use('/api/auth/register', authLimiter);`}
           "Custom header versioning (X-API-Version)"
         ]}
         correctIndex={1}
-        explanation={"URL path versioning (/api/v1/) is the most widely adopted strategy, used by Stripe, GitHub, Google, and most major API providers. It is the simplest to implement, most visible, and easiest to test. While purists may prefer content negotiation, the pragmatic benefits of path versioning make it the default recommendation."}
+        explanation={"URL path versioning (/api/v1/) is the most widely adopted strategy. It is the simplest to implement, most visible, and easiest to test — you can exercise it from a browser address bar. While purists may prefer content negotiation, the pragmatic benefits make it the default recommendation. Note that Stripe and GitHub, the usual examples, actually use date-based versioning via a header; Stripe's /v1/ path segment has not changed in over a decade."}
       />
 
       <InteractiveChallenge

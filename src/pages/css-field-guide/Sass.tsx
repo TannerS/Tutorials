@@ -56,11 +56,13 @@ $color-primary: #6366f1;
         glyph="Fn"
         title={<>Functions<span className="dim"> — @return a single value</span></>}
         language="scss"
-        code={`@function px-to-rem($px, $base: 16px) {
-  @return ($px / $base) * 1rem;
+        code={`@use 'sass:math';
+
+@function px-to-rem($px, $base: 16px) {
+  @return math.div($px, $base) * 1rem;   // NOT ($px / $base)
 }
 .heading { font-size: px-to-rem(24px); } // 1.5rem`}
-        caption="A function computes and returns ONE value to slot into a property — if you're writing @include as the entire right-hand side of a declaration, it should probably be a function instead."
+        caption="A function computes and returns ONE value to slot into a property. Divide with math.div() — bare / is deprecated (it's a separator in real CSS, as in font: 16px/1.5) and is removed in Dart Sass 2.0."
       />
 
       <PosterCard
@@ -70,13 +72,13 @@ $color-primary: #6366f1;
         code={`// _tokens.scss
 $primary: #6366f1;
 
-// button.scss
+// button.scss — ALL @use rules first, before any other rule
 @use 'tokens';
-.btn { background: tokens.$primary; }
-
 @use 'tokens' as t;   // optional alias
+
+.btn   { background: tokens.$primary; }
 .badge { background: t.$primary; }`}
-        caption="Replaces the deprecated @import. Loads a partial exactly once regardless of how many files @use it, and namespaces everything — two partials can each define $primary with zero collision."
+        caption="Replaces the deprecated @import. Loads a partial exactly once regardless of how many files @use it, and namespaces everything — two partials can each define $primary with zero collision. Every @use must appear before the first style rule, or Sass errors with '@use rules must be written before any other rules'."
       />
 
       <PosterCard
@@ -138,13 +140,15 @@ styles.scss      ← no underscore = the ACTUAL entry point compiled to CSS
         glyph="Mp"
         title={<>Sass Maps<span className="dim"> — key-value config</span></>}
         language="scss"
-        code={`$breakpoints: (sm: 640px, md: 768px, lg: 1024px);
+        code={`@use 'sass:map';   // REQUIRED — map.get is a built-in module member
+
+$breakpoints: (sm: 640px, md: 768px, lg: 1024px);
 
 @mixin respond-above($bp) {
   @media (min-width: map.get($breakpoints, $bp)) { @content; }
 }
 .nav { @include respond-above(md) { display: flex; } }`}
-        caption="@content forwards whatever block is passed at the @include call site INTO the mixin's @media wrapper — this is how a single respond-above() mixin drives every breakpoint in a project from one config map."
+        caption="@content forwards whatever block is passed at the @include call site INTO the mixin's @media wrapper — one respond-above() mixin drives every breakpoint from one config map. Forget the @use 'sass:map' line and compilation fails outright with 'There is no module with the namespace map'."
       />
 
       <PosterCard

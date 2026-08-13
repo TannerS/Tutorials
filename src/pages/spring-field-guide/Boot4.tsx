@@ -170,14 +170,16 @@ Sleuth                        -> Micrometer Tracing`}
 
       <PosterCard
         glyph="Se"
-        title={<>Java 21 baseline<span className="dim"> for Spring 6</span></>}
+        title={<>Platform baseline<span className="dim"> — which Framework ships with which Boot</span></>}
         language="text"
-        code={`Spring 6 (bundled by Boot 3/4) requires:
-  Java 17 minimum (Java 21 to use virtual threads)
-  Jakarta EE 9+ (javax -> jakarta)
+        code={`Boot 3.x  ->  Spring Framework 6.x  |  Jakarta EE 9+
+Boot 4.x  ->  Spring Framework 7.0  |  Jakarta EE 11
+                                        (Servlet 6.1, JPA 3.2)
 
-Biggest release since Spring 3.`}
-        caption="If you're targeting Boot 3 or 4, the JDK floor moved to 17 — and to actually flip on spring.threads.virtual.enabled you need Java 21."
+Both: Java 17 MINIMUM (Java 21+ to use virtual threads)
+Boot 4 also moves to Jackson 3 (com.fasterxml.jackson
+-> tools.jackson) and Kotlin 2.x.`}
+        caption="Boot 3 and Boot 4 are built on DIFFERENT Framework majors — 6 and 7 respectively. The JDK floor is 17 for both, but spring.threads.virtual.enabled needs Java 21."
       />
 
       <PosterQuickRef

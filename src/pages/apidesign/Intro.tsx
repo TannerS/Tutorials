@@ -104,8 +104,9 @@ export default function Intro() {
       <h2>The Richardson Maturity Model</h2>
       <p>
         Leonard Richardson proposed a model that breaks down the principal elements of a REST
-        approach into three levels. It provides a useful way to think about how RESTful
-        your API actually is.
+        approach into three steps — resources, HTTP verbs, then hypermedia — which produce
+        <strong> four levels, numbered 0 through 3</strong>. It provides a useful way to think
+        about how RESTful your API actually is.
       </p>
 
       <h3>Level 0 — The Swamp of POX</h3>

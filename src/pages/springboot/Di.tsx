@@ -278,31 +278,71 @@ public class CheckoutService {
                        havingValue = "true", matchIfMissing = false)
 public class RealNotificationService implements NotificationService { /* ... */ }
 
-// Fallback: exists when the real one doesn't. Injected consumers get whichever
-// is present — no null checks, no if-statements in the consumers.
+// Fallback: the EXACT INVERSE condition, so precisely one of the two always
+// exists. Injected consumers get whichever is present — no null checks, no
+// if-statements in the consumers.
 @Service
-@ConditionalOnMissingBean(NotificationService.class)
+@ConditionalOnProperty(prefix = "features.notifications", name = "enabled",
+                       havingValue = "false", matchIfMissing = true)
 public class NoopNotificationService implements NotificationService {
     public void send(Notification n) { /* no-op */ }
 }`}
       </CodeBlock>
 
-      <CodeBlock language="java" title="Other conditional annotations">
-{`// Only when a specific class is on the classpath (e.g. optional dep)
-@ConditionalOnClass(name = "com.example.optional.SomeLib")
-public class OptionalLibIntegration { /* ... */ }
+      <InfoBox variant="danger" title="Don't reach for @ConditionalOnMissingBean here">
+        <p>
+          The tempting version of that fallback is{' '}
+          <code>@ConditionalOnMissingBean(NotificationService.class)</code> on the no-op — and it is
+          a real trap. <code>@ConditionalOnMissingBean</code> can only see beans{' '}
+          <strong>already registered at the moment it is evaluated</strong>, and the order in which
+          component scanning registers your <code>@Service</code> classes is not guaranteed. Depending
+          on scan order you can end up with both beans or neither, and the failure is
+          environment-dependent — the worst kind to debug.
+        </p>
+        <p>
+          Spring&apos;s own documentation restricts it to <strong>auto-configuration classes</strong>,
+          which run in a well-defined phase strictly <em>after</em> all user beans are registered.
+          That&apos;s exactly why it works in the auto-config examples in the Intro lesson (&quot;back
+          off if the user defined their own <code>DataSource</code>&quot;) and not here. In your own
+          application code use mutually exclusive <code>@ConditionalOnProperty</code> conditions as
+          above, or put the fallback on a <code>@Bean</code> method inside a real auto-configuration.
+        </p>
+      </InfoBox>
 
-// Only when a Spring profile is active
+      <CodeBlock language="java" title="Other conditional annotations">
+{`// Only when a Spring profile is active. @Profile is the one that is
+// always safe on a component-scanned class — it doesn't depend on
+// what else has been registered yet.
 @Component
 @Profile("dev")
 public class InMemoryEventStore implements EventStore { /* ... */ }
 
-// Combine multiple conditions
-@Bean
-@ConditionalOnProperty("features.cache.enabled")
-@ConditionalOnMissingBean(CacheManager.class)
-public CacheManager defaultCacheManager() { /* ... */ }`}
+// The @ConditionalOnX family belongs on @Bean methods inside a
+// @Configuration (ideally an auto-configuration), NOT on scanned classes.
+@Configuration
+public class CacheConfig {
+
+    // Only when a specific class is on the classpath (e.g. an optional dep)
+    @Bean
+    @ConditionalOnClass(name = "com.example.optional.SomeLib")
+    public OptionalLibIntegration optionalLibIntegration() { /* ... */ }
+
+    // Conditions stack: ALL must pass for the bean to be created.
+    // @ConditionalOnMissingBean is dependable here — @Bean methods in
+    // auto-configuration are evaluated after user beans are registered.
+    @Bean
+    @ConditionalOnProperty("features.cache.enabled")
+    @ConditionalOnMissingBean(CacheManager.class)
+    public CacheManager defaultCacheManager() { /* ... */ }
+}`}
       </CodeBlock>
+
+      <InfoBox variant="note" title="A stereotype is still required">
+        Conditions only ever <em>subtract</em>. <code>@ConditionalOnClass</code> on a bare class with
+        no <code>@Component</code>/<code>@Service</code>/<code>@Bean</code> registers nothing at all —
+        there was no bean definition for the condition to filter in the first place. Every conditional
+        example above still needs its stereotype or its enclosing <code>@Configuration</code>.
+      </InfoBox>
 
       <InfoBox variant="tip" title="Why this matters in enterprise Spring">
         <p>
@@ -352,30 +392,44 @@ public class ReportExportService {
 }`}
       </CodeBlock>
 
-      <CodeBlock language="java" title="Optional dependencies — three ways">
+      <CodeBlock language="java" title="Optional dependencies — two ways, one constructor">
 {`@Service
 public class MetricsService {
 
     // Way 1: java.util.Optional — clear intent, no null.
+    // Resolved eagerly at construction: empty if no such bean exists.
     private final Optional<TracingClient> tracing;
 
-    public MetricsService(Optional<TracingClient> tracing) {
-        this.tracing = tracing;
-    }
-
     // Way 2: ObjectProvider — lazy, avoids early bean resolution.
-    // Best when the dependency is genuinely optional and expensive to create.
+    // Best when the dependency is genuinely optional AND expensive to create,
+    // or when you want a fresh lookup per call rather than one fixed instance.
     private final ObjectProvider<AlertingClient> alerting;
 
-    public MetricsService(ObjectProvider<AlertingClient> alerting) {
+    // ONE constructor that takes both. A bean must have exactly one
+    // autowirable constructor — two constructors here would not compile
+    // (each leaves the other final field unassigned) and would also leave
+    // Spring with no way to choose between them.
+    public MetricsService(Optional<TracingClient> tracing,
+                          ObjectProvider<AlertingClient> alerting) {
+        this.tracing = tracing;
         this.alerting = alerting;
     }
 
     void reportError(Exception e) {
-        alerting.ifAvailable(client -> client.notify(e));
+        alerting.ifAvailable(client -> client.notify(e));   // no-op if absent
+        tracing.ifPresent(client -> client.recordError(e));
     }
 }`}
       </CodeBlock>
+
+      <InfoBox variant="note" title="If you genuinely need more than one constructor">
+        Spring only autowires a constructor automatically when there is exactly <em>one</em>. Add a
+        second and startup fails with{' '}
+        <code>NoSuchMethodException</code>/&quot;no default constructor found&quot; unless you mark
+        the one Spring should use with <code>@Autowired</code>. That is the only situation in modern
+        Spring where <code>@Autowired</code> on a constructor is still required — with a single
+        constructor it has been redundant since Spring 4.3.
+      </InfoBox>
 
       <h2>The Self-Invocation Trap</h2>
       <p>
@@ -515,8 +569,12 @@ public class BackgroundWorker {
 
 // For beans you can't annotate (e.g. third-party classes),
 // use the @Bean(initMethod = "...", destroyMethod = "...") form.
-@Bean(initMethod = "connect", destroyMethod = "close")
-public MyClient myClient() { return new MyClient(config); }`}
+// @Bean methods only work inside a @Configuration (or @Component) class.
+@Configuration
+public class ClientConfig {
+    @Bean(initMethod = "connect", destroyMethod = "close")
+    public MyClient myClient() { return new MyClient(config); }
+}`}
       </CodeBlock>
 
       <InfoBox variant="warning" title="Prototype beans in a singleton — the injection trap">
@@ -605,10 +663,13 @@ class ApplicationSmokeTest {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="note" title="@MockBean is deprecated in Spring Boot 3.4+">
+      <InfoBox variant="note" title="@MockBean is gone — use @MockitoBean">
         <p>
-          Use <code>@MockitoBean</code> (Spring 6.2+) instead. Same behavior, better
-          integration with Mockito's lifecycle, and it's the going-forward API.
+          <code>@MockBean</code> and <code>@SpyBean</code> were deprecated in Spring Boot 3.4 and{' '}
+          <strong>removed in Spring Boot 4</strong>. The replacements are{' '}
+          <code>@MockitoBean</code> and <code>@MockitoSpyBean</code> (Spring Framework 6.2+), which
+          live in Framework rather than Boot, integrate properly with Mockito&apos;s lifecycle, and
+          participate in test-context caching. A straight rename covers almost every migration.
         </p>
       </InfoBox>
 

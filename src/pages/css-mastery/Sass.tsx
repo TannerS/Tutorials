@@ -88,7 +88,7 @@ $brand-hues: (primary: 243, danger: 4, success: 142);
 
     .title {
       font-size: 1.25rem; // compiles to: .card .header .title { ... }
-    }                     // specificity (0,3,0) — three classes deep
+    }                     // specificity (0,0,3,0) — three classes deep
   }
 
   &:hover { box-shadow: var(--shadow-lg); }   // & = parent reference
@@ -147,17 +147,33 @@ $brand-hues: (primary: 243, danger: 4, success: 142);
       </p>
 
       <CodeBlock language="scss" title="Functions — Compute a Value">
-{`@function px-to-rem($px, $base: 16px) {
-  @return ($px / $base) * 1rem;
+{`@use 'sass:math';
+
+@function px-to-rem($px, $base: 16px) {
+  // math.div, NOT $px / $base — see the warning below
+  @return math.div($px, $base) * 1rem;
 }
 
 @function contrast-text($bg-lightness) {
-  @return if($bg-lightness > 60%, #111, #fff);
+  @if $bg-lightness > 60% { @return #111; }
+  @return #fff;
 }
 
 .heading { font-size: px-to-rem(24px); } // 1.5rem
 .badge   { color: contrast-text(85%); }  // #111`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="/ is no longer division in Sass">
+        <code>/</code> was always ambiguous — it&apos;s a separator in real CSS
+        (<code>font: 16px/1.5</code>, <code>grid-area: 1 / 3</code>), so Sass could never tell
+        &quot;divide&quot; from &quot;print a slash.&quot; Writing <code>$px / $base</code> now emits
+        a <code>slash-div</code> deprecation warning and <strong>stops working entirely in Dart Sass
+        2.0</strong>. Use <code>math.div($px, $base)</code> (after <code>@use &apos;sass:math&apos;</code>),
+        which is unambiguous. The same applies to <code>if(...)</code>: Sass&apos;s function form is
+        now deprecated in favour of CSS&apos;s own <code>if()</code>, so inside a{' '}
+        <code>@function</code> reach for a plain <code>@if</code>/<code>@return</code> instead — it
+        reads better and carries no deprecation.
+      </InfoBox>
 
       <InfoBox variant="info" title="Mixin or function?">
         Ask what you&apos;re producing. Need multiple declarations (a media query block, vendor
@@ -192,17 +208,24 @@ $primary: #6366f1;
 $primary: #6366f1;
 @function spacing($n) { @return $n * 0.25rem; }
 
-// button.scss
+// button.scss — every @use goes at the TOP, before any style rule
 @use 'tokens';            // loaded exactly once, namespaced as "tokens."
+@use 'tokens' as t;       // alias the namespace if you want it shorter
+
 .btn {
   background: tokens.$primary;
   padding: tokens.spacing(4);
 }
-
-// alias the namespace if you want it shorter
-@use 'tokens' as t;
 .badge { background: t.$primary; }`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="@use must come first">
+        Every <code>@use</code> has to appear before the first style rule in the file (only{' '}
+        <code>@charset</code>, comments, and variable declarations may precede it). Slipping one in
+        further down — a very natural thing to do when you realise mid-file that you need another
+        partial — fails the build outright with <em>&quot;@use rules must be written before any
+        other rules&quot;</em>. Hoist it to the top of the file instead.
+      </InfoBox>
 
       <CodeBlock language="scss" title="@forward — Building a Single Public Entry Point">
 {`// styles/tokens/_color.scss

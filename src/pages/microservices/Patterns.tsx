@@ -7,7 +7,7 @@ import LessonLayout from '../../components/LessonLayout';
 export default function Patterns() {
   return (
     <LessonLayout
-      title="Core Microservices Patterns (10)"
+      title="Core Microservices Patterns (11)"
       sectionId="microservices"
       lessonIndex={1}
       prev={{ path: '/microservices/intro', label: 'Monolith vs Microservices' }}
@@ -363,7 +363,11 @@ public class OrderService {
 
     private final Tracer tracer;
 
-    @Transactional
+    // Deliberately NOT @Transactional. The remote inventoryClient.reserve()
+    // call below would sit inside the database transaction, holding a
+    // connection open for the whole network round trip — and a rollback would
+    // not un-reserve the stock anyway. Cross-service atomicity is a saga's job
+    // (pattern 5), not a database transaction's.
     public Order placeOrder(PlaceOrderRequest request) {
         // Add a manual span only where business meaning helps —
         // auto-instrumentation already covers the HTTP and DB layers.
@@ -483,6 +487,11 @@ public class OrderService {
             <td>Many services, need uniform cross-cutting</td>
             <td>Few services, adds infrastructure cost</td>
           </tr>
+          <tr>
+            <td>Distributed Tracing</td>
+            <td>Any request that crosses more than one service</td>
+            <td>Never skip it — but sample, do not trace 100%</td>
+          </tr>
         </tbody>
       </table>
 
@@ -527,6 +536,7 @@ public class OrderService {
           <li>CQRS optimizes reads and writes independently</li>
           <li>Strangler Fig enables gradual migration</li>
           <li>Service Mesh handles infrastructure concerns transparently</li>
+          <li>Distributed Tracing is what makes all of the above debuggable</li>
         </ul>
       </InfoBox>
     </LessonLayout>

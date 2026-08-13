@@ -219,22 +219,30 @@ export default function Messaging() {
         code={`// ─── Producer ───
 const amqp = require('amqplib');
 
-async function publishOrder(order) {
+// Open the connection and channel ONCE at startup and reuse them. Opening a
+// TCP connection + channel per message costs several round trips and will
+// exhaust broker file descriptors under load.
+let channel;
+
+async function initProducer() {
   const conn = await amqp.connect('amqp://localhost');
-  const ch   = await conn.createChannel();
+  // A ConfirmChannel lets the broker tell us the message was actually
+  // accepted. On a plain channel, publish() only buffers locally — close the
+  // process at the wrong moment and the message is silently gone.
+  channel = await conn.createConfirmChannel();
+  await channel.assertExchange('orders_exchange', 'direct', { durable: true });
+}
 
-  await ch.assertExchange('orders_exchange', 'direct', { durable: true });
-
-  ch.publish(
-    'orders_exchange',
-    'order.created',            // routing key
-    Buffer.from(JSON.stringify(order)),
-    { persistent: true }        // survive broker restart
-  );
-
-  console.log('Order published:', order.id);
-  await ch.close();
-  await conn.close();
+function publishOrder(order) {
+  return new Promise((resolve, reject) => {
+    channel.publish(
+      'orders_exchange',
+      'order.created',            // routing key
+      Buffer.from(JSON.stringify(order)),
+      { persistent: true },       // survive broker restart
+      (err) => (err ? reject(err) : resolve())   // broker confirm
+    );
+  });
 }
 
 // ─── Consumer ───
@@ -243,18 +251,27 @@ async function consumeOrders() {
   const ch   = await conn.createChannel();
 
   await ch.assertExchange('orders_exchange', 'direct', { durable: true });
-  const q = await ch.assertQueue('orders_queue', { durable: true });
+  const q = await ch.assertQueue('orders_queue', {
+    durable: true,
+    arguments: { 'x-dead-letter-exchange': 'orders_dlx' },
+  });
   await ch.bindQueue(q.queue, 'orders_exchange', 'order.created');
 
-  ch.prefetch(10);  // process up to 10 messages concurrently
+  ch.prefetch(10);  // at most 10 unacked messages in flight
 
   ch.consume(q.queue, async (msg) => {
+    if (!msg) return;           // broker cancelled the consumer
     try {
       const order = JSON.parse(msg.content.toString());
       await processOrder(order);
-      ch.ack(msg);           // success → acknowledge
+      ch.ack(msg);              // success → acknowledge
     } catch (err) {
-      ch.nack(msg, false, true);  // failure → requeue
+      // requeue=FALSE. Requeueing on every error is the classic poison-pill
+      // bug: a message that can never succeed (malformed JSON, a row that
+      // does not exist) is redelivered instantly and forever, spinning the
+      // consumer at 100% CPU and blocking real work. requeue=false routes it
+      // to the dead letter exchange instead — see the DLQ section below.
+      ch.nack(msg, false, false);
     }
   });
 }`}
@@ -323,6 +340,39 @@ async function consumeOrders() {
         lands in. All messages with the same key go to the same partition, guaranteeing ordering
         per key.
       </p>
+
+      <InfoBox title="Hot Partitions — When the Key You Chose Is Skewed" variant="warning">
+        <p>
+          Partition count sets your <em>maximum</em> parallelism; the key decides whether you
+          actually get it. Kafka assigns a partition by hashing the key, so throughput is only
+          balanced if the keys are. Choose <code>tenant_id</code> and your largest customer&apos;s
+          traffic all lands on one partition — one consumer runs red-hot and falls behind while the
+          other five idle. Adding consumers does not help: a partition is consumed by exactly one
+          member of a group, so that partition is a hard serial bottleneck.
+        </p>
+        <p>
+          The fix is to pick a higher-cardinality key, or to salt the hot one
+          (<code>tenant_id:bucket</code>, where bucket is a small random number) — but only when
+          the ordering guarantee you would be giving up is one you did not actually need. Ordering
+          per key is the whole reason to key at all; do not salt it away by accident.
+        </p>
+      </InfoBox>
+
+      <InfoBox title="Consumer Lag Is the Metric That Matters" variant="tip">
+        <p>
+          <strong>Consumer lag</strong> is the gap between the newest offset in a partition and the
+          offset a group has committed — literally how many messages you are behind. It is the
+          single most important health signal for a streaming system, because it is the only one
+          that distinguishes &quot;working&quot; from &quot;keeping up&quot;. Throughput can look
+          excellent while lag grows without bound.
+        </p>
+        <p>
+          Alert on lag <em>trend</em>, not an absolute number: a steady 50K is fine if it is flat,
+          while a rising 500 means consumers are now permanently slower than producers and will
+          never recover on their own. Watch it per partition, not just per topic — a single hot
+          partition&apos;s lag disappears into a topic-wide average.
+        </p>
+      </InfoBox>
 
       <h3>Consumer Group Rebalancing</h3>
       <p>
@@ -449,7 +499,7 @@ async function startConsumer() {
           </tr>
           <tr>
             <td>Replay</td>
-            <td>Not supported</td>
+            <td>Not with classic queues; RabbitMQ Streams (3.9+) does support offset replay</td>
             <td>Consumer resets offset to replay</td>
           </tr>
           <tr>

@@ -36,7 +36,7 @@ export default function Patterns() {
     "footer  footer  footer";
   grid-template-columns: 200px 1fr 200px;
   grid-template-rows: auto 1fr auto;
-  min-height: 100vh;
+  min-height: 100dvh;   /* dvh, not vh — see the Responsive lesson */
 }
 .holy-grail > header { grid-area: header; }
 .holy-grail > .left  { grid-area: left; }
@@ -62,10 +62,10 @@ export default function Patterns() {
 {`.dashboard {
   display: grid;
   grid-template-columns: 240px 1fr;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 .dash-sidebar {
-  position: sticky; top: 0; height: 100vh;
+  position: sticky; top: 0; height: 100dvh;
   overflow-y: auto; background: #1e293b; color: #f8fafc;
 }
 .dash-content {
@@ -134,7 +134,17 @@ export default function Patterns() {
       <p><strong>Why it works:</strong> <code>position: sticky</code> keeps the element in flow but pins it at <code>top: 0</code> on scroll. No JS needed.</p>
 
       <InfoBox variant="warning" title="Sticky Gotcha: overflow">
-        <code>sticky</code> won&apos;t work if any ancestor has <code>overflow: hidden</code> or <code>overflow: auto</code>. The scrolling container must be the viewport.
+        A sticky element sticks within its <strong>nearest scrolling ancestor</strong>, not
+        necessarily the viewport — and that&apos;s the whole gotcha. Give an ancestor{' '}
+        <code>overflow: hidden</code> or <code>clip</code> and that ancestor becomes the scroll
+        container, but it can never actually scroll, so the element has no scroll to react to and
+        appears to do nothing. (It is still <code>position: sticky</code>; it never computes back to{' '}
+        <code>static</code>.) By contrast <code>overflow: auto</code> or <code>scroll</code> on an
+        ancestor doesn&apos;t break anything — the element simply sticks inside <em>that</em> box
+        instead of the page, which is exactly how sticky table headers inside a scrollable panel are
+        built. So the rule is: if sticky &quot;does nothing,&quot; walk up the ancestor chain looking
+        for <code>overflow: hidden</code>/<code>clip</code>, and remember a sticky element can also
+        never escape its own parent&apos;s box.
       </InfoBox>
 
       {/* ───── 5. Collapsible Sidebar ───── */}
@@ -142,7 +152,7 @@ export default function Patterns() {
       <p>Desktop sidebar becomes a horizontal nav strip on small screens.</p>
       <CodeBlock language="css" title="Collapsible Sidebar — CSS">
 {`.app-layout {
-  display: grid; grid-template-columns: 240px 1fr; min-height: 100vh;
+  display: grid; grid-template-columns: 240px 1fr; min-height: 100dvh;
 }
 .app-sidebar { background: #1e293b; color: #f8fafc; padding: 1rem; }
 
@@ -271,20 +281,23 @@ export default function Patterns() {
       {/* ───── 10. Custom Scrollbar ───── */}
       <h2>10. Custom Scrollbar Styling</h2>
       <CodeBlock language="css" title="Custom Scrollbar — CSS">
-{`/* Chromium & Safari */
+{`/* STANDARD properties — now supported by Firefox, Chromium AND Safari.
+   Reach for these first; they are all most projects need. */
+.custom-scroll { scrollbar-width: thin; scrollbar-color: #94a3b8 #f1f5f9; }
+
+/* Legacy WebKit pseudo-elements — only for finer control than the two
+   standard properties allow (hover states, custom thumb radius, arrows). */
 .custom-scroll::-webkit-scrollbar { width: 8px; }
 .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
 .custom-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
-.custom-scroll::-webkit-scrollbar-thumb:hover { background: #64748b; }
-/* Firefox */
-.custom-scroll { scrollbar-width: thin; scrollbar-color: #94a3b8 #f1f5f9; }`}
+.custom-scroll::-webkit-scrollbar-thumb:hover { background: #64748b; }`}
       </CodeBlock>
       <CodeBlock language="html" title="Custom Scrollbar — HTML">
 {`<div class="custom-scroll" style="max-height: 300px; overflow-y: auto;">
   <!-- scrollable content -->
 </div>`}
       </CodeBlock>
-      <p><strong>Why it works:</strong> WebKit uses pseudo-elements; Firefox uses <code>scrollbar-width</code> and <code>scrollbar-color</code> for the same effect with less granularity.</p>
+      <p><strong>Why it works:</strong> <code>scrollbar-width</code> and <code>scrollbar-color</code> are the standardised properties and are the ones to reach for by default — Firefox has had them for years, Chromium shipped them in 121 and Safari in 18.2, so the &quot;these are the Firefox-only ones&quot; framing you&apos;ll still find in older articles is out of date. The <code>::-webkit-scrollbar</code> pseudo-elements remain useful only when you need finer control than <code>thin</code> plus two colours gives you, and they have never been on a standards track.</p>
 
       {/* ───── 11. Full-Bleed ───── */}
       <h2>11. Full-Bleed Layout</h2>
@@ -303,6 +316,27 @@ export default function Patterns() {
 </div>`}
       </CodeBlock>
       <p><strong>Why it works:</strong> <code>calc(50% - 50vw)</code> shifts the element left to the viewport edge, then <code>100vw</code> stretches it across.</p>
+
+      <InfoBox variant="warning" title="100vw includes the scrollbar">
+        <code>100vw</code> is the width of the viewport <em>including</em> a classic (non-overlay)
+        scrollbar gutter, while <code>50%</code> resolves against the content box, which excludes it.
+        On any desktop browser showing a permanent scrollbar the element therefore ends up ~15px too
+        wide and triggers a horizontal scrollbar of its own — the single most common complaint about
+        this recipe. Reaching for <code>overflow-x: hidden</code> on the body is the usual patch, but
+        it silently breaks <code>position: sticky</code> further down the page (per the gotcha
+        above). The robust fix drops viewport units entirely and lets a grid do the measuring:
+        <CodeBlock language="css" title="Scrollbar-safe full-bleed — the grid breakout">
+{`.wrapper {
+  display: grid;
+  grid-template-columns: 1fr min(65ch, 100%) 1fr;
+}
+.wrapper > * { grid-column: 2; }        /* content sits in the middle track */
+.full-bleed  { grid-column: 1 / -1; }   /* this one spans all three */
+
+/* No vw anywhere, so the scrollbar can't skew it: the side tracks are
+   just whatever 1fr of the CONTENT width happens to be. */`}
+        </CodeBlock>
+      </InfoBox>
 
       <InteractiveChallenge
         question={"What CSS makes an element break out of a centered container to full viewport width?"}

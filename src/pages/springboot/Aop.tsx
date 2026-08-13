@@ -367,12 +367,15 @@ HTTP concern? Filter or interceptor. Service concern? Aspect.`}
         <code>@Order</code> (or <code>Ordered</code> interface) controls it.
       </p>
       <CodeBlock language="java" title="Explicit aspect order">
-{`@Aspect @Component @Order(1) public class TransactionAspect { /* ... */ }
+{`@Aspect @Component @Order(1) public class LoggingAspect     { /* ... */ }
 @Aspect @Component @Order(2) public class SecurityAspect    { /* ... */ }
-@Aspect @Component @Order(3) public class LoggingAspect     { /* ... */ }
+@Aspect @Component @Order(3) public class TransactionAspect { /* ... */ }
 
-// Lower @Order = outer. With this ordering:
-//   Logging → Security → Transaction → target → Transaction → Security → Logging`}
+// Lower @Order = higher precedence = OUTER. With this ordering:
+//   Logging → Security → Transaction → target → Transaction → Security → Logging
+//
+// Logging outermost is usually what you want: it then measures the time spent
+// in the transaction and sees exceptions before the tx aspect rolls back.`}
       </CodeBlock>
 
       <h2>Common Pitfalls</h2>

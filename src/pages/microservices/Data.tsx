@@ -137,9 +137,14 @@ class BankAccount {
   private version = 0;
   private uncommittedEvents: DomainEvent[] = [];
 
+  // The aggregate's OWN identity. Never derive this from a mutable business
+  // field like the owner's name — two accounts for the same person would
+  // collide, and the ID would be empty until AccountCreated is applied.
+  constructor(private readonly id: string) {}
+
   // Rebuild state from events
-  static fromEvents(events: DomainEvent[]): BankAccount {
-    const account = new BankAccount();
+  static fromEvents(id: string, events: DomainEvent[]): BankAccount {
+    const account = new BankAccount(id);
     events.forEach(event => account.apply(event));
     return account;
   }
@@ -152,6 +157,7 @@ class BankAccount {
 
   // Command: withdraw money
   withdraw(amount: number): void {
+    if (amount <= 0) throw new Error('Amount must be positive');
     if (amount > this.balance) throw new Error('Insufficient funds');
     this.addEvent('MoneyWithdrawn', { amount });
   }
@@ -176,11 +182,13 @@ class BankAccount {
   private addEvent(type: string, data: Record<string, unknown>): void {
     const event: DomainEvent = {
       eventId: crypto.randomUUID(),
-      aggregateId: this.owner,
+      aggregateId: this.id,
       type,
       data,
-      timestamp: new Date(),
-      version: this.version + this.uncommittedEvents.length + 1,
+      // Just +1: apply() below already advances this.version, so also adding
+      // uncommittedEvents.length double-counts and produces 1, 3, 6, 10...
+      // Those gaps break the expectedVersion check in EventStore.append.
+      version: this.version + 1,
     };
     this.apply(event);
     this.uncommittedEvents.push(event);
@@ -244,8 +252,15 @@ class GetOrdersByCustomerQuery implements Query<OrderDTO[]> {
 class CreateOrderHandler {
   async execute(cmd: CreateOrderCommand): Promise<string> {
     const order = Order.create(cmd.customerId, cmd.items);
+
+    // ⚠️ These two lines are a DUAL WRITE: the save commits, then the publish
+    // is a separate network call. Crash in between and the order exists with
+    // no event — the read model never learns about it. Shown this way for
+    // clarity only; in production, write the event to an outbox table inside
+    // the same transaction (see Transactional Outbox at the end of this lesson).
     await this.writeRepository.save(order);
     await this.eventBus.publish(new OrderCreatedEvent(order));
+
     return order.id;  // only return the ID
   }
 }

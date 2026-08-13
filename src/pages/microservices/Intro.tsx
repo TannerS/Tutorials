@@ -11,7 +11,7 @@ export default function Intro() {
       sectionId="microservices"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/microservices/patterns', label: 'Core Patterns (10)' }}
+      next={{ path: '/microservices/patterns', label: 'Core Patterns (11)' }}
     >
       <h2>What Are Microservices?</h2>
       <p>

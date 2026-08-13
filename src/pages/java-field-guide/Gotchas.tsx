@@ -127,7 +127,7 @@ public non-sealed class Triangle extends Shape { ... }   // reopens the hierarch
         rows={[
           { need: 'NoSuchElementException from Optional', answer: 'Use orElseThrow, never bare .get()' },
           { need: 'Default object built on every call', answer: 'orElseGet(Supplier), not orElse(value)' },
-          { need: 'Vthreads throttling under load', answer: 'Pinning — swap synchronized for ReentrantLock' },
+          { need: 'Vthreads throttling under load', answer: "Don't hold a lock across I/O. Pre-24 only: swap synchronized for ReentrantLock" },
           { need: 'Manually sizing a thread pool for tasks', answer: 'Use newVirtualThreadPerTaskExecutor instead' },
           { need: 'Two empty states to check on a lookup', answer: 'Return empty collection, not Optional<Collection>' },
           { need: 'NPE from Optional.of(value)', answer: 'Use Optional.ofNullable for anything that might be null' },

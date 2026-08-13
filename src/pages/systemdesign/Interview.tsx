@@ -10,7 +10,7 @@ export default function Interview() {
       title="System Design Interviews"
       sectionId="systemdesign"
       lessonIndex={6}
-      prev={{ path: '/systemdesign/messaging', label: 'Message Queues &amp; Streaming' }}
+      prev={{ path: '/systemdesign/messaging', label: 'Message Queues & Streaming' }}
       next={null}
     >
       <p>
@@ -112,8 +112,21 @@ export default function Interview() {
           <tr><td>Cross-country round trip</td><td>~50 ms</td></tr>
           <tr><td>SSD sequential throughput</td><td>~1 GB/s</td></tr>
           <tr><td>Network throughput (1 Gbps link)</td><td>~125 MB/s</td></tr>
+          <tr><td>99% availability (&quot;two nines&quot;)</td><td>~3.65 days of downtime/year</td></tr>
+          <tr><td>99.9% availability (&quot;three nines&quot;)</td><td>~8.8 hours/year (~43 min/month)</td></tr>
+          <tr><td>99.99% availability (&quot;four nines&quot;)</td><td>~53 minutes/year (~4.3 min/month)</td></tr>
+          <tr><td>99.999% availability (&quot;five nines&quot;)</td><td>~5 minutes/year</td></tr>
         </tbody>
       </table>
+
+      <p>
+        The availability rows are worth committing to memory, because interviewers ask you to
+        state an SLA and then quietly check whether you understand what you just promised. Two
+        things to say out loud when you do: availability <strong>multiplies</strong> across
+        dependencies in series — a service that calls three components each at 99.9% inherits
+        roughly 99.7%, not 99.9% — and anything past four nines is essentially unreachable if a
+        human has to be paged, because 53 minutes a year does not survive one bad deploy.
+      </p>
 
       <p>
         Use these numbers to quickly estimate QPS, storage, and bandwidth for any system.

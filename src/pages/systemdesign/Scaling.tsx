@@ -258,11 +258,14 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Static file caching
+    # Static file caching.
+    # NOTE: do not pair "expires" with an "add_header Cache-Control". The
+    # expires directive already emits its own Cache-Control: max-age=...,
+    # so you end up sending TWO Cache-Control headers and the behaviour is
+    # whichever one the client picks. Set one, explicitly.
     location /static/ {
         root /var/www;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
+        add_header Cache-Control "public, max-age=2592000, immutable" always;
     }
 }`}
       />
@@ -684,12 +687,20 @@ for i in range(200):
         code={`-- KEYS[1]: rate limit key, e.g. "rl:user123"
 -- ARGV[1]: window size in seconds
 -- ARGV[2]: max requests per window
--- ARGV[3]: current unix time (ms) — passed in, never read from the
---          Redis node, so all instances agree on "now"
+--
+-- "now" is read from the REDIS NODE, not passed in by the caller. This is the
+-- point that trips people up: each app instance has its own slightly skewed
+-- clock, so accepting a client-supplied timestamp means instances disagree
+-- about which window a request belongs to — and a client with a fast clock can
+-- skip ahead into a fresh window on demand. One server-side clock, one answer.
+-- (redis.call('TIME') is non-deterministic, which older Redis forbade in
+-- scripts; since Redis 5 effects replication is the default and this is fine.)
 
 local window  = tonumber(ARGV[1])
 local limit   = tonumber(ARGV[2])
-local now     = tonumber(ARGV[3])
+
+local t   = redis.call('TIME')            -- {seconds, microseconds}
+local now = (tonumber(t[1]) * 1000) + math.floor(tonumber(t[2]) / 1000)
 
 local current_window  = math.floor(now / 1000 / window)
 local previous_window = current_window - 1
@@ -714,7 +725,12 @@ end
 redis.call("INCR", cur_key)
 redis.call("EXPIRE", cur_key, window * 2)
 
-return {1, limit, limit - estimated - 1}  -- allowed, limit, remaining`}
+-- Redis truncates Lua numbers to integers on the way out, and "estimated" is
+-- fractional. Floor it explicitly so the value you return is the value the
+-- client sees, and clamp at 0 so RateLimit-Remaining is never negative.
+local remaining = math.max(0, math.floor(limit - estimated - 1))
+
+return {1, limit, remaining}  -- allowed, limit, remaining`}
       />
 
       <InfoBox variant="warning" title="Tell the Client What Happened">
@@ -754,13 +770,6 @@ return {1, limit, limit - estimated - 1}  -- allowed, limit, remaining`}
           fairness — that a gateway cannot evaluate. Most mature systems run
           both layers.
         </p>
-      </InfoBox>
-
-      <InfoBox variant="tip" title="Distributed Rate Limiting">
-        When running multiple application instances, each instance needs access to a
-        shared counter. Use Redis with atomic INCR and EXPIRE commands to implement
-        distributed rate limiting. The sliding window log or sliding window counter
-        approach in Redis handles this efficiently at scale.
       </InfoBox>
 
       <InteractiveChallenge

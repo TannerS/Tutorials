@@ -9,7 +9,7 @@ export default function FieldGuideSpringRest() {
       eyebrow="Spring Boot 4 · Field Reference"
       title="Spring REST & Validation"
       tagline="Controllers, request binding, Bean Validation, and the throw-at-the-fault-line error-handling pattern — condensed for offline study."
-      meta={['Spring Boot 4', '13 patterns']}
+      meta={['Spring Boot 4', '12 patterns']}
       footerLabel="Personal study reference — Spring Boot"
       pageLabel="Spring Field Guide · REST & Validation"
       prev={{ path: '/spring-field-guide/spring-di', label: 'Spring DI & Beans' }}
@@ -224,6 +224,8 @@ public class CustomerRepository {
 201 Created         POST that created a resource (+ Location)
 204 No Content       successful DELETE, no body
 400 Bad Request      malformed body / failed validation
+401 Unauthorized     NOT authenticated (misnamed — it means
+                     "unauthenticated"); send a WWW-Authenticate
 403 Forbidden        authenticated but not authorized
 404 Not Found        resource doesn't exist
 409 Conflict         duplicate / concurrent-write conflict

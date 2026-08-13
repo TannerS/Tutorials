@@ -10,8 +10,8 @@ export default function Distributed() {
       title="Distributed Systems"
       sectionId="systemdesign"
       lessonIndex={4}
-      prev={{ path: '/systemdesign/databases', label: 'Database Design &amp; Scaling' }}
-      next={{ path: '/systemdesign/messaging', label: 'Message Queues &amp; Streaming' }}
+      prev={{ path: '/systemdesign/databases', label: 'Database Design & Scaling' }}
+      next={{ path: '/systemdesign/messaging', label: 'Message Queues & Streaming' }}
     >
       {/* ===== Section 1: CAP Theorem Deep Dive ===== */}
       <h2>CAP Theorem Deep Dive</h2>

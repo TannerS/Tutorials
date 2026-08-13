@@ -10,8 +10,8 @@ export default function Caching() {
       title="Caching Strategies"
       sectionId="systemdesign"
       lessonIndex={2}
-      prev={{ path: '/systemdesign/scaling', label: 'Scaling &amp; Load Balancing' }}
-      next={{ path: '/systemdesign/databases', label: 'Database Design &amp; Scaling' }}
+      prev={{ path: '/systemdesign/scaling', label: 'Scaling & Load Balancing' }}
+      next={{ path: '/systemdesign/databases', label: 'Database Design & Scaling' }}
     >
       {/* ================================================================
           SECTION 1: WHY CACHE?
@@ -114,7 +114,11 @@ async function updateUser(userId, data) {
     'UPDATE users SET name = $1 WHERE id = $2',
     [data.name, userId]
   );
-  // Delete stale cache entry
+  // Delete stale cache entry. Order matters: write to the database FIRST,
+  // then delete. Deleting first leaves a window where a concurrent reader
+  // re-populates the cache with the pre-update row and it stays wrong until
+  // the TTL expires. (Even write-then-delete has a narrower version of this
+  // race, which is why a TTL is a safety net, not an optimisation.)
   await redis.del(\`user:\${userId}\`);
 }`}
       </CodeBlock>
@@ -584,14 +588,27 @@ await redis.setex(key, ttlWithJitter(300), JSON.stringify(data));`}
       </InfoBox>
 
       <CodeBlock language="javascript" title="Cache Stampede Prevention with Locking">
-{`async function getWithLock(key, fetchFn, ttl = 300) {
+{`// Release only if WE still hold the lock. Compare-and-delete must be atomic,
+// which on Redis means a Lua script — GET-then-DEL from the client is not.
+const RELEASE = \`
+  if redis.call("GET", KEYS[1]) == ARGV[1] then
+    return redis.call("DEL", KEYS[1])
+  end
+  return 0\`;
+
+async function getWithLock(key, fetchFn, ttl = 300, attempt = 0) {
   // Try cache first
   const cached = await redis.get(key);
   if (cached) return JSON.parse(cached);
 
-  // Acquire lock (NX = only if not exists, EX = 10s timeout)
+  // Bound the retries. Unbounded recursion here means a permanently failing
+  // fetchFn turns every waiting request into an infinite retry loop.
+  if (attempt >= 5) throw new Error(\`Timed out waiting for cache fill: \${key}\`);
+
+  // Acquire lock with a UNIQUE token (NX = only if absent, EX = 10s safety TTL)
   const lockKey = \`lock:\${key}\`;
-  const acquired = await redis.set(lockKey, '1', 'NX', 'EX', 10);
+  const token = crypto.randomUUID();
+  const acquired = await redis.set(lockKey, token, 'NX', 'EX', 10);
 
   if (acquired) {
     try {
@@ -600,12 +617,15 @@ await redis.setex(key, ttlWithJitter(300), JSON.stringify(data));`}
       await redis.setex(key, ttl, JSON.stringify(data));
       return data;
     } finally {
-      await redis.del(lockKey);  // Release lock
+      // NOT redis.del(lockKey). If fetchFn overran the 10s TTL, the lock has
+      // already expired and been re-acquired by someone else — a blind DEL
+      // would delete THEIR lock and let a third request in behind them.
+      await redis.eval(RELEASE, 1, lockKey, token);
     }
   } else {
     // Another request holds the lock — wait and retry
     await sleep(50);  // Wait 50ms
-    return getWithLock(key, fetchFn, ttl);  // Retry
+    return getWithLock(key, fetchFn, ttl, attempt + 1);
   }
 }
 
@@ -616,6 +636,61 @@ const user = await getWithLock(
   300  // 5-minute TTL
 );`}
       </CodeBlock>
+
+      {/* ================================================================
+          SECTION 11b: CACHE PENETRATION
+          ================================================================ */}
+
+      <h2>Cache Penetration (Misses That Never Populate)</h2>
+      <p>
+        A stampede is many requests missing on a key that <em>exists</em>. Cache penetration is the
+        opposite failure: requests for a key that does <strong>not</strong> exist. Look again at the
+        cache-aside code above — <code>if (user)</code> means a lookup that finds nothing writes
+        nothing to the cache. Every future request for that same missing ID misses again and goes
+        straight to the database, forever. The cache is completely bypassed.
+      </p>
+      <p>
+        This is not just a cold-start inefficiency, it is an attack. An attacker requesting
+        <code> /users/-1</code>, <code>/users/-2</code>, <code>/users/-3</code>… generates a
+        guaranteed 100% miss rate and pins your database at full load while your cache hit-rate
+        dashboard still looks healthy — because misses on absent keys never even become cache
+        entries.
+      </p>
+
+      <CodeBlock language="javascript" title="Negative Caching">
+{`const NOT_FOUND = '\\u0000nf';  // sentinel that cannot collide with real data
+
+async function getUserSafe(userId) {
+  const cacheKey = \`user:\${userId}\`;
+  const cached = await redis.get(cacheKey);
+
+  if (cached === NOT_FOUND) return null;      // known-missing — no DB call
+  if (cached) return JSON.parse(cached);
+
+  const user = await db.findUser(userId);
+
+  if (!user) {
+    // Cache the ABSENCE, with a deliberately short TTL: the row may be
+    // created a second from now, and you do not want to serve a 404 for
+    // five minutes after a signup.
+    await redis.setex(cacheKey, 60, NOT_FOUND);
+    return null;
+  }
+
+  await redis.setex(cacheKey, 300, JSON.stringify(user));
+  return user;
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Bloom Filter for Very Large Key Spaces">
+        Negative caching costs memory proportional to the number of distinct bad keys requested —
+        which an attacker controls. When the key space is huge, front the cache with a{' '}
+        <strong>Bloom filter</strong> holding every ID that actually exists. A Bloom filter answers
+        &quot;definitely not present&quot; or &quot;possibly present&quot; in a few bits per key, so
+        a request for an ID that was never issued is rejected before it touches Redis or the
+        database. False positives simply fall through to the normal lookup path; false negatives are
+        impossible, which is exactly the direction of error you want here.
+      </InfoBox>
 
       {/* ================================================================
           SECTION 12: MULTI-TIER CACHING
@@ -639,7 +714,7 @@ const user = await getWithLock(
         <li><strong>CDN Cache:</strong> Edge servers distributed globally. Reduces latency for geographically distributed users. Caches static assets and sometimes API responses.</li>
         <li><strong>API Gateway Cache:</strong> Caches entire API responses at the gateway level. Prevents requests from reaching backend services at all.</li>
         <li><strong>Application Cache (Redis/Memcached):</strong> In-memory cache shared across application instances. Caches database query results, computed values, session data.</li>
-        <li><strong>Database Query Cache:</strong> Built-in query result caching in the database engine. Transparent to the application but limited in scope.</li>
+        <li><strong>Database Buffer Pool:</strong> The engine&apos;s own page cache, holding hot table and index pages in RAM. Transparent to the application — it removes the disk read, but not the cost of executing the query.</li>
       </ul>
 
       <h3>Database Query Cache vs. Materialized Views</h3>
@@ -649,11 +724,21 @@ const user = await getWithLock(
       </p>
       <ul>
         <li>
-          <strong>Query cache (e.g., PostgreSQL shared buffers, MySQL query cache historically):</strong> Caches
-          the result of a specific query <em>after</em> it runs once. Populated lazily on read — same
-          cache-aside idea, just implemented inside the database engine. Invalidated automatically
-          when underlying rows change. Cheap to enable, but scope is limited to exact repeated
-          queries and offers no control over TTL or eviction.
+          <strong>Query result cache:</strong> Caches the full result set of a specific query
+          <em> after</em> it runs once, keyed by the query text, and invalidates it when the
+          underlying rows change. Worth knowing that this is <strong>mostly a historical
+          feature</strong>: MySQL&apos;s query cache was deprecated in 5.7 and removed outright in
+          8.0, because the invalidation lock became a scalability bottleneck on write-heavy
+          tables. Modern stacks put result caching <em>outside</em> the database — in Redis, or a
+          proxy like ProxySQL — where you control TTL and eviction.
+        </li>
+        <li>
+          <strong>Not the same thing: the buffer pool</strong> (PostgreSQL <code>shared_buffers</code>,
+          InnoDB&apos;s buffer pool). This caches <em>data and index pages</em>, not query results.
+          It saves the disk read, but the query still executes — every join, sort, and aggregation
+          runs again. It is why a repeated expensive <code>GROUP BY</code> stays slow even when the
+          table is entirely in memory, and precisely why the application-level caching in this
+          lesson still earns its keep.
         </li>
         <li>
           <strong>Materialized view:</strong> A query&apos;s result set is computed once and physically
@@ -820,6 +905,7 @@ ETag: "abc123"
           <li>Cache invalidation is the hardest problem — when in doubt, use shorter TTLs</li>
           <li>Use distributed caching with consistent hashing for scalability</li>
           <li>Prevent cache stampedes with locking, early expiration, or background refresh</li>
+          <li>Cache misses on keys that do not exist (penetration) bypass the cache entirely — cache the absence too</li>
           <li>Multi-tier caching (browser → CDN → app → DB) provides defense in depth</li>
         </ul>
       </InfoBox>

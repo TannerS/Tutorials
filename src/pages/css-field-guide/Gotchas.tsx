@@ -78,11 +78,15 @@ export default function FieldGuideCssGotchas() {
         glyph="Ov"
         title={<>overflow: hidden<span className="dim"> Breaks sticky</span></>}
         language="css"
-        code={`.scroll-parent { overflow-y: auto; }  /* or overflow: hidden, clip, scroll */
-.scroll-parent .sidebar { position: sticky; top: 0; }
-/* ❌ sticky silently falls back to static behavior — ANY ancestor
-   with overflow other than visible breaks it, not just the direct parent */`}
-        caption="position: sticky requires every ancestor up to the scrolling container to have overflow: visible (the default). Adding overflow: hidden anywhere in that chain — even for an unrelated clipping reason — silently disables sticky with no console warning."
+        code={`/* The real rule: the nearest ancestor with overflow != visible becomes
+   the sticky element's scroll container. It does NOT become static. */
+
+.parent { overflow: hidden; }              /* ❌ container can't scroll, so
+.parent .sidebar { position: sticky; top: 0; }  nothing to stick against */
+
+.parent { overflow-y: auto; height: 100vh; } /* ✅ works — but sticks to
+.parent .sidebar { position: sticky; top: 0; }    THIS box, not the viewport */`}
+        caption="Sticky never silently becomes static — it stays sticky, but relative to the nearest ancestor whose overflow isn't visible. overflow: auto/scroll is fine (that ancestor just becomes the scrollport). The real killers are overflow: hidden and clip, where the container cannot scroll at all, so the element has nothing to stick against. A parent with no height set is the other common cause."
       />
 
       <PosterCard

@@ -23,7 +23,7 @@ export default function FieldGuideCssPatterns() {
   display: grid;
   grid-template-areas: "hd hd hd" "lt ct rt" "ft ft ft";
   grid-template-columns: 200px 1fr 200px;
-  min-height: 100vh;
+  min-height: 100dvh;   /* dvh, not vh — mobile toolbar safe */
 }
 .holy-grail > header { grid-area: hd; }`}
         caption="Named grid-template-areas map directly to the visual layout — no column-counting, and the sidebars stay fixed-width while 1fr absorbs all remaining space for the content column."
@@ -52,7 +52,7 @@ export default function FieldGuideCssPatterns() {
   background: var(--bg-primary);
 }
 /* no JS, no scroll listener — stays in flow until the threshold */`}
-        caption="position: sticky needs a top offset to know WHEN to stick, and every ancestor up the chain must have overflow: visible (see the Gotchas page) or it silently reverts to static."
+        caption="position: sticky needs a top offset to know WHEN to stick. It then sticks inside its NEAREST SCROLLING ANCESTOR — overflow: auto/scroll on an ancestor is fine (that's how sticky table headers in a scroll panel work); overflow: hidden/clip is what breaks it, because that ancestor becomes the scroll container yet can never scroll. It never reverts to static."
       />
 
       <PosterCard
@@ -77,7 +77,7 @@ export default function FieldGuideCssPatterns() {
   width: 100vw;
   margin-left: calc(50% - 50vw);
 }`}
-        caption="calc(50% - 50vw) is the exact horizontal distance from the constrained container's edge to the viewport's edge — shifting left by that amount, then spanning 100vw, breaks the element out to the full screen width."
+        caption="calc(50% - 50vw) is the exact horizontal distance from the constrained container's edge to the viewport's edge. Caveat: 100vw INCLUDES a classic scrollbar gutter while 50% doesn't, so on desktop this overshoots by the scrollbar width and adds a horizontal scrollbar — prefer the scrollbar-safe grid breakout (grid-template-columns: 1fr min(65ch, 100%) 1fr, with .full-bleed { grid-column: 1 / -1 })."
       />
 
       <PosterCard
@@ -150,15 +150,15 @@ export default function FieldGuideCssPatterns() {
         code={`.custom-scroll::-webkit-scrollbar { width: 8px; }
 .custom-scroll::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 .custom-scroll { scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }`}
-        caption="Two separate specs cover this: WebKit/Chromium/Safari use ::-webkit-scrollbar pseudo-elements; Firefox uses the scrollbar-width/scrollbar-color properties. Ship both — neither implements the other's API."
+        caption="scrollbar-width/scrollbar-color are the STANDARD properties and now work in Firefox, Chromium (121+) and Safari (18.2+) — reach for them first; the widespread 'those are the Firefox-only ones' advice is out of date. The ::-webkit-scrollbar pseudo-elements were never standardised and are only worth adding when you need more than thin + two colours (hover states, thumb radius)."
       />
 
       <PosterCard
         glyph="Dg"
         title={<>Dashboard Grid<span className="dim"> — fixed sidebar + fluid content</span></>}
         language="css"
-        code={`.dashboard { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
-.dash-sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+        code={`.dashboard { display: grid; grid-template-columns: 240px 1fr; min-height: 100dvh; }
+.dash-sidebar { position: sticky; top: 0; height: 100dvh; overflow-y: auto; }
 .dash-content {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

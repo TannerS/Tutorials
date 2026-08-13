@@ -9,7 +9,7 @@ export default function FieldGuideJavaExceptionsIo() {
       eyebrow="Java · Field Reference"
       title="Exceptions & I/O"
       tagline="Checked vs unchecked, custom exception hierarchies, and the NIO.2 file API that replaced java.io — condensed for offline study."
-      meta={['Java 21+', '12 patterns']}
+      meta={['Java 21+', '16 patterns']}
       footerLabel="Personal study reference — Java"
       pageLabel="Java Field Guide · Exceptions & I/O"
       prev={{ path: '/java-field-guide/collections-streams', label: 'Collections & Streams' }}

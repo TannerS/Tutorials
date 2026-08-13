@@ -9,7 +9,7 @@ export default function FieldGuideCssTokens() {
       eyebrow="CSS · Field Reference"
       title="Design Tokens & Style Inclusion"
       tagline="Carbon-style token tiers, naming, theming — plus a head-to-head on how styles actually ship to the browser."
-      meta={['Token Architecture', '12 references']}
+      meta={['Token Architecture', '11 references']}
       footerLabel="Personal study reference — Tokens & Delivery"
       pageLabel="CSS Field Guide · Tokens & Style Inclusion"
       prev={{ path: '/css-field-guide/sass', label: 'Sass Essentials' }}

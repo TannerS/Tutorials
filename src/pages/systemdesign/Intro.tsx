@@ -11,7 +11,7 @@ export default function Intro() {
       sectionId="systemdesign"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/systemdesign/scaling', label: 'Scaling &amp; Load Balancing' }}
+      next={{ path: '/systemdesign/scaling', label: 'Scaling & Load Balancing' }}
     >
       {/* ====== Section 1: What is System Design? ====== */}
       <h2>What is System Design?</h2>

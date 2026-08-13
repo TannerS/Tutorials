@@ -238,23 +238,52 @@ Idempotency-Key: pay-2024-03-15-user42-abc123
 HTTP/1.1 422 Unprocessable Entity
 {
   "error": "Idempotency key already used with different parameters"
+}
+
+# Retry arrives while the FIRST request is still being processed.
+# The server must not start a second charge and must not invent a
+# response — it says "ask again in a moment".
+POST /api/payments
+Idempotency-Key: pay-2024-03-15-user42-abc123
+{ "amount": 100.00, "currency": "USD", "merchantId": "merchant-456" }
+
+HTTP/1.1 409 Conflict
+Retry-After: 1
+{
+  "error": "A request with this idempotency key is currently being processed"
 }`}
       </CodeBlock>
 
       <CodeBlock language="javascript" title="Express.js — Idempotency Key Middleware">
-        {`const idempotencyStore = new Map(); // Use Redis in production
+        {`const crypto = require('crypto');
+const hashBody = (body) =>
+  crypto.createHash('sha256').update(JSON.stringify(body ?? {})).digest('hex');
 
-function idempotencyMiddleware(req, res, next) {
+const KEY_TTL_SECONDS = 24 * 60 * 60;
+
+async function idempotencyMiddleware(req, res, next) {
   const key = req.headers['idempotency-key'];
   if (!key) return next();
 
-  // Check if we have a cached response for this key
-  const cached = idempotencyStore.get(key);
+  const storeKey = \`idem:\${key}\`;
+  const bodyHash = hashBody(req.body);
 
-  if (cached) {
-    // Verify the request body matches the original
-    const bodyHash = hashBody(req.body);
-    if (bodyHash !== cached.bodyHash) {
+  // ── Step 1: ATOMICALLY reserve the key ──────────────────────────────
+  // This is the whole point of the pattern. A plain "GET then SET" leaves a
+  // window where two concurrent retries both miss the cache and both charge
+  // the card — exactly the double charge we set out to prevent. SET NX is a
+  // single atomic op: only the first request wins.
+  const reserved = await redis.set(
+    storeKey,
+    JSON.stringify({ state: 'in-flight', bodyHash }),
+    'NX', 'EX', KEY_TTL_SECONDS
+  );
+
+  if (!reserved) {
+    const record = JSON.parse(await redis.get(storeKey));
+
+    // Same key, different payload — the client has a bug.
+    if (record.bodyHash !== bodyHash) {
       return res.status(422).json({
         type: 'https://api.example.com/errors/idempotency-mismatch',
         title: 'Idempotency Key Mismatch',
@@ -263,20 +292,37 @@ function idempotencyMiddleware(req, res, next) {
       });
     }
 
-    // Return the cached response
+    // The original request is STILL RUNNING. Do not process, and do not
+    // guess at the outcome — tell the client to retry shortly.
+    if (record.state === 'in-flight') {
+      return res.status(409).json({
+        type: 'https://api.example.com/errors/idempotency-in-progress',
+        title: 'Request In Progress',
+        status: 409,
+        detail: 'A request with this idempotency key is currently being processed.'
+      });
+    }
+
+    // Completed earlier — replay the stored response.
     res.set('Idempotency-Replayed', 'true');
-    return res.status(cached.status).json(cached.body);
+    return res.status(record.status).json(record.body);
   }
 
-  // Intercept the response to cache it
+  // ── Step 2: we own the key. Record the FINAL response. ──────────────
   const originalJson = res.json.bind(res);
   res.json = (body) => {
-    idempotencyStore.set(key, {
-      status: res.statusCode,
-      body,
-      bodyHash: hashBody(req.body),
-      createdAt: Date.now()
-    });
+    if (res.statusCode >= 500) {
+      // Never freeze a server error behind the key: the client would replay
+      // the same 500 forever instead of getting a real retry. Drop the
+      // reservation so the next attempt starts clean.
+      redis.del(storeKey).catch(() => {});
+    } else {
+      redis.set(
+        storeKey,
+        JSON.stringify({ state: 'done', status: res.statusCode, body, bodyHash }),
+        'EX', KEY_TTL_SECONDS
+      ).catch(() => {});
+    }
     return originalJson(body);
   };
 
@@ -334,10 +380,15 @@ GET /api/users/42/orders       → [{ id, total, items, ... }]
 GET /api/users/42/orders/1/items → [{ id, name, price, ... }]
 # 3 requests, each returns a fixed shape (over-fetching or under-fetching)
 
-# GraphQL: Single endpoint, client-defined shape
-POST /graphql
-{
-  user(id: 42) {
+# GraphQL: Single endpoint, client-defined shape.
+# The query below is the GraphQL document. Over HTTP it does NOT go on the
+# wire as-is — it is carried inside a JSON envelope:
+#   POST /graphql
+#   Content-Type: application/json
+#   { "query": "query GetUser($id: ID!) { ... }", "variables": { "id": 42 } }
+
+query GetUser($id: ID!) {
+  user(id: $id) {
     name
     email
     orders(first: 5) {
@@ -379,17 +430,47 @@ POST /graphql
 syntax = "proto3";
 package user;
 
+// Required for the well-known Empty type. Without this import protoc fails
+// with: "Empty" is not defined. Every message a service references must be
+// defined or imported — protoc will not infer them.
+import "google/protobuf/empty.proto";
+
 service UserService {
   rpc GetUser(GetUserRequest) returns (UserResponse);
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
   rpc CreateUser(CreateUserRequest) returns (UserResponse);
   rpc UpdateUser(UpdateUserRequest) returns (UserResponse);
-  rpc DeleteUser(DeleteUserRequest) returns (Empty);
+  rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
   rpc StreamUserEvents(StreamRequest) returns (stream UserEvent);
 }
 
 message GetUserRequest {
   int64 id = 1;
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+}
+
+message UpdateUserRequest {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message DeleteUserRequest {
+  int64 id = 1;
+}
+
+message StreamRequest {
+  int64 user_id = 1;
+}
+
+message UserEvent {
+  int64 user_id = 1;
+  string event_type = 2;
+  string occurred_at = 3;
 }
 
 message UserResponse {
@@ -444,7 +525,9 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 # - Length limits (max 255 chars for name)
 # - Format validation (email, URL, UUID)
 # - Whitelist allowed values for enums
-# - Sanitize to prevent XSS and SQL injection
+# NOTE: validation is not the defence against injection. Use parameterized
+# queries for SQL and contextual output encoding for XSS — "sanitizing"
+# input is a last resort that attackers routinely slip past.
 
 # 4. Rate limiting — protect against abuse
 X-RateLimit-Limit: 100
@@ -478,8 +561,11 @@ Access-Control-Allow-Headers: Authorization, Content-Type
 
       <h2>API Documentation with OpenAPI</h2>
 
-      <CodeBlock language="yaml" title="OpenAPI 3.0 Specification Example">
-        {`openapi: 3.0.3
+      <CodeBlock language="yaml" title="OpenAPI 3.1 Specification Example">
+        {`# 3.1 is the current line. Its headline change over 3.0 is full JSON Schema
+# 2020-12 compatibility — so 'nullable: true' is gone (use type: [string, 'null'])
+# and you can reuse your existing JSON Schemas verbatim.
+openapi: 3.1.0
 info:
   title: User Management API
   version: 1.0.0
@@ -552,7 +638,7 @@ components:
       <InfoBox variant="success" title="Pre-Launch API Checklist">
         <p><strong>URL Design:</strong> Plural nouns, lowercase, hyphens, consistent prefix, no verbs</p>
         <p><strong>HTTP Methods:</strong> Correct method for each operation, proper status codes</p>
-        <p><strong>Error Handling:</strong> RFC 7807 format, field-level validation, no leaked internals</p>
+        <p><strong>Error Handling:</strong> Problem Details (RFC 9457, which obsoleted RFC 7807), field-level validation, no leaked internals</p>
         <p><strong>Pagination:</strong> All collection endpoints paginated, includes links and meta</p>
         <p><strong>Versioning:</strong> Strategy chosen and documented, backward compatibility policy</p>
         <p><strong>Authentication:</strong> OAuth 2.0 or API keys, HTTPS only</p>

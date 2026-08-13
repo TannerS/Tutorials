@@ -150,7 +150,7 @@ class ApplicationSmokeTest {
         glyph="Mb"
         title={<>@MockitoBean<span className="dim"> vs @MockBean</span></>}
         language="java"
-        code={`// Spring Boot 3.4+ — @MockBean is deprecated
+        code={`// @MockBean: deprecated in Boot 3.4, REMOVED in Boot 4.
 @WebMvcTest(OrderController.class)
 class OrderControllerTest {
     @Autowired MockMvc mvc;
@@ -159,7 +159,7 @@ class OrderControllerTest {
 
 // Plain Mockito mock() — no Spring context involvement at all
 OrderRepository repo = mock(OrderRepository.class);`}
-        caption="@MockitoBean (Spring 6.2+) replaces a bean inside the ApplicationContext for slice/integration tests. Plain mock() is for unit tests with no context."
+        caption="@MockitoBean (Spring Framework 6.2+) replaces a bean inside the ApplicationContext for slice/integration tests; @MockBean was deprecated in Boot 3.4 and removed in Boot 4, so on Boot 4 the migration is mandatory, not optional. Plain mock() is for unit tests with no context."
       />
 
       <PosterCard
@@ -184,20 +184,23 @@ class OrderDtoJsonTest {
         glyph="Wi"
         title={<>WireMock<span className="dim"> vs MockRestServiceServer</span></>}
         language="java"
-        code={`@SpringBootTest
+        code={`// @AutoConfigureWireMock needs spring-cloud-contract-wiremock
+// (it is NOT part of core Spring Boot test).
+@SpringBootTest
 @AutoConfigureWireMock(port = 0)
 class CatalogClientTest {
     @Test
     void returnsProductWhenFound() {
         WireMock.stubFor(get(urlEqualTo("/products/PROD-1"))
             .willReturn(aResponse().withStatus(200)
-                .withBody("{\\"id\\":\\"PROD-1\\"}")));
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\\"id\\":\\"PROD-1\\",\\"name\\":\\"Chair\\"}")));
 
         ProductDto p = client.get("PROD-1");
         assertThat(p.name()).isEqualTo("Chair");
     }
 }`}
-        caption="WireMock runs a real HTTP server on a random port — best for testing wire format. MockRestServiceServer is in-process, for RestTemplate/RestClient code only."
+        caption="WireMock runs a real HTTP server on a random port — best for testing wire format, and the only option that also exercises your HTTP client's own config (timeouts, interceptors, deserialization). MockRestServiceServer is in-process and stubs at the RestTemplate/RestClient layer, so it never proves the real bytes parse."
       />
 
       <PosterCard

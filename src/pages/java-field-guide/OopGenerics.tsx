@@ -9,7 +9,7 @@ export default function FieldGuideJavaOopGenerics() {
       eyebrow="Java · Field Reference"
       title="OOP & Generics"
       tagline="Classes, inheritance, and the type-safety tools that keep collections honest at compile time — condensed for offline study."
-      meta={['Java 21+', '12 patterns']}
+      meta={['Java 21+', '17 patterns']}
       footerLabel="Personal study reference — Java"
       pageLabel="Java Field Guide · OOP & Generics"
       prev={{ path: '/java-field-guide/syntax', label: 'Modern Java Syntax' }}
@@ -156,8 +156,8 @@ public static <T> List<T> arrayToList(T[] array) {
     return list;
 }
 
-printArray(numbers);   // T inferred as Integer
-printArray(words);     // T inferred as String`}
+List<Integer> nums  = arrayToList(numbers);   // T inferred as Integer
+List<String>  strs  = arrayToList(words);     // T inferred as String`}
         caption="A method can introduce its own type parameter even when the enclosing class has none — Java infers T from the argument at the call site, no explicit &lt;Integer&gt; needed."
       />
 
@@ -172,8 +172,11 @@ public static <T extends Number> double sum(List<T> list) {
     return total;
 }
 
-// Multiple bounds: class first, then interfaces
-public static <T extends Comparable<T>> T findMax(List<T> list) { ... }`}
+// An interface bound still uses "extends", never "implements"
+public static <T extends Comparable<T>> T findMax(List<T> list) { ... }
+
+// Multiple bounds joined with & — class bound first, then interfaces
+public static <T extends Number & Comparable<T>> T clamp(T v, T lo, T hi) { ... }`}
         caption={<><code>extends</code> in a bound means &quot;is-a or implements&quot; for both classes and interfaces — it's the only keyword generics use, even for interface bounds. Without the bound, <code>.doubleValue()</code> wouldn't compile because plain <code>T</code> only has <code>Object</code>'s methods.</>}
       />
 

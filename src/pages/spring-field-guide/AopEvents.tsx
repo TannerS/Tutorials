@@ -9,7 +9,7 @@ export default function FieldGuideSpringAopEvents() {
       eyebrow="Spring Boot 4 · Field Reference"
       title="AOP & Async Events"
       tagline="Writing aspects that actually weave, async execution, application events, and @Cacheable — the positive mechanics, gotchas live on the Gotchas page."
-      meta={['Spring Boot 4', '12 patterns']}
+      meta={['Spring Boot 4', '13 patterns']}
       footerLabel="Personal study reference — Spring Boot"
       pageLabel="Spring Field Guide · AOP & Async Events"
       prev={{ path: '/spring-field-guide/spring-security', label: 'Spring Security' }}
@@ -105,14 +105,15 @@ public class ServiceLayerLogging {
         glyph="Or"
         title={<>Aspect ordering<span className="dim"> — @Order</span></>}
         language="java"
-        code={`@Aspect @Component @Order(1) public class TransactionAspect { }
+        code={`@Aspect @Component @Order(1) public class LoggingAspect     { }
 @Aspect @Component @Order(2) public class SecurityAspect    { }
-@Aspect @Component @Order(3) public class LoggingAspect     { }
+@Aspect @Component @Order(3) public class TransactionAspect { }
 
-// Lower @Order = outer. Call order becomes:
+// LOWER @Order = higher precedence = OUTER. So Logging(1) wraps
+// everything and Transaction(3) sits closest to the target:
 //   Logging -> Security -> Transaction -> target
 //   -> Transaction -> Security -> Logging`}
-        caption="When multiple aspects (including built-ins like @Transactional) match the same method, @Order controls nesting — without it, ordering is unspecified and can flip between builds."
+        caption="When multiple aspects (including built-ins like @Transactional) match the same method, @Order controls nesting — without it, ordering is unspecified and can flip between builds. Watch the direction: the LOWEST number is outermost, so give logging the low number and the transaction the high one, not the reverse."
       />
 
       <PosterCard

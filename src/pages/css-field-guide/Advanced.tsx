@@ -9,7 +9,7 @@ export default function FieldGuideCssAdvanced() {
       eyebrow="CSS · Field Reference"
       title="Advanced CSS & Modern Selectors"
       tagline="Grid/flexbox tricks and the 2023+ selector toolkit — :has(), container queries, subgrid, native nesting."
-      meta={['CSS Grid Level 2', '12 techniques']}
+      meta={['CSS Grid Level 2', '18 techniques']}
       footerLabel="Personal study reference — Advanced CSS"
       pageLabel="CSS Field Guide · Advanced"
       prev={{ path: '/css-field-guide/basics', label: 'CSS Basics Cheat Sheet' }}
@@ -50,12 +50,14 @@ export default function FieldGuideCssAdvanced() {
         glyph="Fx"
         title={<>Flexbox One-Liners</>}
         language="css"
-        code={`.center   { display: flex; place-items: center; }
+        code={`.center   { display: flex; justify-content: center; align-items: center; }
+/* ❌ NOT place-items: center — justify-items is IGNORED in flexbox,
+   so you'd get cross-axis centring only. place-items is a GRID shorthand. */
 .between  { display: flex; justify-content: space-between; align-items: center; }
 .stack    { display: flex; flex-direction: column; gap: 1rem; }
 .wrap     { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 .pin-end  { display: flex; }  .pin-end > :last-child { margin-left: auto; }`}
-        caption="margin-left: auto on a flex item consumes ALL remaining free space up to that point — the classic trick for pinning one item to the far edge without switching to justify-content: space-between."
+        caption="Centring on both axes in flexbox takes the two-liner (justify-content + align-items); only display: grid can do it with place-items, because flex containers ignore justify-items outright. margin-left: auto on a flex item consumes ALL remaining free space up to that point — the classic trick for pinning one item to the far edge without switching to space-between."
       />
 
       <PosterCard
@@ -225,6 +227,24 @@ li:has(> a[aria-current="page"]) { background: var(--accent-dim); }`}
       />
 
       <PosterCard
+        glyph="An"
+        title={<>Anchor Positioning<span className="dim"> — tether without JS</span></>}
+        language="css"
+        code={`.trigger { anchor-name: --trigger; }        /* 1. name the anchor */
+
+.tooltip {
+  position: absolute;                      /* or fixed — required */
+  position-anchor: --trigger;              /* 2. point at the name */
+  position-area: block-start center;        /* 3. a 3x3 grid around the anchor */
+
+  /* tried in order; first that fits on screen wins — no JS flipping */
+  position-try-fallbacks: flip-block, flip-inline;
+}
+.dropdown { min-width: anchor-size(width); }  /* match the trigger's width */`}
+        caption="Replaces the getBoundingClientRect + reposition-on-scroll loop that Floating UI/Popper exist for — it runs in the layout engine, so it stays correct while scrolling with zero listeners. Least settled feature here: gate it behind @supports (anchor-name: --x), because without support the element falls back to plain absolute positioning and lands in the wrong place rather than merely looking plainer."
+      />
+
+      <PosterCard
         glyph="Ld"
         title={<>light-dark()<span className="dim"> — one token, both themes</span></>}
         language="css"
@@ -252,6 +272,8 @@ li:has(> a[aria-current="page"]) { background: var(--accent-dim); }`}
           { need: 'Children react to an ancestor’s variant flag', answer: '@container style(--variant: x)' },
           { need: 'Fade something IN from display: none', answer: '@starting-style + transition-behavior: allow-discrete' },
           { need: 'Change scale on hover without losing translate', answer: 'Separate translate / rotate / scale properties' },
+          { need: 'Tether a tooltip/menu to its trigger, no JS', answer: 'anchor-name + position-anchor + position-area' },
+          { need: 'Flip a popover when it would overflow', answer: 'position-try-fallbacks: flip-block, flip-inline' },
           { need: 'Light + dark value in one declaration', answer: 'light-dark(a, b) — needs color-scheme: light dark' },
           { need: 'Bounce or spring easing curve', answer: 'linear() with multiple stops' },
           { need: 'Animate on scroll without a scroll listener', answer: 'animation-timeline: scroll() / view()' },
