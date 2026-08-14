@@ -82,7 +82,7 @@ function reducer(state, action) {
 
 // provider — React 19: render the context itself
 <ThemeCtx value={theme}>{children}</ThemeCtx>
-// <ThemeCtx.Provider> still works but is DEPRECATED
+// <ThemeCtx.Provider> is the pre-19 form — still supported
 
 // reader — anywhere below, no prop drilling
 const theme = useContext(ThemeCtx);`}

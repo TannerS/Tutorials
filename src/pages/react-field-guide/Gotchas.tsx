@@ -118,7 +118,7 @@ if (isLoggedIn) { /* use user */ }`}
 
 // ✅ Context — only the actual consumer subscribes
 const ThemeCtx = createContext(initial);
-<ThemeCtx.Provider value={{ theme, setTheme }}><Dashboard /></ThemeCtx.Provider>
+<ThemeCtx value={{ theme, setTheme }}><Dashboard /></ThemeCtx>
 // deep in the tree: const { theme } = useContext(ThemeCtx);`}
         caption="Prop drilling through components that don't use the value makes every intermediate layer fragile to refactor. But don't over-correct — every Context consumer re-renders on any value change, so keep fast-changing state out of it."
       />

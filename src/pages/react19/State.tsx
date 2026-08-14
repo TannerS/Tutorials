@@ -79,9 +79,9 @@ function TodoProvider({ children }) {
 
   // NEW object created on every render → every consumer re-renders
   return (
-    <TodoContext.Provider value={{ todos, dispatch }}>
+    <TodoContext value={{ todos, dispatch }}>
       {children}
-    </TodoContext.Provider>
+    </TodoContext>
   );
 }
 
@@ -114,9 +114,9 @@ function TodoProvider({ children }) {
   const value = useMemo(() => ({ todos, dispatch }), [todos]); // dispatch is stable
 
   return (
-    <TodoContext.Provider value={value}>
+    <TodoContext value={value}>
       {children}
-    </TodoContext.Provider>
+    </TodoContext>
   );
 }
 
@@ -157,11 +157,11 @@ function todoReducer(state, action) {
 function TodoProvider({ children }) {
   const [todos, dispatch] = useReducer(todoReducer, []);
   return (
-    <TodoStateContext.Provider value={todos}>
-      <TodoDispatchContext.Provider value={dispatch}>
+    <TodoStateContext value={todos}>
+      <TodoDispatchContext value={dispatch}>
         {children}
-      </TodoDispatchContext.Provider>
-    </TodoStateContext.Provider>
+      </TodoDispatchContext>
+    </TodoStateContext>
   );
 }
 
@@ -221,9 +221,9 @@ function AddTodo() {
 function ThemeProvider({ children }) {   // children arrives as a prop
   const [theme, setTheme] = useState('light');
   return (
-    <ThemeContext.Provider value={theme}>
+    <ThemeContext value={theme}>
       {children}   {/* just renders what it was handed */}
-    </ThemeContext.Provider>
+    </ThemeContext>
   );
 }`}
         </CodeBlock>
@@ -248,11 +248,11 @@ function ThemeProvider({ children }) {   // children arrives as a prop
 function ThemeProvider() {
   const [theme, setTheme] = useState('light');
   return (
-    <ThemeContext.Provider value={theme}>
+    <ThemeContext value={theme}>
       <AuthProvider>   {/* created HERE on every render */}
         <App />        {/* brand-new JSX reference each time */}
       </AuthProvider>
-    </ThemeContext.Provider>
+    </ThemeContext>
   );
 }`}
         </CodeBlock>

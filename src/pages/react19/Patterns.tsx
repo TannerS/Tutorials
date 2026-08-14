@@ -41,9 +41,9 @@ function Tabs({ defaultValue, children }) {
   );
 
   return (
-    <TabsContext.Provider value={contextValue}>
+    <TabsContext value={contextValue}>
       <div role="tablist">{children}</div>
-    </TabsContext.Provider>
+    </TabsContext>
   );
 }
 

@@ -230,14 +230,14 @@ function App() {
   const [count, setCount] = useState(0);
 
   return (
-    <ThemeContext.Provider value={theme}>
+    <ThemeContext value={theme}>
       {/* MemoButton re-renders when theme changes, NOT when count changes */}
       <MemoButton label="Click me" />
       <button onClick={() => setCount(c => c + 1)}>Count: {count}</button>
       <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}>
         Toggle theme
       </button>
-    </ThemeContext.Provider>
+    </ThemeContext>
   );
 }`}
       </CodeBlock>
@@ -257,9 +257,9 @@ function AppProvider({ children }) {
 
   // Every child re-renders when user, theme, OR locale changes
   return (
-    <AppContext.Provider value={{ user, setUser, theme, setTheme, locale, setLocale }}>
+    <AppContext value={{ user, setUser, theme, setTheme, locale, setLocale }}>
       {children}
-    </AppContext.Provider>
+    </AppContext>
   );
 }
 
@@ -274,13 +274,13 @@ function AppProvider({ children }) {
   const [locale, setLocale] = useState('en');
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
-      <ThemeContext.Provider value={{ theme, setTheme }}>
-        <LocaleContext.Provider value={{ locale, setLocale }}>
+    <UserContext value={{ user, setUser }}>
+      <ThemeContext value={{ theme, setTheme }}>
+        <LocaleContext value={{ locale, setLocale }}>
           {children}
-        </LocaleContext.Provider>
-      </ThemeContext.Provider>
-    </UserContext.Provider>
+        </LocaleContext>
+      </ThemeContext>
+    </UserContext>
   );
 }
 
@@ -297,9 +297,9 @@ function AuthProvider({ children }) {
   // This creates a NEW object every time AuthProvider re-renders
   // Even if user and permissions haven't changed!
   return (
-    <AuthContext.Provider value={{ user, permissions, setUser, setPermissions }}>
+    <AuthContext value={{ user, permissions, setUser, setPermissions }}>
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 }
 
@@ -315,9 +315,9 @@ function AuthProvider({ children }) {
   );
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext value={value}>
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 }`}
       </CodeBlock>
@@ -570,11 +570,11 @@ function AuthProvider({ children }) {
   // dispatch never changes → consumers that only call setUser never re-render
 
   return (
-    <AuthStateContext.Provider value={state}>
-      <AuthDispatchContext.Provider value={dispatch}>
+    <AuthStateContext value={state}>
+      <AuthDispatchContext value={dispatch}>
         {children}
-      </AuthDispatchContext.Provider>
-    </AuthStateContext.Provider>
+      </AuthDispatchContext>
+    </AuthStateContext>
   );
 }`}
       </CodeBlock>

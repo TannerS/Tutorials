@@ -766,9 +766,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout: () => setUser(null) }}>
+    <AuthContext value={{ user, login, logout: () => setUser(null) }}>
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 }
 

@@ -102,11 +102,11 @@ const CartDispatchContext = createContext<Dispatch<CartAction> | null>(null);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialCartState);
   return (
-    <CartDispatchContext.Provider value={dispatch}>
-      <CartStateContext.Provider value={state}>
+    <CartDispatchContext value={dispatch}>
+      <CartStateContext value={state}>
         {children}
-      </CartStateContext.Provider>
-    </CartDispatchContext.Provider>
+      </CartStateContext>
+    </CartDispatchContext>
   );
 }
 
@@ -264,10 +264,10 @@ const AppProviders = composeProviders(
 function BadProvider() {
   const [state, dispatch] = useReducer(reducer, initial);
   return (
-    <Ctx.Provider value={state}>
+    <Ctx value={state}>
       <Header />
       <Main />       {/* re-created on every state change */}
-    </Ctx.Provider>
+    </Ctx>
   );
 }
 
@@ -275,7 +275,7 @@ function BadProvider() {
 //    Only actual context consumers re-render.
 function GoodProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initial);
-  return <Ctx.Provider value={state}>{children}</Ctx.Provider>;
+  return <Ctx value={state}>{children}</Ctx>;
 }`}
       </CodeBlock>
 
@@ -328,9 +328,9 @@ export function FormStoreProvider({ children }: { children: ReactNode }) {
   const storeRef = useRef<Store<FormState> | null>(null);
   storeRef.current ??= createStore<FormState>({ values: {}, errors: {} });
   return (
-    <FormStoreContext.Provider value={storeRef.current}>
+    <FormStoreContext value={storeRef.current}>
       {children}
-    </FormStoreContext.Provider>
+    </FormStoreContext>
   );
 }
 

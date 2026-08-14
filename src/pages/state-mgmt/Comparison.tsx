@@ -241,7 +241,7 @@ function Provider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(null);
   return (
     // ❌ new object identity on every Provider render
-    <AppContext.Provider value={{ user, setUser }}>{children}</AppContext.Provider>
+    <AppContext value={{ user, setUser }}>{children}</AppContext>
   );
 }
 
@@ -249,7 +249,7 @@ function FixedProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(null);
   // ✅ identity changes only when \`user\` does (setUser is already stable)
   const value = useMemo(() => ({ user, setUser }), [user]);
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return <AppContext value={value}>{children}</AppContext>;
 }`}
       </CodeBlock>
 

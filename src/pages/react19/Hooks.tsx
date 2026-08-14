@@ -1158,14 +1158,14 @@ function AuthProvider({ children }) {
   const logout = () => { setUser(null); setPermissions([]); };
 
   return (
-    <AuthContext.Provider value={{
+    <AuthContext value={{
       user,           //  These values might not change...
       permissions,    //  ...but the {} wrapper is NEW every render
       login,          //  And login/logout are new functions too!
       logout,
     }}>
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 }
 
@@ -1206,9 +1206,9 @@ function AuthProvider({ children }) {
   // ↑ This object only gets a new reference when one of these actually changes
 
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext value={contextValue}>
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 }
 

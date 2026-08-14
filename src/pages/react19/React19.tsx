@@ -462,7 +462,8 @@ function App({ children }) {
   );
 }
 
-// Before React 19 (deprecated — still works, will be removed)
+// Before React 19 — still fully supported today, no warning.
+// React plans to deprecate this form in a future release.
 function OldApp({ children }) {
   return (
     <ThemeContext.Provider value="dark">
@@ -479,11 +480,14 @@ const theme2 = use(ThemeContext);`}
 
       <InfoBox variant="warning" title="Note on the Rest of This Site">
         <p>
-          You will still see <code>Context.Provider</code> in plenty of examples here and
-          in almost every codebase and blog post written before 2025 &mdash; the two forms are
-          behaviourally identical, so treat them as interchangeable when reading. Write the
-          new one in new code. <code>&lt;Context.Consumer&gt;</code> is deprecated in React 19
-          as well; use <code>useContext</code> or <code>use</code> instead.
+          Examples on this site now use the React 19 form, but you will still meet{' '}
+          <code>Context.Provider</code> in almost every codebase and blog post written before
+          2025 &mdash; the two forms are behaviourally identical, so treat them as
+          interchangeable when reading. The older form is <strong>not</strong> deprecated
+          today: it emits no warning in React 19, and React has only said it intends to
+          deprecate it in a future release. <code>&lt;Context.Consumer&gt;</code> is the one
+          React&apos;s docs already mark deprecated; use <code>useContext</code> or{' '}
+          <code>use</code> instead.
         </p>
       </InfoBox>
 

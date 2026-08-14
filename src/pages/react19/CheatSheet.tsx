@@ -789,7 +789,9 @@ function MyInput({ ref, ...props }) { return <input ref={ref} {...props} />; }
 
 // ── render the Context itself as the provider ──
 <ThemeContext value="dark">{children}</ThemeContext>
-// <ThemeContext.Provider> and <Context.Consumer> are DEPRECATED.
+// <ThemeContext.Provider> still works and is NOT deprecated yet (no
+// warning in 19); React plans to deprecate it later. <Context.Consumer>
+// IS marked deprecated — replace it with useContext() / use().
 
 // ── document metadata hoists to <head> from anywhere ──
 <title>{post.title}</title>

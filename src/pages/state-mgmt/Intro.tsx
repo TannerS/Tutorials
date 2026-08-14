@@ -29,9 +29,9 @@ function ThemeProvider({ children }) {
   // ⚠️ This object is recreated every render unless memoized
   const value = useMemo(() => ({ theme, setTheme }), [theme]);
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeContext value={value}>
       {children}
-    </ThemeContext.Provider>
+    </ThemeContext>
   );
 }
 
@@ -88,13 +88,13 @@ function AppProvider({ children }) {
 
   // Every consumer re-renders when ANY of these change
   return (
-    <AppContext.Provider value={{
+    <AppContext value={{
       user, setUser,
       cart, setCart,
       notifications, setNotifications
     }}>
       {children}
-    </AppContext.Provider>
+    </AppContext>
   );
 }
 

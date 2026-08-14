@@ -270,9 +270,9 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(res.user);
   };
   return (
-    <AuthCtx.Provider value={{ user, login, logout: () => setUser(null) }}>
+    <AuthCtx value={{ user, login, logout: () => setUser(null) }}>
       {children}
-    </AuthCtx.Provider>
+    </AuthCtx>
   );
 }
 
@@ -448,7 +448,7 @@ function todoReducer(state: Todo[], action: TodoAction): Todo[] {
 
 function TodoProvider({ children }: { children: React.ReactNode }) {
   const [todos, dispatch] = useReducer(todoReducer, []);
-  return <TodoCtx.Provider value={{ todos, dispatch }}>{children}</TodoCtx.Provider>;
+  return <TodoCtx value={{ todos, dispatch }}>{children}</TodoCtx>;
 }
 
 function useTodos() {

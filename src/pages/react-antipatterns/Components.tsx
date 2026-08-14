@@ -468,14 +468,14 @@ function AppProvider({ children }) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   return (
-    <AppContext.Provider value={{
+    <AppContext value={{
       user, setUser, theme, setTheme,
       cart, setCart, notifications, setNotifications,
       searchQuery, setSearchQuery,
       mousePosition, setMousePosition,
     }}>
       {children}
-    </AppContext.Provider>
+    </AppContext>
   );
 }
 // Every keystroke in search or mouse move re-renders EVERYTHING`}
@@ -487,14 +487,14 @@ const AuthContext = createContext();
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const value = useMemo(() => ({ user, setUser }), [user]);
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext value={value}>{children}</AuthContext>;
 }
 
 const ThemeContext = createContext();
 function ThemeProvider({ children }) {
   const [theme, setTheme] = useState('light');
   const value = useMemo(() => ({ theme, setTheme }), [theme]);
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return <ThemeContext value={value}>{children}</ThemeContext>;
 }
 
 // Frequently changes — use local state or a dedicated store

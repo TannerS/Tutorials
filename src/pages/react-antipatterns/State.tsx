@@ -183,9 +183,9 @@ function ThemeToggle({ theme, setTheme }) {
 function App() {
   const [theme, setTheme] = useState('light');
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext value={{ theme, setTheme }}>
       <Dashboard />
-    </ThemeContext.Provider>
+    </ThemeContext>
   );
 }
 

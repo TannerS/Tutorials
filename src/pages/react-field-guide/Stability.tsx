@@ -137,15 +137,15 @@ strictly negative: allocation + deps checks, zero payoff.`}
         glyph="{}!"
         title={<>The Provider {'{}'} Trap<span className="dim"> — yes, this is why</span></>}
         code={`// ❌ { user, permissions } is a NEW object every render of Provider
-<AuthCtx.Provider value={{ user, permissions }}>
+<AuthCtx value={{ user, permissions }}>
   {children}
-</AuthCtx.Provider>
+</AuthCtx>
 // Every consumer re-renders on EVERY Provider render,
 // even if user and permissions haven't actually changed.
 
 // ✅ Memoize the value — same ref unless deps actually change
 const value = useMemo(() => ({ user, permissions }), [user, permissions]);
-<AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>`}
+<AuthCtx value={value}>{children}</AuthCtx>`}
         caption="Directly answers 'does value={{ foo: 'bar' }} cause re-renders': yes. The object literal is recreated every time the Provider component runs, so Object.is always reports a change, and every consumer re-renders — regardless of whether user or permissions actually changed."
       />
 
@@ -158,7 +158,7 @@ const value = useMemo(() => ({ user, permissions }), [user, permissions]);
 const AuthProvider = memo(function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const value = useMemo(() => ({ user, setUser }), [user]);
-  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
+  return <AuthCtx value={value}>{children}</AuthCtx>;
 });
 // ^ memo() here is doing nothing useful. The useMemo is what matters.`}
         caption="memo on a Provider guards against ITS parent re-rendering it for unrelated reasons — a real but secondary win. The value passed to .Provider is what determines consumer re-renders, so useMemo on the value is the fix that actually matters, not memo on the component."

@@ -114,7 +114,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   // Memoize the context value so consumers only re-render when 'confirm' identity
   // changes (which is never, given the empty deps above).
   return (
-    <ConfirmContext.Provider value={confirm}>
+    <ConfirmContext value={confirm}>
       {children}
       {current !== null && (
         <Modal danger={current.danger} onClose={() => settle(false)}>
@@ -132,7 +132,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           </div>
         </Modal>
       )}
-    </ConfirmContext.Provider>
+    </ConfirmContext>
   );
 }`}
       </CodeBlock>
@@ -183,7 +183,7 @@ export function ApprovalProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ApprovalContext.Provider value={approve as ApprovalFn}>
+    <ApprovalContext value={approve as ApprovalFn}>
       {children}
       {current && (
         <Modal onClose={() => settle(null)}>
@@ -199,7 +199,7 @@ export function ApprovalProvider({ children }: { children: ReactNode }) {
           ))}
         </Modal>
       )}
-    </ApprovalContext.Provider>
+    </ApprovalContext>
   );
 }
 
@@ -293,11 +293,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }), []);
 
   return (
-    <AuthActionsContext.Provider value={actions}>
-      <AuthStateContext.Provider value={state}>
+    <AuthActionsContext value={actions}>
+      <AuthStateContext value={state}>
         {children}
-      </AuthStateContext.Provider>
-    </AuthActionsContext.Provider>
+      </AuthStateContext>
+    </AuthActionsContext>
   );
 }
 
@@ -397,11 +397,11 @@ Keep single-context when:
   }, [authToken]);
 
   return (
-    <ReconnectContext.Provider value={reconnect}>
-      <NotificationClientContext.Provider value={client}>
+    <ReconnectContext value={reconnect}>
+      <NotificationClientContext value={client}>
         {children}
-      </NotificationClientContext.Provider>
-    </ReconnectContext.Provider>
+      </NotificationClientContext>
+    </ReconnectContext>
   );
 }`}
       </CodeBlock>

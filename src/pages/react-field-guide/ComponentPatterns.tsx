@@ -88,7 +88,7 @@ const ProtectedDashboard = withAuth(Dashboard);`}
         code={`const TabsContext = createContext();
 function Tabs({ children, defaultTab }) {
   const [active, setActive] = useState(defaultTab);
-  return <TabsContext.Provider value={{ active, setActive }}>{children}</TabsContext.Provider>;
+  return <TabsContext value={{ active, setActive }}>{children}</TabsContext>;
 }
 Tabs.List = TabList;
 Tabs.Tab = Tab;
@@ -181,7 +181,7 @@ function Accordion({ title, children }) {
         code={`const AuthContext = createContext(null);
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  return <AuthContext.Provider value={{ user, login, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext value={{ user, login, logout }}>{children}</AuthContext>;
 }
 function useAuth() {
   const ctx = useContext(AuthContext);

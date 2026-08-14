@@ -39,9 +39,9 @@ function AppProvider({ children }) {
 
   // Every keystroke re-renders ALL consumers, even those using only 'user'
   return (
-    <AppContext.Provider value={{ user, theme, query, setQuery }}>
+    <AppContext value={{ user, theme, query, setQuery }}>
       {children}
-    </AppContext.Provider>
+    </AppContext>
   );
 }
 
@@ -59,13 +59,13 @@ function AppProvider({ children }) {
   const searchValue = useMemo(() => ({ query, setQuery }), [query]);
 
   return (
-    <UserContext.Provider value={user}>
-      <ThemeContext.Provider value={theme}>
-        <SearchContext.Provider value={searchValue}>
+    <UserContext value={user}>
+      <ThemeContext value={theme}>
+        <SearchContext value={searchValue}>
           {children}
-        </SearchContext.Provider>
-      </ThemeContext.Provider>
-    </UserContext.Provider>
+        </SearchContext>
+      </ThemeContext>
+    </UserContext>
   );
 }
 
@@ -90,9 +90,9 @@ function AppProvider({ children }) {
 function Dashboard() {
   const [user, setUser] = useState(null);
   return (
-    <UserContext.Provider value={user}>
+    <UserContext value={user}>
       <DashboardLayout />  {/* no props — children grab from context themselves */}
-    </UserContext.Provider>
+    </UserContext>
   );
 }
 
@@ -250,7 +250,7 @@ function AuthGate({ children: renderContent, fallback: unauthenticatedFallback }
 
       <h2>Stateful Providers — The Standard Shape</h2>
 
-      <p>The "raw" form — <code>{'<Context.Provider value={staticValue}>'}</code> — is rare in production. Most providers you'll see in real apps own state, fetch data, expose actions, and bundle everything into the context value. That's not a code smell, that's the norm.</p>
+      <p>The "raw" form — <code>{'<Context value={staticValue}>'}</code> — is rare in production. Most providers you'll see in real apps own state, fetch data, expose actions, and bundle everything into the context value. That's not a code smell, that's the norm.</p>
 
       <InfoBox variant="info" title="Why providers own state">
         <p>If a provider just exposed a static value, you wouldn't need a provider at all — you could just <code>import</code> it. The reason a provider exists is to <strong>own dynamic state and expose it tree-wide</strong>. That naturally means it does the work of fetching, storing, mutating, and computing that state.</p>
@@ -296,7 +296,7 @@ function AuthGate({ children: renderContent, fallback: unauthenticatedFallback }
     [user, loading, error, login, logout, refresh, isAdmin]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext value={value}>{children}</AuthContext>;
 }`}
       </CodeBlock>
 
@@ -315,7 +315,7 @@ function AuthGate({ children: renderContent, fallback: unauthenticatedFallback }
 {`// Before: 200-line god provider
 function AuthProvider({ children }) {
   // useState x5, useEffect x3, useCallback x6, useMemo x4...
-  return <AuthContext.Provider value={...}>{children}</AuthContext.Provider>;
+  return <AuthContext value={...}>{children}</AuthContext>;
 }
 
 // After: hooks own logic, provider owns composition
@@ -329,7 +329,7 @@ function AuthProvider({ children }) {
     [authState, authActions, perms]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext value={value}>{children}</AuthContext>;
 }`}
       </CodeBlock>
 
@@ -411,11 +411,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }), []); // ← no deps: actions are created once and never replaced
 
   return (
-    <AuthStateContext.Provider value={state}>
-      <AuthActionsContext.Provider value={actions}>
+    <AuthStateContext value={state}>
+      <AuthActionsContext value={actions}>
         {children}
-      </AuthActionsContext.Provider>
-    </AuthStateContext.Provider>
+      </AuthActionsContext>
+    </AuthStateContext>
   );
 }
 
@@ -471,7 +471,7 @@ function LogoutButton() {
 
       <InfoBox variant="info" title="The two mechanisms at a glance">
         <p><strong>Cascade</strong> is React's default behavior. When a component re-renders, all of its children re-render too. <code>React.memo</code> stops this if the child's props haven't changed reference.</p>
-        <p style={{ marginTop: '0.5rem' }}><strong>Broadcast</strong> is the context-specific path. When a <code>{'<Context.Provider value={X}>'}</code> renders with a new <code>X</code> reference, every <code>useContext</code> consumer re-renders — <em>anywhere in the tree</em>, regardless of memoization. This is the only mechanism that bypasses <code>React.memo</code>.</p>
+        <p style={{ marginTop: '0.5rem' }}><strong>Broadcast</strong> is the context-specific path. When a <code>{'<Context value={X}>'}</code> renders with a new <code>X</code> reference, every <code>useContext</code> consumer re-renders — <em>anywhere in the tree</em>, regardless of memoization. This is the only mechanism that bypasses <code>React.memo</code>.</p>
       </InfoBox>
 
       <CodeBlock language="text" title="Different optimization strategies for each">
@@ -489,11 +489,11 @@ Fix: memoize props you pass down,   | Fix: useMemo the provider value
       <h2>React 19 Context Changes</h2>
 
       <InfoBox variant="success" title="React 19: Context as Provider">
-        <p>In React 19, you can render <code>&lt;Context&gt;</code> directly as a provider instead of <code>&lt;Context.Provider&gt;</code>. The old syntax still works but is deprecated. Also, React 19's compiler may reduce unnecessary context re-renders through automatic memoization.</p>
+        <p>In React 19, you can render <code>&lt;Context&gt;</code> directly as a provider instead of <code>&lt;Context.Provider&gt;</code>. Be precise about the status: the old form is <strong>not</strong> deprecated yet &mdash; it is fully supported and emits no warning in React 19. React has said it plans to deprecate it in a future release, so prefer the short form in new code and treat the two as interchangeable when reading. <code>&lt;Context.Consumer&gt;</code> is the one React&apos;s docs already mark deprecated.</p>
       </InfoBox>
 
       <CodeBlock language="jsx" title="React 19 Context Syntax" showLineNumbers>
-{`// React 18 (still works but deprecated)
+{`// Pre-19 form — still fully supported, no warning
 <ThemeContext.Provider value={theme}>
   {children}
 </ThemeContext.Provider>
@@ -573,9 +573,9 @@ function Panel({ showAdmin }) {
   //   New box = new value = all consumers re-render.
 
   return (
-    <AuthContext.Provider value={{ user, permissions, setUser, setPermissions }}>
+    <AuthContext value={{ user, permissions, setUser, setPermissions }}>
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 }
 
@@ -593,9 +593,9 @@ function AuthProviderFixed({ children }) {
   // React: Object.is(Box A, Box A) === true → no consumer re-renders
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext value={value}>
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 }`}
       </CodeBlock>
@@ -729,9 +729,9 @@ Case B: Provider re-renders because its OWN state changed
   const value = useMemo(() => ({ count, setCount }), [count]);
 
   return (
-    <CountContext.Provider value={value}>
+    <CountContext value={value}>
       {children}
-    </CountContext.Provider>
+    </CountContext>
   );
 }
 
@@ -799,9 +799,9 @@ User clicks "Toggle Theme":
 {`function Layout({ children }) {
   const [count, setCount] = useState(0);
   return (
-    <MyContext.Provider value={count}>
+    <MyContext value={count}>
       {children}
-    </MyContext.Provider>
+    </MyContext>
   );
 }
 
@@ -822,9 +822,9 @@ User clicks "Toggle Theme":
 {`function Layout() {
   const [count, setCount] = useState(0);
   return (
-    <MyContext.Provider value={count}>
+    <MyContext value={count}>
       <ExpensiveComponent />   {/* created INSIDE Layout's render */}
-    </MyContext.Provider>
+    </MyContext>
   );
 }
 
@@ -894,9 +894,9 @@ function ThemeProvider({ children }) {
   const theme = user?.preferences?.theme ?? 'dark';
 
   return (
-    <ThemeContext.Provider value={theme}>
+    <ThemeContext value={theme}>
       {children}
-    </ThemeContext.Provider>
+    </ThemeContext>
   );
 }
 
@@ -912,11 +912,11 @@ function ThemeProvider({ children }) {
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   return (
-    <AuthContext.Provider value={user}>
+    <AuthContext value={user}>
       <ThemeProvider>      {/* ← rendered directly, not passed as prop */}
         {children}
       </ThemeProvider>
-    </AuthContext.Provider>
+    </AuthContext>
   );
 }
 
@@ -1037,9 +1037,9 @@ const SettingsContext = createContext(null);   // null, not undefined, in JS
 export function ConfigProvider({ children }) {
   const [config, setConfig] = useState(/* ... */);
   return (
-    <SettingsContext.Provider value={{ config, setConfig }}>
+    <SettingsContext value={{ config, setConfig }}>
       {children}
-    </SettingsContext.Provider>
+    </SettingsContext>
   );
 }
 
@@ -1078,10 +1078,10 @@ export function useSettings() {
       <CodeBlock language="text" title="How useContext actually finds a value">
 {`When a component calls useContext(SomeContext), React walks UP
 the rendered fiber tree from that component, looking for the
-nearest <SomeContext.Provider> ancestor:
+nearest <SomeContext> ancestor:
 
   Root
-   ├─ <SomeContext.Provider value={X}>     ← React finds this
+   ├─ <SomeContext value={X}>     ← React finds this
    │    └─ <Layout>
    │         └─ <Page>
    │              └─ <Widget>              ← calls useContext(SomeContext)
@@ -1186,7 +1186,7 @@ render(
 // ✅ BETTER: test-specific provider with controlled state
 function TestViewerProvider({ user, children }) {
   const value = useMemo(() => ({ user, login: vi.fn(), logout: vi.fn() }), [user]);
-  return <ViewerContext.Provider value={value}>{children}</ViewerContext.Provider>;
+  return <ViewerContext value={value}>{children}</ViewerContext>;
 }
 
 render(
@@ -1246,7 +1246,7 @@ function App() {
       </CodeBlock>
 
       <InfoBox variant="success" title="The mental model">
-        <p><code>createContext()</code> creates an empty "channel." <code>{'<SomeContext.Provider value={...}>'}</code> publishes a value on that channel for everything rendered inside it. <code>useContext(SomeContext)</code> subscribes to the channel and returns whatever the nearest enclosing Provider published.</p>
+        <p><code>createContext()</code> creates an empty "channel." <code>{'<SomeContext value={...}>'}</code> publishes a value on that channel for everything rendered inside it. <code>useContext(SomeContext)</code> subscribes to the channel and returns whatever the nearest enclosing Provider published.</p>
         <p style={{ marginTop: '0.5rem' }}>No Provider above = no one publishing = default value (which is usually <code>undefined</code>, which makes the wrapper hook throw).</p>
       </InfoBox>
 

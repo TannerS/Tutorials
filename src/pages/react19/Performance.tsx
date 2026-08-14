@@ -368,7 +368,7 @@ function AuthProvider({ children }) {
     logout: () => setUser(null),
   }), [user]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext value={value}>{children}</AuthContext>;
 }
 
 // 4. Dependency of useEffect — prevents unnecessary effect runs

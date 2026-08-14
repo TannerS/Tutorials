@@ -486,3 +486,13 @@ All callbacks provably ran (state advanced `0,0,0 → 1,1,1` in a single commit)
 - **`use()` is genuinely exempt from the rules of hooks**: verified inside an `if` *and* inside a loop with a varying call count (0→1→2 across renders), with **zero** console errors or warnings. `use(promise)` + `Suspense` resolves as documented. Incidentally confirms React 19's provider-less `<Context value=…>` syntax works.
 
 **Method note that generalises**: the two things that made this pass trustworthy were (1) driving from real handlers, and (2) logging the callbacks *and* asserting state changed, so "1 render" could never be silently "the callback never fired". A render-count assertion without a state assertion is not evidence.
+
+### Round 11c — Context.Provider sweep (the long-deferred item)
+
+**74 JSX tag pairs converted** to React 19's `<Context value={…}>` across 20 files, plus 5 prose mentions. Deliberately left in the old form: the before/after blocks in `react19/Context.tsx` (497-499) and `react19/React19.tsx` (469-471), which exist to teach the contrast, and the migration row in the cheat sheet.
+
+**A correctness fix fell out of it.** Four places stated flatly that `Context.Provider` is **DEPRECATED**. It is not — measured on React 19.2.6, rendering `<A.Provider>` *and* `<A.Consumer>` produces **no console warning of any kind**. React's actual position is that it plans to deprecate the Provider form in a *future* release; only `Context.Consumer` is marked deprecated in the docs today. Corrected in `react19/Context.tsx` (InfoBox + code comment), `react19/React19.tsx`, `react19/CheatSheet.tsx`, and `react-field-guide/Hooks.tsx`. The `React19.tsx` box that said "you will still see `Context.Provider` in plenty of examples here" was rewritten, since after the sweep that is no longer true of this site.
+
+**Method note — the automated sweep was not safe on its own.** A naive tag regex also rewrote *comments and prose* that mention the tag. In `react-field-guide/Hooks.tsx` it turned `// <ThemeCtx.Provider> still works but is DEPRECATED` into `// <ThemeCtx> still works but is DEPRECATED` — i.e. it inverted the lesson, claiming the **new** syntax was deprecated. Caught only because the script counted opening vs closing tags per file and flagged the 1-open/0-close imbalance. Same check explained the 5 extra opens in `Context.tsx` as prose mentions, each then reviewed by hand. **If you ever repeat a sweep like this: assert tag balance per file and read every non-JSX line the regex touched.**
+
+**Verified after**: `tsc --noEmit` clean, `npm run build` clean (2,966 modules), and all 12 affected pages loaded in a real browser — HTTP 200, real text content, **zero console errors**.
