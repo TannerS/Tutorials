@@ -272,20 +272,28 @@ Date          new Date()           ❌ No*                New Date = new referen
 setState x3 in click handler                          1         Auto-batched (sync block)
 setState x3 in setTimeout callback                    1         Auto-batched (React 18+)
 setState before await + setState after await          2         await splits the block
-setState in 3 separate setTimeout calls               3         Each callback = own block
-setState in 3 separate .then() calls                  3         Each .then = own microtask
+setState in 3 setTimeout(..., 0) — all same turn      1         All land before the flush
+setState in 3 setTimeout spread 0/30/60ms             3         React flushes in between
+setState in 3 separate .then() callbacks              1         Microtasks all drain first
 dispatch(action) once (updates 5 state fields)        1         Always 1 — atomic update
 setState + dispatch in same handler                   1         Auto-batched together
 
-WHAT BREAKS A BATCH (creates new synchronous block):
-  • await                     • setTimeout/setInterval callbacks
-  • .then() callbacks         • requestAnimationFrame callbacks
-  • Separate event listeners
+THE REAL RULE: a batch ends when React gets a chance to FLUSH — not when a
+callback ends. Everything queued before that flush lands in ONE render. So
+"separate callback" does NOT imply "separate render": three .then()s all
+drain in the same microtask checkpoint, and three setTimeout(..., 0) all
+run in the same timer turn, so each group repaints once.
 
-WHAT DOESN'T BREAK A BATCH (same sync block):
-  • for/while loops           • if/else branches
-  • Function calls            • .map/.filter/.reduce
-  • Any synchronous code`}
+RELIABLY SEPARATE RENDERS (React flushes in between):
+  • Sequential awaits — each resumption is after a flush
+  • A .then() CHAIN — each link waits on the previous one
+  • Timers spaced far enough apart to let a flush land
+  • Separate user events (two real clicks)
+
+STILL ONE RENDER (everything queued before the flush):
+  • Any uninterrupted sync code — loops, if/else, calls, .map/.filter
+  • Several setState inside ONE timer or promise callback
+  • Several timers or promises that all fire in the SAME turn`}
       </CodeBlock>
 
       <h3>The Complete Decision Table</h3>

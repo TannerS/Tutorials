@@ -923,26 +923,32 @@ async function handleSubmit() {
 }
 // → 2 renders
 
-// ❌ Each setTimeout callback = its own block:
-setTimeout(() => setState1('a'), 0);  // Block 1 → Render 1
-setTimeout(() => setState2('b'), 0);  // Block 2 → Render 2
+// ⚠️ Two INDEPENDENT setTimeout(..., 0) — still ONE render:
+setTimeout(() => setState1('a'), 0);  // both fire in the same timer
+setTimeout(() => setState2('b'), 0);  // turn, before React flushes
+// → 1 render, not 2. Separate callback ≠ separate render.
+//   Space them out (0ms vs 50ms) and React flushes in
+//   between → then you really do get 2 renders.
 
-// ✅ But INSIDE one setTimeout = one block:
+// ✅ INSIDE one setTimeout = one block:
 setTimeout(() => {
   setState1('a');  // queued
   setState2('b');  // queued
 }, 0);             // → 1 render
 
-// ❌ Each .then() = its own microtask = its own block:
+// ❌ A .then() CHAIN is genuinely sequential — each link
+//    resumes only after the previous one settled:
 fetch('/api')
-  .then(() => setState1('a'))   // Block 1 → Render 1
-  .then(() => setState2('b'));  // Block 2 → Render 2`}
+  .then(() => setState1('a'))   // Render 1
+  .then(() => setState2('b'));  // Render 2
+// → 2 renders. But two INDEPENDENT .then() callbacks both
+//   drain in the same microtask checkpoint → 1 render.`}
       </CodeBlock>
 
       <InfoBox variant="note" title="The Mental Model">
         <p><strong>Things that DON'T break a block:</strong> <code>for</code>/<code>while</code> loops, <code>if</code>/<code>else</code>, function calls, <code>.map()</code>/<code>.filter()</code>/<code>.reduce()</code> — any synchronous computation.</p>
-        <p><strong>Things that DO break a block:</strong> <code>await</code>, <code>setTimeout</code>/<code>setInterval</code> callbacks, <code>.then()</code> callbacks, event listener callbacks, <code>requestAnimationFrame</code>.</p>
-        <p>Rule of thumb: if JavaScript has to "come back later" to run your code, that's a new block.</p>
+        <p><strong>Things that DO break a block:</strong> <code>await</code>, each link of a <code>.then()</code> chain, separate user events, and callbacks spaced far enough apart in time that React can flush between them.</p>
+        <p>Rule of thumb: a block ends when <strong>React gets a chance to flush</strong> — not merely when JavaScript "comes back later". Several callbacks that all run in the <em>same</em> turn (two <code>setTimeout(fn, 0)</code>, or two independent <code>.then()</code>s) still repaint once, because everything they queue lands before that single flush.</p>
       </InfoBox>
 
       <InfoBox variant="tip" title="Pro Tip: dispatch is Stable">
