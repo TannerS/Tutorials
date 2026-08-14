@@ -461,3 +461,28 @@ Every one of the four errors was a claim about **status or naming that changed o
 
 ### Process note
 Twice I committed with `git add -A` while lanes were live and swept their in-flight files into my commit (`c67b412`, `d4de500`). Both times the edits landed intact and were verified before pushing, but the fix is **targeted `git add <paths>` whenever a lane is running**.
+
+### Round 11b — React measured in a real browser
+
+Done inline rather than by agent lane: the React lane died three times to connection errors, twice leaving nothing on disk. All of the below was measured with Playwright against React **19.2.6**, driving **real event handlers** and asserting that callbacks actually ran and state actually advanced — the earlier lane's last words were *"Measurement artifact — my setters ran outside a React event handler"*, so every reading here is guarded against exactly that.
+
+**Error found and fixed — the batching rules confused "separate callback" with "separate render".**
+
+| scenario | taught | measured |
+|---|---|---|
+| 3 independent `setTimeout(fn, 0)` | 3 renders | **1** |
+| 2 independent `setTimeout(fn, 0)` | 2 renders | **1** |
+| 3 independent `.then()` callbacks | 3 renders | **1** |
+| `.then()` **chain** of 2 | 2 renders | 2 ✓ |
+| 3 sequential `await`s | 3 renders | 3 ✓ |
+| timers spread 0/30/60ms | 3 renders | 3 ✓ |
+
+All callbacks provably ran (state advanced `0,0,0 → 1,1,1` in a single commit). React 18+ schedules its flush asynchronously, so timers armed for the same turn — and independent microtasks, which all drain at one checkpoint — land before it and coalesce. The correct rule is **"did React get a chance to flush in between"**, not "did JavaScript come back later". Fixed in `react19/CheatSheet.tsx` (batching table) and `react19/Hooks.tsx` (code block + "The Mental Model" box), which had drifted into agreeing on the wrong version.
+
+**Verified correct — no change needed:**
+- **Effect cleanup order** (`LifecycleSim.tsx`), the thing an earlier pass got wrong in some restatements: on unmount, `useLayoutEffect` cleanup runs first, then `useEffect` cleanups **in declaration order** — the same relative order as mount, not reversed. Confirmed, and the Unmount-Order and Re-render flowcharts now agree with the prose. Prop change correctly fires cleanup *before* re-running the effect.
+- **StrictMode**, all four cheat-sheet claims: component body 2×, `useState` initializer 2×, effects setup→cleanup→setup, and `useReducer` reducer **2× per single dispatch** while final state still advances by 1.
+- **React 19 API naming**: the repo uses `useActionState` (26×) and never the removed `useFormState`; `useFormStatus` is imported from `react-dom`, correctly, in all 3 places.
+- **`use()` is genuinely exempt from the rules of hooks**: verified inside an `if` *and* inside a loop with a varying call count (0→1→2 across renders), with **zero** console errors or warnings. `use(promise)` + `Suspense` resolves as documented. Incidentally confirms React 19's provider-less `<Context value=…>` syntax works.
+
+**Method note that generalises**: the two things that made this pass trustworthy were (1) driving from real handlers, and (2) logging the callbacks *and* asserting state changed, so "1 render" could never be silently "the callback never fired". A render-count assertion without a state assertion is not evidence.
