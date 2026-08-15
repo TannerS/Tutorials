@@ -119,6 +119,37 @@ import MicroEvents from './pages/microservices/Events'
 import MicroContainers from './pages/microservices/Containers'
 import MicroMigration from './pages/microservices/Migration'
 
+// Domain-Driven Design
+import DddIntro from './pages/ddd/Intro'
+import DddStrategic from './pages/ddd/Strategic'
+import DddTactical from './pages/ddd/Tactical'
+import DddDomainEvents from './pages/ddd/DomainEvents'
+import DddEventStorming from './pages/ddd/EventStorming'
+import DddSpringBoot from './pages/ddd/SpringBoot'
+import DddCheatsheet from './pages/ddd/Cheatsheet'
+
+// Communicating Architecture
+import ArchDocsAdrs from './pages/architecture-docs/Adrs'
+import ArchDocsC4Model from './pages/architecture-docs/C4Model'
+import ArchDocsNfrs from './pages/architecture-docs/Nfrs'
+import ArchDocsQualityAttributes from './pages/architecture-docs/QualityAttributes'
+import ArchDocsStakeholders from './pages/architecture-docs/Stakeholders'
+import ArchDocsCheatsheet from './pages/architecture-docs/Cheatsheet'
+
+// Cloud & Infrastructure
+import CloudWellArchitected from './pages/cloud-architecture/WellArchitected'
+import CloudIac from './pages/cloud-architecture/Iac'
+import CloudMultiRegion from './pages/cloud-architecture/MultiRegion'
+import CloudCapacityPlanning from './pages/cloud-architecture/CapacityPlanning'
+import CloudCheatsheet from './pages/cloud-architecture/Cheatsheet'
+
+// Observability & SRE
+import ObsThreePillars from './pages/observability/ThreePillars'
+import ObsSlos from './pages/observability/Slos'
+import ObsTracing from './pages/observability/Tracing'
+import ObsIncidents from './pages/observability/Incidents'
+import ObsCheatsheet from './pages/observability/Cheatsheet'
+
 // API Design
 import ApiIntro from './pages/apidesign/Intro'
 import ApiMethods from './pages/apidesign/Methods'
@@ -468,6 +499,29 @@ function App() {
         <Route path="microservices/events" element={<MicroEvents />} />
         <Route path="microservices/containers" element={<MicroContainers />} />
         <Route path="microservices/migration" element={<MicroMigration />} />
+        <Route path="ddd/intro" element={<DddIntro />} />
+        <Route path="ddd/strategic" element={<DddStrategic />} />
+        <Route path="ddd/tactical" element={<DddTactical />} />
+        <Route path="ddd/domain-events" element={<DddDomainEvents />} />
+        <Route path="ddd/event-storming" element={<DddEventStorming />} />
+        <Route path="ddd/spring-boot" element={<DddSpringBoot />} />
+        <Route path="ddd/cheatsheet" element={<DddCheatsheet />} />
+        <Route path="architecture-docs/adrs" element={<ArchDocsAdrs />} />
+        <Route path="architecture-docs/c4-model" element={<ArchDocsC4Model />} />
+        <Route path="architecture-docs/nfrs" element={<ArchDocsNfrs />} />
+        <Route path="architecture-docs/quality-attributes" element={<ArchDocsQualityAttributes />} />
+        <Route path="architecture-docs/stakeholders" element={<ArchDocsStakeholders />} />
+        <Route path="architecture-docs/cheatsheet" element={<ArchDocsCheatsheet />} />
+        <Route path="cloud-architecture/well-architected" element={<CloudWellArchitected />} />
+        <Route path="cloud-architecture/iac" element={<CloudIac />} />
+        <Route path="cloud-architecture/multi-region" element={<CloudMultiRegion />} />
+        <Route path="cloud-architecture/capacity-planning" element={<CloudCapacityPlanning />} />
+        <Route path="cloud-architecture/cheatsheet" element={<CloudCheatsheet />} />
+        <Route path="observability/three-pillars" element={<ObsThreePillars />} />
+        <Route path="observability/slos" element={<ObsSlos />} />
+        <Route path="observability/tracing" element={<ObsTracing />} />
+        <Route path="observability/incidents" element={<ObsIncidents />} />
+        <Route path="observability/cheatsheet" element={<ObsCheatsheet />} />
         {/* API Design */}
         <Route path="apidesign/intro" element={<ApiIntro />} />
         <Route path="apidesign/methods" element={<ApiMethods />} />
