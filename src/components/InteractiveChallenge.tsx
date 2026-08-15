@@ -24,7 +24,7 @@ export default function InteractiveChallenge({
   const isCorrect = selected === correctIndex;
 
   return (
-    <div style={{
+    <div className="no-print" style={{
       margin: '1.5rem 0',
       background: 'var(--bg-secondary)',
       borderRadius: '12px',

@@ -421,6 +421,16 @@ li {
     overflow: visible !important;
     max-width: 100% !important;
   }
+  /* `pre` alone having break-inside:avoid (below) was not enough — the title
+     bar lives in a SIBLING div inside .code-block, outside that `pre`, so it
+     could still get orphaned alone at the bottom of a page with the actual
+     code pushed to the next one (found by rendering real output: a card
+     showed its title + empty border on one page, headerless code on the
+     next). Keep the whole card together instead. */
+  .code-block {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
   pre, pre code, code, .site-code {
     white-space: pre-wrap !important;
     word-break: break-word !important;

@@ -10,11 +10,19 @@
  *
  * Usage:
  *   npm run build:pdf                       # build + generate every section
+ *   npm run build:pdf:combined              # build + every section + ONE combined
+ *                                            #   whole-site PDF (dist-pdf/tutorials-complete.pdf)
  *   npm run pdf:section java                # re-use the existing dist/ build
  *   node scripts/build-pdf.mjs java react19 # multiple sections
+ *   node scripts/build-pdf.mjs --combined   # re-use dist/, all sections, + combine
  *
  * `pdf:section` does NOT rebuild — it serves whatever is already in dist/,
  * so run `npm run build` first if the site has changed.
+ *
+ * `--combined` always runs ALONGSIDE the normal per-section output (it never
+ * replaces it) — it just additionally stitches whichever section PDFs were
+ * generated in this run into one cover-to-cover PDF, ordered the way the
+ * sidebar actually displays them (not sections.ts's declaration order).
  *
  * Prerequisites (one-time):
  *   npm install
@@ -36,8 +44,14 @@ const APP_ROOT = resolve(__dirname, '..');
 const OUT_DIR = join(APP_ROOT, 'dist-pdf');
 const HOST = '127.0.0.1';
 const PORT = 5273;
+// Letter width in CSS pixels at 96 DPI = 8.5in * 96 = 816px. Used both for
+// the capture viewport and as an explicit width forced onto <main> below —
+// see the comment there for why "explicit" matters, not just "matching".
+const PAGE_WIDTH_PX = 816;
 
-const wantedSections = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+const COMBINED = rawArgs.includes('--combined');
+const wantedSections = rawArgs.filter((a) => a !== '--combined');
 
 async function findFreePort(preferred) {
   // Try the preferred port first; if it's busy, ask the OS for any free port.
@@ -74,10 +88,29 @@ async function loadSections() {
   await writeFile(outfile, stripped);
   try {
     const mod = await import(`file://${outfile}`);
-    return mod.sections;
+    return { sections: mod.sections, groups: mod.groups };
   } finally {
     await rm(outfile, { force: true });
   }
+}
+
+// Flattens `groups` into an ordered list of section ids matching exactly how
+// Sidebar.tsx renders them: for each group, its child GROUPS render first (in
+// array order), then its own direct sectionIds — recursively, depth-first.
+// This is what makes the combined PDF read in the same order a reader
+// browsing the sidebar would encounter, not sections.ts's declaration order
+// (which is unrelated — e.g. 'auth' is declared early but displays late,
+// under the Security group).
+function sidebarSectionOrder(groups) {
+  const order = [];
+  const walk = (groupList) => {
+    for (const g of groupList) {
+      if (g.children) walk(g.children);
+      for (const id of g.sectionIds ?? []) order.push(id);
+    }
+  };
+  walk(groups);
+  return order;
 }
 
 async function startPreviewServer(port) {
@@ -138,7 +171,7 @@ async function main() {
   const url = `http://${HOST}:${port}`;
 
   console.log(`[pdf] Loading sections...`);
-  const sections = await loadSections();
+  const { sections, groups } = await loadSections();
   const targets = wantedSections.length
     ? sections.filter((s) => wantedSections.includes(s.id))
     : sections;
@@ -157,6 +190,7 @@ async function main() {
 
   console.log(`[pdf] Launching Chromium (headless)...`);
   const browser = await chromium.launch();
+  const writtenFiles = new Map(); // sectionId -> filepath, only sections that actually rendered
   try {
     for (const section of targets) {
       const filename = join(OUT_DIR, `${section.id}.pdf`);
@@ -165,10 +199,9 @@ async function main() {
       const buffers = [];
       for (const lesson of section.lessons) {
         console.log(`       - ${lesson.title}`);
-        // Letter width in CSS pixels at 96 DPI = 8.5in * 96 = 816px.
         // Set the viewport wide enough to match the target paper width so text
         // renders at the same size the print media styles expect.
-        const page = await browser.newPage({ viewport: { width: 816, height: 1200 } });
+        const page = await browser.newPage({ viewport: { width: PAGE_WIDTH_PX, height: 1200 } });
         try {
           const target = url + lesson.path;
           // 'load' rather than 'networkidle': pages embedding a live widget
@@ -186,7 +219,7 @@ async function main() {
           //  printing the visible portion — CSS @media print with
           //  overflow:visible does NOT reliably override an inline style set
           //  on <main> during the print pass.)
-          await page.evaluate(() => {
+          await page.evaluate((pageWidthPx) => {
             document.querySelectorAll('.sidebar-container, aside, .mobile-backdrop, button[aria-label="Open menu"]').forEach(el => el.remove());
 
             // Turn off flex/scroll at every ancestor of the lesson content so
@@ -211,6 +244,21 @@ async function main() {
               main.style.padding = '20px 32px';
               main.style.flex = 'none';
               main.style.display = 'block';
+              // CRITICAL: an explicit width, not left to resolve from the flex
+              // ancestor. Once `main` is pulled out of flex sizing (flex:none)
+              // and freed from its scroll-container role (overflow:visible,
+              // height:auto), Chromium has no definite containing-block width
+              // for it anymore and falls into an unconstrained intrinsic-sizing
+              // layout pass. Ordinary text reflows fine in that pass, but a
+              // `width="100%"` mermaid SVG resolves against Chromium's internal
+              // "unbounded" sentinel (~1,000,000px) instead of a real number —
+              // proportionally scaling its height with it. One diagram then
+              // measures hundreds of thousands of pixels tall, blows out that
+              // lesson's computed PDF page height by orders of magnitude, and
+              // produces a wall of near-blank pages in the merged section PDF.
+              // Reproduced and isolated by bisecting this function line by
+              // line; giving `main` a real pixel width removes the ambiguity.
+              main.style.width = pageWidthPx + 'px';
               // Its flex-row wrapper (LessonLayout root) — turn off the flex.
               const lessonRoot = main.querySelector(':scope > div');
               if (lessonRoot) {
@@ -226,35 +274,34 @@ async function main() {
                 contentCol.style.flex = 'none';
               }
             }
-          });
+          }, PAGE_WIDTH_PX);
           await page.emulateMedia({ media: 'print' });
           await page.waitForTimeout(500);   // let mermaid + syntax highlighter finish
 
-          // Measure the content column itself — it's the most reliable dimension.
-          const scrollHeightPx = await page.evaluate(() => {
-            const main = document.querySelector('main');
-            if (!main) return 1200;
-            return Math.max(
-              main.scrollHeight,
-              main.offsetHeight,
-              document.body.scrollHeight,
-              document.documentElement.scrollHeight,
-            );
-          });
-          // Capture as ONE tall PDF page per lesson. Printing this from a PDF
-          // viewer with "fit to page" produces properly paginated output; PDF
-          // viewers also handle native pagination when scaled to Letter.
-          const heightIn = Math.max(4, scrollHeightPx / 96);   // px -> inches @ 96 DPI
-
+          // Real, standard Letter-format pagination — the SAME thing a
+          // browser's own Cmd+P does. A previous version of this script
+          // captured one giant custom-height page per lesson instead (sized
+          // to the lesson's full scrollHeight) on the theory that a PDF
+          // viewer's "fit to page" would paginate it afterward. That doesn't
+          // hold up: Adobe Reader (and the PDF spec itself) caps a single
+          // page at 200x200 inches, and several of this site's longer
+          // lessons render past 300in tall — Adobe truncates those silently
+          // ("dimensions are out-of-range... content might be truncated"),
+          // with no visible glitch to tip you off. Verified directly: the
+          // same page captured this way instead produces clean, correctly-
+          // broken standard pages, because it's exercising the exact CSS
+          // (@page, break-inside: avoid on pre/table/.flow-chart/.info-box)
+          // that already makes Cmd+P work well — no custom sizing needed.
           const buf = await page.pdf({
-            width: '8.5in',
-            height: heightIn + 'in',
+            format: 'Letter',
             printBackground: true,
             margin: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' },
           });
 
-          // Log per-lesson size so the user can see the pipeline progress.
-          console.log(`           ${scrollHeightPx}px tall, ${(buf.length/1024).toFixed(0)}KB`);
+          // Log per-lesson page count so the user can see the pipeline progress.
+          const { PDFDocument: PDFDocumentForCount } = await import('pdf-lib');
+          const pageCount = (await PDFDocumentForCount.load(buf)).getPageCount();
+          console.log(`           ${pageCount} page${pageCount === 1 ? '' : 's'}, ${(buf.length/1024).toFixed(0)}KB`);
 
           buffers.push(buf);
         } catch (err) {
@@ -278,6 +325,7 @@ async function main() {
       // Concatenate PDFs — we use a tiny inline PDF merger to avoid another dep.
       const merged = await mergePdfBuffers(buffers);
       await writeFile(filename, merged);
+      writtenFiles.set(section.id, filename);
     }
   } finally {
     await browser.close();
@@ -285,6 +333,65 @@ async function main() {
   }
 
   console.log(`[pdf] Done. PDFs in ${OUT_DIR}`);
+
+  if (COMBINED) {
+    await buildCombinedPdf({ sections: targets, groups, writtenFiles });
+  }
+}
+
+/**
+ * Stitches every already-written per-section PDF into one whole-site PDF, in
+ * sidebar order (not sections.ts declaration order — see sidebarSectionOrder),
+ * with a generated cover page listing the table of contents by group.
+ */
+async function buildCombinedPdf({ sections, groups, writtenFiles }) {
+  const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
+
+  const order = sidebarSectionOrder(groups).filter((id) => writtenFiles.has(id));
+  if (order.length === 0) {
+    console.error('[pdf] --combined: no rendered sections to combine — skipping.');
+    return;
+  }
+
+  console.log(`[pdf] Combining ${order.length} section PDFs into one file...`);
+
+  const combined = await PDFDocument.create();
+  const font = await combined.embedFont(StandardFonts.HelveticaBold);
+  const bodyFont = await combined.embedFont(StandardFonts.Helvetica);
+  const idToSection = new Map(sections.map((s) => [s.id, s]));
+
+  // Cover page: title + a simple table of contents (section labels in the
+  // same order they'll appear), paginating onto more cover pages if long.
+  const PAGE_W = 8.5 * 72, PAGE_H = 11 * 72; // Letter, in PDF points (72/in)
+  let cover = combined.addPage([PAGE_W, PAGE_H]);
+  let y = PAGE_H - 90;
+  cover.drawText('Tutorials — Complete Reference', { x: 54, y, size: 22, font, color: rgb(0.1, 0.1, 0.15) });
+  y -= 28;
+  cover.drawText(new Date().toISOString().slice(0, 10), { x: 54, y, size: 10, font: bodyFont, color: rgb(0.4, 0.4, 0.4) });
+  y -= 36;
+  cover.drawText('Contents', { x: 54, y, size: 14, font, color: rgb(0.1, 0.1, 0.15) });
+  y -= 22;
+
+  for (const id of order) {
+    const label = idToSection.get(id)?.label ?? id;
+    if (y < 60) {
+      cover = combined.addPage([PAGE_W, PAGE_H]);
+      y = PAGE_H - 60;
+    }
+    cover.drawText(`•  ${label}`, { x: 66, y, size: 11, font: bodyFont, color: rgb(0.15, 0.15, 0.2) });
+    y -= 18;
+  }
+
+  for (const id of order) {
+    const buf = await readFile(writtenFiles.get(id));
+    const src = await PDFDocument.load(buf);
+    const pages = await combined.copyPages(src, src.getPageIndices());
+    for (const p of pages) combined.addPage(p);
+  }
+
+  const outFile = join(OUT_DIR, 'tutorials-complete.pdf');
+  await writeFile(outFile, await combined.save());
+  console.log(`[pdf] Combined PDF → ${outFile}`);
 }
 
 /**

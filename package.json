@@ -10,6 +10,7 @@
     "preview": "vite preview --port 5173",
     "typecheck": "tsc --noEmit",
     "build:pdf": "npm run build && node scripts/build-pdf.mjs",
+    "build:pdf:combined": "npm run build && node scripts/build-pdf.mjs --combined",
     "pdf:section": "node scripts/build-pdf.mjs"
   },
   "dependencies": {
