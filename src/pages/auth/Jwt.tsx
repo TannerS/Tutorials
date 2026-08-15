@@ -9,7 +9,7 @@ export default function Jwt() {
     <LessonLayout
       title="JWT Deep Dive"
       sectionId="auth"
-      lessonIndex={4}
+      lessonIndex={2}
       prev={{ path: '/auth/cookies', label: 'Cookies & Sessions' }}
       next={{ path: '/auth/oauth', label: 'OAuth 2.0 & OIDC' }}
     >

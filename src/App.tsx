@@ -128,8 +128,22 @@ import ApiVersioning from './pages/apidesign/Versioning'
 import ApiAdvanced from './pages/apidesign/Advanced'
 
 // Auth & Security
-import AuthEncryption from './pages/auth/Encryption'
-import AuthTls from './pages/auth/Tls'
+import CryptoEncodingVsEncryption from './pages/cryptography/EncodingVsEncryption'
+import CryptoEncryption from './pages/cryptography/Encryption'
+import CryptoHashing from './pages/cryptography/Hashing'
+import CryptoAead from './pages/cryptography/Aead'
+import CryptoSignatures from './pages/cryptography/Signatures'
+import CryptoSigningFiles from './pages/cryptography/SigningFiles'
+import CryptoCertificateIssuance from './pages/cryptography/CertificateIssuance'
+import CryptoTls from './pages/cryptography/Tls'
+import CryptoTrustStores from './pages/cryptography/TrustStores'
+import CryptoKeyWrapping from './pages/cryptography/KeyWrapping'
+import CryptoSecureRandom from './pages/cryptography/SecureRandom'
+import CryptoSecureLoginFlow from './pages/cryptography/SecureLoginFlow'
+import CryptoAppliedJava from './pages/cryptography/AppliedJava'
+import CryptoAppliedNode from './pages/cryptography/AppliedNode'
+import CryptoMistakes from './pages/cryptography/Mistakes'
+import CryptoCheatsheet from './pages/cryptography/Cheatsheet'
 import AuthCookies from './pages/auth/Cookies'
 import AuthJwt from './pages/auth/Jwt'
 import AuthOauth from './pages/auth/Oauth'
@@ -462,14 +476,28 @@ function App() {
         <Route path="apidesign/versioning" element={<ApiVersioning />} />
         <Route path="apidesign/advanced" element={<ApiAdvanced />} />
         {/* Auth & Security */}
-        <Route path="auth/encryption" element={<AuthEncryption />} />
-        <Route path="auth/tls" element={<AuthTls />} />
         <Route path="auth/cookies" element={<AuthCookies />} />
         <Route path="auth/jwt" element={<AuthJwt />} />
         <Route path="auth/oauth" element={<AuthOauth />} />
         <Route path="auth/authz" element={<AuthAuthz />} />
         <Route path="auth/gateway" element={<AuthGateway />} />
         <Route path="auth/security" element={<AuthSecurity />} />
+        <Route path="cryptography/encoding-vs-encryption" element={<CryptoEncodingVsEncryption />} />
+        <Route path="cryptography/encryption" element={<CryptoEncryption />} />
+        <Route path="cryptography/hashing" element={<CryptoHashing />} />
+        <Route path="cryptography/aead" element={<CryptoAead />} />
+        <Route path="cryptography/signatures" element={<CryptoSignatures />} />
+        <Route path="cryptography/signing-files" element={<CryptoSigningFiles />} />
+        <Route path="cryptography/certificate-issuance" element={<CryptoCertificateIssuance />} />
+        <Route path="cryptography/tls" element={<CryptoTls />} />
+        <Route path="cryptography/trust-stores" element={<CryptoTrustStores />} />
+        <Route path="cryptography/key-wrapping" element={<CryptoKeyWrapping />} />
+        <Route path="cryptography/secure-random" element={<CryptoSecureRandom />} />
+        <Route path="cryptography/secure-login-flow" element={<CryptoSecureLoginFlow />} />
+        <Route path="cryptography/applied-java" element={<CryptoAppliedJava />} />
+        <Route path="cryptography/applied-node" element={<CryptoAppliedNode />} />
+        <Route path="cryptography/mistakes" element={<CryptoMistakes />} />
+        <Route path="cryptography/cheatsheet" element={<CryptoCheatsheet />} />
         {/* Testing Strategies */}
         <Route path="testing/intro" element={<TestIntro />} />
         <Route path="testing/what-to-test" element={<TestWhatToTest />} />

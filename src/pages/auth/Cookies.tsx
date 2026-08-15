@@ -9,8 +9,8 @@ export default function Cookies() {
     <LessonLayout
       title="Cookies & Sessions"
       sectionId="auth"
-      lessonIndex={3}
-      prev={{ path: '/auth/tls', label: 'TLS & HTTPS' }}
+      lessonIndex={1}
+      prev={{ path: '/auth/authz', label: 'AuthN vs AuthZ' }}
       next={{ path: '/auth/jwt', label: 'JWT Deep Dive' }}
     >
       <p>

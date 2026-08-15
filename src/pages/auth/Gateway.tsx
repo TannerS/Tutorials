@@ -9,7 +9,7 @@ export default function Gateway() {
     <LessonLayout
       title="Gateway Auth: Envoy, Redis & the Auth Wall"
       sectionId="auth"
-      lessonIndex={6}
+      lessonIndex={4}
       prev={{ path: '/auth/oauth', label: 'OAuth 2.0 & OIDC' }}
       next={{ path: '/auth/security', label: 'Web Security (CORS, CSRF, XSS)' }}
     >

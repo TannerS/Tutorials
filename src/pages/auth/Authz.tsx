@@ -11,7 +11,7 @@ export default function Authz() {
       sectionId="auth"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/auth/encryption', label: 'Encryption Fundamentals' }}
+      next={{ path: '/auth/cookies', label: 'Cookies & Sessions' }}
     >
       <p>
         This section is one continuous story: what actually happens when a user logs in, and what keeps

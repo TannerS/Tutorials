@@ -3,6 +3,7 @@ import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
+import MtlsExplainer from '../../components/security/MtlsExplainer';
 
 export default function Patterns() {
   return (
@@ -278,6 +279,8 @@ function replay(events: DomainEvent[]): AccountState {
         cross-cutting concerns: mTLS, retries, circuit breaking, observability, and traffic
         management. A Service Mesh is a collection of sidecars managed by a control plane.
       </p>
+
+      <MtlsExplainer compact />
 
       <FlowChart
         title="Service Mesh Architecture"

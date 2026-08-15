@@ -3,6 +3,7 @@ import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
+import MtlsExplainer from '../../components/security/MtlsExplainer';
 
 export default function Containers() {
   return (
@@ -416,6 +417,8 @@ app.get('/health/ready', async (req, res) => {
         It deploys a sidecar proxy (typically Envoy) alongside every service that transparently
         handles mTLS, retries, circuit breaking, observability, and traffic management.
       </p>
+
+      <MtlsExplainer compact />
 
       <FlowChart
         title="Service Mesh — Istio Architecture"

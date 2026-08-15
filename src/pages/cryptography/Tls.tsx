@@ -3,15 +3,16 @@ import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
+import MtlsExplainer from '../../components/security/MtlsExplainer';
 
 export default function Tls() {
   return (
     <LessonLayout
       title="TLS & HTTPS"
-      sectionId="auth"
-      lessonIndex={2}
-      prev={{ path: '/auth/encryption', label: 'Encryption Fundamentals' }}
-      next={{ path: '/auth/cookies', label: 'Cookies & Sessions' }}
+      sectionId="cryptography"
+      lessonIndex={7}
+      prev={{ path: '/cryptography/certificate-issuance', label: 'How a Certificate Is Actually Made' }}
+      next={{ path: '/cryptography/trust-stores', label: 'Where Keys & Certs Actually Live' }}
     >
       <p>
         TLS (Transport Layer Security) is the previous lesson made real. It takes ECDH key exchange,
@@ -344,10 +345,7 @@ Step 8: Encrypted Communication
 
       <h2>Mutual TLS (mTLS)</h2>
 
-      <p>
-        Standard TLS only authenticates the <em>server</em>. Mutual TLS (mTLS) requires <strong>both</strong> sides
-        to present certificates. The client also proves its identity with a certificate signed by a trusted CA.
-      </p>
+      <MtlsExplainer />
 
       <InfoBox variant="info" title="Where mTLS is Used">
         <p><strong>Zero-trust microservice environments</strong> — Every service verifies every other service. No implicit trust based on network location.</p>

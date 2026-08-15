@@ -8,10 +8,10 @@ export default function Encryption() {
   return (
     <LessonLayout
       title="Encryption Fundamentals"
-      sectionId="auth"
+      sectionId="cryptography"
       lessonIndex={1}
-      prev={{ path: '/auth/authz', label: 'AuthN vs AuthZ' }}
-      next={{ path: '/auth/tls', label: 'TLS & HTTPS' }}
+      prev={{ path: '/cryptography/encoding-vs-encryption', label: 'Encoding vs Encryption vs Hashing' }}
+      next={{ path: '/cryptography/hashing', label: 'Hashing & Data Integrity' }}
     >
       <p>
         Phase 1 of the login flow you just saw is a single line — &quot;the browser and server establish

@@ -9,7 +9,7 @@ export default function Oauth() {
     <LessonLayout
       title="OAuth 2.0 & OIDC"
       sectionId="auth"
-      lessonIndex={5}
+      lessonIndex={3}
       prev={{ path: '/auth/jwt', label: 'JWT Deep Dive' }}
       next={{ path: '/auth/gateway', label: 'Gateway Auth: Envoy, Redis & the Auth Wall' }}
     >

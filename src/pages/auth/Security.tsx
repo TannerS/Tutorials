@@ -9,7 +9,7 @@ export default function Security() {
     <LessonLayout
       title="Web Security (CORS, CSRF, XSS)"
       sectionId="auth"
-      lessonIndex={7}
+      lessonIndex={5}
       prev={{ path: '/auth/gateway', label: 'Gateway Auth: Envoy, Redis & the Auth Wall' }}
       next={null}
     >
