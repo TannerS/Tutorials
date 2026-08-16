@@ -110,25 +110,6 @@ matrix[1][4] == 1   // false — is 1-4 an edge?`}
         </p>
       </InfoBox>
 
-      <p>
-        The same adjacency-list idea in TypeScript is structurally identical &mdash; a{' '}
-        <code>Map</code> keyed by node id, valued by an array of neighbor ids:
-      </p>
-
-      <CodeBlock language="typescript" title="Adjacency List — TypeScript">
-{`function buildAdjacencyList(): Map<number, number[]> {
-  const adj = new Map<number, number[]>();
-  for (let i = 0; i < 6; i++) adj.set(i, []);
-
-  const edges: [number, number][] = [[0,1],[0,2],[1,3],[2,3],[2,4],[3,4],[4,5]];
-  for (const [a, b] of edges) {
-    adj.get(a)!.push(b);
-    adj.get(b)!.push(a);
-  }
-  return adj;
-}`}
-      </CodeBlock>
-
       <h2>Breadth-First Search (BFS)</h2>
 
       <p>

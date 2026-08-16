@@ -183,29 +183,29 @@ Trial 3 -- two-pointer: 0.0040 ms (result=null) | naive: 18.2615 ms (result=null
 
       <p>
         The same algorithm holds up with a <code>Set</code> instead of a <code>Map</code>, shrinking
-        one character at a time from the left rather than jumping — a common alternative phrasing in
-        JS/TS interviews:
+        one character at a time from the left rather than jumping straight to the stale index — a
+        common alternative phrasing:
       </p>
 
-      <CodeBlock language="typescript" title="Set-Based Variant (Node.js v25.2.1 — verified, same test cases)">
-{`function lengthOfLongestSubstring(s: string): number {
-  const window = new Set<string>();
-  let left = 0;
-  let longest = 0;
+      <CodeBlock language="java" title="Set-Based Variant — verified, same test cases">
+{`static int lengthOfLongestSubstring(String s) {
+    Set<Character> window = new HashSet<>();
+    int left = 0;
+    int longest = 0;
 
-  for (let right = 0; right < s.length; right++) {
-    const c = s[right];
-    while (window.has(c)) {
-      window.delete(s[left]);
-      left++;
+    for (int right = 0; right < s.length(); right++) {
+        char c = s.charAt(right);
+        while (window.contains(c)) {
+            window.remove(s.charAt(left));
+            left++;
+        }
+        window.add(c);
+        longest = Math.max(longest, right - left + 1);
     }
-    window.add(c);
-    longest = Math.max(longest, right - left + 1);
-  }
-  return longest;
+    return longest;
 }
 
-// node sliding-window.js output:
+// Actual output, all 7 cases from the Map-based version re-run against this one:
 // [PASS] "abcabcbb" expected=3 actual=3
 // [PASS] "abcdefg" expected=7 actual=7   (all unique)
 // [PASS] "aaaaaaa" expected=1 actual=1   (all identical)
