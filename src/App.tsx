@@ -164,8 +164,12 @@ import DsaComplexity from './pages/dsa/Complexity'
 import DsaArraysSorting from './pages/dsa/ArraysSorting'
 import DsaLinkedLists from './pages/dsa/LinkedLists'
 import DsaStacksQueues from './pages/dsa/StacksQueues'
+import DsaRecursion from './pages/dsa/Recursion'
 import DsaTrees from './pages/dsa/Trees'
+import DsaHeaps from './pages/dsa/Heaps'
+import DsaTries from './pages/dsa/Tries'
 import DsaGraphs from './pages/dsa/Graphs'
+import DsaUnionFind from './pages/dsa/UnionFind'
 import DsaHashing from './pages/dsa/Hashing'
 import DsaDynamicProgramming from './pages/dsa/DynamicProgramming'
 import DsaPatterns from './pages/dsa/Patterns'
@@ -564,8 +568,12 @@ function App() {
         <Route path="dsa/arrays-sorting" element={<DsaArraysSorting />} />
         <Route path="dsa/linked-lists" element={<DsaLinkedLists />} />
         <Route path="dsa/stacks-queues" element={<DsaStacksQueues />} />
+        <Route path="dsa/recursion-backtracking" element={<DsaRecursion />} />
         <Route path="dsa/trees" element={<DsaTrees />} />
+        <Route path="dsa/heaps" element={<DsaHeaps />} />
+        <Route path="dsa/tries" element={<DsaTries />} />
         <Route path="dsa/graphs" element={<DsaGraphs />} />
+        <Route path="dsa/union-find" element={<DsaUnionFind />} />
         <Route path="dsa/hashing" element={<DsaHashing />} />
         <Route path="dsa/dynamic-programming" element={<DsaDynamicProgramming />} />
         <Route path="dsa/patterns" element={<DsaPatterns />} />

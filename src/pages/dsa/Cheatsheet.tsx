@@ -7,7 +7,7 @@ export default function Cheatsheet() {
     <LessonLayout
       title="📋 Cheat Sheet"
       sectionId="dsa"
-      lessonIndex={9}
+      lessonIndex={13}
       prev={{ path: '/dsa/patterns', label: 'Common Interview Patterns' }}
       next={null}
     >

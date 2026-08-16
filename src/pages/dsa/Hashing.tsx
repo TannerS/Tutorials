@@ -8,8 +8,8 @@ export default function Hashing() {
     <LessonLayout
       title="Hash Tables, Deep Dive"
       sectionId="dsa"
-      lessonIndex={6}
-      prev={{ path: '/dsa/graphs', label: 'Graphs & Graph Traversal' }}
+      lessonIndex={10}
+      prev={{ path: '/dsa/union-find', label: 'Union-Find & Minimum Spanning Trees' }}
       next={{ path: '/dsa/dynamic-programming', label: 'Dynamic Programming' }}
     >
       <p>

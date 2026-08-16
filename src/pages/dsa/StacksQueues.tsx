@@ -10,7 +10,7 @@ export default function StacksQueues() {
       sectionId="dsa"
       lessonIndex={3}
       prev={{ path: '/dsa/linked-lists', label: 'Linked Lists' }}
-      next={{ path: '/dsa/trees', label: 'Trees & Binary Search Trees' }}
+      next={{ path: '/dsa/recursion-backtracking', label: 'Recursion & Backtracking' }}
     >
       <p>
         Stacks and queues are the same idea — a linear sequence of elements — with opposite rules for

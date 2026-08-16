@@ -9,9 +9,9 @@ export default function Trees() {
     <LessonLayout
       title="Trees & Binary Search Trees"
       sectionId="dsa"
-      lessonIndex={4}
-      prev={{ path: '/dsa/stacks-queues', label: 'Stacks & Queues' }}
-      next={{ path: '/dsa/graphs', label: 'Graphs & Graph Traversal' }}
+      lessonIndex={5}
+      prev={{ path: '/dsa/recursion-backtracking', label: 'Recursion & Backtracking' }}
+      next={{ path: '/dsa/heaps', label: 'Heaps & Priority Queues, From Scratch' }}
     >
       <p>
         A tree is a hierarchy: one <strong>root</strong> node, and every other node reachable from it

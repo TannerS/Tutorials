@@ -8,7 +8,7 @@ export default function DynamicProgramming() {
     <LessonLayout
       title="Dynamic Programming"
       sectionId="dsa"
-      lessonIndex={7}
+      lessonIndex={11}
       prev={{ path: '/dsa/hashing', label: 'Hash Tables, Deep Dive' }}
       next={{ path: '/dsa/patterns', label: 'Common Interview Patterns' }}
     >

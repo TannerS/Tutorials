@@ -9,9 +9,9 @@ export default function Graphs() {
     <LessonLayout
       title="Graphs & Graph Traversal"
       sectionId="dsa"
-      lessonIndex={5}
-      prev={{ path: '/dsa/trees', label: 'Trees & Binary Search Trees' }}
-      next={{ path: '/dsa/hashing', label: 'Hash Tables, Deep Dive' }}
+      lessonIndex={8}
+      prev={{ path: '/dsa/tries', label: 'Tries (Prefix Trees)' }}
+      next={{ path: '/dsa/union-find', label: 'Union-Find & Minimum Spanning Trees' }}
     >
       <p>
         A tree is a graph with rules bolted on: exactly one path between any two nodes, no cycles,

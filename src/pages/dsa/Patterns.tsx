@@ -8,7 +8,7 @@ export default function Patterns() {
     <LessonLayout
       title="Common Interview Patterns"
       sectionId="dsa"
-      lessonIndex={8}
+      lessonIndex={12}
       prev={{ path: '/dsa/dynamic-programming', label: 'Dynamic Programming' }}
       next={{ path: '/dsa/cheatsheet', label: '📋 Cheat Sheet' }}
     >
