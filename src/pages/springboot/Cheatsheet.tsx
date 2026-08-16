@@ -7,8 +7,8 @@ export default function Cheatsheet() {
     <LessonLayout
       title="Cheat Sheet"
       sectionId="springboot"
-      lessonIndex={16}
-      prev={{ path: '/springboot/observability', label: 'Observability' }}
+      lessonIndex={18}
+      prev={{ path: '/springboot/resilience', label: 'Resilience4j & Circuit Breakers' }}
       next={null}
     >
       <h2>Startup Failure Triage</h2>

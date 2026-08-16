@@ -11,7 +11,7 @@ export default function Security() {
       sectionId="auth"
       lessonIndex={5}
       prev={{ path: '/auth/gateway', label: 'Gateway Auth: Envoy, Redis & the Auth Wall' }}
-      next={null}
+      next={{ path: '/auth/sso', label: 'SSO & SAML' }}
     >
       <p>
         Every mechanism in this section works exactly as designed and the user can still be robbed,

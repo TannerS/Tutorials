@@ -11,7 +11,7 @@ export default function FeatureFolder() {
       sectionId="react19"
       lessonIndex={18}
       prev={{ path: '/react19/module-federation', label: 'Module Federation & MFEs' }}
-      next={null}
+      next={{ path: '/react19/error-boundaries', label: 'Error Boundaries' }}
     >
       <h2>The Two Ways to Organize a Frontend</h2>
       <p>

@@ -10,7 +10,7 @@ export default function OptionalDeepDive() {
       sectionId="java"
       lessonIndex={10}
       prev={{ path: '/java/advanced', label: 'Advanced Java Features' }}
-      next={null}
+      next={{ path: '/java/jvm-internals', label: 'JVM Internals & Garbage Collection' }}
     >
       <h2>What Optional Is For</h2>
       <p>

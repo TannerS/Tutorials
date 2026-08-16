@@ -10,7 +10,7 @@ export default function CloudArchitectureCapacityPlanning() {
       sectionId="cloud-architecture"
       lessonIndex={3}
       prev={{ path: '/cloud-architecture/multi-region', label: 'Multi-Region Architecture & Disaster Recovery' }}
-      next={{ path: '/cloud-architecture/cheatsheet', label: '📋 Cheat Sheet' }}
+      next={{ path: '/cloud-architecture/cicd', label: 'CI/CD Pipelines & Deployment Strategies' }}
     >
       <p>
         The Estimation Cheat Sheet in the System Design Interview lesson covers this same back-of-envelope

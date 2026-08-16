@@ -11,7 +11,7 @@ export default function Advanced() {
       sectionId="apidesign"
       lessonIndex={5}
       prev={{ path: '/apidesign/versioning', label: 'Versioning & Pagination' }}
-      next={null}
+      next={{ path: '/apidesign/graphql', label: 'GraphQL Fundamentals' }}
     >
       <h2>API Gateway Pattern</h2>
       <p>

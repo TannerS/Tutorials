@@ -7,8 +7,8 @@ export default function CloudArchitectureCheatsheet() {
     <LessonLayout
       title="📋 Cheat Sheet"
       sectionId="cloud-architecture"
-      lessonIndex={4}
-      prev={{ path: '/cloud-architecture/capacity-planning', label: 'Cost & Capacity Planning' }}
+      lessonIndex={5}
+      prev={{ path: '/cloud-architecture/cicd', label: 'CI/CD Pipelines & Deployment Strategies' }}
       next={null}
     >
       <p>

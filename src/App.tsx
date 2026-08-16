@@ -13,6 +13,9 @@ import JavaConcurrency from './pages/java/Concurrency'
 import JavaIo from './pages/java/Io'
 import JavaAdvanced from './pages/java/Advanced'
 import JavaOptional from './pages/java/Optional'
+import JavaJvmInternals from './pages/java/JvmInternals'
+import JavaReflection from './pages/java/Reflection'
+import JavaBuildTools from './pages/java/BuildTools'
 
 // Spring Boot
 import SpringIntro from './pages/springboot/Intro'
@@ -31,6 +34,8 @@ import SpringKafka from './pages/springboot/Kafka'
 import SpringAop from './pages/springboot/Aop'
 import SpringBoot4 from './pages/springboot/Boot4'
 import SpringObservability from './pages/springboot/Observability'
+import SpringWebflux from './pages/springboot/Webflux'
+import SpringResilience from './pages/springboot/Resilience'
 import SpringCheatsheet from './pages/springboot/Cheatsheet'
 
 // React 19
@@ -53,6 +58,9 @@ import ReactAdapters from './pages/react19/Adapters'
 import ReactImperativeBridge from './pages/react19/ImperativeBridge'
 import ReactModuleFederation from './pages/react19/ModuleFederation'
 import ReactFeatureFolder from './pages/react19/FeatureFolder'
+import ReactErrorBoundaries from './pages/react19/ErrorBoundaries'
+import ReactAnimations from './pages/react19/Animations'
+import ReactPortals from './pages/react19/Portals'
 
 // SQL Fundamentals
 import SqlQuickstart from './pages/sql-fundamentals/Quickstart'
@@ -141,6 +149,7 @@ import CloudWellArchitected from './pages/cloud-architecture/WellArchitected'
 import CloudIac from './pages/cloud-architecture/Iac'
 import CloudMultiRegion from './pages/cloud-architecture/MultiRegion'
 import CloudCapacityPlanning from './pages/cloud-architecture/CapacityPlanning'
+import CloudCicd from './pages/cloud-architecture/Cicd'
 import CloudCheatsheet from './pages/cloud-architecture/Cheatsheet'
 
 // Observability & SRE
@@ -150,6 +159,24 @@ import ObsTracing from './pages/observability/Tracing'
 import ObsIncidents from './pages/observability/Incidents'
 import ObsCheatsheet from './pages/observability/Cheatsheet'
 
+// Data Structures & Algorithms
+import DsaComplexity from './pages/dsa/Complexity'
+import DsaArraysSorting from './pages/dsa/ArraysSorting'
+import DsaLinkedLists from './pages/dsa/LinkedLists'
+import DsaStacksQueues from './pages/dsa/StacksQueues'
+import DsaTrees from './pages/dsa/Trees'
+import DsaGraphs from './pages/dsa/Graphs'
+import DsaHashing from './pages/dsa/Hashing'
+import DsaDynamicProgramming from './pages/dsa/DynamicProgramming'
+import DsaPatterns from './pages/dsa/Patterns'
+import DsaCheatsheet from './pages/dsa/Cheatsheet'
+
+// Git & Version Control
+import VcInternals from './pages/version-control/Internals'
+import VcBranching from './pages/version-control/Branching'
+import VcCollaboration from './pages/version-control/Collaboration'
+import VcCheatsheet from './pages/version-control/Cheatsheet'
+
 // API Design
 import ApiIntro from './pages/apidesign/Intro'
 import ApiMethods from './pages/apidesign/Methods'
@@ -157,6 +184,8 @@ import ApiResources from './pages/apidesign/Resources'
 import ApiErrors from './pages/apidesign/Errors'
 import ApiVersioning from './pages/apidesign/Versioning'
 import ApiAdvanced from './pages/apidesign/Advanced'
+import ApiGraphql from './pages/apidesign/Graphql'
+import ApiWebsockets from './pages/apidesign/Websockets'
 
 // Auth & Security
 import CryptoEncodingVsEncryption from './pages/cryptography/EncodingVsEncryption'
@@ -181,6 +210,7 @@ import AuthOauth from './pages/auth/Oauth'
 import AuthAuthz from './pages/auth/Authz'
 import AuthGateway from './pages/auth/Gateway'
 import AuthSecurity from './pages/auth/Security'
+import AuthSso from './pages/auth/Sso'
 
 // Java Cheat Sheet
 
@@ -407,6 +437,9 @@ function App() {
         <Route path="java/io" element={<JavaIo />} />
         <Route path="java/advanced" element={<JavaAdvanced />} />
         <Route path="java/optional" element={<JavaOptional />} />
+        <Route path="java/jvm-internals" element={<JavaJvmInternals />} />
+        <Route path="java/reflection" element={<JavaReflection />} />
+        <Route path="java/build-tools" element={<JavaBuildTools />} />
         {/* Spring Boot */}
         <Route path="springboot/intro" element={<SpringIntro />} />
         <Route path="springboot/setup" element={<SpringSetup />} />
@@ -424,6 +457,8 @@ function App() {
         <Route path="springboot/aop" element={<SpringAop />} />
         <Route path="springboot/boot4" element={<SpringBoot4 />} />
         <Route path="springboot/observability" element={<SpringObservability />} />
+        <Route path="springboot/webflux" element={<SpringWebflux />} />
+        <Route path="springboot/resilience" element={<SpringResilience />} />
         <Route path="springboot/cheatsheet" element={<SpringCheatsheet />} />
         {/* React 19 */}
         <Route path="react19/lifecycle" element={<ReactLifecycle />} />
@@ -445,6 +480,9 @@ function App() {
         <Route path="react19/imperative-bridge" element={<ReactImperativeBridge />} />
         <Route path="react19/module-federation" element={<ReactModuleFederation />} />
         <Route path="react19/feature-folder" element={<ReactFeatureFolder />} />
+        <Route path="react19/error-boundaries" element={<ReactErrorBoundaries />} />
+        <Route path="react19/animations" element={<ReactAnimations />} />
+        <Route path="react19/portals" element={<ReactPortals />} />
         {/* SQL */}
         <Route path="sql-fundamentals/quickstart" element={<SqlQuickstart />} />
         <Route path="sql-fundamentals/joins" element={<SqlJoins />} />
@@ -516,11 +554,26 @@ function App() {
         <Route path="cloud-architecture/iac" element={<CloudIac />} />
         <Route path="cloud-architecture/multi-region" element={<CloudMultiRegion />} />
         <Route path="cloud-architecture/capacity-planning" element={<CloudCapacityPlanning />} />
+        <Route path="cloud-architecture/cicd" element={<CloudCicd />} />
         <Route path="cloud-architecture/cheatsheet" element={<CloudCheatsheet />} />
         <Route path="observability/three-pillars" element={<ObsThreePillars />} />
         <Route path="observability/slos" element={<ObsSlos />} />
         <Route path="observability/tracing" element={<ObsTracing />} />
         <Route path="observability/incidents" element={<ObsIncidents />} />
+        <Route path="dsa/complexity" element={<DsaComplexity />} />
+        <Route path="dsa/arrays-sorting" element={<DsaArraysSorting />} />
+        <Route path="dsa/linked-lists" element={<DsaLinkedLists />} />
+        <Route path="dsa/stacks-queues" element={<DsaStacksQueues />} />
+        <Route path="dsa/trees" element={<DsaTrees />} />
+        <Route path="dsa/graphs" element={<DsaGraphs />} />
+        <Route path="dsa/hashing" element={<DsaHashing />} />
+        <Route path="dsa/dynamic-programming" element={<DsaDynamicProgramming />} />
+        <Route path="dsa/patterns" element={<DsaPatterns />} />
+        <Route path="dsa/cheatsheet" element={<DsaCheatsheet />} />
+        <Route path="version-control/internals" element={<VcInternals />} />
+        <Route path="version-control/branching" element={<VcBranching />} />
+        <Route path="version-control/collaboration" element={<VcCollaboration />} />
+        <Route path="version-control/cheatsheet" element={<VcCheatsheet />} />
         <Route path="observability/cheatsheet" element={<ObsCheatsheet />} />
         {/* API Design */}
         <Route path="apidesign/intro" element={<ApiIntro />} />
@@ -529,6 +582,8 @@ function App() {
         <Route path="apidesign/errors" element={<ApiErrors />} />
         <Route path="apidesign/versioning" element={<ApiVersioning />} />
         <Route path="apidesign/advanced" element={<ApiAdvanced />} />
+        <Route path="apidesign/graphql" element={<ApiGraphql />} />
+        <Route path="apidesign/websockets" element={<ApiWebsockets />} />
         {/* Auth & Security */}
         <Route path="auth/cookies" element={<AuthCookies />} />
         <Route path="auth/jwt" element={<AuthJwt />} />
@@ -536,6 +591,7 @@ function App() {
         <Route path="auth/authz" element={<AuthAuthz />} />
         <Route path="auth/gateway" element={<AuthGateway />} />
         <Route path="auth/security" element={<AuthSecurity />} />
+        <Route path="auth/sso" element={<AuthSso />} />
         <Route path="cryptography/encoding-vs-encryption" element={<CryptoEncodingVsEncryption />} />
         <Route path="cryptography/encryption" element={<CryptoEncryption />} />
         <Route path="cryptography/hashing" element={<CryptoHashing />} />

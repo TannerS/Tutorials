@@ -11,7 +11,7 @@ export default function Observability() {
       sectionId="springboot"
       lessonIndex={15}
       prev={{ path: '/springboot/boot4', label: 'Boot 4 Novelties' }}
-      next={{ path: '/springboot/cheatsheet', label: 'Cheat Sheet' }}
+      next={{ path: '/springboot/webflux', label: 'Reactive Programming with WebFlux' }}
     >
       <h2>The Three Pillars, Modernized</h2>
       <p>
