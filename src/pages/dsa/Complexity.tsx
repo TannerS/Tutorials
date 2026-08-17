@@ -24,6 +24,44 @@ export default function Complexity() {
         with the real explanation for it.
       </p>
 
+      <h2>The Intuition First, Before Any Notation</h2>
+
+      <p>
+        Before a single symbol: imagine looking up &quot;Smith&quot; in a phone book versus finding one
+        particular receipt in a shoebox of loose, unsorted paper. In the phone book you flip open to
+        roughly the middle, see whether you overshot or undershot, and repeat on whichever half is left —
+        a handful of flips gets you there even in a book with a million names, because each flip throws
+        away half of what remains. In the shoebox there is no such shortcut: nothing is in order, so the
+        only honest strategy is checking receipts one at a time until you find it or run out. Double the
+        receipts and the worst-case search roughly doubles too; double the phone book and you barely add
+        one more flip. That gap — how the <em>work</em> grows as the <em>pile</em> grows — is exactly what
+        the notation below exists to measure precisely.
+      </p>
+
+      <CodeBlock language="text" title="The shape of each growth rate, at a glance (schematic sketch, not measured data)">
+{`work
+required
+  ^                                                        #   O(n^2)  -- doubling the input
+  |                                                #             roughly QUADRUPLES the work
+  |                                        #
+  |                                #
+  |                        #                                +   O(n)    -- doubling the input
+  |                #                                +             roughly DOUBLES the work
+  |        #                                +
+  |    #                        +
+  |o o o o o o o o o o o o o o o o o o o o o o o o o o o o  O(log n) -- doubling the input barely
+  |                                                              adds one more step (the phone book)
+  |-------------------------------------------------------  O(1)    -- flat: same cost no matter
+  +-------------------------------------------------------->            the input size (array index)
+    small input                                    large input (n)`}
+      </CodeBlock>
+
+      <p>
+        That is the whole intuition, before any proof: O(1) and O(log n) barely notice the pile getting
+        bigger, O(n) feels it directly, and O(n²) gets punished hard. The rest of this lesson puts exact,
+        measured numbers behind that shape — starting with what the notation is actually promising.
+      </p>
+
       <InfoBox variant="warning" title="The Sloppy Habit This Lesson Won't Repeat">
         <p>
           In casual conversation and most interviews, &quot;Big-O&quot; gets used as a catch-all for

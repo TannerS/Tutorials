@@ -42,6 +42,19 @@ export default function Patterns() {
         cleanly.
       </p>
 
+      <CodeBlock language="text" title="Two Pointers — Walking Toward Each Other">
+{`sorted = [2, 7, 11, 15], target = 9
+
+step 1:  [ 2   7   11   15 ]
+           L              R      sum = 2 + 15 = 17  -> too big, move R left
+
+step 2:  [ 2   7   11   15 ]
+           L         R           sum = 2 + 11 = 13  -> too big, move R left
+
+step 3:  [ 2   7   11   15 ]
+           L    R                sum = 2 + 7  = 9   -> found it, L and R stop`}
+      </CodeBlock>
+
       <p>
         The idea: put one pointer at each end of the sorted array. If the pair at those two positions
         sums to less than the target, the <em>only</em> way to increase the sum is to move the left
@@ -110,6 +123,17 @@ Trial 3 -- two-pointer: 0.0040 ms (result=null) | naive: 18.2615 ms (result=null
         &quot;substring&quot;/&quot;subarray&quot; (as opposed to &quot;subsequence,&quot; which permits
         gaps and is usually a dynamic-programming signal instead).
       </p>
+
+      <CodeBlock language="text" title="Sliding Window — Growing, Then Shrinking on a Repeat">
+{`s = "abba"
+
+right=0  [a]bba        window="a"     no repeat, grow
+right=1  [ab]ba        window="ab"    no repeat, grow
+right=2  [abb]a        window="abb"   'b' repeats -> shrink from left
+          a[bb]a       window="bb" -> drop leading 'a', still has dup -> shrink again
+          ab[b]a       window="b"     now valid, longest so far = 2
+right=3  ab[ba]        window="ba"    no repeat, grow -> longest still 2`}
+      </CodeBlock>
 
       <p>
         The idea: maintain a window <code>[left, right]</code> and a running record of what is inside
@@ -225,6 +249,18 @@ Trial 3 -- two-pointer: 0.0040 ms (result=null) | naive: 18.2615 ms (result=null
         sequence&quot; problem.
       </p>
 
+      <CodeBlock language="text" title="Fast &amp; Slow Pointers — One Step vs. Two, Same Array">
+{`index:  [ 0   1   2   3   4   5   6 ]
+start:    SF                            slow=0, fast=0
+
+step 1:   .   S   .   F   .   .   .     slow=1 (+1), fast=2 (+2)
+
+step 2:   .   .   S   .   .   F   .     slow=2 (+1), fast=4 (+2)
+
+step 3:   .   .   .   S   .   .   F     slow=3 (+1), fast=6 (+2) -> fast out of room
+                      ^-- slow lands on the middle (index 3, length 7)`}
+      </CodeBlock>
+
       <p>
         Applied to finding the middle of an array: a slow pointer advances one step at a time, a fast
         pointer advances two. When the fast pointer runs out of room, the slow pointer — having covered
@@ -277,6 +313,18 @@ length=16 array=[0..15]                           -> middleIndex=8 middleValue=8
         conference rooms,&quot; &quot;insert a new interval into an existing sorted list&quot; are all
         this pattern.
       </p>
+
+      <CodeBlock language="text" title="Merge Intervals — Before and After">
+{`timeline:  0  1  2  3  4  5  6  7  8  9  10 11 12
+
+before:       [1,3]
+                       [2,6]
+                                      [8,10]
+                                            [9,12]
+
+after:        [1,6]                  [8,12]
+              (1-3 and 2-6 overlap -> merged)   (8-10 and 9-12 overlap -> merged)`}
+      </CodeBlock>
 
       <p>
         The one non-negotiable correctness step is sorting the intervals <strong>by start time
@@ -343,6 +391,16 @@ Correct (sort by start time first, then sweep):
         trending hashtags,&quot; &quot;K closest points to the origin,&quot; &quot;the 3 most frequent
         words&quot; — the presence of a specific, bounded K alongside a much larger N is the signal.
       </p>
+
+      <CodeBlock language="text" title="Top-K — a Size-K Heap Boundary Sliding Over the Stream">
+{`array = [7, 2, 19, 4, 25, 12, 1, 33, 8], k = 3
+
+  min-heap (capped at size 3) scanning left -> right:
+  {7,2,19} -> 4 too small, skip -> 25 bumps out 2 -> {7,19,25}
+  -> 12 bumps out 7 -> {12,19,25} -> 1 too small, skip
+  -> 33 bumps out 12 -> {19,25,33} -> 8 too small, skip
+  final heap: {19, 25, 33}   -- matches the real run below`}
+      </CodeBlock>
 
       <p>
         The tool is a <code>PriorityQueue</code> capped at size K — the same <code>PriorityQueue</code>{' '}

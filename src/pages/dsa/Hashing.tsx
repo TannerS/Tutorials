@@ -2,6 +2,7 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
+import FlowChart from '../../components/FlowChart';
 
 export default function Hashing() {
   return (
@@ -21,6 +22,33 @@ export default function Hashing() {
         silently making lookups fail. This lesson opens the box: how the array-and-index
         arithmetic actually works underneath, and the two or three ways it breaks mechanically if
         you build one yourself.
+      </p>
+
+      <h2>The Picture Before the Code</h2>
+
+      <p>
+        Imagine a row of numbered mailboxes — say four of them, boxes 0 through 3 — and one rule for
+        deciding which mailbox any given key belongs in. To store <code>&quot;banana&quot;</code>, you
+        do not check box 0, then box 1, then box 2 looking for a free slot. You run{' '}
+        <code>&quot;banana&quot;</code> through a <strong>hash function</strong> — a plain calculation
+        that turns the key into a number — and that number <em>is</em> the mailbox to use. The diagram
+        below is that entire trip for one key: the key goes in on the left, a number comes out in the
+        middle, and that number is the bucket the value lands in on the right.
+      </p>
+
+      <FlowChart
+        title="One Key's Trip: Input -> Hash Function -> Bucket"
+        chart={"graph LR\n  K[\"key: 'banana'\"] --> H[\"hash function\"]\n  H --> IDX[\"hash('banana') mod 4 = index 1\"]\n  IDX --> B1\n  subgraph Array of Buckets\n    B0[\"bucket 0\"]\n    B1[\"bucket 1 <- banana lands here\"]\n    B2[\"bucket 2\"]\n    B3[\"bucket 3\"]\n  end\n  style B1 fill:#1a3329,stroke:#4ade80"}
+      />
+
+      <p>
+        That is the whole reason a hash table is fast: a lookup is not a search, it is one calculation
+        followed by one direct jump to the right slot. Compare that to scanning a list front to back
+        checking every element for a match (linear search — O(n)) — a hash table skips the scanning
+        entirely and computes exactly where to go in one step (O(1) on average). Everything from here
+        on is the mechanics underneath that one arrow in the middle of the diagram: how the number gets
+        computed safely, and what happens on the rare occasion two different keys compute the same
+        number.
       </p>
 
       <InfoBox variant="info" title="The Mechanism, In One Sentence">

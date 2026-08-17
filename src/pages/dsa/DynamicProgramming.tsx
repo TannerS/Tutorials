@@ -2,6 +2,7 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
+import FlowChart from '../../components/FlowChart';
 
 export default function DynamicProgramming() {
   return (
@@ -19,6 +20,50 @@ export default function DynamicProgramming() {
         <code>dp[i][j]</code> represent...&quot; setup — is just different plumbing around that one idea.
         This lesson proves it is not hand-waving. Every timing number below came from actually compiling
         and running the code with the JDK installed on this machine, not from a textbook estimate.
+      </p>
+
+      <h2>The Picture Before the Numbers</h2>
+
+      <p>
+        Before any code: imagine solving the same simple math problem over and over again — not because
+        it&apos;s hard, but because you keep forgetting you already solved it a few seconds ago. That is,
+        quite literally, what naive recursive Fibonacci does to itself, and it is easier to <em>see</em>{' '}
+        than to explain in words. Below is the complete call tree for a small case, <code>fib(5)</code> —
+        small enough to draw every single call, with nothing left out or summarized:
+      </p>
+
+      <FlowChart
+        title="The Full Recursion Tree for fib(5) — Every Box Is One Function Call"
+        chart={`graph TD
+    R["fib(5)"] --> A["fib(4)"]
+    R --> B["fib(3) (again)"]
+    A --> A1["fib(3)"]
+    A --> A2["fib(2) (again)"]
+    B --> B1["fib(2) (again)"]
+    B --> B2["fib(1) = 1"]
+    A1 --> A11["fib(2)"]
+    A1 --> A12["fib(1) = 1"]
+    A2 --> A21["fib(1) = 1"]
+    A2 --> A22["fib(0) = 0"]
+    B1 --> B11["fib(1) = 1"]
+    B1 --> B12["fib(0) = 0"]
+    A11 --> A111["fib(1) = 1"]
+    A11 --> A112["fib(0) = 0"]
+    style A1 fill:#fb923c,color:#fff
+    style B fill:#fb923c,color:#fff
+    style A2 fill:#f87171,color:#fff
+    style B1 fill:#f87171,color:#fff
+    style A11 fill:#f87171,color:#fff`}
+      />
+
+      <p>
+        Trace it by eye: <code>fib(4)</code> shows up once, but <code>fib(3)</code> (orange) shows up{' '}
+        <strong>twice</strong> — once down the left branch, once down the right — as two completely
+        separate computations that arrive at the identical answer. <code>fib(2)</code> (red) shows up{' '}
+        <strong>three separate times</strong>. No branch knows another branch already did this exact work
+        a moment earlier, so each one redoes it from scratch. That is <strong>overlapping subproblems</strong>{' '}
+        made visible in one picture, and at just <code>n&nbsp;=&nbsp;5</code> it is already this wasteful.
+        Now watch what the same waste costs at real scale:
       </p>
 
       <h2>The Problem With Naive Recursion</h2>

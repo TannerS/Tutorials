@@ -1,6 +1,7 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
+import FlowChart from '../../components/FlowChart';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function LinkedLists() {
@@ -23,6 +24,40 @@ export default function LinkedLists() {
         the ends, no shifting required, which is the trade this entire lesson is about. Every claim below —
         every Big-O, every &quot;this is what Java actually does&quot; — was compiled and run against a real
         JDK 26 install, not recalled from memory.
+      </p>
+
+      <h2>Picture It First: A Chain of Boxes, Not a Row of Slots</h2>
+
+      <p>
+        Forget the code for a second and just look at the shape. An array is one unbroken block of
+        memory you already have a picture of from the previous lesson. A linked list is the opposite:
+        separate little boxes scattered wherever the heap has room, each one holding a value and an arrow
+        pointing to the next box, with the last arrow pointing at nothing (<code>null</code>).{' '}
+        <code>head</code> is just a pointer to the first box — that&apos;s the entire structure.
+      </p>
+
+      <FlowChart
+        title="A Linked List Is a Chain of Nodes, Each Pointing to the Next"
+        chart={"graph LR\n  HEAD((head)) --> A[5] --> B[2] --> C[8] --> D[null]"}
+      />
+
+      <p>
+        Now the payoff. Say you want to insert <code>99</code> between <code>5</code> and <code>2</code>.
+        In an array, everything from that point on has to physically slide over to make room — O(n) work.
+        In a linked list, nothing moves at all: you rewire exactly two arrows — the node before the
+        insertion point now points at the new node, and the new node points at whatever used to come
+        next — and every other box stays exactly where it already was in memory.
+      </p>
+
+      <FlowChart
+        title="Before vs. After Inserting 99 — Only Two Arrows Change, Nothing Shifts"
+        chart={"graph LR\n  subgraph Before\n    A1[5] --> B1[2] --> C1[8]\n  end\n  subgraph After\n    A2[5] --> X2[99] --> B2[2] --> C2[8]\n  end"}
+      />
+
+      <p>
+        That&apos;s O(1) insertion, given you already hold a reference to the node you&apos;re inserting
+        after — no shifting, no copying, just two pointer writes. Everything below is that same idea
+        worked out in real, runnable code.
       </p>
 
       <InfoBox variant="info" title="The Core Idea">

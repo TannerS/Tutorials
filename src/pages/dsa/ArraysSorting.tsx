@@ -2,6 +2,7 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
+import FlowChart from '../../components/FlowChart';
 
 export default function ArraysSorting() {
   return (
@@ -22,6 +23,73 @@ export default function ArraysSorting() {
         checked — against real, compiled Java on the installed JDK (<code>26.0.1</code>), or against the
         actual JDK source (not a summary of it, the literal <code>@implNote</code> text) where the fastest
         path to certainty was reading the source instead of re-deriving it empirically.
+      </p>
+
+      <h2>The Picture First: What an Array Actually Is</h2>
+
+      <p>
+        Strip away the syntax and an array is just a row of fixed-size slots sitting next to each other in
+        memory, each one numbered starting at 0. That numbering is <em>why</em> <code>arr[2]</code> is O(1)
+        &mdash; the computer does not search for slot 2, it computes an address directly (start address + 2
+        &times; slot size) and jumps straight there:
+      </p>
+
+      <CodeBlock language="text" title="An array is contiguous, numbered slots -- nothing more">
+{`index:    0     1     2     3
+        +-----+-----+-----+-----+
+value:  |  5  |  2  |  8  |  1  |
+        +-----+-----+-----+-----+
+
+arr[2] reads slot 2 directly: "start address + 2 slots" -> one jump, no searching -> O(1)`}
+      </CodeBlock>
+
+      <p>
+        Insertion is where that flat, convenient picture stops being free. There is no gap between slots to
+        squeeze a new value into &mdash; inserting at the <strong>front</strong> means every existing
+        element has to physically move one slot to the right first, just to open up index 0:
+      </p>
+
+      <CodeBlock language="text" title="Inserting 9 at the front: everyone else has to shift right first">
+{`BEFORE -- 4 elements, want to insert 9 at index 0:
+
+index:    0     1     2     3
+        +-----+-----+-----+-----+
+value:  |  5  |  2  |  8  |  1  |
+        +-----+-----+-----+-----+
+
+STEP 1 -- shift every element one slot right to open up index 0
+          (idx 3 -> 4, idx 2 -> 3, idx 1 -> 2, idx 0 -> 1)
+          4 elements already in the array = 4 moves, before the new value is even written
+
+STEP 2 -- write 9 into the now-empty index 0:
+
+index:    0     1     2     3     4
+        +-----+-----+-----+-----+-----+
+value:  |  9  |  5  |  2  |  8  |  1  |
+        +-----+-----+-----+-----+-----+
+
+n elements already in the array -> up to n moves for ONE front insert -> O(n), every time.`}
+      </CodeBlock>
+
+      <p>
+        That shift is not a sloppy implementation detail that a smarter array could avoid &mdash; it is
+        forced by what &quot;contiguous, numbered slots&quot; means. A meaningful chunk of the sorting
+        algorithms below spend their effort managing exactly this cost.
+      </p>
+
+      <p>
+        &quot;Sorting&quot; itself just means rearranging those same slots so the values read out in order:
+      </p>
+
+      <FlowChart
+        title="What sorting means, before any specific algorithm"
+        chart={"graph LR\n  A[Unsorted: 5, 2, 8, 1] -->|sort| B[Sorted: 1, 2, 5, 8]\n  style A fill:#ef4444,color:#fff\n  style B fill:#10b981,color:#fff"}
+      />
+
+      <p>
+        Every algorithm below &mdash; Bubble, Merge, Quicksort &mdash; is a different strategy for getting
+        from the left box to the right one, and they differ enormously in <em>how much work</em> that
+        rearranging costs as the array grows, which is exactly what the complexity table below measures.
       </p>
 
       <h2>Bubble, Merge, and Quicksort: The Complexity Cheat Sheet</h2>

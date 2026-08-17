@@ -1,6 +1,7 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
+import FlowChart from '../../components/FlowChart';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function StacksQueues() {
@@ -20,6 +21,44 @@ export default function StacksQueues() {
         library has more than one way to implement each, and picking the wrong one is a common interview
         tell — this lesson covers which types to actually reach for, plus the one behavior around{' '}
         <code>PriorityQueue</code> that trips up almost everyone the first time they hit it.
+      </p>
+
+      <h2>Picture It First: Plates and a Line of People</h2>
+
+      <p>
+        Before any code, two physical analogies cover both structures completely. A stack is a stack of
+        plates: you can only ever add or remove the plate on <em>top</em>. To get to the plate at the
+        bottom, you&apos;d have to remove every plate above it first — there&apos;s no reaching in from the
+        side.
+      </p>
+
+      <FlowChart
+        title="Stack (LIFO) — push(4) Adds to the Top, pop() Removes From the Top"
+        chart={"graph LR\n  subgraph Before push 4\n    TOP1[top] --> S3[3] --> S2[2] --> S1[1]\n  end\n  subgraph After push 4\n    TOP2[top] --> S4[4 NEW] --> S3b[3] --> S2b[2] --> S1b[1]\n  end"}
+      />
+
+      <p>
+        <code>pop()</code> is just that arrow in reverse — it removes plate 4 and hands it to you, and the
+        stack is back to 3-2-1 with 3 on top again. Last plate on is always the first plate off:{' '}
+        <strong>LIFO</strong>.
+      </p>
+
+      <p>
+        A queue is a checkout line instead: people join at the <em>back</em> and get served from the{' '}
+        <em>front</em> — the opposite ends. Whoever has been waiting longest is served next, no matter how
+        many people have joined behind them since.
+      </p>
+
+      <FlowChart
+        title="Queue (FIFO) — enqueue() Joins the Back, dequeue() Leaves From the Front"
+        chart={"graph LR\n  subgraph Before enqueue Dave\n    FRONT1[front] --> A1[Alice] --> B1[Bob] --> C1[Carol]\n  end\n  subgraph After enqueue Dave\n    FRONT2[front] --> A2[Alice] --> B2[Bob] --> C2[Carol] --> D2[Dave NEW]\n  end"}
+      />
+
+      <p>
+        <code>dequeue()</code> removes from the <em>front</em> of that same line — Alice, not Dave — since
+        she&apos;s been waiting the longest. That&apos;s the whole difference from a stack: a stack adds and
+        removes at the same end, a queue adds and removes at opposite ends. Everything below is that same
+        pair of rules implemented with Java&apos;s real collection types.
       </p>
 
       <h2>Stack (LIFO): Stack vs ArrayDeque</h2>
