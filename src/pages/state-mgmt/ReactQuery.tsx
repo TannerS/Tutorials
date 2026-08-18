@@ -8,7 +8,7 @@ export default function ReactQuery() {
     <LessonLayout
       title="TanStack Query (React Query)"
       sectionId="state-mgmt"
-      lessonIndex={3}
+      lessonIndex={6}
       prev={{ path: '/state-mgmt/patterns', label: 'Real-World Patterns' }}
       next={null}
     >

@@ -409,6 +409,24 @@ export const sections: Section[] = [
     ],
   },
   {
+    id: 'javascript',
+    label: 'JavaScript',
+    icon: '🟨',
+    color: '#f7df1e',
+    lessons: [
+      { id: 'fundamentals', title: 'Fundamentals & Syntax', path: '/javascript/fundamentals' },
+      { id: 'functions-closures', title: 'Functions, Scope & Closures', path: '/javascript/functions-closures' },
+      { id: 'objects-prototypes', title: 'Objects, Classes & Prototypes', path: '/javascript/objects-prototypes' },
+      { id: 'arrays-iterables', title: 'Arrays, Destructuring & Iterables', path: '/javascript/arrays-iterables' },
+      { id: 'async', title: 'Asynchronous JavaScript', path: '/javascript/async' },
+      { id: 'modules', title: 'Modules & Tooling', path: '/javascript/modules' },
+      { id: 'error-handling', title: 'Error Handling', path: '/javascript/error-handling' },
+      { id: 'modern-tour', title: 'Modern JavaScript: ES2015-2024 Feature Tour', path: '/javascript/modern-tour' },
+      { id: 'es2017', title: 'ECMAScript 2017 (ES8): The Complete Deep Dive', path: '/javascript/es2017' },
+      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/javascript/cheatsheet' },
+    ],
+  },
+  {
     id: 'react-router',
     label: 'React Router v7',
     icon: '🧭',
@@ -433,6 +451,9 @@ export const sections: Section[] = [
     lessons: [
       { id: 'intro', title: 'When Context Isn\'t Enough', path: '/state-mgmt/intro' },
       { id: 'comparison', title: 'The State Escalation Ladder', path: '/state-mgmt/comparison' },
+      { id: 'zustand-fundamentals', title: 'Zustand: Fundamentals', path: '/state-mgmt/zustand-fundamentals' },
+      { id: 'zustand-advanced', title: 'Zustand: Advanced Patterns', path: '/state-mgmt/zustand-advanced' },
+      { id: 'zustand-cheatsheet', title: 'Zustand Cheat Sheet', path: '/state-mgmt/zustand-cheatsheet' },
       { id: 'patterns', title: 'Real-World Patterns', path: '/state-mgmt/patterns' },
       { id: 'react-query', title: 'TanStack Query (React Query)', path: '/state-mgmt/react-query' },
     ],
@@ -647,6 +668,13 @@ export const groups: Group[] = [
         icon: '🔷',
         color: '#3178c6',
         sectionIds: ['typescript', 'typescript-field-guide'],
+      },
+      {
+        id: 'frontend-javascript',
+        label: 'JavaScript',
+        icon: '🟨',
+        color: '#f7df1e',
+        sectionIds: ['javascript'],
       },
       {
         id: 'frontend-react',

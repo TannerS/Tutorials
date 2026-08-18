@@ -9,8 +9,8 @@ export default function Patterns() {
     <LessonLayout
       title="Real-World Patterns"
       sectionId="state-mgmt"
-      lessonIndex={2}
-      prev={{ path: '/state-mgmt/comparison', label: 'The State Escalation Ladder' }}
+      lessonIndex={5}
+      prev={{ path: '/state-mgmt/zustand-cheatsheet', label: 'Zustand Cheat Sheet' }}
       next={{ path: '/state-mgmt/react-query', label: 'TanStack Query' }}
     >
       <p>

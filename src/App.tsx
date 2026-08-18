@@ -266,6 +266,18 @@ import TsNativeCompiler from './pages/typescript/NativeCompiler'
 import TsRuntimeValidation from './pages/typescript/RuntimeValidation'
 import TsNodeTypescript from './pages/typescript/NodeTypescript'
 
+// JavaScript
+import JsFundamentals from './pages/javascript/Fundamentals'
+import JsFunctionsClosures from './pages/javascript/FunctionsClosures'
+import JsObjectsPrototypes from './pages/javascript/ObjectsPrototypes'
+import JsArraysIterables from './pages/javascript/ArraysIterables'
+import JsAsync from './pages/javascript/Async'
+import JsModules from './pages/javascript/Modules'
+import JsErrorHandling from './pages/javascript/ErrorHandling'
+import JsModernTour from './pages/javascript/ModernTour'
+import JsEs2017 from './pages/javascript/Es2017'
+import JsCheatsheet from './pages/javascript/Cheatsheet'
+
 // React Router v7
 import RRIntro from './pages/react-router/Intro'
 import RRNested from './pages/react-router/Nested'
@@ -323,6 +335,9 @@ import SFGGotchas from './pages/spring-field-guide/Gotchas'
 // State Management
 import SMIntro from './pages/state-mgmt/Intro'
 import SMComparison from './pages/state-mgmt/Comparison'
+import SMZustandFundamentals from './pages/state-mgmt/ZustandFundamentals'
+import SMZustandAdvanced from './pages/state-mgmt/ZustandAdvanced'
+import SMZustandCheatsheet from './pages/state-mgmt/ZustandCheatsheet'
 import SMPatterns from './pages/state-mgmt/Patterns'
 import SMReactQuery from './pages/state-mgmt/ReactQuery'
 
@@ -657,6 +672,17 @@ function App() {
         <Route path="typescript/native-compiler" element={<TsNativeCompiler />} />
         <Route path="typescript/runtime-validation" element={<TsRuntimeValidation />} />
         <Route path="typescript/node" element={<TsNodeTypescript />} />
+        {/* JavaScript */}
+        <Route path="javascript/fundamentals" element={<JsFundamentals />} />
+        <Route path="javascript/functions-closures" element={<JsFunctionsClosures />} />
+        <Route path="javascript/objects-prototypes" element={<JsObjectsPrototypes />} />
+        <Route path="javascript/arrays-iterables" element={<JsArraysIterables />} />
+        <Route path="javascript/async" element={<JsAsync />} />
+        <Route path="javascript/modules" element={<JsModules />} />
+        <Route path="javascript/error-handling" element={<JsErrorHandling />} />
+        <Route path="javascript/modern-tour" element={<JsModernTour />} />
+        <Route path="javascript/es2017" element={<JsEs2017 />} />
+        <Route path="javascript/cheatsheet" element={<JsCheatsheet />} />
         {/* React Router v7 */}
         <Route path="react-router/intro" element={<RRIntro />} />
         <Route path="react-router/nested" element={<RRNested />} />
@@ -713,6 +739,9 @@ function App() {
         {/* State Management */}
         <Route path="state-mgmt/intro" element={<SMIntro />} />
         <Route path="state-mgmt/comparison" element={<SMComparison />} />
+        <Route path="state-mgmt/zustand-fundamentals" element={<SMZustandFundamentals />} />
+        <Route path="state-mgmt/zustand-advanced" element={<SMZustandAdvanced />} />
+        <Route path="state-mgmt/zustand-cheatsheet" element={<SMZustandCheatsheet />} />
         <Route path="state-mgmt/patterns" element={<SMPatterns />} />
         <Route path="state-mgmt/react-query" element={<SMReactQuery />} />
         {/* Accessibility */}
