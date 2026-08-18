@@ -838,6 +838,62 @@ export { createClient };
         </p>
       </InfoBox>
 
+      <h3>Import Attributes — Typing a Non-JS Import Directly</h3>
+      <p>
+        Before TS 5.3, importing a JSON file needed <code>resolveJsonModule</code> and gave the
+        compiler no way to know <em>what kind</em> of module was being pulled in &mdash; it just
+        trusted the <code>.json</code> extension. <code>import ... with {'{'} type: ... {'}'}</code>{' '}
+        is the standard TC39 syntax for stating that explicitly at the import site, and TS 5.3
+        type-checks it:
+      </p>
+      <CodeBlock language="typescript" title="Verified on TypeScript 6.0 / Node 25 — real output">
+{`// data.json: { "name": "example-config", "version": 1 }
+import config from "./data.json" with { type: "json" };
+
+console.log(config);
+// { name: 'example-config', version: 1 }`}
+      </CodeBlock>
+      <InfoBox variant="warning" title="Not the Same as the Old resolveJsonModule">
+        <p>
+          <code>resolveJsonModule</code> is a TypeScript-only convenience that infers a type from
+          the file&apos;s shape and needs no special import syntax, but it does not exist as a
+          real JS feature &mdash; a plain <code>import config from &quot;./data.json&quot;</code>{' '}
+          with no attribute only runs under bundlers that added their own JSON support.{' '}
+          <code>with {'{'} type: &quot;json&quot; {'}'}</code> is the opposite: an actual runtime
+          instruction (Node and browsers both honor it directly), and TypeScript is just
+          type-checking syntax that already means something on its own. Use{' '}
+          <code>resolveJsonModule</code> in a bundler-driven app for convenience; use import
+          attributes when the code needs to run unbundled, e.g. directly under Node.
+        </p>
+      </InfoBox>
+
+      <h3>import defer — Typed Ahead of Runtime Support</h3>
+      <p>
+        TS 5.9 added type-checking for the Stage 3 <code>import defer</code> proposal: it parses a
+        module&apos;s exports and types them normally, but defers actually <em>running</em> the
+        module&apos;s top-level code until the first property access on the namespace &mdash;
+        useful for an expensive module (a large parser, a wasm loader) that a given code path might
+        never touch.
+      </p>
+      <CodeBlock language="typescript" title="Compiles clean on TypeScript 6.0 — but does not run yet">
+{`import defer * as heavy from "./heavy-module.js";
+
+console.log("module not evaluated yet");
+console.log("first access triggers evaluation:", heavy.value);`}
+      </CodeBlock>
+      <InfoBox variant="danger" title="tsc Accepts It, Node Does Not — Verified, Not Assumed">
+        <p>
+          The snippet above passes <code>tsc --noEmit</code> with zero errors. Running it under
+          Node 25.2.1 throws <code>SyntaxError: Unexpected token &apos;*&apos;</code> immediately
+          &mdash; the JS engine itself has no <code>import defer</code> support yet, and{' '}
+          <code>node --help</code> has no experimental flag for it either. This is a real gap
+          between what TypeScript 5.9 type-checks and what today&apos;s runtimes execute: treat any
+          brand-new TC39 proposal TypeScript adds support for as &quot;syntax-valid&quot; only
+          until you have separately confirmed your actual deployment target (Node version, browser
+          matrix) runs it.
+        </p>
+      </InfoBox>
+
       {/* ── 10. Module Augmentation ── */}
       <h2>Module Augmentation</h2>
       <p>

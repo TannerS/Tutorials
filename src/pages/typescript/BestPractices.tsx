@@ -294,6 +294,97 @@ export function getUser(id: string): User {
         </p>
       </InfoBox>
 
+      {/* 2i. Manual array copying vs the TS 5.2 copying methods */}
+      <h3>i) Manual Array Copying vs the Built-in Copying Methods (TS 5.2+)</h3>
+      <CodeBlock language="typescript" title="❌ Not wrong, but easy to get wrong — the spread-and-mutate dance">
+{`function sortedDesc(nums: number[]): number[] {
+  return [...nums].sort((a, b) => b - a);   // easy to forget the [...] and mutate the input
+}
+function withUpdated(items: string[], i: number, value: string): string[] {
+  const copy = [...items];
+  copy[i] = value;
+  return copy;
+}`}
+      </CodeBlock>
+      <CodeBlock language="typescript" title="✅ TS 5.2+ (lib ES2023) — toSorted, toReversed, toSpliced, with">
+{`function sortedDesc(nums: number[]): number[] {
+  return nums.toSorted((a, b) => b - a);   // returns a new array — impossible to
+}                                            // accidentally mutate the caller's array
+
+function withUpdated(items: string[], i: number, value: string): string[] {
+  return items.with(i, value);
+}`}
+      </CodeBlock>
+      <InfoBox variant="tip" title="Verified on TypeScript 6.0 / Node 25 — the original really is untouched">
+        <p>
+          You don&apos;t have <code>Array.prototype.sort()</code> mutating your data as a side
+          effect anymore &mdash; not literally (the old mutating methods are still there), but you
+          rarely need to reach for them once you know the copying versions exist. This needs{' '}
+          <code>&quot;lib&quot;: [&quot;ES2023&quot;]</code> or later in <code>tsconfig.json</code>{' '}
+          (this course&apos;s recommended configs already include it).
+        </p>
+        <CodeBlock language="text" title="Real console.log output">
+{`original unchanged: [3,1,4,1,5,9,2,6]
+toSorted result:    [1,1,2,3,4,5,6,9]
+toReversed result:  [6,2,9,5,1,4,1,3]
+toSpliced result:   [3,100,200,1,5,9,2,6]
+with(0, 999):       [999,1,4,1,5,9,2,6]
+original still:     [3,1,4,1,5,9,2,6]`}
+        </CodeBlock>
+      </InfoBox>
+
+      {/* 2j. Manual grouping vs Object.groupBy / Map.groupBy */}
+      <h3>j) Manual Grouping vs Object.groupBy / Map.groupBy (TS 5.4+)</h3>
+      <CodeBlock language="typescript" title="❌ BAD — the reduce() you don't need lodash's groupBy for, but still hand-roll">
+{`function groupByStatus(orders: Order[]): Record<string, Order[]> {
+  return orders.reduce((acc, o) => {
+    (acc[o.status] ??= []).push(o);
+    return acc;
+  }, {} as Record<string, Order[]>);
+}`}
+      </CodeBlock>
+      <CodeBlock language="typescript" title="✅ GOOD — a real, typed built-in as of TS 5.4 (lib ES2024)">
+{`const byStatus = Object.groupBy(orders, o => o.status);
+// Record<string, Order[] | undefined> — grouped keys aren't guaranteed present
+
+const byStatusMap = Map.groupBy(orders, o => o.status);
+// Map<string, Order[]> — use this form when the key isn't a plain string`}
+      </CodeBlock>
+      <InfoBox variant="tip" title="Why Two Versions Exist">
+        <p>
+          <code>Object.groupBy</code> returns a plain object with keys typed as possibly{' '}
+          <code>undefined</code> &mdash; TypeScript is honest that a key you never grouped on
+          simply won&apos;t be there. <code>Map.groupBy</code> is the one to reach for when the
+          grouping key isn&apos;t a string (an object, a number you don&apos;t want coerced), or
+          when you want <code>.get()</code>&apos;s explicit &quot;might not exist&quot; semantics
+          instead of an index signature. Same <code>&quot;lib&quot;: [&quot;ES2024&quot;]</code>{' '}
+          (or later) requirement as the array-copying methods above.
+        </p>
+      </InfoBox>
+
+      {/* 2k. Regex bugs caught at compile time (TS 5.5+) */}
+      <h3>k) A Regex Bug the Compiler Now Catches for You (TS 5.5+)</h3>
+      <p>
+        Before TS 5.5, a regex literal was just an opaque value to the type checker &mdash; any
+        syntax error inside it (a duplicate named group, an unknown escape, an invalid quantifier)
+        was purely a runtime surprise, the first time that line of code actually ran. TS 5.5 added
+        real syntax checking for regex literals, so this class of bug now shows up at compile time
+        instead:
+      </p>
+      <CodeBlock language="typescript" title="Verified on TypeScript 6.0 — a real compiler error, not a lint suggestion">
+{`const parseDate = /(?<year>\\d{4})-(?<year>\\d{2})/;
+//                                    ~~~~~~~~~~
+// error TS1515: Named capturing groups with the same name
+//               must be mutually exclusive to each other.`}
+      </CodeBlock>
+      <InfoBox variant="info" title="Scope: Syntax, Not Logic">
+        <p>
+          This only catches regexes that are malformed as <em>syntax</em> &mdash; duplicate names,
+          invalid escapes, unbalanced groups. It cannot tell you a correctly-formed regex matches
+          the wrong strings; that is still on you and your test cases, same as before TS 5.5.
+        </p>
+      </InfoBox>
+
       {/* ── Section 3: Discriminated Unions ──────────────────────── */}
       <h2>3. DO: Use Discriminated Unions</h2>
       <p>

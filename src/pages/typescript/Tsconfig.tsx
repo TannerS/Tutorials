@@ -395,6 +395,43 @@ import { fetchUser } from './api';       // kept at runtime — even if unused`}
 }`}
       </CodeBlock>
 
+      <InfoBox variant="tip" title="TS 5.5+: isolatedDeclarations — .d.ts Generation Without a Full Type-Check">
+        <p>
+          Normal <code>declaration: true</code> emit reads your whole codebase to infer any return
+          type you left off. That is slow at scale, and it is exactly the kind of cross-file
+          inference a faster, per-file tool (the native compiler covered in the next lesson,
+          or a bundler&apos;s isolated transpile step) cannot do. <code>isolatedDeclarations</code>{' '}
+          flips the requirement: every exported function&apos;s type must be readable from that one
+          file alone, and the compiler <em>errors</em> on any export where it isn&apos;t &mdash;
+          instead of silently doing the expensive cross-file work.
+        </p>
+        <CodeBlock language="typescript" title="Verified on TypeScript 6.0, with isolatedDeclarations: true">
+{`function computeDefault() {
+  return { a: 1, b: 2 };
+}
+
+// ❌ Return type depends on reading computeDefault's body — not "isolated"
+export function makeConfig() {
+  return computeDefault();
+}
+// error TS9007: Function must have an explicit return type
+//               annotation with --isolatedDeclarations.
+
+// ✅ Fully readable from this file alone
+export function makeSimple(): { x: number } {
+  return { x: 1 };
+}`}
+        </CodeBlock>
+        <p>
+          You don&apos;t get to skip return-type annotations on exports anymore once this flag is
+          on &mdash; do this instead: add the explicit type. It only affects code you{' '}
+          <em>export</em>; internal, unexported functions are unaffected, same as{' '}
+          <code>computeDefault</code> above. Turn it on when publishing a library meant to be
+          consumed by fast, per-file build tools; leave it off for an application&apos;s own code,
+          where the extra annotations mostly add noise for no build-speed benefit.
+        </p>
+      </InfoBox>
+
       {/* ── Section 3: Recommended Configs ───────────────────────── */}
       <h2>3. Recommended Configs (Copy-Paste Ready)</h2>
 

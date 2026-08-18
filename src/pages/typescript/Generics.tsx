@@ -288,6 +288,39 @@ logLength([1, 2, 3]);  // ✅ array has length
 logLength(42);         // ❌ number has no length`}
       </CodeBlock>
 
+      <InfoBox variant="tip" title="TS 5.0+: const Type Parameters — Inference Without the as const Everywhere">
+        <p>
+          Before TypeScript 5.0, a generic call over a literal like{' '}
+          <code>{"identity('GET')"}</code> widened <code>T</code> to <code>string</code> unless
+          the <em>caller</em> remembered to write <code>as const</code> at every call site. TS 5.0
+          added a <code>const</code> modifier on the type parameter itself, which flips that
+          default for every caller at once &mdash; no change needed at the call site.
+        </p>
+        <CodeBlock language="typescript" title="Verified on TypeScript 6.0 — the exact inferred types, not a guess">
+{`function namedTuple<T extends readonly unknown[]>(...args: T): T {
+  return args;
+}
+function namedTupleConst<const T extends readonly unknown[]>(...args: T): T {
+  return args;
+}
+
+const a = namedTuple("a", "b", "c");
+// inferred type: [string, string, string] — each literal widened to its base type
+
+const b = namedTupleConst("a", "b", "c");
+// inferred type: readonly ["a", "b", "c"] — literals preserved, marked readonly`}
+        </CodeBlock>
+        <p>
+          It only changes <em>inference</em>, not what the type parameter is allowed to be —{' '}
+          <code>const T</code> still needs its own <code>extends</code> clause if you want to
+          constrain it, exactly like an ordinary type parameter. Reach for it on any generic
+          function whose whole point is capturing the caller&apos;s literal values &mdash; tuple
+          builders, event-name registries, config objects &mdash; the same jobs{' '}
+          <code>as const</code> already does in the <em>const Assertions</em> lesson, just moved
+          from every call site into the one function signature.
+        </p>
+      </InfoBox>
+
       {/* ── Section 7: keyof with Generics ── */}
       <h2>keyof with Generics</h2>
 
@@ -921,6 +954,41 @@ uniqueIds.add("1"); // ❌ Error: string not assignable to number
 // WeakMap<K extends object, V>
 // IterableIterator<T>`}
       </CodeBlock>
+
+      <InfoBox variant="tip" title="TS 5.6+: Iterator Helper Methods — You Don't Need Array.from() First Anymore">
+        <p>
+          Before TS 5.6, a generator&apos;s return type &mdash; <code>Iterator&lt;T&gt;</code> or{' '}
+          <code>IterableIterator&lt;T&gt;</code> from the comment above &mdash; had none of the
+          familiar array methods. The standard fix was <code>Array.from(iterator)</code> first,
+          which defeats the entire point of an iterator for something like an infinite generator:
+          it can never finish. TS 5.6 typed the new <code>Iterator.prototype</code> helper methods
+          (<code>.map</code>, <code>.filter</code>, <code>.take</code>, <code>.drop</code>,{' '}
+          <code>.flatMap</code>, <code>.toArray</code>, and more), so you chain directly on the
+          iterator and only materialize an array at the very end, if at all.
+        </p>
+        <CodeBlock language="typescript" title="Verified on TypeScript 6.0 / Node 25 — real output, not a projection">
+{`function* naturals() {
+  let n = 1;
+  while (true) yield n++;   // infinite — Array.from() here would hang forever
+}
+
+const result = naturals()
+  .map(n => n * n)
+  .filter(n => n % 2 === 0)
+  .take(5)
+  .toArray();
+
+console.log(result);
+// [ 4, 16, 36, 64, 100 ]`}
+        </CodeBlock>
+        <p>
+          This needs a <code>lib</code> that includes <code>esnext</code> (or a target new enough
+          to imply it) in <code>tsconfig.json</code>, and a runtime new enough to actually have the
+          methods &mdash; Node 22+. Older Node versions type-check fine but throw{' '}
+          <code>TypeError: naturals(...).map is not a function</code> at runtime, since this is a
+          real JS engine feature TypeScript is describing, not something TypeScript adds itself.
+        </p>
+      </InfoBox>
 
       <FlowChart
         title="Reading a Generic Signature"

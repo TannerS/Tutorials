@@ -266,6 +266,40 @@ function area(shape: Shape): number {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="tip" title="TS 5.3+: switch (true) Now Narrows — For When There Is No Single Discriminant">
+        <p>
+          The discriminated-union switch above works because every branch tests the same field.
+          When the condition per branch is different &mdash; a range check, an{' '}
+          <code>instanceof</code>, a compound condition &mdash; older TypeScript could not follow{' '}
+          <code>switch (true) {'{'} case someCondition: ... {'}'}</code> at all: every case body
+          saw the original, un-narrowed type. TS 5.3 made the checker treat each{' '}
+          <code>case</code> expression exactly like an <code>if</code> condition, narrowing for the
+          rest of that case body.
+        </p>
+        <CodeBlock language="typescript" title="Verified on TypeScript 6.0">
+{`type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; side: number };
+
+function area(shape: Shape): number {
+  switch (true) {
+    case shape.kind === "circle":
+      return Math.PI * shape.radius ** 2;  // narrowed to the circle branch here
+    case shape.kind === "square":
+      return shape.side ** 2;
+    default:
+      const _exhaustive: never = shape;    // still exhaustive, same as a normal switch
+      return _exhaustive;
+  }
+}`}
+        </CodeBlock>
+        <p>
+          Reach for this only when the branches genuinely cannot share one discriminant field
+          &mdash; a plain <code>switch (shape.kind)</code>, or a chain of <code>if</code>/
+          <code>else if</code>, stays the clearer default otherwise.
+        </p>
+      </InfoBox>
+
       <h3>Custom type guard functions</h3>
       <p>
         Everything so far narrowed <em>inline</em>. The moment you move the check into a
