@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "build:pdf": "npm run build && node scripts/build-pdf.mjs",
     "build:pdf:combined": "npm run build && node scripts/build-pdf.mjs --combined",
+    "build:pdf:dark": "npm run build && node scripts/build-pdf.mjs --combined --dark",
     "pdf:section": "node scripts/build-pdf.mjs"
   },
   "dependencies": {

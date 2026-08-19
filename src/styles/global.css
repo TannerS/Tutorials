@@ -515,6 +515,152 @@ li {
   ul, ol { page-break-inside: auto; }
   li { page-break-inside: avoid; break-inside: avoid; }
   img { max-width: 100% !important; height: auto !important; page-break-inside: avoid; }
+
+  /* ---- Dark PDF export --------------------------------------------
+     Opt-in dark-mode print pass, activated ONLY by data-pdf-mode="dark"
+     on <html> — set by scripts/build-pdf.mjs when run with --dark.
+     Real Cmd+P printing and the default (light) PDF export never carry
+     that attribute, so every rule below is inert for them; this is
+     purely additive on top of the block above, not a replacement for
+     it. All the pagination/break-inside safety above (code blocks,
+     tables, diagrams, InfoBoxes staying intact across page breaks)
+     applies identically here — only the color layer changes, from
+     ink-on-paper back to the site's real dark palette. */
+  :root[data-pdf-mode="dark"] {
+    --bg-primary: #0f1117;
+    --bg-secondary: #161822;
+    --bg-sidebar: #12141e;
+    --bg-card: #1a1d2e;
+    --bg-code: #1e2235;
+    --bg-hover: #1f2337;
+    --bg-active: #252a3f;
+    --text-primary: #e4e6f0;
+    --text-secondary: #9399b2;
+    --text-muted: #8288a5;
+    --text-light-gray: #e0e0e0;
+    --border-color: #2a2e42;
+    --border-light: #e2e8f0;
+    --accent-blue: #5b9cf6;
+    --accent-blue-alt: #3b82f6;
+    --accent-green: #4ade80;
+    --accent-emerald: #10b981;
+    --accent-purple: #a78bfa;
+    --accent-violet: #8b5cf6;
+    --accent-indigo: #6366f1;
+    --accent-orange: #fb923c;
+    --accent-amber: #fbbf24;
+    --accent-amber-dark: #f59e0b;
+    --accent-amber-deep: #d97706;
+    --accent-red: #f87171;
+    --accent-red-bright: #ef4444;
+    --accent-red-deep: #dc2626;
+    --accent-cyan: #22d3ee;
+    --accent-yellow: #facc15;
+    --accent-pink: #f472b6;
+    --accent-blue-bg: #1a2744;
+    --accent-green-bg: #1a3329;
+    --accent-orange-bg: #3d2f14;
+    --accent-purple-bg: #2a1f44;
+    --accent-red-bg: #3b1a1a;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    --syn-keyword: #c792ea;
+    --syn-string: #c3e88d;
+    --syn-function: #82aaff;
+    --syn-number: #f78c6c;
+    --syn-comment: #6c7293;
+    --syn-punctuation: #d4d7e5;
+    --syn-property: #f07178;
+    --syn-tag: #82aaff;
+  }
+
+  html[data-pdf-mode="dark"],
+  html[data-pdf-mode="dark"] body,
+  html[data-pdf-mode="dark"] #root {
+    background: #0f1117 !important;
+    color: #e4e6f0 !important;
+  }
+
+  :root[data-pdf-mode="dark"] h1,
+  :root[data-pdf-mode="dark"] h2,
+  :root[data-pdf-mode="dark"] h3,
+  :root[data-pdf-mode="dark"] h4 {
+    color: #e4e6f0 !important;
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+  }
+  :root[data-pdf-mode="dark"] p,
+  :root[data-pdf-mode="dark"] li {
+    color: #c7cad8 !important;
+  }
+
+  :root[data-pdf-mode="dark"] a {
+    color: #5b9cf6 !important;
+  }
+  :root[data-pdf-mode="dark"] a[href^="http"]::after {
+    color: #9399b2 !important;
+  }
+
+  :root[data-pdf-mode="dark"] pre,
+  :root[data-pdf-mode="dark"] code {
+    background: #1e2235 !important;
+    color: #e4e6f0 !important;
+  }
+  :root[data-pdf-mode="dark"] pre {
+    border-color: #2a2e42 !important;
+  }
+  /* Deliberately no dark equivalent of the light path's token-flattening
+     rule (`pre [class*="token"] { color: #111 !important }`) — leaving
+     it unset here lets Prism's real per-token classes fall through to
+     the --syn-* variables redefined above, so code keeps its actual
+     syntax highlighting instead of going flat black-on-dark. */
+  :root[data-pdf-mode="dark"] .linenumber {
+    color: #6c7293 !important;
+  }
+
+  :root[data-pdf-mode="dark"] table {
+    background: none !important;
+  }
+  :root[data-pdf-mode="dark"] th,
+  :root[data-pdf-mode="dark"] td {
+    border-color: #2a2e42 !important;
+    color: #d5d7e3 !important;
+  }
+  :root[data-pdf-mode="dark"] th {
+    background: #1f2337 !important;
+  }
+
+  :root[data-pdf-mode="dark"] .flow-chart {
+    border-color: #2a2e42 !important;
+  }
+
+  :root[data-pdf-mode="dark"] .info-box {
+    border-color: #2a2e42 !important;
+    background: #1a1d2e !important;
+    color: #d5d7e3 !important;
+  }
+  :root[data-pdf-mode="dark"] .info-box * {
+    color: #d5d7e3 !important;
+  }
+
+  :root[data-pdf-mode="dark"] .interactive-embed {
+    border-color: #2a2e42 !important;
+  }
+  :root[data-pdf-mode="dark"] .interactive-embed::after {
+    color: #9399b2 !important;
+  }
+
+  :root[data-pdf-mode="dark"] button {
+    color: #e4e6f0 !important;
+  }
+
+  /* The light path forces any inline var(--bg-*) style to white so a dark
+     surface doesn't print as a black slab. In dark mode that surface IS
+     the point — redirect back to the (now dark-redefined) variable
+     itself instead of a hardcoded color. */
+  :root[data-pdf-mode="dark"] [style*="var(--bg-card)"] { background: var(--bg-card) !important; }
+  :root[data-pdf-mode="dark"] [style*="var(--bg-secondary)"] { background: var(--bg-secondary) !important; }
+  :root[data-pdf-mode="dark"] [style*="var(--bg-active)"] { background: var(--bg-active) !important; }
+  :root[data-pdf-mode="dark"] [style*="var(--bg-hover)"] { background: var(--bg-hover) !important; }
 }
 
 /* Mobile responsive */

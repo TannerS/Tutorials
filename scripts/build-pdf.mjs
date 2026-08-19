@@ -12,9 +12,13 @@
  *   npm run build:pdf                       # build + generate every section
  *   npm run build:pdf:combined              # build + every section + ONE combined
  *                                            #   whole-site PDF (dist-pdf/tutorials-complete.pdf)
+ *   npm run build:pdf:dark                  # same as combined, but styled in the site's
+ *                                            #   real dark theme instead of ink-on-paper
+ *                                            #   (dist-pdf/tutorials-complete-dark.pdf)
  *   npm run pdf:section java                # re-use the existing dist/ build
  *   node scripts/build-pdf.mjs java react19 # multiple sections
  *   node scripts/build-pdf.mjs --combined   # re-use dist/, all sections, + combine
+ *   node scripts/build-pdf.mjs --combined --dark   # ...styled dark instead
  *
  * `pdf:section` does NOT rebuild — it serves whatever is already in dist/,
  * so run `npm run build` first if the site has changed.
@@ -23,6 +27,13 @@
  * replaces it) — it just additionally stitches whichever section PDFs were
  * generated in this run into one cover-to-cover PDF, ordered the way the
  * sidebar actually displays them (not sections.ts's declaration order).
+ *
+ * `--dark` renders every page in the site's real dark theme instead of the
+ * default light "ink-on-paper" flatten (see the `data-pdf-mode="dark"` block
+ * in global.css's @media print section). Output filenames get a `-dark`
+ * suffix so a dark run never overwrites a light one — both can coexist in
+ * dist-pdf/. Pagination and break-inside safety are identical either way;
+ * only the color layer changes.
  *
  * Prerequisites (one-time):
  *   npm install
@@ -51,7 +62,8 @@ const PAGE_WIDTH_PX = 816;
 
 const rawArgs = process.argv.slice(2);
 const COMBINED = rawArgs.includes('--combined');
-const wantedSections = rawArgs.filter((a) => a !== '--combined');
+const DARK = rawArgs.includes('--dark');
+const wantedSections = rawArgs.filter((a) => a !== '--combined' && a !== '--dark');
 
 async function findFreePort(preferred) {
   // Try the preferred port first; if it's busy, ask the OS for any free port.
@@ -193,15 +205,26 @@ async function main() {
   const writtenFiles = new Map(); // sectionId -> filepath, only sections that actually rendered
   try {
     for (const section of targets) {
-      const filename = join(OUT_DIR, `${section.id}.pdf`);
+      const filename = join(OUT_DIR, `${section.id}${DARK ? '-dark' : ''}.pdf`);
       console.log(`[pdf] ${section.label} (${section.id}) → ${filename}`);
 
       const buffers = [];
       for (const lesson of section.lessons) {
         console.log(`       - ${lesson.title}`);
         // Set the viewport wide enough to match the target paper width so text
-        // renders at the same size the print media styles expect.
-        const page = await browser.newPage({ viewport: { width: PAGE_WIDTH_PX, height: 1200 } });
+        // renders at the same size the print media styles expect. In dark
+        // mode, force colorScheme: 'dark' at page-creation time — BEFORE any
+        // navigation — so the site's own ThemeProvider (which falls back to
+        // `prefers-color-scheme`) resolves to dark from the very first paint.
+        // That matters beyond just CSS: FlowChart.tsx picks mermaid's node/
+        // edge colors from React theme state at mount, not from print media,
+        // so diagrams need theme='dark' resolved early to render dark-colored
+        // in the first place — poking the DOM attribute after the fact
+        // wouldn't reach back into already-rendered SVGs.
+        const page = await browser.newPage({
+          viewport: { width: PAGE_WIDTH_PX, height: 1200 },
+          ...(DARK ? { colorScheme: 'dark' } : {}),
+        });
         try {
           const target = url + lesson.path;
           // 'load' rather than 'networkidle': pages embedding a live widget
@@ -219,7 +242,16 @@ async function main() {
           //  printing the visible portion — CSS @media print with
           //  overflow:visible does NOT reliably override an inline style set
           //  on <main> during the print pass.)
-          await page.evaluate((pageWidthPx) => {
+          await page.evaluate(({ pageWidthPx, dark }) => {
+            // Belt-and-suspenders: also set the attribute the CSS in
+            // global.css's @media print block keys off (data-pdf-mode="dark")
+            // directly, in case the page's own theme resolved to light for
+            // any reason (e.g. a stray localStorage entry surviving between
+            // runs in the same browser instance).
+            if (dark) {
+              document.documentElement.dataset.pdfMode = 'dark';
+              document.documentElement.dataset.theme = 'dark';
+            }
             document.querySelectorAll('.sidebar-container, aside, .mobile-backdrop, button[aria-label="Open menu"]').forEach(el => el.remove());
 
             // Turn off flex/scroll at every ancestor of the lesson content so
@@ -274,8 +306,8 @@ async function main() {
                 contentCol.style.flex = 'none';
               }
             }
-          }, PAGE_WIDTH_PX);
-          await page.emulateMedia({ media: 'print' });
+          }, { pageWidthPx: PAGE_WIDTH_PX, dark: DARK });
+          await page.emulateMedia({ media: 'print', ...(DARK ? { colorScheme: 'dark' } : {}) });
           await page.waitForTimeout(500);   // let mermaid + syntax highlighter finish
 
           // Real, standard Letter-format pagination — the SAME thing a
@@ -335,7 +367,7 @@ async function main() {
   console.log(`[pdf] Done. PDFs in ${OUT_DIR}`);
 
   if (COMBINED) {
-    await buildCombinedPdf({ sections: targets, groups, writtenFiles });
+    await buildCombinedPdf({ sections: targets, groups, writtenFiles, dark: DARK });
   }
 }
 
@@ -344,7 +376,7 @@ async function main() {
  * sidebar order (not sections.ts declaration order — see sidebarSectionOrder),
  * with a generated cover page listing the table of contents by group.
  */
-async function buildCombinedPdf({ sections, groups, writtenFiles }) {
+async function buildCombinedPdf({ sections, groups, writtenFiles, dark }) {
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
 
   const order = sidebarSectionOrder(groups).filter((id) => writtenFiles.has(id));
@@ -362,23 +394,37 @@ async function buildCombinedPdf({ sections, groups, writtenFiles }) {
 
   // Cover page: title + a simple table of contents (section labels in the
   // same order they'll appear), paginating onto more cover pages if long.
+  // The cover is generated with pdf-lib (not captured from the browser), so
+  // it needs its own dark styling to match the captured pages that follow —
+  // a light-mode cover in front of an otherwise-dark PDF would be jarring.
   const PAGE_W = 8.5 * 72, PAGE_H = 11 * 72; // Letter, in PDF points (72/in)
-  let cover = combined.addPage([PAGE_W, PAGE_H]);
+  const titleColor = dark ? rgb(0.894, 0.902, 0.941) : rgb(0.1, 0.1, 0.15);   // #e4e6f0 dark / near-black light
+  const dateColor = dark ? rgb(0.576, 0.6, 0.698) : rgb(0.4, 0.4, 0.4);       // #9399b2 dark / mid-grey light
+  const bulletColor = dark ? rgb(0.784, 0.792, 0.847) : rgb(0.15, 0.15, 0.2); // #c7cad8 dark / near-black light
+  const coverBg = rgb(0.059, 0.067, 0.09); // #0f1117 — the site's real --bg-primary dark value
+
+  const newCoverPage = () => {
+    const p = combined.addPage([PAGE_W, PAGE_H]);
+    if (dark) p.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: coverBg });
+    return p;
+  };
+
+  let cover = newCoverPage();
   let y = PAGE_H - 90;
-  cover.drawText('Tutorials — Complete Reference', { x: 54, y, size: 22, font, color: rgb(0.1, 0.1, 0.15) });
+  cover.drawText('Tutorials — Complete Reference', { x: 54, y, size: 22, font, color: titleColor });
   y -= 28;
-  cover.drawText(new Date().toISOString().slice(0, 10), { x: 54, y, size: 10, font: bodyFont, color: rgb(0.4, 0.4, 0.4) });
+  cover.drawText(new Date().toISOString().slice(0, 10), { x: 54, y, size: 10, font: bodyFont, color: dateColor });
   y -= 36;
-  cover.drawText('Contents', { x: 54, y, size: 14, font, color: rgb(0.1, 0.1, 0.15) });
+  cover.drawText('Contents', { x: 54, y, size: 14, font, color: titleColor });
   y -= 22;
 
   for (const id of order) {
     const label = idToSection.get(id)?.label ?? id;
     if (y < 60) {
-      cover = combined.addPage([PAGE_W, PAGE_H]);
+      cover = newCoverPage();
       y = PAGE_H - 60;
     }
-    cover.drawText(`•  ${label}`, { x: 66, y, size: 11, font: bodyFont, color: rgb(0.15, 0.15, 0.2) });
+    cover.drawText(`•  ${label}`, { x: 66, y, size: 11, font: bodyFont, color: bulletColor });
     y -= 18;
   }
 
@@ -389,7 +435,7 @@ async function buildCombinedPdf({ sections, groups, writtenFiles }) {
     for (const p of pages) combined.addPage(p);
   }
 
-  const outFile = join(OUT_DIR, 'tutorials-complete.pdf');
+  const outFile = join(OUT_DIR, `tutorials-complete${dark ? '-dark' : ''}.pdf`);
   await writeFile(outFile, await combined.save());
   console.log(`[pdf] Combined PDF → ${outFile}`);
 }
