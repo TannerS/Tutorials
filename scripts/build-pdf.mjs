@@ -308,7 +308,24 @@ async function main() {
             }
           }, { pageWidthPx: PAGE_WIDTH_PX, dark: DARK });
           await page.emulateMedia({ media: 'print', ...(DARK ? { colorScheme: 'dark' } : {}) });
-          await page.waitForTimeout(500);   // let mermaid + syntax highlighter finish
+          // Wait for mermaid to actually finish, not a fixed guess. mermaid.render()
+          // is async (FlowChart.tsx sets the SVG into state once its promise
+          // resolves) — a blind timeout is a race: most diagrams render well under
+          // 500ms, but a bigger/more complex one occasionally doesn't, and gets
+          // captured mid-render — the .flow-chart wrapper and its title bar are
+          // already in the DOM, but the inner content div is still empty, so the
+          // page shows a title with a big blank box under it and no error anywhere
+          // to flag it. Found by rendering a captured PDF page to PNG and actually
+          // looking at it (a title bar with nothing below), not by reading the code.
+          await page.waitForFunction(() => {
+            const charts = document.querySelectorAll('.flow-chart');
+            return Array.from(charts).every((el) => el.querySelector('svg') !== null);
+          }, { timeout: 10_000 }).catch(() => {
+            // Don't hard-fail the whole lesson if a chart is genuinely broken
+            // (bad mermaid syntax) — that's a content bug, not a timing one, and
+            // should still produce a page instead of skipping it entirely.
+          });
+          await page.waitForTimeout(150);   // settle the syntax highlighter too
 
           // Real, standard Letter-format pagination — the SAME thing a
           // browser's own Cmd+P does. A previous version of this script

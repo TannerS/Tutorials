@@ -485,8 +485,40 @@ li {
   }
   .flow-chart svg,
   svg {
-    max-width: 100% !important;
+    /* NOT !important, deliberately — mermaid already sets its own inline
+       max-width on the SVG (e.g. "max-width: 459.7px"), computed from the
+       diagram's real viewBox/aspect ratio, and inline styles beat a
+       non-important external rule automatically. This 100% is only a
+       fallback ceiling for the (now-rare) case where that inline value is
+       missing, not a forced override of it. It USED to be !important, and
+       that was actively harmful: for a naturally tall/narrow diagram (e.g.
+       a subgraph-heavy flowchart with a small computed max-width), forcing
+       it to stretch to the full container width made its aspect-ratio-
+       preserving height blow out past a single page's worth of height —
+       combined with break-inside:avoid below, Chromium's print engine
+       silently dropped the whole oversized box instead of painting it,
+       producing a title bar with a big blank space under it and no error
+       anywhere. Found by comparing a working vs. broken diagram's
+       getBoundingClientRect() (766x1613 vs its own 459x968 viewBox) and
+       confirming page.pdf() still omitted it even with the SVG verified
+       present and non-empty in the DOM at capture time — not a timing bug. */
+    max-width: 100%;
     height: auto !important;
+    /* Second half of the same failure mode: even at its own correct,
+       un-stretched natural size, a genuinely tall diagram (e.g. a real
+       908x1606 viewBox — this is honest content, not a bug) can still
+       exceed one printable page's height on its own. Paired with
+       break-inside:avoid below, an unbreakable box taller than the page
+       gets silently dropped by Chromium's print engine — same visible
+       symptom (title bar, blank underneath), different cause (real size,
+       not incorrect stretching). Capping max-height here, with width
+       already constrained above, makes the browser solve both
+       constraints together and shrink the whole diagram (preserving
+       aspect ratio) until it truly fits one page, rather than clipping
+       or dropping it. 850px is a deliberately conservative fit inside a
+       Letter page's ~960px content height after margins and the title
+       bar, verified against actual generated PDFs, not just computed. */
+    max-height: 850px;
     page-break-inside: avoid;
     break-inside: avoid;
   }
