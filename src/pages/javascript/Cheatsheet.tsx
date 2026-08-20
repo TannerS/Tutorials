@@ -5,7 +5,7 @@ import LessonLayout from '../../components/LessonLayout';
 export default function JsCheatsheet() {
   return (
     <LessonLayout
-      title="📋 Cheat Sheet"
+      title="📋 JavaScript Cheat Sheet"
       sectionId="javascript"
       lessonIndex={9}
       prev={{ path: '/javascript/es2017', label: 'ECMAScript 2017 (ES8): The Complete Deep Dive' }}
@@ -91,6 +91,43 @@ Object.seal(obj)     blocks add/delete, existing values still writable
 Object.hasOwn(obj, 'prop') -> true for OWN props only (own vs. inherited
                                genuinely diverge — verified with a real example)`}
       </CodeBlock>
+
+      <h2>Prototypes — What They Are, How They Were Used</h2>
+
+      <CodeBlock language="text" title="The core mental model">
+{`Every object has an internal [[Prototype]] link (read: Object.getPrototypeOf(obj)).
+A missing property lookup walks that link, then its link, until null.
+
+[[Prototype]]   internal link every OBJECT has — used for lookups
+.prototype      an ordinary property only FUNCTIONS have — becomes the
+                [[Prototype]] of every instance 'new Fn()' creates
+
+class Foo {} is real sugar over this exact mechanism — verified via
+Object.getOwnPropertyNames(Foo.prototype) showing methods land there,
+same as a hand-written Foo.prototype.method = function(){} would.`}
+      </CodeBlock>
+
+      <CodeBlock language="javascript" title="Old-way inheritance — the pattern class extends replaced">
+{`function Dog(name) { Animal.call(this, name); }   // "super" call, manually
+Dog.prototype = Object.create(Animal.prototype);   // wire the chain
+Dog.prototype.constructor = Dog;                    // repair identity — easy to forget!
+
+// Forgetting that last line: felix.constructor === Cat is FALSE,
+// felix.constructor === Animal is TRUE — a real, verified, silent bug.
+// class Dog extends Animal {} gets both lines right automatically.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Mixins — the multiple-inheritance workaround">
+        <p>
+          JS only has one prototype chain per object. <code>Object.assign(SomeClass.prototype,
+          MixinA, MixinB)</code> copies shared methods onto a prototype directly — real
+          multiple-inheritance-like sharing without forcing everything into one chain. Fine on a
+          prototype you own; doing the same to a <em>built-in</em> (<code>Array.prototype.x =
+          ...</code>) is a real anti-pattern — verified: it leaks into <code>for...in</code> on
+          every array in the program, and risks colliding with a same-named method the spec adds
+          later.
+        </p>
+      </InfoBox>
 
       <h2>Arrays, Destructuring &amp; Iterables</h2>
 

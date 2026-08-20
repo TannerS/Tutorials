@@ -11,7 +11,7 @@ export default function Patterns() {
       sectionId="state-mgmt"
       lessonIndex={5}
       prev={{ path: '/state-mgmt/zustand-cheatsheet', label: 'Zustand Cheat Sheet' }}
-      next={{ path: '/state-mgmt/react-query', label: 'TanStack Query' }}
+      next={null}
     >
       <p>
         The previous lesson decided <em>which rung</em> to stand on. This one is the production

@@ -5,7 +5,7 @@ import InfoBox from '../../components/InfoBox';
 export default function CloudArchitectureCheatsheet() {
   return (
     <LessonLayout
-      title="📋 Cheat Sheet"
+      title="📋 Cloud & Infrastructure Cheat Sheet"
       sectionId="cloud-architecture"
       lessonIndex={5}
       prev={{ path: '/cloud-architecture/cicd', label: 'CI/CD Pipelines & Deployment Strategies' }}

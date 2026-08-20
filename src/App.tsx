@@ -16,6 +16,7 @@ import JavaOptional from './pages/java/Optional'
 import JavaJvmInternals from './pages/java/JvmInternals'
 import JavaReflection from './pages/java/Reflection'
 import JavaBuildTools from './pages/java/BuildTools'
+import JavaCheatsheet from './pages/java/Cheatsheet'
 
 // Spring Boot
 import SpringIntro from './pages/springboot/Intro'
@@ -339,7 +340,16 @@ import SMZustandFundamentals from './pages/state-mgmt/ZustandFundamentals'
 import SMZustandAdvanced from './pages/state-mgmt/ZustandAdvanced'
 import SMZustandCheatsheet from './pages/state-mgmt/ZustandCheatsheet'
 import SMPatterns from './pages/state-mgmt/Patterns'
-import SMReactQuery from './pages/state-mgmt/ReactQuery'
+
+// React Query
+import RQFundamentals from './pages/react-query/Fundamentals'
+import RQAdvanced from './pages/react-query/Advanced'
+import RQCheatsheet from './pages/react-query/Cheatsheet'
+
+// What's New in React 19
+import WNFeatures from './pages/react19-whats-new/Features'
+import WNMigration from './pages/react19-whats-new/Migration'
+import WNCheatsheet from './pages/react19-whats-new/Cheatsheet'
 
 // Accessibility
 import A11yIntro from './pages/accessibility/Intro'
@@ -386,6 +396,7 @@ import RTPatterns from './pages/react-testing/Patterns'
 
 // Frontend Tooling
 import FTVite from './pages/frontend-tooling/Vite'
+import FTWebpack from './pages/frontend-tooling/Webpack'
 import FTLinting from './pages/frontend-tooling/Linting'
 import FTPackages from './pages/frontend-tooling/Packages'
 import FTMonorepos from './pages/frontend-tooling/Monorepos'
@@ -459,6 +470,7 @@ function App() {
         <Route path="java/jvm-internals" element={<JavaJvmInternals />} />
         <Route path="java/reflection" element={<JavaReflection />} />
         <Route path="java/build-tools" element={<JavaBuildTools />} />
+        <Route path="java/cheatsheet" element={<JavaCheatsheet />} />
         {/* Spring Boot */}
         <Route path="springboot/intro" element={<SpringIntro />} />
         <Route path="springboot/setup" element={<SpringSetup />} />
@@ -743,7 +755,14 @@ function App() {
         <Route path="state-mgmt/zustand-advanced" element={<SMZustandAdvanced />} />
         <Route path="state-mgmt/zustand-cheatsheet" element={<SMZustandCheatsheet />} />
         <Route path="state-mgmt/patterns" element={<SMPatterns />} />
-        <Route path="state-mgmt/react-query" element={<SMReactQuery />} />
+        {/* React Query */}
+        <Route path="react-query/fundamentals" element={<RQFundamentals />} />
+        <Route path="react-query/advanced" element={<RQAdvanced />} />
+        <Route path="react-query/cheatsheet" element={<RQCheatsheet />} />
+        {/* What's New in React 19 */}
+        <Route path="react19-whats-new/features" element={<WNFeatures />} />
+        <Route path="react19-whats-new/migration" element={<WNMigration />} />
+        <Route path="react19-whats-new/cheatsheet" element={<WNCheatsheet />} />
         {/* Accessibility */}
         <Route path="accessibility/intro" element={<A11yIntro />} />
         <Route path="accessibility/semantic" element={<A11ySemantic />} />
@@ -782,6 +801,7 @@ function App() {
         <Route path="react-testing/patterns" element={<RTPatterns />} />
         {/* Frontend Tooling */}
         <Route path="frontend-tooling/vite" element={<FTVite />} />
+        <Route path="frontend-tooling/webpack" element={<FTWebpack />} />
         <Route path="frontend-tooling/linting" element={<FTLinting />} />
         <Route path="frontend-tooling/packages" element={<FTPackages />} />
         <Route path="frontend-tooling/monorepos" element={<FTMonorepos />} />

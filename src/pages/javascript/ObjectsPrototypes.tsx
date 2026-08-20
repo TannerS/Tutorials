@@ -250,6 +250,150 @@ try {
         </p>
       </InfoBox>
 
+      {/* ── Section 3.5: Building inheritance hierarchies the old way ── */}
+      <h2>How Prototypes Were Actually Used: Building Inheritance by Hand</h2>
+      <p>
+        Before <code>class ... extends</code> existed, a multi-level inheritance hierarchy
+        was built by directly wiring one constructor&apos;s <code>.prototype</code> to point
+        at another&apos;s. This is the real pattern production codebases used for years — and
+        every framework&apos;s <code>Component.extend(...)</code>-style helper from that era
+        was a variation of exactly this.
+      </p>
+
+      <CodeBlock language="javascript" title="Animal -> Dog, the manual way">
+{`function Animal(name) {
+  this.name = name;
+}
+Animal.prototype.eat = function () { return \`\${this.name} eats.\`; };
+
+function Dog(name, breed) {
+  Animal.call(this, name);        // "super constructor" call — borrow Animal's setup
+  this.breed = breed;
+}
+Dog.prototype = Object.create(Animal.prototype);   // wire the chain: Dog -> Animal
+Dog.prototype.constructor = Dog;                    // repair identity (see below for why)
+Dog.prototype.bark = function () { return \`\${this.name} barks.\`; };
+
+const rex = new Dog("Rex", "Lab");
+console.log(rex.eat());                                   // inherited from Animal
+console.log(rex.bark());                                  // own, from Dog
+console.log(rex instanceof Dog, rex instanceof Animal);    // both true — real inheritance`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="Verified">
+        <p>
+          Ran exactly as shown: <code>rex.eat()</code> → <code>&quot;Rex eats.&quot;</code>,{' '}
+          <code>rex.bark()</code> → <code>&quot;Rex barks.&quot;</code>,{' '}
+          <code>rex instanceof Dog</code> and <code>rex instanceof Animal</code> both{' '}
+          <code>true</code>.
+        </p>
+      </InfoBox>
+
+      <p>
+        Three lines are doing real work, and each has a reason: <code>Animal.call(this,
+        name)</code> is the only way a plain function can &quot;call the parent
+        constructor&quot; — there was no <code>super()</code> yet. <code>Dog.prototype =
+        Object.create(Animal.prototype)</code> is the actual inheritance link (a plain{' '}
+        <code>Dog.prototype = Animal.prototype</code> would make Dog and Animal share the{' '}
+        <em>same</em> object, so adding <code>bark</code> would add it to Animal too — a real
+        and common mistake). And the <code>.constructor</code> repair line exists because{' '}
+        <code>Object.create</code> gives the new prototype object a fresh, useless{' '}
+        <code>constructor</code> — skip that line and the chain still works for method
+        lookup, but identity checks quietly break:
+      </p>
+
+      <CodeBlock language="javascript" title="Forgetting the .constructor repair — a real, easy-to-miss bug">
+{`function Cat(name) { Animal.call(this, name); }
+Cat.prototype = Object.create(Animal.prototype);
+// (forgot: Cat.prototype.constructor = Cat;)
+
+const felix = new Cat("Felix");
+console.log(felix.constructor === Cat);      // false!
+console.log(felix.constructor === Animal);   // true — inherited Animal's by accident`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Verified — and this is exactly what class extends fixes for you">
+        <p>
+          Real output: <code>felix.constructor === Cat</code> is <code>false</code>;{' '}
+          <code>felix.constructor === Animal</code> is <code>true</code>. Every{' '}
+          <code>Cat</code> instance now silently claims to be constructed by{' '}
+          <code>Animal</code> — code that branches on <code>instance.constructor</code>{' '}
+          (some serialization libraries and older frameworks did) gets the wrong answer, and
+          nothing throws to tell you. <code>class Dog extends Animal {'{}'}</code> wires the
+          prototype chain <em>and</em> the constructor link correctly every time, which is
+          the real, practical reason <code>extends</code> replaced this pattern rather than
+          just being shorter to type.
+        </p>
+      </InfoBox>
+
+      <h3>Mixins — Sharing Behavior Without a Linear Chain</h3>
+      <p>
+        JavaScript only allows a <em>single</em> prototype chain — no multiple inheritance.
+        Mixins were (and still are) the workaround: copy a shared object&apos;s methods onto
+        several unrelated prototypes with <code>Object.assign</code>, rather than trying to
+        force them into one inheritance tree.
+      </p>
+
+      <CodeBlock language="javascript" title="Two unrelated mixins, applied to one class">
+{`const Serializable = { serialize() { return JSON.stringify(this); } };
+const Comparable = { equals(other) { return this.id === other.id; } };
+
+class Product {
+  constructor(id, name) { this.id = id; this.name = name; }
+}
+Object.assign(Product.prototype, Serializable, Comparable);
+
+const p1 = new Product(1, "Widget");
+const p2 = new Product(1, "Widget (renamed)");
+console.log(p1.serialize());                                    // from the mixin
+console.log(p1.equals(p2));                                     // from the other mixin
+console.log(p1 instanceof Product);                              // true — still a real Product
+console.log(Object.getPrototypeOf(p1) === Product.prototype);    // true — chain untouched`}
+      </CodeBlock>
+
+      <InfoBox variant="info" title="Verified">
+        <p>
+          Real output: <code>p1.serialize()</code> → <code>{'{"id":1,"name":"Widget"}'}</code>;{' '}
+          <code>p1.equals(p2)</code> → <code>true</code> (same <code>id</code>);{' '}
+          <code>p1 instanceof Product</code> → <code>true</code>. The mixin methods land
+          directly on <code>Product.prototype</code> as if you&apos;d written them there by
+          hand — <code>Object.assign</code> doesn&apos;t know or care that they came from
+          somewhere else.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="danger" title="The Same Technique, Aimed at a Built-in, Is a Real Anti-Pattern">
+        <p>
+          Everything above targets a prototype <em>you own</em>. Doing the identical thing
+          to a built-in — <code>Array.prototype.flatten = function () {'{ ... }'}</code> —
+          used to be common (people patched in methods before the spec added them) and is
+          now considered a real mistake, not a style preference. Verified concretely: adding
+          a custom <code>Array.prototype.flatten</code> makes it show up in{' '}
+          <code>for...in</code> over <em>every array in the program</em>, including ones you
+          don&apos;t own:
+        </p>
+        <CodeBlock language="javascript" title="A monkey-patched built-in leaking into unrelated code">
+{`Array.prototype.flatten = function () {
+  return this.reduce((flat, item) =>
+    flat.concat(Array.isArray(item) ? item.flatten() : item), []);
+};
+
+for (const key in [1, 2, 3]) console.log('for...in key:', key);
+// 0
+// 1
+// 2
+// flatten   <- leaked in, from code that never touched this array`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          That is the real version of the &quot;for...in trap&quot; the Arrays lesson warns
+          about, caused directly. Worse, if the spec later adds a same-named method (as it
+          did with <code>Array.prototype.flat</code> in ES2019), your version silently wins
+          or loses depending on load order — a collision with the language itself, not just
+          another library. Extending a class or object you own is a normal, useful pattern;
+          extending a built-in prototype is the one place this technique is now avoided.
+        </p>
+      </InfoBox>
+
       {/* ── Section 4: Getters and Setters ── */}
       <h2>Getters and Setters</h2>
       <p>

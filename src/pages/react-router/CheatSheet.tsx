@@ -876,6 +876,103 @@ React.MouseEvent<HTMLButtonElement>     // onClick on button`}
         <code>React.ChangeEvent&lt;...&gt;</code> on event handlers. Everything else
         TypeScript infers automatically from your return types and the router types.
       </InfoBox>
+
+      {/* ══════════════════════════════════════════════
+          17. TESTING ROUTES
+      ══════════════════════════════════════════════ */}
+      <h2>Testing Routes</h2>
+      <p>
+        Render a route through a real router instance rather than the bare component — a
+        component that calls <code>useLoaderData()</code> or <code>useNavigate()</code> throws
+        outside a router context.
+      </p>
+      <CodeBlock language="tsx" title="createMemoryRouter — the standard test harness">
+{`import { render, screen } from '@testing-library/react';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+
+test('renders product list from loader data', async () => {
+  const router = createMemoryRouter(
+    [{ path: '/products', element: <ProductList />, loader: () => mockProducts }],
+    { initialEntries: ['/products'] },
+  );
+  render(<RouterProvider router={router} />);
+
+  expect(await screen.findByText('Widget')).toBeInTheDocument();
+});
+
+// Testing an action (form submission)
+test('submits the add-todo form', async () => {
+  const actionSpy = jest.fn(() => ({ ok: true }));
+  const router = createMemoryRouter(
+    [{ path: '/', element: <TodoForm />, action: actionSpy }],
+    { initialEntries: ['/'] },
+  );
+  render(<RouterProvider router={router} />);
+
+  await userEvent.type(screen.getByRole('textbox'), 'Buy milk');
+  await userEvent.click(screen.getByRole('button', { name: /add/i }));
+
+  expect(actionSpy).toHaveBeenCalled();
+});`}
+      </CodeBlock>
+      <InfoBox variant="info" title="Why createMemoryRouter, not BrowserRouter">
+        <p>
+          <code>createMemoryRouter</code> keeps navigation state in memory instead of the real
+          URL bar — no <code>window.history</code> side effects leaking between tests, and you
+          control the starting route directly via <code>initialEntries</code>. It's also the
+          only router type that supports data loaders/actions in a test environment the same
+          way <code>createBrowserRouter</code> does in the app.
+        </p>
+      </InfoBox>
+
+      {/* ══════════════════════════════════════════════
+          18. MIGRATION GUIDE (v5 -> v7)
+      ══════════════════════════════════════════════ */}
+      <h2>Migration Guide (v5 → v7)</h2>
+      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>v5</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>v6 / v7</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>{'<Switch>'}</code></td>
+            <td style={{ padding: '0.75rem' }}><code>{'<Routes>'}</code> — exact-match by default, no more <code>exact</code> prop</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>{'<Route component={X} />'}</code></td>
+            <td style={{ padding: '0.75rem' }}><code>{'<Route element={<X />} />'}</code> — an element, not a component reference</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>useHistory()</code></td>
+            <td style={{ padding: '0.75rem' }}><code>useNavigate()</code> — <code>navigate(-1)</code> instead of <code>history.goBack()</code></td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>withRouter(Component)</code></td>
+            <td style={{ padding: '0.75rem' }}>Hooks (<code>useParams</code>, <code>useNavigate</code>, <code>useLocation</code>) — HOC removed entirely</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}>Class components + render props (<code>{'<Route render={...} />'}</code>)</td>
+            <td style={{ padding: '0.75rem' }}>Hooks-only API — render props removed</td>
+          </tr>
+          <tr>
+            <td style={{ padding: '0.75rem' }}>No built-in data loading</td>
+            <td style={{ padding: '0.75rem' }}><code>loader</code>/<code>action</code> on route config (v6.4+) — the biggest net-new capability, not a rename</td>
+          </tr>
+        </tbody>
+      </table>
+      <InfoBox variant="warning" title="The codemod handles the mechanical part; loaders don't retrofit automatically">
+        <p>
+          React Router publishes an official codemod for the <code>{'<Switch>'}</code> →{' '}
+          <code>{'<Routes>'}</code> and <code>component=</code> → <code>element=</code>{' '}
+          renames. It cannot invent loaders/actions for you — that's a design shift (moving data
+          fetching out of components and into route config), not a syntax rename, so migrating
+          off <code>componentDidMount</code>/<code>useEffect</code> data-fetching to loaders is
+          a deliberate follow-up step, not something a migration script can do safely.
+        </p>
+      </InfoBox>
     </LessonLayout>
   );
 }

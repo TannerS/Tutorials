@@ -9,8 +9,8 @@ export default function Linting() {
     <LessonLayout
       title="ESLint & Prettier"
       sectionId="frontend-tooling"
-      lessonIndex={1}
-      prev={{ path: '/frontend-tooling/vite', label: 'Vite Deep Dive' }}
+      lessonIndex={2}
+      prev={{ path: '/frontend-tooling/webpack', label: 'Webpack: Getting Started' }}
       next={{ path: '/frontend-tooling/packages', label: 'Package Managers' }}
     >
       <h2>Why Linting and Formatting Matter</h2>

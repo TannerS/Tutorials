@@ -11,7 +11,7 @@ export default function Vite() {
       sectionId="frontend-tooling"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/frontend-tooling/linting', label: 'ESLint & Prettier' }}
+      next={{ path: '/frontend-tooling/webpack', label: 'Webpack: Getting Started' }}
     >
       <InfoBox variant="info" title="This Is the Toolchain-Level Tour">
         This lesson covers Vite as <em>one tool in your frontend toolchain</em> — enough to read

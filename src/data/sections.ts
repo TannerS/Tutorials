@@ -21,6 +21,7 @@ export const sections: Section[] = [
       { id: 'jvm-internals', title: 'JVM Internals & Garbage Collection', path: '/java/jvm-internals' },
       { id: 'reflection', title: 'Reflection & Annotations', path: '/java/reflection' },
       { id: 'build-tools', title: 'Build Tools: Maven & Gradle', path: '/java/build-tools' },
+      { id: 'cheatsheet', title: 'Java Cheat Sheet', path: '/java/cheatsheet' },
     ],
   },
   {
@@ -78,6 +79,17 @@ export const sections: Section[] = [
       { id: 'error-boundaries', title: 'Error Boundaries', path: '/react19/error-boundaries' },
       { id: 'animations', title: 'Animation Libraries (Framer Motion & Beyond)', path: '/react19/animations' },
       { id: 'portals', title: 'Portals, In Depth', path: '/react19/portals' },
+    ],
+  },
+  {
+    id: 'react19-whats-new',
+    label: "What's New in React 19",
+    icon: '✨',
+    color: '#38bdf8',
+    lessons: [
+      { id: 'features', title: 'The Complete Feature List', path: '/react19-whats-new/features' },
+      { id: 'migration', title: 'Migrating from React 18 to 19', path: '/react19-whats-new/migration' },
+      { id: 'cheatsheet', title: "What's New in React 19 Cheat Sheet", path: '/react19-whats-new/cheatsheet' },
     ],
   },
   {
@@ -455,7 +467,17 @@ export const sections: Section[] = [
       { id: 'zustand-advanced', title: 'Zustand: Advanced Patterns', path: '/state-mgmt/zustand-advanced' },
       { id: 'zustand-cheatsheet', title: 'Zustand Cheat Sheet', path: '/state-mgmt/zustand-cheatsheet' },
       { id: 'patterns', title: 'Real-World Patterns', path: '/state-mgmt/patterns' },
-      { id: 'react-query', title: 'TanStack Query (React Query)', path: '/state-mgmt/react-query' },
+    ],
+  },
+  {
+    id: 'react-query',
+    label: 'React Query',
+    icon: '🔄',
+    color: '#ff4154',
+    lessons: [
+      { id: 'fundamentals', title: 'React Query: Fundamentals', path: '/react-query/fundamentals' },
+      { id: 'advanced', title: 'React Query: Advanced Patterns', path: '/react-query/advanced' },
+      { id: 'cheatsheet', title: 'React Query Cheat Sheet', path: '/react-query/cheatsheet' },
     ],
   },
   {
@@ -510,6 +532,7 @@ export const sections: Section[] = [
     color: '#f59e0b',
     lessons: [
       { id: 'vite', title: 'Vite Deep Dive', path: '/frontend-tooling/vite' },
+      { id: 'webpack', title: 'Webpack: Getting Started', path: '/frontend-tooling/webpack' },
       { id: 'linting', title: 'ESLint & Prettier', path: '/frontend-tooling/linting' },
       { id: 'packages', title: 'Package Managers', path: '/frontend-tooling/packages' },
       { id: 'monorepos', title: 'Monorepo Strategies', path: '/frontend-tooling/monorepos' },
@@ -681,7 +704,7 @@ export const groups: Group[] = [
         label: 'React',
         icon: '⚛️',
         color: '#22d3ee',
-        sectionIds: ['react19', 'react-antipatterns', 'state-mgmt', 'react-testing', 'react-router', 'react-field-guide'],
+        sectionIds: ['react19', 'react19-whats-new', 'react-antipatterns', 'state-mgmt', 'react-query', 'react-testing', 'react-router', 'react-field-guide'],
       },
       {
         id: 'frontend-tooling-group',

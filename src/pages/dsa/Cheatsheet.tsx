@@ -5,7 +5,7 @@ import InfoBox from '../../components/InfoBox';
 export default function Cheatsheet() {
   return (
     <LessonLayout
-      title="📋 Cheat Sheet"
+      title="📋 Data Structures & Algorithms Cheat Sheet"
       sectionId="dsa"
       lessonIndex={13}
       prev={{ path: '/dsa/patterns', label: 'Common Interview Patterns' }}

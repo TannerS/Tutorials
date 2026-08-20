@@ -5,7 +5,7 @@ import InfoBox from '../../components/InfoBox';
 export default function CryptoCheatsheet() {
   return (
     <LessonLayout
-      title="📋 Cheat Sheet"
+      title="📋 Cryptography Cheat Sheet"
       sectionId="cryptography"
       lessonIndex={15}
       prev={{ path: '/cryptography/mistakes', label: 'Common Cryptographic Mistakes' }}

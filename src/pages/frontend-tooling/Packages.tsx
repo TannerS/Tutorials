@@ -9,7 +9,7 @@ export default function Packages() {
     <LessonLayout
       title="Package Managers"
       sectionId="frontend-tooling"
-      lessonIndex={2}
+      lessonIndex={3}
       prev={{ path: '/frontend-tooling/linting', label: 'ESLint & Prettier' }}
       next={{ path: '/frontend-tooling/monorepos', label: 'Monorepo Strategies' }}
     >

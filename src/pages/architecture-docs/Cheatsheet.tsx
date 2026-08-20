@@ -5,7 +5,7 @@ import InfoBox from '../../components/InfoBox';
 export default function ArchitectureDocsCheatsheet() {
   return (
     <LessonLayout
-      title="📋 Cheat Sheet"
+      title="📋 Communicating Architecture Cheat Sheet"
       sectionId="architecture-docs"
       lessonIndex={5}
       prev={{ path: '/architecture-docs/stakeholders', label: 'Presenting Architecture to Stakeholders' }}

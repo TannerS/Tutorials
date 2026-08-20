@@ -10,7 +10,7 @@ export default function BuildTools() {
       sectionId="java"
       lessonIndex={13}
       prev={{ path: '/java/reflection', label: 'Reflection & Annotations' }}
-      next={null}
+      next={{ path: '/java/cheatsheet', label: 'Java Cheat Sheet' }}
     >
       <p>
         A build tool does three jobs that used to be scripted by hand, badly: it resolves your{' '}

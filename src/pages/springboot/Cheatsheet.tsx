@@ -5,7 +5,7 @@ import LessonLayout from '../../components/LessonLayout';
 export default function Cheatsheet() {
   return (
     <LessonLayout
-      title="Cheat Sheet"
+      title="📋 Spring Boot Cheat Sheet"
       sectionId="springboot"
       lessonIndex={18}
       prev={{ path: '/springboot/resilience', label: 'Resilience4j & Circuit Breakers' }}
@@ -519,6 +519,117 @@ class TenantRegistrar implements BeanRegistrar {
           construction) and the <strong>module split</strong> if you maintain a custom starter.
           JSpecify, API versioning, <code>@Retryable</code>, and <code>BeanRegistrar</code> are
           all opt-in — upgrade first, adopt incrementally.
+        </p>
+      </InfoBox>
+
+      <h2>WebFlux — Mono/Flux Quick Reference</h2>
+      <CodeBlock language="java" title="Nothing runs until subscribed — and WebClient/the framework does that for you">
+{`Mono<User> userMono = userRepo.findById(id);      // lazy — no query has run yet
+Mono<User> withFallback = userMono
+    .switchIfEmpty(Mono.error(new NotFoundException(id)))
+    .doOnNext(u -> log.info("loaded {}", u.getId()));
+
+@GetMapping("/users/{id}")
+public Mono<User> getUser(@PathVariable String id) { return withFallback; }
+// The controller returning a Mono is what triggers the eventual subscribe —
+// you almost never call .subscribe() yourself in a web handler.`}
+      </CodeBlock>
+      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Type</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Emits</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Reactor equivalent of</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>{'Mono<T>'}</code></td>
+            <td style={{ padding: '0.75rem' }}>0 or 1 item</td>
+            <td style={{ padding: '0.75rem' }}><code>{'Optional<T>'}</code> / a single async result</td>
+          </tr>
+          <tr>
+            <td style={{ padding: '0.75rem' }}><code>{'Flux<T>'}</code></td>
+            <td style={{ padding: '0.75rem' }}>0..N items over time</td>
+            <td style={{ padding: '0.75rem' }}>a <code>{'Stream<T>'}</code> that arrives asynchronously</td>
+          </tr>
+        </tbody>
+      </table>
+      <InfoBox variant="danger" title="WebFlux vs. Virtual Threads — the honest trade-off">
+        <p>
+          Both exist to serve high I/O-bound concurrency without exhausting a thread pool, and
+          since Java 21 you genuinely get to pick. WebFlux needs the <em>entire</em> stack
+          reactive end to end (R2DBC, not blocking JPA, or the benefit breaks silently) and has a
+          real learning curve plus notoriously hard-to-read stack traces. Virtual threads +
+          Spring MVC give you the same scalability with ordinary blocking code — the JPA/
+          <code>RestTemplate</code> style you already know, unmodified, on a different{' '}
+          <code>Thread</code> under the hood. Default to virtual threads for new services on
+          Java 21+; reach for WebFlux specifically when you need Reactor's backpressure
+          semantics or you're already deep in a reactive stack.
+        </p>
+      </InfoBox>
+
+      <h2>Resilience4j Quick Reference</h2>
+      <CodeBlock language="java" title="The annotation, and the fallback signature contract">
+{`@CircuitBreaker(name = "paymentGateway", fallbackMethod = "chargeFallback")
+public ChargeResult charge(ChargeRequest request) {
+    return gatewayApi.charge(request);
+}
+
+// Same class, same params, PLUS exactly one trailing Throwable. Enforced by
+// Resilience4j itself — get the signature wrong and it silently isn't found.
+private ChargeResult chargeFallback(ChargeRequest request, Throwable t) {
+    return ChargeResult.queued("Payment gateway unavailable: " + t.getMessage());
+}`}
+      </CodeBlock>
+      <CodeBlock language="yaml" title="application.yml — the knobs that actually matter">
+{`resilience4j.circuitbreaker.instances.paymentGateway:
+  slidingWindowType: COUNT_BASED       # or TIME_BASED — "last N calls" vs "last N seconds"
+  slidingWindowSize: 20
+  minimumNumberOfCalls: 10             # won't OPEN until this many calls are recorded, ever
+  failureRateThreshold: 50             # % of the window that must fail to trip OPEN
+  waitDurationInOpenState: 30s         # how long before a single HALF_OPEN probe call`}
+      </CodeBlock>
+      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
+        <thead>
+          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Pattern</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Protects against</th>
+            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Use when</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>@CircuitBreaker</code></td>
+            <td style={{ padding: '0.75rem' }}>Cascading failure — one dead dependency exhausting your whole thread pool</td>
+            <td style={{ padding: '0.75rem' }}>Any call to a downstream that can hang or error repeatedly</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>@Retry</code></td>
+            <td style={{ padding: '0.75rem' }}>Transient failures only</td>
+            <td style={{ padding: '0.75rem' }}>The operation is idempotent — never retry a non-idempotent POST/charge</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}><code>@RateLimiter</code></td>
+            <td style={{ padding: '0.75rem' }}>Overwhelming a downstream (or your own service)</td>
+            <td style={{ padding: '0.75rem' }}>A hard external quota, or protecting a fragile dependency</td>
+          </tr>
+          <tr>
+            <td style={{ padding: '0.75rem' }}><code>@Bulkhead</code></td>
+            <td style={{ padding: '0.75rem' }}>One slow dependency starving threads needed by unrelated requests</td>
+            <td style={{ padding: '0.75rem' }}>Isolate a risky/slow call to its own bounded pool of concurrent calls</td>
+          </tr>
+        </tbody>
+      </table>
+      <InfoBox variant="warning" title="Composition order matters — outermost wraps innermost">
+        <p>
+          Stacking multiple annotations on one method applies them outside-in in the order
+          listed. <code>@Retry</code> around <code>@CircuitBreaker</code> means each retry
+          attempt is itself subject to the breaker — a fast-failing <code>OPEN</code> breaker
+          can turn 3 retry attempts into 3 near-instant <code>CallNotPermittedException</code>s
+          instead of 3 real network attempts. Getting the order backwards (breaker around retry)
+          changes what the breaker's failure count actually measures — decide the order
+          deliberately, don't leave it to annotation-declaration order by accident.
         </p>
       </InfoBox>
 

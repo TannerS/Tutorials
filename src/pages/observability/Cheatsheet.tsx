@@ -5,7 +5,7 @@ import InfoBox from '../../components/InfoBox';
 export default function ObservabilityCheatsheet() {
   return (
     <LessonLayout
-      title="📋 Cheat Sheet"
+      title="📋 Observability & SRE Cheat Sheet"
       sectionId="observability"
       lessonIndex={4}
       prev={{ path: '/observability/incidents', label: 'Alerting & Incident Response' }}

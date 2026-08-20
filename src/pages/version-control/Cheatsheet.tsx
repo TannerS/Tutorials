@@ -5,7 +5,7 @@ import InfoBox from '../../components/InfoBox';
 export default function Cheatsheet() {
   return (
     <LessonLayout
-      title="📋 Cheat Sheet"
+      title="📋 Git & Version Control Cheat Sheet"
       sectionId="version-control"
       lessonIndex={3}
       prev={{ path: '/version-control/collaboration', label: 'Collaborative Workflows' }}
