@@ -392,21 +392,54 @@ async function buildCombinedPdf({ sections, groups, writtenFiles, dark }) {
   const bodyFont = await combined.embedFont(StandardFonts.Helvetica);
   const idToSection = new Map(sections.map((s) => [s.id, s]));
 
-  // Cover page: title + a simple table of contents (section labels in the
+  // Content pages FIRST, before the cover — pdf-lib's insertPage lets the
+  // cover be prepended afterward, but we need each section's first-page
+  // PDFRef in hand before drawing the table of contents, since that's what
+  // the "click a section, jump to it" links below point at.
+  const firstPageOf = new Map(); // sectionId -> PDFPage (its first page)
+  for (const id of order) {
+    const buf = await readFile(writtenFiles.get(id));
+    const src = await PDFDocument.load(buf);
+    const pages = await combined.copyPages(src, src.getPageIndices());
+    for (const p of pages) combined.addPage(p);
+    if (pages.length > 0) firstPageOf.set(id, pages[0]);
+  }
+
+  // Cover page: title + a clickable table of contents (section labels in the
   // same order they'll appear), paginating onto more cover pages if long.
   // The cover is generated with pdf-lib (not captured from the browser), so
   // it needs its own dark styling to match the captured pages that follow —
   // a light-mode cover in front of an otherwise-dark PDF would be jarring.
+  // Built AFTER the content above, then inserted at the front (index 0, 1,
+  // 2... in order) so it still ends up first in reading order.
   const PAGE_W = 8.5 * 72, PAGE_H = 11 * 72; // Letter, in PDF points (72/in)
   const titleColor = dark ? rgb(0.894, 0.902, 0.941) : rgb(0.1, 0.1, 0.15);   // #e4e6f0 dark / near-black light
   const dateColor = dark ? rgb(0.576, 0.6, 0.698) : rgb(0.4, 0.4, 0.4);       // #9399b2 dark / mid-grey light
-  const bulletColor = dark ? rgb(0.784, 0.792, 0.847) : rgb(0.15, 0.15, 0.2); // #c7cad8 dark / near-black light
+  const linkColor = dark ? rgb(0.357, 0.612, 0.965) : rgb(0.145, 0.388, 0.922); // --accent-blue, both themes
   const coverBg = rgb(0.059, 0.067, 0.09); // #0f1117 — the site's real --bg-primary dark value
 
+  let insertAt = 0;
   const newCoverPage = () => {
-    const p = combined.addPage([PAGE_W, PAGE_H]);
+    const p = combined.insertPage(insertAt++, [PAGE_W, PAGE_H]);
     if (dark) p.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: coverBg });
     return p;
+  };
+
+  // A Link annotation with a /Dest pointing at another page's PDFRef — the
+  // actual "clickable" part. pdf-lib has no high-level helper for this, so
+  // it's built from the low-level context.obj()/register()/addAnnot() API;
+  // context.obj() converts bare JS strings to PDFName (not PDFString), which
+  // is exactly what /Type, /Subtype, and the /Fit destination type need.
+  const addSectionLink = (page, targetPage, rect) => {
+    if (!targetPage) return;
+    const annotDict = combined.context.obj({
+      Type: 'Annot',
+      Subtype: 'Link',
+      Rect: rect,
+      Border: [0, 0, 0],
+      Dest: [targetPage.ref, 'Fit'],
+    });
+    page.node.addAnnot(combined.context.register(annotDict));
   };
 
   let cover = newCoverPage();
@@ -424,15 +457,14 @@ async function buildCombinedPdf({ sections, groups, writtenFiles, dark }) {
       cover = newCoverPage();
       y = PAGE_H - 60;
     }
-    cover.drawText(`•  ${label}`, { x: 66, y, size: 11, font: bodyFont, color: bulletColor });
+    const text = `•  ${label}`;
+    cover.drawText(text, { x: 66, y, size: 11, font: bodyFont, color: linkColor });
+    // Clickable area: the drawn text's own width, generous vertical padding
+    // (a few points above/below the glyphs, not just a tight box) so the
+    // link is easy to hit, not just the exact glyph outlines.
+    const textWidth = bodyFont.widthOfTextAtSize(text, 11);
+    addSectionLink(cover, firstPageOf.get(id), [66, y - 3, 66 + textWidth, y + 13]);
     y -= 18;
-  }
-
-  for (const id of order) {
-    const buf = await readFile(writtenFiles.get(id));
-    const src = await PDFDocument.load(buf);
-    const pages = await combined.copyPages(src, src.getPageIndices());
-    for (const p of pages) combined.addPage(p);
   }
 
   const outFile = join(OUT_DIR, `tutorials-complete${dark ? '-dark' : ''}.pdf`);

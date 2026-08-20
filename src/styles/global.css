@@ -608,11 +608,58 @@ li {
   :root[data-pdf-mode="dark"] pre {
     border-color: #2a2e42 !important;
   }
-  /* Deliberately no dark equivalent of the light path's token-flattening
-     rule (`pre [class*="token"] { color: #111 !important }`) — leaving
-     it unset here lets Prism's real per-token classes fall through to
-     the --syn-* variables redefined above, so code keeps its actual
-     syntax highlighting instead of going flat black-on-dark. */
+  /* Safety net BEFORE the specific per-class rules below: Prism emits more
+     token classes than the --syn-* mapping enumerates (verified by
+     scanning real rendered pages — `token constant`, `token property-access`,
+     `token import namespace`, `token imports` all showed up with real
+     content, none of them covered by the .site-code .token.X list this
+     file defines elsewhere). Lower specificity than the explicit rules
+     below (one fewer class in the selector), so those still win for the
+     classes they name — this only catches whatever they don't, and gives
+     it a safe, readable fallback instead of falling through to the light
+     path's #111 flatten. */
+  :root[data-pdf-mode="dark"] pre [class*="token"],
+  :root[data-pdf-mode="dark"] code [class*="token"] {
+    color: #d4d7e5 !important;
+  }
+  /* The light path's token-flattening rule (`pre [class*="token"],
+     code [class*="token"] { color: #111 !important }`, above) is NOT
+     scoped to light mode — it has no data-pdf-mode condition at all, so
+     it fires unconditionally in every @media print pass, dark included.
+     Leaving it unanswered here (an earlier version of this file did
+     exactly that, reasoning the --syn-* variable redefinition above
+     would just "shine through") was wrong: `!important` rules are
+     compared among themselves before specificity ever enters the
+     picture, so the flatten rule always won regardless of how the
+     non-important `.site-code .token.keyword { color: var(--syn-keyword) }`
+     rule elsewhere in this file was defined — verified by inspecting
+     real computed styles (`getComputedStyle` reported rgb(17,17,17) on
+     every token span under data-pdf-mode="dark"), not assumed from
+     reading the cascade. Re-declaring the same token-to-variable mapping
+     here, `!important` and under the dark-scoped selector, is what
+     actually wins. */
+  :root[data-pdf-mode="dark"] .token.keyword,
+  :root[data-pdf-mode="dark"] .token.boolean,
+  :root[data-pdf-mode="dark"] .token.builtin,
+  :root[data-pdf-mode="dark"] .token.operator,
+  :root[data-pdf-mode="dark"] .token.important { color: var(--syn-keyword) !important; }
+  :root[data-pdf-mode="dark"] .token.string,
+  :root[data-pdf-mode="dark"] .token.template-string,
+  :root[data-pdf-mode="dark"] .token.char,
+  :root[data-pdf-mode="dark"] .token.attr-value { color: var(--syn-string) !important; }
+  :root[data-pdf-mode="dark"] .token.function,
+  :root[data-pdf-mode="dark"] .token.class-name { color: var(--syn-function) !important; }
+  :root[data-pdf-mode="dark"] .token.tag { color: var(--syn-tag) !important; }
+  :root[data-pdf-mode="dark"] .token.number { color: var(--syn-number) !important; }
+  :root[data-pdf-mode="dark"] .token.comment { color: var(--syn-comment) !important; font-style: italic; }
+  :root[data-pdf-mode="dark"] .token.punctuation { color: var(--syn-punctuation) !important; }
+  :root[data-pdf-mode="dark"] .token.property,
+  :root[data-pdf-mode="dark"] .token.attr-name,
+  :root[data-pdf-mode="dark"] .token.parameter,
+  :root[data-pdf-mode="dark"] .token.annotation,
+  :root[data-pdf-mode="dark"] .token.decorator,
+  :root[data-pdf-mode="dark"] .token.maybe-class-name { color: var(--syn-property) !important; }
+
   :root[data-pdf-mode="dark"] .linenumber {
     color: #6c7293 !important;
   }
