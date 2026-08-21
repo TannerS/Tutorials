@@ -9,8 +9,8 @@ export default function Advanced() {
     <LessonLayout
       title="Advanced SQL Patterns"
       sectionId="sql-advanced"
-      lessonIndex={2}
-      prev={{ path: '/sql-advanced/cte', label: 'CTEs & Recursive Queries' }}
+      lessonIndex={3}
+      prev={{ path: '/sql-advanced/stored-procedures', label: 'Stored Procedures' }}
       next={null}
     >
       <p>This is the grab bag of power techniques — patterns you reach for when standard queries hit a wall. Pivoting, JSON, LATERAL joins, upserts, full-text search, partitioning, and materialized views, all PostgreSQL-flavored.</p>

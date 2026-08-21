@@ -11,7 +11,7 @@ export default function Cte() {
       sectionId="sql-advanced"
       lessonIndex={1}
       prev={{ path: '/sql-advanced/transactions', label: 'Transactions & Locking' }}
-      next={{ path: '/sql-advanced/advanced', label: 'Advanced SQL Patterns' }}
+      next={{ path: '/sql-advanced/stored-procedures', label: 'Stored Procedures' }}
     >
       <p>Common Table Expressions make complex queries readable. Recursive CTEs unlock hierarchical data traversal — org charts, category trees, bill of materials — all in pure PostgreSQL SQL.</p>
 

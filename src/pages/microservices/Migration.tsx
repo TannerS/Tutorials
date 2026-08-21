@@ -9,8 +9,8 @@ export default function Migration() {
     <LessonLayout
       title="Migration & Decomposition"
       sectionId="microservices"
-      lessonIndex={7}
-      prev={{ path: '/microservices/containers', label: 'Containers & Kubernetes' }}
+      lessonIndex={8}
+      prev={{ path: '/microservices/openshift', label: 'OpenShift: Kubernetes for the Enterprise' }}
       next={null}
     >
       <h2>Migrating from Monolith to Microservices</h2>

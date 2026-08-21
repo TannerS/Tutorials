@@ -15,10 +15,16 @@
  *   npm run build:pdf:dark                  # same as combined, but styled in the site's
  *                                            #   real dark theme instead of ink-on-paper
  *                                            #   (dist-pdf/tutorials-complete-dark.pdf)
+ *   npm run build:pdf:cheatsheets           # build + ONLY the cheat-sheet lesson from every
+ *                                            #   section, combined into one PDF, light theme
+ *                                            #   (dist-pdf/tutorials-cheatsheets-only.pdf)
+ *   npm run build:pdf:cheatsheets:dark      # same, dark theme
+ *                                            #   (dist-pdf/tutorials-cheatsheets-only-dark.pdf)
  *   npm run pdf:section java                # re-use the existing dist/ build
  *   node scripts/build-pdf.mjs java react19 # multiple sections
  *   node scripts/build-pdf.mjs --combined   # re-use dist/, all sections, + combine
  *   node scripts/build-pdf.mjs --combined --dark   # ...styled dark instead
+ *   node scripts/build-pdf.mjs --cheatsheets --dark   # ...cheat sheets only, dark
  *
  * `pdf:section` does NOT rebuild — it serves whatever is already in dist/,
  * so run `npm run build` first if the site has changed.
@@ -34,6 +40,16 @@
  * suffix so a dark run never overwrites a light one — both can coexist in
  * dist-pdf/. Pagination and break-inside safety are identical either way;
  * only the color layer changes.
+ *
+ * `--cheatsheets` filters every section down to just its cheat-sheet lesson
+ * (matched by lesson id, not title — a title merely CONTAINING "cheat sheet"
+ * on an otherwise-unrelated lesson doesn't count) before capturing anything,
+ * and always combines the result into one file — this is a genuinely
+ * separate command from `--combined`/`build:pdf:dark`, not a variant of them,
+ * per an explicit ask to keep every PDF flavor its own dedicated command
+ * rather than one command trying to produce all of them. It does not write
+ * the normal per-section files (a pile of 1-lesson stub PDFs isn't useful on
+ * its own), only the one combined cheatsheets-only output.
  *
  * Prerequisites (one-time):
  *   npm install
@@ -61,9 +77,20 @@ const PORT = 5273;
 const PAGE_WIDTH_PX = 816;
 
 const rawArgs = process.argv.slice(2);
-const COMBINED = rawArgs.includes('--combined');
+const CHEATSHEETS_ONLY = rawArgs.includes('--cheatsheets');
+// --cheatsheets implies combining — a pile of 1-lesson stub PDFs isn't a
+// useful deliverable on its own, the combined file is the whole point.
+const COMBINED = rawArgs.includes('--combined') || CHEATSHEETS_ONLY;
 const DARK = rawArgs.includes('--dark');
-const wantedSections = rawArgs.filter((a) => a !== '--combined' && a !== '--dark');
+const wantedSections = rawArgs.filter((a) => a !== '--combined' && a !== '--dark' && a !== '--cheatsheets');
+
+// Matches a cheat-sheet lesson by id, e.g. 'cheatsheet', 'cheat-sheet',
+// 'zustand-cheatsheet' — NOT by title. A lesson can have "Cheat Sheet"
+// somewhere in its title without actually being a section's dedicated
+// cheat-sheet page (e.g. css-field-guide's 'basics' lesson is titled "CSS
+// Basics Cheat Sheet" but is a normal lesson, not the section's cheat
+// sheet) — id is the reliable signal, title text is not.
+const isCheatsheetLesson = (lesson) => /cheat-?sheet$/i.test(lesson.id);
 
 async function findFreePort(preferred) {
   // Try the preferred port first; if it's busy, ask the OS for any free port.
@@ -184,9 +211,21 @@ async function main() {
 
   console.log(`[pdf] Loading sections...`);
   const { sections, groups } = await loadSections();
-  const targets = wantedSections.length
+  let targets = wantedSections.length
     ? sections.filter((s) => wantedSections.includes(s.id))
     : sections;
+
+  if (CHEATSHEETS_ONLY) {
+    // Filter each section down to just its cheat-sheet lesson(s) — most
+    // sections have exactly one, state-mgmt technically has zero at the
+    // section level (Zustand's lives at 'zustand-cheatsheet', matched the
+    // same way). Drop any section left with nothing to capture entirely,
+    // rather than rendering it and getting an empty/skipped result.
+    targets = targets
+      .map((s) => ({ ...s, lessons: s.lessons.filter(isCheatsheetLesson) }))
+      .filter((s) => s.lessons.length > 0);
+    console.log(`[pdf] --cheatsheets: ${targets.length} sections have a cheat sheet.`);
+  }
 
   if (targets.length === 0) {
     console.error(
@@ -205,7 +244,14 @@ async function main() {
   const writtenFiles = new Map(); // sectionId -> filepath, only sections that actually rendered
   try {
     for (const section of targets) {
-      const filename = join(OUT_DIR, `${section.id}${DARK ? '-dark' : ''}.pdf`);
+      // Cheatsheets-only mode writes each section's (single-lesson) capture to
+      // a clearly-temp filename — buildCombinedPdf still needs a real file per
+      // section to read back and stitch together, but a pile of 1-lesson
+      // "section.pdf" files left behind afterward isn't a useful deliverable,
+      // so these get deleted once the real combined output is built (below).
+      const filename = CHEATSHEETS_ONLY
+        ? join(OUT_DIR, `.tmp-cheatsheet-${section.id}${DARK ? '-dark' : ''}.pdf`)
+        : join(OUT_DIR, `${section.id}${DARK ? '-dark' : ''}.pdf`);
       console.log(`[pdf] ${section.label} (${section.id}) → ${filename}`);
 
       const buffers = [];
@@ -384,7 +430,16 @@ async function main() {
   console.log(`[pdf] Done. PDFs in ${OUT_DIR}`);
 
   if (COMBINED) {
-    await buildCombinedPdf({ sections: targets, groups, writtenFiles, dark: DARK });
+    await buildCombinedPdf({ sections: targets, groups, writtenFiles, dark: DARK, cheatsheetsOnly: CHEATSHEETS_ONLY });
+  }
+
+  if (CHEATSHEETS_ONLY) {
+    // Clean up the temp per-section captures now that they're stitched into
+    // the one real deliverable — dist-pdf/ should only show the combined file.
+    for (const tmpFile of writtenFiles.values()) {
+      await rm(tmpFile, { force: true });
+    }
+    console.log(`[pdf] Cleaned up ${writtenFiles.size} temp per-section capture(s).`);
   }
 }
 
@@ -393,7 +448,7 @@ async function main() {
  * sidebar order (not sections.ts declaration order — see sidebarSectionOrder),
  * with a generated cover page listing the table of contents by group.
  */
-async function buildCombinedPdf({ sections, groups, writtenFiles, dark }) {
+async function buildCombinedPdf({ sections, groups, writtenFiles, dark, cheatsheetsOnly }) {
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
 
   const order = sidebarSectionOrder(groups).filter((id) => writtenFiles.has(id));
@@ -461,7 +516,10 @@ async function buildCombinedPdf({ sections, groups, writtenFiles, dark }) {
 
   let cover = newCoverPage();
   let y = PAGE_H - 90;
-  cover.drawText('Tutorials — Complete Reference', { x: 54, y, size: 22, font, color: titleColor });
+  cover.drawText(
+    cheatsheetsOnly ? 'Tutorials — Cheat Sheets Only' : 'Tutorials — Complete Reference',
+    { x: 54, y, size: 22, font, color: titleColor },
+  );
   y -= 28;
   cover.drawText(new Date().toISOString().slice(0, 10), { x: 54, y, size: 10, font: bodyFont, color: dateColor });
   y -= 36;
@@ -484,7 +542,8 @@ async function buildCombinedPdf({ sections, groups, writtenFiles, dark }) {
     y -= 18;
   }
 
-  const outFile = join(OUT_DIR, `tutorials-complete${dark ? '-dark' : ''}.pdf`);
+  const baseName = cheatsheetsOnly ? 'tutorials-cheatsheets-only' : 'tutorials-complete';
+  const outFile = join(OUT_DIR, `${baseName}${dark ? '-dark' : ''}.pdf`);
   await writeFile(outFile, await combined.save());
   console.log(`[pdf] Combined PDF → ${outFile}`);
 }

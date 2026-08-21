@@ -12,6 +12,8 @@
     "build:pdf": "npm run build && node scripts/build-pdf.mjs",
     "build:pdf:combined": "npm run build && node scripts/build-pdf.mjs --combined",
     "build:pdf:dark": "npm run build && node scripts/build-pdf.mjs --combined --dark",
+    "build:pdf:cheatsheets": "npm run build && node scripts/build-pdf.mjs --cheatsheets",
+    "build:pdf:cheatsheets:dark": "npm run build && node scripts/build-pdf.mjs --cheatsheets --dark",
     "pdf:section": "node scripts/build-pdf.mjs"
   },
   "dependencies": {

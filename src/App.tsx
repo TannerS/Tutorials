@@ -77,6 +77,7 @@ import SqlMultiTenancy from './pages/sql-design-patterns/MultiTenancy'
 // SQL Advanced
 import SqlTransactions from './pages/sql-advanced/Transactions'
 import SqlCte from './pages/sql-advanced/Cte'
+import SqlStoredProcedures from './pages/sql-advanced/StoredProcedures'
 import SqlAdvanced from './pages/sql-advanced/Advanced'
 
 // SQL Field Guide
@@ -126,6 +127,7 @@ import MicroData from './pages/microservices/Data'
 import MicroScaling from './pages/microservices/Scaling'
 import MicroEvents from './pages/microservices/Events'
 import MicroContainers from './pages/microservices/Containers'
+import MicroOpenshift from './pages/microservices/Openshift'
 import MicroMigration from './pages/microservices/Migration'
 
 // Domain-Driven Design
@@ -524,6 +526,7 @@ function App() {
         <Route path="sql-design-patterns/multi-tenancy" element={<SqlMultiTenancy />} />
         <Route path="sql-advanced/transactions" element={<SqlTransactions />} />
         <Route path="sql-advanced/cte" element={<SqlCte />} />
+        <Route path="sql-advanced/stored-procedures" element={<SqlStoredProcedures />} />
         <Route path="sql-advanced/advanced" element={<SqlAdvanced />} />
         <Route path="sql-field-guide/basic-queries" element={<SFGBasicQueries />} />
         <Route path="sql-field-guide/advanced-queries" element={<SFGAdvancedQueries />} />
@@ -567,6 +570,7 @@ function App() {
         <Route path="microservices/scaling" element={<MicroScaling />} />
         <Route path="microservices/events" element={<MicroEvents />} />
         <Route path="microservices/containers" element={<MicroContainers />} />
+        <Route path="microservices/openshift" element={<MicroOpenshift />} />
         <Route path="microservices/migration" element={<MicroMigration />} />
         <Route path="ddd/intro" element={<DddIntro />} />
         <Route path="ddd/strategic" element={<DddStrategic />} />

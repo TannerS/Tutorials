@@ -12,7 +12,7 @@ export default function Containers() {
       sectionId="microservices"
       lessonIndex={6}
       prev={{ path: '/microservices/events', label: 'Event-Driven Architecture' }}
-      next={{ path: '/microservices/migration', label: 'Migration & Decomposition' }}
+      next={{ path: '/microservices/openshift', label: 'OpenShift: Kubernetes for the Enterprise' }}
     >
       <h2>Why Containers?</h2>
       <p>

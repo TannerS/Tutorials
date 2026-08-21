@@ -123,6 +123,7 @@ export const sections: Section[] = [
     lessons: [
       { id: 'transactions', title: 'Transactions & Locking', path: '/sql-advanced/transactions' },
       { id: 'cte', title: 'CTEs & Recursive Queries', path: '/sql-advanced/cte' },
+      { id: 'stored-procedures', title: 'Stored Procedures', path: '/sql-advanced/stored-procedures' },
       { id: 'advanced', title: 'Advanced SQL Patterns', path: '/sql-advanced/advanced' },
     ],
   },
@@ -202,6 +203,7 @@ export const sections: Section[] = [
       { id: 'scaling', title: 'Scaling Strategies', path: '/microservices/scaling' },
       { id: 'events', title: 'Event-Driven Architecture', path: '/microservices/events' },
       { id: 'containers', title: 'Containers & Kubernetes', path: '/microservices/containers' },
+      { id: 'openshift', title: 'OpenShift: Kubernetes for the Enterprise', path: '/microservices/openshift' },
       { id: 'migration', title: 'Migration & Decomposition', path: '/microservices/migration' },
     ],
   },
