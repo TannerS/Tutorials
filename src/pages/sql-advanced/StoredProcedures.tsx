@@ -187,10 +187,45 @@ GRANT EXECUTE ON PROCEDURE transfer_funds(INT, INT, NUMERIC) TO app_role;
 REVOKE ALL ON accounts, transfer_log FROM app_role;`}
         </CodeBlock>
         <p>
-          The procedure itself typically runs with the privileges of whoever defined it
+          To make that work the procedure has to run with the privileges of whoever defined it
           (<code>SECURITY DEFINER</code>), so it can touch the tables it needs to even though the
           calling role can't touch them directly. That's a genuine, narrower attack surface than
-          "the app's DB user can run arbitrary UPDATE against accounts."
+          "the app's DB user can run arbitrary UPDATE against accounts" — but only if you also
+          pin <code>search_path</code>. See the warning below; this is not optional.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="danger" title="SECURITY DEFINER Without SET search_path Is a Privilege-Escalation Bug">
+        <p>
+          A <code>SECURITY DEFINER</code> function runs as its owner but resolves unqualified names
+          using the <em>caller&#39;s</em> <code>search_path</code>. The caller controls that. So a role
+          holding nothing but <code>EXECUTE</code> can create its own schema, put a decoy table in it,
+          put that schema first on its path, and the privileged function will happily read — or write —
+          the attacker&#39;s object instead of yours.
+        </p>
+        <CodeBlock language="sql" title="The Escalation, and the One Line That Stops It">
+{`-- Attacker holds only EXECUTE on the function. They do this:
+CREATE SCHEMA evil;
+CREATE TABLE evil.accounts (id INT, balance NUMERIC);
+INSERT INTO evil.accounts VALUES (1, 999999999);
+SET search_path = evil, public;
+
+CALL some_definer_procedure(1);   -- reads evil.accounts, not app.accounts
+
+-- The fix is one clause on every SECURITY DEFINER routine:
+CREATE OR REPLACE PROCEDURE transfer_funds(...)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = app, pg_temp   -- resolved at definition time, not call time
+AS $$ ... $$;`}
+        </CodeBlock>
+        <p>
+          Always include <code>pg_temp</code> <strong>last</strong>. If a caller can create a temp
+          table that shadows a name your function uses, and <code>pg_temp</code> is searched early,
+          you have the same bug again. And the danger is not limited to tables — the same trick
+          against a shadowed <em>function</em> or <em>operator</em> gives arbitrary code execution as
+          the definer, which is why PostgreSQL&#39;s own documentation treats this as the default
+          hazard of the feature rather than an edge case.
         </p>
       </InfoBox>
 

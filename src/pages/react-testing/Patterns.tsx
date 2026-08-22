@@ -21,7 +21,7 @@ export default function Patterns() {
 
       <CodeBlock language="jsx" title="test-utils.jsx — The All-Providers Wrapper">
 {`import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './ThemeContext';
 import { AuthProvider } from './AuthContext';

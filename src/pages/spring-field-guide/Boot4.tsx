@@ -193,7 +193,7 @@ Boot 4 also moves to Jackson 3 (com.fasterxml.jackson
           { need: 'Avoid vthread pinning (Java 21-23)', answer: 'Keep I/O outside the lock; ReentrantLock over synchronized' },
           { need: 'Avoid vthread pinning (Java 24+)', answer: 'Mostly solved by JEP 491 — only native/JNI frames pin' },
           { need: 'One call, metrics + tracing', answer: 'Observation API' },
-          { need: 'Fork/join with auto-cancel', answer: 'StructuredTaskScope (final in Java 25; preview 21-24)' },
+          { need: 'Fork/join with auto-cancel', answer: 'StructuredTaskScope (still preview: JEP 505 in 25, JEP 525 in 26)' },
           { need: 'Fast cold start', answer: 'GraalVM native image via ./mvnw -Pnative' },
           { need: 'Test double bean', answer: '@MockitoBean — @MockBean was REMOVED in Boot 4' },
         ]}

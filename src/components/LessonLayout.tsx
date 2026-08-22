@@ -1,4 +1,4 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router';
 import { useEffect, useRef, type ReactNode } from 'react';
 import ProgressTracker from './ProgressTracker';
 import { TableOfContents } from './TableOfContents';

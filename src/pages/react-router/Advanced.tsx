@@ -141,7 +141,7 @@ export default defineConfig({
         // Group shared dependencies into stable, long-cached chunks
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
+          'router': ['react-router'],
         },
         // Rename the auto-generated route chunks if the defaults aren't clear
         chunkFileNames: 'assets/[name]-[hash].js',
@@ -175,7 +175,7 @@ export default defineConfig({
       </p>
 
       <CodeBlock language="jsx" title="ScrollRestoration">
-{`import { ScrollRestoration, Outlet } from 'react-router-dom';
+{`import { ScrollRestoration, Outlet } from 'react-router';
 
 function RootLayout() {
   return (
@@ -216,7 +216,7 @@ function RootLayout() {
       </p>
 
       <CodeBlock language="jsx" title="Modal Route Pattern">
-{`import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+{`import { Outlet, useNavigate, useLocation } from 'react-router';
 
 function PhotoGrid() {
   const photos = useLoaderData();
@@ -321,7 +321,7 @@ const router = createBrowserRouter([
 ]);
 
 // Breadcrumb component
-import { useMatches, Link } from 'react-router-dom';
+import { useMatches, Link } from 'react-router';
 
 function Breadcrumbs() {
   const matches = useMatches();
@@ -356,7 +356,7 @@ function Breadcrumbs() {
 
       <h2>Programmatic Navigation Patterns</h2>
       <CodeBlock language="jsx" title="Advanced Navigation">
-{`import { useNavigate, useLocation } from 'react-router-dom';
+{`import { useNavigate, useLocation } from 'react-router';
 
 function useSmartNavigate() {
   const navigate = useNavigate();
@@ -397,7 +397,7 @@ function useSmartNavigate() {
 
       <h2>Route Transition Animations</h2>
       <CodeBlock language="jsx" title="Animated Route Transitions (framer-motion)">
-{`import { useLocation, useOutlet } from 'react-router-dom';
+{`import { useLocation, useOutlet } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 
 function AnimatedLayout() {
@@ -492,7 +492,7 @@ export default {
 
       <h2>Prefetching Routes</h2>
       <CodeBlock language="jsx" title="Prefetch on Hover/Focus">
-{`import { Link } from 'react-router-dom';
+{`import { Link } from 'react-router';
 
 // In framework mode, Link supports prefetch
 <Link to="/dashboard" prefetch="intent">

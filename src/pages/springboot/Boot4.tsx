@@ -231,14 +231,20 @@ public class OrderEnrichmentService {
     }
 }`}
       </CodeBlock>
-      <InfoBox variant="warning" title="This API was restructured in Java 25">
+      <InfoBox variant="warning" title="This API was restructured in Java 25 — and is still preview">
         <p>
           The <code>ShutdownOnFailure</code> subclass form above is the Java 21&ndash;24 preview
-          API and requires <code>--enable-preview</code>. Java 25 finalised{' '}
-          <code>StructuredTaskScope</code> with a different shape:{' '}
+          API. Java 25 <em>reshaped</em> — but did not finalise —{' '}
+          <code>StructuredTaskScope</code> into a different form:{' '}
           <code>StructuredTaskScope.open(Joiner.allSuccessfulOrThrow())</code>, where{' '}
           <code>join()</code> returns the result and throws on failure. If your service targets
           Java 25 use that form — see the Java Concurrency lesson for both side by side.
+        </p>
+        <p>
+          Either way you still need <code>--enable-preview</code> at compile <em>and</em> run time:
+          structured concurrency was JEP 505 (fifth preview) in Java 25 and is JEP 525 (sixth
+          preview) in Java 26, with finalisation expected in 27. The API that genuinely finalised in
+          25 is <code>ScopedValue</code> (JEP 506) — the two are easy to conflate.
         </p>
       </InfoBox>
 

@@ -261,6 +261,7 @@ enum Status { Active }
         language="typescript"
         code={`{
   "compilerOptions": {
+    // baseUrl: removed in TS 7 — omit it and make "paths" root-relative
     "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] }
   }

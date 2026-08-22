@@ -239,13 +239,17 @@ WHERE created_at::date = DATE '2024-06-01'
 WHERE name LIKE '%foo'               -- no prefix to seek to
 
 -- ✅ leave the column bare, or index the expression itself
-WHERE email = lower('a@x.com')
 WHERE created_at >= '2024-06-01' AND created_at < '2024-06-02'
-CREATE INDEX ON users (lower(email));
+CREATE INDEX ON users (lower(email));   -- keeps lower(email) = ... seekable
+
+-- ⚠️ NOT a rewrite of the first line: email = lower('a@x.com') is a
+--    DIFFERENT QUERY. It only matches rows already stored lowercase,
+--    so on mixed-case data it silently returns fewer rows. Index the
+--    expression instead, or normalise on write and drop lower() entirely.
 
 -- Type mismatch does it implicitly: a bigint column compared to a
 -- numeric parameter gets the cast applied on the COLUMN side.`}
-        caption="Postgres is cost-based, never rule-based — it never asks 'is there an index?', it prices every plan. So 'my index isn't used' has three answers: the predicate isn't sargable, the row estimate is wrong (ANALYZE, or raise SET STATISTICS), or a seq scan genuinely wins past roughly 5-10% selectivity. The tell is a Filter line where you expected an Index Cond."
+        caption="Moving a function off the column only works when the two queries mean the same thing — lower(email) = 'a@x.com' and email = lower('a@x.com') do not, so that one needs the expression index, not a rewrite. Postgres is cost-based, never rule-based — it never asks 'is there an index?', it prices every plan. So 'my index isn't used' has three answers: the predicate isn't sargable, the row estimate is wrong (ANALYZE, or raise SET STATISTICS), or a seq scan genuinely wins past roughly 5-10% selectivity. The tell is a Filter line where you expected an Index Cond."
       />
 
       <PosterQuickRef

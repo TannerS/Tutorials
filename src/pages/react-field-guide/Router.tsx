@@ -269,7 +269,7 @@ useNavigate   Navigation triggered by code, not a click:
       <PosterCard
         glyph="TS"
         title={<>Typing Loader Data</>}
-        code={`import type { LoaderFunctionArgs } from 'react-router-dom';
+        code={`import type { LoaderFunctionArgs } from 'react-router';
 
 export async function loader({ params }: LoaderFunctionArgs): Promise<Product> {
   return getProduct(params.id!); // safe — loader only runs when the route matches

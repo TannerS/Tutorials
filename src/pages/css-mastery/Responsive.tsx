@@ -348,7 +348,10 @@ h2 {
 p {
   /* Body text: subtle scaling, narrow range */
   font-size: clamp(1rem, 0.925rem + 0.5vw, 1.25rem);
-  line-height: clamp(1.5, 1.4 + 0.3vw, 1.8);
+  /* Unitless line-height can't be clamped: 1.4 + 0.3vw adds a <number>
+     to a <length>, which is invalid math, so the whole declaration is
+     dropped and you silently fall back to normal. Use em throughout. */
+  line-height: clamp(1.5em, 1.4em + 0.3vw, 1.8em);
 }
 
 /* Full responsive type scale */

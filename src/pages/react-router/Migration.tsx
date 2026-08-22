@@ -30,7 +30,7 @@ export default function Migration() {
       <h3>1. Switch → Routes</h3>
       <CodeBlock language="jsx" title="Before (v5) → After (v6)">
 {`// ❌ v5 — Switch renders the first matching Route
-import { Switch, Route } from 'react-router-dom';
+import { Switch, Route } from 'react-router';
 
 <Switch>
   <Route exact path="/" component={Home} />
@@ -39,7 +39,7 @@ import { Switch, Route } from 'react-router-dom';
 </Switch>
 
 // ✅ v6 — Routes replaces Switch, element replaces component
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router';
 
 <Routes>
   <Route path="/" element={<Home />} />
@@ -69,7 +69,7 @@ import { Routes, Route } from 'react-router-dom';
       <h3>3. useHistory → useNavigate</h3>
       <CodeBlock language="jsx" title="Navigation Hook Migration">
 {`// ❌ v5 — useHistory
-import { useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router';
 
 function MyComponent() {
   const history = useHistory();
@@ -81,7 +81,7 @@ function MyComponent() {
 }
 
 // ✅ v6 — useNavigate
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 function MyComponent() {
   const navigate = useNavigate();
@@ -112,7 +112,7 @@ function MyComponent() {
       <h3>5. Redirect → Navigate</h3>
       <CodeBlock language="jsx" title="Redirect Component Migration">
 {`// ❌ v5 — Redirect component
-import { Redirect } from 'react-router-dom';
+import { Redirect } from 'react-router';
 
 <Route path="/old-page">
   <Redirect to="/new-page" />
@@ -122,7 +122,7 @@ import { Redirect } from 'react-router-dom';
 {!isLoggedIn && <Redirect to="/login" />}
 
 // ✅ v6 — Navigate component
-import { Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router';
 
 <Route path="/old-page" element={<Navigate to="/new-page" replace />} />
 
@@ -222,7 +222,7 @@ function DashboardLayout() {
 
       <CodeBlock language="jsx" title="v6 → v7: the removed APIs">
 {`// ❌ v6.4–v6.x — all three are GONE in v7
-import { defer, json } from 'react-router-dom';
+import { defer, json } from 'react-router';
 
 export async function loader() {
   return defer({ reviews: fetchReviews() });     // TypeError in v7
@@ -237,7 +237,7 @@ export async function loader() {
   return { reviews: fetchReviews() };            // bare promise, still works with <Await>
 }
 
-import { data } from 'react-router-dom';
+import { data } from 'react-router';
 export async function action() {
   return { ok: true };                           // plain object for a normal 200
   // ...or when you need a status/headers:
@@ -251,7 +251,7 @@ export async function action() {
       <h3>Adopting createBrowserRouter</h3>
       <CodeBlock language="jsx" title="v6 JSX Router → v7 Config Router">
 {`// v6 — JSX-based routing (still works in v7)
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router';
 
 function App() {
   return (
@@ -265,7 +265,8 @@ function App() {
 }
 
 // v7 — Config-based routing (unlocks data APIs)
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 
 const router = createBrowserRouter([
   { path: '/', element: <Home />, loader: homeLoader },
@@ -317,7 +318,9 @@ function UserList() {
       <CodeBlock language="jsx" title="Recommended Migration Order">
 {`/*
 Phase 1 — Syntax Migration (v5 → v6 compat)
-  1. Install react-router-dom@latest
+  1. Install react-router@latest
+     (v5/v6 shipped as react-router-dom; v7 folded it into
+      react-router and v8 removes the old package outright)
   2. Replace <Switch> with <Routes>
   3. Replace component/render props with element
   4. Replace useHistory with useNavigate

@@ -318,8 +318,12 @@ Execution Time: 62.104 ms`}
           <strong>The predicate isn&apos;t sargable.</strong> Wrapping the indexed column in a
           function or a cast hides it: <code>WHERE lower(email) = ...</code> cannot use an index on{' '}
           <code>email</code>, and <code>WHERE created_at::date = ...</code> cannot use one on{' '}
-          <code>created_at</code>. Rewrite the predicate as a range on the bare column, or build the
-          matching expression index. Leading-wildcard <code>LIKE &apos;%foo&apos;</code> is the same
+          <code>created_at</code>. The two cases take different remedies, and they are not
+          interchangeable: a date/timestamp comparison rewrites cleanly into a range on the bare
+          column (<code>created_at &gt;= &apos;2024-06-01&apos; AND created_at &lt; &apos;2024-06-02&apos;</code>),
+          but <code>lower(email)</code> does <em>not</em> — moving the function to the literal gives you
+          a case-sensitive query that returns different rows, so that one needs an expression index
+          (<code>CREATE INDEX ON users (lower(email))</code>). Leading-wildcard <code>LIKE &apos;%foo&apos;</code> is the same
           problem: a B-tree is sorted by prefix, so there is no prefix to seek to.
         </p>
         <p>

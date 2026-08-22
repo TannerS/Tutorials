@@ -15,27 +15,52 @@ export default function Intro() {
     >
       <p>
         React Router v7 is a full-featured routing library for React that handles
-        URL-based navigation, nested layouts, data loading, and form handling. It
-        ships as <code>react-router</code> (core) and <code>react-router-dom</code>{' '}
-        (web bindings). v7 unifies the best ideas from Remix into the React Router
-        API, giving you loaders, actions, and framework-level conventions right out
-        of the box.
+        URL-based navigation, nested layouts, data loading, and form handling. As of
+        v7 it ships as a single package, <code>react-router</code>, with the small
+        set of DOM-specific entry points under <code>react-router/dom</code>. v7
+        unifies the best ideas from Remix into the React Router API, giving you
+        loaders, actions, and framework-level conventions right out of the box.
       </p>
 
       <h2>Installation</h2>
       <CodeBlock language="bash" title="Install React Router v7">
-{`# New project — install the unified package
-npm install react-router react-router-dom
+{`# New project — one package
+npm install react-router
 
 # If upgrading from v6
-npm install react-router@latest react-router-dom@latest`}
+npm install react-router@latest`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="v7 Package Structure">
-        In v7, <code>react-router-dom</code> re-exports everything from{' '}
-        <code>react-router</code>. You can import all hooks, components, and
-        utilities from <code>react-router-dom</code> directly — no need to import
-        from both packages.
+      <InfoBox variant="warning" title="Do Not Reach for react-router-dom">
+        <p>
+          You will see <code>react-router-dom</code> in almost every tutorial written
+          before 2025, and it still installs today — but in v7 it is nothing more than
+          a compatibility shim to ease the v6 upgrade. Its entire published source is
+          three lines: re-export everything from <code>react-router</code>, plus{' '}
+          <code>RouterProvider</code> and <code>HydratedRouter</code> from{' '}
+          <code>react-router/dom</code>.
+        </p>
+        <p>
+          <strong>React Router v8 removes the package entirely</strong>, so anything
+          you write against it today is code you will have to rewrite. Import from{' '}
+          <code>react-router</code>, and reach for <code>react-router/dom</code> only
+          for <code>RouterProvider</code> and <code>HydratedRouter</code>. Every
+          example in this section follows that rule.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="note" title="Where v7 Sits Now">
+        <p>
+          v8 shipped in June 2026. It is ESM-only, drops{' '}
+          <code>react-router-dom</code>, renames <code>data</code> to{' '}
+          <code>loaderData</code> in <code>meta</code>/<code>matches</code>/
+          <code>useMatches</code>, promotes middleware out of{' '}
+          <code>future.v8_middleware</code> to a default, and raises the floors to
+          Node 22.22+, React 19.2.7+ and Vite 7+. v7 is now the security-only branch
+          and <strong>v6 is end-of-life</strong>. This section teaches v7 because that
+          is what is pinned here — the import style above is the same in both, which
+          is most of the migration.
+        </p>
       </InfoBox>
 
       <h2>Two Ways to Define Routes</h2>
@@ -48,7 +73,7 @@ npm install react-router@latest react-router-dom@latest`}
 
       <h3>JSX-Based (Classic)</h3>
       <CodeBlock language="jsx" title="BrowserRouter + Routes (basic)">
-{`import { BrowserRouter, Routes, Route } from 'react-router-dom';
+{`import { BrowserRouter, Routes, Route } from 'react-router';
 
 function App() {
   return (
@@ -66,10 +91,8 @@ function App() {
 
       <h3>Config-Based (Recommended for v7)</h3>
       <CodeBlock language="jsx" title="createBrowserRouter + RouterProvider">
-{`import {
-  createBrowserRouter,
-  RouterProvider,
-} from 'react-router-dom';
+{`import { createBrowserRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 
 const router = createBrowserRouter([
   {
@@ -147,7 +170,7 @@ function App() {
 
       <h3>Link vs NavLink</h3>
       <CodeBlock language="jsx" title="Link and NavLink">
-{`import { Link, NavLink } from 'react-router-dom';
+{`import { Link, NavLink } from 'react-router';
 
 // Basic link — renders an <a> tag, prevents full-page reload
 <Link to="/dashboard">Dashboard</Link>
@@ -190,7 +213,7 @@ function App() {
 
       <h3>useNavigate — Programmatic Navigation</h3>
       <CodeBlock language="jsx" title="useNavigate">
-{`import { useNavigate } from 'react-router-dom';
+{`import { useNavigate } from 'react-router';
 
 function LoginForm() {
   const navigate = useNavigate();
@@ -220,7 +243,7 @@ function LoginForm() {
 
       <h3>useParams — Read URL Parameters</h3>
       <CodeBlock language="jsx" title="useParams">
-{`import { useParams } from 'react-router-dom';
+{`import { useParams } from 'react-router';
 
 // Route: /users/:userId/posts/:postId
 function PostDetail() {
@@ -232,7 +255,7 @@ function PostDetail() {
 
       <h3>useSearchParams — Query String Management</h3>
       <CodeBlock language="jsx" title="useSearchParams">
-{`import { useSearchParams } from 'react-router-dom';
+{`import { useSearchParams } from 'react-router';
 
 function ProductList() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -264,7 +287,7 @@ function ProductList() {
 
       <h3>useLocation — Access Current Location</h3>
       <CodeBlock language="jsx" title="useLocation">
-{`import { useLocation } from 'react-router-dom';
+{`import { useLocation } from 'react-router';
 
 function Breadcrumb() {
   const location = useLocation();
@@ -280,7 +303,8 @@ function Breadcrumb() {
 
       <h2>Putting It All Together</h2>
       <CodeBlock language="jsx" title="Complete App Setup (v7 Config-Based)">
-{`import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+{`import { createBrowserRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 import RootLayout from './layouts/RootLayout';
 import Home from './pages/Home';
 import About from './pages/About';

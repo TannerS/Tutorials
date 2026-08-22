@@ -21,7 +21,8 @@ export default function CheatSheet() {
       ══════════════════════════════════════════════ */}
       <h2>Router Setup</h2>
       <CodeBlock language="jsx" title="createBrowserRouter + RouterProvider (recommended)">
-{`import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+{`import { createBrowserRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 
 const router = createBrowserRouter([
   {
@@ -111,7 +112,7 @@ index: true      → matches parent's exact path (replaces '' for index routes)
 }
 
 // In every layout component — renders the matched child route
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 function ShopLayout() {
   return (
     <div>
@@ -189,7 +190,7 @@ export async function action({ request, params }) {
 }
 
 // In the component — <Form> wires to the route's action automatically
-import { Form, useActionData } from 'react-router-dom';
+import { Form, useActionData } from 'react-router';
 
 export default function NewProduct() {
   const result = useActionData();          // what action() returned (if anything)
@@ -529,7 +530,7 @@ const from = location.state?.from ?? '/';
 // useFetcher submits to any route's action WITHOUT changing the URL.
 // Use it for: like buttons, inline edits, delete from a list, notifications.
 
-import { useFetcher } from 'react-router-dom';
+import { useFetcher } from 'react-router';
 
 function LikeButton({ postId, liked }) {
   const fetcher = useFetcher();
@@ -627,7 +628,7 @@ Track global navigation state (loading bar)   useNavigation().state`}
 
 // To force the current route's loaders to re-run — e.g. a "Refresh" button,
 // or after a mutation that did NOT go through an action:
-import { useRevalidator } from 'react-router-dom';
+import { useRevalidator } from 'react-router';
 
 function RefreshButton() {
   const revalidator = useRevalidator();
@@ -682,7 +683,7 @@ export async function loader({ request, params }) {
 }`}
       </CodeBlock>
       <CodeBlock language="tsx" title="TypeScript">
-{`import type { LoaderFunctionArgs } from 'react-router-dom';
+{`import type { LoaderFunctionArgs } from 'react-router';
 import type { ProductsResult } from '../mockApi';
 
 // LoaderFunctionArgs types both request and params
@@ -831,7 +832,7 @@ const from = (location.state as { from?: string } | null)?.from ?? '/';`}
 }`}
       </CodeBlock>
       <CodeBlock language="tsx" title="TypeScript">
-{`import type { RouteObject } from 'react-router-dom';
+{`import type { RouteObject } from 'react-router';
 
 // RouteObject types the entire route config — optional but helpful for large apps
 const routes: RouteObject[] = [
@@ -850,12 +851,12 @@ const routes: RouteObject[] = [
 
       <h3>Summary — Key TypeScript Imports</h3>
       <CodeBlock language="tsx" title="TypeScript — all the types you'll use">
-{`// From react-router-dom (no @types/ package needed)
+{`// From react-router (no @types/ package needed)
 import type {
   LoaderFunctionArgs,   // type for loader({ request, params })
   ActionFunctionArgs,   // type for action({ request, params })
   RouteObject,          // type for the route config array
-} from 'react-router-dom';
+} from 'react-router';
 
 // Pattern: derive loader data type from the loader itself
 type LoaderData = Awaited<ReturnType<typeof loader>>;
@@ -888,7 +889,8 @@ React.MouseEvent<HTMLButtonElement>     // onClick on button`}
       </p>
       <CodeBlock language="tsx" title="createMemoryRouter — the standard test harness">
 {`import { render, screen } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { createMemoryRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 
 test('renders product list from loader data', async () => {
   const router = createMemoryRouter(

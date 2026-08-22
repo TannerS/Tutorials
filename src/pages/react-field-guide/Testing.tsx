@@ -129,7 +129,7 @@ screen.getByRole('alert');`}
       <PosterCard
         glyph="Rt"
         title="Testing React Router"
-        code={`import { MemoryRouter } from 'react-router-dom';
+        code={`import { MemoryRouter } from 'react-router';
 
 render(
   <MemoryRouter initialEntries={['/users/42']}>

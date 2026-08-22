@@ -577,8 +577,10 @@ public class VirtualThreads {
         <p>
           For production applications, use a Long-Term Support (LTS) release.{' '}
           <strong>Java 25 is the current LTS</strong> and the right default for anything new: it
-          brings stable <code>ScopedValue</code>, finalised structured concurrency, module import
-          declarations, and compact source files, on top of everything below. Java 21 remains a
+          brings stable <code>ScopedValue</code> (JEP 506), module import declarations, and compact
+          source files, on top of everything below. Structured concurrency is <em>not</em> finalised
+          — it is still preview in 25 (JEP 505) and 26 (JEP 525, sixth preview), so it needs
+          <code>--enable-preview</code> at both compile and run time. Java 21 remains a
           perfectly good target if your platform or vendor has not certified 25 yet — it already
           has virtual threads, pattern matching in switch, record patterns, and sequenced
           collections. Java 17 is the floor for existing services: records, sealed classes, text

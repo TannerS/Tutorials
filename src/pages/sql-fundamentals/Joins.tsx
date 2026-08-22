@@ -235,21 +235,39 @@ SELECT customer_id FROM orders;`}
       <CodeBlock language="sql" title="The practical use: diffing two tables" showLineNumbers={true}>
 {`-- "What changed between the staging table and production?"
 -- Rows that differ in EITHER direction, labelled.
+-- NOTE: EXCEPT ALL, not EXCEPT — see the warning below.
 (SELECT 'only_in_new' AS side, * FROM staging_products
- EXCEPT
+ EXCEPT ALL
  SELECT 'only_in_new', * FROM products)
 UNION ALL
 (SELECT 'only_in_old' AS side, * FROM products
- EXCEPT
+ EXCEPT ALL
  SELECT 'only_in_old', * FROM staging_products);
 
--- Verifying a migration produced identical data: this should return 0 rows.
+-- Verifying a migration produced identical data: this should report 0.
 SELECT count(*) FROM (
-  (SELECT * FROM old_table EXCEPT SELECT * FROM new_table)
+  (SELECT * FROM old_table EXCEPT ALL SELECT * FROM new_table)
   UNION ALL
-  (SELECT * FROM new_table EXCEPT SELECT * FROM old_table)
+  (SELECT * FROM new_table EXCEPT ALL SELECT * FROM old_table)
 ) diff;`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="Use EXCEPT ALL for Diffs — Plain EXCEPT Reports Clean on Dirty Data">
+        <p>
+          <code>EXCEPT</code> deduplicates before comparing, so it cannot see a difference in how
+          many times a row appears. Given <code>old_table</code> = <code>(1,&apos;a&apos;), (1,&apos;a&apos;), (2,&apos;b&apos;)</code>
+          and <code>new_table</code> = <code>(1,&apos;a&apos;), (2,&apos;b&apos;)</code> — three rows versus two,
+          demonstrably not identical — the plain <code>EXCEPT</code> version returns <strong>0</strong>
+          and declares the migration clean. <code>EXCEPT ALL</code> returns 1 and correctly flags it.
+        </p>
+        <p>
+          A verification query that passes on data it should reject is worse than no verification at
+          all, because it is the thing you point at when someone asks whether the migration was
+          checked. Reach for <code>EXCEPT ALL</code> any time the question is &quot;are these two
+          result sets the same&quot;, and keep plain <code>EXCEPT</code> for genuine set subtraction
+          where duplicates are noise.
+        </p>
+      </InfoBox>
 
       <h2>JOIN vs Subquery — When to Use Each</h2>
 
@@ -265,7 +283,7 @@ SELECT count(*) FROM (
       <InfoBox variant="danger" title="Mistakes That Will Ruin Your Data">
         <p><strong>Missing ON clause → Cartesian product:</strong> If you accidentally write <code>FROM a, b</code> without a WHERE or use <code>CROSS JOIN</code> unintentionally, you get every possible row combination. A 10K × 10K table produces 100M rows.</p>
         <p><strong>Joining on wrong column:</strong> <code>ON a.id = b.id</code> when you meant <code>ON a.id = b.a_id</code>. Always double-check join conditions.</p>
-        <p><strong>Duplicate rows from 1:N joins:</strong> Joining orders to order_items multiplies your order rows. If you then SUM(order.total), you get inflated numbers. Aggregate before joining or use DISTINCT.</p>
+        <p><strong>Duplicate rows from 1:N joins:</strong> Joining orders to order_items multiplies your order rows. If you then SUM(order.total), you get inflated numbers. <strong>Aggregate before joining</strong> — and note that <code>DISTINCT</code> is <em>not</em> an alternative fix here. Two different orders that happen to share a total are collapsed into one by <code>SUM(DISTINCT total)</code>, which trades a visible 3&times; overcount for a silent undercount. With one customer holding two &#36;100 orders: the truth is 200, the buggy join gives 600, and the <code>DISTINCT</code> &quot;fix&quot; gives 100.</p>
         <p><strong>NULL in join columns:</strong> <code>NULL = NULL</code> is <code>UNKNOWN</code> in SQL, not <code>TRUE</code>. Rows with NULL join keys never match in an INNER or LEFT JOIN ON clause. Postgres's <code>IS NOT DISTINCT FROM</code> treats NULLs as equal if you actually need that.</p>
       </InfoBox>
 

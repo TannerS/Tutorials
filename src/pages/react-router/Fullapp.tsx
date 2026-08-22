@@ -33,7 +33,7 @@ export default function Fullapp() {
       </p>
 
       <CodeBlock language="jsx" title="layouts/RootLayout.jsx">
-{`import { Outlet, NavLink, ScrollRestoration, useNavigation } from 'react-router-dom';
+{`import { Outlet, NavLink, ScrollRestoration, useNavigation } from 'react-router';
 
 export default function RootLayout() {
   const navigation = useNavigation();
@@ -100,7 +100,7 @@ export default function Pricing() {
 
       <h2>Step 3: Auth Routes</h2>
       <CodeBlock language="jsx" title="pages/Login.jsx (with action)">
-{`import { Form, useActionData, useNavigation, redirect } from 'react-router-dom';
+{`import { Form, useActionData, useNavigation, redirect } from 'react-router';
 
 export async function action({ request }) {
   const formData = await request.formData();
@@ -146,7 +146,7 @@ export default function Login() {
 
       <h2>Step 4: Protected Route Wrapper</h2>
       <CodeBlock language="jsx" title="components/ProtectedRoute.jsx">
-{`import { redirect } from 'react-router-dom';
+{`import { redirect } from 'react-router';
 
 // Use as a loader guard — prevents render entirely
 export function requireAuth({ request }) {
@@ -173,7 +173,7 @@ export function requireAuth({ request }) {
 
       <h2>Step 5: Dashboard Layout with Sidebar</h2>
       <CodeBlock language="jsx" title="layouts/DashboardLayout.jsx">
-{`import { Outlet, NavLink, useNavigation } from 'react-router-dom';
+{`import { Outlet, NavLink, useNavigation } from 'react-router';
 
 export default function DashboardLayout() {
   const navigation = useNavigation();
@@ -277,7 +277,7 @@ export default function UserDetail() {
 
       <h2>Step 7: Error Boundaries</h2>
       <CodeBlock language="jsx" title="Error Boundaries per Section">
-{`import { useRouteError, isRouteErrorResponse, Link } from 'react-router-dom';
+{`import { useRouteError, isRouteErrorResponse, Link } from 'react-router';
 
 // Root-level error boundary
 export function RootError() {
@@ -332,7 +332,7 @@ export function NotFound() {
       </p>
 
       <CodeBlock language="jsx" title="router.jsx — Complete Configuration">
-{`import { createBrowserRouter } from 'react-router-dom';
+{`import { createBrowserRouter } from 'react-router';
 import RootLayout from './layouts/RootLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 import { requireAuth } from './components/ProtectedRoute';
@@ -398,7 +398,7 @@ export const router = createBrowserRouter([
       <CodeBlock language="jsx" title="main.jsx">
 {`import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { RouterProvider } from 'react-router-dom';
+import { RouterProvider } from 'react-router/dom';
 import { router } from './router';
 
 createRoot(document.getElementById('root')).render(
@@ -486,7 +486,7 @@ src/
 
       <h2>Loading States with useNavigation</h2>
       <CodeBlock language="jsx" title="Global and Local Loading Indicators">
-{`import { useNavigation } from 'react-router-dom';
+{`import { useNavigation } from 'react-router';
 
 // Global loading bar (in RootLayout)
 function GlobalLoadingBar() {

@@ -96,6 +96,11 @@ export default function Gateway() {
           - remove: "x-user-id"
           - remove: "x-user-roles"
           - remove: "x-session-id"
+          # Envoy does NOT sanitize these from an untrusted downstream
+          # (CVE-2023-27487). If the auth service reads them to decide what
+          # it is authorizing, a client can just claim a different route.
+          - remove: "x-envoy-original-path"
+          - remove: "x-envoy-original-method"
 
   - name: envoy.filters.http.ext_authz
     typed_config:
@@ -107,6 +112,11 @@ export default function Gateway() {
           uri: http://auth-service.internal:9191/authorize
           cluster: auth_service_cluster
           timeout: 0.25s
+        # With http_service, server_uri supplies ONLY host/cluster/timeout.
+        # The check request keeps the ORIGINAL path unless you set this, so
+        # without it the auth service is called at /api/orders, 404s, and
+        # every request is denied. The prefix is PREPENDED, not substituted.
+        path_prefix: /authorize
         authorization_request:
           headers_to_add:
             - key: x-forwarded-proto
@@ -151,7 +161,7 @@ const app = express();
 const SESSION_TTL_SECONDS = 900; // 15 min idle timeout
 
 // Envoy calls this on EVERY request that hits the edge listener
-app.all('/authorize', async (req, res) => {
+app.all('/authorize/*', async (req, res) => {
   const cookies = cookie.parse(req.headers['cookie'] || '');
   const token = cookies.session;
 
@@ -165,9 +175,12 @@ app.all('/authorize', async (req, res) => {
     return res.status(401).end();
   }
 
-  // Route the auth check knows about via the original request Envoy saw
-  const path = req.headers['x-envoy-original-path'] || req.path;
-  const method = req.headers['x-envoy-original-method'] || req.method;
+  // The route being authorized comes from Envoy's own check-request path
+  // (path_prefix + the original path), NOT from a header. Any x-envoy-*
+  // header here is client-controllable and would let a caller authorize
+  // /api/public while actually requesting /api/admin/users.
+  const path = req.path.replace(/^\/authorize/, '') || '/';
+  const method = req.method;
   const roles = JSON.parse(session.roles);
 
   if (!isAuthorized(roles, method, path)) {
@@ -192,6 +205,24 @@ function isAuthorized(roles, method, path) {
 
 app.listen(9191);`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="Never Read the Thing You Are Authorizing From a Client Header">
+        <p>
+          The subtle version of this bug: the auth service correctly checks the <em>session</em>, then
+          decides <strong>what it is authorizing</strong> by reading <code>x-envoy-original-path</code>.
+          Envoy does not sanitize that header coming from an untrusted downstream — that is
+          CVE-2023-27487. A caller sends <code>x-envoy-original-path: /api/public</code> while actually
+          requesting <code>/api/admin/users</code>, the <code>startsWith(&#39;/api/admin&#39;)</code> check
+          evaluates the attacker&#39;s string, and the request sails through with an admin route and a
+          non-admin session.
+        </p>
+        <p>
+          The authenticated identity and the resource being authorized must <em>both</em> come from
+          somewhere the client cannot write. Here that means Envoy&#39;s own check-request path via
+          <code>path_prefix</code>, plus stripping the <code>x-envoy-*</code> headers at the edge so a
+          future refactor cannot quietly reintroduce the dependency.
+        </p>
+      </InfoBox>
 
       <h2>Login &amp; Logout: Owning the Session Store</h2>
 

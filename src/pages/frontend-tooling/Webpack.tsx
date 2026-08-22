@@ -125,8 +125,11 @@ Verbose runtime error messages       React strips dev-only warnings`}
       </p>
 
       <CodeBlock language="bash" title="Install">
-{`npm install --save-dev webpack webpack-cli webpack-dev-server \\
-  html-webpack-plugin style-loader css-loader ts-loader typescript`}
+{`# Pin TypeScript to 5.x: ts-loader cannot drive the TypeScript 7 native
+# compiler, and an unpinned install resolves 7.x today — you get
+# "Cannot read properties of undefined (reading 'fileExists')" at build.
+npm install --save-dev webpack@5 webpack-cli webpack-dev-server \\
+  html-webpack-plugin style-loader css-loader ts-loader typescript@5`}
       </CodeBlock>
 
       <CodeBlock language="javascript" title="webpack.config.js">
@@ -275,11 +278,21 @@ webpack 5.109.2 compiled successfully in 605 ms`}
 {`<i> [webpack-dev-server] Project is running at:
 <i> [webpack-dev-server] Loopback: http://localhost:3000/, http://[::1]:3000/
 <i> [webpack-dev-server] Content not from webpack is served from './dist' directory
-asset vendors.js 3.24 MiB [emitted] (name: vendors)
-asset main.js 70.1 KiB [emitted] (name: main)
-asset about.js 2.03 KiB [emitted] (name: about)
+asset main.js 3.3 MiB [emitted] (name: main)
 webpack 5.109.2 compiled successfully in 605 ms`}
       </CodeBlock>
+
+      <InfoBox variant="note" title="One Bundle, For Now">
+        <p>
+          A single 3.3 MiB <code>main.js</code> is the correct output at this stage — the config
+          above has no <code>splitChunks</code> and no dynamic <code>import()</code>, so webpack has
+          no reason to emit anything else. It is large because development mode skips minification
+          and inlines full source maps. The <a href="/frontend-tooling/webpack">code-splitting
+          section further down</a> is what turns this into separate{' '}
+          <code>vendors</code>/<code>main</code>/<code>about</code> chunks; if you see three assets
+          here, you have already applied it.
+        </p>
+      </InfoBox>
 
       <p>
         A <code>curl http://localhost:3000/</code> against it while running returns a real{' '}

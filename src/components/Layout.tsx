@@ -1,4 +1,4 @@
-import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, Link, useNavigate } from 'react-router';
 import { useRef, useEffect, useState, useCallback, useMemo, useSyncExternalStore } from 'react';
 import Sidebar from './Sidebar';
 import { sections } from '../data/sections';

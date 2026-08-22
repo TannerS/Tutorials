@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router';
 import { useState, useEffect } from 'react';
 import { sections, groups } from '../data/sections';
 import type { Group, Section } from '../data/types';

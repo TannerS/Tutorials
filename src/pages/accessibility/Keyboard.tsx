@@ -75,7 +75,7 @@ function Keyboard() {
 
       <CodeBlock language="jsx" title="Focus on Route Change in React">
 {`import { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 function useRouteAnnouncer() {
   const location = useLocation();

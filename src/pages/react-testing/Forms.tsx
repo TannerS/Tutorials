@@ -387,7 +387,7 @@ test('rejects files over size limit', async () => {
 
       <CodeBlock language="jsx" title="Testing Route Rendering with MemoryRouter">
 {`import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import App from './App';
 
 test('renders home page at /', () => {
@@ -421,7 +421,7 @@ test('renders 404 for unknown routes', () => {
       <CodeBlock language="jsx" title="Testing Navigation">
 {`import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import App from './App';
 
 test('navigates to about page when link is clicked', async () => {
@@ -440,7 +440,7 @@ test('navigates to about page when link is clicked', async () => {
 
       <CodeBlock language="jsx" title="Testing Route Params and Query Strings">
 {`import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import UserPage from './UserPage';
 
 test('renders user page with route params', () => {
@@ -469,7 +469,7 @@ test('reads query string parameters', () => {
 
       <CodeBlock language="jsx" title="Testing Redirects">
 {`import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import App from './App';
 
 test('redirects unauthenticated users to login', () => {
@@ -490,7 +490,7 @@ test('redirects unauthenticated users to login', () => {
         options={[
           "BrowserRouter with a manually set URL",
           "MemoryRouter with initialEntries matching the route pattern",
-          "StaticRouter from react-router-dom/server",
+          "StaticRouter from react-router/dom",
           "Just mock useParams with jest.mock()"
         ]}
         correctIndex={1}
@@ -503,7 +503,7 @@ test('redirects unauthenticated users to login', () => {
       <CodeBlock language="jsx" title="LoginForm.test.jsx — Validation + Submit + Redirect">
 {`import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import App from './App';
 
 const renderLogin = () =>
@@ -581,7 +581,8 @@ describe('LoginForm', () => {
           through <code>RouterProvider</code>:
         </p>
         <CodeBlock language="jsx" title="Testing a route that has a loader">
-          {`import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+          {`import { createMemoryRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 
 const router = createMemoryRouter(
   [{ path: '/users/:id', element: <UserPage />, loader: userLoader }],

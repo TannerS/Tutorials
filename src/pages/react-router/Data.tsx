@@ -37,7 +37,7 @@ export default function Data() {
 
       <CodeBlock language="jsx" title="Basic Loader">
 {`// routes/UserProfile.jsx
-import { useLoaderData } from 'react-router-dom';
+import { useLoaderData } from 'react-router';
 
 // Loader runs before the component renders.
 //   params  — the :placeholders from the matched path, e.g. { userId: '42' }
@@ -102,7 +102,7 @@ const router = createBrowserRouter([
       </p>
 
       <CodeBlock language="jsx" title="Action Function + Form">
-{`import { Form, useActionData, redirect } from 'react-router-dom';
+{`import { Form, useActionData, redirect } from 'react-router';
 
 // Action receives the form data
 export async function action({ request, params }) {
@@ -197,7 +197,7 @@ export default function EditUser() {
       </p>
 
       <CodeBlock language="jsx" title="useFetcher for Inline Actions">
-{`import { useFetcher } from 'react-router-dom';
+{`import { useFetcher } from 'react-router';
 
 function TodoItem({ todo }) {
   const fetcher = useFetcher();
@@ -232,7 +232,7 @@ function TodoItem({ todo }) {
 
       <h2>useNavigation — Loading States</h2>
       <CodeBlock language="jsx" title="Global Loading Indicator">
-{`import { useNavigation } from 'react-router-dom';
+{`import { useNavigation } from 'react-router';
 
 function RootLayout() {
   const navigation = useNavigation();
@@ -263,7 +263,7 @@ function RootLayout() {
       </p>
 
       <CodeBlock language="jsx" title="Route Error Boundaries">
-{`import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
+{`import { useRouteError, isRouteErrorResponse } from 'react-router';
 
 function RouteError() {
   const error = useRouteError();
@@ -335,7 +335,7 @@ const router = createBrowserRouter([
       </InfoBox>
 
       <CodeBlock language="jsx" title="Streaming a loader in v7 — no defer() wrapper">
-{`import { Await, useLoaderData } from 'react-router-dom';
+{`import { Await, useLoaderData } from 'react-router';
 import { Suspense } from 'react';
 
 export async function loader({ params }) {
@@ -391,9 +391,7 @@ export default function UserProfile() {
       <h2>Complete CRUD Example</h2>
       <CodeBlock language="jsx" title="Full CRUD Route with Loader + Action">
 {`// routes/contacts.jsx
-import {
-  Form, useLoaderData, useActionData, redirect,
-} from 'react-router-dom';
+import { Form, useLoaderData, useActionData, redirect } from 'react-router';
 
 export async function loader() {
   const res = await fetch('/api/contacts');

@@ -56,7 +56,7 @@ export default function Guards() {
       </InfoBox>
 
       <CodeBlock language="jsx" title="Auth Check in Loader">
-{`import { redirect } from 'react-router-dom';
+{`import { redirect } from 'react-router';
 import { getSession } from '../auth';
 
 // Reusable auth guard for any loader
@@ -133,7 +133,7 @@ export async function loader({ request }) {
       </p>
 
       <CodeBlock language="jsx" title="ProtectedRoute Component">
-{`import { Navigate, Outlet, useLocation } from 'react-router-dom';
+{`import { Navigate, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../hooks/useAuth';
 
 function ProtectedRoute({ allowedRoles }) {
@@ -247,7 +247,7 @@ export const useAuth = () => {
 
       <h2>Login Page with Return-To Redirect</h2>
       <CodeBlock language="jsx" title="Login with returnTo Pattern">
-{`import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+{`import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
@@ -323,7 +323,7 @@ export async function reportsLoader({ request }) {
 
       <h2>403 / Unauthorized Error Page</h2>
       <CodeBlock language="jsx" title="Handling 401 and 403 Errors">
-{`import { useRouteError, isRouteErrorResponse, Link } from 'react-router-dom';
+{`import { useRouteError, isRouteErrorResponse, Link } from 'react-router';
 
 function AuthError() {
   const error = useRouteError();
@@ -400,7 +400,8 @@ export async function loader({ request }) {
 
       <h2>Complete Auth Flow Example</h2>
       <CodeBlock language="jsx" title="Full App with Auth Guards">
-{`import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+{`import { createBrowserRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 import { AuthProvider } from './auth/AuthProvider';
 import RootLayout from './layouts/RootLayout';
 import Login, { action as loginAction } from './routes/Login';

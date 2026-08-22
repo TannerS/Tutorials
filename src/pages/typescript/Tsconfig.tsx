@@ -95,7 +95,8 @@ tsc --listFiles`}
 
     // moduleResolution: How to find imported modules
     // "bundler" = modern bundler rules (Vite, Webpack, esbuild)
-    // "node" = classic Node.js resolution (legacy)
+    // "node"/"node10" = classic Node.js resolution — deprecated in TS 6,
+    //   REMOVED in TS 7. ("classic" is a separate value, removed in TS 6.)
     // "node16"/"nodenext" = Node.js ESM resolution (package.json "exports")
     "moduleResolution": "bundler",
 
@@ -292,7 +293,9 @@ const val = map['missing']; // number | undefined (not just number)`}
       <CodeBlock language="json" title="Path and resolution options">
 {`{
   "compilerOptions": {
-    // baseUrl: Root for non-relative imports. Usually "."
+    // baseUrl: deprecated in TS 6, REMOVED in TS 7. Write "paths"
+    // relative to the project root instead and drop this entirely —
+    // shown here only because you will meet it in existing repos.
     "baseUrl": ".",
 
     // paths: Import aliases (must ALSO configure bundler!)
@@ -311,8 +314,10 @@ const val = map['missing']; // number | undefined (not just number)`}
     // Default: ["node_modules/@types"]
     "typeRoots": ["./node_modules/@types", "./src/types"],
 
-    // types: ONLY include specific @types packages
-    // If omitted, ALL @types/* in node_modules are included
+    // types: which @types packages are loaded globally.
+    // TS 6 CHANGED THE DEFAULT to [] — omitting this now includes
+    // NOTHING. Pre-6 it auto-included every @types/* in node_modules.
+    // If a global from @types/node suddenly "cannot be found", this is why.
     "types": ["vite/client", "vitest/globals"],
 
     // resolveJsonModule: Allow importing .json files

@@ -290,24 +290,48 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      # Legacy shape, shown because you will still meet it in older repos.
+      # See the warning below: NPM_TOKEN classic tokens were revoked in
+      # Dec 2025 — new setups should use trusted publishing instead.
       - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: \${{ secrets.NPM_TOKEN }}`}
       </CodeBlock>
 
-      <CodeBlock language="bash" title="Setting up automated publishing">
-{`# 1. Create an npm access token
-npm token create --type=automation
-# Copy the token
+      <InfoBox variant="danger" title="Classic npm Tokens Were Revoked — Use Trusted Publishing">
+        <p>
+          <code>npm token create --type=automation</code> no longer exists. npm permanently revoked
+          all classic tokens on <strong>9 December 2025</strong> and removed the flag from the CLI —
+          on npm 11 the command accepts only <code>--read-only</code> and <code>--cidr</code>. Any
+          workflow still built around <code>NPM_TOKEN</code> as a long-lived secret is a workflow
+          that stopped working.
+        </p>
+        <p>
+          The replacement is <strong>trusted publishing</strong>: you register the repository and
+          workflow on npmjs.com, and CI proves its identity per-run with a short-lived OIDC token.
+          There is no secret in the repo, in CI settings, or in anyone&apos;s <code>~/.npmrc</code>
+          for an attacker to steal — which is what made the classic-token era so damaging. If you
+          genuinely cannot use OIDC, granular tokens are the fallback, created on the website with a
+          90-day maximum lifetime.
+        </p>
+      </InfoBox>
 
-# 2. Add to GitHub repo secrets
-# Settings → Secrets → Actions → New secret
-# Name: NPM_TOKEN
-# Value: npm_XXXXXXXXXXXXXXXX
+      <CodeBlock language="bash" title="Setting up automated publishing (trusted publishing)">
+{`# 1. On npmjs.com: package Settings -> Publishing access
+#    -> add a trusted publisher: repo + workflow filename
+#    (optionally scoped to a GitHub Environment)
+
+# 2. Give the job permission to mint an OIDC token.
+#    In the workflow above, replace the NODE_AUTH_TOKEN env block with:
+#      permissions:
+#        id-token: write
+#        contents: read
+#    ...and drop the NPM_TOKEN secret entirely.
 
 # 3. Create a release on GitHub
 # This triggers the workflow above
 # The package version in package.json becomes the published version
+# Provenance is attached automatically — no --provenance flag needed
 
 # 4. Alternative trigger: publish on git tag push
 # on:

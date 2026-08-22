@@ -433,7 +433,11 @@ hasCycleDirectedCorrect(trueCycle, 4);  // Output: true   <- correct`}
       />
 
       <CodeBlock language="java" title="Dijkstra.java — PriorityQueue-Based, Run and Verified Manually">
-{`static int[] dijkstra(Map<Integer, List<Edge>> adj, int source, int numNodes) {
+{`// A weighted edge. Records give you the constructor, accessors, equals()
+// and hashCode() for free — see the Java "Advanced Features" lesson.
+record Edge(int to, int weight) {}
+
+static int[] dijkstra(Map<Integer, List<Edge>> adj, int source, int numNodes) {
     int[] dist = new int[numNodes];
     Arrays.fill(dist, Integer.MAX_VALUE);
     dist[source] = 0;
@@ -450,11 +454,14 @@ hasCycleDirectedCorrect(trueCycle, 4);  // Output: true   <- correct`}
         finalized.add(node);
 
         for (Edge edge : adj.get(node)) {
-            if (finalized.contains(edge.to)) continue;
-            int newDist = d + edge.weight;
-            if (newDist < dist[edge.to]) {
-                dist[edge.to] = newDist;
-                pq.offer(new int[]{edge.to, newDist});
+            if (finalized.contains(edge.to())) continue;
+            // "Relaxing" an edge = checking whether going through 'node'
+            // reaches edge.to() more cheaply than the best route found so
+            // far, and lowering the recorded distance if it does.
+            int newDist = d + edge.weight();
+            if (newDist < dist[edge.to()]) {
+                dist[edge.to()] = newDist;
+                pq.offer(new int[]{edge.to(), newDist});
             }
         }
     }

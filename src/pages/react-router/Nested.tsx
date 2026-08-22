@@ -35,7 +35,7 @@ export default function Nested() {
       </p>
 
       <CodeBlock language="jsx" title="Parent Layout with Outlet">
-{`import { Outlet, NavLink } from 'react-router-dom';
+{`import { Outlet, NavLink } from 'react-router';
 
 function DashboardLayout() {
   return (
@@ -63,7 +63,7 @@ function DashboardLayout() {
 
       <h2>Nested Route Configuration</h2>
       <CodeBlock language="jsx" title="Config-Based Nested Routes">
-{`import { createBrowserRouter } from 'react-router-dom';
+{`import { createBrowserRouter } from 'react-router';
 
 const router = createBrowserRouter([
   {
@@ -176,7 +176,7 @@ function AuthenticatedLayout() {
 { path: 'posts/:postId/comments/:commentId', element: <Comment /> }
 
 // Component
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 function UserProfile() {
   const { userId } = useParams();
@@ -294,7 +294,7 @@ function DashboardLayout() {
 
       <h2>Passing Data Through Outlet Context</h2>
       <CodeBlock language="jsx" title="Outlet Context">
-{`import { Outlet, useOutletContext } from 'react-router-dom';
+{`import { Outlet, useOutletContext } from 'react-router';
 
 // Parent passes data via context prop
 function DashboardLayout() {

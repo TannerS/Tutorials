@@ -358,6 +358,7 @@ export default tseslint.config(
       <CodeBlock language="json" title="tsconfig.app.json &mdash; Add paths">
 {`{
   "compilerOptions": {
+    // baseUrl: removed in TS 7 — omit it and make "paths" root-relative
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
@@ -432,7 +433,7 @@ export default defineConfig({
 
       <CodeBlock language="bash" title="Complete stack install commands">
 {`# Routing
-npm install react-router-dom
+npm install react-router
 
 # State management (pick one)
 npm install zustand              # Simple, minimal boilerplate

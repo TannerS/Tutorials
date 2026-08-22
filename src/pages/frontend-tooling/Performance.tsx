@@ -145,7 +145,7 @@ lighthouse https://myapp.com --budget-path=budget.json
 
       <CodeBlock language="javascript" title="Route-Based Code Splitting">
 {`import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router';
 
 // Each route loads its own chunk
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -358,7 +358,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
+          router: ['react-router'],
         },
       },
     },

@@ -33,7 +33,7 @@ export default function Testing() {
 
       <CodeBlock language="jsx" title="Basic MemoryRouter Test Setup">
 {`import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router';
 import Home from './pages/Home';
 import About from './pages/About';
 
@@ -73,7 +73,7 @@ test('renders About at /about', () => {
       <CodeBlock language="jsx" title="Testing Link Navigation">
 {`import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Routes, Route, Link } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, Link } from 'react-router';
 
 function Nav() {
   return (
@@ -106,7 +106,7 @@ test('navigates to dashboard on link click', async () => {
       <h2>Testing Route Params</h2>
       <CodeBlock language="jsx" title="Testing Dynamic Route Segments">
 {`import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Routes, Route, useParams } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, useParams } from 'react-router';
 
 function UserProfile() {
   const { userId } = useParams();
@@ -135,7 +135,8 @@ test('renders correct user from route param', () => {
 
       <CodeBlock language="jsx" title="Testing Loaders with createMemoryRouter">
 {`import { render, screen, waitFor } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider, useLoaderData } from 'react-router-dom';
+import { createMemoryRouter, useLoaderData } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 
 function Dashboard() {
   const data = useLoaderData();
@@ -166,10 +167,8 @@ test('loader provides data to component', async () => {
       <CodeBlock language="jsx" title="Testing Actions with Form Submission">
 {`import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {
-  createMemoryRouter, RouterProvider,
-  useLoaderData, useActionData, Form,
-} from 'react-router-dom';
+import { createMemoryRouter, useLoaderData, useActionData, Form } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 
 function ContactPage() {
   const actionData = useActionData();
@@ -221,7 +220,8 @@ test('action processes form and returns data', async () => {
       <h2>Testing Protected Routes</h2>
       <CodeBlock language="jsx" title="Testing Auth Redirects">
 {`import { render, screen, waitFor } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider, redirect } from 'react-router-dom';
+import { createMemoryRouter, redirect } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 
 function requireAuth() {
   const user = getStoredUser(); // your auth helper
@@ -281,7 +281,8 @@ test('shows dashboard for authenticated user', async () => {
       <h2>Testing Error Boundaries</h2>
       <CodeBlock language="jsx" title="Testing errorElement Rendering">
 {`import { render, screen, waitFor } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider, useRouteError } from 'react-router-dom';
+import { createMemoryRouter, useRouteError } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 
 function ErrorPage() {
   const error = useRouteError();
@@ -322,7 +323,7 @@ test('displays error boundary when loader throws', async () => {
       <CodeBlock language="jsx" title="createRoutesStub with stubbed loader and action">
 {`import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createRoutesStub } from 'react-router-dom';
+import { createRoutesStub } from 'react-router';
 import LoginForm from './LoginForm';
 
 test('shows the validation error the action returns', async () => {
@@ -394,7 +395,7 @@ render(
       <CodeBlock language="jsx" title="Test Utility Wrapper">
 {`// test-utils.jsx
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { AuthProvider } from './context/AuthContext';
 
 export function renderWithRouter(ui, { route = '/', ...options } = {}) {
@@ -426,14 +427,14 @@ export function renderWithRouter(ui, { route = '/', ...options } = {}) {
 import userEvent from '@testing-library/user-event';
 
 // Mock the entire module
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+jest.mock('react-router', () => ({
+  ...jest.requireActual('react-router'),
   useNavigate: jest.fn(),
   useParams: jest.fn(),
   useLocation: jest.fn(),
 }));
 
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router';
 import UserProfile from './UserProfile';
 
 test('calls navigate on button click', async () => {

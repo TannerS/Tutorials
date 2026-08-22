@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { hasModifier, isTypingTarget } from './keyboardNav';
 import '../styles/poster.css';
