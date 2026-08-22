@@ -11,7 +11,7 @@ export default function Security() {
       sectionId="springboot"
       lessonIndex={5}
       prev={{ path: '/springboot/data', label: 'Spring Data & JPA' }}
-      next={{ path: '/springboot/testing', label: 'Testing in Spring Boot' }}
+      next={{ path: '/springboot/security-migration', label: 'Spring Security 7 & Boot 4 Changes' }}
     >
       <h2>Spring Security in One Diagram</h2>
       <p>

@@ -22,7 +22,7 @@ export default function Fullapp() {
 
       <FlowChart
         title="Application Route Tree"
-        chart={"graph TD\nR[Root Layout] --> H[/ Home]\nR --> A[/about]\nR --> P[/pricing]\nR --> AUTH[/login & /register & /forgot-password]\nR --> DASH[/dashboard - Protected Layout]\nDASH --> DO[/dashboard Overview]\nDASH --> DP[/dashboard/profile]\nDASH --> DS[/dashboard/settings]\nDASH --> DU[/dashboard/users/:id]\nR --> NF[* 404 Catch-All]\nstyle R fill:#3b82f6,color:#fff\nstyle DASH fill:#8b5cf6,color:#fff\nstyle NF fill:#ef4444,color:#fff"}
+        chart={"graph TD\nR[Root Layout] --> H[\"/ Home\"]\nR --> A[\"/about\"]\nR --> P[\"/pricing\"]\nR --> AUTH[\"/login & /register & /forgot-password\"]\nR --> DASH[\"/dashboard - Protected Layout\"]\nDASH --> DO[\"/dashboard Overview\"]\nDASH --> DP[\"/dashboard/profile\"]\nDASH --> DS[\"/dashboard/settings\"]\nDASH --> DU[\"/dashboard/users/:id\"]\nR --> NF[* 404 Catch-All]\nstyle R fill:#3b82f6,color:#fff\nstyle DASH fill:#8b5cf6,color:#fff\nstyle NF fill:#ef4444,color:#fff"}
       />
 
       <h2>Step 1: Root Layout</h2>

@@ -31,10 +31,19 @@ export function TableOfContents({ containerRef, resetKey }: TableOfContentsProps
 
     const nodes = root.querySelectorAll<HTMLElement>('h2, h3');
     const collected: TocHeading[] = [];
+    // Headings legitimately repeat across a lesson ("How It Works" once per
+    // strategy), and slugify() alone would hand them all the same id — which
+    // collides as a React key and makes every anchor jump to the first one.
+    const seen = new Map<string, number>();
     nodes.forEach((node) => {
       const text = node.textContent?.trim();
       if (!text) return;
-      if (!node.id) node.id = slugify(text);
+      if (!node.id) {
+        const base = slugify(text);
+        const n = seen.get(base) ?? 0;
+        seen.set(base, n + 1);
+        node.id = n === 0 ? base : `${base}-${n + 1}`;
+      }
       collected.push({
         id: node.id,
         text,

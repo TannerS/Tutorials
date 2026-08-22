@@ -23,7 +23,7 @@ export default function Advanced() {
 
       <FlowChart
         title="Advanced feature map"
-        chart={"graph TD\nA[Spring Boot App] --> B[@Scheduled]\nA --> C[@Async]\nA --> D[Application Events]\nA --> E[@Cacheable]\nA --> F[Actuator]\nA --> G[AOP / Aspects]\nF -.dedicated.-> H[Observability lesson]\nG -.dedicated.-> I[AOP & Interceptors lesson]"}
+        chart={"graph TD\nA[Spring Boot App] --> B[\"@Scheduled\"]\nA --> C[\"@Async\"]\nA --> D[Application Events]\nA --> E[\"@Cacheable\"]\nA --> F[Actuator]\nA --> G[AOP / Aspects]\nF -.dedicated.-> H[Observability lesson]\nG -.dedicated.-> I[AOP & Interceptors lesson]"}
       />
 
       <h2>Scheduled Tasks — @Scheduled</h2>

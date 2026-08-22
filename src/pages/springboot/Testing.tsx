@@ -37,7 +37,7 @@ export default function Testing() {
 
       <FlowChart
         title="Test level for a given piece of code"
-        chart={"graph TD\nA[What do I need to test?] --> B{Pure logic, service method?}\nB -->|Yes| C[Plain JUnit + Mockito]\nA --> D{HTTP controller behavior?}\nD -->|Yes| E[@WebMvcTest + MockMvc]\nA --> F{Repository query correctness?}\nF -->|Yes| G[@DataJpaTest + TestContainers]\nA --> H{Full startup + wiring works?}\nH -->|Yes| I[@SpringBootTest smoke test]"}
+        chart={"graph TD\nA[What do I need to test?] --> B{Pure logic, service method?}\nB -->|Yes| C[Plain JUnit + Mockito]\nA --> D{HTTP controller behavior?}\nD -->|Yes| E[\"@WebMvcTest + MockMvc\"]\nA --> F{Repository query correctness?}\nF -->|Yes| G[\"@DataJpaTest + TestContainers\"]\nA --> H{Full startup + wiring works?}\nH -->|Yes| I[\"@SpringBootTest smoke test\"]"}
       />
 
       <h2>Level 1 — Plain Unit Tests</h2>

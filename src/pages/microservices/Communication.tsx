@@ -10,7 +10,7 @@ export default function Communication() {
       title="Service Communication"
       sectionId="microservices"
       lessonIndex={2}
-      prev={{ path: '/microservices/patterns', label: 'Core Patterns (10)' }}
+      prev={{ path: '/microservices/patterns', label: 'Core Patterns (11)' }}
       next={{ path: '/microservices/data', label: 'Data Patterns & CQRS' }}
     >
       <h2>How Services Talk to Each Other</h2>
