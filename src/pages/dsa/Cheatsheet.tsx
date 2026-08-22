@@ -26,7 +26,9 @@ O(log n)    binary search, balanced BST operations
 O(n)        linear scan, single-pass hash table build
 O(n log n)  merge sort, heap sort, well-implemented quicksort
 O(n²)       bubble sort, naive nested-loop pair search, worst-case quicksort
-O(2^n)      naive recursive Fibonacci (no memoization)
+O(phi^n)    naive recursive Fibonacci (no memoization) — phi ~ 1.618.
+            Measured call-count ratio was 2.618 = phi^2 every 2 steps of n,
+            never 4.0. "O(2^n)" is a TRUE upper bound but not the tight one.
 
 Big-O is an upper bound on GROWTH, not an exact operation count.
 Big-Omega = lower bound, Big-Theta = tight bound — most casual use
@@ -49,7 +51,7 @@ conflates all three under "Big-O."`}
             <td style={{ padding: '0.75rem' }}><strong>Array / ArrayList</strong></td>
             <td style={{ padding: '0.75rem' }}>O(1)</td>
             <td style={{ padding: '0.75rem' }}>O(n) at head, O(1) amortized at tail</td>
-            <td style={{ padding: '0.75rem' }}>Resize doubling — most inserts fast, occasional O(n) copy</td>
+            <td style={{ padding: '0.75rem' }}>Resize grows <strong>1.5×</strong>, not 2× (measured: 244 → 366) — most inserts fast, occasional O(n) copy</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Linked List</strong></td>
@@ -170,7 +172,7 @@ an exponential naive approach are the real tells.`}
       <h2>Section Index</h2>
 
       <CodeBlock language="text" title="All 10 lessons, in reading order">
-{`1. Complexity Analysis: Big-O in Practice     O(1) through O(2^n), empirically measured
+{`1. Complexity Analysis: Big-O in Practice     O(1) through exponential, empirically measured
 2. Arrays & Sorting Algorithms                Bubble/Merge/Quick, Arrays.sort() internals
 3. Linked Lists                               Singly/doubly, cycle detection, reversal
 4. Stacks & Queues                            Stack vs ArrayDeque, PriorityQueue's real order

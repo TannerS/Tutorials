@@ -404,7 +404,12 @@ console.log(it.next());  // { value: undefined, done: true }`}
         </p>
         <CodeBlock language="javascript" title="Verified">
 {`for (const v of { x: 1, y: 2 }) { console.log(v); }
-// TypeError: {(intermediate value)} is not iterable`}
+// TypeError: {(intermediate value)(intermediate value)} is not iterable
+//
+// Yes, "(intermediate value)" really is printed twice — that is verbatim
+// Node 25 output, not a typo. V8 has no name for an object literal, so it
+// substitutes a placeholder for the object AND for the expression it came
+// from. Read past it: the sentence is "<this thing> is not iterable".`}
         </CodeBlock>
         <p>
           That&apos;s not a bug to work around &mdash; it&apos;s the protocol correctly refusing

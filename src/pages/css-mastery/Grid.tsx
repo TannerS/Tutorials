@@ -415,12 +415,36 @@ export default function Grid() {
 .equal { grid-template-columns: repeat(3, minmax(0, 1fr)); }  /* ✅ */
 .uneven { grid-template-columns: repeat(3, 1fr); }             /* can drift wider */
 
-/* GOTCHA: never combine auto-fit/auto-fill with a 0 minimum.
-   The repeat count is derived from the track's MIN size, so a 0 floor
-   is degenerate — browsers collapse it to a single column. */
-.broken { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }  /* ❌ 1 col */
-.works  { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } /* ✅ */`}
+/* GOTCHA: auto-fit/auto-fill with a 0 minimum destroys the responsive
+   breakpoint. It does NOT collapse to one column — the opposite happens.
+   The minimum is what tells the browser when a track no longer fits, so a
+   0 floor means every track always "fits": the row NEVER wraps at any
+   width, and the items just squeeze thinner and thinner. */
+.broken { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }   /* ❌ never wraps */
+.works  { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); } /* ✅ wraps at 280px */`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Measured in Chromium — the 0-minimum grid stays on one row forever">
+        <p>
+          Six items, <code>gap: 16px</code>, full-width container. With{' '}
+          <code>minmax(0, 1fr)</code>: <strong>1280px &rarr; 6 columns of 200px</strong>,{' '}
+          <strong>768px &rarr; 6 columns of 114.7px</strong>,{' '}
+          <strong>390px &rarr; 6 columns of 51.7px</strong> &mdash; always one row, on a phone the
+          cards are 52px wide. With <code>minmax(280px, 1fr)</code> the same six items go{' '}
+          <strong>4 + 2</strong> at 1280px, <strong>2 per row</strong> at 768px, and{' '}
+          <strong>1 per row</strong> at 390px.
+        </p>
+        <p>
+          The mechanism is worth knowing because it is counter-intuitive: <code>auto-fit</code>{' '}
+          generates as many tracks as could theoretically fit (with a 0 floor, dozens of them) and
+          then <em>collapses the empty ones to 0px</em>. Your six filled tracks are therefore always
+          the only ones with width, and they always split the container between them. If you are
+          debugging &quot;my auto-fit grid refuses to stack on mobile,&quot; a{' '}
+          <code>0</code> or very small minimum is the first thing to check. Note{' '}
+          <code>auto-fill</code> is worse, not better: it keeps the empty tracks, so the six items
+          get a sliver each and overflow their own tracks.
+        </p>
+      </InfoBox>
 
       <InteractiveChallenge
         question={"A 3-column grid has items with long text overflowing horizontally. What is the most common fix?"}

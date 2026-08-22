@@ -369,6 +369,7 @@ import CSSAnimations from './pages/css-mastery/Animations'
 import CSSVariables from './pages/css-mastery/Variables'
 import CSSSass from './pages/css-mastery/Sass'
 import CSSTokens from './pages/css-mastery/Tokens'
+import CSSDesignSystemTokens from './pages/css-mastery/DesignSystemTokens'
 import CSSStyleInclusion from './pages/css-mastery/StyleInclusion'
 import CSSPatterns from './pages/css-mastery/Patterns'
 
@@ -395,6 +396,8 @@ import RTHooks from './pages/react-testing/Hooks'
 import RTAsync from './pages/react-testing/Async'
 import RTForms from './pages/react-testing/Forms'
 import RTPatterns from './pages/react-testing/Patterns'
+import RTBestPractices from './pages/react-testing/BestPractices'
+import RTCheatsheet from './pages/react-testing/Cheatsheet'
 
 // Frontend Tooling
 import FTVite from './pages/frontend-tooling/Vite'
@@ -782,6 +785,7 @@ function App() {
         <Route path="css-mastery/variables" element={<CSSVariables />} />
         <Route path="css-mastery/sass" element={<CSSSass />} />
         <Route path="css-mastery/tokens" element={<CSSTokens />} />
+        <Route path="css-mastery/design-system-tokens" element={<CSSDesignSystemTokens />} />
         <Route path="css-mastery/style-inclusion" element={<CSSStyleInclusion />} />
         <Route path="css-mastery/patterns" element={<CSSPatterns />} />
         <Route path="playground/compiler" element={<PlaygroundCompiler />} />
@@ -803,6 +807,8 @@ function App() {
         <Route path="react-testing/async" element={<RTAsync />} />
         <Route path="react-testing/forms" element={<RTForms />} />
         <Route path="react-testing/patterns" element={<RTPatterns />} />
+        <Route path="react-testing/best-practices" element={<RTBestPractices />} />
+        <Route path="react-testing/cheatsheet" element={<RTCheatsheet />} />
         {/* Frontend Tooling */}
         <Route path="frontend-tooling/vite" element={<FTVite />} />
         <Route path="frontend-tooling/webpack" element={<FTWebpack />} />

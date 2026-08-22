@@ -439,11 +439,35 @@ describe('SearchInput with debounce', () => {
 });`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="user-event and Fake Timers">
-        When combining <code>userEvent.setup()</code> with <code>jest.useFakeTimers()</code>,
-        pass <code>{"{ advanceTimers: jest.advanceTimersByTime }"}</code> to the setup options.
-        Otherwise user-event's internal delays will hang because the fake timer
-        never advances.
+      <InfoBox variant="warning" title="user-event and Fake Timers — and Why the Jest Fix Is Not Enough on Vitest">
+        <p>
+          When combining <code>userEvent.setup()</code> with{' '}
+          <code>jest.useFakeTimers()</code>, pass{' '}
+          <code>{"{ advanceTimers: jest.advanceTimersByTime }"}</code> to the setup
+          options. Otherwise user-event&apos;s internal delays hang, because the fake
+          timer never advances.
+        </p>
+        <p>
+          <strong>On Vitest — which is what this section uses — that is not
+          sufficient.</strong> Testing Library decides whether fake timers are active
+          with a <code>typeof jest !== &apos;undefined&apos;</code> check in{' '}
+          <code>@testing-library/dom</code>&apos;s helpers. Under Vitest there is no{' '}
+          <code>jest</code> global, so that check returns <code>false</code> even
+          though the clock <em>is</em> faked. Testing Library then polls{' '}
+          <code>waitFor</code> against a clock nothing is advancing, and it hangs to
+          timeout <em>even when its condition is already true</em> — taking{' '}
+          <code>findBy*</code>, <code>waitForElementToBeRemoved</code> and every
+          awaited user-event call with it.
+        </p>
+        <p>
+          The fix is to let the clock tick on its own:{' '}
+          <code>vi.useFakeTimers({"{ shouldAdvanceTime: true }"})</code>. That costs
+          you nothing in determinism — a debounce still will not fire until you call{' '}
+          <code>vi.advanceTimersByTime(300)</code> explicitly — it only stops the
+          poller from deadlocking. This is one of the most confusing failures in the
+          whole RTL surface, because the symptom (a timeout) looks like your
+          assertion is wrong rather than like the clock is stopped.
+        </p>
       </InfoBox>
 
       <InteractiveChallenge

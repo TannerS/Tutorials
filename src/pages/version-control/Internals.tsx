@@ -140,10 +140,18 @@ $ cat .git/refs/tags/v1.0
       <CodeBlock language="bash" title="Lightweight Tag — No Tag Object, Points Straight at the Commit">
 {`$ git tag lightweight-v1
 $ cat .git/refs/tags/lightweight-v1
-46573ae41a6736612a61830691c10cda5352f267
-$ git cat-file -t 46573ae41a6736612a61830691c10cda5352f267
+7400081f72e20afa0a40bf05d93c751cd719f480
+$ git cat-file -t 7400081f72e20afa0a40bf05d93c751cd719f480
 commit`}
       </CodeBlock>
+
+      <p>
+        That is the same hash the annotated tag&apos;s <code>object</code> line named above — both tags
+        point at the same (and, this early in the repo, only) commit. The difference is not <em>what</em>{' '}
+        they point at, it is how many hops it takes: <code>v1.0</code> resolves to a tag object that then
+        names the commit, while <code>lightweight-v1</code> is the commit hash written straight into the
+        ref file.
+      </p>
 
       <h2>Content-Addressable Storage: The Hash IS the Content</h2>
 
@@ -397,7 +405,11 @@ nothing to commit, working tree clean`}
         rescue-name</code> and that commit becomes unreachable from any ref — still sitting in the
         object database exactly like <code>9f1c9e1&hellip;</code> did above, recoverable via{' '}
         <code>git reflog</code> for a while, but headed for garbage collection if nothing ever points
-        at it again.
+        at it again. (One naming caveat: modern Git splits <code>checkout</code>&apos;s two unrelated
+        jobs into <code>git switch</code> for moving HEAD — <code>git switch --detach &lt;hash&gt;</code>{' '}
+        is the above — and <code>git restore</code> for discarding file changes; <code>checkout</code>{' '}
+        is not deprecated and Git&apos;s own BreakingChanges document keeps all three, and it is used
+        here precisely because it makes the HEAD-file mechanism visible.)
       </p>
 
       <h2>Quick Reference</h2>
@@ -423,13 +435,13 @@ nothing to commit, working tree clean`}
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Find what commit a branch points at</td>
-            <td style={{ padding: '0.75rem' }}><code>cat .git/refs/heads/&lt;name&gt;</code></td>
-            <td style={{ padding: '0.75rem' }}>Prints the exact commit hash the ref file contains</td>
+            <td style={{ padding: '0.75rem' }}><code>git rev-parse &lt;name&gt;</code> (or <code>git show-ref &lt;name&gt;</code>)</td>
+            <td style={{ padding: '0.75rem' }}>Asks Git to resolve the ref, whatever storage it lives in. <code>cat .git/refs/heads/&lt;name&gt;</code> shows the same hash <em>only</em> while the ref is still a loose file — see the note below</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Find what HEAD currently resolves to</td>
-            <td style={{ padding: '0.75rem' }}><code>cat .git/HEAD</code></td>
-            <td style={{ padding: '0.75rem' }}><code>ref: refs/heads/&lt;name&gt;</code> normally, or a raw hash if detached</td>
+            <td style={{ padding: '0.75rem' }}><code>git rev-parse HEAD</code>; <code>git symbolic-ref -q HEAD</code> for the branch name</td>
+            <td style={{ padding: '0.75rem' }}>Prints the commit hash; <code>symbolic-ref</code> prints <code>refs/heads/&lt;name&gt;</code>, or fails (exit 1) when detached. <code>cat .git/HEAD</code> shows the raw <code>ref: refs/heads/&lt;name&gt;</code> line on the default backend</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Visualize the whole commit DAG</td>
@@ -443,6 +455,48 @@ nothing to commit, working tree clean`}
           </tr>
         </tbody>
       </table>
+
+      <InfoBox variant="warning" title="Read Refs With Git, Not With cat — the File May Not Be There">
+        <p>
+          The loose-file demos above are the clearest way to <em>see</em> the model, and everything they
+          show is real. But &quot;one ref, one file&quot; is only the storage layout Git happens to start
+          with. Run <code>git pack-refs --all</code> (which <code>git gc</code> does for you, and which
+          every <code>git clone</code> has already done) and the loose files are deleted, their contents
+          folded into a single <code>.git/packed-refs</code> table. Here is the scratch repo from the tag
+          section above, one <code>pack-refs</code> later:
+        </p>
+        <CodeBlock language="bash" title="Same repo at the tag stage, after pack-refs — the ref file is simply gone">
+{`$ git pack-refs --all
+$ cat .git/refs/heads/main
+cat: .git/refs/heads/main: No such file or directory
+
+$ git rev-parse main
+7400081f72e20afa0a40bf05d93c751cd719f480
+$ git show-ref main
+7400081f72e20afa0a40bf05d93c751cd719f480 refs/heads/main
+
+$ cat .git/packed-refs
+# pack-refs with: peeled fully-peeled sorted
+7400081f72e20afa0a40bf05d93c751cd719f480 refs/heads/main
+7400081f72e20afa0a40bf05d93c751cd719f480 refs/tags/lightweight-v1
+052e3aa231baf2d2d93feaacfc73c01794b14f9c refs/tags/v1.0
+^7400081f72e20afa0a40bf05d93c751cd719f480`}
+        </CodeBlock>
+        <p>
+          <code>git rev-parse</code> and <code>git show-ref</code> keep working because they ask Git to
+          resolve the name; <code>cat</code> only works if it guesses the current storage layout right.
+          That gap gets permanent with the <strong>reftable</strong> backend
+          (<code>git init --ref-format=reftable</code>), a binary format that Git 3.0 makes the default
+          for new repositories. There, <code>.git/refs/</code> holds nothing at all and{' '}
+          <code>.git/HEAD</code> is a fixed stub reading <code>ref: refs/heads/.invalid</code> — even
+          on a perfectly healthy repo sitting on <code>main</code>, so <code>cat</code> cannot ever
+          report the truth. Verified on git 2.50.1: in a reftable repo{' '}
+          <code>git rev-parse --symbolic-full-name HEAD</code> correctly printed{' '}
+          <code>refs/heads/main</code> while <code>cat .git/HEAD</code> printed the{' '}
+          <code>.invalid</code> stub. Use <code>cat</code> to learn the model; use the porcelain
+          commands in scripts.
+        </p>
+      </InfoBox>
 
       <p>
         With the object model and the pointer files settled, the next lesson builds directly on top of

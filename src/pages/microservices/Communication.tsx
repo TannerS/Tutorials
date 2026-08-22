@@ -206,8 +206,8 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
           </tr>
           <tr>
             <td>Performance</td>
-            <td>Good</td>
-            <td>Excellent (7-10x faster)</td>
+            <td>Good — usually bounded by your handler, not the protocol</td>
+            <td>Lower per-call overhead (binary framing, HTTP/2 multiplexing, no per-request connection setup). How much that wins depends entirely on your workload — see below.</td>
           </tr>
           <tr>
             <td>Streaming</td>
@@ -227,7 +227,7 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
           <tr>
             <td>Debugging</td>
             <td>Easy (curl, Postman)</td>
-            <td>Harder (grpcurl, BloomRPC)</td>
+            <td>Harder — grpcurl / grpcui (CLI and browser UI, both need server reflection), Postman&apos;s native gRPC support, or Kreya. Not BloomRPC: it was archived years ago and never gained reflection support.</td>
           </tr>
           <tr>
             <td>Best For</td>
@@ -236,6 +236,52 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
           </tr>
         </tbody>
       </table>
+
+      <InfoBox variant="warning" title="&quot;gRPC Is 7-10x Faster&quot; Is a Number Worth Refusing to Repeat">
+        <p>
+          You will see a specific multiplier attached to gRPC in almost every comparison, this one
+          included until recently. Ask the two questions that make it fall apart: <em>faster at
+          what</em>, and <em>measured how</em>. A speed claim needs a workload, a payload, a
+          concurrency level and a metric (p50? p99? throughput at fixed latency?). Without those it
+          is not a benchmark result, it is a vibe with a decimal point.
+        </p>
+        <p>
+          Where the number usually comes from is the row directly above it. Protobuf really does
+          serialise to something on the order of 3-10x smaller than the equivalent JSON, and that is
+          a defensible, reproducible claim about <strong>size</strong>. Somewhere along the way the
+          size ratio gets copied down a row and relabelled as a speed ratio, which does not follow —
+          smaller payloads help when you are bandwidth-bound or parsing-bound, and help almost not at
+          all when your service spends 40ms in a database query.
+        </p>
+        <p>What is actually true, and why:</p>
+        <ul>
+          <li>
+            <strong>Per-call overhead is genuinely lower.</strong> Binary framing, no repeated header
+            text, HTTP/2 multiplexing over one connection, and no TLS handshake per request.
+          </li>
+          <li>
+            <strong>The gain scales with how chatty you are.</strong> Small messages at high QPS —
+            where protocol overhead is most of the cost — are where gRPC shows the biggest wins.
+            Large responses dominated by database time or business logic show close to none.
+          </li>
+          <li>
+            <strong>Streaming is a capability difference, not a speed difference.</strong> Native
+            bidirectional streaming lets you do things REST cannot do at all, which is a stronger
+            argument than any multiplier.
+          </li>
+          <li>
+            <strong>Much of &quot;gRPC vs REST&quot; is really HTTP/2 vs HTTP/1.1.</strong> Run REST
+            over HTTP/2 with keep-alive and a chunk of the published gap closes.
+          </li>
+        </ul>
+        <p>
+          In an interview or a design review, &quot;it is 8x faster&quot; invites the follow-up
+          &quot;on what workload?&quot; and you will not have an answer. &quot;Lower per-call
+          overhead, and the advantage grows with request rate and shrinks as handler time grows — I
+          would benchmark our actual endpoints before claiming a number&quot; is both honest and the
+          stronger answer.
+        </p>
+      </InfoBox>
 
       <h2>Asynchronous Communication</h2>
       <p>
@@ -534,7 +580,7 @@ async function startConsumer() {
           'When your services are written in different languages'
         ]}
         correctIndex={1}
-        explanation={"gRPC excels at service-to-service communication with its binary Protobuf serialization (7-10x faster), HTTP/2 multiplexing, native bidirectional streaming, and auto-generated typed clients. It does support multiple languages (option D), but REST does too — the real advantage is performance and streaming."}
+        explanation={"gRPC excels at service-to-service communication: binary Protobuf serialization (payloads roughly 3-10x smaller than the equivalent JSON), HTTP/2 multiplexing over a single connection, native bidirectional streaming, and auto-generated typed clients. Note the honest form of the performance claim — the compact payload is a size fact, not a speed multiplier. Lower per-call overhead matters most for small, chatty, high-QPS calls and matters very little when the handler is dominated by database time, so benchmark your own endpoints rather than quoting a ratio. It does support multiple languages (option D), but REST does too."}
       />
 
       <h2>Summary</h2>

@@ -936,23 +936,33 @@ setTimeout(() => {
   setState2('b');  // queued
 }, 0);             // → 1 render
 
-// ❌ A .then() CHAIN is genuinely sequential — each link
-//    resumes only after the previous one settled:
+// ⚠️ A .then() CHAIN is sequential, but it is STILL 1 render:
 fetch('/api')
-  .then(() => setState1('a'))   // Render 1
-  .then(() => setState2('b'));  // Render 2
-// → 2 renders. But two INDEPENDENT .then() callbacks both
-//   drain in the same microtask checkpoint → 1 render.`}
+  .then(() => setState1('a'))   // microtask 1
+  .then(() => setState2('b'));  // microtask 2
+// → 1 render. Each link does resume in its own microtask, but
+//   the whole chain drains in the SAME microtask checkpoint,
+//   before React ever gets to flush. Measured in Chromium
+//   against react@19.2.6: 1 render, not 2.
+
+// ❌ ...unless a link genuinely waits on something new:
+fetch('/api')
+  .then(r => { setState1('a'); return r.json(); })  // Render 1
+  .then(() => setState2('b'));                      // Render 2
+// → 2 renders. r.json() is real async work, so the checkpoint
+//   drains and React flushes before the next link runs.`}
       </CodeBlock>
 
       <InfoBox variant="note" title="The Mental Model">
         <p><strong>Things that DON'T break a block:</strong> <code>for</code>/<code>while</code> loops, <code>if</code>/<code>else</code>, function calls, <code>.map()</code>/<code>.filter()</code>/<code>.reduce()</code> — any synchronous computation.</p>
-        <p><strong>Things that DO break a block:</strong> <code>await</code>, each link of a <code>.then()</code> chain, separate user events, and callbacks spaced far enough apart in time that React can flush between them.</p>
-        <p>Rule of thumb: a block ends when <strong>React gets a chance to flush</strong> — not merely when JavaScript "comes back later". Several callbacks that all run in the <em>same</em> turn (two <code>setTimeout(fn, 0)</code>, or two independent <code>.then()</code>s) still repaint once, because everything they queue lands before that single flush.</p>
+        <p><strong>Things that DO break a block:</strong> <code>await</code> on real async work (a network request, a timer), separate user events, and callbacks spaced far enough apart in time that React can flush between them.</p>
+        <p>Rule of thumb: a block ends when <strong>React gets a chance to flush</strong> — not merely when JavaScript "comes back later". Several callbacks that all run in the <em>same</em> turn (two <code>setTimeout(fn, 0)</code>, or every link of one <code>.then()</code> chain) still repaint once, because everything they queue lands before that single flush.</p>
+        <p>This is why a <code>.then()</code> chain surprises people: the links <em>are</em> sequential in JavaScript terms, yet they all drain in one microtask checkpoint, so React sees a single batch. Apply the rule rather than counting callbacks and you get the right answer.</p>
       </InfoBox>
 
       <InfoBox variant="tip" title="Pro Tip: dispatch is Stable">
-        <p><code>dispatch</code> from <code>useReducer</code> has a stable identity — it never changes between renders. This means you can pass it to child components without wrapping in <code>useCallback</code>, and it won't break <code>React.memo</code>. This is one of the biggest practical advantages over <code>useState</code> setters when combined with context.</p>
+        <p><code>dispatch</code> from <code>useReducer</code> has a stable identity — it never changes between renders, so you can pass it to child components without wrapping in <code>useCallback</code> and it won't break <code>React.memo</code>.</p>
+        <p><strong>This is not an advantage over <code>useState</code>.</strong> Setters returned by <code>useState</code> are stable too (verified: <code>setCount === setCount</code> across renders). The real advantage of <code>dispatch</code> is that <em>one</em> stable function covers every transition, so a context value carrying it never needs a <code>useMemo</code> over five separate setters — not that the function itself is more stable.</p>
       </InfoBox>
 
       <h2>useMemo &amp; useCallback — Referential Stability</h2>
@@ -1292,7 +1302,9 @@ function FancyInput({ ref, ...props }) {
   return <input ref={inputRef} {...props} />;
 }
 
-// Pre-19 form you'll still see everywhere (forwardRef is now deprecated):
+// Pre-19 form you'll still see everywhere. forwardRef is NOT deprecated —
+// react.dev says it "is no longer necessary" and "will be deprecated in a
+// future release". It emits no warning in 19; just don't write new ones:
 // const FancyInput = forwardRef((props, ref) => { ... });`}
       </CodeBlock>
 

@@ -199,7 +199,7 @@ target/          # build output — compiled classes, the packaged JAR/WAR, repo
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-dependencies</artifactId>
-      <version>3.4.0</version>
+      <version>4.1.1</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -230,7 +230,7 @@ target/          # build output — compiled classes, the packaged JAR/WAR, repo
       <CodeBlock language="kotlin" title="Minimal build.gradle.kts — verified against docs, not executed">
 {`plugins {
     java
-    id("org.springframework.boot") version "3.4.0"
+    id("org.springframework.boot") version "4.1.1"
 }
 
 group = "com.example"

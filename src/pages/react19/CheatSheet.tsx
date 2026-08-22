@@ -271,29 +271,32 @@ Date          new Date()           ❌ No*                New Date = new referen
 ────────────────────────────────────────────────────  ────────  ──────────────────────
 setState x3 in click handler                          1         Auto-batched (sync block)
 setState x3 in setTimeout callback                    1         Auto-batched (React 18+)
-setState before await + setState after await          2         await splits the block
+setState before await fetch() + setState after        2         Real async work splits it
 setState in 3 setTimeout(..., 0) — all same turn      1         All land before the flush
 setState in 3 setTimeout spread 0/30/60ms             3         React flushes in between
 setState in 3 separate .then() callbacks              1         Microtasks all drain first
+setState in a 3-link .then() CHAIN                    1         Same checkpoint — chain ≠ split
 dispatch(action) once (updates 5 state fields)        1         Always 1 — atomic update
 setState + dispatch in same handler                   1         Auto-batched together
 
 THE REAL RULE: a batch ends when React gets a chance to FLUSH — not when a
 callback ends. Everything queued before that flush lands in ONE render. So
 "separate callback" does NOT imply "separate render": three .then()s all
-drain in the same microtask checkpoint, and three setTimeout(..., 0) all
-run in the same timer turn, so each group repaints once.
+drain in the same microtask checkpoint — chained or independent, it makes
+no difference — and three setTimeout(..., 0) all run in the same timer
+turn, so each group repaints once.
 
 RELIABLY SEPARATE RENDERS (React flushes in between):
-  • Sequential awaits — each resumption is after a flush
-  • A .then() CHAIN — each link waits on the previous one
+  • await on REAL async work — a fetch, a timer, res.json()
   • Timers spaced far enough apart to let a flush land
   • Separate user events (two real clicks)
 
 STILL ONE RENDER (everything queued before the flush):
   • Any uninterrupted sync code — loops, if/else, calls, .map/.filter
   • Several setState inside ONE timer or promise callback
-  • Several timers or promises that all fire in the SAME turn`}
+  • Several timers or promises that all fire in the SAME turn
+  • A .then() CHAIN whose links do no real async work — the whole
+    chain drains in one microtask checkpoint (measured: 1 render)`}
       </CodeBlock>
 
       <h3>The Complete Decision Table</h3>
@@ -775,7 +778,9 @@ const isStale  = query !== deferred;            // the standard "dim it" signal`
       <CodeBlock language="jsx" title="Syntax that changed in React 19" showLineNumbers>
 {`// ── ref is a normal prop; forwardRef is no longer needed ──
 function MyInput({ ref, ...props }) { return <input ref={ref} {...props} />; }
-// forwardRef still works but is DEPRECATED.
+// forwardRef still works and is NOT deprecated: react.dev says it "is no
+// longer necessary" and "will be deprecated in a future release". No
+// warning in 19 — don't write new ones, don't rush to rip out old ones.
 
 // ── ref callbacks can return a cleanup function ──
 <div ref={(node) => {

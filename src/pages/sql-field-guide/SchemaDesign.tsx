@@ -9,7 +9,7 @@ export default function FieldGuideSchemaDesign() {
       eyebrow="SQL · Field Reference"
       title="Schema Design Patterns"
       tagline="Normalization, indexing, and the shapes that recur in every real-world PostgreSQL schema."
-      meta={['PostgreSQL 17+', '15 patterns']}
+      meta={['PostgreSQL 18+', '15 patterns']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · Schema Design Patterns"
       prev={{ path: '/sql-field-guide/advanced-queries', label: 'Advanced Queries' }}
@@ -104,7 +104,7 @@ CREATE INDEX ON categories USING GIST (path);
 CREATE INDEX idx_orders_lookup
   ON orders (status, customer_id, created_at);
 -- equality columns first, range column LAST`}
-        caption="Left-prefix rule: a composite index on (a,b,c) serves queries on (a), (a,b), (a,b,c) — never (b) or (c) alone. Range columns must go last."
+        caption="Left-prefix rule: a composite index on (a,b,c) seeks for (a), (a,b), (a,b,c) — design as though (b) or (c) alone cannot use it, and put the range column last. PG18 relaxes 'cannot' to 'sometimes': B-tree skip scan will use the index with no leading-column predicate when the leading column is low-cardinality (verified: 'Index Searches: 5' vs a seq scan on 17). Still order the columns as if it didn't exist."
       />
 
       <PosterCard
@@ -160,7 +160,7 @@ CREATE POLICY tenant_isolation ON orders
 
 -- give a JSONB field a real type, then index it
 user_id INT GENERATED ALWAYS AS ((payload->>'user_id')::int) STORED`}
-        caption="Computed on write, and writing to it directly is an error — so it cannot drift from its inputs. The expression must be IMMUTABLE and may only reference the current row. Postgres has STORED only (no VIRTUAL), so it costs disk; use a VIEW if you'd rather pay CPU on read."
+        caption="Cannot drift from its inputs — writing to it directly is an error. The expression must be IMMUTABLE and may only reference the current row. WRITE THE 'STORED' KEYWORD: PG18 added VIRTUAL and made it the DEFAULT, so an omitted keyword now silently gives you a virtual column — computed on read, costs no disk, and CANNOT BE INDEXED ('ERROR: indexes on virtual generated columns are not supported', verified on 18.6). Only STORED is indexable. On PG12-17 the keyword was mandatory, so old DDL is safe."
       />
 
       <PosterCard

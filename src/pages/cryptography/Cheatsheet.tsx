@@ -186,7 +186,8 @@ present in this environment's Node v25.`}
 Hash (one-shot)               crypto.createHash('sha256').update(x).digest('hex')
 Hash (streaming, large files) createHash() piped through fs.createReadStream via pipeline()
 HMAC                          crypto.createHmac('sha256', key)
-Password KDF                  crypto.scrypt(password, salt, keylen)
+Password KDF                  crypto.argon2(...)  <- preferred, Node 24.7+
+                              crypto.scrypt(password, salt, keylen)  <- fallback
 Sign / verify                 crypto.sign() / crypto.verify() (with generateKeyPairSync)
 Constant-time compare         crypto.timingSafeEqual(a, b)   — THROWS if lengths differ
 CSPRNG                        crypto.randomBytes(n) / crypto.randomInt(min, max)

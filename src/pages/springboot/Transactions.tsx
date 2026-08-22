@@ -67,12 +67,22 @@ public class ReportService {
       <InfoBox variant="warning" title="The same mechanism has a second, quieter consequence: visibility">
         <p>
           A proxy can only intercept a call it is able to see and override. Spring&apos;s CGLIB
-          proxy is a <em>subclass</em> of your bean, so it can only override methods a subclass
-          could override. <code>@Transactional</code> on a <code>private</code>,{' '}
-          <code>protected</code>, or package-private method is therefore <strong>silently
-          ignored</strong> — no warning, no error, just no transaction. Same for{' '}
-          <code>final</code> methods and <code>final</code> classes, which cannot be overridden
-          at all.
+          proxy is a <em>subclass</em> of your bean, generated into the same package, so it can
+          only advise methods a subclass could override. <code>@Transactional</code> on a{' '}
+          <code>private</code> method is therefore <strong>silently ignored</strong> — no
+          warning, no error, just no transaction. Same for <code>final</code> methods and{' '}
+          <code>final</code> classes, which cannot be overridden at all.
+        </p>
+        <p>
+          <strong>What that rule does <em>not</em> cover any more:</strong>{' '}
+          <code>protected</code> and package-visible methods. Since Framework 6.0 — i.e. every
+          version this course targets, Boot 3 and Boot 4 — class-based proxies advise them
+          normally, so <code>@Transactional</code> on them works. Plenty of older blog posts
+          (and older versions of this rule) still say &quot;public only&quot;; that was a
+          Spring 5 fact. Two caveats survive: a JDK dynamic proxy (interface-based, which
+          Spring uses when you opt out of CGLIB) can still only see public interface methods,
+          and a package-private method <em>inherited from a parent class in a different
+          package</em> is effectively private and cannot be advised.
         </p>
         <p>
           This is not a rule to memorise separately. It is the <em>same</em> fact as
@@ -209,9 +219,9 @@ Optimistic locking (@Version) is usually a better answer than SERIALIZABLE.`}
 
       <h2>Rollback Rules</h2>
       <p>
-        By default, Spring rolls back on <code>RuntimeException</code> subclasses only.
-        Checked exceptions <strong>commit</strong> the transaction unless you say
-        otherwise.
+        By default, Spring rolls back on <code>RuntimeException</code> <em>or</em>{' '}
+        <code>Error</code> — i.e. on unchecked throwables. Checked exceptions{' '}
+        <strong>commit</strong> the transaction unless you say otherwise.
       </p>
       <CodeBlock language="java" title="What rolls back by default">
 {`@Transactional
@@ -248,8 +258,10 @@ public void tryUpdate() { /* ... */ }`}
         Mark queries with <code>readOnly = true</code>. Two benefits:
       </p>
       <ul>
-        <li>Hibernate sets flush-mode to <code>NEVER</code> — no dirty-checking overhead
-            for entities you just read.</li>
+        <li>Spring sets the Hibernate session&apos;s flush-mode to{' '}
+            <code>FlushMode.MANUAL</code> — no dirty-checking overhead for entities you just
+            read. (You will still see <code>NEVER</code> in older write-ups; that was the
+            Hibernate 3 name, deprecated in favour of <code>MANUAL</code>.)</li>
         <li>Some drivers route the query to a read replica automatically.</li>
       </ul>
       <CodeBlock language="java" title="Read-only queries">

@@ -12,12 +12,16 @@ export default function React19() {
       prev={{ path: '/react19/profiling', label: 'Profiling React Apps in the Browser' }}
       next={{ path: '/react19/server', label: 'Server Components & Actions' }}
     >
-      <p>React 19 is the most significant release since hooks. It introduces the React Compiler (automatic memoization), Actions for async state transitions, new hooks for forms and optimistic UI, and the <code>use()</code> hook. Let's dive into each.</p>
+      <p>React 19 is the most significant release since hooks. It brings Actions for async state transitions, new hooks for forms and optimistic UI, ref as a plain prop, and the <code>use()</code> hook. We start with the React Compiler, which is <em>not</em> part of the <code>react</code> package but is the change that most reshapes how the rest of this lesson gets used. Let's dive into each.</p>
 
       <h2>React Compiler (React Forget)</h2>
 
+      <InfoBox variant="warning" title="A separate build tool, not a React 19 runtime feature">
+        <p>The React Compiler ships as its own package (<code>babel-plugin-react-compiler</code>) on its own release track. It is <strong>not bundled into <code>react@19</code></strong>, and upgrading to React 19 does <strong>not</strong> turn it on &mdash; you add the plugin to your build config and opt in. It reached <strong>1.0 (stable)</strong> as a standalone release, so it is no longer &ldquo;upcoming&rdquo;; it is simply a decision your project makes separately from its React version.</p>
+      </InfoBox>
+
       <InfoBox variant="success" title="The End of Manual Memoization">
-        <p>The React Compiler automatically memoizes components, hooks, and their dependencies at build time. This means <code>useMemo</code>, <code>useCallback</code>, and <code>React.memo</code> are largely unnecessary in React 19 projects using the compiler. It analyzes your code and inserts memoization where beneficial.</p>
+        <p>Once enabled, the React Compiler automatically memoizes components, hooks, and their dependencies at build time. This means <code>useMemo</code>, <code>useCallback</code>, and <code>React.memo</code> are largely unnecessary in projects that run it. It analyzes your code and inserts memoization where beneficial &mdash; but only for components that follow the Rules of React; anything that mutates props or state during render silently opts out.</p>
       </InfoBox>
 
       <FlowChart
@@ -442,12 +446,14 @@ function ProfilePage({ userId }) {
 // retries, and garbage collection, which the 6-line Map above does not.`}
       </CodeBlock>
 
-      <h2>Context as a Provider &mdash; <code>Context.Provider</code> Is Deprecated</h2>
+      <h2>Context as a Provider &mdash; <code>&lt;Context&gt;</code> Replaces <code>Context.Provider</code></h2>
 
       <p>
         React 19 lets you render the context object itself as the provider. The old{' '}
-        <code>&lt;MyContext.Provider&gt;</code> form still works, but it is deprecated and
-        will be removed in a future major version.
+        <code>&lt;MyContext.Provider&gt;</code> form is <strong>not</strong> deprecated &mdash;
+        it is fully supported and emits no warning in React 19. React has said it intends to
+        deprecate it in a future release, so prefer the short form in new code and treat the
+        two as interchangeable when reading.
       </p>
 
       <CodeBlock language="jsx" title="The new provider syntax" showLineNumbers>
@@ -824,9 +830,14 @@ function Tabs({ active }) {
           </li>
         </ul>
         <p style={{ marginBottom: 0 }}>
-          <code>forwardRef</code> and <code>Context.Provider</code> are <em>deprecated but
-          still functional</em> &mdash; they will be removed in a later major, so migrate at
-          your leisure rather than in a panic.
+          <code>forwardRef</code> and <code>Context.Provider</code> are <strong>not</strong> on
+          that list. Neither is deprecated in React 19 &mdash; both are fully supported and
+          emit no warning. React&apos;s docs say <code>forwardRef</code> &ldquo;is no longer
+          necessary&rdquo; and &ldquo;will be deprecated in a future release&rdquo;, and it has
+          signalled the same intent for <code>Context.Provider</code>. Write the new forms in
+          new code; there is nothing to migrate in a panic. (<code>Context.Consumer</code>{' '}
+          <em>is</em> already marked legacy &mdash; use <code>useContext</code> or{' '}
+          <code>use</code>.)
         </p>
       </InfoBox>
 

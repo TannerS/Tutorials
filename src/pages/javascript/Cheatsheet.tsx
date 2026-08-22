@@ -302,7 +302,7 @@ err.cause                -> the original error, still fully inspectable`}
         </p>
       </InfoBox>
 
-      <h2>Feature Timeline — ES2015 Through ES2024</h2>
+      <h2>Feature Timeline — ES2015 Through ES2026</h2>
 
       <CodeBlock language="text" title="Year -> headline additions (full depth in Modern JS Tour + the dedicated ES2017 lesson)">
 {`2015 (ES6)   let/const, arrow fns, classes, template literals, destructuring,
@@ -319,7 +319,24 @@ err.cause                -> the original error, still fully inspectable`}
 2022 (ES13)  top-level await, true private #fields, static blocks, .at(),
              Object.hasOwn, error.cause
 2023 (ES14)  toSorted/toReversed/toSpliced/with, findLast/findLastIndex
-2024 (ES15)  Object.groupBy/Map.groupBy, Promise.withResolvers`}
+2024 (ES15)  Object.groupBy/Map.groupBy, Promise.withResolvers,
+             ArrayBuffer.transfer, /v regex flag
+2025 (ES16)  iterator helpers (.map/.filter/.take/.drop/.toArray on any
+             iterator), Set methods (union/intersection/difference/...),
+             Promise.try, RegExp.escape, JSON modules + import attributes,
+             Float16Array, regex modifiers (?i:...), dup named capture groups
+2026 (ES17)  Math.sumPrecise, Error.isError, Uint8Array to/fromBase64 + Hex,
+             Array.fromAsync, Iterator.concat, Map/WeakMap getOrInsert,
+             JSON.rawJSON / JSON.isRawJSON
+
+2027 (next)  Temporal, 'using' / 'await using' (explicit resource management),
+             Atomics.pause, Iterator.zip  -- all Stage 4, some already in V8
+
+Caution: an edition number says what TC39 ratified, not what your runtime
+can execute. On Node 25.2.1 today, 'using' RUNS (ES2027) while Math.sumPrecise,
+Iterator.concat and Map.getOrInsert DO NOT (ES2026). Check the runtime.
+And when a TypeScript release note "adds" iterator helpers (5.6) or 'using'
+(5.2), it added the TYPES -- the features themselves are ECMAScript.`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="The two most common real-world bugs on this whole page">

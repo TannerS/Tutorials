@@ -196,14 +196,21 @@ li:not(:where(.active)) { color: gray; }  /* :where() zeroes it back out */`}
 
       <PosterCard
         glyph="Ly"
-        title={<>Unlayered Styles<span className="dim"> Always Beat @layer</span></>}
+        title={<>Unlayered Styles<span className="dim"> Beat @layer — Until !important</span></>}
         language="css"
         code={`@layer base { .btn { color: blue; } }
-
 .btn { color: red; }  /* NOT in any @layer */
-/* red wins — ANY unlayered declaration beats ANY layered one,
-   regardless of specificity OR layer order */`}
-        caption="Cascade layers only govern priority AMONG layered styles — a single unlayered rule anywhere in the stylesheet outranks every @layer, including ones declared later. Adopting @layer for a component library means wrapping ALL of it, or an app's un-layered override styles will always win unexpectedly."
+/* red wins — an unlayered NORMAL declaration beats a layered one,
+   regardless of specificity OR layer order */
+
+/* Both rules INVERT for !important: */
+@layer base { .btn { color: blue !important; } }
+.btn { color: red !important; }   /* blue wins — LAYERED beats unlayered */
+
+@layer a, b;
+@layer a { .btn { color: red !important; } }
+@layer b { .btn { color: blue !important; } }  /* red — EARLIER layer wins */`}
+        caption="For normal declarations, cascade layers only govern priority AMONG layered styles — a single unlayered rule anywhere outranks every @layer, including ones declared later. !important reverses both halves (verified in Chromium): a layered important declaration beats an unlayered one, and the earliest layer wins instead of the latest. So the library advice is: wrap ALL of your CSS in a layer or an app's unlayered overrides win — but do not then reach for !important to claw priority back, because inside a layered architecture that hands the win to whichever layer was declared first."
       />
 
       <PosterCard

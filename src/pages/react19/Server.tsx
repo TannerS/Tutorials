@@ -97,6 +97,34 @@ export function AddToCartButton({ productId }) {
 
       <h2>Server Actions — "use server"</h2>
 
+      <InfoBox variant="danger" title="Before you ship any of this: CVE-2025-55182 (CVSS 10.0)">
+        <p>
+          A Server Action is a real, unauthenticated <code>POST</code> endpoint that
+          deserializes an attacker-supplied body. In December 2025, a flaw in exactly that
+          deserialization step &mdash; the RSC <strong>Flight</strong> protocol &mdash; allowed
+          <strong> pre-auth remote code execution</strong> on the server from a single crafted
+          POST. No login, no user interaction. It was scored <strong>CVSS 10.0</strong>, the
+          maximum, and dubbed &ldquo;React2Shell&rdquo;.
+        </p>
+        <p>
+          <strong>Affected:</strong> the RSC packages at <code>19.0.0</code>,{' '}
+          <code>19.1.0</code>, <code>19.1.1</code> and <code>19.2.0</code>.{' '}
+          <strong>Patched in:</strong> <code>19.0.1</code>, <code>19.1.2</code>, and{' '}
+          <code>19.2.1</code> &mdash; and everything after. That covers{' '}
+          <code>react-server-dom-webpack</code>, <code>react-server-dom-parcel</code> and{' '}
+          <code>react-server-dom-turbopack</code>. Next.js shipped its own companion fix
+          (CVE-2025-66478); if you are on Next, patch the framework too rather than only
+          bumping React.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          The practical rule: <strong>never run RSC on a version below the patch floor.</strong>{' '}
+          Pin, don&apos;t range &mdash; <code>react@^19.0.0</code> is a floor that still{' '}
+          <em>permits</em> <code>19.0.0</code>. This is also the sharpest possible argument for
+          the section&apos;s own advice: server-side validation is not the boundary here, because
+          the exploit fires <em>before</em> your action body ever runs.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="jsx" title="Server Actions — Mutations Without API Routes" showLineNumbers>
 {`// Server Action — runs on server, callable from client
 "use server";

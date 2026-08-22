@@ -307,8 +307,21 @@ CREATE INDEX ON events (user_id);
 
 -- RULES: the expression must be IMMUTABLE, may reference only the CURRENT row
 -- (no subqueries, no other tables), and cannot reference another generated
--- column. Postgres supports STORED only — there is no VIRTUAL yet, so it costs
--- disk. Use a plain VIEW when you'd rather spend CPU on read than bytes on disk.`}
+-- column.
+
+-- ALWAYS WRITE THE STORAGE KEYWORD. PG12-17 accepted STORED only and made it
+-- mandatory. PG18 added VIRTUAL (computed on read, zero disk) and made VIRTUAL
+-- the DEFAULT, so an omitted keyword changes meaning across a major upgrade:
+CREATE TABLE t (q INT, p NUMERIC, total NUMERIC GENERATED ALWAYS AS (q*p));
+-- PG17: ERROR: syntax error at or near ")"   <- the keyword was required
+-- PG18: accepted, and 'total' is VIRTUAL
+
+-- That matters because a VIRTUAL column CANNOT BE INDEXED:
+CREATE INDEX ON t (total);
+-- ERROR: indexes on virtual generated columns are not supported
+-- (verified on 18.6). So: STORED when you will index it or read it far more
+-- often than you write it; VIRTUAL to skip the disk cost; a plain VIEW when
+-- the expression isn't per-row. Never leave it to the default.`}
       </CodeBlock>
 
       <CodeBlock language="sql" title="EXCLUSION constraints — UNIQUE for things that aren't equality" showLineNumbers={true}>

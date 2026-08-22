@@ -196,13 +196,15 @@ encoder.matches(candidate, user.getPasswordHash());`}
         glyph="Cs"
         title={<>CSRF<span className="dim"> — on or off?</span></>}
         language="java"
-        code={`// Cookie-session browser app: enable CSRF.
-.csrf(csrf -> csrf.csrfTokenRepository(
-    CookieCsrfTokenRepository.withHttpOnlyFalse()))
+        code={`// Server-rendered form app on a cookie session: leave the defaults.
+// (Session-backed repository + Xor handler = BREACH protection.)
+
+// SPA on a cookie session: Security 7 has a one-method answer.
+.csrf(csrf -> csrf.spa())
 
 // Stateless bearer-token API: disable CSRF.
 .csrf(csrf -> csrf.disable())`}
-        caption="CSRF forges a request using a browser's automatically-attached cookie. A bearer token in a header is never auto-attached cross-origin, so stateless APIs have nothing to forge."
+        caption="CSRF forges a request using a browser's automatically-attached cookie; a bearer token in a header is never auto-attached cross-origin, so stateless APIs have nothing to forge. For a SPA, the widely-copied CookieCsrfTokenRepository.withHttpOnlyFalse() line ALONE gives you a 403 — the cookie holds the raw token but the default XorCsrfTokenRequestAttributeHandler expects an encoded one. spa() (Security 7) wires both halves; on 6.x you have to hand-roll a handler that renders Xor and resolves plain."
       />
 
       <PosterCard
@@ -268,7 +270,7 @@ class OrderControllerSecurityTest {
           { need: 'Check return value owner', answer: '@PostAuthorize("returnObject...")' },
           { need: 'Current user in a controller', answer: '@AuthenticationPrincipal Jwt jwt' },
           { need: 'Hash a password', answer: 'PasswordEncoderFactories.createDelegatingPasswordEncoder()' },
-          { need: 'Cookie-session app', answer: 'Enable CSRF with CookieCsrfTokenRepository' },
+          { need: 'Cookie-session app', answer: 'Leave CSRF on. SPA front end? csrf.spa() — the cookie repository alone 403s' },
           { need: 'CORS for /api/**', answer: 'CorsConfigurationSource bean, not just WebMvcConfigurer' },
           { need: 'Test a secured endpoint', answer: '@WebMvcTest + .with(jwt().authorities(...))' },
         ]}

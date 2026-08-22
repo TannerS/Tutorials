@@ -306,8 +306,8 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7          # v4 runs on node20, which GitHub
+      - uses: actions/setup-node@v7         # removes from runners 2026-09-16
         with:
           node-version: 24        # current Active LTS; Node 20 went EOL in April 2026
 
@@ -318,7 +318,7 @@ jobs:
         env:
           CI: true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
@@ -348,8 +348,8 @@ jobs:
           </tr>
           <tr>
             <td>Parallel execution</td>
-            <td>Built-in, free</td>
-            <td>Paid (Cypress Cloud)</td>
+            <td>Built-in workers plus <code>--shard</code>, free, no service required</td>
+            <td>Free if you split the spec list yourself (or use an open-source orchestrator). What Cypress Cloud sells is <em>load-balanced</em> orchestration and result aggregation — convenience, not the capability.</td>
           </tr>
           <tr>
             <td>Multi-tab/multi-origin</td>
@@ -373,13 +373,13 @@ jobs:
           </tr>
           <tr>
             <td>Test runner UI</td>
-            <td>HTML report, trace viewer</td>
-            <td>Interactive runner (great DX)</td>
+            <td>UI mode (watch + time-travel), trace viewer, codegen, HTML report</td>
+            <td>Interactive runner — genuinely good, and for years the reason to pick Cypress. Playwright&apos;s UI mode has largely closed this gap.</td>
           </tr>
           <tr>
             <td>Community</td>
-            <td>Growing rapidly</td>
-            <td>Large, mature ecosystem</td>
+            <td>The larger ecosystem and the default for new projects. Week of 2026-08-15 on npm: <code>@playwright/test</code> ~55M weekly downloads, <code>playwright</code> ~83M.</td>
+            <td>Still large and mature, with good docs and plugins — but ~7.3M weekly downloads over the same week, roughly an order of magnitude behind.</td>
           </tr>
           <tr>
             <td>iframes</td>
@@ -390,9 +390,25 @@ jobs:
       </table>
 
       <InfoBox variant="info" title="Our Recommendation">
-        For new projects, Playwright is generally the better choice — it&apos;s faster, supports
-        more browsers, and has free parallelism. Cypress still excels in developer experience
-        with its interactive test runner and time-travel debugging. Both are excellent tools.
+        <p>
+          For new projects, pick Playwright. It supports more browsers and languages, handles
+          multi-tab, multi-origin and iframes that Cypress cannot, parallelises without a paid
+          service, and — the part most comparison tables have not caught up with — it is now the{' '}
+          <em>larger</em> ecosystem, not the challenger. That last point matters practically: it is
+          where the Stack Overflow answers, the CI recipes and the AI-generated examples are.
+        </p>
+        <p>
+          Cypress is still a good tool and its interactive runner is still pleasant. But the
+          historical trade-off &mdash; &quot;Playwright for capability, Cypress for developer
+          experience&quot; &mdash; has narrowed a long way since Playwright shipped UI mode and the
+          trace viewer. Treat any comparison that describes Playwright as &quot;growing rapidly&quot;
+          or Cypress as &quot;the mature choice&quot; as written before roughly 2023.
+        </p>
+        <p>
+          The one genuine reason to stay on Cypress is an existing suite. Rewriting a working E2E
+          suite buys you very little; migrate when you hit something Cypress cannot do (multi-origin
+          auth flows and cross-tab are the usual triggers), not on principle.
+        </p>
       </InfoBox>
 
       <h2>E2E Testing Best Practices</h2>

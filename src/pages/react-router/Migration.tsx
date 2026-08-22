@@ -7,7 +7,7 @@ import LessonLayout from '../../components/LessonLayout';
 export default function Migration() {
   return (
     <LessonLayout
-      title="Migration Guide (v5→v7)"
+      title="Migration Guide (v5→v8)"
       sectionId="react-router"
       lessonIndex={7}
       prev={{ path: '/react-router/fullapp', label: 'Complete App Routing' }}
@@ -312,6 +312,47 @@ function UserList() {
         <code>createBrowserRouter</code> first, keeping existing components
         unchanged. Then add loaders one route at a time, replacing{' '}
         <code>useEffect</code> fetching as you go.
+      </InfoBox>
+
+      <h2>v7 → v8: What Changed in June 2026</h2>
+
+      <p>
+        v8 is a much smaller jump than v6 or v7 were &mdash; there is no new routing model
+        to learn. Most of the work is mechanical, and if you already import from{' '}
+        <code>react-router</code> rather than <code>react-router-dom</code> you have done
+        the largest part of it.
+      </p>
+
+      <CodeBlock language="jsx" title="The v7 → v8 checklist">
+{`// 1. react-router-dom is GONE. It was only ever a re-export shim in v7.
+//    import { Link, useNavigate } from 'react-router';
+//    import { RouterProvider, HydratedRouter } from 'react-router/dom';
+
+// 2. ESM-only. There is no CJS build any more — if you require() it
+//    from a CommonJS file, that now fails.
+
+// 3. 'data' was renamed to 'loaderData' in meta / matches / useMatches.
+//    export function meta({ loaderData }) { return [{ title: loaderData.title }]; }
+
+// 4. Middleware left the flag. future.v8_middleware is the default now,
+//    so remove the flag and adopt the stable API.
+
+// 5. New floors: Node 22.22+, React 19.2.7+, Vite 7+.`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Which Version Should You Actually Be On?">
+        <p>
+          <strong>v6 is end-of-life</strong> and <strong>v7 is security-only</strong>. If you
+          are starting something new, start on v8. If you are on v6, the useful path is
+          v6&nbsp;&rarr;&nbsp;v7&nbsp;&rarr;&nbsp;v8 rather than a single jump: v7 is where the
+          data APIs and the package unification land, and it is much easier to verify one of
+          those at a time.
+        </p>
+        <p>
+          The examples throughout this section are written for v7, which is what this site
+          pins. The import style is identical in v8, so they carry over unchanged &mdash; that
+          is deliberate, and it is most of the migration.
+        </p>
       </InfoBox>
 
       <h2>Step-by-Step Migration Approach</h2>

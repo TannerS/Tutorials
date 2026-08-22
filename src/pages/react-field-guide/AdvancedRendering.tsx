@@ -115,8 +115,11 @@ function handleChange(e) {
         title={<>The React Compiler<span className="dim"> changes the calculus</span></>}
         language="text"
         code={`If the compiler is enabled on your project (look for
-babel-plugin-react-compiler in vite.config / babel config —
-it shipped 1.0 and is stable, so there's no "rc" tag anymore):
+babel-plugin-react-compiler in vite.config / babel config).
+Check the VERSION, not just the presence: latest is 1.0.0, but
+the old "rc" dist-tag still exists and still resolves to a
+pre-1.0 build (19.1.0-rc.3), so an install pinned to @rc is
+NOT on the stable compiler. Want stable? pin ^1.0.0.
 
   It auto-inserts useMemo/useCallback/memo equivalents for you
   at BUILD time, for any component/hook that follows the Rules

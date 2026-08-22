@@ -382,12 +382,13 @@ function App() {
   useEffect(() => {
     setProcessed(items.map(i => ({ ...i, processed: true })));
   }, [items]);
-  // Trace it: the effect writes "processed", which is NOT in its own deps.
-  // Re-render → "items" is the same reference → deps unchanged → effect does
-  // not re-run. It settles after one extra render. The cost is a wasted
-  // render and a stale frame, not a hang.
+  // Trace it: the effect re-renders (it sets "processed"), but on that
+  // re-render "items" is the same reference → deps unchanged → the effect
+  // does not run again. Half the cycle is missing, so it settles after one
+  // extra render. The cost is a wasted render and a stale frame, not a hang.
   //
-  // The rule: an effect only loops if it changes something it depends on.
+  // The rule needs BOTH halves: the effect must re-render AND its deps must
+  // differ on that re-render. Here only the first half holds.
 
   // ❌ THIS one is a real infinite loop — it writes to its own dependency:
   useEffect(() => {
@@ -409,18 +410,41 @@ function App() {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="The One Test for &ldquo;Will This Effect Loop?&rdquo;">
-        An effect loops if and only if running it changes something in its own
-        dependency array. Walk the cycle out loud: <em>effect writes X → X is in my
-        deps → deps changed → effect runs again</em>. If you cannot close that circle,
-        you do not have a loop — you have at most one wasted render.
-        <br />
-        <br />
-        This matters because the two problems have different fixes. A genuine loop
-        means the effect is doing something it should not be doing at all. A wasted
-        render usually means you are computing derived state and should delete the
-        effect in favour of a calculation during render. Guessing &ldquo;probably a
-        loop&rdquo; and bolting on a <code>useRef</code> guard hides both.
+      <InfoBox variant="tip" title="The Two-Part Test for &ldquo;Will This Effect Loop?&rdquo;">
+        <p style={{ marginTop: 0 }}>
+          An effect loops when <strong>both</strong> of these are true — neither one
+          alone is enough:
+        </p>
+        <ol>
+          <li>
+            <strong>Running it causes a re-render.</strong> It sets state (or dispatches)
+            to a value React does not bail out on. An effect that only fetches, logs or
+            subscribes cannot loop, because nothing re-renders to run it again.
+          </li>
+          <li>
+            <strong>Its dependencies differ on that re-render</strong> — or there is no
+            dependency array at all, which means &ldquo;always re-run&rdquo;.
+          </li>
+        </ol>
+        <p>
+          Note what the second half is <em>not</em>: it is not &ldquo;the effect writes
+          something in its own deps.&rdquo; Overlap is one way to satisfy it, not the
+          only way. The two counterexamples are both in the block above:{' '}
+          <code>useEffect(() =&gt; setCount(count + 1))</code> has <em>no deps to
+          overlap with</em> and loops anyway; and{' '}
+          <code>useEffect(fn, [{'{ token }'}])</code> loops because the object literal
+          is a new reference every render, regardless of what the body writes. Overlap
+          is not sufficient either — an effect that writes its own dep back to the{' '}
+          <em>same</em> value fails part 1, because React bails out and never
+          re-renders.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          This matters because the two problems have different fixes. A genuine loop
+          means the effect is doing something it should not be doing at all. A wasted
+          render usually means you are computing derived state and should delete the
+          effect in favour of a calculation during render. Guessing &ldquo;probably a
+          loop&rdquo; and bolting on a <code>useRef</code> guard hides both.
+        </p>
       </InfoBox>
 
       <h2>Anti-Pattern 6: Syncing Parent-Child State</h2>

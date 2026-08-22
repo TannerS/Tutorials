@@ -15,7 +15,7 @@ export default function Boot4() {
       <h2>Spring 6 and Boot 3/4 in a Sentence</h2>
       <p>
         Spring 6 (bundled by Boot 3/4) is the biggest release since Spring 3: Jakarta EE 9+
-        (<code>javax</code> → <code>jakarta</code>), Java 17 minimum, RFC 7807
+        (<code>javax</code> → <code>jakarta</code>), Java 17 minimum, RFC 9457
         Problem Details as first-class, a new declarative HTTP client, an Observation API
         that unifies metrics + tracing, virtual thread support, and native compilation with
         GraalVM AOT. This page is a tour of the pieces you'll actually use day-to-day.
@@ -126,7 +126,7 @@ class CatalogClientConfig {
         </p>
       </InfoBox>
 
-      <h2>ProblemDetail — RFC 7807 as First-Class</h2>
+      <h2>ProblemDetail — RFC 9457 as First-Class</h2>
       <p>
         Covered in depth in the Error Handling lesson. The point here: Boot 3+ ships
         <code>ProblemDetail</code> support out of the box. Enable it and Spring MVC
@@ -208,10 +208,11 @@ public class ReportService {
 
       <h2>Structured Concurrency (Java 21+, Preview)</h2>
       <p>
-        Java 21 previewed <code>StructuredTaskScope</code> and Java 23 continues to iterate.
-        The idea: fork multiple subtasks, join them, cancel siblings if one fails — all
-        with lexical scoping and structured error handling. Spring doesn't have direct
-        support yet, but you can use it inside services.
+        Java 21 previewed <code>StructuredTaskScope</code>, and it is <em>still</em> iterating —
+        JEP 505 (fifth preview) in Java 25, JEP 525 (sixth preview) in Java 26. The idea: fork
+        multiple subtasks, join them, cancel siblings if one fails — all with lexical scoping
+        and structured error handling. Spring doesn't have direct support yet, but you can use
+        it inside services.
       </p>
       <CodeBlock language="java" title="Structured concurrency (Java 21 preview API)">
 {`@Service
@@ -522,7 +523,7 @@ class HttpClientConfig { }`}
           <li>New HTTP call sites use <code>RestClient</code>, not
               <code>RestTemplate</code>.</li>
           <li>3+ endpoint external APIs are wrapped as <code>@HttpExchange</code> interfaces.</li>
-          <li><code>ProblemDetail</code> is on for automatic RFC 7807 error responses.</li>
+          <li><code>ProblemDetail</code> is on for automatic RFC 9457 error responses.</li>
           <li>Virtual threads are enabled for I/O-bound web workloads.</li>
           <li>Cross-cutting instrumentation uses the Observation API, not raw
               <code>Timer</code> + <code>Span</code> pairs.</li>

@@ -304,17 +304,34 @@ function ThemeToggle() {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="note" title="Why the Ref Is Also the Right Tool Here — Not Just the Faster One">
-        The re-render saving is the headline, but there is a correctness angle worth
-        noticing. In the <code>useState</code> version, <code>stop</code> reads{' '}
-        <code>intervalId</code> from the closure of the render in which it was
-        created. State updates are asynchronous, so a rapid Start → Stop sequence can
-        run <code>stop</code> against a render that has not yet seen the new id, and{' '}
-        <code>clearInterval(null)</code> quietly does nothing — leaving the timer
-        running. A ref has no such lag: <code>intervalRef.current</code> is a single
-        mutable box that every closure reads at call time, so it is always the
-        current value. That is the deeper reason refs suit &ldquo;handles to
-        imperative things&rdquo; — not merely that they skip renders.
+      <InfoBox variant="note" title="Why the Ref Is the Right Tool Here — and What the Reason Actually Is">
+        <p style={{ marginTop: 0 }}>
+          The reason is the one this section opened with: <strong>renders you paid for
+          and got nothing back.</strong> Measured in Chromium against react@19.2.6,
+          three Start clicks render the <code>useState</code> component 3 extra times
+          and the ref version <strong>0</strong> extra times — and every one of those
+          extra renders produces byte-identical DOM, because <code>intervalId</code> is
+          never displayed. That is the whole case, and it is enough.
+        </p>
+        <p>
+          It is tempting to reach for a <em>correctness</em> argument instead —
+          &ldquo;state updates are async, so a fast Start → Stop can run{' '}
+          <code>stop</code> against a stale <code>intervalId</code>.&rdquo; For two real
+          user clicks that is <strong>false</strong>: clicks are discrete events, React
+          flushes them synchronously, and the second click&apos;s handler is a fresh
+          closure over the new id. Measured: <code>stop</code> saw the live timer id and
+          the clock stopped.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          The stale read is real, but it needs a <em>single</em> block of JavaScript to
+          both set and read the id — <code>start(); stop();</code> in one handler, or a
+          handler that calls <code>start()</code>, <code>await</code>s something, then
+          calls <code>stop()</code>. Both measured as leaking a live interval, because
+          no re-render happened in between. A ref has no such lag:{' '}
+          <code>intervalRef.current</code> is one mutable box read at call time. So the
+          ref does buy immunity to that class of bug — just not to the two-clicks case
+          people usually cite.
+        </p>
       </InfoBox>
 
       <InfoBox variant="tip" title="useRef Cheat Sheet">

@@ -55,7 +55,7 @@ CatalogApi api = HttpServiceProxyFactory
 
       <PosterCard
         glyph="Pd"
-        title={<>ProblemDetail<span className="dim"> — RFC 7807 built-in</span></>}
+        title={<>ProblemDetail<span className="dim"> — RFC 9457 built-in</span></>}
         language="yaml"
         code={`spring:
   mvc:
@@ -64,7 +64,7 @@ CatalogApi api = HttpServiceProxyFactory
 
 # Now unhandled Spring MVC exceptions automatically
 # produce application/problem+json — no handler needed.`}
-        caption="Boot 3+ ships ProblemDetail out of the box. Flip this flag and framework exceptions get a standard RFC 7807 body without writing a @RestControllerAdvice."
+        caption="Boot 3+ ships ProblemDetail out of the box. Flip this flag and framework exceptions get a standard RFC 9457 (obsoletes RFC 7807) body without writing a @RestControllerAdvice — the media type is still application/problem+json."
       />
 
       <PosterCard

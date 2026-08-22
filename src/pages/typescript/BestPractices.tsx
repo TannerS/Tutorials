@@ -345,16 +345,23 @@ original still:     [3,1,4,1,5,9,2,6]`}
       </CodeBlock>
       <CodeBlock language="typescript" title="✅ GOOD — a real, typed built-in as of TS 5.4 (lib ES2024)">
 {`const byStatus = Object.groupBy(orders, o => o.status);
-// Record<string, Order[] | undefined> — grouped keys aren't guaranteed present
+// Partial<Record<string, Order[]>> — verbatim from tsc 6.0.3.
+// Partial<> is what makes every value Order[] | undefined: a key you
+// never grouped on simply isn't there, and the type says so.
 
 const byStatusMap = Map.groupBy(orders, o => o.status);
-// Map<string, Order[]> — use this form when the key isn't a plain string`}
+// Map<string, Order[]> — verified. No undefined in the type parameter;
+// the "might be missing" lives in .get()'s return instead.`}
       </CodeBlock>
       <InfoBox variant="tip" title="Why Two Versions Exist">
         <p>
-          <code>Object.groupBy</code> returns a plain object with keys typed as possibly{' '}
-          <code>undefined</code> &mdash; TypeScript is honest that a key you never grouped on
-          simply won&apos;t be there. <code>Map.groupBy</code> is the one to reach for when the
+          <code>Object.groupBy</code> returns{' '}
+          <code>{'Partial<Record<K, T[]>>'}</code> &mdash; note the exact wording, because you will
+          see it in error messages. The <code>Partial</code> is doing the work: it makes every
+          value <code>{'T[] | undefined'}</code>, so TypeScript is honest that a key you never
+          grouped on simply won&apos;t be there and you have to handle the{' '}
+          <code>undefined</code> before you can <code>.map()</code> over a group.{' '}
+          <code>Map.groupBy</code> is the one to reach for when the
           grouping key isn&apos;t a string (an object, a number you don&apos;t want coerced), or
           when you want <code>.get()</code>&apos;s explicit &quot;might not exist&quot; semantics
           instead of an index signature. Same <code>&quot;lib&quot;: [&quot;ES2024&quot;]</code>{' '}

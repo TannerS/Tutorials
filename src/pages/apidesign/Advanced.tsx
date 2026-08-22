@@ -562,9 +562,15 @@ Access-Control-Allow-Headers: Authorization, Content-Type
       <h2>API Documentation with OpenAPI</h2>
 
       <CodeBlock language="yaml" title="OpenAPI 3.1 Specification Example">
-        {`# 3.1 is the current line. Its headline change over 3.0 is full JSON Schema
-# 2020-12 compatibility — so 'nullable: true' is gone (use type: [string, 'null'])
-# and you can reuse your existing JSON Schemas verbatim.
+        {`# 3.1 is what to write today. Its headline change over 3.0 is full JSON
+# Schema 2020-12 compatibility — so 'nullable: true' is gone (use
+# type: [string, 'null']) and you can reuse your JSON Schemas verbatim.
+#
+# 3.2.0 exists (Sept 2025) and adds streaming media types (SSE, JSONL),
+# a 'querystring' parameter location, richer tags, and OAuth2 device flow.
+# Stay on 3.1 unless you specifically need one of those: tooling support
+# for 3.2 lags the spec, and 3.1 is what generators, linters, mock servers
+# and API gateways handle reliably.
 openapi: 3.1.0
 info:
   title: User Management API

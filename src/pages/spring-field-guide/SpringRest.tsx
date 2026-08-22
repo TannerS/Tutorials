@@ -179,7 +179,7 @@ Throw an exception  -> every error response. A
 
       <PosterCard
         glyph="Pd"
-        title={<>ProblemDetail<span className="dim"> — RFC 7807</span></>}
+        title={<>ProblemDetail<span className="dim"> — RFC 9457</span></>}
         language="json"
         code={`{
   "type": "https://api.example.com/errors/customer-not-found",
@@ -280,7 +280,7 @@ public class CustomerRepository {
           { need: 'Many query params', answer: '@ModelAttribute into a record' },
           { need: 'Status depends on logic', answer: 'ResponseEntity<T>' },
           { need: 'Any error response', answer: 'Throw a domain exception, never return an error DTO' },
-          { need: 'Structured error body', answer: 'ProblemDetail (RFC 7807)' },
+          { need: 'Structured error body', answer: 'ProblemDetail (RFC 9457, obsoletes 7807)' },
           { need: 'Centralize error mapping', answer: '@RestControllerAdvice + @ExceptionHandler' },
           { need: 'Driver exception leaked', answer: 'Catch at repository boundary, wrap as domain exception' },
           { need: 'Malformed vs business-rule error', answer: '400 for shape, 422 for a violated rule' },

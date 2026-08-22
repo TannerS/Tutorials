@@ -11,7 +11,7 @@ export default function Fullapp() {
       sectionId="react-router"
       lessonIndex={6}
       prev={{ path: '/react-router/testing', label: 'Testing Routes' }}
-      next={{ path: '/react-router/migration', label: 'Migration Guide (v5→v7)' }}
+      next={{ path: '/react-router/migration', label: 'Migration Guide (v5→v8)' }}
     >
       <p>
         Let&apos;s build a complete routing structure for a production-style app.

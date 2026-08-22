@@ -77,7 +77,8 @@ export default function Contract() {
 {`<dependency>
     <groupId>au.com.dius.pact.consumer</groupId>
     <artifactId>junit5</artifactId>
-    <version>4.6.11</version>
+    <!-- Latest stable on the 4.6 line. 4.7.x is still beta-only. -->
+    <version>4.6.17</version>
     <scope>test</scope>
 </dependency>`}
       </CodeBlock>

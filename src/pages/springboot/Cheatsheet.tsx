@@ -263,7 +263,7 @@ Because the filters run BEFORE DispatcherServlet:
     producer.acks: all
     producer.properties.enable.idempotence: true
   threads.virtual.enabled: true              # Java 21 virtual threads
-  mvc.problemdetails.enabled: true           # RFC 7807 responses
+  mvc.problemdetails.enabled: true           # RFC 9457 responses
 server:
   port: 8080
   shutdown: graceful

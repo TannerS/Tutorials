@@ -6,7 +6,7 @@ import LessonLayout from '../../components/LessonLayout';
 export default function JsModernTour() {
   return (
     <LessonLayout
-      title="Modern JavaScript: ES2015-2024 Feature Tour"
+      title="Modern JavaScript: ES2015-2026 Feature Tour"
       sectionId="javascript"
       lessonIndex={7}
       prev={{ path: '/javascript/error-handling', label: 'Error Handling' }}
@@ -15,7 +15,8 @@ export default function JsModernTour() {
       <p>
         JavaScript ships a new spec every year now. This lesson is a chronological map of what
         landed and when, from the 2015 rewrite that made the language feel modern through the
-        small-but-useful additions that keep arriving every June. Earlier lessons in this section
+        small-but-useful additions that keep arriving every June, up to ES2026 (ratified June 2026)
+        and a look at what is already locked in for ES2027. Earlier lessons in this section
         already cover most of the ES2015 mechanics in depth (destructuring, closures, modules,
         async) — here they're just named and dated so you can place them on the timeline.
       </p>
@@ -350,12 +351,124 @@ await promise;`}
         </p>
       </InfoBox>
 
+      <h2>ES2025 / ES16 — Lazy Iteration &amp; Real Set Algebra</h2>
+      <p>
+        Ratified June 2025. The headline is <strong>iterator helpers</strong>: the array methods
+        you already know, moved onto <code>Iterator.prototype</code> so they work lazily on
+        anything iterable — including infinite generators, where <code>Array.from()</code> first
+        would simply hang.
+      </p>
+      <CodeBlock language="javascript" title="ES2025 — all verified on Node 25.2.1">
+{`// Iterator helpers — lazy, chainable, never materializes the whole sequence
+function* naturals() { let n = 1; while (true) yield n++; }
+naturals().map(n => n * n).filter(n => n % 2 === 0).take(2).toArray();
+// [4, 16]
+
+[1, 2, 3, 4, 5].values().filter(n => n % 2).map(n => n * 10).take(2).toArray();
+// [10, 30]
+
+// Set methods — the seven operations everyone used to hand-roll or import lodash for
+new Set([1, 2]).union(new Set([2, 3]));              // Set {1, 2, 3}
+new Set([1, 2, 3]).intersection(new Set([2, 3, 4])); // Set {2, 3}
+// also: difference, symmetricDifference, isSubsetOf, isSupersetOf, isDisjointFrom
+
+// Promise.try — runs the callback synchronously, but a THROW comes back
+// as a rejection instead of blowing up the caller
+await Promise.try(() => 'sync value, still a promise');
+// 'sync value, still a promise'
+
+// RegExp.escape — finally, a correct way to put user input in a pattern
+RegExp.escape('a.b*c');   // '\\x61\\.b\\*c'
+// (yes, the leading 'a' becomes \\x61 — escaping the first character is
+//  deliberate so the result is always safe to concatenate anywhere)
+
+// Float16Array + Math.f16round + DataView get/setFloat16
+new Float16Array([1.5, 2.25])[1];   // 2.25
+
+// JSON modules (with import attributes)
+import config from './config.json' with { type: 'json' };
+
+// RegExp modifiers and duplicate named capture groups
+/(?i:hello) world/.test('HELLO world');                    // true
+/(?<year>\\d{4})-\\d\\d|\\d\\d-(?<year>\\d{4})/;               // legal now`}
+      </CodeBlock>
+
+      <h2>ES2026 / ES17 — Precision, Binary Strings &amp; Upserts</h2>
+      <p>
+        Ratified June 2026. A grab-bag of &quot;the correct version of something you were doing
+        approximately.&quot;
+      </p>
+      <CodeBlock language="javascript" title="ES2026">
+{`// Math.sumPrecise — correctly-rounded summation. The naive reduce loses the 0.1
+// entirely because 1e20 + 0.1 rounds back to 1e20.
+Math.sumPrecise([1e20, 0.1, -1e20]);              // 0.1
+[1e20, 0.1, -1e20].reduce((a, b) => a + b, 0);    // 0   (verified on Node 25)
+
+// Error.isError — works across realms/iframes, where instanceof Error does not,
+// and is not fooled by a plain object that merely looks like an error
+Error.isError(new TypeError('x'));         // true
+Error.isError({ name: 'Error', message: 'x' });  // false
+
+// Uint8Array <-> base64/hex, without the atob/btoa/String.fromCharCode dance
+new Uint8Array([72, 105]).toBase64();   // 'SGk='
+Uint8Array.fromBase64('SGk=');          // Uint8Array [72, 105]
+new Uint8Array([255, 0, 16]).toHex();   // 'ff0010'
+
+// Array.fromAsync — the async-iterable counterpart to Array.from
+await Array.fromAsync(someAsyncGenerator());   // [1, 2]
+
+// Iterator.concat — sequencing iterators without spreading them into arrays
+Iterator.concat([1, 2].values(), [3].values()).toArray();   // [1, 2, 3]
+
+// Map/WeakMap upsert — replaces the get-check-set trio
+const m = new Map();
+m.getOrInsert('k', []).push(1);         // inserts [] the first time, returns it after
+m.getOrInsertComputed('k2', () => expensive());  // callback only runs on a miss
+
+// JSON.rawJSON / JSON.isRawJSON — round-trip a big integer without precision loss
+JSON.stringify({ n: JSON.rawJSON('12345678901234567890') });
+// '{"n":12345678901234567890}'
+JSON.stringify({ n: 12345678901234567890 });
+// '{"n":12345678901234567000}'   <- a plain number literal already lost the tail`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Ratified is not the same as shipped — and neither implies the other">
+        <p>
+          This is the single most useful thing to internalize about the yearly cadence. Both
+          directions of the mismatch are real, measured on Node 25.2.1 today:
+        </p>
+        <p>
+          <strong>Ratified but not yet in V8:</strong> <code>Math.sumPrecise</code>,{' '}
+          <code>Iterator.concat</code> and <code>Map.prototype.getOrInsert</code> all threw{' '}
+          <code>TypeError: … is not a function</code>. They are in the ES2026 spec; the engine
+          hasn&apos;t caught up. Everything else in the ES2026 block above ran.
+        </p>
+        <p>
+          <strong>Shipped but not yet ratified:</strong> <code>using</code> declarations run
+          unflagged on Node 25 right now, and they are <em>not</em> in ES2026 — Explicit Resource
+          Management is Stage 4 and slated for <strong>ES2027</strong>, alongside{' '}
+          <strong>Temporal</strong> (the <code>Date</code> replacement, which missed the June 2026
+          cutoff), <code>Atomics.pause</code>, and joint iteration (<code>Iterator.zip</code>).
+          Temporal is the reverse case again: ratified for 2027 and still absent from Node 25 —{' '}
+          <code>typeof Temporal</code> is <code>&apos;undefined&apos;</code>.
+        </p>
+        <p>
+          The practical rule: an edition number tells you what TC39 agreed on, never what your
+          runtime can execute. Check the runtime. And when a TypeScript release note says it
+          &quot;added&quot; iterator helpers or <code>using</code>, read that as &quot;added the
+          type declarations for&quot; — those are JavaScript features, and TypeScript describing
+          them does not make your Node version able to run them.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="success" title="The shape of the last decade">
         <p>
           2015 was the rewrite; everything since has been steady, incremental polish — smarter
           defaults for common footguns (<code>??</code>, <code>.at()</code>), real enforcement
-          where JS previously only had convention (private fields), and array APIs that stopped
-          assuming mutation was fine. None of it is flashy. All of it is worth reaching for.
+          where JS previously only had convention (private fields), array APIs that stopped
+          assuming mutation was fine, and — in the most recent editions — correct versions of
+          things everyone had been approximating (set algebra, precise summation, base64,
+          cross-realm error detection). None of it is flashy. All of it is worth reaching for.
         </p>
       </InfoBox>
     </LessonLayout>

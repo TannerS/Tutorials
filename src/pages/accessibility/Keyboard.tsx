@@ -179,14 +179,42 @@ function RouteAnnouncer() {
 
   return (
     // tabindex="-1" makes it programmatically focusable without
-    // adding it to the tab order. The label gives the screen reader
-    // something to announce when focus lands.
-    <div ref={targetRef} tabIndex={-1} aria-label="Main content" style={{ outline: 'none' }}>
+    // adding it to the tab order. It MUST be a <main> (or a div with
+    // role="main") -- a bare <div> is role="generic", and ARIA forbids
+    // naming a generic, so aria-label on it is thrown away and focus
+    // lands somewhere with nothing to announce.
+    <main ref={targetRef} tabIndex={-1} aria-label="Main content" style={{ outline: 'none' }}>
       {children}
-    </div>
+    </main>
   );
 }`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="Why That Wrapper Is a main Element and Not a div">
+        <p>
+          Putting <code>aria-label</code> on a bare <code>&lt;div&gt;</code> is the single most common
+          way this pattern is written, and it is <strong>prohibited by the ARIA specification</strong>.
+          A <code>&lt;div&gt;</code> with no role maps to <code>role=&quot;generic&quot;</code>, and
+          generic is on the list of roles where naming is <em>prohibited</em> (ARIA 1.2 §5.2.8.6,
+          &quot;Roles which cannot be named&quot;). A conforming screen reader does not merely ignore
+          the label as a nicety — it is required to drop it.
+        </p>
+        <p>
+          The consequence is exact and cruel: focus moves to an unnamed, contentless container, and
+          the screen reader announces <em>nothing</em>. The handler still &quot;works&quot; in the
+          sense that the tab position resets, but the announcement that the whole pattern exists to
+          produce never happens, and it fails silently — nothing throws, no audit rule fires on the
+          JSX, and it looks correct in review.
+        </p>
+        <p>
+          Any role that supports an accessible name fixes it. <code>&lt;main&gt;</code> (implicit{' '}
+          <code>role=&quot;main&quot;</code>) is the right one here because the thing you are focusing
+          genuinely <em>is</em> the page&apos;s main content, so you get a correct landmark for free.
+          If a <code>&lt;main&gt;</code> already exists further down your tree, put{' '}
+          <code>role=&quot;region&quot;</code> on the wrapper instead — a second <code>main</code>{' '}
+          landmark is its own bug. What you must not do is leave it generic.
+        </p>
+      </InfoBox>
 
       {/* ── Focus Trapping ────────────────────────────────── */}
       <h2>Focus Trapping in Modals</h2>

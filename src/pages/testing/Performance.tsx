@@ -737,10 +737,10 @@ npx nx affected --target=test`}
       matrix:
         shard: [1, 2, 3, 4]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7          # v4 runs on node20, which GitHub
+      - uses: actions/setup-node@v7         # removes from runners 2026-09-16
         with:
-          node-version: 20
+          node-version: 24     # Active LTS; Node 20 went EOL April 2026
           cache: npm           # dependency cache: minutes -> seconds
       - run: npm ci
       - run: npx playwright install --with-deps chromium
@@ -748,7 +748,7 @@ npx nx affected --target=test`}
                --outputFile=results-\${{ matrix.shard }}.xml
       # Jest:       npx jest --shard=\${{ matrix.shard }}/4
       # Playwright: npx playwright test --shard=\${{ matrix.shard }}/4
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: results-\${{ matrix.shard }}

@@ -11,7 +11,7 @@ export default function Tokens() {
       sectionId="css-mastery"
       lessonIndex={7}
       prev={{ path: '/css-mastery/sass', label: 'Sass & SCSS Fundamentals' }}
-      next={{ path: '/css-mastery/style-inclusion', label: 'Style-Inclusion Methods' }}
+      next={{ path: '/css-mastery/design-system-tokens', label: 'Design System Tokens: A Carbon Deep Dive' }}
     >
       <p>
         A design token is a named, single source of truth for a design decision — a color, a spacing
@@ -196,7 +196,7 @@ export default function Tokens() {
 
       <FlowChart
         title="Token Tier Decision Guide"
-        chart={"graph TD\n  V[New value needed in CSS] --> SHARED{Used by 2+ semantic tokens\\nor needs its own name in the palette?}\n  SHARED -->|Yes| PRIM[Primitive tier: --blue-60, --gray-100]\n  SHARED -->|No, one-off| SKIP[Skip primitive tier, go straight to semantic]\n  PRIM --> SEM[Semantic tier: --text-primary maps to primitive]\n  SKIP --> SEM\n  SEM --> SCOPE{Only ONE component will ever read it?}\n  SCOPE -->|Yes| COMP[Component tier: --button-color-primary]\n  SCOPE -->|No| USE[Components reference the semantic token directly]\n  style PRIM fill:#6366f1,color:#fff\n  style SEM fill:#10b981,color:#fff\n  style COMP fill:#f59e0b,color:#000"}
+        chart={"graph TD\n  V[New value needed in CSS] --> SHARED{Used by 2+ semantic tokens\\nor needs its own name in the palette?}\n  SHARED -->|Yes| PRIM[Primitive tier: --blue-60, --gray-100]\n  SHARED -->|No, one-off| SKIP[Skip primitive tier, go straight to semantic]\n  PRIM --> SEM[Semantic tier: --text-primary maps to primitive]\n  SKIP --> SEM\n  SEM --> SCOPE{Only ONE component will ever read it?}\n  SCOPE -->|Yes| COMP[Component tier: --button-color-primary]\n  SCOPE -->|No| USE[Components reference the semantic token directly]\n  style PRIM fill:#1a2744\n  style SEM fill:#1a3329\n  style COMP fill:#3d2f14"}
       />
 
       <InteractiveChallenge

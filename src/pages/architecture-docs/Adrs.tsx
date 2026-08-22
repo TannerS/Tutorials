@@ -166,11 +166,14 @@ item references a product and a price at time of purchase, an order has
 exactly one shipping address and one billing address, and refunds must
 reference the original order and be constrained to not exceed the original
 total. Reporting also needs to join orders against customers, promotions, and
-inventory reservations for finance and support tooling.
+refunds for finance and support tooling.
 
-The service must guarantee that "reserve inventory, charge payment, create
-order" either all happen or none do — a partial write here means charging a
-customer for stock that was never reserved.
+Business also requires that "reserve inventory, charge payment, create order"
+never ends up half-done — a partial outcome here means charging a customer
+for stock that was never reserved. Note that only one of those three steps is
+ours: inventory lives in the Inventory Service's own database and the charge
+is an HTTPS call to Stripe. Whatever we choose here can only make our own
+writes atomic.
 
 ## Decision
 
@@ -181,9 +184,11 @@ accessed via Spring Data JPA.
 
 **Positive**
 
-- Multi-table transactions (order + line items + inventory reservation) are
-  atomic via standard ACID transactions — no saga or outbox pattern is needed
-  for the core order-creation path.
+- Everything the Orders Service owns commits together: the order row, its
+  line items, its addresses, and the outbox row that publishes OrderPlaced
+  all go in one ACID transaction. That last part is the point — it is what
+  makes a transactional outbox possible at all, so a published event can
+  never disagree with the state that produced it.
 - Foreign key constraints enforce referential integrity at the database level
   (a line item cannot reference a deleted product) instead of relying on
   application code to keep this consistent.
@@ -195,6 +200,18 @@ accessed via Spring Data JPA.
 
 **Negative**
 
+- This does NOT give us end-to-end atomicity for order placement, and no
+  datastore choice could have. The payment is a third-party HTTP call and the
+  reservation is a write to another service's database; a local transaction
+  cannot roll either one back. Order placement is therefore a saga: reserve
+  inventory -> authorize payment -> commit (order + outbox) locally -> capture
+  payment, with an explicit compensation for each step (release reservation,
+  void authorization) and an order status of PENDING / CONFIRMED / FAILED
+  rather than "exists or does not exist". We accept eventual consistency
+  across the three services and a short window where an order is PENDING.
+- We considered and rejected XA / two-phase commit for the above: Stripe is
+  not a resource manager and cannot enlist, and 2PC would couple our
+  availability to the Inventory Service's.
 - Schema changes require migrations (Flyway) and a deploy step, versus
   MongoDB's schema flexibility — adding a field to an order requires a
   migration, not just writing a new shape.
@@ -209,6 +226,34 @@ accessed via Spring Data JPA.
   and order_addresses tables. The one-time migration script is tracked
   separately in ADR-0005.`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Read the Consequences Section Adversarially">
+        <p>
+          Look at what the Consequences section above refuses to claim. The Context asks for
+          &quot;reserve inventory, charge payment, create order — all or nothing,&quot; and the
+          tempting positive bullet writes itself: <em>&quot;multi-table transactions make this atomic,
+          no saga needed.&quot;</em> It would be wrong. Two of those three steps are not in our
+          database — the charge is an HTTPS call to a payment provider and the reservation belongs to
+          another service — and <code>ROLLBACK</code> has no authority over either. The{' '}
+          <em>Design Patterns → Composite &amp; Facade</em> lesson puts it bluntly: a database
+          transaction cannot un-charge a credit card, so the rollback is a lie.
+        </p>
+        <p>
+          This is worth dwelling on because an ADR is not an essay — it is the artifact the next
+          engineer copies. A Consequences section that overclaims does not just misinform; it gets
+          cited in review six months later as the reason nobody built the saga, and by then the
+          person who could have argued with it has left. The Negative bullet that names the saga,
+          the compensations, and the PENDING window is the most valuable thing in the whole record.
+        </p>
+        <p>
+          A useful habit when writing one: take each Positive bullet and ask <em>&quot;what would
+          have to be true for this to be false?&quot;</em> Here, &quot;atomic across the three
+          services&quot; requires all three to share a transaction manager — they do not, so the
+          bullet gets rewritten to cover only what the Orders database actually owns. Consequences
+          you can defend under that question are the difference between a decision record and a
+          sales pitch.
+        </p>
+      </InfoBox>
 
       <InfoBox variant="tip" title="One Decision Per ADR">
         <p>

@@ -704,8 +704,9 @@ export default MyComponent;
         </ul>
       </InfoBox>
 
-      <InfoBox variant="info" title="The React Compiler Will Handle This">
-        <p>The upcoming <strong>React Compiler</strong> (previously React Forget) automatically adds memoization where beneficial. It analyzes your code at build time and inserts memo/useMemo/useCallback only where they help. This means manual React.memo will eventually become unnecessary for most cases. Until then, apply memo surgically — not everywhere.</p>
+      <InfoBox variant="info" title="The React Compiler Can Handle This — If Your Project Enables It">
+        <p>The <strong>React Compiler</strong> (previously React Forget) automatically adds memoization where beneficial. It analyzes your code at build time and inserts the equivalent of memo/useMemo/useCallback only where they help, so manual <code>React.memo</code> becomes unnecessary for most cases.</p>
+        <p style={{ marginBottom: 0 }}>It is not "upcoming" — it shipped 1.0 — but it is also <strong>not part of React 19</strong>. It is a separate build-time plugin (<code>babel-plugin-react-compiler</code>) on its own release track that a project opts into; upgrading React does not enable it. So check your build config before assuming it is on, and until it is, apply memo surgically — not everywhere.</p>
       </InfoBox>
 
       <h2>Hooks and the Render Cycle — Complete Reference</h2>

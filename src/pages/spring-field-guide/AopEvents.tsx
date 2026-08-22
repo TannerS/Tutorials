@@ -160,7 +160,7 @@ public class WelcomeMailer {
         return CompletableFuture.completedFuture(null);
     }
 }`}
-        caption="Always name an explicit executor bean — the default SimpleAsyncTaskExecutor spins up an unbounded thread per call, no pooling, no backpressure."
+        caption="Always name an explicit executor bean — but not for the reason usually given. Spring Boot does not leave you on plain Spring's SimpleAsyncTaskExecutor: it auto-configures an applicationTaskExecutor, a ThreadPoolTaskExecutor with 8 core threads (or a virtual-thread SimpleAsyncTaskExecutor when spring.threads.virtual.enabled=true). The real footgun is that its queue-capacity defaults to Integer.MAX_VALUE, and a ThreadPoolTaskExecutor only adds threads past core-size once the queue is FULL — so max-size is never reached, and work silently backs up behind 8 threads instead of rejecting or scaling."
       />
 
       <PosterCard

@@ -15,9 +15,10 @@ export default function Cookies() {
     >
       <p>
         HTTP is stateless — each request is independent, with no memory of the one before it. That is the
-        problem the last lesson left open: TLS secured the channel and the user successfully sent their
-        password, and then the next request arrives looking exactly like an anonymous one. Cookies and
-        sessions are the classic answer, and they are Phase 3 of the login flow.
+        problem left open once the login itself succeeds: <a href="/cryptography/tls">TLS</a> secured the
+        channel and the user sent their password, and then the very next request arrives looking exactly
+        like an anonymous one. Cookies and sessions are the classic answer, and they are Phase 3 of the
+        login flow.
       </p>
 
       <p>
@@ -105,9 +106,12 @@ Cookie: sessionId=abc123; theme=dark`}
 
       <InfoBox variant="tip" title="The Default Is Lax — But Set It Anyway">
         <p>
-          Since 2020 Chrome, Edge, and Firefox treat a cookie with <strong>no</strong>{' '}
+          Since 2020 Chrome and Edge treat a cookie with <strong>no</strong>{' '}
           <code>SameSite</code> attribute as <code>SameSite=Lax</code>. Omitting it is therefore not the
-          same as opting out — you get Lax by default, which is usually what you wanted.
+          same as opting out on those browsers — you get Lax by default, which is usually what you
+          wanted. <strong>Firefox never shipped this on release</strong>:{' '}
+          <code>network.cookie.sameSite.laxByDefault</code> is enabled only on Nightly, and the
+          rollout was abandoned over web-compatibility breakage.
         </p>
         <p>
           Still set it explicitly. The default is browser policy rather than a guarantee (Safari&apos;s
@@ -115,10 +119,14 @@ Cookie: sessionId=abc123; theme=dark`}
           explicit attribute documents the intent for the next person reading the code.
         </p>
         <p>
-          One sharp edge worth knowing: <code>Lax</code> is enforced on the <em>site</em>, and a
-          site is registrable-domain + scheme, so <code>http://example.com</code> and{' '}
-          <code>https://example.com</code> are the same site — <code>SameSite</code> is not a substitute
-          for <code>Secure</code>.
+          One sharp edge worth knowing: under <em>schemeful</em> same-site — which is what governs{' '}
+          <code>SameSite</code> today — a site is registrable-domain <strong>+ scheme</strong>, so{' '}
+          <code>http://example.com</code> and <code>https://example.com</code> are{' '}
+          <strong>different</strong> sites. That is the modern definition; the older schemeless one
+          treated them as the same. Either way <code>SameSite</code> is not a substitute for{' '}
+          <code>Secure</code>: a non-enforcing or older client will happily send a{' '}
+          <code>Lax</code> cookie over plaintext, so you still need <code>Secure</code> to keep it
+          off the wire.
         </p>
       </InfoBox>
 
@@ -549,12 +557,12 @@ res.cookie('sessionId', sessionId, {
         question={"What is the key difference between a session cookie and a persistent cookie?"}
         options={[
           "Session cookies are encrypted while persistent cookies are not",
-          "Session cookies have no Max-Age/Expires and are deleted when the browser closes; persistent cookies survive browser restarts",
+          "Session cookies have no Max-Age/Expires and are held in memory; persistent cookies have one and are written to disk",
           "Session cookies can only be used for authentication",
           "Persistent cookies are larger than session cookies"
         ]}
         correctIndex={1}
-        explanation={"A session cookie has no Max-Age or Expires attribute. The browser keeps it in memory and deletes it when the tab or browser window closes. A persistent cookie has a Max-Age or Expires, so the browser writes it to disk and includes it even after restart. 'Remember me' features typically use persistent cookies with a longer Max-Age."}
+        explanation={"A session cookie has no Max-Age or Expires attribute, so the browser holds it in memory rather than writing it to disk. A persistent cookie has one, so it is stored on disk and survives a restart. Note the careful wording: a session cookie dies with the BROWSER, not the tab — and session-restore features routinely bring it back, so it is not a reliable expiry mechanism. 'Remember me' features typically use persistent cookies with a longer Max-Age."}
       />
     </LessonLayout>
   );

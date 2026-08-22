@@ -52,12 +52,16 @@ export default function CloudArchitectureIac() {
 
       <CodeBlock language="hcl" title="Declaring and Configuring a Provider">
 {`terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.10.0"
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      # "~> 6.0" means >= 6.0.0 and < 7.0.0 -- accept minor and patch
+      # releases, refuse the next major. The AWS provider is on 6.x;
+      # a stale "~> 5.0" here would quietly hold you a whole major
+      # version behind, missing new resource types and fixes.
+      version = "~> 6.0"
     }
   }
 }
@@ -68,9 +72,19 @@ provider "aws" {
       </CodeBlock>
 
       <p>
-        Pinning a version constraint here (<code>~&gt; 5.0</code>) matters for the same reason pinning a
+        Pinning a version constraint here (<code>~&gt; 6.0</code>) matters for the same reason pinning a
         package.json dependency matters — without it, a fresh <code>terraform init</code> months from now
         can silently pull a newer provider version with breaking changes to resource arguments.
+      </p>
+      <p>
+        The failure mode people forget is the other direction. A constraint is a ceiling as well as a
+        floor: leave <code>&quot;~&gt; 5.0&quot;</code> in place after the provider moves to 6.x and{' '}
+        <code>terraform init</code> keeps succeeding, keeps resolving a 5.x release, and never tells
+        you that you are a major version behind on new resource types, arguments and bug fixes. Nothing
+        errors — it just stops moving. Constraints need reviewing on a schedule, the same as any other
+        dependency pin. <code>required_version</code> is set to <code>&gt;= 1.10.0</code> here rather
+        than something older for a concrete reason: the S3 backend&apos;s native{' '}
+        <code>use_lockfile</code> locking used later in this lesson does not exist before 1.10.
       </p>
 
       <h3>Resources</h3>
@@ -184,12 +198,13 @@ resource "aws_instance" "web" {
 
       <CodeBlock language="hcl" title="main.tf — S3 Bucket + EC2 Instance (illustrative, not executed)">
 {`terraform {
-  required_version = ">= 1.5.0"
+  # 1.10+ is required for the S3 backend's native use_lockfile below.
+  required_version = ">= 1.10.0"
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
   }
 
@@ -323,6 +338,33 @@ output "web_instance_public_ip" {
           restarting services on machines that already exist) rather than a provisioning tool for creating
           the cloud resources in the first place, and it is common to see Terraform provision a server and
           Ansible configure it afterward, in the same pipeline.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="Terraform Is No Longer Open Source — and OpenTofu Is the Fork">
+        <p>
+          One fact about Terraform is not technical and gets left out of tutorials, including this one
+          until now: in <strong>August 2023 HashiCorp relicensed Terraform from MPL 2.0 to the
+          Business Source License (BUSL 1.1)</strong>. BUSL is source-available, not open source. For
+          the overwhelming majority of users nothing changes — you may still read, run, modify and
+          embed Terraform in your own infrastructure. The restriction targets building a competing
+          commercial offering with it, which is a real constraint for a narrow set of vendors and a
+          non-issue for a team managing its own AWS account.
+        </p>
+        <p>
+          What it did change is the ecosystem. The community forked the last MPL-licensed code as{' '}
+          <strong>OpenTofu</strong>, now a Linux Foundation project, currently on the 1.12 line. It is
+          a drop-in replacement — same HCL, same provider protocol, same registry providers, and{' '}
+          <code>tofu</code> in place of <code>terraform</code> on the command line. It has since
+          shipped features Terraform does not have, such as client-side state encryption.
+        </p>
+        <p>
+          Practically: learn Terraform, because it is what job postings say and what the module
+          ecosystem is built around, and everything in this lesson applies to both. Know that OpenTofu
+          exists, because &quot;why not just use Terraform?&quot; is a question a senior engineer is
+          expected to be able to answer with the licence change rather than a shrug — and because if
+          you ever build a product that <em>provisions infrastructure on a customer&apos;s behalf</em>,
+          the distinction stops being trivia and becomes a legal review.
         </p>
       </InfoBox>
 

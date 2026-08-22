@@ -9,7 +9,7 @@ export default function FieldGuideAdvancedQueries() {
       eyebrow="SQL · Field Reference"
       title="Advanced Queries"
       tagline="Joins, window functions, CTEs, and LATERAL — the toolkit for queries plain SELECTs can't express."
-      meta={['PostgreSQL 17+', '14 patterns']}
+      meta={['PostgreSQL 18+', '14 patterns']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · Advanced Queries"
       prev={{ path: '/sql-field-guide/basic-queries', label: 'Basic Queries' }}

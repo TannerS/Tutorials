@@ -35,15 +35,25 @@ export default function Errors() {
         </p>
       </InfoBox>
 
-      <h2>RFC 7807 — Problem Details for HTTP APIs</h2>
+      <h2>RFC 9457 — Problem Details for HTTP APIs</h2>
       <p>
-        RFC 7807 (now superseded by RFC 9457) defines a standard format for error responses
-        called <strong>Problem Details</strong>. It provides a consistent, machine-readable
-        structure that any client can parse without knowing your specific API. Adopting this
-        standard means your errors are predictable across all your services.
+        <strong>RFC 9457</strong> defines a standard format for error responses called{' '}
+        <strong>Problem Details</strong>. It provides a consistent, machine-readable structure that
+        any client can parse without knowing your specific API. Adopting this standard means your
+        errors are predictable across all your services.
+      </p>
+      <p>
+        You will see this called <strong>RFC 7807</strong> nearly everywhere — in blog posts, in
+        framework docs, and in the names of libraries. 7807 was the original (2016); RFC 9457
+        obsoleted it in July 2023. Cite 9457, but do not go changing code over it: the wire format
+        is unchanged, the media type is still <code>application/problem+json</code>, and nothing you
+        have already shipped needs to move. 9457 mainly tightened the specification language and
+        added guidance on registering problem types and on the <code>type</code> URI. Treat
+        &quot;7807&quot; in someone else&apos;s documentation as a dated citation, not a different
+        format.
       </p>
 
-      <CodeBlock language="json" title="RFC 7807 Problem Details Format">
+      <CodeBlock language="json" title="RFC 9457 Problem Details Format">
         {`{
   "type": "https://api.example.com/errors/insufficient-funds",
   "title": "Insufficient Funds",
@@ -542,7 +552,7 @@ module.exports = { errorHandler, AppError, NotFoundError, ValidationError, Confl
       />
 
       <InteractiveChallenge
-        question={"Which field in RFC 7807 Problem Details should contain a link to documentation about the error type?"}
+        question={"Which field in RFC 9457 Problem Details (the spec that obsoleted RFC 7807) should contain a link to documentation about the error type?"}
         options={[
           "detail",
           "instance",

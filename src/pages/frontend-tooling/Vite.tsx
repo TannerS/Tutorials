@@ -23,7 +23,9 @@ export default function Vite() {
         If you've used Create React App or Webpack, you've felt the pain: slow cold starts,
         sluggish HMR, and config files that rival War and Peace. Vite (French for "fast")
         was created by Evan You to solve these problems by leveraging native ES modules
-        during development and a Rollup-compatible bundler for production builds.
+        during development and a Rollup-compatible bundler for production builds. As of
+        Vite 8 that bundler is <strong>Rolldown</strong>, and it now handles both halves of
+        the job — see "How Vite Works Under the Hood" below for what changed.
       </p>
 
       <InfoBox variant="info" title="CRA Is Dead">
@@ -47,25 +49,43 @@ export default function Vite() {
 
       <h2>How Vite Works Under the Hood</h2>
 
-      <h3>Development: Native ESM + esbuild</h3>
+      <InfoBox variant="info" title="One Bundler Now, Not Two">
+        Through Vite 7 this section would have described two separate engines: <strong>esbuild</strong>{' '}
+        pre-bundling dependencies and transforming TS/JSX in dev, and <strong>Rollup</strong>{' '}
+        producing the production build. That split was Vite's biggest structural wart — dev and
+        prod could disagree because they ran through different code. Vite 8 replaces both with{' '}
+        <strong>Rolldown</strong>, a Rust bundler that is Rollup-API-compatible by design, plus{' '}
+        <strong>Oxc</strong> for the per-file transform esbuild used to do. If you read an older
+        tutorial that says "esbuild in dev, Rollup in prod," it is describing Vite 7 and earlier.
+      </InfoBox>
+
+      <h3>Development: Native ESM + Rolldown/Oxc</h3>
       <p>
-        In dev mode, Vite pre-bundles dependencies (node_modules) with esbuild for speed,
-        then serves your source code as native ES modules. The browser's import system
-        requests files individually, and Vite transforms them on the fly.
+        In dev mode, Vite pre-bundles dependencies (node_modules) with Rolldown, then serves your
+        source code as native ES modules. The browser's import system requests files individually,
+        and Vite strips types and compiles JSX on the fly with Oxc's transformer. Pre-bundling
+        exists for two reasons that have nothing to do with speed of bundling: it converts any
+        CommonJS dependency to ESM so the browser can load it, and it collapses a package that
+        ships hundreds of small files into one request instead of hundreds.
       </p>
 
       <FlowChart
         title="Vite Dev Server Architecture"
-        chart={"graph TD\n  A[Browser Request] --> B[Vite Dev Server]\n  B --> C{File Type?}\n  C -->|node_modules| D[Pre-bundled with esbuild]\n  C -->|.tsx/.jsx| E[Transform with esbuild]\n  C -->|.css| F[Inject as JS module]\n  C -->|.svg| G[Transform via Plugin]\n  D --> H[Serve to Browser]\n  E --> H\n  F --> H\n  G --> H"}
+        chart={"graph TD\n  A[Browser Request] --> B[Vite Dev Server]\n  B --> C{File Type?}\n  C -->|node_modules| D[Pre-bundled with Rolldown]\n  C -->|.tsx/.jsx| E[Transformed by Oxc]\n  C -->|.css| F[Inject as JS module]\n  C -->|.svg| G[Transform via Plugin]\n  D --> H[Serve to Browser]\n  E --> H\n  F --> H\n  G --> H"}
       />
 
-      <h3>Production: Rollup, Now Rolldown</h3>
+      <h3>Production: Rolldown</h3>
       <p>
         For production, Vite creates optimized bundles with tree-shaking, code splitting, and
         asset hashing. Historically that was Rollup. Rolldown — the Rust-based bundler the Vite
         team built to unify esbuild's pre-bundling role and Rollup's build role in one engine —
-        shipped as opt-in <code>rolldown-vite</code> during the Vite 6/7 era and became the
-        default bundler in Vite 8.
+        shipped as opt-in <code>rolldown-vite</code> during the Vite 6/7 era and became <em>the</em>{' '}
+        bundler in Vite 8, for both dev pre-bundling and the production build. CSS minification is
+        handled by <strong>Lightning CSS</strong>, also Rust — it is the default minifier in Vite 8
+        (esbuild is opt-in via <code>build.cssMinify: 'esbuild'</code>, and esbuild is no longer a
+        bundled dependency at all). The full CSS <em>transform</em> pipeline still runs PostCSS by
+        default; set <code>css.transformer: 'lightningcss'</code> to hand syntax lowering and
+        vendor-prefixing to Lightning CSS too and drop Autoprefixer entirely.
       </p>
 
       <InfoBox variant="tip" title="Why the Config Barely Changed">
@@ -132,14 +152,49 @@ export default defineConfig(({ mode }) => ({
 }))`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="__dirname Is Not Defined in an ESM Config">
-        The alias block above uses <code>__dirname</code>, which you'll see in most Vite
-        tutorials — but <code>__dirname</code> is a CommonJS global. In a project with
-        <code> "type": "module"</code> (which every scaffolded Vite project has), referencing it
-        in <code>vite.config.ts</code> throws <em>__dirname is not defined</em>. Use
-        <code> import.meta.dirname</code> on Node 20.11+, or derive it:
-        <code> fileURLToPath(new URL('.', import.meta.url))</code>. Better still, install
-        <code> vite-tsconfig-paths</code> and skip the manual alias block entirely.
+      <InfoBox variant="warning" title="__dirname Works Today Only Because Vite Bundles Your Config">
+        <p>
+          The alias block above uses <code>__dirname</code>, which you&apos;ll see in most Vite
+          tutorials. <code>__dirname</code> is a CommonJS global and does not exist in an ES module,
+          and every scaffolded Vite project sets <code>&quot;type&quot;: &quot;module&quot;</code> —
+          so the natural assumption is that this throws. It doesn&apos;t, and knowing <em>why</em>{' '}
+          is what tells you when it will start to.
+        </p>
+        <p>
+          Vite does not <code>import()</code> your config file directly. Its default{' '}
+          <code>configLoader: 'bundle'</code> runs the config through Rolldown first, and that
+          bundling step shims <code>__dirname</code> in for you. So on a clean Vite 8 ESM project
+          both <code>vite</code> and <code>vite build</code> succeed — the only visible consequence
+          is a warning:
+        </p>
+        <CodeBlock language="text" title="Verified — vite 8.2.2, clean ESM project, __dirname in the alias block">
+{`(!) Your Vite config uses features that are unsupported by 'configLoader: native',
+    which is planned to become the default in a future major version of Vite:
+  - __dirname (vite.config.ts:6:32). Use import.meta.dirname instead
+
+vite v8.2.2 building client environment for production...
+✓ 5 modules transformed.
+✓ built in 17ms`}
+        </CodeBlock>
+        <p>
+          That warning is the real reason to migrate. <code>configLoader: 'native'</code> skips the
+          bundling step and hands the config straight to Node&apos;s own ESM loader — faster, no
+          transform in the way, and it is the planned default. Opt in today and the shim goes with
+          it:
+        </p>
+        <CodeBlock language="text" title="Verified — the same project with vite build --configLoader native">
+{`failed to load config from /tmp/viteverify/vite.config.ts
+error during build:
+ReferenceError: __dirname is not defined in ES module scope`}
+        </CodeBlock>
+        <p>
+          So: <code>__dirname</code> is not broken, it is <em>borrowed</em>. Use{' '}
+          <code>import.meta.dirname</code> on Node 20.11+, or derive it with{' '}
+          <code>fileURLToPath(new URL('.', import.meta.url))</code>, and your config keeps working
+          under either loader. Better still, install <code>vite-tsconfig-paths</code> and skip the
+          manual alias block entirely — one source of truth in <code>tsconfig.json</code> for both
+          the compiler and the bundler.
+        </p>
       </InfoBox>
 
       <h2>Essential Plugins</h2>

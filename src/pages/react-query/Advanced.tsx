@@ -1,6 +1,7 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
+import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function ReactQueryAdvanced() {
@@ -75,6 +76,30 @@ const toggleTodo = useMutation({
   },
 });`}
       </CodeBlock>
+
+      <InteractiveChallenge
+        language="jsx"
+        question="A developer deletes step 1 — the await queryClient.cancelQueries(...) line — because 'the mutation already updates the cache, so cancelling seems redundant.' Everything still works in testing. What bug have they introduced?"
+        code={`onMutate: async ({ id, done }) => {
+  // ❌ removed: await queryClient.cancelQueries({ queryKey: ['todos'] });
+
+  const previousTodos = queryClient.getQueryData(['todos']);
+  queryClient.setQueryData(['todos'], (old) =>
+    old.map(todo => todo.id === id ? { ...todo, done } : todo)
+  );
+  return { previousTodos };
+},`}
+        options={[
+          'None — onSettled invalidates at the end, so the cache is corrected either way',
+          'The rollback in onError will now throw, because previousTodos is undefined',
+          'A refetch that was already in flight can land after the optimistic write and overwrite it, so the checkbox visibly flips back — and if that refetch resolves before the snapshot is taken, the rollback restores the wrong data',
+          'Optimistic updates stop working entirely without cancelQueries',
+        ]}
+        correctIndex={2}
+        explanation={
+          "The bug is a race, which is exactly why it survives testing — it needs a refetch to be in flight at the moment the user clicks. Picture a refetch of ['todos'] fired 200ms ago by a window-focus event. onMutate writes the optimistic value at t=0; the stale response lands at t=50 and calls setQueryData with the server's OLD list, silently undoing the optimistic write. The user sees their checkbox tick and then untick. cancelQueries aborts in-flight fetches for that key so nothing can land on top of you — and it is awaited for a reason: it must complete before the snapshot is taken, or previousTodos captures a value that is itself about to be replaced, which makes the onError rollback restore something that was never on screen. Note why option 1 is wrong: onSettled does eventually re-sync, but 'the UI corrects itself a second later' is not the same as 'no bug' — flicker like this is the classic optimistic-update complaint."
+        }
+      />
 
       <h2>Infinite Queries — Load More / Infinite Scroll</h2>
 

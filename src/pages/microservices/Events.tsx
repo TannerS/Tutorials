@@ -341,7 +341,17 @@ async function startConsumer() {
       // Claim the event ATOMICALLY. A plain EXISTS-then-SETEX has a race:
       // two consumers can both see "not processed" and both charge the card.
       // SET NX returns null if another worker already claimed this eventId.
-      const claimed = await redis.set(\`processed:\${eventId}\`, '1', 'NX', 'EX', 604800);
+      //
+      // NOTE THE TTL. The claim is SHORT (2 minutes -- comfortably longer
+      // than the worst-case processing time, far shorter than the retention
+      // window). If this process is SIGKILLed after claiming and before
+      // finishing, the claim expires and the redelivery genuinely reprocesses.
+      // Claiming for 7 days up front looks safer and is the opposite: a crash
+      // in that window means every redelivery is skipped as a "duplicate" and
+      // the payment is silently never taken. See the box below.
+      const CLAIM_TTL = 120;
+      const DONE_TTL = 604800;   // 7 days -- only applied AFTER success
+      const claimed = await redis.set(\`processed:\${eventId}\`, 'claimed', 'NX', 'EX', CLAIM_TTL);
       if (!claimed) {
         console.log(\`Skipping duplicate event: \${eventId}\`);
         return;
@@ -356,16 +366,80 @@ async function startConsumer() {
             await refundPayment(event.data);
             break;
         }
+        // Promote the short claim to a long-lived tombstone ONLY once the
+        // side effect has actually happened. Everything between the SET NX
+        // and this line is the crash window, and the CLAIM_TTL is what
+        // bounds it.
+        await redis.set(\`processed:\${eventId}\`, 'done', 'EX', DONE_TTL);
       } catch (error) {
         console.error(\`Error processing event: \${error.message}\`);
         // Release the claim so the retry is not swallowed as a "duplicate".
         await redis.del(\`processed:\${eventId}\`);
-        throw error;  // kafkajs will retry
+        throw error;  // the client will redeliver
       }
     },
   });
 }`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="The Crash Window Between Claiming and Processing">
+        <p>
+          The <code>SET NX EX</code> above really is atomic — two workers cannot both win the claim,
+          and that part of the pattern is sound. But atomicity of the <em>claim</em> is not atomicity
+          of <em>claim + side effect</em>, and the gap between them is where this design leaks.
+        </p>
+        <p>
+          Trace a <code>SIGKILL</code> — OOM killer, pod eviction, node failure — landing after the
+          claim succeeds and before <code>processPayment</code> completes. The <code>catch</code>{' '}
+          never runs, so the claim is never released. Kafka redelivers the message (the offset was
+          never committed), the new consumer executes <code>SET NX</code>, sees the orphaned claim,
+          logs <code>Skipping duplicate event</code>, and returns. The event is now <strong>lost for
+          the entire TTL</strong>. With the 7-day TTL this pattern is usually written with, that means
+          lost forever in practice: nothing retries a week later, and the failure is completely
+          silent — no exception, no dead-letter, just a payment that never happened and a log line
+          that says everything is fine.
+        </p>
+        <p>
+          The version above bounds that window with a short claim TTL, promoted to a long tombstone
+          only after success. A crash costs you a redelivery delay of at most{' '}
+          <code>CLAIM_TTL</code>, not the event. The cost is a real trade-off, not a free win: if
+          processing ever exceeds the claim TTL, the claim expires while the first worker is still
+          running and a redelivery <em>can</em> double-process. Pick a TTL well above your p99.9
+          handler duration and alert on handlers that approach it.
+        </p>
+        <p>
+          <strong>The stronger fix is to stop using a separate store.</strong> Redis and your
+          database cannot commit together, so any two-store version has some window. Write the{' '}
+          <code>event_id</code> into a <code>processed_events</code> table with a primary-key
+          constraint <em>in the same database transaction</em> as the business effect. Then
+          &quot;did I process this&quot; and &quot;did the effect happen&quot; are the same fact and
+          cannot disagree: a duplicate hits the PK violation and you skip it; a crash rolls back both.
+          Reserve the Redis version for effects that are not database writes, and know that you are
+          choosing a bounded window rather than eliminating one.
+        </p>
+        <p>
+          This is the concrete reason &quot;exactly-once&quot; is better said as{' '}
+          <em>at-least-once delivery plus an idempotent consumer</em>. The delivery is genuinely
+          at-least-once; the &quot;exactly&quot; is something your handler earns, and it is only as
+          good as where the dedup record is stored.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="kafkajs Is Unmaintained — Use It to Learn, Not to Ship">
+        <p>
+          The examples on this page use <code>kafkajs</code> because its API is the clearest way to
+          teach producer and consumer semantics, and it is still what most tutorials and existing
+          codebases show. It has had no release since February 2023 and is not officially maintained.
+        </p>
+        <p>
+          For new services, use <strong><code>@confluentinc/kafka-javascript</code></strong> —
+          Confluent&apos;s GA client, built on <code>librdkafka</code>, with commercial support. It
+          ships a deliberately KafkaJS-compatible surface, so the code above ports with an import
+          change: <code>require(&#39;@confluentinc/kafka-javascript&#39;).KafkaJS</code> in place of{' '}
+          <code>require(&#39;kafkajs&#39;)</code>. Everything this lesson teaches about idempotent
+          producers, partition ordering and consumer-side dedup applies unchanged.
+        </p>
+      </InfoBox>
 
       <h2>RabbitMQ vs Kafka — Head-to-Head</h2>
 

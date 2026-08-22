@@ -49,7 +49,11 @@ export default function Encryption() {
 // AES-256-GCM: Authenticated Encryption
 // GCM mode provides both confidentiality AND integrity
 function encrypt(plaintext, key) {
-  const iv = crypto.randomBytes(12);           // 96-bit IV for GCM
+  // IV = Initialization Vector: a per-message value that makes the same
+  // plaintext encrypt to a different ciphertext every time. It is NOT a
+  // secret -- it ships alongside the ciphertext -- but it must never repeat
+  // for a given key. GCM wants 96 bits.
+  const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
 
   let encrypted = cipher.update(plaintext, 'utf8', 'hex');
@@ -489,6 +493,16 @@ async function checkPassword(plaintext, storedHash) {
           safe if <em>either</em> holds — is enabled by default in Chrome and Firefox and supported
           across Cloudflare and AWS. A large fraction of TLS 1.3 traffic is already post-quantum
           protected today.
+        </p>
+        <p>
+          <strong>And there are now dates attached.</strong> NIST IR 8547 sets the migration
+          schedule: RSA-2048 and ECC P-256 become <em>deprecated</em> in 2030 and{' '}
+          <em>disallowed</em> in 2035. In the US that stopped being advisory in June 2026, when
+          EO 14412 and OMB M-26-15 turned it into a federal compliance deadline. NIST also selected{' '}
+          <strong>HQC</strong> in March 2025 as a non-lattice backup KEM — insurance in case a
+          structural break is found in the lattice assumptions ML-KEM rests on — with a draft
+          standard in 2026 and finalisation expected 2027. FN-DSA (FIPS 206) is still draft.
+          If you are planning work, 2030 is the number to plan against.
         </p>
         <p>
           <strong>Why the hurry, given no quantum computer can do this yet?</strong> Because of{' '}

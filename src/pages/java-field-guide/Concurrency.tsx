@@ -93,8 +93,13 @@ try {
     lock.unlock();  // always in finally!
 }
 
-if (lock.tryLock(1, TimeUnit.SECONDS)) { /* ... */ }`}
-        caption="Gives you tryLock/timeouts and fairness that synchronized can't — but unlike synchronized, an exception won't auto-release it, so unlock() must live in finally."
+// Timed: tryLock(long, TimeUnit) throws InterruptedException,
+// and you unlock ONLY on the branch that acquired it.
+if (lock.tryLock(1, TimeUnit.SECONDS)) {
+    try { /* critical section */ }
+    finally { lock.unlock(); }
+}`}
+        caption="Gives you tryLock/timeouts and fairness that synchronized can't — but unlike synchronized, an exception won't auto-release it, so unlock() must live in finally. Note the timed overload is interruptible: the caller has to declare or catch InterruptedException, and a false return means you never held the lock, so you must not unlock."
       />
 
       <PosterCard

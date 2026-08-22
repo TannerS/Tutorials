@@ -210,7 +210,7 @@ else           r.error;       // only available in this branch`}
         title={<>Narrowing Evaporates <span className="dim">at a Closure Boundary</span></>}
         language="typescript"
         code={`let name: string | null = 'x';
-function reset() { name = null; }   // an assignment exists SOMEWHERE
+function reset() { name = null; }   // ...and it fails even with NO reset() at all
 
 if (name !== null) {
   name.toUpperCase();               // ✅ narrowed here
@@ -227,7 +227,7 @@ if (box.v) {
 // ✅ Fix both: copy into a const FIRST, then narrow the const
 const v = box.v;
 if (v) run(() => v.toUpperCase());`}
-        caption="Narrowing is control-flow analysis, and a callback has no knowable execution time — TypeScript cannot prove the value is still narrowed when it eventually runs, so it discards the narrowing at the function boundary. This is a correctness feature, not a limitation: reset() really could run first. A const can never be reassigned, so its narrowing survives into any closure. Note the trigger is that an assignment exists anywhere; a let that is never reassigned keeps its narrowing."
+        caption="Narrowing is control-flow analysis, and a callback has no knowable execution time — TypeScript cannot prove the value is still narrowed when it eventually runs, so it discards the narrowing at the function boundary. This is a correctness feature, not a limitation: reset() really could run first. The trigger is the DECLARATION, not the assignment: verified on tsc 6.0.3, a let that is never reassigned anywhere in the program still gets TS18047 inside the closure. Only const survives, because only const is un-reassignable by construction — which is why the fix is to copy into a const first, not to hunt for the assignment."
       />
 
       <PosterCard

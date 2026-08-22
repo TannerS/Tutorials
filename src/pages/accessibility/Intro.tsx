@@ -165,24 +165,39 @@ function Intro() {
 
       <CodeBlock language="javascript" title="Major Accessibility Laws">
 {`// United States
-// ADA (Americans with Disabilities Act) — applies to public accommodations
+// ADA Title III — public accommodations. No published technical
+//   standard, so courts and settlements use WCAG as the yardstick.
+// ADA Title II final rule (DOJ, published 2024-04-24) — this one is
+//   NOT a de-facto standard: it makes WCAG 2.1 AA legally binding for
+//   state and local government web content and mobile apps. DOJ
+//   extended both compliance dates by one year in April 2026:
+//     2027-04-26 — public entities serving 50,000+ people
+//     2028-04-26 — smaller entities and special district governments
+//   If you build for a university, city, transit agency, public
+//   hospital or school district, this is your deadline.
 // Section 508 — federal agencies must meet WCAG 2.0 AA
 // State laws (e.g., California's Unruh Act)
 
 // European Union
-// European Accessibility Act (EAA) — enforcement begins June 2025
-// EN 301 549 — harmonized standard referencing WCAG 2.1 AA
+// European Accessibility Act (EAA) — APPLICABLE SINCE 2025-06-28.
+//   Not upcoming; member-state regulators are already running market
+//   surveillance and audits against e-commerce and banking sites.
+// EN 301 549 v3.2.1 — the harmonised standard, references WCAG 2.1 AA.
+//   v4.1.1, which moves to WCAG 2.2 AA, is expected to supersede it.
 
 // Canada
 // Accessible Canada Act (ACA)
 // AODA (Ontario) — WCAG 2.0 AA required
 
 // Note: these laws name older WCAG versions because legislation
-// lags the standard. WCAG 2.2 (Oct 2023) is the current W3C
-// Recommendation and is backward-compatible with all of them.
+// lags the standard. WCAG 2.2 has been the W3C Recommendation since
+// October 2023 and was approved as ISO/IEC 40500:2025 in October
+// 2025 — which matters for procurement, since RFPs that cite ISO
+// standards can now name WCAG 2.2 directly.
 
-// Key takeaway: build to WCAG 2.2 AA. It satisfies every legal
-// reference above, and AA is the target in all of them.`}
+// Key takeaway: build to WCAG 2.2 AA. It is a strict superset of
+// 2.1 and 2.0, so it satisfies every legal reference above, and AA
+// is the target in all of them.`}
       </CodeBlock>
 
       <InfoBox variant="danger" title="Real Lawsuits Happen">
@@ -274,7 +289,7 @@ function Intro() {
       />
 
       <InteractiveChallenge
-        question={"What is the minimum color contrast ratio required by WCAG 2.1 AA for normal text?"}
+        question={"What is the minimum color contrast ratio required by WCAG 2.2 AA for normal text?"}
         options={[
           "3:1",
           "4.5:1",
@@ -282,7 +297,7 @@ function Intro() {
           "2:1"
         ]}
         correctIndex={1}
-        explanation={"WCAG 2.1 AA requires a minimum contrast ratio of 4.5:1 for normal text (Success Criterion 1.4.3). Large text (18pt or 14pt bold) can use 3:1. Level AAA requires 7:1 for normal text."}
+        explanation={"WCAG 2.2 AA requires a minimum contrast ratio of 4.5:1 for normal text (Success Criterion 1.4.3 — unchanged from 2.0 and 2.1; 2.2 added no new contrast thresholds). Large text (18pt or 14pt bold) can use 3:1. Level AAA requires 7:1 for normal text."}
         language="html"
       />
 

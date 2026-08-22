@@ -165,7 +165,8 @@ WHERE event_type = 'page_view'
   AND payload @> '{"page": "/checkout"}'  -- containment operator (uses GIN index)
   AND (payload->>'duration')::int > 5000;
 
--- jsonb_path_query / @? for JSONPath-style querying (Postgres 12+)
+-- jsonb_path_query / @? for JSONPath-style querying (Postgres 12+; the
+-- SQL-standard JSON_EXISTS below does the same job on 17+)
 SELECT * FROM events
 WHERE payload @? '$.items[*] ? (@.price > 100)';
 
@@ -201,6 +202,63 @@ WHERE id = 501;`}
           <code>JSONB</code> stores a decomposed binary format: faster to query, supports
           indexing (GIN), but doesn't preserve key order or whitespace. Default to{' '}
           <code>JSONB</code> unless you specifically need to preserve the original document byte-for-byte.
+        </p>
+      </InfoBox>
+
+      <p>
+        Everything above is Postgres&apos;s own JSON dialect, and it works on every version from 12
+        onward. <strong>PostgreSQL 17 added the SQL-standard SQL/JSON functions</strong> —{' '}
+        <code>JSON_TABLE</code>, <code>JSON_VALUE</code>, <code>JSON_QUERY</code> and{' '}
+        <code>JSON_EXISTS</code>. They are not a rename of the operators; <code>JSON_TABLE</code> in
+        particular does the one thing the arrow operators genuinely cannot, which is turn a nested
+        array into ordinary rows and columns in a single expression:
+      </p>
+
+      <CodeBlock language="sql" title="SQL/JSON functions — PostgreSQL 17+ (verified on 18.6)" showLineNumbers={true}>
+{`-- JSON_TABLE: shred a nested array into real, typed rows. This is now the
+-- recommended way to go from one JSONB document to N relational rows.
+SELECT e.id, jt.*
+FROM events e,
+     JSON_TABLE(e.payload, '$.items[*]'
+       COLUMNS (
+         idx   FOR ORDINALITY,          -- 1-based position within the array
+         sku   text    PATH '$.sku',
+         price numeric PATH '$.price',
+         qty   int     PATH '$.qty'
+       )) AS jt;
+--  id | idx | sku | price | qty
+-- ----+-----+-----+-------+-----
+--   1 |   1 | A1  |   150 |   1
+--   1 |   2 | B2  |    40 |   3
+--   2 |   1 | C3  |   900 |   2
+
+-- JSON_VALUE: one scalar, RETURNING a real type. Replaces the
+-- (payload->>'user_id')::int cast-every-time pattern used above.
+SELECT id, JSON_VALUE(payload, '$.user_id' RETURNING int) AS user_id FROM events;
+
+-- ...and unlike a cast, it can be told what to do with bad data instead of
+-- aborting the whole query:
+SELECT JSON_VALUE('{"a":"notanumber"}'::jsonb, '$.a' RETURNING int DEFAULT -1 ON ERROR);
+-- -> -1   (a plain ::int cast here raises 22P02 and kills the statement)
+
+-- JSON_QUERY: extract a whole sub-document rather than a scalar
+SELECT id, JSON_QUERY(payload, '$.items[0]') AS first_item FROM events;
+
+-- JSON_EXISTS: the standard spelling of the @? operator
+SELECT id, JSON_EXISTS(payload, '$.items[*] ? (@.price > 100)') AS has_big_item
+FROM events;`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="These are PG17+ only — check before you use them">
+        <p>
+          On PostgreSQL 16 and older every one of these is a{' '}
+          <strong>syntax error</strong>, not a missing-function error (verified on 16.15:{' '}
+          <code>ERROR: syntax error at or near &quot;RETURNING&quot;</code>), because the parser
+          itself doesn&apos;t know the grammar. If you target 16, keep using{' '}
+          <code>jsonb_array_elements()</code>/<code>jsonb_to_recordset()</code> for shredding and{' '}
+          <code>-&gt;&gt;</code> plus a cast for scalars. The arrow and containment operators are not
+          deprecated by any of this — <code>@&gt;</code> is still what a GIN index accelerates, and{' '}
+          <code>-&gt;&gt;</code> is still the shortest way to pull one text field.
         </p>
       </InfoBox>
 

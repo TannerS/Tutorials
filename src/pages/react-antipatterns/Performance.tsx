@@ -636,11 +636,20 @@ function ProductDashboard({ products, categories }) {
       </InfoBox>
 
       <InfoBox variant="info" title="A Note on the React Compiler">
-        Much of this lesson describes manual work that the React Compiler (stable as
-        of React 19) automates: it analyses your components and inserts the
+        Much of this lesson describes manual work that the React Compiler automates:
+        it analyses your components and inserts the
         equivalent of <code>useMemo</code>/<code>useCallback</code>/<code>memo</code>{' '}
         for you, which is why you will see new codebases with almost no manual
         memoization.
+        <br />
+        <br />
+        Get its status right, because it is widely misreported: the compiler shipped{' '}
+        <strong>1.0 (stable)</strong>, but it is a <strong>separate build-time
+        plugin</strong> (<code>babel-plugin-react-compiler</code>) versioned on its own
+        track. It is <em>not</em> bundled with React 19, and upgrading React does not
+        switch it on — a project adds it to its Babel/Vite config deliberately. So
+        &ldquo;we are on React 19&rdquo; tells you nothing about whether this lesson&apos;s
+        manual work is already being done for you; check the build config.
         <br />
         <br />
         Learn the manual version anyway, for two reasons. First, you will maintain

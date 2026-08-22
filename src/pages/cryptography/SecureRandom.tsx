@@ -192,6 +192,17 @@ System.out.println("Actual:    " + actualR3);
         strong, as described in <em>RFC 4086: Randomness Requirements for Security</em>.&quot;
       </p>
 
+      <InfoBox variant="note" title="The Javadoc Cites a Superseded Standard — Quoted Verbatim Anyway">
+        <p>
+          FIPS 140-2 was superseded by <strong>FIPS 140-3</strong>; the CMVP stopped accepting
+          140-2 validations in September 2021. The quote above is reproduced exactly as the JDK
+          ships it, so the stale reference is the <em>Javadoc&apos;s</em>, not this page&apos;s.
+          Nothing about the requirement changed in substance — 140-3 incorporates ISO/IEC 19790 and
+          the statistical-test bar for a CSPRNG is the same one. Worth knowing mostly so you are not
+          confused when an auditor asks which revision you are claiming against.
+        </p>
+      </InfoBox>
+
       <p>
         Stripped of the standards references, the bar is: an attacker who knows the exact algorithm and has
         seen every prior output must still be unable to distinguish the next output from true randomness,

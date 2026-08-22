@@ -218,16 +218,17 @@ npm test -- --watch
         scripts access package metadata without hardcoding values.
       </p>
 
-      <CodeBlock language="bash" title="npm-injected environment variables">
-{`# All package.json fields are available as npm_package_* vars:
+      <CodeBlock language="bash" title="npm-injected environment variables — verified on npm 11.6.2">
+{`# Only a SHORT LIST of package.json fields becomes npm_package_* — see below:
 echo $npm_package_name        # "my-app"
 echo $npm_package_version     # "1.0.0"
+echo $npm_package_json        # /abs/path/to/package.json
+echo $npm_package_config_port # from the "config" block
+echo $npm_package_engines_node
 
-# The current lifecycle event:
+# The current lifecycle event and the script text being run:
 echo $npm_lifecycle_event     # "build", "test", etc.
-
-# npm configuration:
-echo $npm_config_registry     # "https://registry.npmjs.org/"
+echo $npm_lifecycle_script    # "node probe.js"
 
 # Node and npm paths:
 echo $npm_node_execpath       # /usr/local/bin/node
@@ -241,6 +242,57 @@ echo $npm_execpath            # /usr/local/lib/node_modules/npm/bin/npm-cli.js
   }
 }`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="npm 7 stopped exporting most of package.json — verified on npm 11.6.2">
+        <p>
+          You will still find plenty of guides claiming &quot;every field in{' '}
+          <code>package.json</code> is available as <code>npm_package_*</code>.&quot; That was true
+          on npm 6 and has been false since npm 7. A script that printed every{' '}
+          <code>npm_package_*</code> variable from a <code>package.json</code> containing{' '}
+          <code>description</code>, <code>license</code>, <code>main</code>, <code>author</code>,{' '}
+          <code>keywords</code>, <code>repository</code>, <code>homepage</code>,{' '}
+          <code>dependencies</code> and <code>devDependencies</code> got back exactly six entries,
+          none of them from that list:
+        </p>
+        <CodeBlock language="text" title="The complete npm_package_* set, npm 11.6.2">
+{`npm_package_name          = "envprobe"
+npm_package_version       = "1.2.3"
+npm_package_json          = "/tmp/npmenv/package.json"
+npm_package_config_port   = "8080"     # from "config": { "port": "8080" }
+npm_package_engines_node  = ">=20"     # "engines" and "bin" survive as sub-keys too
+npm_package_bin_envprobe  = "probe.js"
+
+# NOT exported: description, license, main, author, keywords, files,
+# homepage, repository, bugs, os, cpu, type, publishConfig,
+# dependencies, devDependencies, scripts — anything not on the list above.`}
+        </CodeBlock>
+        <p>
+          The trap is that <code>name</code> and <code>version</code> — the two everybody reaches
+          for first — are survivors, so the feature looks like it works and you only discover the
+          truth when <code>$npm_package_description</code> expands to an empty string and your
+          build banner silently ships with a hole in it. If you need a field that is not on the
+          list, read the file: <code>node -p &quot;require('./package.json').description&quot;</code>,
+          or use <code>$npm_package_json</code> to locate it. The
+          &quot;<code>config</code>&quot; block is the officially supported escape hatch and is
+          overridable per-user with <code>npm config set my-app:port 9000</code>.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="npm_config_* does NOT mirror your .npmrc">
+        <p>
+          The other half of the same myth is <code>$npm_config_registry</code>. With{' '}
+          <code>registry=https://registry.npmjs.org/</code> written into a project{' '}
+          <code>.npmrc</code>, that variable is <strong>undefined</strong> inside{' '}
+          <code>npm run</code> on npm 11.6.2. It only appears when the value came from an actual
+          environment variable in the first place — <code>npm_config_registry=… npm run build</code>{' '}
+          sets it, because npm re-exports its own env-sourced config. What you <em>do</em> reliably
+          get is npm&apos;s internal/computed config: <code>npm_config_cache</code>,{' '}
+          <code>npm_config_prefix</code>, <code>npm_config_local_prefix</code>,{' '}
+          <code>npm_config_user_agent</code>, <code>npm_config_userconfig</code>,{' '}
+          <code>npm_config_globalconfig</code>. To read the effective registry from a script, ask
+          npm: <code>npm config get registry</code>.
+        </p>
+      </InfoBox>
 
       <h2>Cross-Platform Scripts</h2>
       <p>

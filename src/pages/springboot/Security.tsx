@@ -65,7 +65,7 @@ TWO CONSEQUENCES WORTH REMEMBERING:
     anonymous Authentication is still populated.`}
       </CodeBlock>
 
-      <h2>The Modern SecurityFilterChain (Boot 3+)</h2>
+      <h2>The Modern SecurityFilterChain (Boot 3 and Boot 4)</h2>
       <p>
         The old <code>WebSecurityConfigurerAdapter</code> was removed. You now configure
         security by exposing a <code>SecurityFilterChain</code> bean.
@@ -431,9 +431,12 @@ public class UserService {
       </p>
       <ul>
         <li>
-          <strong>Cookie-authenticated browser session?</strong> Enable CSRF. Use
-          <code>CookieCsrfTokenRepository.withHttpOnlyFalse()</code> so JS can read
-          the token from a cookie and echo it back in a header.
+          <strong>Server-rendered form app on a cookie session?</strong> Enable CSRF and leave
+          the defaults alone. Thymeleaf/JSP form tags inject the token for you.
+        </li>
+        <li>
+          <strong>SPA (React/Vue) on a cookie session?</strong> Enable CSRF and use{' '}
+          <code>csrf.spa()</code>. See the warning below — this is the one people get wrong.
         </li>
         <li>
           <strong>Stateless bearer-token API?</strong> Disable CSRF. The browser cannot
@@ -441,16 +444,52 @@ public class UserService {
           nothing to forge.
         </li>
       </ul>
-      <CodeBlock language="java" title="CSRF for cookie-session apps">
+      <CodeBlock language="java" title="CSRF for a server-rendered form app">
 {`@Bean
 SecurityFilterChain browserFilterChain(HttpSecurity http) throws Exception {
     return http
-        .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+        // Defaults are correct here: session-backed token repository plus the
+        // Xor request handler (BREACH protection). The form tag library reads
+        // the token out of the request attribute and renders it as a hidden field.
         .authorizeHttpRequests(a -> a.anyRequest().authenticated())
         .formLogin(Customizer.withDefaults())
         .build();
 }`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="For a SPA, the cookie repository ALONE gives you a 403">
+        <p>
+          The advice you will find everywhere — &quot;just set{' '}
+          <code>csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())</code> so JS
+          can read the token&quot; — is only half the change, and the missing half is the half
+          that breaks. That cookie holds the <strong>raw</strong> token, but the default request
+          handler is <code>XorCsrfTokenRequestAttributeHandler</code>, which expects the incoming
+          header to carry a <em>randomised</em> value. Raw in, decode attempted, mismatch,{' '}
+          <code>403</code> on every POST.
+        </p>
+        <p>
+          Spring Security 7 collapses the whole fix into one method:
+        </p>
+        <CodeBlock language="java" title="Security 7: CSRF for a SPA">
+{`@Bean
+SecurityFilterChain spaChain(HttpSecurity http) throws Exception {
+    return http
+        // Cookie-based repository + a request handler that resolves the actual
+        // token value on the way in, while still rendering the Xor-encoded value
+        // on the way out. BREACH protection is kept, not traded away.
+        .csrf(csrf -> csrf.spa())
+        .authorizeHttpRequests(a -> a.anyRequest().authenticated())
+        .build();
+}`}
+        </CodeBlock>
+        <p>
+          On Security 6.x there is no <code>spa()</code>, and the popular workaround — swapping
+          in the plain <code>CsrfTokenRequestAttributeHandler</code> — works by{' '}
+          <em>disabling BREACH protection</em>. The next lesson,{' '}
+          <strong>Spring Security 7 &amp; Boot 4 Changes</strong>, walks through both the 6.x
+          hand-rolled equivalent and why the token rotates on login in its CSRF section.
+        </p>
+      </InfoBox>
 
       <h2>CORS in Spring Security</h2>
       <p>

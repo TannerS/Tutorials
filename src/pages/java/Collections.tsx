@@ -478,7 +478,7 @@ b.hashCode();     // 1794717576    — a completely unrelated number
 
 Set<BadPoint> set = new HashSet<>();
 set.add(new BadPoint(1, 2));
-set.contains(new BadPoint(1, 2));
+System.out.println(set.contains(new BadPoint(1, 2)));
 
 // Output:
 //   false

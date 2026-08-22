@@ -202,12 +202,49 @@ Feature: add validation`}
 
       <p>
         <code>login.txt</code>'s blob is the exact same object (<code>1df70d50&hellip;</code>) both
-        times — the change the commit introduces is identical. But the commit object itself is not: its{' '}
-        <code>parent</code> line points at a different commit than before (the rebase target instead of
-        the old parent), which changes the tree, which changes the commit's hash. Content-addressing from
-        the previous lesson applies here without exception: different parent, different bytes, different
-        hash — same rule as two files with one byte changed. The old commit, <code>9af3715&hellip;</code>,
-        is still a real object right after the rebase — just unreferenced:
+        times — the change the commit introduces is identical. But the commit object itself is not, and
+        the reason is the one from the previous lesson: <strong>a commit's hash is the hash of its own
+        bytes, and the <code>parent</code> line is one of those bytes.</strong> Point it at the rebase
+        target instead of the old parent and the object being hashed is literally different text, so the
+        hash is different. (Two other lines moved here too: the <code>tree</code>, because the replayed
+        commit now snapshots a working tree that also contains main's changes, and the{' '}
+        <code>committer</code> timestamp, which is stamped fresh at replay time — the author timestamp is
+        preserved. Any one of the three on its own is enough.) Content-addressing applies without
+        exception: different bytes, different hash — the same rule as two files differing by one byte.
+      </p>
+
+      <InfoBox variant="warning" title="A Changed Parent Does Not Mean a Changed Tree">
+        <p>
+          It is tempting to compress that into &quot;the parent changed, so the tree changed, so the
+          hash changed.&quot; That middle step is not a rule — the tree records the <em>snapshot</em>,
+          and re-parenting a commit onto history that adds nothing to the snapshot leaves it byte-identical.
+          Rebasing a commit onto an <code>--allow-empty</code> commit demonstrates it: same tree object,
+          different parent, different commit hash.
+        </p>
+        <CodeBlock language="bash" title="Same tree, new parent, new hash — verified on git 2.50.1">
+{`# feature = one commit adding b.txt; main then gets an EMPTY commit
+$ git rev-parse feature          # before rebase
+15d1de688d3e474bcbd05ec2a9a4a9a09bc33336
+$ git cat-file -p feature | head -1
+tree f4b354863caa9cea99b95422c9dab70465757d87
+
+$ git rebase -q main
+
+$ git rev-parse feature          # after rebase -> DIFFERENT commit
+1e42c471af1213a79164f5a6eb751a9fcf056fab
+$ git cat-file -p feature | head -1
+tree f4b354863caa9cea99b95422c9dab70465757d87   # ...but the SAME tree`}
+        </CodeBlock>
+        <p>
+          The direction only runs one way: changing the tree always changes the commit hash, because the
+          tree line is part of the commit's bytes. Changing the parent also always changes the commit
+          hash, for exactly the same reason — not via the tree.
+        </p>
+      </InfoBox>
+
+      <p>
+        The old commit, <code>9af3715&hellip;</code>, is still a real object right after the rebase —
+        just unreferenced:
       </p>
 
       <CodeBlock language="bash" title="The Old Commit Still Exists, Just Unreachable">
@@ -546,6 +583,11 @@ $ git log --graph --oneline --all
             <td style={{ padding: '0.75rem' }}>Reorder, edit, or drop older unpushed commits</td>
             <td style={{ padding: '0.75rem' }}><strong>git rebase -i</strong></td>
             <td style={{ padding: '0.75rem' }}>The todo list gives full control: pick/squash/reword/edit/drop</td>
+          </tr>
+          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <td style={{ padding: '0.75rem' }}>Push your own PR branch after rebasing or amending it</td>
+            <td style={{ padding: '0.75rem' }}><strong>git push --force-with-lease</strong> (never bare <code>--force</code>)</td>
+            <td style={{ padding: '0.75rem' }}>Rewriting means the remote can&apos;t fast-forward, so <em>some</em> force is required — but <code>--force-with-lease</code> first checks the remote branch still points where your last fetch said it did, and aborts if a teammate pushed in the meantime. Reproduced with two clones: after a teammate pushed, <code>--force-with-lease</code> refused with <code>! [rejected] main -&gt; main (stale info)</code>, while plain <code>--force</code> reported <code>(forced update)</code> and destroyed their commit. It only protects you if you have <em>not</em> just run <code>git fetch</code> — fetching refreshes the lease</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Resolve a conflict Git flagged</td>

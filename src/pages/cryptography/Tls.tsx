@@ -67,8 +67,8 @@ export default function Tls() {
   Signature Algorithm: ecdsa-with-SHA384
   Issuer: CN=E5, O=Let's Encrypt, C=US
   Validity:
-    Not Before: Jan 1 00:00:00 2026 UTC
-    Not After:  Apr 1 00:00:00 2026 UTC    (90 days!)
+    Not Before: Jan 1 00:00:00 2027 UTC
+    Not After:  Apr 1 00:00:00 2027 UTC    (90 days!)
   Subject: CN=www.example.com
   Subject Public Key Info:
     Algorithm: EC (prime256v1)
@@ -289,12 +289,12 @@ Step 8: Encrypted Communication
         </thead>
         <tbody>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-            <td style={{ padding: '0.75rem' }}><strong>CRL</strong></td>
+            <td style={{ padding: '0.75rem' }}><strong>CRL</strong><br /><span style={{ fontSize: '0.85em', opacity: 0.7 }}>Certificate Revocation List</span></td>
             <td style={{ padding: '0.75rem' }}>CA publishes a list of revoked serial numbers</td>
             <td style={{ padding: '0.75rem' }}>Simple but can be large and stale</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-            <td style={{ padding: '0.75rem' }}><strong>OCSP</strong></td>
+            <td style={{ padding: '0.75rem' }}><strong>OCSP</strong><br /><span style={{ fontSize: '0.85em', opacity: 0.7 }}>Online Certificate Status Protocol</span></td>
             <td style={{ padding: '0.75rem' }}>Client asks the CA in real time whether a cert is revoked</td>
             <td style={{ padding: '0.75rem' }}>Real-time, but leaks the user&#39;s browsing to the CA, adds latency, and fails open — being phased out</td>
           </tr>
@@ -333,7 +333,7 @@ Step 8: Encrypted Communication
         <p>
           The industry answer is to make revocation matter less by shrinking certificate lifetimes. The
           CA/Browser Forum has agreed a schedule stepping the maximum public TLS certificate lifetime down
-          from 398 days to <strong>47 days by 2029</strong>, and Let&apos;s Encrypt now issues 6-day
+          from 398 days &mdash; already down to <strong>200 days</strong> since 15 March 2026, then 100 days in March 2027 and <strong>47 days in March 2029</strong> (CA/Browser Forum ballot SC-081v3) &mdash; and Let&apos;s Encrypt now issues 6-day
           certificates. A cert that expires this week barely needs revoking.
         </p>
         <p>
@@ -459,8 +459,9 @@ https.get(options, (res) => {
 
       <p>
         That is Phase 3 of the flow: the server needs to hand the browser something it can present again
-        later. The next two lessons are the two competing answers to that one question — the classic
-        stateful one first.
+        later. The two competing answers to that one question are the{' '}
+        <a href="/auth/cookies">Cookies &amp; Sessions</a> and <a href="/auth/jwt">JWT</a> lessons over in
+        the Auth section — the classic stateful one first.
       </p>
 
       <InteractiveChallenge

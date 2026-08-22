@@ -247,8 +247,13 @@ ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]`}
           </tr>
           <tr>
             <td><strong>Ingress</strong></td>
-            <td>External HTTP routing</td>
-            <td>Routes external traffic to internal services. TLS termination, path-based routing.</td>
+            <td>External HTTP routing (legacy)</td>
+            <td>Routes external traffic to internal services. TLS termination, path-based routing. Still GA and still everywhere — but <strong>feature-frozen</strong>: anything beyond host/path routing lives in controller-specific annotations. See the box below before choosing it for something new.</td>
+          </tr>
+          <tr>
+            <td><strong>Gateway / HTTPRoute</strong></td>
+            <td>External HTTP routing (Gateway API — the successor)</td>
+            <td>Splits Ingress into role-oriented resources: <code>GatewayClass</code> and <code>Gateway</code> (platform team owns the listener and TLS) and <code>HTTPRoute</code> (app team owns its own routes). Header matching, traffic splitting and request mirroring are typed fields, not annotations.</td>
           </tr>
           <tr>
             <td><strong>HPA</strong></td>
@@ -369,6 +374,151 @@ spec:
   type: ClusterIP`}
       </CodeBlock>
 
+      <h3>Getting Traffic In: Gateway API, Not Ingress</h3>
+
+      <InfoBox variant="danger" title="Ingress Is Feature-Frozen, and Its Most Popular Controller Is Retired">
+        <p>
+          Almost every Kubernetes tutorial — including the table above until recently — presents{' '}
+          <code>Ingress</code> as <em>the</em> answer for external HTTP traffic. Two things changed
+          that, and both are worth knowing before you start a new cluster.
+        </p>
+        <p>
+          <strong>The Ingress API is feature-frozen.</strong> It is not deprecated and it is not
+          going away — existing Ingress resources keep working. But no new capability is being added
+          to it, and it never had fields for the things people actually need: header-based routing,
+          weighted traffic splitting, request mirroring, timeouts. Every controller invented its own{' '}
+          <code>annotations</code> for those, which is why an Ingress manifest is portable in theory
+          and locked to one controller in practice.
+        </p>
+        <p>
+          <strong><code>kubernetes/ingress-nginx</code> reached end of life on 2026-03-24.</strong>{' '}
+          It was the most widely deployed Ingress controller by a wide margin, and it now receives
+          no bug fixes and — the part that should move this up your backlog —{' '}
+          <strong>no CVE patches</strong>. Running it is an accumulating, unpatchable security
+          liability. (F5&apos;s separate <code>nginx-ingress</code> is a different project and is
+          still maintained; so are Traefik, HAProxy and the Envoy-based controllers.)
+        </p>
+        <p>
+          Active development moved to the <strong>Gateway API</strong>, which is GA
+          (<code>gateway.networking.k8s.io/v1</code>) and is what SIG-Network now treats as the
+          standard. If you have existing Ingress resources, the{' '}
+          <code>ingress2gateway</code> tool (1.0, March 2026) converts them, including 30+ of the
+          common controller annotations.
+        </p>
+      </InfoBox>
+
+      <p>
+        The design change that matters is not syntax, it is <strong>ownership</strong>. Ingress
+        crammed &quot;which port and certificate does the cluster listen on&quot; and &quot;where do
+        my app&apos;s URLs go&quot; into one resource, so either the platform team owned every
+        route or every app team could rewrite the cluster&apos;s TLS config. Gateway API splits
+        those into separate resources with separate RBAC:
+      </p>
+      <ul>
+        <li>
+          <strong>GatewayClass</strong> — cluster-scoped, installed once, names the implementation
+          (Envoy Gateway, Istio, Traefik, NGINX Gateway Fabric, a cloud load balancer).
+        </li>
+        <li>
+          <strong>Gateway</strong> — the listener: ports, protocol, hostnames, TLS certificates, and
+          an explicit policy for which namespaces may attach routes. Platform team.
+        </li>
+        <li>
+          <strong>HTTPRoute</strong> — lives in the application&apos;s own namespace and points at
+          its own Services. Application team. There are sibling kinds for other protocols
+          (<code>GRPCRoute</code>, <code>TLSRoute</code>, <code>TCPRoute</code>).
+        </li>
+      </ul>
+
+      <CodeBlock language="yaml" title="Gateway API — the Ingress Replacement">
+{`# GatewayClass -- cluster-scoped, installed once by the platform team.
+# controllerName selects the implementation actually doing the work.
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: production
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+---
+# Gateway -- the listener. Ports, TLS and delegation policy are decided
+# ONCE, here, by the team that should be deciding them.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: edge
+  namespace: gateway-system
+spec:
+  gatewayClassName: production
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.example.com"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: example-com-tls
+      allowedRoutes:
+        # Explicit delegation. With Ingress, any namespace could claim any
+        # hostname and the last writer won -- a real multi-tenant hazard.
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gateway-access: "true"
+---
+# HTTPRoute -- owned by the APP team, in the app's own namespace. It
+# attaches to the Gateway by reference; it cannot change the Gateway.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: order-service
+  namespace: order-system
+spec:
+  parentRefs:
+    - name: edge
+      namespace: gateway-system
+  hostnames:
+    - "api.example.com"
+  rules:
+    # Header matching is a TYPED FIELD. On Ingress this was a
+    # controller-specific annotation, where it existed at all.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /orders
+          headers:
+            - name: x-canary
+              value: "true"
+      backendRefs:
+        - name: order-service-v2
+          port: 80
+    # Weighted split for everyone else -- 90/10 canary, no annotations,
+    # no service-mesh install required.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /orders
+      backendRefs:
+        - name: order-service
+          port: 80
+          weight: 90
+        - name: order-service-v2
+          port: 80
+          weight: 10`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="What This Means for What You Should Learn">
+        <p>
+          Learn <code>Ingress</code> — you will meet it in every existing cluster, and interviewers
+          still ask about it. Reach for <strong>Gateway API</strong> for anything new. The honest
+          summary in a design review is: &quot;Ingress still works and we have plenty of it, but it
+          is frozen, our routing needs have outgrown annotations, and our controller lost security
+          support in March — so new services get HTTPRoutes and we migrate the rest with
+          ingress2gateway.&quot;
+        </p>
+      </InfoBox>
+
       <h3>Health Checks: Liveness vs Readiness vs Startup</h3>
 
       <InfoBox variant="note" title="Three Types of Health Probes">
@@ -413,9 +563,16 @@ app.get('/health/ready', async (req, res) => {
 
       <h2>Service Mesh</h2>
       <p>
-        A service mesh is an infrastructure layer that handles service-to-service communication.
-        It deploys a sidecar proxy (typically Envoy) alongside every service that transparently
-        handles mTLS, retries, circuit breaking, observability, and traffic management.
+        A service mesh is an infrastructure layer that handles service-to-service communication —
+        mTLS, retries, circuit breaking, observability, and traffic management — without the
+        application knowing about any of it. The classic implementation is the{' '}
+        <strong>sidecar</strong> model: an Envoy proxy container injected into every pod, with all
+        of that pod&apos;s traffic transparently redirected through it.
+      </p>
+      <p>
+        The diagram and manifests below show the sidecar model, because it is what most clusters run
+        and what interviews ask about. It is no longer the only model — see the box under the
+        diagram.
       </p>
 
       <MtlsExplainer compact />
@@ -425,11 +582,44 @@ app.get('/health/ready', async (req, res) => {
         chart={"graph TD\n  subgraph Control Plane\n    Istiod[Istiod] -.->|Config + Certs| E1\n    Istiod -.->|Config + Certs| E2\n    Istiod -.->|Config + Certs| E3\n  end\n  subgraph Pod A\n    A[Order Service] --- E1[Envoy Sidecar]\n  end\n  subgraph Pod B\n    B[Payment Service] --- E2[Envoy Sidecar]\n  end\n  subgraph Pod C\n    C[Catalog Service] --- E3[Envoy Sidecar]\n  end\n  E1 <-->|mTLS| E2\n  E2 <-->|mTLS| E3\n  E1 <-->|mTLS| E3\n  E1 --> Jaeger[Jaeger - Tracing]\n  E2 --> Jaeger\n  E3 --> Jaeger\n  E1 --> Prom[Prometheus - Metrics]\n  E2 --> Prom\n  E3 --> Prom"}
       />
 
+      <InfoBox variant="info" title="Sidecars Are No Longer the Only Mesh Model — Ambient Mode">
+        <p>
+          The sidecar model has a real cost that the architecture diagrams hide: one extra Envoy
+          container per pod. That is CPU and memory per <em>replica</em>, restarts on every proxy
+          upgrade, races between the app and the proxy at pod startup and shutdown, and the injection
+          machinery that makes all of it work.
+        </p>
+        <p>
+          Istio&apos;s <strong>ambient mode</strong> (GA in Istio 1.24) removes the sidecar. It splits
+          the mesh into two layers you can adopt separately:
+        </p>
+        <ul>
+          <li>
+            <strong>ztunnel</strong> — a per-node agent (a DaemonSet, not a per-pod container) that
+            provides mTLS, identity and L4 authorization. This is the layer most teams actually want,
+            and on its own it costs far less than a sidecar per pod.
+          </li>
+          <li>
+            <strong>waypoint proxy</strong> — an optional per-namespace or per-service Envoy that you
+            add only where you need L7 features: header routing, retries, weighted splits, request
+            metrics. Pay for L7 where you use it rather than everywhere.
+          </li>
+        </ul>
+        <p>
+          The trade-off is not free. Ambient is younger, its debugging story is less familiar, and
+          moving L7 processing out of the pod means an extra hop for the workloads that need it.
+          Sidecars remain the well-understood default and the right answer for an existing mesh.
+          But &quot;a service mesh means a proxy in every pod&quot; stopped being true, and if you
+          are asked why a mesh is expensive, per-pod sidecar overhead — and the fact that there is
+          now an alternative — is the answer worth having.
+        </p>
+      </InfoBox>
+
       <h3>What the Sidecar Handles</h3>
 
       <CodeBlock language="yaml" title="Istio VirtualService — Traffic Management">
 {`# Canary deployment — route 10% of traffic to v2
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
   name: order-service
@@ -452,7 +642,7 @@ spec:
       timeout: 10s            # total request timeout
 ---
 # Circuit breaker configuration
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
   name: order-service

@@ -53,7 +53,7 @@ export default function Setup() {
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.0</version>
+        <version>4.1.1</version>
     </parent>
 
     <groupId>com.example</groupId>
@@ -62,8 +62,10 @@ export default function Setup() {
     <name>my-app</name>
 
     <properties>
-        <!-- Boot 4 requires 17 as a minimum; target 21+ for virtual threads. -->
-        <java.version>21</java.version>
+        <!-- Boot 4 requires 17 as a minimum. 25 is the current LTS and the
+             right default for new work; 21 is still a supported LTS and is
+             perfectly fine if your platform hasn't certified 25 yet. -->
+        <java.version>25</java.version>
     </properties>
 
     <dependencies>
@@ -86,7 +88,10 @@ export default function Setup() {
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Test starter: JUnit 5 + Mockito + Spring Test -->
+        <!-- Test starter: JUnit 6 + Mockito + Spring Test.
+             (Boot 4 baselines JUnit 6. If you know JUnit 5 you already know
+             JUnit 6 — same org.junit.jupiter package, same annotations; the
+             break is a Java 17 baseline and some removed deprecations.) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -127,7 +132,7 @@ export default function Setup() {
       <CodeBlock language="text" title="build.gradle.kts (Kotlin DSL)">
 {`plugins {
     java
-    id("org.springframework.boot") version "4.0.0"
+    id("org.springframework.boot") version "4.1.1"
     id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -138,7 +143,7 @@ java {
     toolchain {
         // Gradle downloads this JDK if it isn't installed — builds become
         // reproducible regardless of what the developer has on PATH.
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -282,7 +287,7 @@ java -jar target/my-app-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev`}
 # The key idea is layer extraction — it splits the fat JAR into layers
 # ordered by how often they change, so Docker can cache the stable ones.
 
-FROM eclipse-temurin:21-jdk AS builder
+FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /builder
 COPY . .
 RUN ./mvnw -DskipTests clean package
@@ -290,7 +295,7 @@ RUN cp target/*.jar application.jar
 # Boot 3.3+ spelling. On Boot 3.2 and earlier it was '-Djarmode=layertools'.
 RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 WORKDIR /application
 # Order matters: least-frequently-changed layer first, so a code-only change
 # invalidates just the last COPY.

@@ -305,8 +305,8 @@ jobs:
   api-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7          # v4 runs on node20, which GitHub
+      - uses: actions/setup-java@v5         # removes from runners 2026-09-16
         with:
           java-version: 21
           distribution: temurin
@@ -333,7 +333,7 @@ jobs:
             --environment postman/ci.postman_environment.json \\
             --reporters cli,junit --reporter-junit-export newman-results.xml
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results

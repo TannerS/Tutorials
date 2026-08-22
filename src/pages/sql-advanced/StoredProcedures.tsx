@@ -399,6 +399,141 @@ FROM accounts
 WHERE account_balance(id) > 1000;`}
       </CodeBlock>
 
+      <h2>Calling One From Application Code</h2>
+
+      <p>
+        The SQL above is only half the picture. The half that decides whether a team actually
+        adopts stored procedures is what the calling code looks like &mdash; and where the{' '}
+        <code>.sql</code> files live so they are not just something someone once typed into a
+        psql prompt.
+      </p>
+
+      <InfoBox variant="tip" title="CALL a Procedure, SELECT a Function">
+        <p>
+          This trips people up constantly, so it is worth stating before any code: a{' '}
+          <strong>procedure</strong> is invoked with <code>CALL name(args)</code> and returns
+          nothing; a <strong>function</strong> is invoked inside a query with{' '}
+          <code>SELECT name(args)</code> and returns a value. Verified against PostgreSQL 16:{' '}
+          <code>CALL transfer_funds(1, 2, 100)</code> moved the money and returned no rows, while{' '}
+          <code>SELECT get_balance(1)</code> returned <code>900</code>. Calling a procedure with{' '}
+          <code>SELECT</code> is an error, and vice versa.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="java" title="Spring Boot — three ways, in order of how often you want them">
+{`// 1. JdbcTemplate — the plain one. Best default for a procedure that
+//    just does work and returns nothing.
+@Repository
+public class TransferRepository {
+    private final JdbcTemplate jdbc;
+
+    public TransferRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+
+    public void transfer(long from, long to, BigDecimal amount) {
+        jdbc.update("CALL transfer_funds(?, ?, ?)", from, to, amount);
+    }
+}
+
+// 2. Spring Data JPA @Procedure — least code when you already have a
+//    repository for that aggregate. The name must match the DB object.
+public interface AccountRepository extends JpaRepository<Account, Long> {
+
+    @Procedure(procedureName = "transfer_funds")
+    void transferFunds(@Param("from_acct") long fromAcct,
+                       @Param("to_acct")   long toAcct,
+                       @Param("amt")       BigDecimal amt);
+}
+
+// 3. SimpleJdbcCall — when there are OUT parameters or a returned
+//    cursor to unpack. More ceremony, but it handles the mapping.
+var call = new SimpleJdbcCall(jdbc)
+        .withProcedureName("place_order")
+        .declareParameters(
+            new SqlParameter("p_customer", Types.BIGINT),
+            new SqlParameter("p_sku",      Types.VARCHAR),
+            new SqlOutParameter("p_order_id", Types.BIGINT));
+
+Map<String, Object> out = call.execute(Map.of(
+        "p_customer", customerId,
+        "p_sku",      sku));
+Long orderId = (Long) out.get("p_order_id");`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="@Transactional Around a CALL Is Not Free">
+        <p>
+          If the procedure opens its own transaction (or issues <code>COMMIT</code> internally,
+          which PL/pgSQL procedures are allowed to do and functions are not), and Spring has
+          already started one, you get a conflict &mdash; Postgres will refuse with{' '}
+          <em>invalid transaction termination</em>. Either let the procedure own the transaction
+          and call it outside a Spring-managed one, or keep the procedure transaction-free and let{' '}
+          <code>@Transactional</code> wrap it. Pick one; mixing them is where the confusing
+          production failures come from.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="javascript" title="Node — node-postgres">
+{`// A procedure: CALL, no rows come back.
+await pool.query('CALL transfer_funds($1, $2, $3)', [fromId, toId, amount]);
+
+// A function: SELECT, and you read the value out of rows[0].
+const { rows } = await pool.query('SELECT get_balance($1) AS balance', [acctId]);
+const balance = rows[0].balance;
+
+// Parameters are still bound, not interpolated — a stored procedure is
+// NOT a substitute for parameterised queries. Building the CALL string
+// with template literals reintroduces SQL injection at the call site.`}
+      </CodeBlock>
+
+      <h2>Where the Files Actually Live</h2>
+
+      <p>
+        A stored procedure that exists only in the production database is an outage waiting to
+        happen: nobody can review it, nobody can diff it, and rebuilding a staging environment
+        silently produces a different one. Treat these files exactly like application code &mdash;
+        they belong in the repository, in version control, applied by a migration tool.
+      </p>
+
+      <CodeBlock language="text" title="Typical Spring Boot layout with Flyway">
+{`src/main/resources/db/migration/
+    V1__create_accounts.sql
+    V2__create_transfer_funds_procedure.sql     <- the procedure lives here
+    V3__add_absolute_cap_to_transfer.sql        <- a CHANGE is a NEW file
+    V4__create_place_order_procedure.sql
+
+# Liquibase is the same idea with different filenames:
+src/main/resources/db/changelog/
+    db.changelog-master.yaml
+    changes/002-transfer-funds-procedure.sql
+
+# Node projects: whatever your migration tool expects, e.g.
+migrations/
+    1712345678_create_transfer_funds.sql`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Write Them CREATE OR REPLACE, and Never Edit an Applied Migration">
+        <p>
+          Two rules make this workable. First, define routines with{' '}
+          <code>CREATE OR REPLACE PROCEDURE</code> / <code>FUNCTION</code> so re-running is safe
+          and the file always contains the <em>whole</em> current definition &mdash; a reviewer can
+          read one file and know what the routine does, instead of replaying five diffs in their
+          head.
+        </p>
+        <p>
+          Second, once a migration has run anywhere you do not own, it is immutable. Flyway
+          checksums applied migrations and will refuse to start if one changed underneath it, which
+          is a feature. Changing a procedure means a <strong>new</strong> versioned file containing
+          the new full definition. That also gives you an honest history: <code>git log</code> on
+          the migrations directory is the change history of your database logic.
+        </p>
+        <p>
+          One caveat worth knowing: because each change is a full replacement, procedure files
+          produce noisy diffs. Some teams keep a mirrored{' '}
+          <code>db/routines/transfer_funds.sql</code> holding only the latest definition purely so
+          code review has something readable to diff, with the migration importing or duplicating
+          it. That is a reasonable trade if your review process is suffering; it is not required.
+        </p>
+      </InfoBox>
+
       <InteractiveChallenge
         question="An app currently does a SELECT to check inventory, an UPDATE to decrement it, and an INSERT to record the order — three separate calls to the database. What is the primary, measurable benefit of moving this into a single stored procedure call?"
         options={[

@@ -86,7 +86,7 @@ function reducer(state, action) {
 
 // reader — anywhere below, no prop drilling
 const theme = useContext(ThemeCtx);`}
-        caption="Reads the nearest provider's value, skipping every level in between. React 19 lets you render the context object directly as the provider; Context.Provider and Context.Consumer are both deprecated."
+        caption="Reads the nearest provider's value, skipping every level in between. React 19 lets you render the context object directly as the provider. Be precise about status: Context.Provider is NOT deprecated — it is fully supported and warning-free in 19, and React has only said it plans to deprecate it later. Context.Consumer is the one react.dev already marks legacy; replace it with useContext() or use()."
       />
 
       <PosterCard
@@ -291,7 +291,8 @@ function ChatRoom({ roomId, theme }) {
         glyph="R"
         title={<>Ref <span className="dim">Cleanup &amp; ref-as-prop</span></>}
         badge="R19"
-        code={`// ref is a plain prop now — forwardRef is deprecated
+        code={`// ref is a plain prop now — forwardRef is no longer necessary
+// (not deprecated: no warning in 19, deprecation is "a future release")
 function MyInput({ ref, ...props }) {
   return <input ref={ref} {...props} />;
 }

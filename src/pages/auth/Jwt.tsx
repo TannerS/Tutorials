@@ -131,7 +131,7 @@ RSASHA256(
 
       <InfoBox variant="info" title="Symmetric vs Asymmetric JWT Signing">
         <p><strong>HS256 (HMAC-SHA256)</strong> — Symmetric. Same secret key signs and verifies. Simple, but the secret must be shared with every service that verifies tokens. If one service is compromised, all are.</p>
-        <p><strong>RS256 (RSA-SHA256)</strong> — Asymmetric. Private key signs, public key verifies. The auth server keeps the private key; all other services only need the public key (often fetched via JWKS endpoint). More secure for distributed systems.</p>
+        <p><strong>RS256 (RSA-SHA256)</strong> — Asymmetric. Private key signs, public key verifies. The auth server keeps the private key; all other services only need the public key (often fetched from a JWKS endpoint &mdash; JSON Web Key Set, a well-known URL publishing the server&apos;s current public keys so clients can rotate without redeploying). More secure for distributed systems.</p>
         <p><strong>ES256 (ECDSA-SHA256)</strong> — Asymmetric with elliptic curves. Smaller signatures, faster verification. Increasingly preferred over RS256.</p>
       </InfoBox>
 
@@ -368,14 +368,37 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         accept a forged admin token.
       </p>
 
+      <InfoBox variant="note" title="Modern jsonwebtoken Already Blocks This — Pin Algorithms Anyway">
+        <p>
+          Verified against <code>jsonwebtoken@9.0.3</code>: with no{' '}
+          <code>algorithms</code> option at all, an HS256 token signed with the
+          public-key bytes is rejected with{' '}
+          <code>JsonWebTokenError: invalid algorithm</code>, and an{' '}
+          <code>alg: none</code> token with{' '}
+          <code>JsonWebTokenError: jwt signature is required</code>. The library
+          infers permitted algorithms from the key type and refuses an{' '}
+          <code>HS*</code> header against a non-secret key.
+        </p>
+        <p>
+          So the danger here is not &quot;jsonwebtoken trusts the header&quot; — it
+          does not, and believing that will make you mis-triage real code. The danger
+          is that <em>this protection is a library implementation detail</em>. It has
+          not always held, it does not hold across every JWT library, and it never
+          holds for verification you write yourself. Pinning{' '}
+          <code>algorithms</code> makes your policy explicit rather than inherited,
+          which is why it belongs in every review checklist regardless.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="javascript" title="Algorithm Confusion — Vulnerable vs Safe">
-{`// VULNERABLE — the token decides how it gets verified.
-// jwt.verify() without an algorithms option will trust the header's alg.
-const decoded = jwt.verify(token, publicKey);   // NEVER do this
+{`// RISKY — you are relying on your library's defaults, not on your
+// own policy. Some libraries (and every hand-rolled verifier) will
+// take the algorithm from the token's own header.
+const decoded = jwt.verify(token, publicKey);
 
 // SAFE — the SERVER decides. The header's alg is only a hint,
 // and a mismatch is rejected before any crypto runs.
-const decoded = jwt.verify(token, publicKey, {
+const verified = jwt.verify(token, publicKey, {
   algorithms: ['RS256'],   // an HS256 or "none" token is rejected outright
   issuer: 'https://auth.example.com',
   audience: 'https://api.example.com',

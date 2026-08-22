@@ -87,9 +87,10 @@ export default function Distributed() {
           absolute is the answer that gets followed up with a question you then cannot answer.
         </p>
         <p>
-          <strong>Cassandra</strong> is AP at <code>CONSISTENCY ONE</code>, but set reads and writes
-          to <code>QUORUM</code> (so that R + W &gt; N) and you get strong consistency at the cost of
-          availability during a partition — CP behaviour from an &quot;AP database.&quot;
+          <strong>Cassandra</strong> is AP at <code>CONSISTENCY ONE</code>. Set reads and writes to{' '}
+          <code>QUORUM</code> (so that R + W &gt; N) and you trade availability during a partition
+          for a much stronger read guarantee — but, as the box below explains, <em>not</em> for
+          linearizability. Genuine linearizability in Cassandra needs lightweight transactions.
         </p>
         <p>
           <strong>MongoDB</strong> is CP with <code>readConcern: majority</code> and{' '}
@@ -104,6 +105,59 @@ export default function Distributed() {
         <p>
           The strong interview answer: <em>&quot;It depends on the consistency level configured.
           Here is what changes when you turn that dial.&quot;</em>
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="danger" title="R + W > N Is Not Linearizability (The Follow-Up Question)">
+        <p>
+          &quot;Quorum reads and writes give you strong consistency&quot; is the most repeated
+          half-truth in system design interviews, and it is worth being precise about because this
+          lesson defines CAP&apos;s C <em>as</em> linearizability at the top of the page.
+        </p>
+        <p>
+          What R + W &gt; N actually buys you is <strong>overlap</strong>: any read quorum shares at
+          least one replica with any write quorum, so a read is guaranteed to <em>touch</em> a
+          replica holding the newest acknowledged write. That is a real and useful property. It is
+          not consensus, and overlap alone does not order operations.
+        </p>
+        <p>
+          Three things break linearizability even at <code>QUORUM</code>/<code>QUORUM</code>:
+        </p>
+        <ul>
+          <li>
+            <strong>Conflicts resolve by last-write-wins on timestamps.</strong> Two concurrent
+            writes are not serialised through any agreement protocol — Cassandra compares
+            cell timestamps and the higher one wins. With clock skew, the write that happened later
+            in real time can be silently discarded. A linearizable system may not lose an
+            acknowledged write.
+          </li>
+          <li>
+            <strong>Writes are not atomic across replicas.</strong> A <code>QUORUM</code> write that
+            fails to reach a quorum still leaves its mutation on whichever replicas did apply it,
+            and it is never rolled back. A later read may or may not see that &quot;failed&quot;
+            value depending on which replicas answer.
+          </li>
+          <li>
+            <strong>Read repair makes reads mutating.</strong> A partial write can be invisible on
+            one read and permanently visible on the next, purely because the first read repaired it
+            — so two clients (and even the same client) can observe the value flipping in an order
+            no single global history explains.
+          </li>
+        </ul>
+        <p>
+          To get linearizability from Cassandra you need its <strong>lightweight transactions</strong>{' '}
+          — a Paxos round — via <code>IF</code> / <code>IF NOT EXISTS</code> on the write and{' '}
+          <code>CONSISTENCY SERIAL</code> (or <code>LOCAL_SERIAL</code> for a single DC) on the read.
+          That costs roughly four round trips instead of one, which is exactly the price
+          consensus always charges. The honest summary: <em>quorums give you overlap; consensus
+          gives you an order.</em>
+        </p>
+        <p>
+          The same distinction applies elsewhere. Dynamo-style stores (Riak, classic Dynamo) use
+          vector clocks and hand conflicts back to the application. DynamoDB&apos;s{' '}
+          <code>ConsistentRead</code> <em>is</em> linearizable for a single item because reads are
+          served from the leader of a Paxos-replicated partition — a different mechanism from
+          quorum overlap, even though it is often described with the same words.
         </p>
       </InfoBox>
 

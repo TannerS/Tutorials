@@ -34,10 +34,56 @@ export default function Indexing() {
       />
 
       <InfoBox variant="info" title="B-Tree Key Properties">
-        <p><strong>O(log n) lookups:</strong> A table with 1 billion rows needs only ~30 node traversals.</p>
+        <p><strong>O(log n) lookups &mdash; but the base is not 2:</strong> ~30 is{' '}
+          <code>log&#8322;(10&#8313;)</code>, which is the depth of a <em>binary</em> tree. A Postgres
+          B-tree packs hundreds of keys into each 8&nbsp;KB page, so the real depth is far smaller.
+          Measured with <code>pageinspect</code> on a real 10,000,000-row index:{' '}
+          <code>bt_metap()</code> reports <code>level = 2</code>, i.e. <strong>3 levels</strong> &mdash;
+          a lookup touches three pages, not the 23 that <code>log&#8322;(10&#8311;)</code> would
+          predict. At a billion rows you are looking at roughly 4&ndash;5. The{' '}
+          <code>O(log n)</code> label is right; it is the mental image of a binary tree that is
+          misleading.</p>
         <p><strong>Sorted:</strong> Supports range scans (<code>WHERE salary BETWEEN 50K AND 100K</code>), ORDER BY, and MIN/MAX efficiently.</p>
         <p><strong>Leaf chain:</strong> Leaves are linked, so range scans walk the chain without revisiting the tree.</p>
-        <p><strong>Left-prefix rule:</strong> A composite index on (a, b, c) supports queries on (a), (a, b), or (a, b, c) — but NOT (b) or (c) alone.</p>
+        <p><strong>Left-prefix rule:</strong> A composite index on (a, b, c) is efficiently seekable for queries on (a), (a, b), or (a, b, c). A query on (b) or (c) alone has no prefix to seek to — design your column order as if it were unusable. (PostgreSQL 18 softened this from &quot;impossible&quot; to &quot;sometimes still worth it&quot; via <strong>skip scan</strong> — see the note below.)</p>
+      </InfoBox>
+
+      <InfoBox variant="note" title="PG18 skip scan: the left-prefix rule is now a design heuristic, not a hard limit">
+        <p>
+          Through PostgreSQL 17, omitting the leading column meant the index was simply not an option
+          — the planner fell back to a sequential scan. PostgreSQL 18 added <strong>B-tree skip
+          scan</strong>: when the leading column has few distinct values, the executor can loop over
+          those values and run one index search per value, so a multicolumn index becomes usable{' '}
+          <em>with no restriction on the leading columns at all</em>. Same table (500,000 rows,{' '}
+          <code>a</code> holding only 3 distinct values, index on <code>(a, b, c)</code>), same query,
+          two versions:
+        </p>
+        <CodeBlock language="sql" title="EXPLAIN (ANALYZE) SELECT * FROM t WHERE b = 12345 — real output">
+{`-- PostgreSQL 17.11
+ Gather (actual rows=1 loops=1)
+   Buffers: shared hit=4167
+   ->  Parallel Seq Scan on t (actual rows=0 loops=3)
+         Filter: (b = 12345)
+         Rows Removed by Filter: 166666
+
+-- PostgreSQL 18.6 — SAME index, SAME query
+ Index Scan using idx_abc on t (actual rows=1.00 loops=1)
+   Index Cond: (b = 12345)
+   Index Searches: 5          -- <- the skip-scan tell: one search per leading value
+   Buffers: shared hit=9 read=10`}
+        </CodeBlock>
+        <p>
+          4,167 buffers down to 19. The <code>Index Searches</code> line is what distinguishes a skip
+          scan from a normal one — a genuine prefix query (<code>WHERE a = 1 AND b = 12346</code>)
+          reports <code>Index Searches: 1</code>.
+        </p>
+        <p>
+          <strong>Keep designing by the left-prefix rule anyway.</strong> Skip scan is a recovery
+          mechanism with a hard precondition: the leading column must be low-cardinality. Rebuilt with
+          <code> a</code> holding 500,000 distinct values instead of 3, the identical query on PG18.6
+          went straight back to <code>Parallel Seq Scan</code> with 4,167 buffers. Put the
+          low-cardinality columns last and the selective ones first, and you never depend on it.
+        </p>
       </InfoBox>
 
       <h2>CREATE INDEX Syntax</h2>
@@ -286,8 +332,13 @@ Execution Time: 62.104 ms`}
           <strong>Buffers</strong> — <code>shared hit</code> came from Postgres&apos;s cache;{' '}
           <code>shared read</code> came from outside it (OS cache or disk). The orders scan read
           3,288 blocks it didn&apos;t have cached — 26 MB of I/O, and the reason this query takes 62
-          ms rather than 10. Always pass <code>BUFFERS</code>; I/O volume is a far more stable
-          signal than wall-clock time on a shared machine.
+          ms rather than 10. I/O volume is a far more stable signal than wall-clock time on a shared
+          machine, so this is the number to read first. On <strong>PostgreSQL 18 and later you get it
+          for free</strong>: <code>EXPLAIN ANALYZE</code> turns <code>BUFFERS</code> on implicitly
+          (verified — plain <code>EXPLAIN (ANALYZE)</code> on 18.6 prints{' '}
+          <code>Buffers:</code> lines, the same command on 17.11 prints none). Keep writing it
+          explicitly if you still run anything 17 or older, and note that plain <code>EXPLAIN</code>{' '}
+          without <code>ANALYZE</code> still shows nothing — there is no execution to count buffers for.
         </p>
       </InfoBox>
 
@@ -525,7 +576,7 @@ DROP INDEX CONCURRENTLY idx_orders_lookup;`}
       </InfoBox>
 
       <InteractiveChallenge
-        question="You have a composite index on (a, b, c). Which WHERE clause can fully utilize this index?"
+        question="You have a composite index on (a, b, c). Which WHERE clause can use this index as a full prefix scan — every column seekable, no leading value skipped?"
         options={[
           'WHERE b = 1 AND c = 2',
           'WHERE a = 1 AND c = 2',
@@ -533,7 +584,7 @@ DROP INDEX CONCURRENTLY idx_orders_lookup;`}
           'WHERE b = 1',
         ]}
         correctIndex={2}
-        explanation="The optimizer can reorder equality conditions, so WHERE c=1 AND b=2 AND a=3 is equivalent to WHERE a=3 AND b=2 AND c=1, which matches the full index prefix. Option B only uses column 'a' from the index (skips b). Options A and D can't use the index at all because they don't include the leftmost column 'a'."
+        explanation="The optimizer can reorder equality conditions, so WHERE c=1 AND b=2 AND a=3 is equivalent to WHERE a=3 AND b=2 AND c=1 — the full (a,b,c) prefix, one index search. Option B seeks on 'a' and then filters on 'c' inside the index. Options A and D cannot use it as a PREFIX scan, because they don't constrain the leftmost column: through PG17 that meant a sequential scan, and on PG18+ the planner may still choose the index via a skip scan (verified: 'Index Searches: 5' instead of 1) — but only when 'a' is low-cardinality, so the left-prefix rule remains the way to design the index."
         language="sql"
       />
 

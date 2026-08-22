@@ -178,7 +178,7 @@ console.log(crypto.createHash('sha1').update('hello').digest('hex'));
         Merkle-Damgård design, a sponge construction sharing none of that structure would be unaffected.
         There is one concrete consequence today, not just in some hypothetical future: Merkle-Damgård
         hashes (MD5, SHA-1, SHA-256) are vulnerable to a <strong>length-extension attack</strong> — given{' '}
-        <code>H(secret || message)</code> and the length of <code>secret</code>, an attacker can compute a
+        <code>H(secret || message)</code> — where <code>||</code> means <em>concatenation</em>, not logical OR — and the length of <code>secret</code>, an attacker can compute a
         valid <code>H(secret || message || padding || extra)</code> without ever learning{' '}
         <code>secret</code>. SHA-3&apos;s sponge construction is not vulnerable to this. It is also exactly
         why HMAC, below, does not just concatenate the key and the message — it uses a specific nested
@@ -192,7 +192,7 @@ console.log(crypto.createHash('sha1').update('hello').digest('hex'));
         — and that similarity causes real confusion. CRC32 was designed to catch{' '}
         <strong>accidental</strong> corruption: a bad network packet, a flipped bit from a failing disk
         sector, a truncated file. It was never designed to resist someone deliberately trying to produce a
-        collision. CRC32&apos;s math is linear — it is built from polynomial division over GF(2) — which
+        collision. CRC32&apos;s math is linear — it is built from polynomial division over GF(2), the two-element field where addition is just XOR — which
         means that given a message and a target checksum, computing the exact bytes to append or patch in
         to hit that target is cheap arithmetic, not a search. This is routinely how tampered firmware
         images and zip files are patched to still pass a CRC check. A cryptographic hash&apos;s collision

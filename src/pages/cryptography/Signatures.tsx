@@ -99,7 +99,7 @@ export default function CryptoSignatures() {
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>ECDSA P-256</td>
             <td style={{ padding: '0.75rem' }}>91 bytes</td>
-            <td style={{ padding: '0.75rem' }}>~70-72 bytes (variable, DER)</td>
+            <td style={{ padding: '0.75rem' }}>~69-72 bytes (variable, DER)</td>
             <td style={{ padding: '0.75rem' }}>~77,000 ops/sec</td>
             <td style={{ padding: '0.75rem' }}>~30,700 ops/sec</td>
           </tr>
@@ -241,7 +241,7 @@ function sizes(name, publicKey, privateKey, signature) {
         rather than ECDSA.
       </p>
 
-      <h2>Java: The ECDSA Demo Encryption.tsx Didn&#39;t Show</h2>
+      <h2>Java: The ECDSA Demo the Encryption Lesson Didn&#39;t Show</h2>
 
       <p>
         The Encryption lesson&#39;s sign/verify demo was Node-only. Here is the same flow —

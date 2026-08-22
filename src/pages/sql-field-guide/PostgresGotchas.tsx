@@ -9,7 +9,7 @@ export default function FieldGuidePostgresGotchas() {
       eyebrow="SQL · Field Reference"
       title="Postgres Gotchas & Pitfalls"
       tagline="The traps that don't show up until production — NULLs, MVCC, locking, and silent data loss."
-      meta={['PostgreSQL 17+', '18 pitfalls']}
+      meta={['PostgreSQL 18+', '18 pitfalls']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · Postgres Gotchas & Pitfalls"
       prev={{ path: '/sql-field-guide/schema-design', label: 'Schema Design Patterns' }}
@@ -226,7 +226,7 @@ ORDER BY duration DESC;`}
 --    nodes and flow upward, so the top line runs LAST.
 -- 3. actual time and rows are PER LOOP. rows=3 loops=10000 is
 --    30,000 rows, and 0.9ms x 10,000 is ~9 seconds, not 0.9ms.`}
-        caption="Forgetting to multiply by loops is the most common misreading there is, and it hides exactly the nested-loop blowups you are hunting. Node timings are also inclusive of their children, so a node's own cost is its time minus its child's. Always pass BUFFERS — I/O volume is a far more stable signal than wall-clock on a shared machine."
+        caption="Forgetting to multiply by loops is the most common misreading there is, and it hides exactly the nested-loop blowups you are hunting. Node timings are also inclusive of their children, so a node's own cost is its time minus its child's. Read BUFFERS before the timings — I/O volume is a far more stable signal than wall-clock on a shared machine. On PG18+ you no longer have to ask: EXPLAIN ANALYZE enables BUFFERS implicitly (verified — 18.6 prints Buffers: lines with no option given, 17.11 prints none). Keep writing it explicitly only if you still touch PG17 or older."
       />
 
       <PosterCard

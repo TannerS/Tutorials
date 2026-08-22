@@ -14,10 +14,37 @@ function Testing() {
       next={null}
     >
       <p>
-        Automated tools catch roughly 30–50% of accessibility issues. The rest require manual testing,
-        screen reader verification, and human judgment. A robust a11y testing strategy combines all
-        three layers: automated CI checks, manual audits, and assistive technology testing.
+        Automation gets you roughly half the way there and never further. Deque&apos;s own study —
+        2,000+ audits across 13,000+ pages, nearly 300,000 issues, run with axe — found automated
+        testing completely covered <strong>57%</strong> of the issues found. The rest require manual
+        testing, screen reader verification, and human judgment. A robust a11y testing strategy
+        combines all three layers: automated CI checks, manual audits, and assistive technology
+        testing.
       </p>
+
+      <InfoBox variant="info" title="Why You See 20–30%, 30–50% and 57% Quoted for the Same Thing">
+        <p>
+          These numbers are not competing measurements — they answer different questions, and it is
+          worth knowing which one someone means before arguing about it.
+        </p>
+        <p>
+          The older <strong>20–30%</strong> figure counts <em>WCAG success criteria</em>: of the ~50
+          testable criteria, how many can a machine decide? That is a deliberately harsh denominator,
+          because criteria like &quot;is this alt text meaningful&quot; are one criterion each and are
+          permanently un-automatable.
+        </p>
+        <p>
+          Deque&apos;s <strong>57%</strong> counts <em>issue volume</em>: of every defect found in a
+          real audit, what share did the tool catch? Real pages fail the machine-checkable criteria
+          over and over — a hundred unlabelled inputs is a hundred issues — so the same tool scores
+          much higher on this denominator.
+        </p>
+        <p>
+          Both are honest; neither changes the practical conclusion. Run the automation, because it is
+          free and it clears out the high-volume noise. Then do the manual pass, because the criteria
+          it cannot reach are the ones that decide whether the page is actually usable.
+        </p>
+      </InfoBox>
 
       <FlowChart
         title="Accessibility Testing Pyramid"
@@ -314,22 +341,29 @@ test.describe('Accessibility', () => {
       <h2>Color Contrast Checking</h2>
 
       <CodeBlock language="css" title="WCAG Contrast Ratios">
-{`/* WCAG 2.1 AA Requirements: */
+{`/* WCAG 2.2 AA Requirements (unchanged from 2.1 — 2.2 added no new
+   contrast thresholds, it added 9 other success criteria): */
 /* Normal text (< 18pt): minimum 4.5:1 contrast ratio */
 /* Large text (≥ 18pt or ≥ 14pt bold): minimum 3:1 */
 /* UI components and graphics: minimum 3:1 */
+/* AAA raises normal text to 7:1 and large text to 4.5:1 */
 
-/* ❌ Fails AA — gray text on white (ratio ~2.5:1) */
+/* ❌ Fails AA — gray text on white (2.85:1) */
 .bad-contrast {
   color: #999999;
   background: #ffffff;
 }
 
-/* ✅ Passes AA — dark gray on white (ratio ~7:1) */
+/* ✅ Passes AA and AAA — dark gray on white (12.63:1) */
 .good-contrast {
   color: #333333;
   background: #ffffff;
 }
+
+/* The AAA boundary is darker than most people guess. On white,
+   #595959 is 7.00:1 — the lightest neutral gray that still passes
+   AAA. One step lighter, #5a5a5a, is 6.90:1 and fails. Never eyeball
+   a ratio; compute it or let a tool do it. */
 
 /* ✅ Check with these tools: */
 /* - Chrome DevTools → Inspect element → color picker shows contrast ratio */
@@ -407,15 +441,15 @@ test.describe('Accessibility', () => {
       </InfoBox>
 
       <InteractiveChallenge
-        question={"What percentage of accessibility issues can automated tools (like axe-core) typically detect?"}
+        question={"You will see automated a11y coverage quoted as \"20-30%\" and as \"57%\" (Deque's study of 13,000+ pages with axe). Why do the two figures differ so much, and what does that change?"}
         options={[
-          "80-90%",
-          "30-50%",
-          "10-20%",
-          "60-70%"
+          "The 57% figure is vendor marketing; 20-30% is the real number, so automation is barely worth running",
+          "They use different denominators — 20-30% counts WCAG success criteria a machine can decide, 57% counts share of total issues found. Automation is worth more than the old number suggests, and a manual pass is still mandatory under either figure.",
+          "axe simply got better, so the old figure is obsolete and automation now covers most of what matters",
+          "It is a sampling difference; averaged over enough sites the true value is about 40%"
         ]}
         correctIndex={1}
-        explanation={"Automated tools catch roughly 30-50% of WCAG issues. They're great at detecting missing alt text, low contrast, invalid ARIA, and missing labels — but they cannot evaluate whether alt text is meaningful, whether focus order is logical, or whether the user experience actually works with a screen reader. Manual testing is always required."}
+        explanation={"Both numbers are honest measurements of different things. Counting success criteria is a harsh denominator: \"is the alt text meaningful\" is one criterion and is permanently un-automatable, so tools score 20-30%. Counting issue volume is kinder: real pages fail the machine-checkable criteria hundreds of times each, so Deque measured 57% of found issues fully covered. Neither figure changes the strategy — automation clears the high-volume, unambiguous defects (missing alt text, low contrast, invalid ARIA, missing labels) and cannot evaluate whether alt text is meaningful, whether focus order is logical, or whether a screen reader user can actually complete the flow. Estimates vary by methodology; quote the denominator with the number."}
         language="html"
       />
 

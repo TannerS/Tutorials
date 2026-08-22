@@ -955,16 +955,25 @@ uniqueIds.add("1"); // ❌ Error: string not assignable to number
 // IterableIterator<T>`}
       </CodeBlock>
 
-      <InfoBox variant="tip" title="TS 5.6+: Iterator Helper Methods — You Don't Need Array.from() First Anymore">
+      <InfoBox variant="tip" title="Iterator Helper Methods — You Don't Need Array.from() First Anymore">
         <p>
           Before TS 5.6, a generator&apos;s return type &mdash; <code>Iterator&lt;T&gt;</code> or{' '}
           <code>IterableIterator&lt;T&gt;</code> from the comment above &mdash; had none of the
           familiar array methods. The standard fix was <code>Array.from(iterator)</code> first,
           which defeats the entire point of an iterator for something like an infinite generator:
-          it can never finish. TS 5.6 typed the new <code>Iterator.prototype</code> helper methods
-          (<code>.map</code>, <code>.filter</code>, <code>.take</code>, <code>.drop</code>,{' '}
-          <code>.flatMap</code>, <code>.toArray</code>, and more), so you chain directly on the
-          iterator and only materialize an array at the very end, if at all.
+          it can never finish. TS 5.6 added <em>types</em> for the{' '}
+          <code>Iterator.prototype</code> helper methods (<code>.map</code>, <code>.filter</code>,{' '}
+          <code>.take</code>, <code>.drop</code>, <code>.flatMap</code>, <code>.toArray</code>, and
+          more), so you chain directly on the iterator and only materialize an array at the very
+          end, if at all.
+        </p>
+        <p>
+          Read &quot;TS 5.6&quot; as the version that <em>described</em> them, not the version that
+          introduced them. Iterator helpers are <strong>ECMAScript 2025</strong> &mdash; a ratified
+          JavaScript feature that V8 implements. TypeScript only shipped the{' '}
+          <code>lib</code> declarations, which is exactly why the caveat at the bottom of this box
+          bites: the compiler will happily type-check code that a runtime without the methods
+          cannot run.
         </p>
         <CodeBlock language="typescript" title="Verified on TypeScript 6.0 / Node 25 — real output, not a projection">
 {`function* naturals() {

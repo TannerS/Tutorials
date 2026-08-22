@@ -111,16 +111,38 @@ export default function Variables() {
   }
 }
 
-/* Manual override — higher specificity than :root */
-[data-theme="dark"] {
+/* Manual override — qualify with :root so it genuinely OUT-SPECIFIES the
+   base block. Bare [data-theme="dark"] is (0,0,1,0), exactly the same score
+   as :root, so it would only win on source order. */
+:root[data-theme="dark"] {
   --color-bg: #0f0f1a; --color-text: #e2e8f0;
   --color-surface: #1e1e2e; --color-primary: #818cf8;
 }
-[data-theme="light"] {
+:root[data-theme="light"] {
   --color-bg: #fff; --color-text: #1a1a2e;
   --color-surface: #f1f5f9; --color-primary: #6366f1;
 }`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Write :root[data-theme=…], not [data-theme=…] — measured in Chromium">
+        <p>
+          A bare attribute selector scores <code>(0,0,1,0)</code>. So does{' '}
+          <code>:root</code> &mdash; a pseudo-class sits in the same column as an attribute. They{' '}
+          <strong>tie</strong>, which means the winner is whichever one the browser sees{' '}
+          <em>last</em>. Verified: with the theme block written first and{' '}
+          <code>:root</code> second, the light tokens win and the toggle does nothing, even on an
+          element with <code>data-theme=&quot;dark&quot;</code>. Reorder your imports, let a bundler
+          hoist a chunk, or move the base tokens into a file that lands later, and the theme toggle
+          silently stops working with no error anywhere.
+        </p>
+        <p>
+          Prefixing with <code>:root</code> makes it <code>(0,0,2,0)</code> &mdash; two
+          class-column items against one &mdash; so it wins outright regardless of order. Verified
+          the same way: <code>:root[data-theme]</code> still applies with a plain{' '}
+          <code>:root</code> block declared after it. This is the form the Design Tokens lesson
+          uses, and it is the one to copy.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="javascript" title="Theme Toggle Logic">
 {`function toggleTheme() {
@@ -153,9 +175,10 @@ export default function Variables() {
 }
 
 /* Manual override: flip color-scheme, and every light-dark()
-   token re-resolves — no second block of variables to maintain. */
-[data-theme="light"] { color-scheme: light; }
-[data-theme="dark"]  { color-scheme: dark; }`}
+   token re-resolves — no second block of variables to maintain.
+   Qualify with :root again, for the same specificity reason as above. */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"]  { color-scheme: dark; }`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="color-scheme Does Real Work On Its Own">
@@ -254,7 +277,9 @@ body:has(dialog[open]) { overflow: hidden; }`}
       <h2>@layer — Cascade Layers</h2>
       <p>
         Cascade layers give explicit control over which styles win regardless of specificity.
-        Earlier layers always lose to later layers. Unlayered styles beat all layered styles.
+        For <em>normal</em> declarations &mdash; which is everything you write day to day &mdash;
+        earlier layers lose to later layers, and unlayered styles beat all layered styles.
+        Both of those rules flip for <code>!important</code> declarations; see the warning below.
       </p>
 
       <CodeBlock language="css" title="Cascade Layers">
@@ -273,8 +298,47 @@ body:has(dialog[open]) { overflow: hidden; }`}
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; }
 }
 
-/* Unlayered styles always win — use sparingly */`}
+/* Unlayered NORMAL declarations win — use sparingly */`}
       </CodeBlock>
+
+      <InfoBox variant="danger" title="!important inverts BOTH layer rules — verified in Chromium">
+        <p>
+          The Cascade Fundamentals lesson showed that <code>!important</code> reverses the{' '}
+          <em>origin</em> order, which is why a user stylesheet&apos;s important declaration beats
+          an author&apos;s. Layer order is a separate step of the cascade, and{' '}
+          <code>!important</code> reverses that one too &mdash; independently, and in both of its
+          parts:
+        </p>
+        <CodeBlock language="css" title="Measured — computed color after each pair">
+{`/* 1. Unlayered vs layered, NORMAL declarations */
+@layer base { #t { color: blue; } }
+#t { color: red; }            /* -> red    unlayered wins, as taught */
+
+/* 2. Unlayered vs layered, BOTH !important */
+@layer base { #t { color: blue !important; } }
+#t { color: red !important; } /* -> BLUE   the LAYERED one now wins */
+
+/* 3. Earlier vs later layer, NORMAL declarations */
+@layer a, b;
+@layer a { #t { color: red; } }
+@layer b { #t { color: blue; } }   /* -> blue   later layer wins, as taught */
+
+/* 4. Earlier vs later layer, BOTH !important */
+@layer a, b;
+@layer a { #t { color: red !important; } }
+@layer b { #t { color: blue !important; } }  /* -> RED  the EARLIER layer wins */`}
+        </CodeBlock>
+        <p>
+          The design intent is consistent: <code>!important</code> always hands power to whoever is{' '}
+          <em>further from the author&apos;s normal styles</em>. Normally that means later layers
+          and unlayered rules; with <code>!important</code> it means earlier layers and layered
+          rules. Practically: a layer you declared first as your &quot;lowest priority&quot; reset
+          becomes your <em>highest</em> priority the moment anything in it is marked important, and
+          slapping <code>!important</code> on an unlayered override will not beat an important
+          declaration inside a layer. Fix specificity or layer order instead of reaching for{' '}
+          <code>!important</code> inside a layered architecture.
+        </p>
+      </InfoBox>
 
       <h2>@scope — Subtree Scoping</h2>
       <p>
@@ -378,15 +442,18 @@ body:has(dialog[open]) { overflow: hidden; }`}
         correct during scroll without a single event listener.
       </InfoBox>
 
-      <InfoBox variant="warning" title="Check support before you ship this one">
-        Anchor positioning is the least settled feature on this page. It shipped in Chromium first
-        and other engines have followed at different rates, so unlike <code>:has()</code>,{' '}
-        <code>@layer</code>, or <code>light-dark()</code> &mdash; all comfortably baseline &mdash;
-        this one still warrants a check against your support target. It degrades badly rather than
-        gracefully: without support the element simply falls back to normal absolute positioning,
-        which usually means it lands in the wrong place instead of merely looking plainer. Gate it
-        behind <code>@supports (anchor-name: --x)</code> and keep a static fallback position, or
-        keep using a JS library until your baseline catches up.
+      <InfoBox variant="warning" title="Newly Baseline — gate it, but you no longer need a JS library">
+        Anchor positioning is the youngest feature on this page. It shipped in Chromium first and
+        the other engines followed at different rates, but with Firefox&apos;s 2026 release it
+        reached <strong>Baseline 2026 (newly available)</strong> &mdash; all three engines,
+        roughly 91% of global traffic. That is the point at which it stops being a &quot;maybe
+        later&quot; and becomes a normal progressive-enhancement decision. Still gate it behind{' '}
+        <code>@supports (anchor-name: --x)</code> and keep a static fallback, because it degrades
+        badly rather than gracefully: without support the element falls back to plain absolute
+        positioning, which usually means it lands in the wrong place instead of merely looking
+        plainer. One sharp edge remains &mdash; <code>@position-try</code> flipping landed later
+        than core anchor placement, so a browser at your baseline floor may position correctly but
+        not flip. Treat the fallback position as the thing that has to be acceptable on its own.
       </InfoBox>
 
       <CodeBlock language="css" title="Progressive enhancement pattern">
@@ -591,7 +658,7 @@ p { overflow-wrap: break-word; text-wrap: pretty; }
       />
 
       <InteractiveChallenge
-        question={"In cascade layers, which styles have the highest priority?"}
+        question={"Among NORMAL (non-!important) declarations, which styles have the highest priority?"}
         options={[
           "Styles in the first declared layer",
           "Styles in the last declared layer",
@@ -599,7 +666,7 @@ p { overflow-wrap: break-word; text-wrap: pretty; }
           "Styles with the highest selector specificity"
         ]}
         correctIndex={2}
-        explanation={"Unlayered styles always beat layered styles, regardless of specificity or layer order. Among layered styles, later-declared layers beat earlier ones. The order declaration (@layer reset, base, components, utilities) defines priority. Unlayered styles sit above all layers."}
+        explanation={"For normal declarations, unlayered styles beat layered styles regardless of specificity or layer order, and among layered styles the later-declared layer wins — the order declaration (@layer reset, base, components, utilities) defines that priority. The question says NORMAL for a reason: !important inverts both halves of this rule. Between two important declarations, the LAYERED one beats the unlayered one, and the EARLIER layer beats the later one."}
         language="css"
       />
     </LessonLayout>

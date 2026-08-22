@@ -73,11 +73,16 @@ public class ReportService {
         glyph="Pv"
         title={<>Private / final methods<span className="dim"> — AOP never fires</span></>}
         language="text"
-        code={`Spring AOP only weaves PUBLIC methods on beans obtained
-through the proxy. A private @Transactional or @Cacheable
-method compiles fine and does nothing at runtime — no
-error, no warning, just silently ignored behavior.`}
-        caption="Unlike self-invocation, this one gives you nothing to grep for — the pointcut 'matches' at compile time but Spring's proxy-based AOP can never intercept a private or final method call."
+        code={`A CGLIB proxy is a SUBCLASS, so it can only weave what a
+subclass could override. private and final methods (and
+final classes) are out: a private @Transactional or
+@Cacheable method compiles fine and does nothing at
+runtime — no error, no warning, silently ignored.
+
+NOT out, since Framework 6.0: protected and
+package-visible methods. The old "public only" rule is a
+Spring 5 fact that outlived its framework.`}
+        caption="Unlike self-invocation, this one gives you nothing to grep for — the pointcut 'matches' at compile time but Spring's proxy-based AOP can never intercept a private or final method call. Two carve-outs still hold: a JDK dynamic proxy (interface-based) only ever sees public interface methods, and a package-private method inherited from a parent class in a different package is effectively private."
       />
 
       <PosterCard
@@ -185,7 +190,7 @@ public record CatalogApiProperties(@NotBlank String baseUrl) { }`}
         rows={[
           { need: "App won't start", answer: 'Read the Description/Action block, not the trace. --debug for the conditions report' },
           { need: '@Transactional silently no-ops', answer: 'Called via this. — extract to another bean' },
-          { need: 'Private method annotation ignored', answer: 'Spring AOP only weaves public methods' },
+          { need: 'Private method annotation ignored', answer: 'CGLIB proxies only weave overridable methods — private/final are out. protected + package-private are fine since Framework 6.0' },
           { need: '1000+ queries for a list endpoint', answer: 'N+1 — add @EntityGraph or JOIN FETCH' },
           { need: 'Old rows change meaning after a deploy', answer: 'Enum ORDINAL mapping — always use STRING' },
           { need: 'Connection pool exhausted under load', answer: 'HTTP/Kafka call inside @Transactional — move it outside' },

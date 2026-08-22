@@ -33,14 +33,18 @@ export default function FieldGuideGotchas() {
         title="Missing Dependency Arrays"
         code={`// ❌ New object every render — reference changes = infinite loop
 useEffect(() => {
-  fetch('/api/data', { headers: { Authorization: \`Bearer \${token}\` } });
+  fetch('/api/data', { headers: { Authorization: \`Bearer \${token}\` } })
+    .then(r => r.json())
+    .then(setData);   // ← the setState that closes the cycle
 }, [{ token }]);
 
 // ✅ Primitive dependency — stable across renders
 useEffect(() => {
-  fetch('/api/data', { headers: { Authorization: \`Bearer \${token}\` } });
+  fetch('/api/data', { headers: { Authorization: \`Bearer \${token}\` } })
+    .then(r => r.json())
+    .then(setData);
 }, [token]);`}
-        caption="An object or array literal in the dependency array is a new reference every render, so the effect thinks its inputs changed and re-runs endlessly. Depend on primitives, or memoize the object first."
+        caption="An object or array literal in the dependency array is a new reference every render, so the effect thinks its inputs changed and re-runs. Note the setData: without it nothing re-renders, so the bad version would run exactly once — it takes BOTH an unstable dep and a state write to loop. Depend on primitives, or memoize the object first."
       />
 
       <PosterCard
@@ -58,18 +62,26 @@ setTodos(prev => [...prev, newTodo]);`}
       <PosterCard
         glyph="∞"
         title="Infinite Re-render Loops"
-        code={`// THE TEST: an effect loops only if it WRITES its own dependency.
-// Compare the deps array against what the body sets. Overlap = loop.
+        code={`// THE TEST — a loop needs BOTH halves, never just one:
+//   1. the effect causes a re-render (it sets state), AND
+//   2. its deps differ on that re-render (or there is no deps array)
 
-// ❌ No deps = every value is a dependency; it writes count
+// ❌ Both: sets count, and no deps array = always re-runs
 useEffect(() => { setCount(count + 1); });
 
-// ❌ Writes items, depends on items
+// ❌ Both: sets items, and items is its own dep
 useEffect(() => { setItems([...items, newItem]); }, [items]);
 
-// ✅ Writes items, depends on query — no overlap, no loop
-useEffect(() => { setItems(fetchFor(query)); }, [query]);`}
-        caption="Read the deps array, read what the body sets, and look for overlap — that one test explains every infinite-loop effect without needing to trace the cycle. No deps array means EVERY value is a dependency, which is why it's the easiest way to trigger this. Watch for the indirect form too: writing state that an unstable dep is derived from counts as writing the dep."
+// ❌ Both — with ZERO overlap: the object literal is a new
+//    reference every render, so half 2 holds regardless
+useEffect(() => { setTotal(sum(cart)); }, [{ cart }]);
+
+// ✅ Half 1 only: sets items, but query is stable → settles
+useEffect(() => { setItems(fetchFor(query)); }, [query]);
+
+// ✅ Half 2 only: deps always differ, but nothing re-renders
+useEffect(() => { analytics.track('view', opts); }, [{ opts }]);`}
+        caption="Overlap between the deps and what the body writes is ONE way to satisfy half 2 — not the test itself. An unstable dep loops with no overlap at all, and a no-deps effect loops with no deps to overlap with. Conversely, an effect that writes its own dep back to the SAME value fails half 1: React bails out, nothing re-renders, no loop."
       />
 
       <PosterCard

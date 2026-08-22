@@ -93,6 +93,16 @@ export default function FlowChart({ chart, title }: FlowChartProps) {
     });
     const render = async () => {
       try {
+        // Mermaid measures every label with the configured fontFamily to size
+        // its nodes. If Inter has not loaded yet it measures against the
+        // fallback, comes up short, and clips the last character off each
+        // label ("src/" renders as "src,"). Waiting for fonts first makes a
+        // cold load produce the same geometry as a warm one — which also
+        // matters for the PDF export, where every page is a cold load.
+        if (typeof document !== 'undefined' && document.fonts?.ready) {
+          await document.fonts.ready;
+        }
+        if (cancelled) return;
         const source = theme === 'light' ? applyLightSwap(chart.trim()) : chart.trim();
         const { svg: rendered } = await mermaid.render(chartDomId, source);
         if (!cancelled) setSvg(rendered);

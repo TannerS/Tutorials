@@ -392,9 +392,11 @@ Phase 6: Logout
       <p>
         Look at the relationship map again and notice that every path traces back to one box:{' '}
         <strong>encryption</strong>. None of this works if the password can be read off the wire, if a
-        session cookie can be forged, or if a token signature can be faked. So the next lesson starts at
-        the bottom of the stack — symmetric and asymmetric keys, digital signatures, and password
-        hashing — the primitives that TLS, cookies, JWTs, and OAuth all assume you already have.
+        session cookie can be forged, or if a token signature can be faked. Those primitives —
+        symmetric and asymmetric keys, digital signatures, password hashing, and TLS itself — live in
+        the <a href="/cryptography/encoding-vs-encryption">Cryptography</a> section. This section
+        assumes them rather than re-deriving them, so if any of those words are unfamiliar, read that
+        section first and come back; everything from here on will land better.
       </p>
 
       <InteractiveChallenge

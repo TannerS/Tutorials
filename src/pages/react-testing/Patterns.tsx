@@ -11,7 +11,7 @@ export default function Patterns() {
       sectionId="react-testing"
       lessonIndex={5}
       prev={{ path: '/react-testing/forms', label: 'Testing Forms & Routing' }}
-      next={null}
+      next={{ path: '/react-testing/best-practices', label: 'Best Practices & Anti-Patterns' }}
     >
       <h2>Custom Render Utility</h2>
       <p>

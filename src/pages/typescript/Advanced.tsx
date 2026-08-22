@@ -160,7 +160,7 @@ type Result2 = ToArrayNonDist<string | number>;
         conditional separately for each member, and unions the results back together</em>:
       </p>
 
-      <CodeBlock language="typescript" title="Distribution, step by step">
+      <CodeBlock language="text" title="Distribution, step by step — a derivation, not compilable code">
 {`type ToArray<T> = T extends unknown ? T[] : never;
 
 ToArray<string | number>
@@ -182,7 +182,7 @@ ToArrayND<string | number>  →  (string | number)[]`}
           already use. <code>{'Exclude<T, U>'}</code> is literally{' '}
           <code>T extends U ? never : T</code>. Run it on a union and watch:
         </p>
-        <CodeBlock language="typescript" title="Exclude is one line, and distribution does the work">
+        <CodeBlock language="text" title="Exclude is one line, and distribution does the work — a derivation, not compilable code">
 {`Exclude<"a" | "b" | "c", "b">
   → ("a" extends "b" ? never : "a")     // "a"
     | ("b" extends "b" ? never : "b")   // never
@@ -398,8 +398,14 @@ colors.secondary.map(c => c);       // OK - knows it's string[]`}
       {/* ── 8. using Declarations ── */}
       <h2>using Declarations</h2>
       <p>
-        TypeScript 5.2 introduced <code>using</code> for deterministic resource
-        cleanup. Resources are automatically disposed when they go out of scope.
+        <code>using</code> gives you deterministic resource cleanup: the resource is disposed
+        automatically when it goes out of scope. TypeScript shipped support for it in 5.2, but
+        this is <strong>not a TypeScript feature</strong> — it is TC39&apos;s Explicit Resource
+        Management proposal, which reached Stage 4 and is slated for ECMAScript 2027. That
+        distinction matters practically: it is real JavaScript syntax, V8 already ships it (it
+        runs unmodified on Node 25 with no flag), and the semantics below are the language&apos;s,
+        not the compiler&apos;s. TypeScript&apos;s only additions are the <code>Disposable</code>{' '}
+        and <code>AsyncDisposable</code> types and a downlevel emit for older targets.
       </p>
 
       <CodeBlock language="typescript" title="Resource Management with using">

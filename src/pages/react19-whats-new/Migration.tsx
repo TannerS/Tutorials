@@ -285,14 +285,30 @@ graph TD
       <p>Run through these in order:</p>
       <ol>
         <li>
-          <strong>Install React 19 itself.</strong> React's upgrade guide gives the
-          exact-pinned form:
-          <CodeBlock language="bash" showLineNumbers={false}>{`npm install --save-exact react@^19.0.0 react-dom@^19.0.0`}</CodeBlock>
+          <strong>Install React 19 itself.</strong> Pin an exact version &mdash; and pin one at
+          or above the security floor, not <code>19.0.0</code>:
+          <CodeBlock language="bash" showLineNumbers={false}>{`npm install --save-exact react@19.2.8 react-dom@19.2.8`}</CodeBlock>
+          <InfoBox variant="warning" title="Do not start from react@^19.0.0">
+            <p>
+              You will see <code>npm install --save-exact react@^19.0.0</code> quoted a lot.
+              It is self-contradictory &mdash; <code>--save-exact</code> means &ldquo;write a
+              bare version into <code>package.json</code>&rdquo;, while <code>^19.0.0</code> is
+              a range, so the two flags argue about the same field.
+            </p>
+            <p style={{ marginBottom: 0 }}>
+              More importantly the floor is unsafe. <strong>CVE-2025-55182</strong> (CVSS 10.0,
+              pre-auth RCE in React Server Components) affects <code>19.0.0</code>,{' '}
+              <code>19.1.0</code>, <code>19.1.1</code> and <code>19.2.0</code>; the fixes are{' '}
+              <code>19.0.1</code>, <code>19.1.2</code> and <code>19.2.1</code>. A range starting
+              at <code>^19.0.0</code> permits every vulnerable release, and a lockfile written
+              from a stale cache can land on one. Name the exact version you intend to run.
+            </p>
+          </InfoBox>
         </li>
         <li>
           <strong>Update the TypeScript types</strong> to match &mdash; this project already
           pins <code>@types/react@19.2.15</code>, but for a fresh upgrade:
-          <CodeBlock language="bash" showLineNumbers={false}>{`npm install --save-exact @types/react@^19.0.0 @types/react-dom@^19.0.0`}</CodeBlock>
+          <CodeBlock language="bash" showLineNumbers={false}>{`npm install --save-exact @types/react@19.2.15 @types/react-dom@19.2.3`}</CodeBlock>
         </li>
         <li>
           <strong>Run React's official codemod recipe.</strong> This is the current command

@@ -695,9 +695,13 @@ String readName() {
       </InfoBox>
 
       <h2>Java Version Recap</h2>
-      <CodeBlock language="text" title="LTS versions and their signature features">
+      <CodeBlock language="text" title="Versions and their signature features (LTS marked)">
 {`Java 8   (2014, still LTS) — lambdas, streams, Optional, java.time
-Java 11  (2018, LTS)       — var (local vars), String::lines, HTTP client
+Java 10  (2018, non-LTS)   — var for local variables (JEP 286). Often mis-cited
+                             as an 11 feature because 11 was the LTS that
+                             carried it to most codebases.
+Java 11  (2018, LTS)       — String::lines/strip/repeat, the standard HTTP
+                             client, var usable in lambda parameters
 Java 17  (2021, LTS)       — records, sealed types, pattern matching instanceof,
                              text blocks, switch expressions
 Java 21  (2023, LTS)       — virtual threads, pattern matching for switch,
@@ -709,6 +713,11 @@ Java 25  (2025, LTS)       — ScopedValue final; structured concurrency redesig
                              but STILL preview (and still preview in 26),
                              module import declarations, compact source files,
                              more pattern-matching depth
+Java 26  (2026, non-LTS)   — HTTP/3 in the HTTP client, "final means final"
+                             (JEP 500 restricts deep reflection on final fields),
+                             the Applet API finally removed, AOT object caching
+                             with any GC. Structured concurrency is a SIXTH
+                             preview here (JEP 525) — still not final.
 
 For any new codebase in 2026, target Java 25 (the newest LTS) or Java 21 if
 your platform hasn't certified 25 yet. Java 17 remains a safe choice for

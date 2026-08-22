@@ -9,7 +9,7 @@ export default function FieldGuideBasicQueries() {
       eyebrow="SQL · Field Reference"
       title="Basic Queries"
       tagline="Table creation, CRUD, and filtering — the PostgreSQL syntax you reach for every single day."
-      meta={['PostgreSQL 17+', '14 patterns']}
+      meta={['PostgreSQL 18+', '14 patterns']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · Basic Queries"
       prev={null}

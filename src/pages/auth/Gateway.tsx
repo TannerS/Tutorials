@@ -158,7 +158,8 @@ const cookie = require('cookie');
 const redis = new Redis(process.env.REDIS_URL);
 const app = express();
 
-const SESSION_TTL_SECONDS = 900; // 15 min idle timeout
+const SESSION_TTL_SECONDS = 900;              // 15 min idle timeout
+const SESSION_ABSOLUTE_MAX_SECONDS = 43200;  // 12 h hard cap, never extended
 
 // Envoy calls this on EVERY request that hits the edge listener
 app.all('/authorize/*', async (req, res) => {
@@ -187,7 +188,16 @@ app.all('/authorize/*', async (req, res) => {
     return res.status(403).end();
   }
 
-  // Sliding expiration: every successful call resets the idle timer.
+  // An idle timeout alone can be kept alive forever by polling, so the
+  // absolute cap is what actually bounds a stolen token's usefulness.
+  // createdAt is written at login and never updated.
+  const ageSeconds = (Date.now() - Number(session.createdAt)) / 1000;
+  if (ageSeconds > SESSION_ABSOLUTE_MAX_SECONDS) {
+    await redis.del(sessionKey);
+    return res.status(401).end();
+  }
+
+  // Sliding expiration: every successful call resets the IDLE timer only.
   await redis.expire(sessionKey, SESSION_TTL_SECONDS);
 
   // Only these headers reach the backend — never the raw token itself.
@@ -453,7 +463,15 @@ spec:
     rp: { name: 'Example App', id: 'example.com' },
     user: { id: userIdBuffer, name: user.email, displayName: user.name },
     pubKeyCredParams: [{ type: 'public-key', alg: -7 }], // ES256
-    authenticatorSelection: { userVerification: 'required' },
+    authenticatorSelection: {
+      userVerification: 'required',
+      // Without residentKey: 'required' this is a plain WebAuthn credential,
+      // NOT a passkey — it cannot be discovered by the authenticator, so the
+      // user still has to identify themselves first and usernameless login
+      // is impossible.
+      residentKey: 'required',
+      requireResidentKey: true,   // legacy alias, kept for older authenticators
+    },
   },
 });
 // Send credential.response (attestation + public key) to the server to store`}

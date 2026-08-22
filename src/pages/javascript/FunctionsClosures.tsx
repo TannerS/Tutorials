@@ -217,7 +217,11 @@ console.log('regular arguments.length:', regularFn(1, 2, 3));
 const arrowFn = (...args) => {
   return arguments.length; // no enclosing function here — nothing to find
 };
-console.log('arrow arguments access:', arrowFn(1, 2, 3));
+try {
+  console.log('arrow arguments access:', arrowFn(1, 2, 3));
+} catch (e) {
+  console.log('arrow arguments access throws:', e.constructor.name, '-', e.message);
+}
 
 function outer() {
   const inner = () => arguments.length; // arrow borrows OUTER's arguments
@@ -227,9 +231,18 @@ console.log('arrow inside regular fn sees outer arguments:', outer(1, 2, 3, 4));
 
 // ── Real console output ──
 // regular arguments.length: 3
-// arrow arguments access: ReferenceError: arguments is not defined
+// arrow arguments access throws: ReferenceError - arguments is not defined
 // arrow inside regular fn sees outer arguments: 4`}
       </CodeBlock>
+
+      <InfoBox variant="note" title="Why the try/catch is not optional here">
+        Without it this snippet prints <em>one</em> line, not three. The{' '}
+        <code>ReferenceError</code> from the middle call is never caught, so it propagates out of
+        the module and Node exits with status 1 before the third{' '}
+        <code>console.log</code> — the interesting one — ever runs. That is the same reason the
+        hoisting demo further up wraps its two failing calls: in a script whose whole point is to{' '}
+        <em>show you the error</em>, an uncaught throw destroys everything after it.
+      </InfoBox>
 
       <p>
         The middle case throws because <code>arrowFn</code> is defined at the top level — there

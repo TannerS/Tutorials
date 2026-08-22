@@ -280,18 +280,21 @@ app.get('/api/csrf-token', (req, res) => {
 // Protect every state-changing route.
 app.use(doubleCsrfProtection);
 
-app.post('/transfer', (req, res) => {
-  processTransfer(req.body);
-  res.json({ success: true });
-});
-
 // Belt-and-braces: reject cross-site requests outright.
+// This MUST be registered before the routes it protects — Express matches
+// middleware in registration order, so mounting it after app.post('/transfer')
+// means it never runs for that route and the layer is silently dead.
 app.use((req, res, next) => {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
   if (req.get('sec-fetch-site') === 'cross-site') {
     return res.status(403).json({ error: 'Cross-site request rejected' });
   }
   next();
+});
+
+app.post('/transfer', (req, res) => {
+  processTransfer(req.body);
+  res.json({ success: true });
 });
 
 // In your SPA, include the token in requests:
@@ -316,36 +319,46 @@ public class CsrfConfig {
         return http
             // CSRF protection is ON by default — you configure it,
             // you do not enable it.
-            .csrf(csrf -> csrf
-                // Token in a JS-readable cookie so a SPA can echo it back
-                // in a header. The cookie is NOT the credential here, so
-                // httpOnly=false is correct for this specific cookie.
-                .csrfTokenRepository(
-                    CookieCsrfTokenRepository.withHttpOnlyFalse())
-                // Keep the Xor handler — it randomises the token per
-                // response, which is what defends against BREACH.
-                // Setting the request-attribute name to null opts out of
-                // Security 6's DEFERRED token loading, which is the part
-                // that actually breaks SPAs: without it the cookie is
-                // never written until something reads the token.
-                .csrfTokenRequestHandler(spaCsrfHandler())
-            )
+            // Spring Security 7 (GA Nov 2025): one call wires the whole
+            // SPA combination — the JS-readable cookie, non-deferred token
+            // loading, AND re-issuing the cookie after login/logout, which
+            // CsrfAuthenticationStrategy and CsrfLogoutHandler clear.
+            .csrf(CsrfConfigurer::spa)
             .build();
     }
-
-    private static CsrfTokenRequestHandler spaCsrfHandler() {
-        var handler = new XorCsrfTokenRequestAttributeHandler();
-        handler.setCsrfRequestAttributeName(null);
-        return handler;
-    }
 }
+
+// ── On Spring Security 6.x, where spa() does not exist yet ──────────────
+// You have to assemble the same thing by hand:
+//
+//     .csrf(csrf -> csrf
+//         // Token in a JS-readable cookie so a SPA can echo it back in a
+//         // header. The cookie is NOT the credential, so httpOnly=false
+//         // is correct for this specific cookie.
+//         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+//         // Keep the Xor handler — it randomises the token per response,
+//         // which is what defends against BREACH. Setting the request-
+//         // attribute name to null opts out of Security 6's DEFERRED token
+//         // loading, the part that actually breaks SPAs: without it the
+//         // cookie is never written until something reads the token.
+//         .csrfTokenRequestHandler(spaCsrfHandler())
+//     )
+//
+//     private static CsrfTokenRequestHandler spaCsrfHandler() {
+//         var handler = new XorCsrfTokenRequestAttributeHandler();
+//         handler.setCsrfRequestAttributeName(null);
+//         return handler;
+//     }
+//
+// Note this hand-rolled version covers deferred loading but NOT the
+// login/logout cookie reset, so a SPA can still 403 on the first write
+// after signing in. That gap is precisely what spa() closes.
 
 // ⚠️ Do NOT "fix" a SPA by swapping in the plain
 // CsrfTokenRequestAttributeHandler. It is widely posted as the SPA fix,
 // but its actual effect is to turn OFF the per-response XOR masking —
 // you trade a BREACH mitigation for a deferred-loading problem it was
-// never the right tool for. Spring Security 7 adds .csrf(csrf -> csrf.spa())
-// which wires the correct combination for you.
+// never the right tool for.
 
 // Stateless JWT API using ONLY the Authorization header?
 // Then and only then is disabling CSRF correct:
@@ -439,13 +452,23 @@ app.use(helmet());
 app.use(helmet.contentSecurityPolicy({
   directives: {
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'nonce-{random}'"],
+    // Note there is no 'self' here: a same-origin allowlist is bypassable
+    // via any JSONP endpoint or stale library you host. The nonce is what
+    // grants trust; 'strict-dynamic' lets a trusted script load its own
+    // dependencies; https: is only a fallback for pre-strict-dynamic clients.
+    scriptSrc: ["'nonce-{random}'", "'strict-dynamic'", "https:"],
+    // 'unsafe-inline' on styles is a real (smaller) risk — it enables CSS
+    // exfiltration of attribute values. Nonce your styles too if you can.
     styleSrc: ["'self'", "'unsafe-inline'"],
     imgSrc: ["'self'", "data:", "https:"],
     connectSrc: ["'self'", "https://api.example.com"],
     fontSrc: ["'self'"],
     objectSrc: ["'none'"],
     frameSrc: ["'none'"],
+    // Without base-uri, an injected <base> tag re-points every relative
+    // script URL — including your nonced ones — at the attacker's host.
+    baseUri: ["'none'"],
+    formAction: ["'self'"],
     upgradeInsecureRequests: [],
   },
 }));
@@ -555,7 +578,8 @@ app.post('/register',
   [
     body('email').isEmail().normalizeEmail(),
 
-    // Password rules per current NIST SP 800-63B guidance:
+    // Password rules per NIST SP 800-63B-4 (Rev 4, finalised Aug 2025,
+    // superseding SP 800-63-3):
     // length + a breach check, NOT character-class rules. See below.
     body('password')
       .isLength({ min: 12, max: 128 })   // max caps hashing-DoS cost
@@ -584,7 +608,8 @@ app.post('/register',
           guidance rejects it.
         </p>
         <p>
-          <strong>NIST SP 800-63B</strong> — the standard everyone else cites — explicitly says verifiers{' '}
+          <strong>NIST SP 800-63B-4</strong> — Revision 4, which superseded SP 800-63-3 in August
+          2025 and is the standard everyone else cites — explicitly says verifiers{' '}
           <em>shall not</em> impose composition rules, and <em>shall not</em> require periodic rotation
           without evidence of compromise. Both rules push users toward predictable behaviour:{' '}
           <code>Password1!</code> satisfies every complexity checker ever written, and forced 90-day
@@ -717,7 +742,7 @@ app.post('/register',
           "Rate limiting"
         ]}
         correctIndex={2}
-        explanation={"CSP is the most powerful defense against XSS. It whitelists which sources can execute scripts, load styles, and fetch resources. Even if an attacker injects a script tag, CSP blocks it from executing because the source is not whitelisted. Combined with output encoding (escaping HTML entities in server responses) and input sanitization (cleaning user input), these form a multi-layered defense. React auto-escapes JSX output, providing built-in XSS protection."}
+        explanation={"CSP is the most powerful defense against XSS — but note HOW, because the intuitive answer is the weak one. A host allowlist is largely bypassable: allowlisting a CDN also allowlists every JSONP endpoint and stale library hosted on it. The policy that actually works is nonce-based with 'strict-dynamic': an injected script tag carries no per-response nonce, so it never executes, and host allowlists are ignored entirely. Combined with output encoding and input sanitization this forms a multi-layered defense. React auto-escapes JSX output, providing built-in XSS protection."}
       />
     </LessonLayout>
   );

@@ -310,16 +310,22 @@ n=    16,000  best-of-5=    15.062 ms  time/n^2=0.05883 ns`}
           instead of timing wall-clock:
         </p>
         <CodeBlock language="text" title="Exact comparison-step count vs. floor(log2(n))+1">
-{`n=      1,000  actual worst-case steps=  9   floor(log2(n))+1=10
-n=     10,000  actual worst-case steps= 13   floor(log2(n))+1=14
-n=    100,000  actual worst-case steps= 16   floor(log2(n))+1=17
-n=  1,000,000  actual worst-case steps= 19   floor(log2(n))+1=20
-n= 10,000,000  actual worst-case steps= 23   floor(log2(n))+1=24
-n=100,000,000  actual worst-case steps= 26   floor(log2(n))+1=27`}
+{`n=      1,000  actual worst-case steps= 10   floor(log2(n))+1=10   match
+n=     10,000  actual worst-case steps= 14   floor(log2(n))+1=14   match
+n=    100,000  actual worst-case steps= 17   floor(log2(n))+1=17   match
+n=  1,000,000  actual worst-case steps= 20   floor(log2(n))+1=20   match
+n= 10,000,000  actual worst-case steps= 24   floor(log2(n))+1=24   match
+n=100,000,000  actual worst-case steps= 27   floor(log2(n))+1=27   match`}
         </CodeBlock>
         <p>
-          That is a near-perfect log₂(n) match (off by exactly one throughout, because the loop counts the
-          final failed check too). This is the cleanest illustration in this lesson of the point made at
+          Not &quot;close to&quot; log₂(n) — <strong>exactly</strong> floor(log₂(n))+1, on every size. That
+          number is found by brute force, not sampling: for each n the program runs the search once for{' '}
+          <em>every</em> absent target (all the odd values that fall in the gaps of an all-even array,
+          including one below the first element and one above the last) and keeps the maximum step count.
+          The best case among absent targets is one step lower, so a search that stops a level early is
+          possible — but the worst case never exceeds the formula and always reaches it. The same
+          exhaustive check for every n from 1 to 5,000 also matches the formula with no exceptions.
+          This is the cleanest illustration in this lesson of the point made at
           the top: <strong>Big-O predicts operation-count growth, not wall-clock time.</strong> The step
           count grows exactly as the formula predicts; wall-clock time additionally depends on hardware —
           here, cache locality. A 1,000-element <code>int[]</code> (4 KB) fits entirely in L1 cache, so

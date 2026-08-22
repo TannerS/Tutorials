@@ -477,13 +477,13 @@ SET lock_timeout = '5s';  -- error after 5 seconds of waiting
       <InteractiveChallenge
         question="Two transactions run concurrently under REPEATABLE READ in PostgreSQL. TX1 reads all orders with status='pending' (gets 5 rows). TX2 inserts a new pending order and commits. TX1 re-reads pending orders. How many rows does TX1 see?"
         options={[
-          '5 — snapshot is frozen at TX start',
+          "5 — the snapshot was frozen by TX1's first statement, and every later statement reuses it",
           '6 — new committed data is always visible',
           'Error — conflict detected',
           'Depends on the database engine',
         ]}
         correctIndex={0}
-        explanation="REPEATABLE READ guarantees a consistent snapshot from the start of the transaction. TX1 won't see TX2's insert — that's the whole point. This also prevents phantom reads specifically in PostgreSQL's snapshot-isolation implementation, though the SQL standard doesn't require REPEATABLE READ to prevent phantoms in general."
+        explanation={"Under REPEATABLE READ one snapshot is taken at the FIRST STATEMENT of the transaction — not at BEGIN — and every later statement reuses it, so TX1's re-read still returns 5. Reproduced on PostgreSQL 18.6 with two genuinely concurrent sessions: TX1's first SELECT returned 5, TX2 inserted and committed, TX1's re-read still returned 5, and only after TX1 committed did the same query return 6. The distinction is not pedantry — running the same script but leaving TX1 IDLE after BEGIN, so TX2's insert lands before TX1 issues any statement, makes TX1's first SELECT return 6. BEGIN alone freezes nothing. (This also blocks phantom reads in Postgres's snapshot implementation, which the SQL standard does not require of REPEATABLE READ.)"}
         language="sql"
       />
 

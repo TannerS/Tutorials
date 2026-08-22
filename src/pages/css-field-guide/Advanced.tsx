@@ -263,7 +263,7 @@ li:has(> a[aria-current="page"]) { background: var(--accent-dim); }`}
   position-try-fallbacks: flip-block, flip-inline;
 }
 .dropdown { min-width: anchor-size(width); }  /* match the trigger's width */`}
-        caption="Replaces the getBoundingClientRect + reposition-on-scroll loop that Floating UI/Popper exist for — it runs in the layout engine, so it stays correct while scrolling with zero listeners. Least settled feature here: gate it behind @supports (anchor-name: --x), because without support the element falls back to plain absolute positioning and lands in the wrong place rather than merely looking plainer."
+        caption="Replaces the getBoundingClientRect + reposition-on-scroll loop that Floating UI/Popper exist for — it runs in the layout engine, so it stays correct while scrolling with zero listeners. Youngest feature here, but it reached Baseline 2026 (all three engines, ~91% of traffic), so it is a normal progressive-enhancement call now rather than a wait. Still gate it behind @supports (anchor-name: --x) and keep a usable static fallback: without support the element falls back to plain absolute positioning and lands in the wrong place rather than merely looking plainer, and @position-try flipping landed later than core placement."
       />
 
       <PosterCard
@@ -275,8 +275,10 @@ li:has(> a[aria-current="page"]) { background: var(--accent-dim); }`}
   --bg:   light-dark(#fff,    #0f0f1a);
   --text: light-dark(#1a1a2e, #e2e8f0);
 }
-[data-theme="dark"] { color-scheme: dark; }  /* manual override */`}
-        caption="Collapses the duplicated light/dark variable blocks into one declaration. color-scheme earns its keep independently too — it makes the browser render native scrollbars, form controls, and date pickers in the matching theme."
+:root[data-theme="dark"] { color-scheme: dark; }  /* manual override */
+/* NOT bare [data-theme="dark"] — that scores (0,0,1,0), the SAME as
+   :root, so it would only win on source order. :root[...] is (0,0,2,0). */`}
+        caption="Collapses the duplicated light/dark variable blocks into one declaration. color-scheme earns its keep independently too — it makes the browser render native scrollbars, form controls, and date pickers in the matching theme. Qualify the override with :root: a bare attribute selector ties with :root on specificity, so a stylesheet reorder silently kills the toggle with no error."
       />
 
       <PosterQuickRef

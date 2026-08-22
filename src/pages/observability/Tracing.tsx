@@ -168,12 +168,15 @@ const tracer = trace.getTracer('checkout-service');
 // One trace: a checkout request. The parent span is the whole request;
 // the child span is one unit of work inside it (a DB query).
 tracer.startActiveSpan('POST /checkout', (parentSpan) => {
-  parentSpan.setAttribute('http.method', 'POST');
+  // Stable semantic-convention names. The pre-1.0 spellings you will
+  // still see everywhere -- http.method, db.system, db.statement -- were
+  // renamed when semconv stabilised. http.route was NOT renamed.
+  parentSpan.setAttribute('http.request.method', 'POST');
   parentSpan.setAttribute('http.route', '/checkout');
 
   tracer.startActiveSpan('SELECT inventory', (childSpan) => {
-    childSpan.setAttribute('db.system', 'postgresql');
-    childSpan.setAttribute('db.statement', 'SELECT qty FROM inventory WHERE sku = ?');
+    childSpan.setAttribute('db.system.name', 'postgresql');
+    childSpan.setAttribute('db.query.text', 'SELECT qty FROM inventory WHERE sku = ?');
 
     const start = Date.now();
     while (Date.now() - start < 30) { /* simulate the DB call taking ~30ms */ }
@@ -195,45 +198,98 @@ tracer.startActiveSpan('POST /checkout', (parentSpan) => {
       <CodeBlock language="text" title="Actual Console Output">
 {`// child span — 'SELECT inventory' — ends first
 {
-  traceId: '0c55b26dc605d44d846f289cdad50331',
-  parentSpanContext: { spanId: 'd62d2611ec987761', ... },
+  traceId: '87f6cf608107afd0dd86afb6cc9a3b20',
+  parentSpanContext: { spanId: 'd953432aeedd9ccd', ... },
   name: 'SELECT inventory',
-  id: '708a605c630b1792',
-  duration: 29302.875,   // microseconds ≈ 29.3ms
-  attributes: { 'db.system': 'postgresql', 'db.statement': 'SELECT qty FROM inventory WHERE sku = ?' }
+  id: '770208cc7d4b618d',
+  duration: 29986.333,   // microseconds ≈ 30.0ms
+  attributes: {
+    'db.system.name': 'postgresql',
+    'db.query.text': 'SELECT qty FROM inventory WHERE sku = ?'
+  }
 }
 
 // parent span — 'POST /checkout' — ends after its child
 {
-  traceId: '0c55b26dc605d44d846f289cdad50331',
+  traceId: '87f6cf608107afd0dd86afb6cc9a3b20',
   parentSpanContext: undefined,   // this is the root — no parent
   name: 'POST /checkout',
-  id: 'd62d2611ec987761',
-  duration: 30398,       // microseconds ≈ 30.4ms
-  attributes: { 'http.method': 'POST', 'http.route': '/checkout' }
+  id: 'd953432aeedd9ccd',
+  duration: 31034.292,   // microseconds ≈ 31.0ms
+  attributes: { 'http.request.method': 'POST', 'http.route': '/checkout' }
 }`}
       </CodeBlock>
 
       <p>
         Every claim from earlier in this lesson is sitting right there in real output. Both spans share
         the same <code>traceId</code> — that's what makes them one trace. The child's{' '}
-        <code>parentSpanContext.spanId</code> (<code>d62d2611ec987761</code>) is exactly the parent's own{' '}
+        <code>parentSpanContext.spanId</code> (<code>d953432aeedd9ccd</code>) is exactly the parent's own{' '}
         <code>id</code> — that's the parent-child pointer that builds the tree. And the durations show
-        the DB query (29,302.875&nbsp;μs) accounting for nearly all of the parent's total wall-clock time
-        (30,398&nbsp;μs) — in a real service, that's the signal that tells you the latency isn't in your
+        the DB query (29,986.333&nbsp;μs) accounting for nearly all of the parent's total wall-clock time
+        (31,034.292&nbsp;μs) — in a real service, that's the signal that tells you the latency isn't in your
         HTTP handling, it's in that query.
       </p>
+
+      <InfoBox variant="warning" title="Attribute Names Changed When Semantic Conventions Stabilised">
+        <p>
+          Span names are yours to choose; attribute <em>keys</em> are not, and getting them right is
+          the whole point of instrumenting. OpenTelemetry&apos;s value is that a dashboard, a
+          sampling rule or a backend&apos;s auto-generated service map can work on any service in any
+          language, and that only holds if everyone spells the keys the same way. That agreement is
+          the <strong>semantic conventions</strong>.
+        </p>
+        <p>
+          Several of the most common keys were renamed on the way to a stable 1.0 semconv. The old
+          spellings are still what most tutorials, blog posts and older code use, so you will meet
+          both:
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Pre-stabilization</th>
+              <th>Stable</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>http.method</code></td>
+              <td><code>http.request.method</code></td>
+            </tr>
+            <tr>
+              <td><code>db.system</code></td>
+              <td><code>db.system.name</code></td>
+            </tr>
+            <tr>
+              <td><code>db.statement</code></td>
+              <td><code>db.query.text</code></td>
+            </tr>
+            <tr>
+              <td><code>http.route</code></td>
+              <td><code>http.route</code> — unchanged, do not &quot;fix&quot; it</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Nothing breaks loudly when you use the old names — the span exports fine and shows up in
+          your backend. What breaks is quiet and worse: a query filtering on{' '}
+          <code>http.request.method</code> silently misses every span emitted with{' '}
+          <code>http.method</code>, so half your traffic vanishes from a dashboard that looks
+          perfectly healthy. If you are migrating a fleet gradually, the OTel Collector&apos;s
+          transform processor can rewrite the old keys to the new ones at ingest so your queries only
+          have to know one spelling.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="java" title="Same Thing in Java (opentelemetry-api / opentelemetry-sdk 1.44.1 — also actually run)">
 {`Tracer tracer = openTelemetrySdk.getTracer("checkout-service");
 
 Span parentSpan = tracer.spanBuilder("POST /checkout").startSpan();
-parentSpan.setAttribute("http.method", "POST");
+parentSpan.setAttribute("http.request.method", "POST");
 parentSpan.setAttribute("http.route", "/checkout");
 try (Scope parentScope = parentSpan.makeCurrent()) {
 
     Span childSpan = tracer.spanBuilder("SELECT inventory").startSpan();
-    childSpan.setAttribute("db.system", "postgresql");
+    childSpan.setAttribute("db.system.name", "postgresql");
     try (Scope childScope = childSpan.makeCurrent()) {
         Thread.sleep(30); // simulate the DB call
     } finally {

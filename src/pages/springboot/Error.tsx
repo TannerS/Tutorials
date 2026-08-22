@@ -39,11 +39,19 @@ export default function Error() {
         chart={"graph TD\nA[Service throws domain exception] --> B[Exception propagates up call stack]\nB --> C[RestControllerAdvice matches exception type]\nC --> D[Builds ProblemDetail with status + code + details]\nD --> E[JSON response to client]"}
       />
 
-      <h2>ProblemDetail (RFC 7807) — the default from Spring Boot 3+</h2>
+      <h2>ProblemDetail (RFC 9457) — the default from Spring Boot 3+</h2>
       <p>
-        RFC 7807 defines a media type — <code>application/problem+json</code> — for HTTP
+        RFC 9457 defines a media type — <code>application/problem+json</code> — for HTTP
         API error bodies. Spring 6 provides <code>ProblemDetail</code> as a first-class
         class and Spring Boot exposes it automatically.
+      </p>
+      <p>
+        You will see this cited almost everywhere — including in Spring&apos;s own Javadoc — as
+        <strong> RFC 7807</strong>. That number is dead: RFC 9457 obsoleted it in July 2023.
+        Nothing you write changes, because the media type is still{' '}
+        <code>application/problem+json</code> and the member names are identical; 9457 mainly
+        clarifies <code>type</code> resolution and adds guidance on extension members. Cite the
+        live number.
       </p>
       <CodeBlock language="json" title="What a ProblemDetail response looks like">
 {`{

@@ -272,8 +272,17 @@ esbuild src/index.tsx --bundle --minify --outfile=dist/bundle.js --platform=brow
       <h3>5. Vite — Dev Server + Optimized Builds</h3>
 
       <p>
-        The modern standard for React application development. Dev mode uses native ES modules with esbuild on-demand transforms for instant startup. Production uses Rollup for optimized, code-split bundles.
+        The modern standard for React application development. Dev mode serves native ES modules and transforms them on demand for instant startup; production emits optimized, code-split bundles.
       </p>
+
+      <InfoBox variant="note" title="Vite 8 runs on Rolldown — not esbuild + Rollup">
+        <p>
+          The &ldquo;esbuild in dev, Rollup for the build&rdquo; split is the Vite 4&ndash;6 architecture and you will still read it everywhere. <strong>Vite 8 replaced both with <a href="https://rolldown.rs" target="_blank" rel="noreferrer">Rolldown</a></strong>, a Rust bundler that handles dependency pre-bundling <em>and</em> production bundling, which removes the long-standing dev/prod behaviour mismatch between the two old tools.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Verified in this very project: <code>vite@8.2.0</code> declares <code>rolldown</code> as a direct dependency, and neither <code>esbuild</code> nor <code>rollup</code> is installed at all. If you see <code>rollupOptions</code> in a config, note the key name was kept for compatibility &mdash; Rolldown is Rollup-API-compatible, so most plugins and options carry over unchanged.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="bash" title="Vite Quick Start" showLineNumbers>
 {`npm create vite@latest my-app -- --template react-ts

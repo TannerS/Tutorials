@@ -205,6 +205,32 @@ card network cost 335ms — that's where 80% of the 420ms total actually went.`}
         </p>
       </InfoBox>
 
+      <InfoBox variant="info" title="There Is a Fourth Signal Arriving: Continuous Profiling">
+        <p>
+          If the three-pillar split is a teaching model rather than a law, it is worth knowing what is
+          being added to it. <strong>Profiles</strong> — continuous, always-on CPU and memory
+          profiling of production processes — are being standardised as a fourth OpenTelemetry signal,
+          with an OTLP wire format alongside traces, metrics and logs.
+        </p>
+        <p>
+          It fills a gap the other three genuinely cannot. A trace tells you the 340ms was spent
+          inside <code>payment-service</code>, and stops there — the span is the smallest unit it
+          knows about. Profiles tell you which <em>functions</em> burned that CPU, down to the line,
+          continuously, in production, at overhead low enough to leave switched on. That is the
+          question &quot;where did the time go <em>inside</em> the slow span&quot; that otherwise ends
+          with someone trying to reproduce it locally with a profiler attached.
+        </p>
+        <p>
+          Status matters here, so be precise about it: profiles are the <em>least</em> mature signal.
+          The specification and OTLP format are still moving, and SDK support is thin — Java is in
+          development and most languages have nothing yet, while traces and metrics are stable almost
+          everywhere. Vendor-specific continuous profilers (Pyroscope/Grafana, Datadog, Elastic,
+          Polar Signals) are production-ready today; the OpenTelemetry-native, vendor-neutral version
+          is not there yet. Know it is coming, check its current status before planning around it,
+          and do not let &quot;there are four signals now&quot; imply they are equally usable.
+        </p>
+      </InfoBox>
+
       <InteractiveChallenge
         question={"Your checkout service's dashboard shows a metric: error rate jumped from 0.5% to 12% at 14:14. You need to find out exactly why one specific failing request failed — the precise exception and stack trace. Which pillar answers that, and why can't the metric?"}
         options={[

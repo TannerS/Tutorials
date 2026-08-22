@@ -169,7 +169,7 @@ p.setTitle(humanize(e.code()));
 p.setInstance(URI.create(req.getRequestURI()));
 p.setProperty("code", e.code());
 e.details().forEach(p::setProperty);   // e.g. customerId, orderId`}
-        caption="setType/setInstance/setProperty are what turn the bare RFC 7807 skeleton into something a client can branch logic on — a stable machine-readable code, not just a human title."
+        caption="setType/setInstance/setProperty are what turn the bare RFC 9457 skeleton into something a client can branch logic on — a stable machine-readable code, not just a human title."
       />
 
       <PosterCard

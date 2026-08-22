@@ -216,10 +216,14 @@ tamperedEarly[0] ^= 0xff;
 decryptCBC(tamperedEarly);
 // -> NO ERROR, garbage content: "oxÄæDö-ãäD\\u000fµVntext!!"
 
-// Case 2: flip the LAST byte of the ciphertext. Via CBC's decrypt-time XOR
-// with the previous block, this corrupts the padding LENGTH byte itself --
-// so PKCS7 unpadding now fails.
-tamperedLastByte[tamperedLastByte.length - 1] ^= 0xff;
+// Case 2: flip a byte in the SECOND-TO-LAST block. In CBC each plaintext
+// block is XORed with the previous CIPHERTEXT block after decryption, so
+// flipping ct[15] here lands directly on the padding LENGTH byte of the
+// final plaintext block -- PKCS7 unpadding then fails.
+// (Flipping the very last byte also throws, but for a different reason:
+//  it changes the block-cipher input and scrambles all 16 bytes of P2.
+//  It is the XOR-with-previous-block path that the real attack drives.)
+tamperedLastByte[15] ^= 0xff;
 decryptCBC(tamperedLastByte);
 // -> throws: error:1C800064:Provider routines::bad decrypt`}
       </CodeBlock>

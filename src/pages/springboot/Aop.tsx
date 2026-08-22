@@ -35,9 +35,11 @@ export default function Aop() {
       <InfoBox variant="note" title="Two very different technologies with the same word">
         <ul>
           <li>
-            <strong>Spring AOP</strong> — proxy-based. Only intercepts <em>public</em>
-            method calls that go through the Spring proxy. Fast, portable, no build-time
-            magic. Covers 95% of what enterprise apps need.
+            <strong>Spring AOP</strong> — proxy-based. Only intercepts calls that go
+            through the Spring proxy, on methods a generated subclass could override:
+            since Framework 6.0 that means <em>public</em>, <em>protected</em> and{' '}
+            <em>package-visible</em> methods (not <em>private</em>, not <em>final</em>).
+            Fast, portable, no build-time magic. Covers 95% of what enterprise apps need.
           </li>
           <li>
             <strong>AspectJ</strong> — a full AOP language with load-time or compile-time
@@ -404,8 +406,12 @@ HTTP concern? Filter or interceptor. Service concern? Aspect.`}
           <li><strong>Self-invocation.</strong> Proxy-based AOP doesn't intercept
               <code>this.something()</code>. Same rule as
               <code>@Transactional</code>.</li>
-          <li><strong>Private methods.</strong> Spring AOP only weaves public methods
-              (final classes are also skipped). Pointcut looks right; nothing fires.</li>
+          <li><strong>Private and final methods.</strong> A CGLIB proxy is a subclass, so
+              it can only weave what a subclass could override. <code>private</code> and{' '}
+              <code>final</code> methods (and <code>final</code> classes) are skipped:
+              pointcut looks right, nothing fires. <code>protected</code> and
+              package-visible methods <em>are</em> woven as of Framework 6.0 — the old
+              &quot;public only&quot; rule is a Spring 5 fact.</li>
           <li><strong>Constructor calls.</strong> AOP happens on method calls to an
               already-created bean. Interceptors can't run inside constructors.</li>
           <li><strong>Aspect on a bean that hasn't been proxied.</strong> Direct

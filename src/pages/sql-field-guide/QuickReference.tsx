@@ -9,7 +9,7 @@ export default function FieldGuideQuickReference() {
       eyebrow="SQL · Field Reference"
       title="What Do I Reach For?"
       tagline="A decision-first cheat sheet — the PostgreSQL tool for each recurring job, in one place."
-      meta={['PostgreSQL 17+', '13 decisions']}
+      meta={['PostgreSQL 18+', '13 decisions']}
       footerLabel="Personal study reference — PostgreSQL"
       pageLabel="SQL Field Guide · What Do I Reach For?"
       prev={{ path: '/sql-field-guide/postgres-gotchas', label: 'Postgres Gotchas & Pitfalls' }}
@@ -157,7 +157,8 @@ SELECT pg_try_advisory_xact_lock(hashtext('nightly-billing'));`}
           { need: 'Fastest way to check if a query uses an index', answer: 'EXPLAIN (ANALYZE, BUFFERS) — look for Seq Scan vs Index Scan' },
           { need: 'Fastest way to find an unused index', answer: 'SELECT * FROM pg_stat_user_indexes WHERE idx_scan = 0' },
           { need: 'Fastest way to bulk-load data', answer: 'COPY, not batched INSERTs' },
-          { need: 'Safest way to add a NOT NULL column to a huge table', answer: 'Add nullable, backfill in batches, add a NOT VALID CHECK (col IS NOT NULL), VALIDATE it, then SET NOT NULL — PG12+ sees the proven CHECK and skips the full-table scan' },
+          { need: 'Safest way to add a NOT NULL column to a huge table (PG18+)', answer: 'Add nullable, ALTER TABLE t ADD CONSTRAINT c_nn NOT NULL col NOT VALID (instant, rejects new NULLs immediately), backfill in batches, then VALIDATE CONSTRAINT c_nn — takes only ShareUpdateExclusiveLock, so reads and writes keep running' },
+          { need: 'Same thing on PG12–17 (no NOT VALID not-null constraints yet)', answer: 'Add nullable, backfill in batches, add a NOT VALID CHECK (col IS NOT NULL), VALIDATE it, then SET NOT NULL — PG12+ sees the proven CHECK and skips the full-table scan. Drop the redundant CHECK afterwards' },
           { need: 'Adding a column with a default to a huge table', answer: 'Safe since PG11 — a non-volatile DEFAULT is stored in the catalog, no table rewrite' },
           { need: 'Safest way to change isolation level app-wide', answer: "Don't — set it per-transaction only where the anomaly actually matters" },
           { need: 'How to avoid the N+1 query problem in Postgres', answer: 'LATERAL join or a single window-function query instead of one query per row' },

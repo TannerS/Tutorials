@@ -26,6 +26,21 @@ export default function CryptoAead() {
 
       <h2>Three Ways to Combine a Cipher and a MAC</h2>
 
+      <InfoBox variant="note" title="MAC — Message Authentication Code">
+        <p>
+          A <strong>MAC</strong> (Message Authentication Code) is a short tag computed over a message
+          <em>with a secret key</em>. Anyone holding the key can recompute the tag and confirm the
+          message is both unmodified and from someone who knows the key; anyone without it cannot
+          produce a valid tag for a message of their choosing. <strong>HMAC</strong> is the specific
+          construction that builds a MAC out of a hash function.
+        </p>
+        <p>
+          That key is the whole difference between a MAC and a plain hash: a hash tells you the bytes
+          did not change <em>by accident</em>, a MAC tells you they were not changed{' '}
+          <em>by an adversary</em>, because forging the tag requires the key.
+        </p>
+      </InfoBox>
+
       <p>
         Bellare and Namprempre&apos;s 2000 paper on generic composition analyzed exactly this question —
         given a symmetric cipher and a MAC, in what order do you apply them? — and identified three
@@ -69,7 +84,7 @@ export default function CryptoAead() {
           Encrypt the plaintext first, then compute the MAC over the <em>ciphertext</em>. A tampered
           ciphertext now fails the MAC check before decryption ever runs — there is no padding-oracle
           window to time, because the receiver never gets far enough to look at padding. Bellare and
-          Namprempre proved this composition is secure regardless of which specific IND-CPA-secure cipher
+          Namprempre proved this composition is secure regardless of which specific IND-CPA-secure cipher (IND-CPA — &quot;indistinguishable under chosen-plaintext attack&quot; — is the baseline bar: an attacker who can get plaintexts of their choosing encrypted still cannot tell which of two messages a ciphertext holds)
           and unforgeable MAC you plug into it, which is not true of the other two orderings — this is why
           it is described as <em>generically</em> safe rather than safe only for particular algorithm
           choices. TLS eventually added it as an option for CBC suites via the Encrypt-then-MAC extension
