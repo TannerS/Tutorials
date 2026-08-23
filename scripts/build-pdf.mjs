@@ -242,6 +242,7 @@ async function main() {
   console.log(`[pdf] Launching Chromium (headless)...`);
   const browser = await chromium.launch();
   const writtenFiles = new Map(); // sectionId -> filepath, only sections that actually rendered
+  const skipped = [];             // { section, lesson, reason } — surfaced as a summary at the end
   try {
     for (const section of targets) {
       // Cheatsheets-only mode writes each section's (single-lesson) capture to
@@ -278,7 +279,14 @@ async function main() {
           // hot-reload and never go network-idle, which would hang this
           // indefinitely. 'load' plus the explicit settle-wait below is
           // enough for mermaid/syntax-highlighting/static widgets.
-          await page.goto(target, { waitUntil: 'load', timeout: 30_000 });
+          // 60s, not 30s: pages that boot a real toolchain in-browser
+          // (typescript/interactive instantiates the TS compiler, the SQL
+          // playground loads sql.js) intermittently exceed 30s on a cold
+          // start, and the catch below turns that into a SILENTLY SKIPPED
+          // lesson — content missing from the PDF with only one line in the
+          // log to say so. Observed on /typescript/interactive: skipped on
+          // one run, captured in 2 pages on the retry.
+          await page.goto(target, { waitUntil: 'load', timeout: 60_000 });
 
           // Remove site chrome that shouldn't appear in the print, and force
           // <main> out of its scroll-container state so the whole content
@@ -404,6 +412,7 @@ async function main() {
           // widget that fails to load in headless Chromium) abort the whole
           // section's PDF. Skip it and keep going.
           console.error(`           SKIPPED (${err.message.split('\n')[0]})`);
+          skipped.push({ section: section.id, lesson: lesson.title, reason: err.message.split('\n')[0] });
         } finally {
           await page.close();
         }
@@ -427,6 +436,19 @@ async function main() {
     stopPreviewServer(preview);
   }
 
+  if (skipped.length) {
+    console.error('');
+    console.error(`[pdf] !!! ${skipped.length} LESSON(S) MISSING FROM THIS PDF !!!`);
+    for (const s of skipped) {
+      console.error(`[pdf]   - ${s.section} / ${s.lesson}`);
+      console.error(`[pdf]     ${s.reason}`);
+    }
+    console.error('[pdf] Re-run — these are usually transient timeouts on pages that');
+    console.error('[pdf] boot a real toolchain in-browser, and they capture on retry.');
+    console.error('');
+  } else {
+    console.log('[pdf] No lessons skipped — every registered lesson is in this PDF.');
+  }
   console.log(`[pdf] Done. PDFs in ${OUT_DIR}`);
 
   if (COMBINED) {
