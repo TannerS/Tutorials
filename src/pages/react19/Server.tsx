@@ -8,8 +8,8 @@ export default function Server() {
     <LessonLayout
       title="Server Components & Actions"
       sectionId="react19"
-      lessonIndex={9}
-      prev={{ path: '/react19/react19', label: 'React 19 New Features' }}
+      lessonIndex={8}
+      prev={{ path: '/react19/profiling', label: 'Profiling React Apps in the Browser' }}
       next={{ path: '/react19/ssr-hydration', label: 'SSR & Hydration' }}
     >
       <p>Server Components represent a fundamental shift in React architecture. Components can now run exclusively on the server, sending only their rendered output to the client — zero JavaScript for those components ships to the browser.</p>

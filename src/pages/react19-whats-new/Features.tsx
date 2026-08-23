@@ -10,7 +10,7 @@ export default function WhatsNewFeatures() {
       sectionId="react19-whats-new"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/react19-whats-new/migration', label: 'Migrating from React 18 to 19' }}
+      next={{ path: '/react19-whats-new/react19', label: 'React 19 in Depth' }}
     >
       <p>
         This lesson is a catalog, not a tutorial. If you already know React and you're coming from

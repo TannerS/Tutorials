@@ -8,7 +8,7 @@ export default function Portals() {
     <LessonLayout
       title="Portals, In Depth"
       sectionId="react19"
-      lessonIndex={21}
+      lessonIndex={20}
       prev={{ path: '/react19/animations', label: 'Animation Libraries (Framer Motion & Beyond)' }}
       next={null}
     >

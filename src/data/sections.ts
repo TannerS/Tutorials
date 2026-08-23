@@ -53,7 +53,7 @@ export const sections: Section[] = [
   },
   {
     id: 'react19',
-    label: 'React 19',
+    label: 'React 18',
     icon: '⚛️',
     color: '#22d3ee',
     lessons: [
@@ -65,7 +65,6 @@ export const sections: Section[] = [
       { id: 'context', title: 'Context & Composition', path: '/react19/context' },
       { id: 'performance', title: 'Performance & Memoization', path: '/react19/performance' },
       { id: 'profiling', title: 'Profiling React Apps in the Browser', path: '/react19/profiling' },
-      { id: 'react19', title: 'React 19 New Features', path: '/react19/react19' },
       { id: 'server', title: 'Server Components & Actions', path: '/react19/server' },
       { id: 'ssr-hydration', title: 'SSR & Hydration', path: '/react19/ssr-hydration' },
       { id: 'patterns', title: 'Advanced Patterns', path: '/react19/patterns' },
@@ -88,6 +87,7 @@ export const sections: Section[] = [
     color: '#38bdf8',
     lessons: [
       { id: 'features', title: 'The Complete Feature List', path: '/react19-whats-new/features' },
+      { id: 'react19', title: 'React 19 in Depth', path: '/react19-whats-new/react19' },
       { id: 'migration', title: 'Migrating from React 18 to 19', path: '/react19-whats-new/migration' },
       { id: 'cheatsheet', title: "What's New in React 19 Cheat Sheet", path: '/react19-whats-new/cheatsheet' },
     ],
@@ -574,7 +574,7 @@ export const sections: Section[] = [
   },
   {
     id: 'react-field-guide',
-    label: 'React 19 Field Guide',
+    label: 'React Field Guide',
     icon: '🃏',
     color: '#38bdf8',
     lessons: [

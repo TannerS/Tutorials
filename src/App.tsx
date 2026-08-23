@@ -48,7 +48,7 @@ import ReactEffects from './pages/react19/Effects'
 import ReactContext from './pages/react19/Context'
 import ReactPerformance from './pages/react19/Performance'
 import ReactProfiling from './pages/react19/Profiling'
-import ReactNew from './pages/react19/React19'
+import ReactNew from './pages/react19-whats-new/React19'
 import ReactServer from './pages/react19/Server'
 import ReactSsrHydration from './pages/react19/SsrHydration'
 import ReactPatterns from './pages/react19/Patterns'
@@ -505,7 +505,7 @@ function App() {
         <Route path="react19/context" element={<ReactContext />} />
         <Route path="react19/performance" element={<ReactPerformance />} />
         <Route path="react19/profiling" element={<ReactProfiling />} />
-        <Route path="react19/react19" element={<ReactNew />} />
+        <Route path="react19-whats-new/react19" element={<ReactNew />} />
         <Route path="react19/server" element={<ReactServer />} />
         <Route path="react19/ssr-hydration" element={<ReactSsrHydration />} />
         <Route path="react19/patterns" element={<ReactPatterns />} />

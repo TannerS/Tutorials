@@ -6,11 +6,11 @@ import LessonLayout from '../../components/LessonLayout';
 export default function React19() {
   return (
     <LessonLayout
-      title="React 19 New Features"
-      sectionId="react19"
-      lessonIndex={8}
-      prev={{ path: '/react19/profiling', label: 'Profiling React Apps in the Browser' }}
-      next={{ path: '/react19/server', label: 'Server Components & Actions' }}
+      title="React 19 in Depth"
+      sectionId="react19-whats-new"
+      lessonIndex={1}
+      prev={{ path: '/react19-whats-new/features', label: 'The Complete Feature List' }}
+      next={{ path: '/react19-whats-new/migration', label: 'Migrating from React 18 to 19' }}
     >
       <p>React 19 is the most significant release since hooks. It brings Actions for async state transitions, new hooks for forms and optimistic UI, ref as a plain prop, and the <code>use()</code> hook. We start with the React Compiler, which is <em>not</em> part of the <code>react</code> package but is the change that most reshapes how the rest of this lesson gets used. Let's dive into each.</p>
 

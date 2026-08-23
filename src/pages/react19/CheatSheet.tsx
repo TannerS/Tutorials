@@ -7,7 +7,7 @@ export default function CheatSheet() {
     <LessonLayout
       title="📋 React Cheat Sheet"
       sectionId="react19"
-      lessonIndex={14}
+      lessonIndex={13}
       prev={{ path: '/react19/build-toolchain', label: 'Build Toolchain' }}
       next={{ path: '/react19/adapters', label: 'API Adapters & Envelopes' }}
     >

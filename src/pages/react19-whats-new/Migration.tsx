@@ -9,8 +9,8 @@ export default function WhatsNewMigration() {
     <LessonLayout
       title="Migrating from React 18 to 19"
       sectionId="react19-whats-new"
-      lessonIndex={1}
-      prev={{ path: '/react19-whats-new/features', label: 'The Complete Feature List' }}
+      lessonIndex={2}
+      prev={{ path: '/react19-whats-new/react19', label: 'React 19 in Depth' }}
       next={{ path: '/react19-whats-new/cheatsheet', label: "What's New in React 19 Cheat Sheet" }}
     >
       {/* ── 1. Framing ── */}

@@ -9,7 +9,7 @@ export default function FeatureFolder() {
     <LessonLayout
       title="Feature-Based Architecture"
       sectionId="react19"
-      lessonIndex={18}
+      lessonIndex={17}
       prev={{ path: '/react19/module-federation', label: 'Module Federation & MFEs' }}
       next={{ path: '/react19/error-boundaries', label: 'Error Boundaries' }}
     >

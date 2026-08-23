@@ -7,7 +7,7 @@ export default function WhatsNewCheatsheet() {
     <LessonLayout
       title="What's New in React 19 Cheat Sheet"
       sectionId="react19-whats-new"
-      lessonIndex={2}
+      lessonIndex={3}
       prev={{ path: '/react19-whats-new/migration', label: 'Migrating from React 18 to 19' }}
       next={null}
     >

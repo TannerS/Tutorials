@@ -8,7 +8,7 @@ export default function Animations() {
     <LessonLayout
       title="Animation Libraries (Framer Motion & Beyond)"
       sectionId="react19"
-      lessonIndex={20}
+      lessonIndex={19}
       prev={{ path: '/react19/error-boundaries', label: 'Error Boundaries' }}
       next={{ path: '/react19/portals', label: 'Portals, In Depth' }}
     >
