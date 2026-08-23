@@ -63,6 +63,92 @@ import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
 
+/**
+ * Chromium embeds a fresh font subset into every page.pdf() capture, and
+ * pdf-lib's copyPages copies those resources verbatim — so a 337-lesson merge
+ * carries ~10,800 font embeds for ~26 actual fonts and lands at 123 MB with
+ * zero images in it.
+ *
+ * `mutool clean -gggg` merges duplicate objects and dedupes identical streams,
+ * which is exactly that problem, and it does NOT re-encode fonts — so the text
+ * layer survives byte-for-byte. Measured on the full book: 123.4 MB -> 49.5 MB
+ * (2.5x), 3417 pages preserved, extracted text identical.
+ *
+ * Ghostscript gets further (3.3x) but rewrites the font programs and drops the
+ * `*` from `*\/` in code comments — it renders correctly but breaks copy-paste
+ * and search. Not worth it for a study reference, so we use mutool.
+ *
+ * Optional: if mutool isn't installed we log once and leave the PDF alone.
+ */
+let mutoolChecked = false;
+let mutoolPresent = false;
+
+async function haveMutool() {
+  if (mutoolChecked) return mutoolPresent;
+  mutoolChecked = true;
+  mutoolPresent = await new Promise((res) => {
+    const p = spawn('mutool', ['-v'], { stdio: 'ignore' });
+    p.on('error', () => res(false));
+    p.on('close', (code) => res(code === 0 || code === 1));
+  });
+  if (!mutoolPresent) {
+    console.warn('[pdf] mutool not found — skipping compression (files stay ~2.5x larger).');
+    console.warn('[pdf] Install with: brew install mupdf-tools');
+  }
+  return mutoolPresent;
+}
+
+/**
+ * Compresses in place, but only swaps the file in if the result is genuinely
+ * smaller AND has the same page count — a compressor that silently truncates
+ * is worse than one that does nothing.
+ */
+async function compressPdf(file) {
+  if (!(await haveMutool())) return null;
+  const tmp = file.replace(/\.pdf$/, '.compressing.pdf');
+  const before = (await readFile(file)).length;
+
+  const ok = await new Promise((res) => {
+    const p = spawn('mutool', ['clean', '-gggg', '-z', file, tmp], { stdio: 'ignore' });
+    p.on('error', () => res(false));
+    p.on('close', (code) => res(code === 0));
+  });
+  if (!ok) { await rm(tmp, { force: true }); return null; }
+
+  const out = await readFile(tmp).catch(() => null);
+  if (!out || out.length === 0 || out.length >= before) {
+    await rm(tmp, { force: true });
+    return null;
+  }
+  // Page-count guard: a compressor that silently truncates is worse than one
+  // that does nothing. Parse both properly rather than grepping the bytes —
+  // mutool packs objects into compressed streams, so /Type /Page is no longer
+  // visible as plain text and a regex undercounts every time.
+  try {
+    const { PDFDocument } = await import('pdf-lib');
+    const [origDoc, newDoc] = await Promise.all([
+      PDFDocument.load(await readFile(file), { updateMetadata: false }),
+      PDFDocument.load(out, { updateMetadata: false }),
+    ]);
+    if (origDoc.getPageCount() !== newDoc.getPageCount()) {
+      console.warn(
+        `[pdf] compression changed page count for ${file} ` +
+        `(${origDoc.getPageCount()} → ${newDoc.getPageCount()}) — keeping the original.`,
+      );
+      await rm(tmp, { force: true });
+      return null;
+    }
+  } catch {
+    // Unreadable output = don't trust it.
+    console.warn(`[pdf] compressed ${file} would not parse — keeping the original.`);
+    await rm(tmp, { force: true });
+    return null;
+  }
+  await writeFile(file, out);
+  await rm(tmp, { force: true });
+  return { before, after: out.length };
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 // Repo root. The repo is flat now (no apps/tutorials/), so '..' from scripts/
@@ -438,6 +524,7 @@ async function main() {
         merged, section, positionOf.get(section.id), fullOrder.length, DARK,
       );
       await writeFile(filename, withDivider);
+      await compressPdf(filename);
       writtenFiles.set(section.id, filename);
     }
   } finally {
@@ -591,6 +678,14 @@ async function buildCombinedPdf({ sections, groups, writtenFiles, dark, cheatshe
   }
   const outFile = join(OUT_DIR, `${baseName}${dark ? '-dark' : ''}.pdf`);
   await writeFile(outFile, await combined.save());
+  const squeezed = await compressPdf(outFile);
+  if (squeezed) {
+    const mb = (n) => (n / 1048576).toFixed(1);
+    console.log(
+      `[pdf] Compressed ${mb(squeezed.before)} MB → ${mb(squeezed.after)} MB ` +
+      `(${(squeezed.before / squeezed.after).toFixed(1)}x, lossless — text layer unchanged).`,
+    );
+  }
   console.log(`[pdf] Combined PDF → ${outFile}`);
 }
 
