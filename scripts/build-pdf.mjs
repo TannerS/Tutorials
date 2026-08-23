@@ -564,7 +564,20 @@ async function buildCombinedPdf({ sections, groups, writtenFiles, dark, cheatshe
     y -= 18;
   }
 
-  const baseName = cheatsheetsOnly ? 'tutorials-cheatsheets-only' : 'tutorials-complete';
+  // A FILTERED run (e.g. `build-pdf.mjs react-query --combined --dark`) must not
+  // write to the full-site filename — doing so silently replaced a 3300-page
+  // deliverable with a 24-page one-section test, and nothing in the log said so.
+  // Partial runs get their own name.
+  const partial = !cheatsheetsOnly && wantedSections.length > 0;
+  const baseName = cheatsheetsOnly
+    ? 'tutorials-cheatsheets-only'
+    : partial
+      ? `tutorials-partial-${sections.map((s) => s.id).join('+').slice(0, 60)}`
+      : 'tutorials-complete';
+  if (partial) {
+    console.warn(`[pdf] Partial run (${sections.length} section(s)) — writing ${baseName}.pdf`);
+    console.warn('[pdf] The full-site tutorials-complete PDF was NOT touched.');
+  }
   const outFile = join(OUT_DIR, `${baseName}${dark ? '-dark' : ''}.pdf`);
   await writeFile(outFile, await combined.save());
   console.log(`[pdf] Combined PDF → ${outFile}`);
