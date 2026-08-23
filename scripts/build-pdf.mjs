@@ -162,6 +162,9 @@ const PORT = 5273;
 // see the comment there for why "explicit" matters, not just "matching".
 const PAGE_WIDTH_PX = 816;
 
+// How many times to try capturing a single lesson before giving up on it.
+const MAX_CAPTURE_ATTEMPTS = 3;
+
 const rawArgs = process.argv.slice(2);
 const CHEATSHEETS_ONLY = rawArgs.includes('--cheatsheets');
 // --cheatsheets implies combining — a pile of 1-lesson stub PDFs isn't a
@@ -174,7 +177,11 @@ const nameIdx = rawArgs.indexOf('--name');
 const CUSTOM_NAME = nameIdx !== -1 ? (rawArgs[nameIdx + 1] ?? '').replace(/[^a-z0-9-]/gi, '') : '';
 const wantedSections = rawArgs.filter((a, i) => (
   a !== '--combined' && a !== '--dark' && a !== '--cheatsheets'
-  && a !== '--name' && i !== nameIdx + 1
+  && a !== '--name'
+  // Only skip the value slot when --name is actually present. With no --name,
+  // nameIdx is -1 and `i !== nameIdx + 1` would drop argv[0] — silently turning
+  // `build-pdf.mjs react-query --dark` into a full 41-section build.
+  && !(nameIdx !== -1 && i === nameIdx + 1)
 ));
 
 // Matches a cheat-sheet lesson by id, e.g. 'cheatsheet', 'cheat-sheet',
@@ -357,6 +364,12 @@ async function main() {
       const buffers = [];
       for (const lesson of section.lessons) {
         console.log(`       - ${lesson.title}`);
+        // Retry transient failures. Capturing 337 lessons back-to-back through
+        // one Chromium occasionally times out on a page that is fine in
+        // isolation — observed on three DIFFERENT lessons across three runs,
+        // so it is contention, not a bad page. Without this the lesson is
+        // silently dropped and the book is quietly short a few pages.
+        for (let attempt = 1; attempt <= MAX_CAPTURE_ATTEMPTS; attempt++) {
         // Set the viewport wide enough to match the target paper width so text
         // renders at the same size the print media styles expect. In dark
         // mode, force colorScheme: 'dark' at page-creation time — BEFORE any
@@ -506,14 +519,22 @@ async function main() {
           console.log(`           ${pageCount} page${pageCount === 1 ? '' : 's'}, ${(buf.length/1024).toFixed(0)}KB`);
 
           buffers.push(buf);
+          break; // captured — stop retrying this lesson
         } catch (err) {
-          // Don't let one broken/hung lesson (e.g. a page embedding a live
-          // widget that fails to load in headless Chromium) abort the whole
-          // section's PDF. Skip it and keep going.
-          console.error(`           SKIPPED (${err.message.split('\n')[0]})`);
-          skipped.push({ section: section.id, lesson: lesson.title, reason: err.message.split('\n')[0] });
+          const why = err.message.split('\n')[0];
+          if (attempt < MAX_CAPTURE_ATTEMPTS) {
+            console.warn(`           attempt ${attempt} failed (${why}) — retrying`);
+          } else {
+            // Don't let one broken/hung lesson (e.g. a page embedding a live
+            // widget that fails to load in headless Chromium) abort the whole
+            // section's PDF. Skip it and keep going — the end-of-run summary
+            // names it so a short book is never mistaken for a complete one.
+            console.error(`           SKIPPED after ${attempt} attempts (${why})`);
+            skipped.push({ section: section.id, lesson: lesson.title, reason: why });
+          }
         } finally {
           await page.close();
+        }
         }
       }
 
