@@ -196,7 +196,7 @@ Inline style (React) folds     none           good (JS-computed)      per-render
 
       <FlowChart
         title="Which Inclusion Method?"
-        chart={"graph TD\n  Q[Styling this?] --> SHARED{Reused across many components?}\n  SHARED -->|Yes, static-ish| MOD[CSS Modules / Sass @use]\n  SHARED -->|No, one-off dynamic value| DYN{Needs :hover/media query?}\n  DYN -->|Yes| MOD\n  DYN -->|No, just computed JS values| INLINE[Inline style prop]\n  Q --> PERF{Perf-sensitive, high render frequency?}\n  PERF -->|Yes| MOD\n  PERF -->|No, DX / full theme logic matters more| CIJ[CSS-in-JS]\n  style MOD fill:#10b981,color:#fff\n  style INLINE fill:#6366f1,color:#fff\n  style CIJ fill:#f59e0b,color:#000"}
+        chart={"graph TD\n  Q[Styling this?] --> SHARED{Reused across many components?}\n  SHARED -->|Yes, static-ish| MOD[CSS Modules / Sass @use]\n  SHARED -->|No, one-off dynamic value| DYN{Needs :hover/media query?}\n  DYN -->|Yes| MOD\n  DYN -->|No, just computed JS values| INLINE[Inline style prop]\n  Q --> PERF{Perf-sensitive, high render frequency?}\n  PERF -->|Yes| MOD\n  PERF -->|No, DX / full theme logic matters more| CIJ[CSS-in-JS]\n  style MOD fill:#10b981,color:#fff\n  style INLINE fill:#6366f1,color:#fff\n  style CIJ fill:#3d2f14"}
       />
 
       <InteractiveChallenge

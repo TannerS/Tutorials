@@ -72,7 +72,7 @@ export default function Caching() {
 
       <FlowChart
         title="Cache-Aside Pattern Flow"
-        chart={"graph TD\n  A[App Receives Request] --> B{Check Cache}\n  B -->|Cache Hit| C[Return Cached Data]\n  B -->|Cache Miss| D[Query Database]\n  D --> E[Store Result in Cache]\n  E --> F[Return Data to Client]\n  style C fill:#10b981,color:#fff\n  style D fill:#f59e0b,color:#000\n  style E fill:#6366f1,color:#fff"}
+        chart={"graph TD\n  A[App Receives Request] --> B{Check Cache}\n  B -->|Cache Hit| C[Return Cached Data]\n  B -->|Cache Miss| D[Query Database]\n  D --> E[Store Result in Cache]\n  E --> F[Return Data to Client]\n  style C fill:#10b981,color:#fff\n  style D fill:#3d2f14\n  style E fill:#6366f1,color:#fff"}
       />
 
       <h3>Pros and Cons</h3>
@@ -142,7 +142,7 @@ async function updateUser(userId, data) {
 
       <FlowChart
         title="Read-Through Cache Flow"
-        chart={"graph TD\n  A[App Requests Data] --> B[Cache Layer]\n  B --> C{Key Exists?}\n  C -->|Hit| D[Return Cached Data]\n  C -->|Miss| E[Cache Loads from DB]\n  E --> F[Cache Stores Data]\n  F --> G[Return Data to App]\n  style B fill:#6366f1,color:#fff\n  style D fill:#10b981,color:#fff\n  style E fill:#f59e0b,color:#000"}
+        chart={"graph TD\n  A[App Requests Data] --> B[Cache Layer]\n  B --> C{Key Exists?}\n  C -->|Hit| D[Return Cached Data]\n  C -->|Miss| E[Cache Loads from DB]\n  E --> F[Cache Stores Data]\n  F --> G[Return Data to App]\n  style B fill:#6366f1,color:#fff\n  style D fill:#10b981,color:#fff\n  style E fill:#3d2f14"}
       />
 
       <h3>When to Use Read-Through</h3>
@@ -165,7 +165,7 @@ async function updateUser(userId, data) {
 
       <FlowChart
         title="Write-Through Cache Flow"
-        chart={"graph TD\n  A[App Writes Data] --> B[Write to Cache]\n  B --> C[Cache Writes to DB Synchronously]\n  C --> D{DB Write Success?}\n  D -->|Yes| E[Acknowledge Write to App]\n  D -->|No| F[Rollback Cache + Return Error]\n  style B fill:#6366f1,color:#fff\n  style C fill:#f59e0b,color:#000\n  style E fill:#10b981,color:#fff\n  style F fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  A[App Writes Data] --> B[Write to Cache]\n  B --> C[Cache Writes to DB Synchronously]\n  C --> D{DB Write Success?}\n  D -->|Yes| E[Acknowledge Write to App]\n  D -->|No| F[Rollback Cache + Return Error]\n  style B fill:#6366f1,color:#fff\n  style C fill:#3d2f14\n  style E fill:#10b981,color:#fff\n  style F fill:#ef4444,color:#fff"}
       />
 
       <h3>Pros and Cons</h3>
@@ -191,7 +191,7 @@ async function updateUser(userId, data) {
 
       <FlowChart
         title="Write-Behind Cache Flow"
-        chart={"graph TD\n  A[App Writes Data] --> B[Write to Cache]\n  B --> C[Acknowledge Write Immediately]\n  B --> D[Async Queue]\n  D --> E[Batch Write to DB]\n  E --> F{DB Write Success?}\n  F -->|Yes| G[Complete]\n  F -->|No| H[Retry / Dead Letter Queue]\n  style C fill:#10b981,color:#fff\n  style D fill:#f59e0b,color:#000\n  style H fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  A[App Writes Data] --> B[Write to Cache]\n  B --> C[Acknowledge Write Immediately]\n  B --> D[Async Queue]\n  D --> E[Batch Write to DB]\n  E --> F{DB Write Success?}\n  F -->|Yes| G[Complete]\n  F -->|No| H[Retry / Dead Letter Queue]\n  style C fill:#10b981,color:#fff\n  style D fill:#3d2f14\n  style H fill:#ef4444,color:#fff"}
       />
 
       <h3>Pros and Cons</h3>
@@ -511,7 +511,7 @@ SCAN 0 MATCH user:* COUNT 100             # Safe iteration`}
 
       <FlowChart
         title="Cache Stampede Scenario"
-        chart={"graph TD\n  A[Popular Cache Key Expires] --> B[1000 Concurrent Requests Arrive]\n  B --> C[All Check Cache]\n  C --> D[All Get Cache Miss]\n  D --> E[All Query Database Simultaneously]\n  E --> F[Database Overloaded]\n  F --> G[Timeouts and Failures]\n  style A fill:#f59e0b,color:#000\n  style E fill:#ef4444,color:#fff\n  style F fill:#ef4444,color:#fff\n  style G fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  A[Popular Cache Key Expires] --> B[1000 Concurrent Requests Arrive]\n  B --> C[All Check Cache]\n  C --> D[All Get Cache Miss]\n  D --> E[All Query Database Simultaneously]\n  E --> F[Database Overloaded]\n  F --> G[Timeouts and Failures]\n  style A fill:#3d2f14\n  style E fill:#ef4444,color:#fff\n  style F fill:#ef4444,color:#fff\n  style G fill:#ef4444,color:#fff"}
       />
 
       <h3>Prevention Strategies</h3>
