@@ -15,11 +15,17 @@ export default function DesignSystemTokens() {
     >
       <p>
         The previous lesson covered the three token tiers and light/dark redefinition in the
-        abstract. This one takes a single, real block of CSS — the one below, which ships in every
-        Carbon build — and explains every character of it, because that block is where two things
-        that feel like magic actually happen: components nesting inside components and adapting to
-        each other, and a theme switch that repaints an entire app instantly without touching a
-        stylesheet.
+        abstract. This lesson is about how a real, industrial design system actually implements all
+        of it — how IBM&apos;s Carbon organises its tokens, what its packages contain and how they
+        stack, what happens when you import its stylesheet, and why components you never configured
+        compose and theme correctly.
+      </p>
+
+      <p>
+        We will use one concrete block of CSS as the way in, because it is compact enough to explain
+        completely and it happens to sit at the intersection of most of the interesting machinery.
+        But it is a doorway, not the subject — the goal is that by the end you can open{' '}
+        <em>any</em> part of Carbon&apos;s compiled output and know what you are looking at.
       </p>
 
       <CodeBlock language="css" title="The block in question — from a compiled Carbon stylesheet">
@@ -55,7 +61,87 @@ export default function DesignSystemTokens() {
         of fact this block quietly encodes once you can read it.
       </InfoBox>
 
-      <h2>1. The Crux: Why Sass Variables Could Never Do This</h2>
+      <h2>1. The Shape of the System</h2>
+
+      <p>
+        Carbon is not one library. It is a stack of packages where each layer only knows about the
+        one below it, and that separation is what makes the whole thing themeable. Before any of the
+        mechanics make sense, it helps to know what is in the box:
+      </p>
+
+      <ul>
+        <li>
+          <strong><code>@carbon/colors</code></strong> — the raw palette and nothing else. Plain
+          constants: <code>gray10 = #f4f4f4</code>, <code>blue60 = #0f62fe</code>. No meaning, no
+          themes, no CSS. This is the primitive tier from the previous lesson.
+        </li>
+        <li>
+          <strong><code>@carbon/layout</code></strong> — spacing, sizing, breakpoints, border radii.
+          Also pure values, derived arithmetically rather than picked by hand.
+        </li>
+        <li>
+          <strong><code>@carbon/type</code></strong> and <strong><code>@carbon/motion</code></strong>{' '}
+          — type scale and easing/duration tokens, same idea.
+        </li>
+        <li>
+          <strong><code>@carbon/themes</code></strong> — the four themes. This is where raw colors
+          acquire <em>meaning</em>: it maps <code>gray10</code> to names like{' '}
+          <code>layer-01</code> and <code>text-primary</code>, once per theme.
+        </li>
+        <li>
+          <strong><code>@carbon/styles</code></strong> — the CSS itself. Component styles, the reset,
+          the grid, and the machinery that turns theme maps into CSS custom properties.
+        </li>
+        <li>
+          <strong><code>@carbon/react</code></strong> — the components. Notably, this layer contains
+          almost no styling logic; it mostly attaches class names.
+        </li>
+      </ul>
+
+      <p>
+        The single import that &quot;just worked&quot; is the entry point of{' '}
+        <code>@carbon/styles</code>, and it is short enough to read in full. This is the real file:
+      </p>
+
+      <CodeBlock language="scss" title="packages/styles/index.scss — the whole entry point">
+{`@forward 'scss/config';
+@forward 'scss/spacing';
+@forward 'scss/border-radius';
+@forward 'scss/colors' hide $white;
+@forward 'scss/motion';
+@forward 'scss/type';
+@forward 'scss/themes';
+@forward 'scss/theme';
+
+@use 'scss/reset';
+@forward 'scss/fonts';
+@forward 'scss/grid';
+@forward 'scss/layer';
+@forward 'scss/layout';
+@forward 'scss/zone';
+@use 'scss/components';`}
+      </CodeBlock>
+
+      <p>
+        Two lines in that list produce the block at the top of this lesson:{' '}
+        <code>scss/layer</code> emits the contextual layer tokens, and <code>scss/zone</code> emits
+        the theme classes. Everything else is palette, type, reset, grid and component CSS.
+      </p>
+
+      <FlowChart
+        title="The package stack — each layer only knows the one below it"
+        chart={"graph TD\n  P[\"@carbon/colors, @carbon/layout,<br/>@carbon/type, @carbon/motion<br/><br/>Raw values. No meaning.\"] --> T\n  T[\"@carbon/themes<br/><br/>Raw values gain NAMES.<br/>white / g10 / g90 / g100\"] --> S\n  S[\"@carbon/styles<br/><br/>Names become CSS custom properties.<br/>Component CSS reads those properties.\"] --> R\n  R[\"@carbon/react<br/><br/>Components attach class names.<br/>Almost no styling logic.\"] --> APP\n  APP[\"Your app<br/><br/>Can override at ANY level above<br/>without forking anything\"]\n  style T fill:#1a2744\n  style S fill:#1a3329\n  style APP fill:#2a1f44"}
+      />
+
+      <InfoBox variant="info" title="Why the split matters">
+        Because each layer only consumes names from the layer beneath, you can replace any single
+        layer without touching the others. Swapping themes changes only the middle. Overriding one
+        color in your app changes only what that name resolves to. This is the same reason the
+        previous lesson insisted the semantic tier is the real API — Carbon just enforces it across
+        package boundaries instead of by convention.
+      </InfoBox>
+
+      <h2>2. The Crux: Why Sass Variables Could Never Do This</h2>
 
       <p>
         This is almost certainly the thing that never clicked, and everything else follows from it.
@@ -142,7 +228,220 @@ export default function DesignSystemTokens() {
         remaining trick in this lesson is a consequence of that sentence.
       </InfoBox>
 
-      <h2>2. Reading <code>var(--cds-layer-01, #fff)</code> Correctly</h2>
+      <h2>3. The Token Taxonomy: What Tokens Actually Exist</h2>
+
+      <p>
+        &quot;Design token&quot; gets used as if it means one thing. In Carbon it means several
+        quite different things with different lifetimes, and knowing which is which is most of what
+        it takes to read the compiled CSS.
+      </p>
+
+      <h3>Color tokens are organised into families</h3>
+
+      <p>
+        Carbon&apos;s color tokens are not a flat list — they are grouped by the <em>job</em> the
+        color does. These are the real group names from{' '}
+        <code>packages/themes/src/tokens/v11TokenGroup.ts</code>:
+      </p>
+
+      <CodeBlock language="text" title="Carbon's color token families">
+{`Background   page-level surfaces           background, background-hover, background-selected
+Layer        stacked surfaces (3 levels)   layer-01..03, layer-hover-*, layer-selected-*, layer-accent-*
+Field        form input surfaces           field-01..03, field-hover-01..03
+Borders      every border in the system    border-subtle-00..03, border-strong-01..03, border-tile-*
+Text         all text colors               text-primary, text-secondary, text-on-color, text-disabled
+Link         links specifically            link-primary, link-primary-hover, link-visited, link-inverse
+Icons        icon fills                    icon-primary, icon-on-color, icon-disabled
+Support      status colors                 support-error, support-success, support-warning, support-info
+Focus        focus rings                   focus, focus-inset, focus-inverse
+Skeleton     loading placeholders          skeleton-background, skeleton-element
+AI           AI-feature styling            (a whole family added for AI affordances)
+Syntax       code highlighting             syntax highlighting token set
+Contextual   the un-numbered aliases       layer, field, border-subtle, border-strong`}
+      </CodeBlock>
+
+      <p>
+        The naming format is consistent enough to guess at:{' '}
+        <strong>family, then role, then state, then step</strong>. So{' '}
+        <code>layer-selected-hover-02</code> is the Layer family, the &quot;selected&quot; role, the
+        hover state, at nesting level 2. Once you know the grammar you can predict token names you
+        have never seen, which is the actual test of whether a naming scheme is any good.
+      </p>
+
+      <p>
+        Note the last family in that list. The <strong>Contextual</strong> tokens are the un-numbered
+        ones — <code>layer</code>, <code>field</code>, <code>border-subtle</code> — and they are the
+        subject of the block at the top of this lesson. They are the only color tokens components are
+        supposed to read.
+      </p>
+
+      <h3>Spacing, type and motion are a different kind of token entirely</h3>
+
+      <p>
+        Here is a distinction that catches people out, and it explains a lot about what you will and
+        will not find in the compiled CSS. Carbon&apos;s spacing scale is generated arithmetically
+        from an 8px &quot;mini unit&quot; and a 16px base font size:
+      </p>
+
+      <CodeBlock language="javascript" title="packages/layout/src/index.ts — the real definitions">
+{`export const baseFontSize = 16;
+export const rem = (px) => px / baseFontSize + 'rem';
+
+export const miniUnit = 8;
+export const miniUnits = (count) => rem(miniUnit * count);
+
+export const spacing01 = miniUnits(0.25);
+export const spacing02 = miniUnits(0.5);
+export const spacing03 = miniUnits(1);
+/* ...through spacing13 */`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="The resulting scale (computed from those definitions)">
+{`spacing-01  0.125rem   2px      spacing-08   2.5rem   40px
+spacing-02   0.25rem   4px      spacing-09     3rem   48px
+spacing-03    0.5rem   8px      spacing-10     4rem   64px
+spacing-04   0.75rem  12px      spacing-11     5rem   80px
+spacing-05      1rem  16px      spacing-12     6rem   96px
+spacing-06    1.5rem  24px      spacing-13    10rem  160px
+spacing-07      2rem  32px`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="The scales are compile-time — which means themes only change color">
+        Used directly, these are Sass variables that compile straight to literal values:{' '}
+        <code>padding: $spacing-05</code> becomes <code>padding: 1rem</code> in the shipped CSS, with
+        no <code>var()</code> anywhere. The same goes for motion — <code>motion(standard,
+        productive)</code> is a Sass function that just reads a map and returns a{' '}
+        <code>cubic-bezier()</code> literal. And type stays compile-time by default, since{' '}
+        <code>packages/styles/scss/_config.scss</code> ships{' '}
+        <code>$css--emit-type-custom-props: false !default</code>.
+        <br /><br />
+        The consequence matters: <strong>a Carbon theme can only change color.</strong> The theme
+        emitters in <code>_zone.scss</code> and <code>_theme.scss</code> only emit a custom property
+        when <code>meta.type-of($value) == color</code>, so switching from g10 to g100 cannot
+        re-space or re-typeset anything. Everything in sections 4 to 7 about runtime overrides is
+        about color specifically.
+      </InfoBox>
+
+      <h3>But size and density have their own runtime system</h3>
+
+      <p>
+        There is an important exception, and it is worth knowing because it is the same idea as the
+        layer system applied to a completely different axis. Alongside the compile-time spacing
+        scale, Carbon has a <strong>contextual layout system</strong> for component size and density
+        that <em>is</em> made of runtime custom properties.
+      </p>
+
+      <CodeBlock language="scss" title="packages/styles/scss/utilities/_layout.scss — the layout token groups">
+{`$layout-tokens: (
+  size: (
+    height: (
+      xs: 24px, sm: 32px, md: 40px,
+      lg: 48px, xl: 64px, 2xl: 80px,   /* converted to rem */
+    ),
+  ),
+  density: (
+    padding-inline: (
+      condensed: $spacing-03,
+      normal: $spacing-05,
+    ),
+  ),
+);`}
+      </CodeBlock>
+
+      <p>
+        The structure should look familiar. There are stepped tokens (<code>xs</code> through{' '}
+        <code>2xl</code>), a context class that remaps which step is active — exactly like{' '}
+        <code>.cds--layer-two</code> — and a component-facing local token:
+      </p>
+
+      <CodeBlock language="scss" title="The context class emitter, and the component-side mixin">
+{`/* Emits .cds--layout--size-md, .cds--layout--density-condensed, etc.
+   This is the direct analogue of .cds--layer-two. */
+.#{config.$prefix}--layout--#{$group}-#{$step} {
+  --cds-layout-size-height-context: var(--cds-layout-size-height-md, 2.5rem);
+  --cds-layout-size-height: var(--cds-layout-size-height-context);
+}
+
+/* What a component includes on its outermost selector: */
+@mixin use($group, $default, $min: null, $max: null) {
+  /* ...builds... */
+  $value: clamp($minValue, var(--cds-layout-size-height, <default>), $maxValue);
+  --cds-layout-size-height-local: #{$value};
+}
+
+/* And what the component then reads: */
+@function density($property) {
+  @return var(--cds-layout-density-padding-inline-local);
+}`}
+      </CodeBlock>
+
+      <p>
+        So <code>padding: layout.density(&apos;padding-inline&apos;)</code> in a component compiles
+        to <code>padding: var(--cds-layout-density-padding-inline-local)</code> — a live reference,
+        not a literal. Wrapping a subtree in <code>.cds--layout--density-condensed</code> tightens
+        every participating component inside it, by the same inheritance mechanism the layers use.
+      </p>
+
+      <p>
+        Rebuilding that machinery and measuring it confirms both halves, including the clamp:
+      </p>
+
+      <CodeBlock language="text" title="Measured — context classes re-size nested components, within limits">
+{`.cds--tile, default (density 'normal')            padding = 16px
+.cds--tile inside .cds--layout--density-condensed  padding =  8px   <- re-padded by the wrapper
+
+.cds--btn, default (size 'md')                     height  = 40px
+.cds--btn inside .cds--layout--size-2xl            height  = 48px   <- NOT 80px`}
+      </CodeBlock>
+
+      <p>
+        That last line is the <code>clamp()</code> doing its job. The context asked for{' '}
+        <code>2xl</code> (80px), but the button was declared with{' '}
+        <code>$max: &apos;lg&apos;</code>, so it grew only to its own supported maximum of 48px. A
+        component participates in the context without surrendering to it — something the layer
+        system, which has no equivalent guard, cannot express.
+      </p>
+
+      <InfoBox variant="tip" title="The pattern is used twice — that is the real lesson">
+        Carbon implements the identical three-part structure on two independent axes:{' '}
+        <em>stepped tokens</em> → <em>a context class that picks the step</em> →{' '}
+        <em>an un-numbered token the component reads</em>. Layers do it for color depth; layout does
+        it for size and density. The layout version adds one refinement — that{' '}
+        <code>clamp()</code> with <code>$min</code>/<code>$max</code> lets a component declare the
+        range it actually supports, so a context asking for <code>2xl</code> cannot stretch a
+        component that only handles up to <code>lg</code>. Once you recognise the shape, you can read
+        any of it.
+      </InfoBox>
+
+      <h3>Component tokens: a third category</h3>
+
+      <p>
+        Some values do not generalise — a Button&apos;s primary fill is not any layer or background
+        token. Carbon models these as <em>component tokens</em>, which carry an explicit value per
+        theme plus a fallback:
+      </p>
+
+      <CodeBlock language="scss" title="packages/styles/scss/components/button/_tokens.scss (excerpt)">
+{`$button-primary: (
+  fallback: map.get(button.$button-primary, white-theme),
+  values: (
+    ( theme: themes.$white, value: map.get(button.$button-primary, white-theme) ),
+    ( theme: themes.$g10,   value: map.get(button.$button-primary, g-10)  ),
+    ( theme: themes.$g90,   value: map.get(button.$button-primary, g-90)  ),
+    ( theme: themes.$g100,  value: map.get(button.$button-primary, g-100) ),
+  ),
+) !default;`}
+      </CodeBlock>
+
+      <p>
+        <code>_zone.scss</code> walks these when it builds each theme class, matches the entry whose{' '}
+        <code>theme</code> equals the zone&apos;s theme, and emits that value. This is the escape
+        hatch for &quot;this one component needs its own color decision&quot; without polluting the
+        semantic tier with a token no other component would ever read — the component tier from the
+        previous lesson, implemented for real.
+      </p>
+
+      <h2>4. Reading <code>var(--cds-layer-01, #fff)</code> Correctly</h2>
 
       <p>
         Now the snippet itself. The instinct is to read it left to right, which makes it look
@@ -220,7 +519,7 @@ Override point 3 — reference a token that was never defined:
         back to it in the trade-offs section.
       </InfoBox>
 
-      <h2>3. Contextual Layering — the &quot;components inside components&quot; answer</h2>
+      <h2>5. Contextual Layering — the &quot;components inside components&quot; answer</h2>
 
       <p>
         This is the most important section in the lesson, and it is the direct answer to how a Tile
@@ -453,7 +752,124 @@ the ":root { --cds-layer: var(--cds-layer-01, #fff) }" declaration:
         <code>:root</code>. It is not duplication. It is the fix.
       </p>
 
-      <h2>4. Theme Switching, and Why It Is Instant</h2>
+      <h2>6. Anatomy of a Real Component: All the Subsystems at Once</h2>
+
+      <p>
+        So far we have followed one token family. A real component pulls from most of them
+        simultaneously, and seeing that is what ties the system together. Here is the top of
+        Carbon&apos;s actual Tile stylesheet — the <code>@use</code> block is effectively a manifest
+        of which token subsystems this one component depends on:
+      </p>
+
+      <CodeBlock language="scss" title="packages/styles/scss/components/tile/_tile.scss — the dependency manifest">
+{`@use '../button/tokens' as button;      // component tokens
+@use '../../config' as *;               // $prefix
+@use '../../feature-flags' as *;        // opt-in behaviour
+@use '../../layer' as *;                // contextual color tokens
+@use '../../motion' as *;               // duration + easing tokens
+@use '../../spacing' as *;              // spacing scale
+@use '../../theme' as *;                // theme color tokens
+@use '../../type' as *;                 // type scale
+@use '../../utilities/focus-outline' as *;`}
+      </CodeBlock>
+
+      <p>
+        And here is the base rule that those imports feed. Every single line pulls from a different
+        subsystem:
+      </p>
+
+      <CodeBlock language="scss" title="The real .cds--tile rule">
+{`.#{$prefix}--tile {
+  @include type-style('body-compact-01');          // TYPE    - compile-time literal
+  @include layout.use('density', $default: 'normal');  // sets up the density context
+
+  position: relative;
+  display: block;
+  padding: layout.density('padding-inline');       // DENSITY - runtime var()
+  background-color: $layer;                        // COLOR   - runtime var()
+  min-block-size: 4rem;
+  min-inline-size: 8rem;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+
+  &:focus {
+    @include focus-outline('outline');             // FOCUS   - runtime var()
+  }
+}
+
+.#{$prefix}--tile--clickable {
+  transition: $duration-moderate-01 motion(standard, productive);  // MOTION - compile-time
+
+  &:hover {
+    background: $layer-hover;                      // COLOR   - runtime var()
+  }
+
+  color: $text-primary;                            // COLOR   - runtime var()
+}`}
+      </CodeBlock>
+
+      <p>
+        This one rule is the whole system in miniature, and it has <strong>two different
+        lifetimes</strong> running through it. The type and motion lines resolve at build time and
+        arrive as literals — <code>font-size: 0.875rem</code>, a literal{' '}
+        <code>cubic-bezier(...)</code>. The color and density lines arrive as live{' '}
+        <code>var()</code> references and stay resolvable forever. That split is exactly why a theme
+        switch can recolor this Tile but cannot restyle its typography, while a{' '}
+        <code>.cds--layout--density-condensed</code> wrapper <em>can</em> re-pad it.
+      </p>
+
+      <InfoBox variant="tip" title="Carbon's own source corroborates the 'never read a numbered token' rule">
+        A few lines further down that same file sits this:
+        <CodeBlock language="scss" title="A legacy escape hatch, flagged by its own authors">
+{`// V11: Possibly deprecate
+.#{$prefix}--tile--light {
+  background-color: $layer-02;
+}`}
+        </CodeBlock>
+        That variant hardcodes a <em>level</em> rather than reading the contextual token, so it
+        cannot participate in layer nesting — drop it inside a <code>Layer</code> and it ignores its
+        surroundings. Carbon&apos;s own comment marks it for deprecation. This is the rule from
+        section 5 showing up as real technical debt in the real codebase, not a hypothetical.
+      </InfoBox>
+
+      <h3>The full trace, end to end</h3>
+
+      <p>
+        Putting every layer together, here is what actually happens between writing{' '}
+        <code>&lt;Tile /&gt;</code> and a colored pixel appearing:
+      </p>
+
+      <CodeBlock language="text" title="One component, every layer of the system">
+{`1. JSX          <Layer><Tile>content</Tile></Layer>
+
+2. React        Layer reads LayerContext (say level 1), renders
+                <div class="cds--layer-two"> and provides level 2 downward.
+                Tile renders <div class="cds--tile">. No colors computed.
+
+3. CSS match    .cds--layer-two  { --cds-layer: var(--cds-layer-02, #f4f4f4); }
+                .cds--tile       { background-color: var(--cds-layer); }
+
+4. Cascade      --cds-layer-02 was set by the theme layer at :root
+                (or by an enclosing .cds--g100 zone).
+
+5. Substitution The wrapper computes --cds-layer by substituting --cds-layer-02
+                AT THAT ELEMENT. The Tile inherits the finished value.
+
+6. Paint        background-color resolves. MEASURED: rgb(57, 57, 57) in g100.
+
+Change the theme class in step 4 and only steps 5-6 re-run.
+Nothing above step 4 is aware anything happened.`}
+      </CodeBlock>
+
+      <p>
+        The division of labour is the thing to take away: <strong>React context carries depth, CSS
+        inheritance carries color, and the two never speak to each other.</strong> The React tree
+        decides which class goes on which element; the cascade decides what that class means. Either
+        half can be replaced independently — which is exactly why Carbon can ship the same
+        stylesheet to its Web Components and Angular implementations.
+      </p>
+
+      <h2>7. Theme Switching, and Why It Is Instant</h2>
 
       <p>
         Carbon ships four themes: two light (<strong>white</strong>, <strong>g10</strong>) and two
@@ -511,7 +927,7 @@ text-primary          #161616     #161616     #f4f4f4     #f4f4f4`}
       }
     }
 
-    /* ...and the mandatory re-emit from section 3: */
+    /* ...and the mandatory re-emit from section 5: */
     @include layer-tokens.emit-layer-tokens(1);
   }
 }`}
@@ -543,7 +959,7 @@ text-primary          #161616     #161616     #f4f4f4     #f4f4f4`}
         Switching themes means changing which of those classes is on an element. Nothing is
         recompiled, no stylesheet is edited, no CSS is fetched — all four theme classes were already
         in the bundle. Measured before and after flipping the token values on the root element, with
-        the tiles from section 3 left completely untouched:
+        the tiles from section 5 left completely untouched:
       </p>
 
       <CodeBlock language="text" title="Measured — one root-level change, three components repaint">
@@ -619,7 +1035,7 @@ element inside .cds--g100:
         check.
       </InfoBox>
 
-      <h2>5. What a Component Library Actually Ships</h2>
+      <h2>8. What One Import Actually Gives You</h2>
 
       <p>
         This explains why importing one stylesheet was enough. The library is split into three
@@ -744,7 +1160,49 @@ return (
         rules — you are supplying inputs.
       </InfoBox>
 
-      <h2>6. Build a Minimal Version You Could Actually Use Tomorrow</h2>
+      <h3>The knobs on that import</h3>
+
+      <p>
+        Because it is Sass, the entry point is configurable before it emits anything — this is what{' '}
+        <code>@use ... with (...)</code> is for, and it is how teams trim Carbon down. The real
+        defaults from <code>packages/styles/scss/_config.scss</code>:
+      </p>
+
+      <CodeBlock language="scss" title="packages/styles/scss/_config.scss — the actual defaults">
+{`$css--body: true !default;          // emit background/color on <body>
+$css--font-face: true !default;     // pull in the IBM Plex @font-face blocks
+$css--reset: true !default;         // include the CSS reset
+$css--default-type: true !default;  // include default typography
+$css--emit-type-custom-props: false !default;  // type stays compile-time
+
+$font-display: swap !default;
+$font-path: '~@ibm/plex' !default;
+$use-akamai-cdn: false !default;    // load Plex from IBM's CDN instead
+
+$prefix: 'cds' !default;            // every class AND custom property is namespaced
+$flex-grid-columns: 16 !default;
+$use-flexbox-grid: false !default;  // CSS Grid by default, flexbox opt-in`}
+      </CodeBlock>
+
+      <p>
+        <code>$prefix</code> is the one worth internalising. It is why every class is{' '}
+        <code>cds--something</code> and every custom property is <code>--cds-something</code> — one
+        variable drives both, via the <code>get-name()</code> helper shown earlier. Change it and the
+        entire library renames itself, which is how Carbon supports multiple versions coexisting on
+        one page during a migration. It is also why the previous lesson could say this site
+        &quot;skips a prefix&quot; without consequence: prefixes exist for distribution, not for
+        correctness.
+      </p>
+
+      <p>
+        The other pattern worth stealing is <code>!default</code>. Every one of those is overridable
+        by the consuming app <em>before</em> the library runs, so you configure Carbon by
+        pre-declaring values rather than by fighting its output afterwards. Combined with the runtime
+        custom properties, that gives you two independent configuration surfaces — one at build time
+        for structure, one at runtime for color.
+      </p>
+
+      <h2>9. Build a Minimal Version You Could Actually Use Tomorrow</h2>
 
       <p>
         Carbon&apos;s system is large because it serves many products across many teams. The{' '}
@@ -760,7 +1218,7 @@ return (
 }
 
 /* 2. THEME — numbered tokens. This is the ONLY tier that names literal colors.
-      Note the last two lines: the mandatory re-emit from section 3. */
+      Note the last two lines: the mandatory re-emit from section 5. */
 :root, .theme-light {
   --surface-01: var(--gray-0);
   --surface-02: var(--gray-10);
@@ -831,11 +1289,11 @@ dark   layer-3  background rgb(82, 82, 82)     border rgb(82, 82, 82)     text r
         </li>
         <li>
           <strong>Any rule that sets a numbered token must re-emit the contextual tokens.</strong>{' '}
-          This is the one non-obvious rule, and section 3 shows what silently breaks without it.
+          This is the one non-obvious rule, and section 5 shows what silently breaks without it.
         </li>
       </ul>
 
-      <h2>7. Honest Trade-offs</h2>
+      <h2>10. Honest Trade-offs</h2>
 
       <h3>Debugging is genuinely worse</h3>
 
@@ -938,6 +1396,19 @@ background-color: var(--cds-layer, #00ff00);
         correctIndex={2}
         explanation={"Neither component knows about the other, and no code coordinates them. The wrapper redefines one inherited custom property for its subtree; the inner component was already reading that property. Measured in the lesson: three identical <div class=\"tile\"> elements from one .tile rule computed rgb(38, 38, 38), rgb(57, 57, 57) and rgb(82, 82, 82) purely on the basis of which wrapper they sat inside. On the React side, <Layer> only tracks a depth number in context and turns it into a class name — it never computes a color."}
         language="css"
+      />
+
+      <InteractiveChallenge
+        question={"A designer asks for a 'compact' Carbon theme that keeps the current colors but halves all the padding. You plan to ship it as a fifth theme alongside white/g10/g90/g100. Why will that not work?"}
+        options={[
+          "Carbon only permits exactly four themes; the theme map is a fixed-length list",
+          "Themes only carry color — the emitters skip any value that is not a color type, and the spacing scale compiles to literal rem values, so no theme can change padding",
+          "Padding cannot be expressed as a CSS custom property in any browser",
+          "It would work, but only if the app re-imports the Carbon stylesheet after switching"
+        ]}
+        correctIndex={1}
+        explanation={"A theme is just a map of tokens that _zone.scss and _theme.scss walk, and both emit a custom property only when meta.type-of($value) == color. Spacing/type/motion used directly compile to literals — padding: $spacing-05 ships as padding: 1rem with no var() to override. The right tool is the separate contextual layout system: wrap the subtree in .cds--layout--density-condensed, which IS built from runtime custom properties. Measured in the lesson: a tile went from 16px to 8px padding purely from that wrapper class. Adding themes is not length-limited (option 1), and custom properties handle lengths fine (option 3) — Carbon simply chose not to emit them for spacing by default."}
+        language="scss"
       />
 
       <InteractiveChallenge
