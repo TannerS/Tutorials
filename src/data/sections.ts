@@ -53,7 +53,7 @@ export const sections: Section[] = [
   },
   {
     id: 'react18',
-    label: 'React 18',
+    label: 'React Core',
     icon: '⚛️',
     color: '#22d3ee',
     lessons: [
