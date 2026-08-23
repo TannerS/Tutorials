@@ -157,7 +157,7 @@ function UserMenu() {
 
       <FlowChart
         title="State Categories and Best-Fit Tools"
-        chart={"graph TD\n  S[Application State] --> UI[UI State]\n  S --> SC[Server Cache]\n  S --> FS[Form State]\n  S --> URL[URL State]\n  UI --> UI1[Local: useState/useReducer]\n  UI --> UI2[Shared: Context + useReducer]\n  SC --> SC1[TanStack Query]\n  SC --> SC2[SWR]\n  FS --> FS1[React Hook Form]\n  FS --> FS2[Formik / useState]\n  URL --> URL1[React Router]\n  URL --> URL2[nuqs / useSearchParams]\n  style UI fill:#3b82f6,color:#fff\n  style SC fill:#10b981,color:#fff\n  style FS fill:#f59e0b,color:#fff\n  style URL fill:#8b5cf6,color:#fff"}
+        chart={"graph TD\n  S[Application State] --> UI[UI State]\n  S --> SC[Server Cache]\n  S --> FS[Form State]\n  S --> URL[URL State]\n  UI --> UI1[Local: useState/useReducer]\n  UI --> UI2[Shared: Context + useReducer]\n  SC --> SC1[TanStack Query]\n  SC --> SC2[SWR]\n  FS --> FS1[React Hook Form]\n  FS --> FS2[Formik / useState]\n  URL --> URL1[React Router]\n  URL --> URL2[nuqs / useSearchParams]\n  style UI fill:#1a2744\n  style SC fill:#1a3329\n  style FS fill:#3d2f14\n  style URL fill:#2a1f44"}
       />
 
       <h3>UI State</h3>
@@ -229,7 +229,7 @@ function useAddTodo() {
 
       <FlowChart
         title="Do You Need a State Management Library?"
-        chart={"graph TD\n  START[New State Requirement] --> Q1{Is it server data?}\n  Q1 -->|Yes| TQ[Use TanStack Query]\n  Q1 -->|No| Q2{Is it form data?}\n  Q2 -->|Yes| RHF[Use React Hook Form]\n  Q2 -->|No| Q3{Is it URL state?}\n  Q3 -->|Yes| RR[Use Router / useSearchParams]\n  Q3 -->|No| Q4{Shared across 2+ unrelated components?}\n  Q4 -->|No| US[Use useState / useReducer]\n  Q4 -->|Yes| Q5{High-frequency updates?}\n  Q5 -->|No| CTX[Context + useReducer]\n  Q5 -->|Yes| EXT[Split contexts, or an external store]\n  style TQ fill:#10b981,color:#fff\n  style RHF fill:#f59e0b,color:#fff\n  style RR fill:#8b5cf6,color:#fff\n  style US fill:#6b7280,color:#fff\n  style CTX fill:#3b82f6,color:#fff\n  style EXT fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  START[New State Requirement] --> Q1{Is it server data?}\n  Q1 -->|Yes| TQ[Use TanStack Query]\n  Q1 -->|No| Q2{Is it form data?}\n  Q2 -->|Yes| RHF[Use React Hook Form]\n  Q2 -->|No| Q3{Is it URL state?}\n  Q3 -->|Yes| RR[Use Router / useSearchParams]\n  Q3 -->|No| Q4{Shared across 2+ unrelated components?}\n  Q4 -->|No| US[Use useState / useReducer]\n  Q4 -->|Yes| Q5{High-frequency updates?}\n  Q5 -->|No| CTX[Context + useReducer]\n  Q5 -->|Yes| EXT[Split contexts, or an external store]\n  style TQ fill:#1a3329\n  style RHF fill:#3d2f14\n  style RR fill:#2a1f44\n  style US fill:#1a2744\n  style CTX fill:#1a2744\n  style EXT fill:#3b1a1a"}
       />
 
       <h2>Signals and the Future of React State</h2>

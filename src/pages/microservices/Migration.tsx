@@ -37,14 +37,14 @@ export default function Migration() {
 
       <FlowChart
         title="Strangler Fig — Phase by Phase"
-        chart={"graph TD\n  subgraph Phase 1 - Start\n    P1[Proxy] -->|All traffic| Mono1[Monolith]\n    Mono1 --> DB1[(Monolith DB)]\n  end\n  subgraph Phase 2 - First Extraction\n    P2[Proxy] -->|/auth/*| Auth[New Auth Service]\n    P2 -->|Everything else| Mono2[Monolith]\n    Auth --> AuthDB[(Auth DB)]\n    Mono2 --> DB2[(Monolith DB)]\n  end\n  subgraph Phase 3 - More Extractions\n    P3[Proxy] -->|/auth/*| Auth2[Auth Service]\n    P3 -->|/orders/*| Order[Order Service]\n    P3 -->|/payments/*| Pay[Payment Service]\n    P3 -->|Everything else| Mono3[Shrinking Monolith]\n  end\n  style Auth fill:#10b981,color:#fff\n  style Auth2 fill:#10b981,color:#fff\n  style Order fill:#10b981,color:#fff\n  style Pay fill:#10b981,color:#fff\n  style Mono3 fill:#f59e0b,color:#fff"}
+        chart={"graph TD\n  subgraph Phase 1 - Start\n    P1[Proxy] -->|All traffic| Mono1[Monolith]\n    Mono1 --> DB1[(Monolith DB)]\n  end\n  subgraph Phase 2 - First Extraction\n    P2[Proxy] -->|/auth/*| Auth[New Auth Service]\n    P2 -->|Everything else| Mono2[Monolith]\n    Auth --> AuthDB[(Auth DB)]\n    Mono2 --> DB2[(Monolith DB)]\n  end\n  subgraph Phase 3 - More Extractions\n    P3[Proxy] -->|/auth/*| Auth2[Auth Service]\n    P3 -->|/orders/*| Order[Order Service]\n    P3 -->|/payments/*| Pay[Payment Service]\n    P3 -->|Everything else| Mono3[Shrinking Monolith]\n  end\n  style Auth fill:#1a3329\n  style Auth2 fill:#1a3329\n  style Order fill:#1a3329\n  style Pay fill:#1a3329\n  style Mono3 fill:#3d2f14"}
       />
 
       <h3>Step-by-Step Migration Strategy</h3>
 
       <FlowChart
         title="Migration Playbook"
-        chart={"graph TD\n  S1[1. Add Proxy Layer] --> S2[2. Identify Service Boundaries]\n  S2 --> S3[3. Extract First Service]\n  S3 --> S4[4. Migrate Data]\n  S4 --> S5[5. Route Traffic]\n  S5 --> S6[6. Verify and Monitor]\n  S6 --> S7{More to extract?}\n  S7 -->|Yes| S2\n  S7 -->|No| S8[7. Decommission Monolith]\n  style S1 fill:#6366f1,color:#fff\n  style S3 fill:#3b82f6,color:#fff\n  style S5 fill:#10b981,color:#fff\n  style S8 fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  S1[1. Add Proxy Layer] --> S2[2. Identify Service Boundaries]\n  S2 --> S3[3. Extract First Service]\n  S3 --> S4[4. Migrate Data]\n  S4 --> S5[5. Route Traffic]\n  S5 --> S6[6. Verify and Monitor]\n  S6 --> S7{More to extract?}\n  S7 -->|Yes| S2\n  S7 -->|No| S8[7. Decommission Monolith]\n  style S1 fill:#1a2744\n  style S3 fill:#1a2744\n  style S5 fill:#1a3329\n  style S8 fill:#3b1a1a"}
       />
 
       <CodeBlock language="nginx" title="Nginx Proxy — Strangler Fig Router">
@@ -102,7 +102,7 @@ server {
 
       <FlowChart
         title="Bounded Contexts — E-Commerce Example"
-        chart={"graph TD\n  subgraph Sales Context\n    SC[Customer = buyer with cart]\n    SC --> SO[Order = items + pricing]\n  end\n  subgraph Shipping Context\n    ShC[Customer = delivery address]\n    ShC --> ShO[Order = package + tracking]\n  end\n  subgraph Billing Context\n    BC[Customer = payment method]\n    BC --> BO[Order = invoice + payment]\n  end\n  subgraph Catalog Context\n    CC[Product = name + description + images]\n  end\n  style SC fill:#3b82f6,color:#fff\n  style ShC fill:#10b981,color:#fff\n  style BC fill:#f59e0b,color:#fff\n  style CC fill:#8b5cf6,color:#fff"}
+        chart={"graph TD\n  subgraph Sales Context\n    SC[Customer = buyer with cart]\n    SC --> SO[Order = items + pricing]\n  end\n  subgraph Shipping Context\n    ShC[Customer = delivery address]\n    ShC --> ShO[Order = package + tracking]\n  end\n  subgraph Billing Context\n    BC[Customer = payment method]\n    BC --> BO[Order = invoice + payment]\n  end\n  subgraph Catalog Context\n    CC[Product = name + description + images]\n  end\n  style SC fill:#1a2744\n  style ShC fill:#1a3329\n  style BC fill:#3d2f14\n  style CC fill:#2a1f44"}
       />
 
       <InfoBox variant="info" title="Context Mapping">
@@ -211,7 +211,7 @@ Step 5: Map to Microservices
 
       <FlowChart
         title="Modular Monolith → Microservices Path"
-        chart={"graph LR\n  A[Spaghetti Monolith] --> B[Modular Monolith]\n  B --> C[Extract First Service]\n  C --> D[Extract More Services]\n  D --> E[Microservices]\n  style A fill:#ef4444,color:#fff\n  style B fill:#f59e0b,color:#fff\n  style C fill:#3b82f6,color:#fff\n  style D fill:#6366f1,color:#fff\n  style E fill:#10b981,color:#fff"}
+        chart={"graph LR\n  A[Spaghetti Monolith] --> B[Modular Monolith]\n  B --> C[Extract First Service]\n  C --> D[Extract More Services]\n  D --> E[Microservices]\n  style A fill:#3b1a1a\n  style B fill:#3d2f14\n  style C fill:#1a2744\n  style D fill:#1a2744\n  style E fill:#1a3329"}
       />
 
       <CodeBlock language="typescript" title="Modular Monolith — Module Interfaces">

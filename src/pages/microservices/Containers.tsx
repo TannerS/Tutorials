@@ -23,7 +23,7 @@ export default function Containers() {
 
       <FlowChart
         title="VMs vs Containers"
-        chart={"graph TD\n  subgraph Virtual Machines\n    HW1[Hardware] --> HV[Hypervisor]\n    HV --> VM1[VM: Full OS + App A]\n    HV --> VM2[VM: Full OS + App B]\n    HV --> VM3[VM: Full OS + App C]\n  end\n  subgraph Containers\n    HW2[Hardware] --> OS[Host OS]\n    OS --> CR[Container Runtime]\n    CR --> C1[Container: App A]\n    CR --> C2[Container: App B]\n    CR --> C3[Container: App C]\n  end\n  style VM1 fill:#ef4444,color:#fff\n  style VM2 fill:#ef4444,color:#fff\n  style VM3 fill:#ef4444,color:#fff\n  style C1 fill:#10b981,color:#fff\n  style C2 fill:#10b981,color:#fff\n  style C3 fill:#10b981,color:#fff"}
+        chart={"graph TD\n  subgraph Virtual Machines\n    HW1[Hardware] --> HV[Hypervisor]\n    HV --> VM1[VM: Full OS + App A]\n    HV --> VM2[VM: Full OS + App B]\n    HV --> VM3[VM: Full OS + App C]\n  end\n  subgraph Containers\n    HW2[Hardware] --> OS[Host OS]\n    OS --> CR[Container Runtime]\n    CR --> C1[Container: App A]\n    CR --> C2[Container: App B]\n    CR --> C3[Container: App C]\n  end\n  style VM1 fill:#3b1a1a\n  style VM2 fill:#3b1a1a\n  style VM3 fill:#3b1a1a\n  style C1 fill:#1a3329\n  style C2 fill:#1a3329\n  style C3 fill:#1a3329"}
       />
 
       <InfoBox variant="info" title="Containers vs VMs">

@@ -7,10 +7,10 @@ export default function ErrorBoundaries() {
   return (
     <LessonLayout
       title="Error Boundaries"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={18}
-      prev={{ path: '/react19/feature-folder', label: 'Feature-Based Architecture' }}
-      next={{ path: '/react19/animations', label: 'Animation Libraries (Framer Motion & Beyond)' }}
+      prev={{ path: '/react18/feature-folder', label: 'Feature-Based Architecture' }}
+      next={{ path: '/react18/animations', label: 'Animation Libraries (Framer Motion & Beyond)' }}
     >
       <p>
         Before React 16, one component throwing during render blanked the entire app — React

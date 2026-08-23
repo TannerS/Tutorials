@@ -8,10 +8,10 @@ export default function SsrHydration() {
   return (
     <LessonLayout
       title="SSR & Hydration"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={9}
-      prev={{ path: '/react19/server', label: 'Server Components & Actions' }}
-      next={{ path: '/react19/patterns', label: 'Advanced Patterns' }}
+      prev={{ path: '/react18/server', label: 'Server Components & Actions' }}
+      next={{ path: '/react18/patterns', label: 'Advanced Patterns' }}
     >
       <p>
         Server-side rendering means running your components on a server to produce real HTML, sending
@@ -32,7 +32,7 @@ export default function SsrHydration() {
 
       <FlowChart
         title="Client rendering vs server rendering — the critical path"
-        chart={"graph TD\n  subgraph CSR[Client Rendered]\n    A1[HTML: empty div id=root] --> A2[Download JS bundle]\n    A2 --> A3[Parse and execute JS]\n    A3 --> A4[React renders - shows spinner]\n    A4 --> A5[Fetch data over network]\n    A5 --> A6[First Contentful Paint]\n  end\n  subgraph SSR[Server Rendered]\n    B1[Server fetches data] --> B2[Server renders HTML]\n    B2 --> B3[Browser paints real content]\n    B3 --> B4[First Contentful Paint]\n    B4 --> B5[Download JS bundle in parallel]\n    B5 --> B6[Hydrate - now interactive]\n  end\n  style A6 fill:#ef4444,color:#fff\n  style B4 fill:#10b981,color:#fff\n  style B6 fill:#3b82f6,color:#fff"}
+        chart={"graph TD\n  subgraph CSR[Client Rendered]\n    A1[HTML: empty div id=root] --> A2[Download JS bundle]\n    A2 --> A3[Parse and execute JS]\n    A3 --> A4[React renders - shows spinner]\n    A4 --> A5[Fetch data over network]\n    A5 --> A6[First Contentful Paint]\n  end\n  subgraph SSR[Server Rendered]\n    B1[Server fetches data] --> B2[Server renders HTML]\n    B2 --> B3[Browser paints real content]\n    B3 --> B4[First Contentful Paint]\n    B4 --> B5[Download JS bundle in parallel]\n    B5 --> B6[Hydrate - now interactive]\n  end\n  style A6 fill:#3b1a1a\n  style B4 fill:#1a3329\n  style B6 fill:#1a2744"}
       />
 
       <h3>What you actually gain</h3>
@@ -111,7 +111,7 @@ export default function SsrHydration() {
 
       <FlowChart
         title="What crosses the wire, and what the client does with it"
-        chart={"graph TD\n  A[Request arrives] --> B[Server runs your components]\n  B --> C[Produces HTML string or stream]\n  C --> D[Serializes fetched data into an inline script]\n  D --> E[Adds bootstrap script tag for the client bundle]\n  E --> F[Browser parses HTML and paints - visible but dead]\n  F --> G[Bundle downloads and executes]\n  G --> H[hydrateRoot renders the SAME tree in memory]\n  H --> I{Does the virtual tree match the DOM?}\n  I -->|Yes| J[Adopt existing nodes - build fiber tree - attach listeners]\n  I -->|No| K[Log recoverable error - discard server DOM for that subtree]\n  K --> L[Client-render it instead - visible flicker]\n  J --> M[Interactive]\n  style M fill:#10b981,color:#fff\n  style L fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  A[Request arrives] --> B[Server runs your components]\n  B --> C[Produces HTML string or stream]\n  C --> D[Serializes fetched data into an inline script]\n  D --> E[Adds bootstrap script tag for the client bundle]\n  E --> F[Browser parses HTML and paints - visible but dead]\n  F --> G[Bundle downloads and executes]\n  G --> H[hydrateRoot renders the SAME tree in memory]\n  H --> I{Does the virtual tree match the DOM?}\n  I -->|Yes| J[Adopt existing nodes - build fiber tree - attach listeners]\n  I -->|No| K[Log recoverable error - discard server DOM for that subtree]\n  K --> L[Client-render it instead - visible flicker]\n  J --> M[Interactive]\n  style M fill:#1a3329\n  style L fill:#3b1a1a"}
       />
 
       <p>
@@ -616,7 +616,7 @@ function useOnlineStatus() {
 
       <FlowChart
         title="Out-of-order streaming"
-        chart={"graph TD\n  A[Render begins] --> B[Shell completes - header, nav, layout]\n  B --> C[Flush shell + fallback markers immediately]\n  C --> D[Browser paints skeletons - TTFB is now shell-only]\n  D --> E[Slow boundaries keep resolving on the server]\n  E --> F[Reviews resolve at 800ms]\n  E --> G[Stats resolve at 200ms]\n  G --> H[Append hidden div + inline swap script]\n  F --> H\n  H --> I[Inline script moves content into the right slot]\n  I --> J[Order of arrival does not matter]\n  style D fill:#10b981,color:#fff\n  style J fill:#3b82f6,color:#fff"}
+        chart={"graph TD\n  A[Render begins] --> B[Shell completes - header, nav, layout]\n  B --> C[Flush shell + fallback markers immediately]\n  C --> D[Browser paints skeletons - TTFB is now shell-only]\n  D --> E[Slow boundaries keep resolving on the server]\n  E --> F[Reviews resolve at 800ms]\n  E --> G[Stats resolve at 200ms]\n  G --> H[Append hidden div + inline swap script]\n  F --> H\n  H --> I[Inline script moves content into the right slot]\n  I --> J[Order of arrival does not matter]\n  style D fill:#1a3329\n  style J fill:#1a2744"}
       />
 
       <CodeBlock language="html" title="The wire format — how the swap physically happens">
@@ -779,7 +779,7 @@ Needs a framework?      No — renderToPipeableStream  Yes — RSC is a protocol
 
       <FlowChart
         title="How they compose in one Next.js App Router request"
-        chart={"graph TD\n  A[Request] --> B[RSC render: Server Components execute]\n  B --> C[Server Component code stays on the server forever]\n  B --> D[Produces RSC payload with holes for Client Components]\n  D --> E[SSR pass: render Client Components to HTML]\n  E --> F[Response: HTML + RSC payload + bundle tags]\n  F --> G[Browser paints HTML instantly]\n  G --> H[Bundle loads - hydrateRoot]\n  H --> I[ONLY Client Component islands hydrate]\n  I --> J[RSC payload reconciles the tree - no refetch]\n  style C fill:#10b981,color:#fff\n  style G fill:#3b82f6,color:#fff\n  style I fill:#f59e0b,color:#fff"}
+        chart={"graph TD\n  A[Request] --> B[RSC render: Server Components execute]\n  B --> C[Server Component code stays on the server forever]\n  B --> D[Produces RSC payload with holes for Client Components]\n  D --> E[SSR pass: render Client Components to HTML]\n  E --> F[Response: HTML + RSC payload + bundle tags]\n  F --> G[Browser paints HTML instantly]\n  G --> H[Bundle loads - hydrateRoot]\n  H --> I[ONLY Client Component islands hydrate]\n  I --> J[RSC payload reconciles the tree - no refetch]\n  style C fill:#1a3329\n  style G fill:#1a2744\n  style I fill:#3d2f14"}
       />
 
       <InteractiveChallenge
@@ -862,7 +862,7 @@ Vite SPA                No SSR at all. vite build emits static assets and
           For Server Components, Server Actions, the <code>&quot;use client&quot;</code> /{' '}
           <code>&quot;use server&quot;</code> composition rules, <code>cache()</code>, and caching or
           revalidation strategy, see{' '}
-          <a href="/react19/server">Server Components &amp; Actions</a>. This lesson covers the
+          <a href="/react18/server">Server Components &amp; Actions</a>. This lesson covers the
           rendering and hydration layer those features sit on top of.
         </p>
       </InfoBox>

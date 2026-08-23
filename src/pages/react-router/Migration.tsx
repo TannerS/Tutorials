@@ -22,7 +22,7 @@ export default function Migration() {
 
       <FlowChart
         title="Migration Decision Tree"
-        chart={"graph TD\nA[Current Version?] --> B{v5?}\nA --> C{v6?}\nB -->|Yes| D[Step 1: Migrate to v6 API]\nD --> E[Switch to Routes]\nD --> F[component to element]\nD --> G[useHistory to useNavigate]\nD --> H[Remove exact]\nD --> I[Redirect to Navigate]\nE --> J[Step 2: Adopt v7 Data APIs]\nF --> J\nG --> J\nH --> J\nI --> J\nC -->|Yes| J\nJ --> K[Add createBrowserRouter]\nJ --> L[Add loaders and actions]\nJ --> M[Add errorElement]\nK --> N[Production-Ready v7 App]\nL --> N\nM --> N\nstyle D fill:#f59e0b,color:#fff\nstyle J fill:#8b5cf6,color:#fff\nstyle N fill:#10b981,color:#fff"}
+        chart={"graph TD\nA[Current Version?] --> B{v5?}\nA --> C{v6?}\nB -->|Yes| D[Step 1: Migrate to v6 API]\nD --> E[Switch to Routes]\nD --> F[component to element]\nD --> G[useHistory to useNavigate]\nD --> H[Remove exact]\nD --> I[Redirect to Navigate]\nE --> J[Step 2: Adopt v7 Data APIs]\nF --> J\nG --> J\nH --> J\nI --> J\nC -->|Yes| J\nJ --> K[Add createBrowserRouter]\nJ --> L[Add loaders and actions]\nJ --> M[Add errorElement]\nK --> N[Production-Ready v7 App]\nL --> N\nM --> N\nstyle D fill:#3d2f14\nstyle J fill:#2a1f44\nstyle N fill:#1a3329"}
       />
 
       <h2>v5 → v6: Breaking Changes</h2>

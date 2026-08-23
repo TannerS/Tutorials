@@ -302,7 +302,7 @@ $unit: 8px;
 
       <FlowChart
         title="Sass Variable vs CSS Custom Property — Decision Guide"
-        chart={"graph TD\n  Q[Need a reusable value?] --> RT{Changes after page load?}\n  RT -->|Yes: theme, JS, media query| CP[CSS Custom Property --var]\n  RT -->|No: fixed build-time constant| BT{Used in Sass logic? @each/@if/math}\n  BT -->|Yes| SV[Sass Variable $var]\n  BT -->|No, just a literal| SV\n  CP --> WRITE[Written once into :root via Sass @each if generated]\n  style CP fill:#6366f1,color:#fff\n  style SV fill:#10b981,color:#fff"}
+        chart={"graph TD\n  Q[Need a reusable value?] --> RT{Changes after page load?}\n  RT -->|Yes: theme, JS, media query| CP[CSS Custom Property --var]\n  RT -->|No: fixed build-time constant| BT{Used in Sass logic? @each/@if/math}\n  BT -->|Yes| SV[Sass Variable $var]\n  BT -->|No, just a literal| SV\n  CP --> WRITE[Written once into :root via Sass @each if generated]\n  style CP fill:#1a2744\n  style SV fill:#1a3329"}
       />
 
       <InteractiveChallenge

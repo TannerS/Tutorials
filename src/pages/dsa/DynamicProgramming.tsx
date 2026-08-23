@@ -49,11 +49,11 @@ export default function DynamicProgramming() {
     B1 --> B12["fib(0) = 0"]
     A11 --> A111["fib(1) = 1"]
     A11 --> A112["fib(0) = 0"]
-    style A1 fill:#fb923c,color:#fff
-    style B fill:#fb923c,color:#fff
-    style A2 fill:#f87171,color:#fff
-    style B1 fill:#f87171,color:#fff
-    style A11 fill:#f87171,color:#fff`}
+    style A1 fill:#3d2f14
+    style B fill:#3d2f14
+    style A2 fill:#3b1a1a
+    style B1 fill:#3b1a1a
+    style A11 fill:#3b1a1a`}
       />
 
       <p>

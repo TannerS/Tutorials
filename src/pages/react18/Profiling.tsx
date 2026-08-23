@@ -7,10 +7,10 @@ export default function Profiling() {
   return (
     <LessonLayout
       title="Profiling React Apps in the Browser"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={7}
-      prev={{ path: '/react19/performance', label: 'Performance & Memoization' }}
-      next={{ path: '/react19/server', label: 'Server Components & Actions' }}
+      prev={{ path: '/react18/performance', label: 'Performance & Memoization' }}
+      next={{ path: '/react18/server', label: 'Server Components & Actions' }}
     >
       <p>
         Never guess at performance problems. Profile first, optimize second. There are two

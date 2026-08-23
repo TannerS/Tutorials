@@ -36,7 +36,7 @@ export default function Data() {
 
       <FlowChart
         title="Database per Service — Polyglot Persistence"
-        chart={"graph TD\n  OrderSvc[Order Service] --> PG[(PostgreSQL)]\n  CatalogSvc[Catalog Service] --> Mongo[(MongoDB)]\n  SearchSvc[Search Service] --> ES[(Elasticsearch)]\n  SessionSvc[Session Service] --> Redis[(Redis)]\n  AnalyticsSvc[Analytics Service] --> CH[(ClickHouse)]\n  style PG fill:#336791,color:#fff\n  style Mongo fill:#47A248,color:#fff\n  style ES fill:#FEC514,color:#000\n  style Redis fill:#DC382D,color:#fff\n  style CH fill:#FFCC00,color:#000"}
+        chart={"graph TD\n  OrderSvc[Order Service] --> PG[(PostgreSQL)]\n  CatalogSvc[Catalog Service] --> Mongo[(MongoDB)]\n  SearchSvc[Search Service] --> ES[(Elasticsearch)]\n  SessionSvc[Session Service] --> Redis[(Redis)]\n  AnalyticsSvc[Analytics Service] --> CH[(ClickHouse)]\n  style PG fill:#1a2744\n  style Mongo fill:#1a3329\n  style ES fill:#3d2f14\n  style Redis fill:#3b1a1a\n  style CH fill:#3d2f14"}
       />
 
       <InfoBox variant="info" title="Polyglot Persistence">
@@ -94,7 +94,7 @@ class OrderService {
 
       <FlowChart
         title="Event Sourcing — State Reconstruction"
-        chart={"graph LR\n  E1[AccountCreated] --> E2[MoneyDeposited $200]\n  E2 --> E3[MoneyWithdrawn $50]\n  E3 --> E4[MoneyDeposited $100]\n  E4 --> E5[MoneyWithdrawn $30]\n  E5 --> State[Current State: $220]\n  style E1 fill:#3b82f6,color:#fff\n  style E2 fill:#10b981,color:#fff\n  style E3 fill:#ef4444,color:#fff\n  style E4 fill:#10b981,color:#fff\n  style E5 fill:#ef4444,color:#fff\n  style State fill:#8b5cf6,color:#fff"}
+        chart={"graph LR\n  E1[AccountCreated] --> E2[MoneyDeposited $200]\n  E2 --> E3[MoneyWithdrawn $50]\n  E3 --> E4[MoneyDeposited $100]\n  E4 --> E5[MoneyWithdrawn $30]\n  E5 --> State[Current State: $220]\n  style E1 fill:#1a2744\n  style E2 fill:#1a3329\n  style E3 fill:#3b1a1a\n  style E4 fill:#1a3329\n  style E5 fill:#3b1a1a\n  style State fill:#2a1f44"}
       />
 
       <CodeBlock language="typescript" title="Event Sourcing — Full Implementation">
@@ -383,7 +383,7 @@ class OrderProjectionHandler {
 
       <FlowChart
         title="Saga Choreography — Order Flow"
-        chart={"graph LR\n  O[Order Service] -->|OrderCreated| P[Payment Service]\n  P -->|PaymentCompleted| I[Inventory Service]\n  I -->|StockReserved| S[Shipping Service]\n  S -->|ShipmentCreated| O\n  P -->|PaymentFailed| O\n  I -->|StockUnavailable| P\n  style O fill:#3b82f6,color:#fff\n  style P fill:#10b981,color:#fff\n  style I fill:#f59e0b,color:#fff\n  style S fill:#8b5cf6,color:#fff"}
+        chart={"graph LR\n  O[Order Service] -->|OrderCreated| P[Payment Service]\n  P -->|PaymentCompleted| I[Inventory Service]\n  I -->|StockReserved| S[Shipping Service]\n  S -->|ShipmentCreated| O\n  P -->|PaymentFailed| O\n  I -->|StockUnavailable| P\n  style O fill:#1a2744\n  style P fill:#1a3329\n  style I fill:#3d2f14\n  style S fill:#2a1f44"}
       />
 
       <h3>Orchestration Saga</h3>

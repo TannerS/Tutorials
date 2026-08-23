@@ -8,10 +8,10 @@ export default function Adapters() {
   return (
     <LessonLayout
       title="API Adapters & Error Envelopes"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={14}
-      prev={{ path: '/react19/cheat-sheet', label: 'Cheat Sheet' }}
-      next={{ path: '/react19/imperative-bridge', label: 'Imperative Bridge Patterns' }}
+      prev={{ path: '/react18/cheat-sheet', label: 'Cheat Sheet' }}
+      next={{ path: '/react18/imperative-bridge', label: 'Imperative Bridge Patterns' }}
     >
       <h2>Why This Lesson Exists</h2>
       <p>

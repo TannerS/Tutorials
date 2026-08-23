@@ -7,10 +7,10 @@ export default function Server() {
   return (
     <LessonLayout
       title="Server Components & Actions"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={8}
-      prev={{ path: '/react19/profiling', label: 'Profiling React Apps in the Browser' }}
-      next={{ path: '/react19/ssr-hydration', label: 'SSR & Hydration' }}
+      prev={{ path: '/react18/profiling', label: 'Profiling React Apps in the Browser' }}
+      next={{ path: '/react18/ssr-hydration', label: 'SSR & Hydration' }}
     >
       <p>Server Components represent a fundamental shift in React architecture. Components can now run exclusively on the server, sending only their rendered output to the client — zero JavaScript for those components ships to the browser.</p>
 
@@ -473,7 +473,7 @@ function CreatePostForm() {
 
       <FlowChart
         title="Server vs Client — Decision Tree"
-        chart={"graph TD\n  A[New Component] --> B{Needs interactivity?}\n  B -->|Yes - onClick/useState/effects| C[Client Component]\n  B -->|No| D{Fetches data?}\n  D -->|Yes - direct DB/API| E[Server Component]\n  D -->|No| F{Uses browser APIs?}\n  F -->|Yes| C\n  F -->|No| G[Either works - prefer Server]\n  style C fill:#ef4444,color:#fff\n  style E fill:#10b981,color:#fff\n  style G fill:#3b82f6,color:#fff"}
+        chart={"graph TD\n  A[New Component] --> B{Needs interactivity?}\n  B -->|Yes - onClick/useState/effects| C[Client Component]\n  B -->|No| D{Fetches data?}\n  D -->|Yes - direct DB/API| E[Server Component]\n  D -->|No| F{Uses browser APIs?}\n  F -->|Yes| C\n  F -->|No| G[Either works - prefer Server]\n  style C fill:#3b1a1a\n  style E fill:#1a3329\n  style G fill:#1a2744"}
       />
 
       <h2>The RSC Boundary in Practice</h2>
@@ -636,7 +636,7 @@ export const getReport = cache(async (id: string) => {
           <code>renderToString</code> is effectively legacy), <code>hydrateRoot</code> versus{' '}
           <code>createRoot</code>, hydration mismatches and how to fix them, streaming with{' '}
           <code>&lt;Suspense&gt;</code>, and selective hydration are all covered in{' '}
-          <a href="/react19/ssr-hydration">SSR &amp; Hydration</a>. One thing worth carrying back
+          <a href="/react18/ssr-hydration">SSR &amp; Hydration</a>. One thing worth carrying back
           here: <code>&quot;use client&quot;</code> does <strong>not</strong> mean client-only —
           Client Components are still server-rendered to produce the initial HTML.
         </p>

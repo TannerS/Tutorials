@@ -108,7 +108,7 @@ export default function ArchitectureDocsC4Model() {
 
       <FlowChart
         title="Level 1 — System Context Diagram"
-        chart={"graph TD\n  Customer[Customer] -->|places orders, browses catalog| System[Ordering System]\n  System -->|charges payment| PaymentGW[Payment Gateway - Stripe]\n  System -->|requests shipping labels| Carrier[Shipping Carrier API]\n  System -->|sends order confirmation email| EmailSvc[Email Delivery Service]\n  style System fill:#3b82f6,color:#fff"}
+        chart={"graph TD\n  Customer[Customer] -->|places orders, browses catalog| System[Ordering System]\n  System -->|charges payment| PaymentGW[Payment Gateway - Stripe]\n  System -->|requests shipping labels| Carrier[Shipping Carrier API]\n  System -->|sends order confirmation email| EmailSvc[Email Delivery Service]\n  style System fill:#1a2744"}
       />
 
       <p>
@@ -119,7 +119,7 @@ export default function ArchitectureDocsC4Model() {
 
       <FlowChart
         title="Level 2 — Container Diagram, Zoomed Into the Ordering System"
-        chart={"graph TD\n  Customer[Customer] -->|HTTPS| WebApp[Web Application - React SPA]\n  subgraph Ordering System\n    WebApp -->|JSON over HTTPS| API[Orders API - Spring Boot]\n    API -->|JDBC| DB[(Orders Database - PostgreSQL)]\n    API -->|publishes order events| MQ[Message Queue - Kafka]\n    MQ -->|delivers events| Worker[Notification Worker]\n  end\n  API -->|charges payment| PaymentGW[Payment Gateway - Stripe]\n  API -->|requests shipping labels| Carrier[Shipping Carrier API]\n  Worker -->|sends confirmation email| EmailSvc[Email Delivery Service]\n  style WebApp fill:#3b82f6,color:#fff\n  style API fill:#3b82f6,color:#fff\n  style DB fill:#3b82f6,color:#fff\n  style MQ fill:#3b82f6,color:#fff\n  style Worker fill:#3b82f6,color:#fff"}
+        chart={"graph TD\n  Customer[Customer] -->|HTTPS| WebApp[Web Application - React SPA]\n  subgraph Ordering System\n    WebApp -->|JSON over HTTPS| API[Orders API - Spring Boot]\n    API -->|JDBC| DB[(Orders Database - PostgreSQL)]\n    API -->|publishes order events| MQ[Message Queue - Kafka]\n    MQ -->|delivers events| Worker[Notification Worker]\n  end\n  API -->|charges payment| PaymentGW[Payment Gateway - Stripe]\n  API -->|requests shipping labels| Carrier[Shipping Carrier API]\n  Worker -->|sends confirmation email| EmailSvc[Email Delivery Service]\n  style WebApp fill:#1a2744\n  style API fill:#1a2744\n  style DB fill:#1a2744\n  style MQ fill:#1a2744\n  style Worker fill:#1a2744"}
       />
 
       <p>

@@ -7,10 +7,10 @@ export default function Animations() {
   return (
     <LessonLayout
       title="Animation Libraries (Framer Motion & Beyond)"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={19}
-      prev={{ path: '/react19/error-boundaries', label: 'Error Boundaries' }}
-      next={{ path: '/react19/portals', label: 'Portals, In Depth' }}
+      prev={{ path: '/react18/error-boundaries', label: 'Error Boundaries' }}
+      next={{ path: '/react18/portals', label: 'Portals, In Depth' }}
     >
       <p>
         The CSS Mastery section already covers <code>transition</code> and <code>@keyframes</code> in

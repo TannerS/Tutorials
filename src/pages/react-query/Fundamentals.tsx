@@ -30,7 +30,7 @@ export default function ReactQueryFundamentals() {
 
       <FlowChart
         title="TanStack Query — The Stale-While-Revalidate Model"
-        chart={"graph TD\n  A[Component mounts] --> B{Data in cache?}\n  B -->|No| C[Fetch from server]\n  B -->|Yes, fresh| D[Return cached data]\n  B -->|Yes, stale| E[Return cached data immediately]\n  E --> F[Refetch in background]\n  C --> G[Cache data with key]\n  F --> H[Update cache when done]\n  G --> I[Render with fresh data]\n  H --> J[Re-render with updated data]\n  D --> I\n  style E fill:#f59e0b,color:#fff\n  style F fill:#3b82f6,color:#fff"}
+        chart={"graph TD\n  A[Component mounts] --> B{Data in cache?}\n  B -->|No| C[Fetch from server]\n  B -->|Yes, fresh| D[Return cached data]\n  B -->|Yes, stale| E[Return cached data immediately]\n  E --> F[Refetch in background]\n  C --> G[Cache data with key]\n  F --> H[Update cache when done]\n  G --> I[Render with fresh data]\n  H --> J[Re-render with updated data]\n  D --> I\n  style E fill:#3d2f14\n  style F fill:#1a2744"}
       />
 
       <h2>Setup</h2>
@@ -92,7 +92,7 @@ function App() {
 
       <FlowChart
         title="A Query's Four States — fresh → stale → inactive → garbage collected"
-        chart={"graph TD\n  A[useQuery mounts] --> B[Fetching]\n  B --> C[FRESH - a component is watching]\n  C -->|staleTime elapses| D[STALE - still watched, still rendered]\n  D -->|refetch trigger| B\n  C -->|last watcher unmounts| E[INACTIVE - nobody watching, still cached]\n  D -->|last watcher unmounts| E\n  E -->|remounts in time| F{Past staleTime?}\n  F -->|No - serve cache, no request| C\n  F -->|Yes - serve cache, refetch behind it| D\n  E -->|gcTime elapses first| G[GARBAGE COLLECTED - next mount starts from nothing]\n  style C fill:#166534,color:#fff\n  style D fill:#b45309,color:#fff\n  style E fill:#1d4ed8,color:#fff\n  style G fill:#7f1d1d,color:#fff"}
+        chart={"graph TD\n  A[useQuery mounts] --> B[Fetching]\n  B --> C[FRESH - a component is watching]\n  C -->|staleTime elapses| D[STALE - still watched, still rendered]\n  D -->|refetch trigger| B\n  C -->|last watcher unmounts| E[INACTIVE - nobody watching, still cached]\n  D -->|last watcher unmounts| E\n  E -->|remounts in time| F{Past staleTime?}\n  F -->|No - serve cache, no request| C\n  F -->|Yes - serve cache, refetch behind it| D\n  E -->|gcTime elapses first| G[GARBAGE COLLECTED - next mount starts from nothing]\n  style C fill:#1a3329\n  style D fill:#3d2f14\n  style E fill:#1a2744\n  style G fill:#3b1a1a"}
       />
 
       <InfoBox variant="note" title="Read the diagram along the two axes it actually has">

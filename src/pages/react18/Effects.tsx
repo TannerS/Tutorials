@@ -7,10 +7,10 @@ export default function Effects() {
   return (
     <LessonLayout
       title="Effects & Data Fetching"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={4}
-      prev={{ path: '/react19/state', label: 'State Management Patterns' }}
-      next={{ path: '/react19/context', label: 'Context & Composition' }}
+      prev={{ path: '/react18/state', label: 'State Management Patterns' }}
+      next={{ path: '/react18/context', label: 'Context & Composition' }}
     >
       <p>Effects are React's escape hatch to synchronize with external systems. They're also the most misunderstood hook. The mental model: effects are for <strong>synchronization</strong>, not for <strong>reacting to events</strong>.</p>
 

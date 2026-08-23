@@ -42,7 +42,7 @@ str.toFixed(2); // ✅ Compile error! TypeScript knows str is a string`}
 
       <FlowChart
         title="How Generics Preserve Type Information"
-        chart={"graph LR\n  A[\"Input: string\"] --> B[\"identity&lt;string&gt;\"]\n  B --> C[\"Output: string\"]\n  D[\"Input: number\"] --> E[\"identity&lt;number&gt;\"]\n  E --> F[\"Output: number\"]\n  G[\"Input: any\"] --> H[\"identityAny\"]\n  H --> I[\"Output: any ❌\"]\n  style C fill:#10b981,color:#fff\n  style F fill:#10b981,color:#fff\n  style I fill:#ef4444,color:#fff"}
+        chart={"graph LR\n  A[\"Input: string\"] --> B[\"identity&lt;string&gt;\"]\n  B --> C[\"Output: string\"]\n  D[\"Input: number\"] --> E[\"identity&lt;number&gt;\"]\n  E --> F[\"Output: number\"]\n  G[\"Input: any\"] --> H[\"identityAny\"]\n  H --> I[\"Output: any ❌\"]\n  style C fill:#1a3329\n  style F fill:#1a3329\n  style I fill:#3b1a1a"}
       />
 
       <InfoBox variant="tip" title="Type Inference">
@@ -1001,7 +1001,7 @@ console.log(result);
 
       <FlowChart
         title="Reading a Generic Signature"
-        chart={"graph TD\n  A[\"See: Map&lt;K, V&gt;\"] --> B[\"K = type of keys\"]\n  A --> C[\"V = type of values\"]\n  B --> D[\"Map&lt;string, User&gt;\"]\n  C --> D\n  D --> E[\"Keys are strings\"]\n  D --> F[\"Values are Users\"]\n  style A fill:#5b9cf6,color:#fff\n  style D fill:#10b981,color:#fff"}
+        chart={"graph TD\n  A[\"See: Map&lt;K, V&gt;\"] --> B[\"K = type of keys\"]\n  A --> C[\"V = type of values\"]\n  B --> D[\"Map&lt;string, User&gt;\"]\n  C --> D\n  D --> E[\"Keys are strings\"]\n  D --> F[\"Values are Users\"]\n  style A fill:#1a2744\n  style D fill:#1a3329"}
       />
 
       {/* ── Section 13: Envelope Generics ── */}

@@ -34,10 +34,10 @@ export default function BuildToolchain() {
   return (
     <LessonLayout
       title="React + TypeScript Build Toolchain"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={12}
-      prev={{ path: '/react19/typescript', label: 'React + TypeScript' }}
-      next={{ path: '/react19/cheat-sheet', label: 'Cheat Sheet' }}
+      prev={{ path: '/react18/typescript', label: 'React + TypeScript' }}
+      next={{ path: '/react18/cheat-sheet', label: 'Cheat Sheet' }}
     >
       {/* ════════════════════════════════════════════════════
           WHY THIS PROBLEM EXISTS

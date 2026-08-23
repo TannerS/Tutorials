@@ -84,7 +84,7 @@ async function b(res: Response) {
 
       <FlowChart
         title="Where the guarantee ends"
-        chart={"graph LR\n  A[Your typed code] -->|compiler checks this| B[Boundary]\n  B -->|types erased here| C[Network / disk / env / user]\n  C -->|arbitrary JSON| B\n  B -->|assertion only| A\n  style C fill:#c0392b,color:#fff\n  style B fill:#d68910,color:#fff"}
+        chart={"graph LR\n  A[Your typed code] -->|compiler checks this| B[Boundary]\n  B -->|types erased here| C[Network / disk / env / user]\n  C -->|arbitrary JSON| B\n  B -->|assertion only| A\n  style C fill:#3b1a1a\n  style B fill:#3d2f14"}
       />
 
       {/* ── Section 2: Schemas ────────────────────────────────────── */}
@@ -105,7 +105,7 @@ async function b(res: Response) {
 
       <FlowChart
         title="One schema, two outputs"
-        chart={"graph TD\n  S[Schema — a runtime value] --> V[Validator: checks real data]\n  S --> T[Static type via z.infer]\n  V --> R[Parsed, trusted value]\n  T --> R\n  style S fill:#2874a6,color:#fff\n  style R fill:#1e8449,color:#fff"}
+        chart={"graph TD\n  S[Schema — a runtime value] --> V[Validator: checks real data]\n  S --> T[Static type via z.infer]\n  V --> R[Parsed, trusted value]\n  T --> R\n  style S fill:#1a2744\n  style R fill:#1a3329"}
       />
 
       <InfoBox variant="note" title="Which library, and which version">

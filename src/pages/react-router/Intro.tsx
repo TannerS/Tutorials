@@ -163,7 +163,7 @@ function App() {
 
       <FlowChart
         title="How React Router Processes a URL"
-        chart={"graph TD\nA[User clicks Link or types URL] --> B[Router matches URL to route tree]\nB --> C{Config-based router?}\nC -->|Yes| D[Run loader functions]\nC -->|No| E[Render matched element directly]\nD --> F[Provide data via useLoaderData]\nF --> G[Render matched route element]\nE --> G\nG --> H[Nested Outlets render children]\nstyle A fill:#3b82f6,color:#fff\nstyle D fill:#8b5cf6,color:#fff\nstyle G fill:#10b981,color:#fff"}
+        chart={"graph TD\nA[User clicks Link or types URL] --> B[Router matches URL to route tree]\nB --> C{Config-based router?}\nC -->|Yes| D[Run loader functions]\nC -->|No| E[Render matched element directly]\nD --> F[Provide data via useLoaderData]\nF --> G[Render matched route element]\nE --> G\nG --> H[Nested Outlets render children]\nstyle A fill:#1a2744\nstyle D fill:#2a1f44\nstyle G fill:#1a3329"}
       />
 
       <h2>Navigation Components</h2>

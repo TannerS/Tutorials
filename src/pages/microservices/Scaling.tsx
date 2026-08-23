@@ -25,7 +25,7 @@ export default function Scaling() {
 
       <FlowChart
         title="Vertical vs Horizontal Scaling"
-        chart={"graph TD\n  subgraph Vertical - Scale Up\n    V1[Small Server 2 CPU 4GB] --> V2[Big Server 16 CPU 64GB]\n    V2 --> V3[Huge Server 64 CPU 256GB]\n  end\n  subgraph Horizontal - Scale Out\n    LB[Load Balancer] --> H1[Instance 1]\n    LB --> H2[Instance 2]\n    LB --> H3[Instance 3]\n    LB --> H4[Instance N...]\n  end\n  style V3 fill:#ef4444,color:#fff\n  style LB fill:#10b981,color:#fff"}
+        chart={"graph TD\n  subgraph Vertical - Scale Up\n    V1[Small Server 2 CPU 4GB] --> V2[Big Server 16 CPU 64GB]\n    V2 --> V3[Huge Server 64 CPU 256GB]\n  end\n  subgraph Horizontal - Scale Out\n    LB[Load Balancer] --> H1[Instance 1]\n    LB --> H2[Instance 2]\n    LB --> H3[Instance 3]\n    LB --> H4[Instance N...]\n  end\n  style V3 fill:#3b1a1a\n  style LB fill:#1a3329"}
       />
 
       <h3>Vertical Scaling (Scale Up)</h3>
@@ -58,7 +58,7 @@ export default function Scaling() {
 
       <FlowChart
         title="Scaling Playbook — Step by Step"
-        chart={"graph TD\n  S1[1. Measure and Profile] --> S2[2. Vertical Scale First]\n  S2 --> S3[3. Make App Stateless]\n  S3 --> S4[4. Add Load Balancer]\n  S4 --> S5[5. Configure Auto-Scaling]\n  S5 --> S6[6. Scale Database Separately]\n  style S1 fill:#6366f1,color:#fff\n  style S2 fill:#8b5cf6,color:#fff\n  style S3 fill:#a78bfa,color:#fff\n  style S4 fill:#3b82f6,color:#fff\n  style S5 fill:#06b6d4,color:#fff\n  style S6 fill:#10b981,color:#fff"}
+        chart={"graph TD\n  S1[1. Measure and Profile] --> S2[2. Vertical Scale First]\n  S2 --> S3[3. Make App Stateless]\n  S3 --> S4[4. Add Load Balancer]\n  S4 --> S5[5. Configure Auto-Scaling]\n  S5 --> S6[6. Scale Database Separately]\n  style S1 fill:#1a2744\n  style S2 fill:#2a1f44\n  style S3 fill:#2a1f44\n  style S4 fill:#1a2744\n  style S5 fill:#1a3329\n  style S6 fill:#1a3329"}
       />
 
       <h3>Step 1: Measure and Profile</h3>
@@ -324,7 +324,7 @@ spec:
 
       <FlowChart
         title="Database Scaling Progression"
-        chart={"graph LR\n  A[1. Vertical Scale] --> B[2. Read Replicas]\n  B --> C[3. Connection Pooling]\n  C --> D[4. Caching Layer]\n  D --> E[5. Sharding - Last Resort]\n  style A fill:#10b981,color:#fff\n  style B fill:#3b82f6,color:#fff\n  style C fill:#6366f1,color:#fff\n  style D fill:#8b5cf6,color:#fff\n  style E fill:#ef4444,color:#fff"}
+        chart={"graph LR\n  A[1. Vertical Scale] --> B[2. Read Replicas]\n  B --> C[3. Connection Pooling]\n  C --> D[4. Caching Layer]\n  D --> E[5. Sharding - Last Resort]\n  style A fill:#1a3329\n  style B fill:#1a2744\n  style C fill:#1a2744\n  style D fill:#2a1f44\n  style E fill:#3b1a1a"}
       />
 
       <h3>1. Vertical Scale</h3>

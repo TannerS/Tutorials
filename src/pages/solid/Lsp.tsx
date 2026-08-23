@@ -36,7 +36,7 @@ export default function Lsp() {
 
       <FlowChart
         title="LSP — Proper Hierarchy Design"
-        chart={"graph TD\nSHAPE[Shape interface] --> RECT[Rectangle]\nSHAPE --> SQUARE[Square]\nSHAPE --> CIRCLE[Circle]\nRECT -.->|NOT a parent of| SQUARE\nstyle SQUARE fill:#ff9800,color:#fff\nstyle RECT fill:#2196f3,color:#fff"}
+        chart={"graph TD\nSHAPE[Shape interface] --> RECT[Rectangle]\nSHAPE --> SQUARE[Square]\nSHAPE --> CIRCLE[Circle]\nRECT -.->|NOT a parent of| SQUARE\nstyle SQUARE fill:#3d2f14\nstyle RECT fill:#1a2744"}
       />
 
       <h2>The Contract Rules — How to Check LSP Mechanically</h2>

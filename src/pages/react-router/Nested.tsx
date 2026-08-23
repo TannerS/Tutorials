@@ -23,7 +23,7 @@ export default function Nested() {
 
       <FlowChart
         title="How Nested Routes Render"
-        chart={"graph TD\nA[URL: /dashboard/settings] --> B[Match: / => RootLayout]\nB --> C[Match: /dashboard => DashboardLayout]\nC --> D[Match: /dashboard/settings => SettingsPage]\nB --> E[RootLayout renders Outlet]\nE --> F[DashboardLayout renders Outlet]\nF --> G[SettingsPage renders content]\nstyle A fill:#3b82f6,color:#fff\nstyle E fill:#8b5cf6,color:#fff\nstyle F fill:#8b5cf6,color:#fff\nstyle G fill:#10b981,color:#fff"}
+        chart={"graph TD\nA[URL: /dashboard/settings] --> B[Match: / => RootLayout]\nB --> C[Match: /dashboard => DashboardLayout]\nC --> D[Match: /dashboard/settings => SettingsPage]\nB --> E[RootLayout renders Outlet]\nE --> F[DashboardLayout renders Outlet]\nF --> G[SettingsPage renders content]\nstyle A fill:#1a2744\nstyle E fill:#2a1f44\nstyle F fill:#2a1f44\nstyle G fill:#1a3329"}
       />
 
       <h2>The Outlet Component</h2>
@@ -379,7 +379,7 @@ function Settings() {
 
       <FlowChart
         title="Route Matching Priority"
-        chart={"graph TD\nA[URL segments to match] --> B{Exact static match?}\nB -->|Yes| C[Use static route]\nB -->|No| D{Dynamic :param match?}\nD -->|Yes| E[Use dynamic route]\nD -->|No| F{Splat * match?}\nF -->|Yes| G[Use splat route]\nF -->|No| H[404 - No match]\nstyle C fill:#10b981,color:#fff\nstyle E fill:#3b82f6,color:#fff\nstyle G fill:#f59e0b,color:#fff\nstyle H fill:#ef4444,color:#fff"}
+        chart={"graph TD\nA[URL segments to match] --> B{Exact static match?}\nB -->|Yes| C[Use static route]\nB -->|No| D{Dynamic :param match?}\nD -->|Yes| E[Use dynamic route]\nD -->|No| F{Splat * match?}\nF -->|Yes| G[Use splat route]\nF -->|No| H[404 - No match]\nstyle C fill:#1a3329\nstyle E fill:#1a2744\nstyle G fill:#3d2f14\nstyle H fill:#3b1a1a"}
       />
     </LessonLayout>
   );

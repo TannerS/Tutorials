@@ -8,10 +8,10 @@ export default function ImperativeBridge() {
   return (
     <LessonLayout
       title="Imperative Bridge Patterns"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={15}
-      prev={{ path: '/react19/adapters', label: 'API Adapters & Error Envelopes' }}
-      next={{ path: '/react19/module-federation', label: 'Module Federation' }}
+      prev={{ path: '/react18/adapters', label: 'API Adapters & Error Envelopes' }}
+      next={{ path: '/react18/module-federation', label: 'Module Federation' }}
     >
       <h2>Two Patterns, One Idea</h2>
       <p>

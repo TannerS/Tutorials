@@ -112,7 +112,7 @@ export default function Patterns() {
 
       <FlowChart
         title="Async Communication — Fire and Forget"
-        chart={"graph LR\n  OrderSvc[Order Service] -->|Publish| MQ[Message Queue]\n  MQ -->|Subscribe| PaySvc[Payment Service]\n  MQ -->|Subscribe| InvSvc[Inventory Service]\n  MQ -->|Subscribe| NotifSvc[Notification Service]\n  style MQ fill:#f59e0b,color:#fff"}
+        chart={"graph LR\n  OrderSvc[Order Service] -->|Publish| MQ[Message Queue]\n  MQ -->|Subscribe| PaySvc[Payment Service]\n  MQ -->|Subscribe| InvSvc[Inventory Service]\n  MQ -->|Subscribe| NotifSvc[Notification Service]\n  style MQ fill:#3d2f14"}
       />
 
       <InfoBox variant="tip" title="When to Use Async">
@@ -130,7 +130,7 @@ export default function Patterns() {
 
       <FlowChart
         title="Circuit Breaker States"
-        chart={"graph LR\n  CLOSED[CLOSED - Requests pass through] -->|Failure threshold exceeded| OPEN[OPEN - Requests fail fast]\n  OPEN -->|Timeout expires| HALF[HALF-OPEN - Test with limited requests]\n  HALF -->|Test succeeds| CLOSED\n  HALF -->|Test fails| OPEN\n  style CLOSED fill:#10b981,color:#fff\n  style OPEN fill:#ef4444,color:#fff\n  style HALF fill:#f59e0b,color:#fff"}
+        chart={"graph LR\n  CLOSED[CLOSED - Requests pass through] -->|Failure threshold exceeded| OPEN[OPEN - Requests fail fast]\n  OPEN -->|Timeout expires| HALF[HALF-OPEN - Test with limited requests]\n  HALF -->|Test succeeds| CLOSED\n  HALF -->|Test fails| OPEN\n  style CLOSED fill:#1a3329\n  style OPEN fill:#3b1a1a\n  style HALF fill:#3d2f14"}
       />
 
       <CodeBlock language="java" title="Circuit Breaker with Resilience4j">
@@ -257,7 +257,7 @@ function replay(events: DomainEvent[]): AccountState {
 
       <FlowChart
         title="CQRS Architecture"
-        chart={"graph LR\n  Client[Client] --> CMD[Command API]\n  Client --> QRY[Query API]\n  CMD -->|Write| WDB[(Write DB - Normalized)]\n  WDB -->|Events| SYNC[Event Sync]\n  SYNC -->|Project| RDB[(Read DB - Denormalized)]\n  QRY -->|Read| RDB\n  style CMD fill:#ef4444,color:#fff\n  style QRY fill:#10b981,color:#fff"}
+        chart={"graph LR\n  Client[Client] --> CMD[Command API]\n  Client --> QRY[Query API]\n  CMD -->|Write| WDB[(Write DB - Normalized)]\n  WDB -->|Events| SYNC[Event Sync]\n  SYNC -->|Project| RDB[(Read DB - Denormalized)]\n  QRY -->|Read| RDB\n  style CMD fill:#3b1a1a\n  style QRY fill:#1a3329"}
       />
 
       <h2>9. Strangler Fig</h2>
@@ -270,7 +270,7 @@ function replay(events: DomainEvent[]): AccountState {
 
       <FlowChart
         title="Strangler Fig Migration"
-        chart={"graph LR\n  Proxy[Proxy / Router] -->|/auth/*| New1[New Auth Service]\n  Proxy -->|/orders/*| New2[New Order Service]\n  Proxy -->|Everything else| Old[Legacy Monolith]\n  style New1 fill:#10b981,color:#fff\n  style New2 fill:#10b981,color:#fff\n  style Old fill:#ef4444,color:#fff"}
+        chart={"graph LR\n  Proxy[Proxy / Router] -->|/auth/*| New1[New Auth Service]\n  Proxy -->|/orders/*| New2[New Order Service]\n  Proxy -->|Everything else| Old[Legacy Monolith]\n  style New1 fill:#1a3329\n  style New2 fill:#1a3329\n  style Old fill:#3b1a1a"}
       />
 
       <h2>10. Sidecar / Service Mesh</h2>

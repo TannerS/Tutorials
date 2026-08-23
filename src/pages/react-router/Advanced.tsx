@@ -164,7 +164,7 @@ export default defineConfig({
 
       <FlowChart
         title="Lazy Route Loading Sequence"
-        chart={"graph TD\nA[User clicks /dashboard link] --> B[Router matches /dashboard route]\nB --> C{Route has lazy property?}\nC -->|Yes| D[Download route chunk]\nC -->|No| E[Use static element/loader]\nD --> F[Extract Component + loader + action]\nF --> G[Run loader in parallel with render prep]\nG --> H[Render Component with loader data]\nE --> G\nstyle D fill:#8b5cf6,color:#fff\nstyle G fill:#3b82f6,color:#fff\nstyle H fill:#10b981,color:#fff"}
+        chart={"graph TD\nA[User clicks /dashboard link] --> B[Router matches /dashboard route]\nB --> C{Route has lazy property?}\nC -->|Yes| D[Download route chunk]\nC -->|No| E[Use static element/loader]\nD --> F[Extract Component + loader + action]\nF --> G[Run loader in parallel with render prep]\nG --> H[Render Component with loader data]\nE --> G\nstyle D fill:#2a1f44\nstyle G fill:#1a2744\nstyle H fill:#1a3329"}
       />
 
       <h2>Scroll Restoration</h2>
@@ -563,7 +563,7 @@ Type-safe routes              → Framework mode + route modules
 
       <FlowChart
         title="React Router v7 Architecture Overview"
-        chart={"graph TD\nA[URL Change] --> B[Router]\nB --> C[Match Routes]\nC --> D{lazy route?}\nD -->|Yes| E[Load chunk]\nD -->|No| F[Use static config]\nE --> F\nF --> G[Run loaders in parallel]\nG --> H[Render matched components]\nH --> I[Outlets fill with children]\nI --> J[ScrollRestoration runs]\nJ --> K[Page visible to user]\nstyle B fill:#3b82f6,color:#fff\nstyle G fill:#8b5cf6,color:#fff\nstyle K fill:#10b981,color:#fff"}
+        chart={"graph TD\nA[URL Change] --> B[Router]\nB --> C[Match Routes]\nC --> D{lazy route?}\nD -->|Yes| E[Load chunk]\nD -->|No| F[Use static config]\nE --> F\nF --> G[Run loaders in parallel]\nG --> H[Render matched components]\nH --> I[Outlets fill with children]\nI --> J[ScrollRestoration runs]\nJ --> K[Page visible to user]\nstyle B fill:#1a2744\nstyle G fill:#2a1f44\nstyle K fill:#1a3329"}
       />
 
       <InfoBox variant="success" title="You Made It!">

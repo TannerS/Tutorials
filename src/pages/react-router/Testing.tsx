@@ -22,7 +22,7 @@ export default function Testing() {
 
       <FlowChart
         title="Route Testing Strategy"
-        chart={"graph TD\nA[Route Tests] --> B[Unit Tests]\nA --> C[Integration Tests]\nB --> D[Test individual components with mocked hooks]\nC --> E[Test full navigation flows with MemoryRouter]\nC --> F[Test loaders and actions in isolation]\nC --> G[Test protected routes with auth context]\nstyle A fill:#3b82f6,color:#fff\nstyle B fill:#8b5cf6,color:#fff\nstyle C fill:#8b5cf6,color:#fff"}
+        chart={"graph TD\nA[Route Tests] --> B[Unit Tests]\nA --> C[Integration Tests]\nB --> D[Test individual components with mocked hooks]\nC --> E[Test full navigation flows with MemoryRouter]\nC --> F[Test loaders and actions in isolation]\nC --> G[Test protected routes with auth context]\nstyle A fill:#1a2744\nstyle B fill:#2a1f44\nstyle C fill:#2a1f44"}
       />
 
       <h2>Testing Setup with MemoryRouter</h2>

@@ -26,7 +26,7 @@ export default function Comparison() {
 
       <FlowChart
         title="The Escalation Ladder"
-        chart={"graph TD\n  A[New piece of state] --> Q1{Used by exactly one component?}\n  Q1 -->|Yes| R1[Rung 1: useState — colocate it]\n  Q1 -->|No| Q2{Shared with a close relative?}\n  Q2 -->|Yes| R2[Rung 2: Lift state up]\n  Q2 -->|No| Q3{Many fields that change together?}\n  Q3 -->|Yes| R3[Rung 3: useReducer]\n  Q3 -->|No| Q4{Distant components, low update rate?}\n  Q4 -->|Yes| R4[Rung 4: Context]\n  Q4 -->|No| R5[Rung 5: External store with selectors]\n  R3 --> R4\n  style R1 fill:#10b981,color:#fff\n  style R2 fill:#22c55e,color:#fff\n  style R3 fill:#3b82f6,color:#fff\n  style R4 fill:#8b5cf6,color:#fff\n  style R5 fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  A[New piece of state] --> Q1{Used by exactly one component?}\n  Q1 -->|Yes| R1[Rung 1: useState — colocate it]\n  Q1 -->|No| Q2{Shared with a close relative?}\n  Q2 -->|Yes| R2[Rung 2: Lift state up]\n  Q2 -->|No| Q3{Many fields that change together?}\n  Q3 -->|Yes| R3[Rung 3: useReducer]\n  Q3 -->|No| Q4{Distant components, low update rate?}\n  Q4 -->|Yes| R4[Rung 4: Context]\n  Q4 -->|No| R5[Rung 5: External store with selectors]\n  R3 --> R4\n  style R1 fill:#1a3329\n  style R2 fill:#1a3329\n  style R3 fill:#1a2744\n  style R4 fill:#2a1f44\n  style R5 fill:#3b1a1a"}
       />
 
       <h2>Rung 1 — Local State (useState)</h2>

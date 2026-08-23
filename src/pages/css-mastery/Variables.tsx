@@ -628,7 +628,7 @@ p { overflow-wrap: break-word; text-wrap: pretty; }
 
       <FlowChart
         title="Modern CSS Feature Decision Guide"
-        chart={"graph TD\n  START[Styling decision] --> VARS{Dynamic value?}\n  VARS -->|Yes| CP[Custom Properties]\n  VARS -->|No| STATIC[Static value]\n  CP --> ANIM{Animate it?}\n  ANIM -->|Yes| PROP[\"@property typed registration\"]\n  ANIM -->|No| THEME{Theming?}\n  THEME -->|Yes| TOKEN[Semantic tokens + dark mode]\n  THEME -->|No| SCOPE{Scope issues?}\n  SCOPE -->|Yes| LAYER{Cascade conflict?}\n  LAYER -->|Yes| ATLAYER[\"@layer\"]\n  LAYER -->|No| ATSCOPE[\"@scope\"]\n  SCOPE -->|No| NEST[Native nesting]\n  START --> SEL{Complex selector?}\n  SEL -->|Parent-based| HAS[:has]\n  SEL -->|Grouping| ISWR[:is / :where]\n  style CP fill:#6366f1,color:#fff\n  style PROP fill:#ec4899,color:#fff\n  style TOKEN fill:#10b981,color:#fff\n  style HAS fill:#3d2f14\n  style ATLAYER fill:#06b6d4,color:#fff"}
+        chart={"graph TD\n  START[Styling decision] --> VARS{Dynamic value?}\n  VARS -->|Yes| CP[Custom Properties]\n  VARS -->|No| STATIC[Static value]\n  CP --> ANIM{Animate it?}\n  ANIM -->|Yes| PROP[\"@property typed registration\"]\n  ANIM -->|No| THEME{Theming?}\n  THEME -->|Yes| TOKEN[Semantic tokens + dark mode]\n  THEME -->|No| SCOPE{Scope issues?}\n  SCOPE -->|Yes| LAYER{Cascade conflict?}\n  LAYER -->|Yes| ATLAYER[\"@layer\"]\n  LAYER -->|No| ATSCOPE[\"@scope\"]\n  SCOPE -->|No| NEST[Native nesting]\n  START --> SEL{Complex selector?}\n  SEL -->|Parent-based| HAS[:has]\n  SEL -->|Grouping| ISWR[:is / :where]\n  style CP fill:#1a2744\n  style PROP fill:#3b1a1a\n  style TOKEN fill:#1a3329\n  style HAS fill:#3d2f14\n  style ATLAYER fill:#1a3329"}
       />
 
       <InteractiveChallenge

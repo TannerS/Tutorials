@@ -24,7 +24,7 @@ export default function Guards() {
 
       <FlowChart
         title="Auth Guard Decision Flow"
-        chart={"graph TD\nA[User navigates to protected route] --> B{Using config-based router?}\nB -->|Yes| C[Loader checks auth]\nC --> D{Authenticated?}\nD -->|No| E[redirect to /login with returnTo]\nD -->|Yes| F{Authorized for this role?}\nF -->|No| G[throw 403 Response]\nF -->|Yes| H[Return data and render]\nB -->|No| I[ProtectedRoute wrapper]\nI --> J{Auth context has user?}\nJ -->|No| K[Navigate to /login]\nJ -->|Yes| L[Render children via Outlet]\nstyle E fill:#ef4444,color:#fff\nstyle G fill:#f59e0b,color:#fff\nstyle H fill:#10b981,color:#fff\nstyle L fill:#10b981,color:#fff"}
+        chart={"graph TD\nA[User navigates to protected route] --> B{Using config-based router?}\nB -->|Yes| C[Loader checks auth]\nC --> D{Authenticated?}\nD -->|No| E[redirect to /login with returnTo]\nD -->|Yes| F{Authorized for this role?}\nF -->|No| G[throw 403 Response]\nF -->|Yes| H[Return data and render]\nB -->|No| I[ProtectedRoute wrapper]\nI --> J{Auth context has user?}\nJ -->|No| K[Navigate to /login]\nJ -->|Yes| L[Render children via Outlet]\nstyle E fill:#3b1a1a\nstyle G fill:#3d2f14\nstyle H fill:#1a3329\nstyle L fill:#1a3329"}
       />
 
       <h2>Pattern 1: Redirect in Loaders (Recommended)</h2>
@@ -470,7 +470,7 @@ export default function App() {
 
       <FlowChart
         title="Complete Auth Flow"
-        chart={"graph TD\nA[User visits /dashboard] --> B[Router runs dashboard loader]\nB --> C{Valid session?}\nC -->|No| D[redirect to /login?returnTo=/dashboard]\nD --> E[Login page renders]\nE --> F[User submits credentials]\nF --> G[Login action validates]\nG --> H{Success?}\nH -->|No| I[Return errors to form]\nH -->|Yes| J[Set session cookie]\nJ --> K[redirect to returnTo path]\nK --> L[Dashboard loader runs again]\nL --> M[Session valid - return data]\nM --> N[Dashboard renders with data]\nstyle D fill:#ef4444,color:#fff\nstyle I fill:#f59e0b,color:#fff\nstyle N fill:#10b981,color:#fff"}
+        chart={"graph TD\nA[User visits /dashboard] --> B[Router runs dashboard loader]\nB --> C{Valid session?}\nC -->|No| D[redirect to /login?returnTo=/dashboard]\nD --> E[Login page renders]\nE --> F[User submits credentials]\nF --> G[Login action validates]\nG --> H{Success?}\nH -->|No| I[Return errors to form]\nH -->|Yes| J[Set session cookie]\nJ --> K[redirect to returnTo path]\nK --> L[Dashboard loader runs again]\nL --> M[Session valid - return data]\nM --> N[Dashboard renders with data]\nstyle D fill:#3b1a1a\nstyle I fill:#3d2f14\nstyle N fill:#1a3329"}
       />
     </LessonLayout>
   );

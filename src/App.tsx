@@ -40,28 +40,28 @@ import SpringResilience from './pages/springboot/Resilience'
 import SpringCheatsheet from './pages/springboot/Cheatsheet'
 
 // React 19
-import ReactLifecycle from './pages/react19/Lifecycle'
-import ReactLifecycleSim from './pages/react19/LifecycleSim'
-import ReactHooks from './pages/react19/Hooks'
-import ReactState from './pages/react19/State'
-import ReactEffects from './pages/react19/Effects'
-import ReactContext from './pages/react19/Context'
-import ReactPerformance from './pages/react19/Performance'
-import ReactProfiling from './pages/react19/Profiling'
+import ReactLifecycle from './pages/react18/Lifecycle'
+import ReactLifecycleSim from './pages/react18/LifecycleSim'
+import ReactHooks from './pages/react18/Hooks'
+import ReactState from './pages/react18/State'
+import ReactEffects from './pages/react18/Effects'
+import ReactContext from './pages/react18/Context'
+import ReactPerformance from './pages/react18/Performance'
+import ReactProfiling from './pages/react18/Profiling'
 import ReactNew from './pages/react19-whats-new/React19'
-import ReactServer from './pages/react19/Server'
-import ReactSsrHydration from './pages/react19/SsrHydration'
-import ReactPatterns from './pages/react19/Patterns'
-import ReactTypescript from './pages/react19/Typescript'
-import ReactBuildToolchain from './pages/react19/BuildToolchain'
-import ReactCheatSheet from './pages/react19/CheatSheet'
-import ReactAdapters from './pages/react19/Adapters'
-import ReactImperativeBridge from './pages/react19/ImperativeBridge'
-import ReactModuleFederation from './pages/react19/ModuleFederation'
-import ReactFeatureFolder from './pages/react19/FeatureFolder'
-import ReactErrorBoundaries from './pages/react19/ErrorBoundaries'
-import ReactAnimations from './pages/react19/Animations'
-import ReactPortals from './pages/react19/Portals'
+import ReactServer from './pages/react18/Server'
+import ReactSsrHydration from './pages/react18/SsrHydration'
+import ReactPatterns from './pages/react18/Patterns'
+import ReactTypescript from './pages/react18/Typescript'
+import ReactBuildToolchain from './pages/react18/BuildToolchain'
+import ReactCheatSheet from './pages/react18/CheatSheet'
+import ReactAdapters from './pages/react18/Adapters'
+import ReactImperativeBridge from './pages/react18/ImperativeBridge'
+import ReactModuleFederation from './pages/react18/ModuleFederation'
+import ReactFeatureFolder from './pages/react18/FeatureFolder'
+import ReactErrorBoundaries from './pages/react18/ErrorBoundaries'
+import ReactAnimations from './pages/react18/Animations'
+import ReactPortals from './pages/react18/Portals'
 
 // SQL Fundamentals
 import SqlQuickstart from './pages/sql-fundamentals/Quickstart'
@@ -497,28 +497,28 @@ function App() {
         <Route path="springboot/resilience" element={<SpringResilience />} />
         <Route path="springboot/cheatsheet" element={<SpringCheatsheet />} />
         {/* React 19 */}
-        <Route path="react19/lifecycle" element={<ReactLifecycle />} />
-        <Route path="react19/lifecycle-sim" element={<ReactLifecycleSim />} />
-        <Route path="react19/hooks" element={<ReactHooks />} />
-        <Route path="react19/state" element={<ReactState />} />
-        <Route path="react19/effects" element={<ReactEffects />} />
-        <Route path="react19/context" element={<ReactContext />} />
-        <Route path="react19/performance" element={<ReactPerformance />} />
-        <Route path="react19/profiling" element={<ReactProfiling />} />
+        <Route path="react18/lifecycle" element={<ReactLifecycle />} />
+        <Route path="react18/lifecycle-sim" element={<ReactLifecycleSim />} />
+        <Route path="react18/hooks" element={<ReactHooks />} />
+        <Route path="react18/state" element={<ReactState />} />
+        <Route path="react18/effects" element={<ReactEffects />} />
+        <Route path="react18/context" element={<ReactContext />} />
+        <Route path="react18/performance" element={<ReactPerformance />} />
+        <Route path="react18/profiling" element={<ReactProfiling />} />
         <Route path="react19-whats-new/react19" element={<ReactNew />} />
-        <Route path="react19/server" element={<ReactServer />} />
-        <Route path="react19/ssr-hydration" element={<ReactSsrHydration />} />
-        <Route path="react19/patterns" element={<ReactPatterns />} />
-        <Route path="react19/typescript" element={<ReactTypescript />} />
-        <Route path="react19/build-toolchain" element={<ReactBuildToolchain />} />
-        <Route path="react19/cheat-sheet" element={<ReactCheatSheet />} />
-        <Route path="react19/adapters" element={<ReactAdapters />} />
-        <Route path="react19/imperative-bridge" element={<ReactImperativeBridge />} />
-        <Route path="react19/module-federation" element={<ReactModuleFederation />} />
-        <Route path="react19/feature-folder" element={<ReactFeatureFolder />} />
-        <Route path="react19/error-boundaries" element={<ReactErrorBoundaries />} />
-        <Route path="react19/animations" element={<ReactAnimations />} />
-        <Route path="react19/portals" element={<ReactPortals />} />
+        <Route path="react18/server" element={<ReactServer />} />
+        <Route path="react18/ssr-hydration" element={<ReactSsrHydration />} />
+        <Route path="react18/patterns" element={<ReactPatterns />} />
+        <Route path="react18/typescript" element={<ReactTypescript />} />
+        <Route path="react18/build-toolchain" element={<ReactBuildToolchain />} />
+        <Route path="react18/cheat-sheet" element={<ReactCheatSheet />} />
+        <Route path="react18/adapters" element={<ReactAdapters />} />
+        <Route path="react18/imperative-bridge" element={<ReactImperativeBridge />} />
+        <Route path="react18/module-federation" element={<ReactModuleFederation />} />
+        <Route path="react18/feature-folder" element={<ReactFeatureFolder />} />
+        <Route path="react18/error-boundaries" element={<ReactErrorBoundaries />} />
+        <Route path="react18/animations" element={<ReactAnimations />} />
+        <Route path="react18/portals" element={<ReactPortals />} />
         {/* SQL */}
         <Route path="sql-fundamentals/quickstart" element={<SqlQuickstart />} />
         <Route path="sql-fundamentals/joins" element={<SqlJoins />} />

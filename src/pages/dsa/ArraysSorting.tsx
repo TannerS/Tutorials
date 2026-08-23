@@ -83,7 +83,7 @@ n elements already in the array -> up to n moves for ONE front insert -> O(n), e
 
       <FlowChart
         title="What sorting means, before any specific algorithm"
-        chart={"graph LR\n  A[Unsorted: 5, 2, 8, 1] -->|sort| B[Sorted: 1, 2, 5, 8]\n  style A fill:#ef4444,color:#fff\n  style B fill:#10b981,color:#fff"}
+        chart={"graph LR\n  A[Unsorted: 5, 2, 8, 1] -->|sort| B[Sorted: 1, 2, 5, 8]\n  style A fill:#3b1a1a\n  style B fill:#1a3329"}
       />
 
       <p>

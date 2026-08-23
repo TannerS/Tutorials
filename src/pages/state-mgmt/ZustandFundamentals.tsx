@@ -45,9 +45,9 @@ export default function ZustandFundamentals() {
           '  Store -->|notifies every subscriber| Check{Did MY selected slice change?}\n' +
           '  Check -->|Yes| Rerender[That component re-renders]\n' +
           '  Check -->|No| Skip[That component does nothing]\n' +
-          '  style Store fill:#ef4444,color:#fff\n' +
-          '  style Rerender fill:#10b981,color:#fff\n' +
-          '  style Skip fill:#6b7280,color:#fff'
+          '  style Store fill:#3b1a1a\n' +
+          '  style Rerender fill:#1a3329\n' +
+          '  style Skip fill:#1a2744'
         }
       />
 

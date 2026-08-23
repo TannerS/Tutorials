@@ -35,7 +35,7 @@ export default function ZustandAdvanced() {
 
       <FlowChart
         title="Slices compose into one store"
-        chart={"graph LR\n  A[createUserSlice] --> D[create]\n  B[createCartSlice] --> D\n  C[createUiSlice] --> D\n  D --> S[(One Store)]\n  S --> U[Components use the whole store\\nvia normal selectors]\n  style D fill:#3b82f6,color:#fff\n  style S fill:#10b981,color:#fff"}
+        chart={"graph LR\n  A[createUserSlice] --> D[create]\n  B[createCartSlice] --> D\n  C[createUiSlice] --> D\n  D --> S[(One Store)]\n  S --> U[Components use the whole store\\nvia normal selectors]\n  style D fill:#1a2744\n  style S fill:#1a3329"}
       />
 
       <CodeBlock language="tsx" title="Two independent slices, combined in one create()">

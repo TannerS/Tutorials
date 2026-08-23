@@ -8,10 +8,10 @@ export default function FeatureFolder() {
   return (
     <LessonLayout
       title="Feature-Based Architecture"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={17}
-      prev={{ path: '/react19/module-federation', label: 'Module Federation & MFEs' }}
-      next={{ path: '/react19/error-boundaries', label: 'Error Boundaries' }}
+      prev={{ path: '/react18/module-federation', label: 'Module Federation & MFEs' }}
+      next={{ path: '/react18/error-boundaries', label: 'Error Boundaries' }}
     >
       <h2>The Two Ways to Organize a Frontend</h2>
       <p>

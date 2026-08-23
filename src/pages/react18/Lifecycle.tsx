@@ -7,10 +7,10 @@ export default function Lifecycle() {
   return (
     <LessonLayout
       title="Component Lifecycle In Depth"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/react19/lifecycle-sim', label: '🧪 Lifecycle Simulator' }}
+      next={{ path: '/react18/lifecycle-sim', label: '🧪 Lifecycle Simulator' }}
     >
       <p>React components go through predictable phases. Understanding these phases—and the distinction between the <strong>render phase</strong> and <strong>commit phase</strong>—is critical for writing correct, performant code.</p>
 
@@ -171,7 +171,7 @@ const MemoizedComponent = React.memo(MyComponent, (prev, next) => {
 
       <FlowChart
         title="Re-render Cascade — Default Behavior"
-        chart={"graph TD\n  A[Parent setState called] --> B[Parent re-renders]\n  B --> C[Child A re-renders]\n  B --> D[Child B re-renders]\n  C --> E[Grandchild A1 re-renders]\n  C --> F[Grandchild A2 re-renders]\n  D --> G[Grandchild B1 re-renders]\n  style A fill:#ff6b6b,color:#fff\n  style B fill:#ff6b6b,color:#fff\n  style C fill:#ff6b6b,color:#fff\n  style D fill:#ff6b6b,color:#fff\n  style E fill:#ff6b6b,color:#fff\n  style F fill:#ff6b6b,color:#fff\n  style G fill:#ff6b6b,color:#fff"}
+        chart={"graph TD\n  A[Parent setState called] --> B[Parent re-renders]\n  B --> C[Child A re-renders]\n  B --> D[Child B re-renders]\n  C --> E[Grandchild A1 re-renders]\n  C --> F[Grandchild A2 re-renders]\n  D --> G[Grandchild B1 re-renders]\n  style A fill:#3b1a1a\n  style B fill:#3b1a1a\n  style C fill:#3b1a1a\n  style D fill:#3b1a1a\n  style E fill:#3b1a1a\n  style F fill:#3b1a1a\n  style G fill:#3b1a1a"}
       />
 
       <CodeBlock language="jsx" title="Cascade in Action — Watch the Console" showLineNumbers>
@@ -208,7 +208,7 @@ const MemoChild = React.memo(function MemoChild({ name }) {
 
       <FlowChart
         title="Memo Boundary vs Context — The Gotcha"
-        chart={"graph TD\n  A[Parent setState] --> B[Parent re-renders]\n  B --> C[React.memo Child]\n  C --> D{Props changed?}\n  D -->|No| E[SKIP re-render]\n  D -->|Yes| F[Re-render child]\n  G[Context value changes] --> H[React.memo Child using context]\n  H --> I[RE-RENDERS ANYWAY]\n  style E fill:#51cf66,color:#fff\n  style I fill:#ff6b6b,color:#fff"}
+        chart={"graph TD\n  A[Parent setState] --> B[Parent re-renders]\n  B --> C[React.memo Child]\n  C --> D{Props changed?}\n  D -->|No| E[SKIP re-render]\n  D -->|Yes| F[Re-render child]\n  G[Context value changes] --> H[React.memo Child using context]\n  H --> I[RE-RENDERS ANYWAY]\n  style E fill:#1a3329\n  style I fill:#3b1a1a"}
       />
 
       <InfoBox variant="danger" title="Context Punches Through React.memo">
@@ -414,7 +414,7 @@ All because {} created a new object. None of the auth data actually changed.`}
         </ol>
       </InfoBox>
 
-      <FlowChart title="How One Unmemoized Context Poisons the App" chart={"graph TD\n  A[Unrelated parent state changes] --> B[Provider component re-renders]\n  B --> C[value=curly braces creates NEW object]\n  C --> D[Object.is returns false]\n  D --> E[ALL consumers re-render]\n  E --> F[Each consumer's children re-render]\n  F --> G[Children's children re-render]\n  G --> H[Entire subtree below every consumer]\n  style A fill:#ff9800,color:#fff\n  style C fill:#f44336,color:#fff\n  style H fill:#f44336,color:#fff"} />
+      <FlowChart title="How One Unmemoized Context Poisons the App" chart={"graph TD\n  A[Unrelated parent state changes] --> B[Provider component re-renders]\n  B --> C[value=curly braces creates NEW object]\n  C --> D[Object.is returns false]\n  D --> E[ALL consumers re-render]\n  E --> F[Each consumer's children re-render]\n  F --> G[Children's children re-render]\n  G --> H[Entire subtree below every consumer]\n  style A fill:#3d2f14\n  style C fill:#3b1a1a\n  style H fill:#3b1a1a"} />
 
       <CodeBlock language="jsx" title="The Fix: useMemo Stops the Cascade at the Source" showLineNumbers>
 {`// With useMemo on the context value:
@@ -497,7 +497,7 @@ function Parent3() {
 }`}
       </CodeBlock>
 
-      <FlowChart title="Does Instability Matter Here?" chart={"graph TD\n  A[Is the value unstable?] -->|No - stable| B[No problem]\n  A -->|Yes - new ref each render| C[Is anything checking this value?]\n  C -->|In a dependency array| D[Effect/memo/callback re-runs every render]\n  C -->|Passed to React.memo child| E[Child re-renders despite memo]\n  C -->|Just a local variable| F[Does not matter - ignore it]\n  style B fill:#4caf50,color:#fff\n  style D fill:#f44336,color:#fff\n  style E fill:#f44336,color:#fff\n  style F fill:#4caf50,color:#fff"} />
+      <FlowChart title="Does Instability Matter Here?" chart={"graph TD\n  A[Is the value unstable?] -->|No - stable| B[No problem]\n  A -->|Yes - new ref each render| C[Is anything checking this value?]\n  C -->|In a dependency array| D[Effect/memo/callback re-runs every render]\n  C -->|Passed to React.memo child| E[Child re-renders despite memo]\n  C -->|Just a local variable| F[Does not matter - ignore it]\n  style B fill:#1a3329\n  style D fill:#3b1a1a\n  style E fill:#3b1a1a\n  style F fill:#1a3329"} />
 
       <h3>Why Are Some Things Stable?</h3>
 
@@ -604,7 +604,7 @@ function AuthProvider({ children }) {
 
       <FlowChart
         title="React.memo Cost-Benefit Analysis"
-        chart={"graph TD\n  A[Without memo] --> B[Component re-renders]\n  B --> C[React diffs virtual DOM]\n  C --> D[No real DOM changes = fast]\n  E[With memo] --> F[Shallow compare ALL props]\n  F --> G{Props changed?}\n  G -->|No| H[Skip render - saved work]\n  G -->|Yes| I[Compare was wasted]\n  I --> B\n  style H fill:#51cf66,color:#fff\n  style I fill:#ff6b6b,color:#fff"}
+        chart={"graph TD\n  A[Without memo] --> B[Component re-renders]\n  B --> C[React diffs virtual DOM]\n  C --> D[No real DOM changes = fast]\n  E[With memo] --> F[Shallow compare ALL props]\n  F --> G{Props changed?}\n  G -->|No| H[Skip render - saved work]\n  G -->|Yes| I[Compare was wasted]\n  I --> B\n  style H fill:#1a3329\n  style I fill:#3b1a1a"}
       />
 
       <CodeBlock language="jsx" title="When React.memo Hurts More Than It Helps" showLineNumbers>

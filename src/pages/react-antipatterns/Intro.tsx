@@ -28,7 +28,7 @@ export default function Intro() {
 
       <FlowChart
         title="The Spectrum from Bad to Good Practices"
-        chart={"graph LR\nA[Bad Practices]-->B[Anti-Patterns]\nB-->C[Code Smells]\nC-->D[Acceptable Code]\nD-->E[Good Practices]\nE-->F[Idiomatic React]\nstyle A fill:#e74c3c,color:#fff\nstyle B fill:#e67e22,color:#fff\nstyle C fill:#f1c40f,color:#000\nstyle D fill:#95a5a6,color:#fff\nstyle E fill:#2ecc71,color:#fff\nstyle F fill:#1abc9c,color:#fff"}
+        chart={"graph LR\nA[Bad Practices]-->B[Anti-Patterns]\nB-->C[Code Smells]\nC-->D[Acceptable Code]\nD-->E[Good Practices]\nE-->F[Idiomatic React]\nstyle A fill:#3b1a1a\nstyle B fill:#3d2f14\nstyle C fill:#3d2f14\nstyle D fill:#1a3329\nstyle E fill:#1a3329\nstyle F fill:#1a3329"}
       />
 
       <h2>Why Do Anti-Patterns Emerge?</h2>
@@ -124,7 +124,7 @@ function UserProfile({ userId }) {
 
       <FlowChart
         title="How Anti-Patterns Compound Over Time"
-        chart={"graph TD\nA[Anti-Pattern Introduced]-->B[Quick Feature Delivered]\nB-->C[More Code Built on Top]\nC-->D[Bug Discovered]\nD-->E[Hard to Diagnose]\nE-->F[Expensive Fix]\nF-->G[Technical Debt Grows]\nG-->C\nstyle A fill:#e74c3c,color:#fff\nstyle D fill:#e67e22,color:#fff\nstyle F fill:#f39c12,color:#fff\nstyle G fill:#c0392b,color:#fff"}
+        chart={"graph TD\nA[Anti-Pattern Introduced]-->B[Quick Feature Delivered]\nB-->C[More Code Built on Top]\nC-->D[Bug Discovered]\nD-->E[Hard to Diagnose]\nE-->F[Expensive Fix]\nF-->G[Technical Debt Grows]\nG-->C\nstyle A fill:#3b1a1a\nstyle D fill:#3d2f14\nstyle F fill:#3d2f14\nstyle G fill:#3b1a1a"}
       />
 
       <h3>Performance Impact</h3>

@@ -119,7 +119,7 @@ CALL place_order(42, 55, 2);`}
 
       <FlowChart
         title="Three Round Trips vs. One"
-        chart={"graph TD\n  subgraph W[\"Without a stored procedure\"]\n    A1[\"App sends SELECT\"] -->|\"round trip 1\"| A2[\"App decides:\\nenough stock?\"]\n    A2 --> A3[\"App sends UPDATE\"]\n    A3 -->|\"round trip 2\"| A4[\"App sends INSERT\"]\n    A4 -->|\"round trip 3\"| A5[\"Done\"]\n  end\n  subgraph S[\"With place_order(...)\"]\n    B1[\"App sends CALL place_order(...)\"] -->|\"round trip 1\"| B2[\"DB runs SELECT + UPDATE + INSERT\\nback-to-back, no network in between\"]\n    B2 --> B3[\"Done\"]\n  end\n  style A2 fill:#3a1f1f,stroke:#f87171\n  style A3 fill:#3a1f1f,stroke:#f87171\n  style A4 fill:#3a1f1f,stroke:#f87171\n  style B2 fill:#1a3329,stroke:#4ade80"}
+        chart={"graph TD\n  subgraph W[\"Without a stored procedure\"]\n    A1[\"App sends SELECT\"] -->|\"round trip 1\"| A2[\"App decides:\\nenough stock?\"]\n    A2 --> A3[\"App sends UPDATE\"]\n    A3 -->|\"round trip 2\"| A4[\"App sends INSERT\"]\n    A4 -->|\"round trip 3\"| A5[\"Done\"]\n  end\n  subgraph S[\"With place_order(...)\"]\n    B1[\"App sends CALL place_order(...)\"] -->|\"round trip 1\"| B2[\"DB runs SELECT + UPDATE + INSERT\\nback-to-back, no network in between\"]\n    B2 --> B3[\"Done\"]\n  end\n  style A2 fill:#3b1a1a,stroke:#f87171\n  style A3 fill:#3b1a1a,stroke:#f87171\n  style A4 fill:#3b1a1a,stroke:#f87171\n  style B2 fill:#1a3329,stroke:#4ade80"}
       />
 
       <p>

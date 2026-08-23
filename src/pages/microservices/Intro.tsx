@@ -100,7 +100,7 @@ export default function Intro() {
 
       <FlowChart
         title="The Architecture Spectrum"
-        chart={"graph LR\n  A[Monolith] --> B[Modular Monolith]\n  B --> C[Mini-Services]\n  C --> D[Full Microservices]\n  style A fill:#ef4444,color:#fff\n  style B fill:#f59e0b,color:#fff\n  style C fill:#3b82f6,color:#fff\n  style D fill:#10b981,color:#fff"}
+        chart={"graph LR\n  A[Monolith] --> B[Modular Monolith]\n  B --> C[Mini-Services]\n  C --> D[Full Microservices]\n  style A fill:#3b1a1a\n  style B fill:#3d2f14\n  style C fill:#1a2744\n  style D fill:#1a3329"}
       />
 
       <h3>1. Monolith</h3>
@@ -163,7 +163,7 @@ public interface InventoryModule {
 
       <FlowChart
         title="When to Use Microservices — Decision Tree"
-        chart={"graph TD\n  Start[Should I use Microservices?] --> Q1{Team size > 10?}\n  Q1 -->|No| Mono[Start with Modular Monolith]\n  Q1 -->|Yes| Q2{Domain well understood?}\n  Q2 -->|No| Mono\n  Q2 -->|Yes| Q3{DevOps maturity high?}\n  Q3 -->|No| Q4[Build DevOps first]\n  Q3 -->|Yes| Q5{Need independent scaling?}\n  Q5 -->|No| Mini[Consider Mini-Services]\n  Q5 -->|Yes| Q6{Need tech stack diversity?}\n  Q6 -->|No| Mini\n  Q6 -->|Yes| Micro[Go Microservices]\n  style Mono fill:#f59e0b,color:#fff\n  style Mini fill:#3b82f6,color:#fff\n  style Micro fill:#10b981,color:#fff\n  style Q4 fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  Start[Should I use Microservices?] --> Q1{Team size > 10?}\n  Q1 -->|No| Mono[Start with Modular Monolith]\n  Q1 -->|Yes| Q2{Domain well understood?}\n  Q2 -->|No| Mono\n  Q2 -->|Yes| Q3{DevOps maturity high?}\n  Q3 -->|No| Q4[Build DevOps first]\n  Q3 -->|Yes| Q5{Need independent scaling?}\n  Q5 -->|No| Mini[Consider Mini-Services]\n  Q5 -->|Yes| Q6{Need tech stack diversity?}\n  Q6 -->|No| Mini\n  Q6 -->|Yes| Micro[Go Microservices]\n  style Mono fill:#3d2f14\n  style Mini fill:#1a2744\n  style Micro fill:#1a3329\n  style Q4 fill:#3b1a1a"}
       />
 
       <h3>Key Decision Factors</h3>

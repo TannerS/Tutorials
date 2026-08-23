@@ -28,7 +28,7 @@ export default function Caching() {
 
       <FlowChart
         title="Request With Cache vs Without Cache"
-        chart={"graph TD\n  subgraph Without Cache\n    A1[Client Request] --> B1[Application Server]\n    B1 --> C1[Database Query ~50-200ms]\n    C1 --> D1[Return Response ~200ms total]\n  end\n  subgraph With Cache\n    A2[Client Request] --> B2[Application Server]\n    B2 --> E2{Cache Hit?}\n    E2 -->|Hit ~1-5ms| F2[Return Cached Data ~5ms total]\n    E2 -->|Miss| G2[Database Query ~50-200ms]\n    G2 --> H2[Store in Cache]\n    H2 --> I2[Return Response ~200ms first time]\n  end\n  style F2 fill:#10b981,color:#fff\n  style D1 fill:#ef4444,color:#fff\n  style E2 fill:#6366f1,color:#fff"}
+        chart={"graph TD\n  subgraph Without Cache\n    A1[Client Request] --> B1[Application Server]\n    B1 --> C1[Database Query ~50-200ms]\n    C1 --> D1[Return Response ~200ms total]\n  end\n  subgraph With Cache\n    A2[Client Request] --> B2[Application Server]\n    B2 --> E2{Cache Hit?}\n    E2 -->|Hit ~1-5ms| F2[Return Cached Data ~5ms total]\n    E2 -->|Miss| G2[Database Query ~50-200ms]\n    G2 --> H2[Store in Cache]\n    H2 --> I2[Return Response ~200ms first time]\n  end\n  style F2 fill:#1a3329\n  style D1 fill:#3b1a1a\n  style E2 fill:#1a2744"}
       />
 
       <h3>Common Caching Use Cases</h3>
@@ -72,7 +72,7 @@ export default function Caching() {
 
       <FlowChart
         title="Cache-Aside Pattern Flow"
-        chart={"graph TD\n  A[App Receives Request] --> B{Check Cache}\n  B -->|Cache Hit| C[Return Cached Data]\n  B -->|Cache Miss| D[Query Database]\n  D --> E[Store Result in Cache]\n  E --> F[Return Data to Client]\n  style C fill:#10b981,color:#fff\n  style D fill:#3d2f14\n  style E fill:#6366f1,color:#fff"}
+        chart={"graph TD\n  A[App Receives Request] --> B{Check Cache}\n  B -->|Cache Hit| C[Return Cached Data]\n  B -->|Cache Miss| D[Query Database]\n  D --> E[Store Result in Cache]\n  E --> F[Return Data to Client]\n  style C fill:#1a3329\n  style D fill:#3d2f14\n  style E fill:#1a2744"}
       />
 
       <h3>Pros and Cons</h3>
@@ -142,7 +142,7 @@ async function updateUser(userId, data) {
 
       <FlowChart
         title="Read-Through Cache Flow"
-        chart={"graph TD\n  A[App Requests Data] --> B[Cache Layer]\n  B --> C{Key Exists?}\n  C -->|Hit| D[Return Cached Data]\n  C -->|Miss| E[Cache Loads from DB]\n  E --> F[Cache Stores Data]\n  F --> G[Return Data to App]\n  style B fill:#6366f1,color:#fff\n  style D fill:#10b981,color:#fff\n  style E fill:#3d2f14"}
+        chart={"graph TD\n  A[App Requests Data] --> B[Cache Layer]\n  B --> C{Key Exists?}\n  C -->|Hit| D[Return Cached Data]\n  C -->|Miss| E[Cache Loads from DB]\n  E --> F[Cache Stores Data]\n  F --> G[Return Data to App]\n  style B fill:#1a2744\n  style D fill:#1a3329\n  style E fill:#3d2f14"}
       />
 
       <h3>When to Use Read-Through</h3>
@@ -165,7 +165,7 @@ async function updateUser(userId, data) {
 
       <FlowChart
         title="Write-Through Cache Flow"
-        chart={"graph TD\n  A[App Writes Data] --> B[Write to Cache]\n  B --> C[Cache Writes to DB Synchronously]\n  C --> D{DB Write Success?}\n  D -->|Yes| E[Acknowledge Write to App]\n  D -->|No| F[Rollback Cache + Return Error]\n  style B fill:#6366f1,color:#fff\n  style C fill:#3d2f14\n  style E fill:#10b981,color:#fff\n  style F fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  A[App Writes Data] --> B[Write to Cache]\n  B --> C[Cache Writes to DB Synchronously]\n  C --> D{DB Write Success?}\n  D -->|Yes| E[Acknowledge Write to App]\n  D -->|No| F[Rollback Cache + Return Error]\n  style B fill:#1a2744\n  style C fill:#3d2f14\n  style E fill:#1a3329\n  style F fill:#3b1a1a"}
       />
 
       <h3>Pros and Cons</h3>
@@ -191,7 +191,7 @@ async function updateUser(userId, data) {
 
       <FlowChart
         title="Write-Behind Cache Flow"
-        chart={"graph TD\n  A[App Writes Data] --> B[Write to Cache]\n  B --> C[Acknowledge Write Immediately]\n  B --> D[Async Queue]\n  D --> E[Batch Write to DB]\n  E --> F{DB Write Success?}\n  F -->|Yes| G[Complete]\n  F -->|No| H[Retry / Dead Letter Queue]\n  style C fill:#10b981,color:#fff\n  style D fill:#3d2f14\n  style H fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  A[App Writes Data] --> B[Write to Cache]\n  B --> C[Acknowledge Write Immediately]\n  B --> D[Async Queue]\n  D --> E[Batch Write to DB]\n  E --> F{DB Write Success?}\n  F -->|Yes| G[Complete]\n  F -->|No| H[Retry / Dead Letter Queue]\n  style C fill:#1a3329\n  style D fill:#3d2f14\n  style H fill:#3b1a1a"}
       />
 
       <h3>Pros and Cons</h3>
@@ -511,7 +511,7 @@ SCAN 0 MATCH user:* COUNT 100             # Safe iteration`}
 
       <FlowChart
         title="Cache Stampede Scenario"
-        chart={"graph TD\n  A[Popular Cache Key Expires] --> B[1000 Concurrent Requests Arrive]\n  B --> C[All Check Cache]\n  C --> D[All Get Cache Miss]\n  D --> E[All Query Database Simultaneously]\n  E --> F[Database Overloaded]\n  F --> G[Timeouts and Failures]\n  style A fill:#3d2f14\n  style E fill:#ef4444,color:#fff\n  style F fill:#ef4444,color:#fff\n  style G fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  A[Popular Cache Key Expires] --> B[1000 Concurrent Requests Arrive]\n  B --> C[All Check Cache]\n  C --> D[All Get Cache Miss]\n  D --> E[All Query Database Simultaneously]\n  E --> F[Database Overloaded]\n  F --> G[Timeouts and Failures]\n  style A fill:#3d2f14\n  style E fill:#3b1a1a\n  style F fill:#3b1a1a\n  style G fill:#3b1a1a"}
       />
 
       <h3>Prevention Strategies</h3>
@@ -705,7 +705,7 @@ async function getUserSafe(userId) {
 
       <FlowChart
         title="Multi-Tier Cache Architecture"
-        chart={"graph LR\n  A[Browser Cache] --> B[CDN Cache]\n  B --> C[API Gateway Cache]\n  C --> D[Application Cache / Redis]\n  D --> E[Database Query Cache]\n  E --> F[Database Disk]\n  style A fill:#10b981,color:#fff\n  style B fill:#06b6d4,color:#fff\n  style C fill:#3b82f6,color:#fff\n  style D fill:#6366f1,color:#fff\n  style E fill:#8b5cf6,color:#fff\n  style F fill:#ef4444,color:#fff"}
+        chart={"graph LR\n  A[Browser Cache] --> B[CDN Cache]\n  B --> C[API Gateway Cache]\n  C --> D[Application Cache / Redis]\n  D --> E[Database Query Cache]\n  E --> F[Database Disk]\n  style A fill:#1a3329\n  style B fill:#1a3329\n  style C fill:#1a2744\n  style D fill:#1a2744\n  style E fill:#2a1f44\n  style F fill:#3b1a1a"}
       />
 
       <h3>The Cache Tiers</h3>

@@ -8,10 +8,10 @@ export default function Performance() {
   return (
     <LessonLayout
       title="Performance & Memoization"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={6}
-      prev={{ path: '/react19/context', label: 'Context & Composition' }}
-      next={{ path: '/react19/profiling', label: 'Profiling React Apps in the Browser' }}
+      prev={{ path: '/react18/context', label: 'Context & Composition' }}
+      next={{ path: '/react18/profiling', label: 'Profiling React Apps in the Browser' }}
     >
       <p>React is fast by default. Most performance issues come from unnecessary re-renders cascading through large trees, or expensive computations running on every render. Here's when and how to optimize.</p>
 
@@ -173,7 +173,7 @@ const Label = React.memo(function Label({ text }) {
 });`}
       </CodeBlock>
 
-      <FlowChart title="Should You Use React.memo?" chart={"graph TD\n  A[Is the component expensive to render?] -->|No| B[Skip memo - re-rendering is cheap]\n  A -->|Yes| C[Do its props change rarely while parent re-renders often?]\n  C -->|No - props change every time| D[Skip memo - it will never skip]\n  C -->|Yes| E[Are all props stable references?]\n  E -->|No| F[Stabilize props first with useCallback and useMemo]\n  E -->|Yes| G[Use React.memo]\n  style B fill:#4caf50,color:#fff\n  style D fill:#ff9800,color:#fff\n  style F fill:#ff9800,color:#fff\n  style G fill:#2196f3,color:#fff"} />
+      <FlowChart title="Should You Use React.memo?" chart={"graph TD\n  A[Is the component expensive to render?] -->|No| B[Skip memo - re-rendering is cheap]\n  A -->|Yes| C[Do its props change rarely while parent re-renders often?]\n  C -->|No - props change every time| D[Skip memo - it will never skip]\n  C -->|Yes| E[Are all props stable references?]\n  E -->|No| F[Stabilize props first with useCallback and useMemo]\n  E -->|Yes| G[Use React.memo]\n  style B fill:#1a3329\n  style D fill:#3d2f14\n  style F fill:#3d2f14\n  style G fill:#1a2744"} />
 
       <InfoBox variant="warning" title="Memo + Context = No Protection">
         <p>Remember: <code>React.memo</code> only checks <strong>props</strong>. If a memoized component uses <code>useContext</code> and that context value changes, it <strong>will re-render regardless of memo</strong>. The gate only guards against prop changes — context bypasses it entirely.</p>
@@ -317,7 +317,7 @@ const MemoizedList = React.memo(function MemoizedList({ items, style, onSelect }
         <p><code>React.memo</code> on the child component is <strong>necessary but not sufficient</strong>. The parent must also <strong>stabilize every prop</strong> it passes. Without both halves, you've added comparison overhead with zero benefit.</p>
       </InfoBox>
 
-      <FlowChart title="Memo Effectiveness Checklist" chart={"graph TD\n  A[Want to prevent unnecessary re-renders?] --> B[Wrap child in React.memo]\n  B --> C{Are ALL props stable?}\n  C -->|Yes - primitives or memoized| D[Memo works - child skips re-render]\n  C -->|No - inline objects or functions| E[Memo is useless - re-renders every time]\n  E --> F[Fix: useMemo for objects and arrays]\n  E --> G[Fix: useCallback for functions]\n  F --> D\n  G --> D\n  style D fill:#4caf50,color:#fff\n  style E fill:#f44336,color:#fff"} />
+      <FlowChart title="Memo Effectiveness Checklist" chart={"graph TD\n  A[Want to prevent unnecessary re-renders?] --> B[Wrap child in React.memo]\n  B --> C{Are ALL props stable?}\n  C -->|Yes - primitives or memoized| D[Memo works - child skips re-render]\n  C -->|No - inline objects or functions| E[Memo is useless - re-renders every time]\n  E --> F[Fix: useMemo for objects and arrays]\n  E --> G[Fix: useCallback for functions]\n  F --> D\n  G --> D\n  style D fill:#1a3329\n  style E fill:#3b1a1a"} />
 
       <h2>useMemo — When and When Not</h2>
 

@@ -98,7 +98,7 @@ const orderPlacedEvent: DomainEvent = {
 
       <FlowChart
         title="RabbitMQ Architecture"
-        chart={"graph LR\n  P[Producer] --> E[Exchange]\n  E -->|Routing Key: order.created| Q1[Queue: payment-processor]\n  E -->|Routing Key: order.created| Q2[Queue: inventory-manager]\n  E -->|Routing Key: order.*| Q3[Queue: audit-logger]\n  Q1 --> C1[Payment Consumer]\n  Q2 --> C2[Inventory Consumer]\n  Q3 --> C3[Audit Consumer]\n  style E fill:#FF6600,color:#fff"}
+        chart={"graph LR\n  P[Producer] --> E[Exchange]\n  E -->|Routing Key: order.created| Q1[Queue: payment-processor]\n  E -->|Routing Key: order.created| Q2[Queue: inventory-manager]\n  E -->|Routing Key: order.*| Q3[Queue: audit-logger]\n  Q1 --> C1[Payment Consumer]\n  Q2 --> C2[Inventory Consumer]\n  Q3 --> C3[Audit Consumer]\n  style E fill:#3d2f14"}
       />
 
       <h3>RabbitMQ Exchange Types</h3>
@@ -239,7 +239,7 @@ async function publishEvent(channel, event) {
 
       <FlowChart
         title="Kafka Architecture"
-        chart={"graph TD\n  P1[Producer 1] --> T[Topic: order-events]\n  P2[Producer 2] --> T\n  T --> PA[Partition 0]\n  T --> PB[Partition 1]\n  T --> PC[Partition 2]\n  PA --> CG1A[Consumer Group A - Instance 1]\n  PB --> CG1B[Consumer Group A - Instance 2]\n  PC --> CG1C[Consumer Group A - Instance 3]\n  PA --> CG2A[Consumer Group B - Instance 1]\n  PB --> CG2A\n  PC --> CG2A\n  style T fill:#231F20,color:#fff"}
+        chart={"graph TD\n  P1[Producer 1] --> T[Topic: order-events]\n  P2[Producer 2] --> T\n  T --> PA[Partition 0]\n  T --> PB[Partition 1]\n  T --> PC[Partition 2]\n  PA --> CG1A[Consumer Group A - Instance 1]\n  PB --> CG1B[Consumer Group A - Instance 2]\n  PC --> CG1C[Consumer Group A - Instance 3]\n  PA --> CG2A[Consumer Group B - Instance 1]\n  PB --> CG2A\n  PC --> CG2A\n  style T fill:#3b1a1a"}
       />
 
       <h3>Kafka Key Concepts</h3>
@@ -504,7 +504,7 @@ async function startConsumer() {
 
       <FlowChart
         title="RabbitMQ vs Kafka Decision Guide"
-        chart={"graph TD\n  Start[Choose a Message Broker] --> Q1{Need event replay?}\n  Q1 -->|Yes| Kafka[Use Kafka]\n  Q1 -->|No| Q2{Multiple consumer groups for same events?}\n  Q2 -->|Yes| Kafka\n  Q2 -->|No| Q3{Need complex routing?}\n  Q3 -->|Yes| Rabbit[Use RabbitMQ]\n  Q3 -->|No| Q4{High throughput > 100K msg/sec?}\n  Q4 -->|Yes| Kafka\n  Q4 -->|No| Q5{Simple task queue / job processing?}\n  Q5 -->|Yes| Rabbit\n  Q5 -->|No| Either[Either works]\n  style Kafka fill:#231F20,color:#fff\n  style Rabbit fill:#FF6600,color:#fff"}
+        chart={"graph TD\n  Start[Choose a Message Broker] --> Q1{Need event replay?}\n  Q1 -->|Yes| Kafka[Use Kafka]\n  Q1 -->|No| Q2{Multiple consumer groups for same events?}\n  Q2 -->|Yes| Kafka\n  Q2 -->|No| Q3{Need complex routing?}\n  Q3 -->|Yes| Rabbit[Use RabbitMQ]\n  Q3 -->|No| Q4{High throughput > 100K msg/sec?}\n  Q4 -->|Yes| Kafka\n  Q4 -->|No| Q5{Simple task queue / job processing?}\n  Q5 -->|Yes| Rabbit\n  Q5 -->|No| Either[Either works]\n  style Kafka fill:#3b1a1a\n  style Rabbit fill:#3d2f14"}
       />
 
       <InfoBox variant="tip" title="Quick Decision Guide">

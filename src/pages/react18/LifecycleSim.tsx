@@ -8,10 +8,10 @@ export default function LifecycleSim() {
   return (
     <LessonLayout
       title="🧪 Lifecycle Simulator"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={1}
-      prev={{ path: '/react19/lifecycle', label: 'Component Lifecycle' }}
-      next={{ path: '/react19/hooks', label: 'Hooks Deep Dive' }}
+      prev={{ path: '/react18/lifecycle', label: 'Component Lifecycle' }}
+      next={{ path: '/react18/hooks', label: 'Hooks Deep Dive' }}
     >
       {/* ── Introduction ── */}
       <p>

@@ -8,10 +8,10 @@ export default function Hooks() {
   return (
     <LessonLayout
       title="Hooks Deep Dive"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={2}
-      prev={{ path: '/react19/lifecycle-sim', label: '🧪 Lifecycle Simulator' }}
-      next={{ path: '/react19/state', label: 'State Management Patterns' }}
+      prev={{ path: '/react18/lifecycle-sim', label: '🧪 Lifecycle Simulator' }}
+      next={{ path: '/react18/state', label: 'State Management Patterns' }}
     >
       <p>Hooks are functions that let you "hook into" React's state and lifecycle from function components. Let's go beyond the basics into nuances that trip up even experienced developers.</p>
 
@@ -225,7 +225,7 @@ useState(loadDefaults)                   // Form 3: clean, no args needed
 useState(() => computeGrid(100, 100))    // Form 2: need to pass arguments
 useState(0)                              // Form 1: fine for cheap primitives`}</CodeBlock>
 
-      <FlowChart title="Decision: Lazy Initializer Needed?" chart={"graph TD\n  A[What is your initial state value?] --> B{Is it expensive to compute?}\n  B -->|No - simple value| C[Just pass it directly]\n  C --> D[\"useState(0) or useState('')\"]\n  B -->|Yes - computation needed| E{Does the function need arguments?}\n  E -->|No args| F[Pass function directly]\n  F --> G[\"useState(myFunction)\"]\n  E -->|Needs args| H[Wrap in arrow function]\n  H --> I[\"useState(() => myFn(arg1, arg2))\"]\n  style D fill:#4caf50,color:#fff\n  style G fill:#4caf50,color:#fff\n  style I fill:#4caf50,color:#fff"} />
+      <FlowChart title="Decision: Lazy Initializer Needed?" chart={"graph TD\n  A[What is your initial state value?] --> B{Is it expensive to compute?}\n  B -->|No - simple value| C[Just pass it directly]\n  C --> D[\"useState(0) or useState('')\"]\n  B -->|Yes - computation needed| E{Does the function need arguments?}\n  E -->|No args| F[Pass function directly]\n  F --> G[\"useState(myFunction)\"]\n  E -->|Needs args| H[Wrap in arrow function]\n  H --> I[\"useState(() => myFn(arg1, arg2))\"]\n  style D fill:#1a3329\n  style G fill:#1a3329\n  style I fill:#1a3329"} />
 
       <h3>Common Cases That Need Lazy Initialization</h3>
 
@@ -362,7 +362,7 @@ const handleClick = () => {
 
       <FlowChart
         title="Direct Value vs Functional Update"
-        chart={"graph TD\n  A[count = 0 captured in closure] --> B[setCount - count + 1 -]\n  B --> C[Queues: set to 1]\n  C --> D[setCount - count + 1 - again]\n  D --> E[Queues: set to 1 - same count!]\n  E --> F[React batches: last value wins = 1]\n  style A fill:#1e3a5f,stroke:#4fc3f7,color:#e0e0e0\n  style F fill:#5c1a1a,stroke:#ef5350,color:#e0e0e0"}
+        chart={"graph TD\n  A[count = 0 captured in closure] --> B[setCount - count + 1 -]\n  B --> C[Queues: set to 1]\n  C --> D[setCount - count + 1 - again]\n  D --> E[Queues: set to 1 - same count!]\n  E --> F[React batches: last value wins = 1]\n  style A fill:#1a2744,stroke:#4fc3f7\n  style F fill:#3b1a1a,stroke:#ef5350"}
       />
 
       <h3>The Fix: Functional Updates</h3>
@@ -383,7 +383,7 @@ const handleClick = () => {
 
       <FlowChart
         title="Functional Update Chain"
-        chart={"graph TD\n  A[setCount - prev => prev + 1 -] --> B[React passes prev = 0]\n  B --> C[Returns 1]\n  C --> D[setCount - prev => prev + 1 -]\n  D --> E[React passes prev = 1]\n  E --> F[Returns 2]\n  F --> G[React applies final state: 2]\n  style A fill:#1e3a5f,stroke:#4fc3f7,color:#e0e0e0\n  style G fill:#1a3a1a,stroke:#66bb6a,color:#e0e0e0"}
+        chart={"graph TD\n  A[setCount - prev => prev + 1 -] --> B[React passes prev = 0]\n  B --> C[Returns 1]\n  C --> D[setCount - prev => prev + 1 -]\n  D --> E[React passes prev = 1]\n  E --> F[Returns 2]\n  F --> G[React applies final state: 2]\n  style A fill:#1a2744,stroke:#4fc3f7\n  style G fill:#1a3329,stroke:#66bb6a"}
       />
 
       <InfoBox variant="tip" title="The Rule">
@@ -475,7 +475,7 @@ function processUpdateQueue(fiber) {
 
       <FlowChart
         title="Update Queue Processing Pipeline"
-        chart={"graph LR\n  A[Handler calls setCount twice] --> B[Queue: fn1, fn2]\n  B --> C[React drains queue]\n  C --> D[pending = 0]\n  D --> E[fn1: 0 to 1]\n  E --> F[fn2: 1 to 2]\n  F --> G[Commit state = 2]\n  G --> H[Re-render with count = 2]\n  style A fill:#1e3a5f,stroke:#4fc3f7,color:#e0e0e0\n  style G fill:#1a3a1a,stroke:#66bb6a,color:#e0e0e0\n  style H fill:#1a3a1a,stroke:#66bb6a,color:#e0e0e0"}
+        chart={"graph LR\n  A[Handler calls setCount twice] --> B[Queue: fn1, fn2]\n  B --> C[React drains queue]\n  C --> D[pending = 0]\n  D --> E[fn1: 0 to 1]\n  E --> F[fn2: 1 to 2]\n  F --> G[Commit state = 2]\n  G --> H[Re-render with count = 2]\n  style A fill:#1a2744,stroke:#4fc3f7\n  style G fill:#1a3329,stroke:#66bb6a\n  style H fill:#1a3329,stroke:#66bb6a"}
       />
 
       <InfoBox variant="info" title="Key Takeaway">
@@ -565,7 +565,7 @@ function useStableCallback(fn) {
 
       <FlowChart
         title="Render Timeline — Where Can Interval Fire?"
-        chart={"graph LR\n  A[Render] --> B[DOM Commit]\n  B --> C[useLayoutEffect - ref updated]\n  C --> D[Browser Paint]\n  D --> E[useEffect runs]\n  D --> F[Interval tick can fire here]\n  style C fill:#1a3a1a,stroke:#66bb6a,color:#e0e0e0\n  style F fill:#5c1a1a,stroke:#ef5350,color:#e0e0e0"}
+        chart={"graph LR\n  A[Render] --> B[DOM Commit]\n  B --> C[useLayoutEffect - ref updated]\n  C --> D[Browser Paint]\n  D --> E[useEffect runs]\n  D --> F[Interval tick can fire here]\n  style C fill:#1a3329,stroke:#66bb6a\n  style F fill:#3b1a1a,stroke:#ef5350"}
       />
 
       <h4>Pattern 2: usePrevious — timing is everything</h4>
@@ -691,7 +691,7 @@ function Parent() {
 
       <FlowChart
         title="useStableCallback — How It Works"
-        chart={"graph TD\n  A[Every render: ref.current = fn] --> B[Wrapper function reads ref.current]\n  B --> C[Wrapper identity never changes]\n  C --> D[Safe for dependency arrays]\n  C --> E[Safe for React.memo children]\n  B --> F[But always calls LATEST fn]\n  style C fill:#1a3a1a,stroke:#66bb6a,color:#e0e0e0\n  style F fill:#1a3a1a,stroke:#66bb6a,color:#e0e0e0\n  style A fill:#1e3a5f,stroke:#4fc3f7,color:#e0e0e0"}
+        chart={"graph TD\n  A[Every render: ref.current = fn] --> B[Wrapper function reads ref.current]\n  B --> C[Wrapper identity never changes]\n  C --> D[Safe for dependency arrays]\n  C --> E[Safe for React.memo children]\n  B --> F[But always calls LATEST fn]\n  style C fill:#1a3329,stroke:#66bb6a\n  style F fill:#1a3329,stroke:#66bb6a\n  style A fill:#1a2744,stroke:#4fc3f7"}
       />
 
       <InfoBox variant="tip" title="When to Use Each Pattern">
@@ -886,7 +886,7 @@ function FormWithReducer() {
 
       <FlowChart
         title="Batching Timeline"
-        chart={"graph LR\n  A[setIsSubmitting true] --> B[setErrors empty]\n  B --> C[Render 1]\n  C --> D[await submitForm...]\n  D --> E[setIsSubmitted true]\n  E --> F[setIsSubmitting false]\n  F --> G[Render 2]\n  style C fill:#1e3a5f,stroke:#4fc3f7,color:#e0e0e0\n  style G fill:#1e3a5f,stroke:#4fc3f7,color:#e0e0e0\n  style D fill:#5c1a1a,stroke:#ef5350,color:#e0e0e0"}
+        chart={"graph LR\n  A[setIsSubmitting true] --> B[setErrors empty]\n  B --> C[Render 1]\n  C --> D[await submitForm...]\n  D --> E[setIsSubmitted true]\n  E --> F[setIsSubmitting false]\n  F --> G[Render 2]\n  style C fill:#1a2744,stroke:#4fc3f7\n  style G fill:#1a2744,stroke:#4fc3f7\n  style D fill:#3b1a1a,stroke:#ef5350"}
       />
 
       <InfoBox variant="info" title="Why useReducer Wins Here">
@@ -1045,7 +1045,7 @@ function Parent() {
 
       <FlowChart
         title="useCallback Props Flow"
-        chart={"graph TD\n  A[Parent re-renders] --> B{Is handleDelete the same ref?}\n  B -->|Without useCallback: NO| C[React.memo fails]\n  C --> D[ExpensiveList re-renders - wasted]\n  B -->|With useCallback: YES| E[React.memo passes]\n  E --> F[ExpensiveList skips re-render]\n  style C fill:#5c1a1a,stroke:#ef5350,color:#e0e0e0\n  style D fill:#5c1a1a,stroke:#ef5350,color:#e0e0e0\n  style F fill:#1a3a1a,stroke:#66bb6a,color:#e0e0e0"}
+        chart={"graph TD\n  A[Parent re-renders] --> B{Is handleDelete the same ref?}\n  B -->|Without useCallback: NO| C[React.memo fails]\n  C --> D[ExpensiveList re-renders - wasted]\n  B -->|With useCallback: YES| E[React.memo passes]\n  E --> F[ExpensiveList skips re-render]\n  style C fill:#3b1a1a,stroke:#ef5350\n  style D fill:#3b1a1a,stroke:#ef5350\n  style F fill:#1a3329,stroke:#66bb6a"}
       />
 
       <InfoBox variant="warning" title="For This Purpose, useCallback Needs React.memo on the Other Side">
@@ -1232,7 +1232,7 @@ function AuthProvider({ children }) {
 
       <FlowChart
         title="Context Value: Unmemoized vs Memoized"
-        chart={"graph TD\n  A[Provider parent re-renders] --> B[Provider re-renders]\n  B --> C{Is context value memoized?}\n  C -->|No: value is new object| D[ALL consumers re-render]\n  D --> E[Their children re-render]\n  E --> F[Cascade: 50+ wasted renders]\n  C -->|Yes: useMemo returns same ref| G[React skips notification]\n  G --> H[Zero consumers re-render]\n  style D fill:#5c1a1a,stroke:#ef5350,color:#e0e0e0\n  style F fill:#5c1a1a,stroke:#ef5350,color:#e0e0e0\n  style H fill:#1a3a1a,stroke:#66bb6a,color:#e0e0e0"}
+        chart={"graph TD\n  A[Provider parent re-renders] --> B[Provider re-renders]\n  B --> C{Is context value memoized?}\n  C -->|No: value is new object| D[ALL consumers re-render]\n  D --> E[Their children re-render]\n  E --> F[Cascade: 50+ wasted renders]\n  C -->|Yes: useMemo returns same ref| G[React skips notification]\n  G --> H[Zero consumers re-render]\n  style D fill:#3b1a1a,stroke:#ef5350\n  style F fill:#3b1a1a,stroke:#ef5350\n  style H fill:#1a3329,stroke:#66bb6a"}
       />
 
       <h3>When NOT to Memoize</h3>

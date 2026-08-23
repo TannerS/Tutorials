@@ -8,10 +8,10 @@ export default function Patterns() {
   return (
     <LessonLayout
       title="Advanced Patterns"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={10}
-      prev={{ path: '/react19/ssr-hydration', label: 'SSR & Hydration' }}
-      next={{ path: '/react19/typescript', label: 'React + TypeScript' }}
+      prev={{ path: '/react18/ssr-hydration', label: 'SSR & Hydration' }}
+      next={{ path: '/react18/typescript', label: 'React + TypeScript' }}
     >
       <p>These patterns solve recurring composition and flexibility challenges. Knowing when to apply each pattern—and when simpler approaches suffice—distinguishes senior React developers.</p>
 

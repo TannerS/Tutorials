@@ -329,7 +329,7 @@ console.log('counter (still going):', counter());
 
       <FlowChart
         title="What createCounter() Actually Builds"
-        chart={"graph TD\n  A[\"createCounter() is called\"] --> B[\"New scope created: count = 0\"]\n  B --> C[\"Inner function is returned\"]\n  C --> D[\"Inner function keeps a live link to 'count'\"]\n  D --> E[\"counter() runs: count becomes 1\"]\n  E --> F[\"counter() runs: count becomes 2\"]\n  F --> G[\"counter() runs: count becomes 3\"]\n  H[\"createCounter() called again\"] --> I[\"Brand new scope: count = 0\"]\n  I --> J[\"Totally separate closure — counter2\"]\n  style D fill:#5b9cf6,color:#fff\n  style J fill:#5b9cf6,color:#fff"}
+        chart={"graph TD\n  A[\"createCounter() is called\"] --> B[\"New scope created: count = 0\"]\n  B --> C[\"Inner function is returned\"]\n  C --> D[\"Inner function keeps a live link to 'count'\"]\n  D --> E[\"counter() runs: count becomes 1\"]\n  E --> F[\"counter() runs: count becomes 2\"]\n  F --> G[\"counter() runs: count becomes 3\"]\n  H[\"createCounter() called again\"] --> I[\"Brand new scope: count = 0\"]\n  I --> J[\"Totally separate closure — counter2\"]\n  style D fill:#1a2744\n  style J fill:#1a2744"}
       />
 
       <InfoBox variant="note" title="Why This Matters Beyond Counters">
@@ -491,7 +491,7 @@ for (let j = 0; j < 3; j++) {
 
       <FlowChart
         title="One Shared Binding vs. One Binding Per Iteration"
-        chart={"graph TD\n  subgraph V[\"var — ONE binding shared by all three callbacks\"]\n    V0[\"i created once, outside the loop's block\"] --> V1[\"iteration 0 sets i=0, then i=1\"]\n    V1 --> V2[\"iteration 1 sets i=2\"]\n    V2 --> V3[\"iteration 2 sets i=3, loop exits\"]\n    V3 --> V4[\"10ms later: all 3 callbacks read the SAME i → 3, 3, 3\"]\n  end\n  subgraph L[\"let — a NEW binding for every iteration\"]\n    L0[\"iteration 0: its own j = 0\"] --> L1[\"iteration 1: its own j = 1\"]\n    L1 --> L2[\"iteration 2: its own j = 2\"]\n    L2 --> L3[\"20ms later: each callback reads ITS OWN j → 0, 1, 2\"]\n  end\n  style V4 fill:#ef4444,color:#fff\n  style L3 fill:#10b981,color:#fff"}
+        chart={"graph TD\n  subgraph V[\"var — ONE binding shared by all three callbacks\"]\n    V0[\"i created once, outside the loop's block\"] --> V1[\"iteration 0 sets i=0, then i=1\"]\n    V1 --> V2[\"iteration 1 sets i=2\"]\n    V2 --> V3[\"iteration 2 sets i=3, loop exits\"]\n    V3 --> V4[\"10ms later: all 3 callbacks read the SAME i → 3, 3, 3\"]\n  end\n  subgraph L[\"let — a NEW binding for every iteration\"]\n    L0[\"iteration 0: its own j = 0\"] --> L1[\"iteration 1: its own j = 1\"]\n    L1 --> L2[\"iteration 2: its own j = 2\"]\n    L2 --> L3[\"20ms later: each callback reads ITS OWN j → 0, 1, 2\"]\n  end\n  style V4 fill:#3b1a1a\n  style L3 fill:#1a3329"}
       />
 
       <InfoBox variant="warning" title="If You Need var, Force a New Scope Per Iteration">

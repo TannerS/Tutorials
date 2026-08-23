@@ -446,7 +446,7 @@ function UserList({ users }) {
 
       <FlowChart
         title="Decoupled Data Flow"
-        chart={"graph TD\nAPI[API Response]-->Parent[Parent: adapts data]\nParent-->Child[Child: simple props]\nChild-->UI[Rendered UI]\nstyle Parent fill:#d4edda\nstyle Child fill:#d4edda"}
+        chart={"graph TD\nAPI[API Response]-->Parent[Parent: adapts data]\nParent-->Child[Child: simple props]\nChild-->UI[Rendered UI]\nstyle Parent fill:#1a3329\nstyle Child fill:#1a3329"}
       />
 
       {/* ─── 8. Overusing Context ─── */}

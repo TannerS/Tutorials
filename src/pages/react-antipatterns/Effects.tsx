@@ -23,7 +23,7 @@ export default function Effects() {
 
       <FlowChart
         title="Should You Use useEffect?"
-        chart={"graph TD\nA[I need to run some code...] --> B{Is it in response to a user action?}\nB -->|Yes| C[Use an event handler, not useEffect]\nB -->|No| D{Is it computing a value from state/props?}\nD -->|Yes| E[Compute during render or useMemo]\nD -->|No| F{Is it syncing with an external system?}\nF -->|Yes, DOM/API/subscription| G[useEffect is correct]\nF -->|No| H{Is it initializing something on mount?}\nH -->|Yes| I[useEffect with empty deps]\nH -->|No| J[You probably do not need useEffect]\nstyle C fill:#22c55e,color:#fff\nstyle E fill:#22c55e,color:#fff\nstyle G fill:#3b82f6,color:#fff\nstyle I fill:#3b82f6,color:#fff\nstyle J fill:#ef4444,color:#fff"}
+        chart={"graph TD\nA[I need to run some code...] --> B{Is it in response to a user action?}\nB -->|Yes| C[Use an event handler, not useEffect]\nB -->|No| D{Is it computing a value from state/props?}\nD -->|Yes| E[Compute during render or useMemo]\nD -->|No| F{Is it syncing with an external system?}\nF -->|Yes, DOM/API/subscription| G[useEffect is correct]\nF -->|No| H{Is it initializing something on mount?}\nH -->|Yes| I[useEffect with empty deps]\nH -->|No| J[You probably do not need useEffect]\nstyle C fill:#1a3329\nstyle E fill:#1a3329\nstyle G fill:#1a2744\nstyle I fill:#1a2744\nstyle J fill:#3b1a1a"}
       />
 
       <h2>Anti-Pattern 1: useEffect for Derived State</h2>
@@ -546,7 +546,7 @@ function Products() {
 
       <FlowChart
         title="Common useEffect Mistakes"
-        chart={"graph TD\nA[useEffect that calls setState] --> B{What triggers it?}\nB -->|Props/state changed| C{Is the new state derived from those?}\nC -->|Yes| D[Remove effect - compute during render]\nC -->|No| E{Is it in response to user action?}\nE -->|Yes| F[Move to event handler]\nE -->|No| G[Effect might be correct - external sync]\nstyle D fill:#22c55e,color:#fff\nstyle F fill:#22c55e,color:#fff\nstyle G fill:#3b82f6,color:#fff"}
+        chart={"graph TD\nA[useEffect that calls setState] --> B{What triggers it?}\nB -->|Props/state changed| C{Is the new state derived from those?}\nC -->|Yes| D[Remove effect - compute during render]\nC -->|No| E{Is it in response to user action?}\nE -->|Yes| F[Move to event handler]\nE -->|No| G[Effect might be correct - external sync]\nstyle D fill:#1a3329\nstyle F fill:#1a3329\nstyle G fill:#1a2744"}
       />
 
       <InteractiveChallenge

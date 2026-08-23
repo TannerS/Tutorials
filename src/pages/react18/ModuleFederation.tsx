@@ -8,10 +8,10 @@ export default function ModuleFederation() {
   return (
     <LessonLayout
       title="Module Federation & MFEs"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={16}
-      prev={{ path: '/react19/imperative-bridge', label: 'Imperative Bridge Patterns' }}
-      next={{ path: '/react19/feature-folder', label: 'Feature-Based Architecture' }}
+      prev={{ path: '/react18/imperative-bridge', label: 'Imperative Bridge Patterns' }}
+      next={{ path: '/react18/feature-folder', label: 'Feature-Based Architecture' }}
     >
       <h2>Micro-Frontends in One Paragraph</h2>
       <p>

@@ -8,10 +8,10 @@ export default function Typescript() {
   return (
     <LessonLayout
       title="TypeScript Crash Course"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={11}
-      prev={{ path: '/react19/patterns', label: 'Advanced Patterns' }}
-      next={{ path: '/react19/build-toolchain', label: 'Build Toolchain' }}
+      prev={{ path: '/react18/patterns', label: 'Advanced Patterns' }}
+      next={{ path: '/react18/build-toolchain', label: 'Build Toolchain' }}
     >
       <p>TypeScript crash course — fundamentals, Node.js patterns, then React-specific patterns. Covers everything from scratch to production.</p>
 

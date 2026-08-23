@@ -510,7 +510,7 @@ function checkoutReducer(state: CheckoutState, action: CheckoutAction): Checkout
 
       <FlowChart
         title="Optimistic Update Flow"
-        chart={"graph TD\n  A[User Action] --> B[Dispatch optimistic action]\n  B --> C[Send API Request]\n  C --> D{Server Response}\n  D -->|Success| E[Dispatch confirmed]\n  D -->|Failure| F[Dispatch rollback with snapshot]\n  F --> G[Show Error Toast]\n  style B fill:#10b981,color:#fff\n  style F fill:#ef4444,color:#fff"}
+        chart={"graph TD\n  A[User Action] --> B[Dispatch optimistic action]\n  B --> C[Send API Request]\n  C --> D{Server Response}\n  D -->|Success| E[Dispatch confirmed]\n  D -->|Failure| F[Dispatch rollback with snapshot]\n  F --> G[Show Error Toast]\n  style B fill:#1a3329\n  style F fill:#3b1a1a"}
       />
 
       <CodeBlock language="tsx" title="Async actions live in hooks, never in the reducer">
@@ -831,7 +831,7 @@ test('useCart throws a useful error outside its provider', () => {
 
       <FlowChart
         title="Production State Architecture"
-        chart={"graph TD\n  APP[React App] --> SS[Server State]\n  APP --> CS[Client State]\n  APP --> FS[Form State]\n  APP --> US[URL State]\n  SS --> TQ[TanStack Query]\n  CS --> LOCAL[useState / useReducer - colocated]\n  CS --> CTX[Context + useReducer - shared]\n  FS --> RHF[React Hook Form]\n  US --> RR[React Router]\n  CTX --> SPLIT[Split state / dispatch]\n  CTX --> PERSIST[Lazy init + effect persistence]\n  TQ --> CACHE[Automatic Cache]\n  style TQ fill:#10b981,color:#fff\n  style CTX fill:#3b82f6,color:#fff\n  style LOCAL fill:#6b7280,color:#fff\n  style RHF fill:#f59e0b,color:#fff\n  style RR fill:#8b5cf6,color:#fff"}
+        chart={"graph TD\n  APP[React App] --> SS[Server State]\n  APP --> CS[Client State]\n  APP --> FS[Form State]\n  APP --> US[URL State]\n  SS --> TQ[TanStack Query]\n  CS --> LOCAL[useState / useReducer - colocated]\n  CS --> CTX[Context + useReducer - shared]\n  FS --> RHF[React Hook Form]\n  US --> RR[React Router]\n  CTX --> SPLIT[Split state / dispatch]\n  CTX --> PERSIST[Lazy init + effect persistence]\n  TQ --> CACHE[Automatic Cache]\n  style TQ fill:#1a3329\n  style CTX fill:#1a2744\n  style LOCAL fill:#1a2744\n  style RHF fill:#3d2f14\n  style RR fill:#2a1f44"}
       />
 
       <CodeBlock language="tsx" title="What a real feature actually uses">

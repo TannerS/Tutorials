@@ -24,7 +24,7 @@ export default function Data() {
 
       <FlowChart
         title="Loader → Render → Action Lifecycle"
-        chart={"graph TD\nA[Navigation or Form Submit] --> B{Is it a GET?}\nB -->|GET| C[Run loader functions]\nB -->|POST/PUT/DELETE| D[Run action function]\nC --> E[Provide data via useLoaderData]\nD --> F[Action processes mutation]\nF --> G[Revalidate - re-run loaders]\nG --> E\nE --> H[Render route component]\nH --> I[User sees fresh data]\nstyle A fill:#3b82f6,color:#fff\nstyle C fill:#8b5cf6,color:#fff\nstyle D fill:#ef4444,color:#fff\nstyle H fill:#10b981,color:#fff"}
+        chart={"graph TD\nA[Navigation or Form Submit] --> B{Is it a GET?}\nB -->|GET| C[Run loader functions]\nB -->|POST/PUT/DELETE| D[Run action function]\nC --> E[Provide data via useLoaderData]\nD --> F[Action processes mutation]\nF --> G[Revalidate - re-run loaders]\nG --> E\nE --> H[Render route component]\nH --> I[User sees fresh data]\nstyle A fill:#1a2744\nstyle C fill:#2a1f44\nstyle D fill:#3b1a1a\nstyle H fill:#1a3329"}
       />
 
       <h2>Loader Functions</h2>

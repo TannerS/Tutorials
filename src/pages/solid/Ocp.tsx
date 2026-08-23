@@ -34,7 +34,7 @@ export default function Ocp() {
 
       <FlowChart
         title="OCP — Closed Code vs. Open Extension Points"
-        chart={"graph TD\nCLIENT[Client Code] --> ABSTRACTION[Abstraction / Interface]\nABSTRACTION --> IMPL_A[Implementation A - existing]\nABSTRACTION --> IMPL_B[Implementation B - existing]\nABSTRACTION --> IMPL_C[Implementation C - NEW]\nstyle IMPL_C fill:#4caf50,color:#fff"}
+        chart={"graph TD\nCLIENT[Client Code] --> ABSTRACTION[Abstraction / Interface]\nABSTRACTION --> IMPL_A[Implementation A - existing]\nABSTRACTION --> IMPL_B[Implementation B - existing]\nABSTRACTION --> IMPL_C[Implementation C - NEW]\nstyle IMPL_C fill:#1a3329"}
       />
 
       <h2>Bad Example — Switch/If Chains</h2>

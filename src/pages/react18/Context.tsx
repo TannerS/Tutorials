@@ -8,10 +8,10 @@ export default function Context() {
   return (
     <LessonLayout
       title="Context & Composition"
-      sectionId="react19"
+      sectionId="react18"
       lessonIndex={5}
-      prev={{ path: '/react19/effects', label: 'Effects & Data Fetching' }}
-      next={{ path: '/react19/performance', label: 'Performance & Memoization' }}
+      prev={{ path: '/react18/effects', label: 'Effects & Data Fetching' }}
+      next={{ path: '/react18/performance', label: 'Performance & Memoization' }}
     >
       <p>Context provides a way to pass data through the component tree without prop drilling. But it's often overused where composition patterns would be simpler and more performant.</p>
 
@@ -466,7 +466,7 @@ function LogoutButton() {
 
       <FlowChart
         title="Cascade vs Broadcast — Two Different Mechanisms"
-        chart={"graph TB\n  subgraph Cascade[\"📥 Render Cascade (top → down)\"]\n    A1[Parent re-renders] --> B1[Children re-render by default]\n    B1 --> C1[Cascade continues into grandchildren]\n    C1 --> D1[React.memo can stop this]\n  end\n  subgraph Broadcast[\"📡 Context Broadcast (sideways)\"]\n    A2[Provider value reference changes] --> B2[Every useContext consumer re-renders]\n    B2 --> C2[Regardless of where they are in the tree]\n    C2 --> D2[React.memo CANNOT stop this]\n  end\n  style A1 fill:#1976d2,color:#fff\n  style A2 fill:#7b1fa2,color:#fff\n  style D1 fill:#388e3c,color:#fff\n  style D2 fill:#d32f2f,color:#fff"}
+        chart={"graph TB\n  subgraph Cascade[\"📥 Render Cascade (top → down)\"]\n    A1[Parent re-renders] --> B1[Children re-render by default]\n    B1 --> C1[Cascade continues into grandchildren]\n    C1 --> D1[React.memo can stop this]\n  end\n  subgraph Broadcast[\"📡 Context Broadcast (sideways)\"]\n    A2[Provider value reference changes] --> B2[Every useContext consumer re-renders]\n    B2 --> C2[Regardless of where they are in the tree]\n    C2 --> D2[React.memo CANNOT stop this]\n  end\n  style A1 fill:#1a2744\n  style A2 fill:#2a1f44\n  style D1 fill:#1a3329\n  style D2 fill:#3b1a1a"}
       />
 
       <InfoBox variant="info" title="The two mechanisms at a glance">
@@ -653,7 +653,7 @@ const value = useMemo(
 );`}
       </CodeBlock>
 
-      <FlowChart title="Without useMemo vs With useMemo" chart={"graph LR\n  subgraph Without\n  A1[Provider re-renders] --> B1[New object created]\n  B1 --> C1[ALL consumers re-render]\n  C1 --> D1[ALL descendants cascade]\n  end\n  subgraph With\n  A2[Provider re-renders] --> B2[useMemo returns cached object]\n  B2 --> C2[No consumers re-render]\n  C2 --> D2[No cascade]\n  end\n  style B1 fill:#f44336,color:#fff\n  style D1 fill:#f44336,color:#fff\n  style B2 fill:#4caf50,color:#fff\n  style D2 fill:#4caf50,color:#fff"} />
+      <FlowChart title="Without useMemo vs With useMemo" chart={"graph LR\n  subgraph Without\n  A1[Provider re-renders] --> B1[New object created]\n  B1 --> C1[ALL consumers re-render]\n  C1 --> D1[ALL descendants cascade]\n  end\n  subgraph With\n  A2[Provider re-renders] --> B2[useMemo returns cached object]\n  B2 --> C2[No consumers re-render]\n  C2 --> D2[No cascade]\n  end\n  style B1 fill:#3b1a1a\n  style D1 fill:#3b1a1a\n  style B2 fill:#1a3329\n  style D2 fill:#1a3329"} />
 
       <InfoBox variant="note" title="React.memo Does NOT Protect Against Context">
         <p>Even if a consumer is wrapped in <code>React.memo</code>, it will <strong>still re-render</strong> when its context value changes. React.memo only checks props — context bypasses it entirely. The only fix is at the <strong>provider level</strong> (memoize the value) or use a state management library with <strong>selector-based subscriptions</strong> (like Zustand).</p>
@@ -779,7 +779,7 @@ User clicks "Toggle Theme":
 
       <FlowChart
         title="Decision Tree: What Re-renders When a Provider Re-renders"
-        chart={"graph TD\n  Start[Provider re-renders] --> Q1{Did the parent re-render?}\n  Q1 -->|Yes - Case A| Cascade[children is a new reference]\n  Cascade --> CascadeResult[Whole subtree re-renders<br/>PLUS useContext consumers re-render]\n  Q1 -->|No - Case B| Stable[children reference unchanged]\n  Stable --> StableResult[Subtree is NOT re-rendered<br/>ONLY useContext consumers re-render]\n  style CascadeResult fill:#d32f2f,color:#fff\n  style StableResult fill:#388e3c,color:#fff\n  style Cascade fill:#7b1fa2,color:#fff\n  style Stable fill:#1976d2,color:#fff"}
+        chart={"graph TD\n  Start[Provider re-renders] --> Q1{Did the parent re-render?}\n  Q1 -->|Yes - Case A| Cascade[children is a new reference]\n  Cascade --> CascadeResult[Whole subtree re-renders<br/>PLUS useContext consumers re-render]\n  Q1 -->|No - Case B| Stable[children reference unchanged]\n  Stable --> StableResult[Subtree is NOT re-rendered<br/>ONLY useContext consumers re-render]\n  style CascadeResult fill:#3b1a1a\n  style StableResult fill:#1a3329\n  style Cascade fill:#2a1f44\n  style Stable fill:#1a2744"}
       />
 
       <hr style={{ borderColor: '#333', margin: '3rem 0 2rem' }} />
