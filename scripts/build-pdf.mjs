@@ -239,6 +239,12 @@ async function main() {
 
   await mkdir(OUT_DIR, { recursive: true });
 
+  // Section numbering for the divider pages, derived from the FULL sidebar
+  // order so a partial build (`pdf:section java`) still labels Java with its
+  // real position in the site rather than "Section 1 of 1".
+  const fullOrder = sidebarSectionOrder(groups);
+  const positionOf = new Map(fullOrder.map((id, i) => [id, i + 1]));
+
   console.log(`[pdf] Launching Chromium (headless)...`);
   const browser = await chromium.launch();
   const writtenFiles = new Map(); // sectionId -> filepath, only sections that actually rendered
@@ -428,7 +434,10 @@ async function main() {
 
       // Concatenate PDFs — we use a tiny inline PDF merger to avoid another dep.
       const merged = await mergePdfBuffers(buffers);
-      await writeFile(filename, merged);
+      const withDivider = await prependSectionDivider(
+        merged, section, positionOf.get(section.id), fullOrder.length, DARK,
+      );
+      await writeFile(filename, withDivider);
       writtenFiles.set(section.id, filename);
     }
   } finally {
@@ -490,7 +499,9 @@ async function buildCombinedPdf({ sections, groups, writtenFiles, dark, cheatshe
   // cover be prepended afterward, but we need each section's first-page
   // PDFRef in hand before drawing the table of contents, since that's what
   // the "click a section, jump to it" links below point at.
-  const firstPageOf = new Map(); // sectionId -> PDFPage (its first page)
+  // pages[0] is that section's divider page (added in main()), so the
+  // contents links below land on a page that names the section.
+  const firstPageOf = new Map(); // sectionId -> PDFPage (its divider page)
   for (const id of order) {
     const buf = await readFile(writtenFiles.get(id));
     const src = await PDFDocument.load(buf);
@@ -581,6 +592,86 @@ async function buildCombinedPdf({ sections, groups, writtenFiles, dark, cheatshe
   const outFile = join(OUT_DIR, `${baseName}${dark ? '-dark' : ''}.pdf`);
   await writeFile(outFile, await combined.save());
   console.log(`[pdf] Combined PDF → ${outFile}`);
+}
+
+/**
+ * The 14 standard PDF fonts are WinAnsi-encoded and pdf-lib THROWS on any
+ * codepoint they can't represent. Section labels and lesson titles routinely
+ * contain emoji ("🧪 Lifecycle Simulator", "📋 Cheat Sheet", "🔧 Build
+ * Toolchain"), so every string drawn into a generated page is folded to
+ * Latin-1 first.
+ */
+function pdfSafe(s) {
+  return String(s ?? '')
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—]/g, '-')
+    .replace(/[^\x20-\x7E\xA0-\xFF]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Prepends a full-page section divider to an already-merged section PDF.
+ *
+ * Without it a section PDF opens cold on lesson one with nothing naming the
+ * section, and in the combined file each section runs straight into the next —
+ * clicking a section in the contents lands on a lesson page that never says
+ * which section it belongs to, so there is no way to tell where one section
+ * ends and the next begins. The divider doubles as that section's contents.
+ *
+ * Done here rather than in buildCombinedPdf so standalone section PDFs get it
+ * too; the combined build then inherits it as each section's first page, which
+ * is already what its `pages[0]` link target picks up.
+ */
+async function prependSectionDivider(mergedBuffer, section, position, total, dark) {
+  const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
+  const doc = await PDFDocument.load(mergedBuffer);
+  const font = await doc.embedFont(StandardFonts.HelveticaBold);
+  const bodyFont = await doc.embedFont(StandardFonts.Helvetica);
+
+  const PAGE_W = 8.5 * 72, PAGE_H = 11 * 72; // Letter, in PDF points (72/in)
+  const titleColor = dark ? rgb(0.894, 0.902, 0.941) : rgb(0.1, 0.1, 0.15);
+  const mutedColor = dark ? rgb(0.576, 0.6, 0.698) : rgb(0.4, 0.4, 0.4);
+  const ruleColor = dark ? rgb(0.357, 0.612, 0.965) : rgb(0.145, 0.388, 0.922);
+  const bg = rgb(0.059, 0.067, 0.09); // #0f1117 — the site's real --bg-primary dark value
+
+  const page = doc.insertPage(0, [PAGE_W, PAGE_H]);
+  if (dark) page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: bg });
+
+  let y = PAGE_H - 132;
+  if (position && total) {
+    page.drawText(pdfSafe(`Section ${position} of ${total}`), {
+      x: 54, y, size: 10, font: bodyFont, color: mutedColor,
+    });
+  }
+
+  y -= 40;
+  // Long labels would run off the page at 30pt, so step down until they fit.
+  const label = pdfSafe(section?.label ?? section?.id ?? '');
+  let titleSize = 30;
+  while (titleSize > 14 && font.widthOfTextAtSize(label, titleSize) > PAGE_W - 108) titleSize -= 1;
+  page.drawText(label, { x: 54, y, size: titleSize, font, color: titleColor });
+
+  y -= 20;
+  page.drawRectangle({ x: 54, y, width: PAGE_W - 108, height: 2, color: ruleColor });
+
+  const lessons = section?.lessons ?? [];
+  y -= 34;
+  page.drawText(pdfSafe(`${lessons.length} ${lessons.length === 1 ? 'lesson' : 'lessons'} in this section`), {
+    x: 54, y, size: 11, font: bodyFont, color: mutedColor,
+  });
+
+  y -= 30;
+  for (let i = 0; i < lessons.length; i++) {
+    if (y < 54) break; // the largest section (22 lessons) still fits; guard anyway
+    page.drawText(pdfSafe(`${String(i + 1).padStart(2, ' ')}.  ${lessons[i].title ?? ''}`), {
+      x: 66, y, size: 11, font: bodyFont, color: titleColor,
+    });
+    y -= 17;
+  }
+
+  return Buffer.from(await doc.save());
 }
 
 /**
