@@ -26,7 +26,7 @@ export const sections: Section[] = [
   },
   {
     id: 'springboot',
-    label: 'Spring Boot',
+    label: 'Spring Boot 4',
     icon: '🍃',
     color: '#4ade80',
     lessons: [
@@ -49,6 +49,23 @@ export const sections: Section[] = [
       { id: 'webflux', title: 'Reactive Programming with WebFlux', path: '/springboot/webflux' },
       { id: 'resilience', title: 'Resilience4j & Circuit Breakers', path: '/springboot/resilience' },
       { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/springboot/cheatsheet' },
+    ],
+  },
+  {
+    id: 'springboot2',
+    label: 'Spring Boot 2 (Legacy)',
+    icon: '🍂',
+    color: '#a3a380',
+    lessons: [
+      { id: 'intro', title: 'Spring Boot 2 in 2026: Where It Stands', path: '/springboot2/intro' },
+      { id: 'javax', title: 'The javax World — Namespace, JPA, Servlets', path: '/springboot2/javax' },
+      { id: 'security', title: 'Security the Boot 2 Way', path: '/springboot2/security' },
+      { id: 'data', title: 'Spring Data & JPA on Hibernate 5', path: '/springboot2/data' },
+      { id: 'config', title: 'Configuration & Properties That Moved', path: '/springboot2/config' },
+      { id: 'testing', title: 'Testing in Boot 2 — @MockBean and Friends', path: '/springboot2/testing' },
+      { id: 'actuator', title: 'Actuator & Metrics Before the Rename', path: '/springboot2/actuator' },
+      { id: 'migration', title: 'Migrating 2 → 3 → 4, In Order', path: '/springboot2/migration' },
+      { id: 'cheatsheet', title: '📋 Spring Boot 2 Cheat Sheet', path: '/springboot2/cheatsheet' },
     ],
   },
   {
@@ -675,7 +692,7 @@ export const groups: Group[] = [
     label: 'Backend',
     icon: '🖥️',
     color: '#fb923c',
-    sectionIds: ['java', 'springboot', 'java-field-guide', 'spring-field-guide'],
+    sectionIds: ['java', 'springboot', 'springboot2', 'java-field-guide', 'spring-field-guide'],
   },
   {
     id: 'frontend',

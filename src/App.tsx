@@ -38,6 +38,15 @@ import SpringObservability from './pages/springboot/Observability'
 import SpringWebflux from './pages/springboot/Webflux'
 import SpringResilience from './pages/springboot/Resilience'
 import SpringCheatsheet from './pages/springboot/Cheatsheet'
+import SB2Intro from './pages/springboot2/Intro'
+import SB2Javax from './pages/springboot2/Javax'
+import SB2Security from './pages/springboot2/Security'
+import SB2Data from './pages/springboot2/Data'
+import SB2Config from './pages/springboot2/Config'
+import SB2Testing from './pages/springboot2/Testing'
+import SB2Actuator from './pages/springboot2/Actuator'
+import SB2Migration from './pages/springboot2/Migration'
+import SB2Cheatsheet from './pages/springboot2/Cheatsheet'
 
 // React 19
 import ReactLifecycle from './pages/react18/Lifecycle'
@@ -496,6 +505,15 @@ function App() {
         <Route path="springboot/webflux" element={<SpringWebflux />} />
         <Route path="springboot/resilience" element={<SpringResilience />} />
         <Route path="springboot/cheatsheet" element={<SpringCheatsheet />} />
+        <Route path="springboot2/intro" element={<SB2Intro />} />
+        <Route path="springboot2/javax" element={<SB2Javax />} />
+        <Route path="springboot2/security" element={<SB2Security />} />
+        <Route path="springboot2/data" element={<SB2Data />} />
+        <Route path="springboot2/config" element={<SB2Config />} />
+        <Route path="springboot2/testing" element={<SB2Testing />} />
+        <Route path="springboot2/actuator" element={<SB2Actuator />} />
+        <Route path="springboot2/migration" element={<SB2Migration />} />
+        <Route path="springboot2/cheatsheet" element={<SB2Cheatsheet />} />
         {/* React 19 */}
         <Route path="react18/lifecycle" element={<ReactLifecycle />} />
         <Route path="react18/lifecycle-sim" element={<ReactLifecycleSim />} />
