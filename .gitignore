@@ -27,3 +27,7 @@ dist-pdf
 
 # transient agent verification scratch — not part of the app
 .audit-scratch/
+
+# Claude Code: share the agent definitions, keep per-machine state local
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
