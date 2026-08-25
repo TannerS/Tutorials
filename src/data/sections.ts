@@ -69,6 +69,19 @@ export const sections: Section[] = [
     ],
   },
   {
+    id: 'from-scratch',
+    label: 'Build From Scratch',
+    icon: '🔩',
+    color: '#f472b6',
+    lessons: [
+      { id: 'intro', title: 'Why Build the Thing You Already Use', path: '/from-scratch/intro' },
+      { id: 'scheduler', title: 'Build a Task Scheduler', path: '/from-scratch/scheduler' },
+      { id: 'storage', title: 'Build a Key-Value Store with a Write-Ahead Log', path: '/from-scratch/storage' },
+      { id: 'httpserver', title: 'Build an HTTP Server from Sockets', path: '/from-scratch/httpserver' },
+      { id: 'consensus', title: 'Build Raft: Leader Election & Log Replication', path: '/from-scratch/consensus' },
+    ],
+  },
+  {
     id: 'react18',
     label: 'React Core',
     icon: '⚛️',
@@ -749,7 +762,7 @@ export const groups: Group[] = [
     label: 'Developer Fundamentals',
     icon: '🎓',
     color: '#f97316',
-    sectionIds: ['dsa', 'version-control'],
+    sectionIds: ['dsa', 'version-control', 'from-scratch'],
   },
   {
     id: 'architecture',

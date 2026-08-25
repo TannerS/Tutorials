@@ -47,6 +47,11 @@ import SB2Testing from './pages/springboot2/Testing'
 import SB2Actuator from './pages/springboot2/Actuator'
 import SB2Migration from './pages/springboot2/Migration'
 import SB2Cheatsheet from './pages/springboot2/Cheatsheet'
+import FSIntro from './pages/from-scratch/Intro'
+import FSScheduler from './pages/from-scratch/Scheduler'
+import FSStorage from './pages/from-scratch/Storage'
+import FSHttpServer from './pages/from-scratch/HttpServer'
+import FSConsensus from './pages/from-scratch/Consensus'
 
 // React 19
 import ReactLifecycle from './pages/react18/Lifecycle'
@@ -514,6 +519,11 @@ function App() {
         <Route path="springboot2/actuator" element={<SB2Actuator />} />
         <Route path="springboot2/migration" element={<SB2Migration />} />
         <Route path="springboot2/cheatsheet" element={<SB2Cheatsheet />} />
+        <Route path="from-scratch/intro" element={<FSIntro />} />
+        <Route path="from-scratch/scheduler" element={<FSScheduler />} />
+        <Route path="from-scratch/storage" element={<FSStorage />} />
+        <Route path="from-scratch/httpserver" element={<FSHttpServer />} />
+        <Route path="from-scratch/consensus" element={<FSConsensus />} />
         {/* React 19 */}
         <Route path="react18/lifecycle" element={<ReactLifecycle />} />
         <Route path="react18/lifecycle-sim" element={<ReactLifecycleSim />} />
