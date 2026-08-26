@@ -9,7 +9,7 @@ export default function Adapters() {
     <LessonLayout
       title="API Adapters & Error Envelopes"
       sectionId="react18"
-      lessonIndex={14}
+      lessonIndex={15}
       prev={{ path: '/react18/cheat-sheet', label: 'Cheat Sheet' }}
       next={{ path: '/react18/imperative-bridge', label: 'Imperative Bridge Patterns' }}
     >

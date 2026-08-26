@@ -8,7 +8,7 @@ export default function Effects() {
     <LessonLayout
       title="Effects & Data Fetching"
       sectionId="react18"
-      lessonIndex={4}
+      lessonIndex={5}
       prev={{ path: '/react18/state', label: 'State Management Patterns' }}
       next={{ path: '/react18/context', label: 'Context & Composition' }}
     >

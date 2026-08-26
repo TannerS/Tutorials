@@ -7,8 +7,8 @@ export default function Cheatsheet() {
     <LessonLayout
       title="Java Cheat Sheet"
       sectionId="java"
-      lessonIndex={14}
-      prev={{ path: '/java/build-tools', label: 'Build Tools: Maven & Gradle' }}
+      lessonIndex={16}
+      prev={{ path: '/java/mockito', label: 'Mockito in Practice' }}
       next={null}
     >
       <p>

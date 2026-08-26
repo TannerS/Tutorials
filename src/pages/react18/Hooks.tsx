@@ -11,7 +11,7 @@ export default function Hooks() {
       sectionId="react18"
       lessonIndex={2}
       prev={{ path: '/react18/lifecycle-sim', label: '🧪 Lifecycle Simulator' }}
-      next={{ path: '/react18/state', label: 'State Management Patterns' }}
+      next={{ path: '/react18/refs', label: 'Refs In Depth — From Basics to Imperative APIs' }}
     >
       <p>Hooks are functions that let you "hook into" React's state and lifecycle from function components. Let's go beyond the basics into nuances that trip up even experienced developers.</p>
 

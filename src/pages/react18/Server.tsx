@@ -8,7 +8,7 @@ export default function Server() {
     <LessonLayout
       title="Server Components & Actions"
       sectionId="react18"
-      lessonIndex={8}
+      lessonIndex={9}
       prev={{ path: '/react18/profiling', label: 'Profiling React Apps in the Browser' }}
       next={{ path: '/react18/ssr-hydration', label: 'SSR & Hydration' }}
     >

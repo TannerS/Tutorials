@@ -8,7 +8,7 @@ export default function ErrorBoundaries() {
     <LessonLayout
       title="Error Boundaries"
       sectionId="react18"
-      lessonIndex={18}
+      lessonIndex={19}
       prev={{ path: '/react18/feature-folder', label: 'Feature-Based Architecture' }}
       next={{ path: '/react18/animations', label: 'Animation Libraries (Framer Motion & Beyond)' }}
     >

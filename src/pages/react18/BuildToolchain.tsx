@@ -35,7 +35,7 @@ export default function BuildToolchain() {
     <LessonLayout
       title="React + TypeScript Build Toolchain"
       sectionId="react18"
-      lessonIndex={12}
+      lessonIndex={13}
       prev={{ path: '/react18/typescript', label: 'React + TypeScript' }}
       next={{ path: '/react18/cheat-sheet', label: 'Cheat Sheet' }}
     >

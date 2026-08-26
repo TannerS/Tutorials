@@ -9,7 +9,7 @@ export default function Context() {
     <LessonLayout
       title="Context & Composition"
       sectionId="react18"
-      lessonIndex={5}
+      lessonIndex={6}
       prev={{ path: '/react18/effects', label: 'Effects & Data Fetching' }}
       next={{ path: '/react18/performance', label: 'Performance & Memoization' }}
     >

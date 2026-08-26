@@ -16,6 +16,8 @@ import JavaOptional from './pages/java/Optional'
 import JavaJvmInternals from './pages/java/JvmInternals'
 import JavaReflection from './pages/java/Reflection'
 import JavaBuildTools from './pages/java/BuildTools'
+import JavaTestingBasics from './pages/java/TestingBasics'
+import JavaMockito from './pages/java/Mockito'
 import JavaCheatsheet from './pages/java/Cheatsheet'
 
 // Spring Boot
@@ -57,6 +59,7 @@ import FSConsensus from './pages/from-scratch/Consensus'
 import ReactLifecycle from './pages/react18/Lifecycle'
 import ReactLifecycleSim from './pages/react18/LifecycleSim'
 import ReactHooks from './pages/react18/Hooks'
+import ReactRefs from './pages/react18/Refs'
 import ReactState from './pages/react18/State'
 import ReactEffects from './pages/react18/Effects'
 import ReactContext from './pages/react18/Context'
@@ -402,6 +405,12 @@ import CFGGotchas from './pages/css-field-guide/Gotchas'
 import CFGPatterns from './pages/css-field-guide/Patterns'
 import CFGSass from './pages/css-field-guide/Sass'
 import CFGTokens from './pages/css-field-guide/Tokens'
+import MuiIntro from './pages/mui/Intro'
+import MuiStylingV4 from './pages/mui/StylingV4'
+import MuiTheming from './pages/mui/Theming'
+import MuiOverrides from './pages/mui/Overrides'
+import MuiStyledV5 from './pages/mui/StyledV5'
+import MuiCheatsheet from './pages/mui/Cheatsheet'
 
 // React Testing
 import RTIntro from './pages/react-testing/Intro'
@@ -489,6 +498,8 @@ function App() {
         <Route path="java/jvm-internals" element={<JavaJvmInternals />} />
         <Route path="java/reflection" element={<JavaReflection />} />
         <Route path="java/build-tools" element={<JavaBuildTools />} />
+        <Route path="java/testing-basics" element={<JavaTestingBasics />} />
+        <Route path="java/mockito" element={<JavaMockito />} />
         <Route path="java/cheatsheet" element={<JavaCheatsheet />} />
         {/* Spring Boot */}
         <Route path="springboot/intro" element={<SpringIntro />} />
@@ -528,6 +539,7 @@ function App() {
         <Route path="react18/lifecycle" element={<ReactLifecycle />} />
         <Route path="react18/lifecycle-sim" element={<ReactLifecycleSim />} />
         <Route path="react18/hooks" element={<ReactHooks />} />
+        <Route path="react18/refs" element={<ReactRefs />} />
         <Route path="react18/state" element={<ReactState />} />
         <Route path="react18/effects" element={<ReactEffects />} />
         <Route path="react18/context" element={<ReactContext />} />
@@ -816,6 +828,12 @@ function App() {
         <Route path="css-mastery/design-system-tokens" element={<CSSDesignSystemTokens />} />
         <Route path="css-mastery/style-inclusion" element={<CSSStyleInclusion />} />
         <Route path="css-mastery/patterns" element={<CSSPatterns />} />
+        <Route path="mui/intro" element={<MuiIntro />} />
+        <Route path="mui/styling-v4" element={<MuiStylingV4 />} />
+        <Route path="mui/theming" element={<MuiTheming />} />
+        <Route path="mui/overrides" element={<MuiOverrides />} />
+        <Route path="mui/styled-v5" element={<MuiStyledV5 />} />
+        <Route path="mui/cheatsheet" element={<MuiCheatsheet />} />
         <Route path="playground/compiler" element={<PlaygroundCompiler />} />
         <Route path="playground/type-checker" element={<PlaygroundTypeChecker />} />
         <Route path="playground/jsx-compiler" element={<PlaygroundJsxCompiler />} />

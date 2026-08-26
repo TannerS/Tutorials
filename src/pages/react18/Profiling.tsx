@@ -8,7 +8,7 @@ export default function Profiling() {
     <LessonLayout
       title="Profiling React Apps in the Browser"
       sectionId="react18"
-      lessonIndex={7}
+      lessonIndex={8}
       prev={{ path: '/react18/performance', label: 'Performance & Memoization' }}
       next={{ path: '/react18/server', label: 'Server Components & Actions' }}
     >

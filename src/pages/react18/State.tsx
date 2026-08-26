@@ -8,8 +8,8 @@ export default function State() {
     <LessonLayout
       title="State Management Patterns"
       sectionId="react18"
-      lessonIndex={3}
-      prev={{ path: '/react18/hooks', label: 'Hooks Deep Dive' }}
+      lessonIndex={4}
+      prev={{ path: '/react18/refs', label: 'Refs In Depth — From Basics to Imperative APIs' }}
       next={{ path: '/react18/effects', label: 'Effects & Data Fetching' }}
     >
       <p>State management is the central challenge in React applications. The right approach depends on the scope, frequency of updates, and number of consumers. Here's a framework for choosing.</p>

@@ -9,7 +9,7 @@ export default function Performance() {
     <LessonLayout
       title="Performance & Memoization"
       sectionId="react18"
-      lessonIndex={6}
+      lessonIndex={7}
       prev={{ path: '/react18/context', label: 'Context & Composition' }}
       next={{ path: '/react18/profiling', label: 'Profiling React Apps in the Browser' }}
     >

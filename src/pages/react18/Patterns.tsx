@@ -9,7 +9,7 @@ export default function Patterns() {
     <LessonLayout
       title="Advanced Patterns"
       sectionId="react18"
-      lessonIndex={10}
+      lessonIndex={11}
       prev={{ path: '/react18/ssr-hydration', label: 'SSR & Hydration' }}
       next={{ path: '/react18/typescript', label: 'React + TypeScript' }}
     >
