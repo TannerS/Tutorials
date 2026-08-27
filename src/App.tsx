@@ -411,6 +411,11 @@ import MuiTheming from './pages/mui/Theming'
 import MuiOverrides from './pages/mui/Overrides'
 import MuiStyledV5 from './pages/mui/StyledV5'
 import MuiCheatsheet from './pages/mui/Cheatsheet'
+import Mui9Intro from './pages/mui9/Intro'
+import Mui9SilentBreaks from './pages/mui9/SilentBreaks'
+import Mui9Styling from './pages/mui9/Styling'
+import Mui9Theming from './pages/mui9/Theming'
+import Mui9Cheatsheet from './pages/mui9/Cheatsheet'
 
 // React Testing
 import RTIntro from './pages/react-testing/Intro'
@@ -834,6 +839,11 @@ function App() {
         <Route path="mui/overrides" element={<MuiOverrides />} />
         <Route path="mui/styled-v5" element={<MuiStyledV5 />} />
         <Route path="mui/cheatsheet" element={<MuiCheatsheet />} />
+        <Route path="mui9/intro" element={<Mui9Intro />} />
+        <Route path="mui9/silent-breaks" element={<Mui9SilentBreaks />} />
+        <Route path="mui9/styling" element={<Mui9Styling />} />
+        <Route path="mui9/theming" element={<Mui9Theming />} />
+        <Route path="mui9/cheatsheet" element={<Mui9Cheatsheet />} />
         <Route path="playground/compiler" element={<PlaygroundCompiler />} />
         <Route path="playground/type-checker" element={<PlaygroundTypeChecker />} />
         <Route path="playground/jsx-compiler" element={<PlaygroundJsxCompiler />} />

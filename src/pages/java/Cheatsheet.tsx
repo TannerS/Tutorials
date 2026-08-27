@@ -932,8 +932,92 @@ Both read the same Maven Central and produce the same JARs — switching later i
 a real project, but it's a rewrite of the build description, not your code.`}
       </CodeBlock>
 
+      <h2>Testing: Test Doubles &amp; Mockito</h2>
+
+      <CodeBlock language="text" title="The five test doubles (Meszaros), and what Mockito gives you">
+{`dummy    passed to satisfy a signature, never used
+stub     returns canned answers          -> when(x).thenReturn(y)
+spy      a REAL object that records      -> spy(obj)  (calls real methods!)
+mock     preprogrammed + verified        -> mock(X.class) + verify(...)
+fake     a working lightweight impl      -> MOCKITO HAS NO FAKE.
+         (in-memory repo, H2)               write it yourself - 30 lines
+                                            beats stubbing it in 40 classes`}
+      </CodeBlock>
+
+      <CodeBlock language="java" title="The API, in one block">
+{`@ExtendWith(MockitoExtension.class)          // JUnit 5
+class OrderServiceTest {
+    @Mock  EmailClient email;                 // a mock
+    @Spy   AuditLog    audit = new AuditLog(); // a real object, recorded
+    @InjectMocks OrderService svc;            // constructor-injected with the above
+
+    @Test void t() {
+        when(email.send(anyString())).thenReturn(true);      // stub
+        when(x.get()).thenReturn(1, 2, 3);                   // consecutive returns
+        when(x.get()).thenAnswer(inv -> inv.getArgument(0)); // dynamic
+
+        doThrow(new IllegalStateException()).when(x).voidMethod();  // void methods
+        doReturn(5).when(spyObj).realMethod();               // SPIES: use doReturn!
+
+        svc.place(order);
+
+        verify(email).send("a@b.c");
+        verify(email, times(2)).send(any());
+        verify(email, never()).send("x");
+        verifyNoMoreInteractions(email);
+
+        var cap = ArgumentCaptor.forClass(String.class);
+        verify(email).send(cap.capture());
+        assertEquals("a@b.c", cap.getValue());
+    }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="The rules that produce confusing failures">
+{`MATCHERS: all-or-nothing. If ONE argument uses a matcher, ALL must.
+  when(svc.f("a", anyInt()))   -> InvalidUseOfMatchersException
+                                  "3 matchers expected, 2 recorded"
+  when(svc.f(eq("a"), anyInt()))  correct
+
+  !! A matcher failure leaves Mockito's thread-local stack DIRTY, so the
+     NEXT test class can fail with UnfinishedStubbingException pointing
+     into the FIRST one. "Passes alone, fails in the suite" = look here.
+
+SPIES call the real method during when(...):
+  when(spy.get())  -> ACTUALLY RUNS get() first (can throw!)
+  doReturn(v).when(spy).get()   -> safe, never runs it
+
+STRICT STUBS (the default under MockitoExtension):
+  an unused stub fails the test with UnnecessaryStubbingException,
+  thrown AFTER the test body, in MockitoExtension.afterEach.
+  lenient() on one stub, or @MockitoSettings(strictness = LENIENT).
+
+@InjectMocks NPE: the stack trace shows only PRODUCTION frames
+  ("because \\"this.email\\" is null") with no mention of Mockito -
+  it means a dependency was not matched and stayed null.`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Setup facts that bite">
+{`mockito-inline is OBSOLETE. Last release 5.2.0 (2023-03-09) vs
+  mockito-core 5.23.0 (2026-03-11). The inline mock-maker has been the
+  DEFAULT since Mockito 5 - adding mockito-inline pins a stale engine.
+  It is what enables mocking final classes/static methods:
+      try (var m = mockStatic(Files.class)) { ... }   // scoped!
+
+MODERN JDKs break Mockito's self-attach. On JDK 26 every run prints
+  "Mockito is currently self-attaching to enable the inline-mock-maker.
+   This will no longer work in future releases of the JDK"
+  plus four JVM agent warnings. Fix - pass Mockito as a javaagent:
+      maven-dependency-plugin (goal: properties)
+      + surefire argLine: -javaagent:\${org.mockito:mockito-core:jar}
+
+SPRING BOOT: @MockBean/@SpyBean deprecated in Boot 3.4, REMOVED in Boot 4
+  -> @MockitoBean / @MockitoSpyBean
+     (org.springframework.test.context.bean.override.mockito)`}
+      </CodeBlock>
+
       <h2>Section Index</h2>
-      <CodeBlock language="text" title="All 14 lessons, in reading order">
+      <CodeBlock language="text" title="All 17 lessons, in reading order">
 {`1.  Introduction to Java                    JVM/JDK/JRE, compilation, main()'s real rules
 2.  Syntax & Data Types                     Primitives, autoboxing, Strings, control flow
 3.  OOP Fundamentals                        Encapsulation, inheritance, @Override, enums
@@ -948,7 +1032,9 @@ a real project, but it's a rewrite of the build description, not your code.`}
 12. JVM Internals & Garbage Collection      Heap/Metaspace/Stack, G1 vs ZGC, stop-the-world
 13. Reflection & Annotations                Class<?>, setAccessible, JPMS, @Retention
 14. Build Tools: Maven & Gradle             Lifecycle/tasks, scopes, api vs implementation
-15. This page`}
+15. Unit Testing Fundamentals               Dummies, stubs, spies, mocks, fakes
+16. Mockito in Practice                     Matchers, strict stubs, captors, statics
+17. This page`}
       </CodeBlock>
     </LessonLayout>
   );

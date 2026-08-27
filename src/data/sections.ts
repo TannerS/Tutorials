@@ -682,6 +682,19 @@ export const sections: Section[] = [
     ],
   },
   {
+    id: 'mui9',
+    label: 'MUI Current (v9)',
+    icon: '🆕',
+    color: '#007fff',
+    lessons: [
+      { id: 'intro', title: 'MUI v9 — Where the Library Actually Is', path: '/mui9/intro' },
+      { id: 'silent-breaks', title: 'The Breaks That Do Not Warn You', path: '/mui9/silent-breaks' },
+      { id: 'styling', title: 'Styling in v9 — styled() and sx', path: '/mui9/styling' },
+      { id: 'theming', title: 'Theming with CSS Variables & Color Schemes', path: '/mui9/theming' },
+      { id: 'cheatsheet', title: '📋 MUI v9 Cheat Sheet', path: '/mui9/cheatsheet' },
+    ],
+  },
+  {
     id: 'java-field-guide',
     label: 'Java Field Guide',
     icon: '🃏',

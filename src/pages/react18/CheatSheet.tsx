@@ -844,6 +844,65 @@ forwardRef            →  ref as a plain prop
         </p>
       </InfoBox>
 
+      <h2>🔗 Refs — Measured Behaviour</h2>
+
+      <CodeBlock language="text" title="Verified in a real browser on react 19.2.6">
+{`ref.current during the FIRST render          null
+ref.current during the SECOND render         populated
+   => never read ref.current during render to decide what to render
+
+INLINE arrow callback ref, on every re-render:
+   1. the OLD callback is called with null
+   2. the NEW callback is called with the node
+   (it is a new function identity each render, so React detaches/reattaches)
+   => useCallback the ref, or accept the churn
+
+Callback ref that RETURNS A CLEANUP (React 19):
+   React NEVER calls it with null at all - it calls the cleanup instead.
+   => the old "if (!node) return" guard is DEAD CODE in that form
+
+ON UNMOUNT, the object ref is:
+   still POPULATED during useLayoutEffect cleanup
+   already NULL     during useEffect cleanup
+   => teardown that needs the node MUST be in useLayoutEffect
+
+forwardRef on 19.2.6: ZERO console warnings. Not deprecated today.`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="The four ref shapes">
+{`// 1. DOM handle
+const ref = useRef(null);  <input ref={ref} />  ref.current.focus();
+
+// 2. instance storage that must NOT re-render
+const timer = useRef(null);        // interval id, AbortController,
+timer.current = setInterval(...);  // previous value, render counter
+
+// 3. callback ref - fires when the node attaches/detaches.
+//    The one case an object ref CANNOT do: measuring a node that
+//    appears later. On mount the object ref is still null.
+<div ref={(node) => {
+  if (!node) return;
+  setWidth(node.getBoundingClientRect().width);
+}} />
+
+// 4. useImperativeHandle - expose a NARROW api, not the node
+useImperativeHandle(ref, () => ({ focus, scrollIntoView }), []);
+// deps [] pins the handle to the FIRST render's closure;
+// omitting deps rebuilds it every render. Measured: with [], the
+// handle still returns render-0 values after a re-render.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Refs vs state, in one line">
+        <p>
+          If the UI must reflect it, it is <strong>state</strong>. If it must survive a render but
+          never trigger one, it is a <strong>ref</strong>. Mutating a ref changes the value
+          immediately but the screen keeps showing the old one until something else re-renders —
+          measured: three increments show <code>0</code> on screen while{' '}
+          <code>current</code> is already <code>3</code>. Full treatment in{' '}
+          <a href="/react18/refs">Refs In Depth</a>.
+        </p>
+      </InfoBox>
+
       <h2>🆕 React 19.1 / 19.2 Additions</h2>
 
       <CodeBlock language="jsx" title="APIs added after the 19.0 release" showLineNumbers>
