@@ -416,6 +416,15 @@ import Mui9SilentBreaks from './pages/mui9/SilentBreaks'
 import Mui9Styling from './pages/mui9/Styling'
 import Mui9Theming from './pages/mui9/Theming'
 import Mui9Cheatsheet from './pages/mui9/Cheatsheet'
+import TsqlIntro from './pages/tsql/Intro'
+import TsqlCoreQueries from './pages/tsql/CoreQueries'
+import TsqlJoins from './pages/tsql/Joins'
+import TsqlAggregation from './pages/tsql/Aggregation'
+import TsqlModifyingData from './pages/tsql/ModifyingData'
+import TsqlProgrammability from './pages/tsql/Programmability'
+import TsqlTransactions from './pages/tsql/Transactions'
+import TsqlIndexing from './pages/tsql/Indexing'
+import TsqlCheatsheet from './pages/tsql/Cheatsheet'
 
 // React Testing
 import RTIntro from './pages/react-testing/Intro'
@@ -844,6 +853,15 @@ function App() {
         <Route path="mui9/styling" element={<Mui9Styling />} />
         <Route path="mui9/theming" element={<Mui9Theming />} />
         <Route path="mui9/cheatsheet" element={<Mui9Cheatsheet />} />
+        <Route path="tsql/intro" element={<TsqlIntro />} />
+        <Route path="tsql/core-queries" element={<TsqlCoreQueries />} />
+        <Route path="tsql/joins" element={<TsqlJoins />} />
+        <Route path="tsql/aggregation" element={<TsqlAggregation />} />
+        <Route path="tsql/modifying-data" element={<TsqlModifyingData />} />
+        <Route path="tsql/programmability" element={<TsqlProgrammability />} />
+        <Route path="tsql/transactions" element={<TsqlTransactions />} />
+        <Route path="tsql/indexing" element={<TsqlIndexing />} />
+        <Route path="tsql/cheatsheet" element={<TsqlCheatsheet />} />
         <Route path="playground/compiler" element={<PlaygroundCompiler />} />
         <Route path="playground/type-checker" element={<PlaygroundTypeChecker />} />
         <Route path="playground/jsx-compiler" element={<PlaygroundJsxCompiler />} />

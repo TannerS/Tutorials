@@ -174,6 +174,23 @@ export const sections: Section[] = [
     ],
   },
   {
+    id: 'tsql',
+    label: 'T-SQL (SQL Server)',
+    icon: '🗄️',
+    color: '#cc2927',
+    lessons: [
+      { id: 'intro', title: 'T-SQL & Which Server You Are On', path: '/tsql/intro' },
+      { id: 'core-queries', title: 'Core Queries — SELECT, TOP, Paging, NULLs', path: '/tsql/core-queries' },
+      { id: 'joins', title: 'Joins & Set Operations', path: '/tsql/joins' },
+      { id: 'aggregation', title: 'Aggregation & Window Functions', path: '/tsql/aggregation' },
+      { id: 'modifying-data', title: 'Modifying Data — OUTPUT, MERGE, Upserts', path: '/tsql/modifying-data' },
+      { id: 'programmability', title: 'Stored Procedures, Functions & Error Handling', path: '/tsql/programmability' },
+      { id: 'transactions', title: 'Transactions, Isolation & Locking', path: '/tsql/transactions' },
+      { id: 'indexing', title: 'Indexing, SARGability & Execution Plans', path: '/tsql/indexing' },
+      { id: 'cheatsheet', title: '📋 T-SQL Cheat Sheet', path: '/tsql/cheatsheet' },
+    ],
+  },
+  {
     id: 'solid',
     label: 'SOLID',
     icon: '🏗️',

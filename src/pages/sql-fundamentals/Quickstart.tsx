@@ -13,6 +13,24 @@ export default function Quickstart() {
       prev={null}
       next={{ path: '/sql-fundamentals/joins', label: 'Joins & Subqueries' }}
     >
+
+      <InfoBox variant="note" title="🐘 Dialect notice — these lessons are PostgreSQL">
+        <p>
+          This section is written for <strong>PostgreSQL</strong>, and the behaviour described was
+          verified against <strong>PostgreSQL 18.x</strong>. Most of the SQL here is standard and
+          transfers directly, but the specifics do not: the type system,{' '}
+          <code>ON CONFLICT</code>, <code>RETURNING</code>, <code>generate_series</code>, MVCC and
+          the isolation-level behaviour are all Postgres.
+        </p>
+        <p style={{ marginTop: '0.5rem' }}>
+          On SQL Server, Oracle or MySQL the equivalent feature usually exists under a different
+          name and with different edge cases — for example <code>MERGE</code> or{' '}
+          <code>INSERT ... ON DUPLICATE KEY UPDATE</code> instead of <code>ON CONFLICT</code>, and
+          a lock-based rather than snapshot-based <code>REPEATABLE READ</code>. Where a feature is
+          version-gated, the lesson says so inline (for instance the <code>CYCLE</code> clause
+          being Postgres 14+).
+        </p>
+      </InfoBox>
       <p>
         You know SQL. Let's speed-run the fundamentals so we share a common vocabulary, then get to
         the good stuff. Everything here is <strong>PostgreSQL-flavored</strong> — where Postgres
