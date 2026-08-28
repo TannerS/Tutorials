@@ -421,6 +421,7 @@ import TsqlCoreQueries from './pages/tsql/CoreQueries'
 import TsqlJoins from './pages/tsql/Joins'
 import TsqlAggregation from './pages/tsql/Aggregation'
 import TsqlModifyingData from './pages/tsql/ModifyingData'
+import TsqlViews from './pages/tsql/Views'
 import TsqlProgrammability from './pages/tsql/Programmability'
 import TsqlTransactions from './pages/tsql/Transactions'
 import TsqlIndexing from './pages/tsql/Indexing'
@@ -858,6 +859,7 @@ function App() {
         <Route path="tsql/joins" element={<TsqlJoins />} />
         <Route path="tsql/aggregation" element={<TsqlAggregation />} />
         <Route path="tsql/modifying-data" element={<TsqlModifyingData />} />
+        <Route path="tsql/views" element={<TsqlViews />} />
         <Route path="tsql/programmability" element={<TsqlProgrammability />} />
         <Route path="tsql/transactions" element={<TsqlTransactions />} />
         <Route path="tsql/indexing" element={<TsqlIndexing />} />

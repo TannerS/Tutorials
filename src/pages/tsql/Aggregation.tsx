@@ -1,6 +1,5 @@
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function TsqlAggregation() {
@@ -14,92 +13,111 @@ function TsqlAggregation() {
     >
       <p>
         Aggregation is standard; window functions are where the leverage is. This lesson covers both,
-        plus the two T-SQL-specific traps: how aggregates treat NULL, and the frame clause that
-        silently changes what your running total means.
+        plus the two T-SQL traps: how aggregates treat NULL, and the frame clause that silently
+        changes what your running total means. Examples run against{' '}
+        <strong>WideWorldImportersDW</strong>.
       </p>
 
       <h2>Aggregates and NULL</h2>
 
       <CodeBlock language="text" title="The rule that explains most 'wrong total' bugs">
-{`COUNT(*)        counts ROWS            — includes rows where everything is NULL
-COUNT(col)      counts NON-NULL values — silently skips NULLs
-COUNT(DISTINCT col)  non-null distinct values
+{`COUNT(*)             counts ROWS            — including all-NULL rows
+COUNT([col])         counts NON-NULL values — silently skips NULLs
+COUNT(DISTINCT [col])  non-null distinct values
 
 SUM / AVG / MIN / MAX all IGNORE NULLs.
 
 *** AVG IS THE DANGEROUS ONE ***
-AVG(salary) over (100, NULL, 80) = 90, not 60.
-The NULL row is not treated as zero — it is excluded from BOTH the sum
-and the count. If you want NULL to count as zero, say so:
-    AVG(ISNULL(salary, 0))
+AVG over (100, NULL, 80) = 90, not 60. The NULL row is not treated as
+zero — it is excluded from BOTH the sum and the count. If you want NULL
+to count as zero, say so:  AVG(ISNULL([Annual Salary], 0))
 
 SUM over zero rows returns NULL, not 0. Wrap it:
-    ISNULL(SUM(x), 0)`}
+    ISNULL(SUM([Profit]), 0)`}
       </CodeBlock>
 
       <h2>GROUP BY, HAVING, and the Order of Operations</h2>
 
       <CodeBlock language="sql" title="WHERE filters rows; HAVING filters groups">
-{`SELECT   dept, COUNT(*) AS headcount, AVG(salary) AS avg_salary
-FROM     emp
-WHERE    salary IS NOT NULL        -- before grouping, per row
-GROUP BY dept
-HAVING   COUNT(*) > 2              -- after grouping, per group
-ORDER BY avg_salary DESC;`}
+{`SELECT
+     [c].[Sales Territory]
+    ,COUNT(*)                              AS [Sale Count]
+    ,CAST(SUM([s].[Profit]) AS DECIMAL(18,2)) AS [Total Profit]
+FROM [Fact].[Sale] AS [s]
+INNER JOIN [Dimension].[City] AS [c]
+        ON [c].[City Key] = [s].[City Key]
+WHERE [s].[Profit] IS NOT NULL            -- before grouping, per row
+GROUP BY [c].[Sales Territory]
+HAVING COUNT(*) > 1000                    -- after grouping, per group
+ORDER BY [Total Profit] DESC;`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Real output — top 5 territories by profit">
+{`Sales Territory | Sale Count | Total Profit
+----------------|------------|-------------
+Southeast       | 50520      | 18994984.65
+Mideast         | 33763      | 12843350.00
+Southwest       | 31756      | 11922901.75
+Plains          | 31039      | 11596968.65
+Great Lakes     | 26599      | 10046782.10`}
       </CodeBlock>
 
       <CodeBlock language="text" title="Logical processing order — why you cannot use an alias in WHERE">
 {`FROM -> WHERE -> GROUP BY -> HAVING -> SELECT -> ORDER BY
 
-SELECT is evaluated almost LAST, so a column alias defined there does
-not exist yet in WHERE, GROUP BY or HAVING:
+SELECT is evaluated almost LAST, so an alias defined there does not yet
+exist in WHERE, GROUP BY or HAVING:
 
-    SELECT salary * 12 AS annual FROM emp WHERE annual > 1000;
-    -- Msg 207: Invalid column name 'annual'
+    SELECT [Profit] * 12 AS [Annual] FROM [Fact].[Sale]
+    WHERE [Annual] > 1000;
+    -- Msg 207: Invalid column name 'Annual'
 
 ORDER BY is the exception — it runs after SELECT, so aliases DO work
-there. That asymmetry is not a quirk to memorise; it falls directly
-out of the processing order.`}
+there. That asymmetry is not a quirk to memorise; it falls straight out
+of the processing order.`}
       </CodeBlock>
 
       <h2>Window Functions</h2>
 
       <p>
-        A window function computes across a set of rows <em>without collapsing them</em>. That is the
-        whole idea: <code>GROUP BY</code> gives you one row per group, <code>OVER()</code> keeps every
-        row and attaches the group-level answer to each one.
+        A window function computes across a set of rows <em>without collapsing them</em>.{' '}
+        <code>GROUP BY</code> gives one row per group; <code>OVER()</code> keeps every row and
+        attaches the group-level answer to each.
       </p>
 
       <CodeBlock language="sql" title="The three families">
 {`-- RANKING
-ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC)  -- 1,2,3,4 always
-RANK()       OVER (PARTITION BY dept ORDER BY salary DESC)  -- 1,2,2,4  (gaps)
-DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC)  -- 1,2,2,3  (no gaps)
-NTILE(4)     OVER (ORDER BY salary)                          -- quartiles
+ROW_NUMBER() OVER (PARTITION BY [Sales Territory] ORDER BY [Profit] DESC)
+RANK()       OVER (...)   -- 1,2,2,4  (gaps)
+DENSE_RANK() OVER (...)   -- 1,2,2,3  (no gaps)
+NTILE(4)     OVER (ORDER BY [Profit])
 
 -- AGGREGATE, applied as a window
-SUM(salary)   OVER (PARTITION BY dept)              -- dept total on every row
-AVG(salary)   OVER (PARTITION BY dept)
-COUNT(*)      OVER ()                               -- grand total row count
+SUM([Profit])   OVER (PARTITION BY [Sales Territory])   -- total on every row
+AVG([Profit])   OVER (PARTITION BY [Sales Territory])
+COUNT(*)        OVER ()                                 -- grand total
 
 -- OFFSET / positional
-LAG(salary, 1)  OVER (ORDER BY hired)   -- previous row's value
-LEAD(salary, 1) OVER (ORDER BY hired)   -- next row's value
-FIRST_VALUE(salary) OVER (PARTITION BY dept ORDER BY salary DESC)`}
+LAG([Profit], 1)  OVER (ORDER BY [Invoice Date Key])
+LEAD([Profit], 1) OVER (ORDER BY [Invoice Date Key])
+FIRST_VALUE([Profit]) OVER (PARTITION BY [Sales Territory]
+                            ORDER BY [Profit] DESC)`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="Deduplication is the killer app for ROW_NUMBER">
         <p>
-          The single most useful window pattern in day-to-day work — keep one row per key, delete the
-          rest, with full control over which one survives:
+          Keep one row per key, delete the rest, with full control over which one survives:
         </p>
         <CodeBlock language="sql" title="Delete duplicates, keeping the newest">
-{`WITH ranked AS (
-  SELECT id,
-         ROW_NUMBER() OVER (PARTITION BY email ORDER BY created DESC) AS rn
-  FROM   users
+{`WITH [Ranked] AS
+(
+    SELECT
+         [City Key]
+        ,ROW_NUMBER() OVER (PARTITION BY [WWI City ID]
+                            ORDER BY [Valid From] DESC) AS [rn]
+    FROM [Dimension].[City]
 )
-DELETE FROM ranked WHERE rn > 1;
+DELETE FROM [Ranked] WHERE [rn] > 1;
 -- yes, you can DELETE from a CTE in T-SQL; it deletes from the base table`}
         </CodeBlock>
       </InfoBox>
@@ -108,8 +126,8 @@ DELETE FROM ranked WHERE rn > 1;
 
       <p>
         When a window function has an <code>ORDER BY</code> inside <code>OVER()</code>, a{' '}
-        <strong>frame</strong> applies. The default frame is not what most people assume, and it
-        produces a subtly wrong running total whenever there are ties.
+        <strong>frame</strong> applies. The default is not what most people assume, and it produces a
+        subtly wrong running total whenever there are ties.
       </p>
 
       <CodeBlock language="text" title="The default when you write ORDER BY inside OVER()">
@@ -123,46 +141,56 @@ What you almost always want:
 
 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
 
-Under ROWS, "current row" means the current physical row, so each tied
+Under ROWS, "current row" means the current PHYSICAL row, so each tied
 row gets its own incremental total.`}
       </CodeBlock>
 
       <CodeBlock language="sql" title="Say ROWS explicitly">
-{`SELECT name, salary,
-       SUM(salary) OVER (ORDER BY salary
-                         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-                        ) AS running_total
-FROM emp;`}
+{`SELECT
+     [s].[Sale Key]
+    ,[s].[Profit]
+    ,SUM([s].[Profit]) OVER (ORDER BY [s].[Sale Key]
+                             ROWS BETWEEN UNBOUNDED PRECEDING
+                                      AND CURRENT ROW) AS [Running Total]
+FROM [Fact].[Sale] AS [s];`}
       </CodeBlock>
 
       <InfoBox variant="warning" title="RANGE is also slower">
         <p>
           Beyond correctness, <code>RANGE</code> frames often force a less efficient plan than{' '}
-          <code>ROWS</code>, because the engine has to look ahead for peer rows rather than
+          <code>ROWS</code>, because the engine must look ahead for peer rows rather than
           accumulating as it goes. Writing <code>ROWS</code> explicitly is both more correct for
-          running totals and generally faster. Getting a running total that is right except on tied
-          values is a genuinely hard bug to spot in testing, because test data rarely has ties.
+          running totals and generally faster. A running total that is right except on tied values is
+          genuinely hard to spot in testing, because test data rarely has ties.
         </p>
       </InfoBox>
 
       <h2>Grouping Extensions</h2>
 
       <CodeBlock language="sql" title="Subtotals without UNION ALL">
-{`-- subtotal per dept, plus a grand total row
-SELECT dept, SUM(salary) AS total
-FROM   emp
-GROUP  BY ROLLUP(dept);
+{`-- subtotal per territory, plus a grand total row
+SELECT
+     [c].[Sales Territory]
+    ,SUM([s].[Profit]) AS [Total Profit]
+FROM [Fact].[Sale] AS [s]
+INNER JOIN [Dimension].[City] AS [c]
+        ON [c].[City Key] = [s].[City Key]
+GROUP BY ROLLUP([c].[Sales Territory]);
 
 -- every combination of the grouping columns
-GROUP BY CUBE(dept, title);
+GROUP BY CUBE([c].[Sales Territory], [c].[Country]);
 
 -- exactly the combinations you name
-GROUP BY GROUPING SETS ((dept), (title), ());
+GROUP BY GROUPING SETS (([c].[Sales Territory]), ([c].[Country]), ());
 
 -- tell a real NULL apart from a "this is a subtotal row" NULL:
-SELECT dept, GROUPING(dept) AS is_subtotal, SUM(salary) AS total
-FROM   emp GROUP BY ROLLUP(dept);
--- GROUPING() returns 1 for the aggregated (subtotal) rows`}
+SELECT
+     [c].[Sales Territory]
+    ,GROUPING([c].[Sales Territory]) AS [Is Subtotal]
+    ,SUM([s].[Profit])               AS [Total Profit]
+FROM ...
+GROUP BY ROLLUP([c].[Sales Territory]);
+-- GROUPING() returns 1 on the aggregated rows`}
       </CodeBlock>
 
       <h2>Version Notes</h2>
@@ -173,25 +201,13 @@ ROWS/RANGE frame clause, LAG/LEAD          2012+
 OFFSET/FETCH                               2012+
 STRING_AGG (with WITHIN GROUP ordering)    2017+
 APPROX_COUNT_DISTINCT                      2019+
-                                           (HyperLogLog, ~2% error,
-                                           for dashboards not billing)
+                                           (HyperLogLog, ~2% error —
+                                           for dashboards, not billing)
 GREATEST / LEAST                           2022+  (NOT on 2019)
 
 Before STRING_AGG, aggregate string concatenation was the FOR XML PATH
 trick — see the core-queries lesson for why to replace it.`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="A running total over a column with duplicate values gives every tied row the same total, jumping past the intermediate values. The OVER clause reads OVER (ORDER BY amount). What fixes it?"
-        options={[
-          'Add PARTITION BY to the OVER clause',
-          "Add an explicit frame: ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW — the default is RANGE, whose CURRENT ROW means 'all rows with this same value'",
-          'Switch from SUM to a correlated subquery',
-          'Add DISTINCT to the outer SELECT',
-        ]}
-        correctIndex={1}
-        explanation={"Writing ORDER BY inside OVER() without a frame clause silently applies RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW. Under RANGE, 'current row' is defined by VALUE rather than position, so all rows sharing the same amount are peers and every one of them receives the total that includes the whole peer group. Specifying ROWS instead makes 'current row' positional, so each row accumulates individually. This is worth building into your habits: always write the frame explicitly for running totals, because the bug is invisible in test data without ties and appears the moment real data has them."}
-      />
     </LessonLayout>
   );
 }

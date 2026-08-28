@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function TsqlIntro() {
@@ -60,7 +59,19 @@ SELECT SERVERPROPERTY('ProductVersion') AS ver,
        SERVERPROPERTY('EngineEdition')  AS eng;
 
 -- the compatibility level, which can differ from the engine version!
-SELECT name, compatibility_level FROM sys.databases;`}
+SELECT [name], [compatibility_level] FROM sys.databases;
+
+-- House style used throughout this section: bracketed identifiers,
+-- leading commas, schema-qualified objects, uppercase keywords.
+USE [WideWorldImportersDW];
+GO
+
+SELECT
+     [c].[City Key]
+    ,[c].[City]
+    ,[c].[Sales Territory]
+FROM [Dimension].[City] AS [c]
+WHERE [c].[Sales Territory] = N'Mideast';`}
       </CodeBlock>
 
       <CodeBlock language="text" title="Real output — the server these lessons were verified against">
@@ -152,18 +163,15 @@ SELECT SERVERPROPERTY('Collation');
 SELECT CASE WHEN 'ABC' = 'abc' THEN 'EQUAL' ELSE 'not equal' END;
    EQUAL (case-INSENSITIVE)          -- in Postgres this is FALSE
 
-
 -- 2. INTEGER DIVISION TRUNCATES
 SELECT 7/2 AS int_div, 7.0/2 AS dec_div;
    int_div | dec_div
    3       | 3.500000
 
-
 -- 3. + PROPAGATES NULL, CONCAT() DOES NOT
 SELECT 'a' + NULL AS concat_op, CONCAT('a', NULL) AS concat_fn;
    concat_op | concat_fn
    NULL      | a
-
 
 -- 4. = NULL IS NEVER TRUE (ANSI_NULLS is on and cannot practically be turned off)
    WHERE x = NULL     -> 0 rows
@@ -201,17 +209,6 @@ SELECT 'a' + NULL AS concat_op, CONCAT('a', NULL) AS concat_fn;
         database setting.
       </p>
 
-      <InteractiveChallenge
-        question="A colleague says the app runs on 'SQL Server 2018'. SELECT @@VERSION reports 15.0.4480.2, but the application database reports compatibility_level 130. What is actually true?"
-        options={[
-          'It is SQL Server 2018 running in 2016 compatibility mode',
-          'The engine is SQL Server 2019 (15.x); there is no 2018 release. The database is pinned to compatibility level 130, so it uses the 2016 optimiser behaviour despite the newer engine',
-          'The version numbers conflict, so the install is corrupted',
-          'compatibility_level 130 means the server is SQL Server 2013',
-        ]}
-        correctIndex={1}
-        explanation={"There is no SQL Server 2018 — the line goes 2016 (13.x), 2017 (14.x), 2019 (15.x), 2022 (16.x), 2025 (17.x). A ProductVersion of 15.x is unambiguously 2019. The compatibility level is a separate, per-database setting: 130 corresponds to 2016, so this database asks the 2019 engine to behave like 2016 for query optimisation. That combination is completely normal — it is how a cautious upgrade is staged, moving the engine first and raising compatibility levels later once plans have been checked. It also matters practically: you get 2019's syntax surface, such as APPROX_COUNT_DISTINCT, while the optimiser follows the older rules."}
-      />
     </LessonLayout>
   );
 }

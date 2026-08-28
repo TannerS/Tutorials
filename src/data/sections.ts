@@ -184,6 +184,7 @@ export const sections: Section[] = [
       { id: 'joins', title: 'Joins & Set Operations', path: '/tsql/joins' },
       { id: 'aggregation', title: 'Aggregation & Window Functions', path: '/tsql/aggregation' },
       { id: 'modifying-data', title: 'Modifying Data — OUTPUT, MERGE, Upserts', path: '/tsql/modifying-data' },
+      { id: 'views', title: 'Views, Reusable SQL & Numbers Tables', path: '/tsql/views' },
       { id: 'programmability', title: 'Stored Procedures, Functions & Error Handling', path: '/tsql/programmability' },
       { id: 'transactions', title: 'Transactions, Isolation & Locking', path: '/tsql/transactions' },
       { id: 'indexing', title: 'Indexing, SARGability & Execution Plans', path: '/tsql/indexing' },
