@@ -30,6 +30,14 @@ export default function Transactions() {
           version-gated, the lesson says so inline (for instance the <code>CYCLE</code> clause
           being Postgres 14+).
         </p>
+        <p style={{ marginTop: '0.5rem' }}>
+          If you work in <strong>Microsoft SQL Server</strong>, that dialect has its own section:{' '}
+          <a href="/tsql/intro">T-SQL (SQL Server)</a>. It is not a translation of these pages — the
+          concurrency model, the NULL sort order and the collation defaults genuinely differ, and{' '}
+          <a href="/tsql/transactions">Transactions, Isolation &amp; Locking</a> covers the one that
+          surprises Postgres users most: on SQL Server a plain <code>SELECT</code> can block behind
+          an uncommitted write.
+        </p>
       </InfoBox>
       <p>Concurrency is where databases earn their keep. Understanding isolation levels, locking strategies, and PostgreSQL's MVCC is the difference between a system that works under load and one that deadlocks at 3 AM.</p>
 
