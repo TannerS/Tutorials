@@ -1,25 +1,21 @@
-import CodeBlock from '../../components/CodeBlock';
-import InfoBox from '../../components/InfoBox';
-import LessonLayout from '../../components/LessonLayout';
+import GuideLayout from '../../components/GuideLayout';
+import GuidePanel, { GuideCode, GuideDefs, GuideRules, GuideTable } from '../../components/GuidePanel';
 
 function TsqlCheatsheet() {
   return (
-    <LessonLayout
-      title="📋 T-SQL Cheat Sheet"
-      sectionId="tsql"
-      lessonIndex={9}
+    <GuideLayout
+      title="T-SQL"
+      kicker="FIELD GUIDE"
+      glyph="🗄️"
+      tagline="Microsoft SQL Server — everything measured on a real 2019 instance (15.0.4480.2)."
+      meta={['SQL Server 2016+', 'verified on 2019', '14 panels']}
+      page="1 / 1"
+      footer="Every figure here came from running the statement, not from documentation. The lessons in this section carry the reasoning; this page is the recall sheet."
       prev={{ path: '/tsql/indexing', label: 'Indexing, SARGability & Execution Plans' }}
       next={null}
     >
-      <p>
-        Everything in this section, condensed. Every measured figure came from running the statement
-        against a real <strong>SQL Server 2019 (15.0.4480.2)</strong> instance with{' '}
-        <strong>WideWorldImportersDW</strong> restored.
-      </p>
-
-      <h2>House Style</h2>
-      <CodeBlock language="sql" title="The conventions used throughout">
-{`USE [WideWorldImportersDW];
+      <GuidePanel n={1} title="House Style" accent="blue" glyph="✍️" span={2}>
+        <GuideCode>{`USE [WideWorldImportersDW];
 GO
 
 CREATE OR ALTER VIEW [dbo].[VW_City] AS
@@ -27,425 +23,252 @@ SELECT
      [City Key]
     ,[City]
     ,[State Province]
-    ,[Sales Territory]
-FROM [Dimension].[City];
+FROM [Dimension].[City];`}</GuideCode>
+        <GuideDefs
+          items={[
+            ['[brackets]', 'mandatory when a name has a space — [City Key]'],
+            ['leading ,', 'add/remove a column touches one line'],
+            ['[Schema].[Obj]', 'always qualify; unqualified resolves per-user'],
+            ["N'literal'", 'the N prefix makes it NVARCHAR (Unicode)'],
+            ['GO', 'batch separator for SSMS/sqlcmd — not T-SQL'],
+            ['CREATE OR ALTER', '2016 SP1+. Keeps permissions; DROP loses them'],
+          ]}
+        />
+      </GuidePanel>
 
-[Brackets]        mandatory when a name has a SPACE — warehouse columns
-                  routinely do: [City Key], [Total Excluding Tax]
-Leading commas    add/remove a column = one line changed
-[Schema].[Object] always qualify; unqualified names resolve per-user
-N'literal'        the N prefix makes it NVARCHAR (Unicode)
-GO                a BATCH SEPARATOR for SSMS/sqlcmd — not T-SQL, the
-                  server never sees it. Required before CREATE VIEW.
-CREATE OR ALTER   2016 SP1+. Keeps object identity AND permissions;
-                  DROP + CREATE loses every GRANT.`}
-      </CodeBlock>
+      <GuidePanel n={2} title="Which Server Am I On?" accent="purple" glyph="🔎">
+        <GuideCode>{`SELECT @@VERSION;
+SELECT SERVERPROPERTY('ProductVersion');
+SELECT [name], [compatibility_level]
+FROM sys.databases;`}</GuideCode>
+        <GuideTable
+          head={['Version', 'Product', 'Compat']}
+          rows={[
+            ['13.x', '2016', '130'],
+            ['14.x', '2017', '140'],
+            ['15.x', '2019', '150'],
+            ['16.x', '2022', '160'],
+            ['17.x', '2025', '170'],
+          ]}
+        />
+        <GuideRules items={['There is NO SQL Server 2018.', 'Compatibility level is per-database and can lag the engine — a 2019 engine at level 130 uses 2016 optimiser behaviour.']} />
+      </GuidePanel>
 
-      <h2>Versions</h2>
-      <CodeBlock language="text" title="Which server am I on?">
-{`SELECT @@VERSION;
-SELECT SERVERPROPERTY('ProductVersion'), SERVERPROPERTY('Edition');
-SELECT [name], [compatibility_level] FROM sys.databases;
+      <GuidePanel n={3} title="Feature Gates (measured on 2019)" accent="green" glyph="🚦">
+        <GuideDefs
+          items={[
+            ['STRING_AGG', '2017+  ✔ available'],
+            ['TRIM', '2017+  ✔ available'],
+            ['CONCAT_WS', '2017+  ✔ available'],
+            ['APPROX_COUNT_DISTINCT', '2019+  ✔ available'],
+            ['STRING_SPLIT', '2016+  ✔ (no ordinal until 2022)'],
+            ['GREATEST / LEAST', '2022+  ✘ NOT on 2019'],
+            ['GENERATE_SERIES', '2022+  ✘ NOT on 2019'],
+            ['DATE_BUCKET', '2022+  ✘ NOT on 2019'],
+          ]}
+        />
+        <GuideRules items={['Pre-2017 tells: LTRIM(RTRIM(x)) and the FOR XML PATH concat trick — which also XML-escapes & and < in your data.']} />
+      </GuidePanel>
 
-13.x = 2016 (130)   14.x = 2017 (140)   15.x = 2019 (150)
-16.x = 2022 (160)   17.x = 2025 (170)
+      <GuidePanel n={4} title="⚠ Not Like PostgreSQL" accent="red" glyph="⚠️" span={2}>
+        <GuideTable
+          head={['Behaviour', 'SQL Server', 'PostgreSQL']}
+          rows={[
+            ["'ABC' = 'abc'", 'TRUE — default collation is CI', 'FALSE'],
+            ['ORDER BY x ASC', 'NULLs FIRST', 'NULLs LAST'],
+            ['NULLS LAST clause', 'does not exist', 'supported'],
+            ['7 / 2', '3 (int division)', '3'],
+            ["'a' + NULL", 'NULL', 'NULL'],
+            ['SELECT vs writer', 'CAN BLOCK', 'never blocks'],
+            ['text types', 'VARCHAR vs NVARCHAR', 'one type, Unicode'],
+          ]}
+        />
+        <GuideRules items={["Case-insensitive default means 'Bob' and 'bob' COLLIDE in a unique index.", "Emulate NULLS LAST: ORDER BY CASE WHEN x IS NULL THEN 1 ELSE 0 END, x"]} />
+      </GuidePanel>
 
-*** THERE IS NO SQL SERVER 2018. ***
+      <GuidePanel n={5} title="Core Queries" accent="cyan" glyph="🔤">
+        <GuideCode>{`SELECT TOP (10) ... ORDER BY [x] DESC;
+SELECT TOP (@n) ...      -- parens required
+SELECT TOP (3) WITH TIES ...
 
-COMPATIBILITY LEVEL is per-database and can lag the engine. A 2019
-engine running a database at level 130 uses 2016 optimiser behaviour —
-including NO scalar UDF inlining. Check it before believing a feature
-"exists in your version".`}
-      </CodeBlock>
+ORDER BY [Id]
+OFFSET 20 ROWS
+FETCH NEXT 10 ROWS ONLY;   -- ORDER BY MANDATORY`}</GuideCode>
+        <GuideRules items={['TOP without ORDER BY returns an arbitrary set.', 'Deep OFFSET is slow — prefer keyset: WHERE [Id] > @Last.']} />
+      </GuidePanel>
 
-      <CodeBlock language="text" title="Feature availability — measured on 2019">
-{`AVAILABLE on 2019:
-  STRING_AGG, TRIM, CONCAT_WS         2017+
-  APPROX_COUNT_DISTINCT               2019+
-  IIF, OFFSET/FETCH, CONCAT, FORMAT   2012+
-  STRING_SPLIT                        2016+
+      <GuidePanel n={6} title="NULL Traps" accent="amber" glyph="⭕">
+        <GuideCode>{`ISNULL(CAST(NULL AS NVARCHAR(2)), N'Not provided')
+  -> 'No'          -- truncated to the FIRST arg's type!
+COALESCE(...)      -> 'Not provided'
 
-NOT AVAILABLE on 2019 (need 2022+):
-  GREATEST, LEAST, GENERATE_SERIES, DATE_BUCKET
+WHERE x NOT IN (SELECT ...)  -- any NULL => ZERO ROWS
+WHERE NOT EXISTS (...)       -- correct`}</GuideCode>
+        <GuideDefs
+          items={[
+            ['COALESCE', 'standard, n-ary, no truncation — the default choice'],
+            ['LEN', "ignores TRAILING spaces: LEN('ab   ') = 2"],
+            ['DATALENGTH', "BYTES not chars: DATALENGTH(N'ab') = 4"],
+            ['AVG', 'ignores NULLs — (100, NULL, 80) averages to 90'],
+          ]}
+        />
+      </GuidePanel>
 
-On 2016 you additionally lose STRING_AGG / TRIM / CONCAT_WS.
-Tells for a pre-2017 codebase:
-  LTRIM(RTRIM([x]))                      instead of TRIM([x])
-  STUFF((SELECT ',' + [c] ... FOR XML PATH('')), 1, 1, '')
-                                         instead of STRING_AGG
-  (FOR XML PATH also XML-escapes & and < in your data — a real bug)`}
-      </CodeBlock>
+      <GuidePanel n={7} title="APPLY — the LATERAL of T-SQL" accent="purple" glyph="🔗">
+        <GuideCode>{`SELECT [t].[Sales Territory], [x].[City]
+FROM (SELECT DISTINCT [Sales Territory]
+      FROM [Dimension].[City]) AS [t]
+CROSS APPLY (
+    SELECT TOP (1) [c].[City]
+    FROM [Dimension].[City] AS [c]
+    WHERE [c].[Sales Territory] = [t].[Sales Territory]
+    ORDER BY [c].[Latest Recorded Population] DESC
+) AS [x];`}</GuideCode>
+        <GuideDefs items={[['CROSS APPLY', 'drops the left row if empty (inner)'], ['OUTER APPLY', 'keeps it with NULLs (left)']]} />
+      </GuidePanel>
 
-      <h2>⚠️ Not Like PostgreSQL</h2>
-      <CodeBlock language="text" title="All verified">
-{`COLLATION      server default SQL_Latin1_General_CP1_CI_AS = CASE INSENSITIVE
-               'ABC' = 'abc'  ->  TRUE
-               => 'Bob' and 'bob' COLLIDE in a unique index
+      <GuidePanel n={8} title="⚠ Slowly-Changing Dimensions" accent="red" glyph="🕰️">
+        <GuideCode>{`-- 116,295 rows, only 37,941 distinct cities.
+-- 'New York' exists 3 times.
 
-NULL ORDER     ORDER BY [x] ASC puts NULLs FIRST  (Postgres: last)
-               T-SQL has NO "NULLS LAST" clause. Emulate:
-               ORDER BY CASE WHEN [x] IS NULL THEN 1 ELSE 0 END, [x]
+ON [c].[City Key] = [s].[City Key]   -- CORRECT
+ON [c].[City]     = [s].[City Name]  -- MULTIPLIES facts`}</GuideCode>
+        <GuideRules items={['Join on the SURROGATE key — it identifies one version.', 'Current row = [Valid To] = 9999-12-31 23:59:59.9999999', 'A view omitting [Valid From]/[Valid To] hides this from consumers entirely.']} />
+      </GuidePanel>
 
-INT DIVISION   7/2 = 3        7.0/2 = 3.500000
+      <GuidePanel n={9} title="Window Functions" accent="green" glyph="🪟">
+        <GuideCode>{`ROW_NUMBER() OVER (PARTITION BY [Dept]
+                   ORDER BY [Profit] DESC)
 
-NULL CONCAT    'a' + NULL = NULL        CONCAT('a',NULL) = 'a'
+SUM([x]) OVER (ORDER BY [k]
+  ROWS BETWEEN UNBOUNDED PRECEDING
+           AND CURRENT ROW)   -- say ROWS!`}</GuideCode>
+        <GuideDefs
+          items={[
+            ['RANK', '1,2,2,4 — gaps'],
+            ['DENSE_RANK', '1,2,2,3 — no gaps'],
+            ['default frame', 'RANGE — tied rows share one total. A bug you cannot see without ties in test data.'],
+          ]}
+        />
+      </GuidePanel>
 
-READS BLOCK    a plain SELECT can block behind an uncommitted UPDATE
-               (see isolation below — this is the big one)
-
-TYPES          VARCHAR (1 byte, code page) vs NVARCHAR (2 bytes, Unicode)
-               Postgres has one text type. Here it is per column.`}
-      </CodeBlock>
-
-      <h2>Queries</h2>
-      <CodeBlock language="sql" title="The shapes you write daily">
-{`SELECT TOP (10) ... ORDER BY [x] DESC;      -- TOP goes at the FRONT
-SELECT TOP (@n) ...                         -- parens REQUIRED for a variable
-SELECT TOP (3) WITH TIES ...                -- do not cut through ties
-
-ORDER BY [Id] OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY;  -- ORDER BY MANDATORY
--- deep paging is slow; prefer keyset: WHERE [Id] > @Last ORDER BY [Id]
-
--- top-N per group: CROSS APPLY is SQL Server's LATERAL
-SELECT [t].[Sales Territory], [x].[City]
-FROM (SELECT DISTINCT [Sales Territory] FROM [Dimension].[City]) AS [t]
-CROSS APPLY (SELECT TOP (1) [c].[City]
-             FROM [Dimension].[City] AS [c]
-             WHERE [c].[Sales Territory] = [t].[Sales Territory]
-             ORDER BY [c].[Latest Recorded Population] DESC) AS [x];
--- CROSS APPLY = inner       OUTER APPLY = left
-
-ISNULL([a],[b])    forces b into a's TYPE — CAN TRUNCATE SILENTLY:
-                   ISNULL(CAST(NULL AS NVARCHAR(2)), N'Not provided')
-                   -> 'No'
-COALESCE([a],[b])  standard, n-ary, no truncation.  DEFAULT TO THIS.
-
-LEN('ab   ') = 2          (ignores TRAILING spaces)
-DATALENGTH('ab   ') = 5   DATALENGTH(N'ab') = 4   (BYTES, not chars)
-
-NOT IN (subquery with any NULL) -> ZERO ROWS. Always use NOT EXISTS.
-UNION dedups (costs a sort); UNION ALL concatenates. Default to ALL.
-
-LEGACY: *= and =* are the pre-1992 outer joins. REMOVED. Replace.`}
-      </CodeBlock>
-
-      <h2>⚠️ Slowly-Changing Dimensions</h2>
-      <CodeBlock language="text" title="Measured on Dimension.City">
-{`116,295 rows   but only   37,941 distinct [WWI City ID]
-New York exists 3 times, with different [Valid From]/[Valid To] windows.
-The current version is the row with [Valid To] = '9999-12-31 23:59:59.9999999'
-
-*** JOIN ON THE SURROGATE KEY ***
-  ON [c].[City Key] = [s].[City Key]        one version. CORRECT.
-  ON [c].[City]     = [s].[City Name]       matches EVERY version —
-                                            multiplies your facts.
-
-Nothing errors. Totals are just too big, by a different factor per city.
-A view that omits [Valid From]/[Valid To] hides this from its consumers
-entirely — which is what VW_City above does.`}
-      </CodeBlock>
-
-      <h2>Window Functions</h2>
-      <CodeBlock language="sql" title="And the frame trap">
-{`ROW_NUMBER() OVER (PARTITION BY [Sales Territory] ORDER BY [Profit] DESC)
-RANK()       -- 1,2,2,4 (gaps)     DENSE_RANK()  -- 1,2,2,3 (no gaps)
-LAG([x],1) / LEAD([x],1) OVER (ORDER BY [t])
-
-*** THE DEFAULT FRAME IS WRONG FOR RUNNING TOTALS ***
-ORDER BY inside OVER() silently applies
-    RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-where "current row" means ALL ROWS WITH THE SAME VALUE, so tied rows all
-get the same total. Always write it explicitly:
-    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-(ROWS is also faster. The bug is invisible without ties in test data.)
-
-Dedup — you CAN delete from a CTE:
-WITH [R] AS (SELECT [City Key],
-                    ROW_NUMBER() OVER (PARTITION BY [WWI City ID]
-                                       ORDER BY [Valid From] DESC) AS [rn]
-             FROM [Dimension].[City])
-DELETE FROM [R] WHERE [rn] > 1;
-
-AVG ignores NULLs — AVG over (100, NULL, 80) is 90, NOT 60.
-SUM over zero rows is NULL, not 0. Wrap: ISNULL(SUM([x]), 0)
-Logical order: FROM > WHERE > GROUP BY > HAVING > SELECT > ORDER BY
-  (so a SELECT alias works in ORDER BY but NOT in WHERE)`}
-      </CodeBlock>
-
-      <h2>Modifying Data</h2>
-      <CodeBlock language="sql" title="OUTPUT is the good one">
-{`UPDATE [dbo].[Account]
+      <GuidePanel n={10} title="Modifying Data" accent="cyan" glyph="✏️">
+        <GuideCode>{`UPDATE [dbo].[Account]
 SET    [Balance] = [Balance] + 1
-OUTPUT deleted.[Id], deleted.[Balance] AS [Old], inserted.[Balance] AS [New]
-WHERE  [Id] = 3;
---  Id | Old | New
---   3 | 80  | 81
+OUTPUT deleted.[Balance] AS [Old]
+      ,inserted.[Balance] AS [New]
+WHERE  [Id] = 3;`}</GuideCode>
+        <GuideDefs
+          items={[
+            ['SCOPE_IDENTITY()', 'correct — this scope'],
+            ['@@IDENTITY', 'WRONG if a trigger inserts elsewhere'],
+            ['OUTPUT inserted', 'best — works for multi-row inserts'],
+            ['MERGE', 'concurrency bugs; needs HOLDLOCK. Prefer UPDATE + INSERT.'],
+            ['TRUNCATE', 'resets identity, skips triggers, IS transactional'],
+          ]}
+        />
+      </GuidePanel>
 
--- atomic queue claim: no race, no explicit transaction
-UPDATE TOP (10) [dbo].[JobQueue]
-SET    [Status] = N'processing'
-OUTPUT inserted.[Job Id], inserted.[Payload]
-WHERE  [Status] = N'pending';
+      <GuidePanel n={11} title="Objects & Where They Live" accent="blue" glyph="📦">
+        <GuideCode>{`SELECT [definition] FROM sys.sql_modules
+WHERE [object_id] = OBJECT_ID('dbo.usp_X');
 
-IDENTITY:
-  SCOPE_IDENTITY()      correct — this scope
-  @@IDENTITY            WRONG if a TRIGGER inserts elsewhere: returns the
-                        trigger's id. Classic production bug.
-  OUTPUT inserted.[Id]  best — unambiguous, works for MULTI-ROW inserts
+SELECT OBJECT_DEFINITION(OBJECT_ID('dbo.usp_X'));`}</GuideCode>
+        <GuideDefs
+          items={[
+            ['VIEW', 'no parameters, stores no data'],
+            ['INLINE TVF', '"a view with parameters" — the good one'],
+            ['scalar UDF', 'per-row; below compat 150 forces SERIAL plans'],
+            ['SCHEMABINDING', 'required for an indexed view; COUNT_BIG(*)'],
+          ]}
+        />
+        <GuideRules items={['CREATE OR ALTER is stored back as "CREATE   PROCEDURE" — OR ALTER is blanked, so a repo-vs-database diff shows a phantom change.']} />
+      </GuidePanel>
 
-UPDATE ... FROM whose join matches MULTIPLE source rows updates once with
-an ARBITRARY winner, silently. Verify the source is unique first.
-
-MERGE: reads well, long history of concurrency bugs, needs WITH (HOLDLOCK),
-       and "NOT MATCHED BY SOURCE THEN DELETE" hits the WHOLE TABLE.
-       Prefer UPDATE + INSERT in a transaction.
-
-TRUNCATE resets the identity seed, skips triggers, and IS transactional.
-Large deletes: DELETE TOP (5000) in a WHILE loop.`}
-      </CodeBlock>
-
-      <h2>Objects: Views, Functions, Procedures</h2>
-      <CodeBlock language="sql" title="Where the code lives, and how to see it">
-{`SELECT [definition] FROM sys.sql_modules
-WHERE [object_id] = OBJECT_ID('dbo.usp_GetSalesByTerritory');
-
-SELECT OBJECT_DEFINITION(OBJECT_ID('dbo.usp_GetSalesByTerritory'));
-
-SELECT [s].[name] + '.' + [o].[name], [o].[type_desc], [o].[modify_date]
-FROM sys.objects AS [o]
-INNER JOIN sys.schemas AS [s] ON [s].[schema_id] = [o].[schema_id]
-WHERE [o].[type] IN ('P','V','FN','IF','TF') AND [o].[is_ms_shipped] = 0;
-
--- what does a view really depend on?
-SELECT * FROM sys.dm_sql_referenced_entities('dbo.VW_City','OBJECT');
-
-*** GOTCHA: deploy with CREATE OR ALTER and the STORED text reads
-    "CREATE   PROCEDURE" — OR ALTER is blanked to spaces. So a naive
-    diff of database-vs-repo shows a change that is not a change. ***
-
-SOURCE CONTROL for something that is not a file:
-  STATE-BASED    SSDT / .sqlproj / DACPAC. One file per object = desired
-                 state; SqlPackage generates the diff at deploy time.
-  MIGRATION      Flyway / Liquibase / DbUp. Ordered scripts, run once.
-                 Flyway REPEATABLE migrations (R__ prefix) + CREATE OR
-                 ALTER is the natural home for procs/views/functions.
-
-FUNCTIONS — the performance cliff:
-  scalar UDF           per-row; below compat 150 also forces the whole
-                       query SINGLE-THREADED. Avoid in SELECT lists.
-  multi-statement TVF  optimiser cannot see inside. Bad estimates.
-  INLINE TVF           RETURNS TABLE AS RETURN (SELECT ...)  <- THE GOOD ONE
-                       "a view with parameters". Use with CROSS APPLY.
-
-A VIEW cannot take parameters. If you need one, you want an inline TVF.
-INDEXED VIEW: WITH SCHEMABINDING + a UNIQUE CLUSTERED INDEX. Uses
-COUNT_BIG(*), no outer joins, and is maintained SYNCHRONOUSLY on every
-write to the base tables.`}
-      </CodeBlock>
-
-      <h2>Procedures & Error Handling</h2>
-      <CodeBlock language="sql" title="The template worth memorising">
-{`CREATE OR ALTER PROCEDURE [dbo].[usp_Name]
-     @Param    NVARCHAR(100)
-    ,@RowCount INT OUTPUT
+      <GuidePanel n={12} title="Procedures & Errors" accent="amber" glyph="🧩">
+        <GuideCode>{`CREATE OR ALTER PROCEDURE [dbo].[usp_Name]
+     @Param NVARCHAR(100)
 AS
 BEGIN
-    SET NOCOUNT ON;      -- always
-    SET XACT_ABORT ON;   -- always, if it writes
-
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
     BEGIN TRY
         BEGIN TRANSACTION;
-            ...
+        ...
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
         IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
-        THROW;           -- preserves number, message AND line
+        THROW;
     END CATCH
-END;
-GO
+END;`}</GuideCode>
+        <GuideRules items={['THROW preserves number, message and line. RAISERROR loses them.', 'SELECT @v = col with no rows KEEPS the old value. SET @v = (SELECT..) is stricter.', 'sp_executesql parameterises values, never identifiers — use QUOTENAME.']} />
+      </GuidePanel>
 
-THROW      2012+, faithful re-raise.  USE THIS.
-RAISERROR  legacy; a bare re-raise LOSES the original error number and
-           reports its own line.
+      <GuidePanel n={13} title="🔒 Isolation — The Big One" accent="red" glyph="🔒" span={2}>
+        <GuideCode>{`-- RCSI OFF (the default):
+A: BEGIN TRAN; UPDATE [Account] SET [Balance]=200 ...  (holds)
+B: SELECT [Balance] FROM [Account] WHERE [Id]=1;
+   -> Msg 1222 — Lock request time out. Reader waited 9s.
 
-SELECT @v = [col] FROM [t]   -- no rows -> @v KEEPS ITS OLD VALUE
-SET @v = (SELECT [col]...)   -- no rows -> NULL; many rows -> ERROR
+ALTER DATABASE [db]
+  SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE;
 
-DYNAMIC SQL — never concatenate values:
-EXEC sys.sp_executesql
-     N'SELECT [City] FROM [Dimension].[City] WHERE [Sales Territory]=@p'
-    ,N'@p NVARCHAR(100)', @p = @Territory;
-Identifiers cannot be parameterised — use QUOTENAME() and validate
-against sys.tables.`}
-      </CodeBlock>
+-- RCSI ON: same test -> Balance = 100, returned in 0s.`}</GuideCode>
+        <GuideTable
+          head={['Level', 'Dirty', 'Non-rep', 'Phantom']}
+          rows={[
+            ['READ UNCOMMITTED', 'yes', 'yes', 'yes'],
+            ['READ COMMITTED ←', 'no', 'yes', 'yes'],
+            ['REPEATABLE READ', 'no', 'no', 'yes'],
+            ['SERIALIZABLE', 'no', 'no', 'no'],
+            ['SNAPSHOT', 'no', 'no', 'no'],
+          ]}
+        />
+        <GuideRules items={['READ COMMITTED has TWO implementations: locking (RCSI off) or versioning (RCSI on). Same name, different behaviour.', 'NOLOCK is not a performance hint — a scan can MISS rows or read one TWICE during page splits.', 'Deadlock = error 1205. Prevent with consistent table ordering; mitigate by retrying.']} />
+      </GuidePanel>
 
-      <h2>🔒 Transactions & Isolation — The Big One</h2>
+      <GuidePanel n={14} title="Indexing & SARGability" accent="green" glyph="⚡" span={2}>
+        <GuideCode>{`WHERE [Customer Code] = 'C0000500'          ->  2 reads  SEEK
+WHERE LEFT([Customer Code],8) = 'C0000500'  -> 57 reads  SCAN
 
-      <InfoBox variant="danger" title="Measured: a plain SELECT blocked 8s and then failed">
-        <p>
-          Default SQL Server is <strong>lock-based</strong>, so readers and writers block each other.
-          On a fresh database <code>is_read_committed_snapshot_on = 0</code>.
-        </p>
-      </InfoBox>
+-- The NVARCHAR trap is COLLATION-DEPENDENT:
+Latin1_General_100_CI_AS (Windows)   2 vs  2 reads  SEEK
+SQL_Latin1_General_CP1_CI_AS (SQL)   2 vs 57 reads  SCAN`}</GuideCode>
+        <GuideTable
+          head={['Non-SARGable', 'Rewrite']}
+          rows={[
+            ['YEAR([d]) = 2026', "[d] >= '2026-01-01' AND [d] < '2027-01-01'"],
+            ["LEFT([c],3) = 'ABC'", "[c] LIKE 'ABC%'"],
+            ['[t] * 12 > 100000', '[t] > 100000/12'],
+            ['[c] = 12345', "[c] = '12345'"],
+            ["ISNULL([d],'x') = 'y'", "[d] = 'y' OR [d] IS NULL"],
+          ]}
+        />
+        <GuideRules items={['Keep the indexed column BARE on one side of the operator.', 'Check estimated vs actual rows FIRST — a big gap means stale stats or parameter sniffing, not a missing index.', 'Fixes for sniffing: OPTION (RECOMPILE) / OPTIMIZE FOR / OPTIMIZE FOR UNKNOWN.']} />
+      </GuidePanel>
 
-      <CodeBlock language="text" title="Real output — the same test, before and after RCSI">
-{`RCSI OFF (the default):
-   A: BEGIN TRANSACTION; UPDATE [dbo].[Account] SET [Balance]=200 ... (holds)
-   B: SELECT [Balance] FROM [dbo].[Account] WHERE [Id]=1;
-   -> Msg 1222, Level 16 — Lock request time out period exceeded.
-      reader returned after 9s
-
-ALTER DATABASE [lab] SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE;
-
-RCSI ON:
-   same test -> Balance = 100 (last committed), returned after 0s
-
-Cost: row versions live in TEMPDB (+14 bytes/row). Semantics change —
-read-then-write logic that relied on blocking now needs UPDLOCK.
-WITH ROLLBACK IMMEDIATE kills existing connections.`}
-      </CodeBlock>
-
-      <CodeBlock language="text" title="Isolation levels and NOLOCK">
-{`                    dirty  non-repeat  phantom
-READ UNCOMMITTED     YES      YES        YES     = WITH (NOLOCK)
-READ COMMITTED        no      YES        YES     <- DEFAULT
-REPEATABLE READ       no       no        YES
-SERIALIZABLE          no       no         no
-SNAPSHOT              no       no         no     versioned
-
-READ COMMITTED has TWO implementations chosen by the RCSI setting:
-locking (blocks) or versioning (does not). Same name, different behaviour.
-
-*** NOLOCK IS NOT A PERFORMANCE HINT ***
-Beyond dirty reads, a NOLOCK scan can MISS ROWS THAT EXIST or READ THE
-SAME ROW TWICE when page splits move data mid-scan. A wrong COUNT(*) on
-a table nobody deleted from. NOLOCK everywhere = a workaround for
-blocking that RCSI fixes properly.
-
-DEADLOCK = error 1205. Prevent by touching tables in a CONSISTENT ORDER.
-Deadlocks are normal under load: catch 1205 and RETRY with backoff.
-
-SELECT [r].[session_id], [r].[blocking_session_id], [r].[wait_type], [t].[text]
-FROM sys.dm_exec_requests AS [r]
-CROSS APPLY sys.dm_exec_sql_text([r].[sql_handle]) AS [t]
-WHERE [r].[blocking_session_id] <> 0;
-LCK_M_S waits = readers queuing behind writers = turn on RCSI.`}
-      </CodeBlock>
-
-      <h2>Indexing & SARGability</h2>
-      <CodeBlock language="text" title="Measured: 20,000 rows, index on [Customer Code] VARCHAR(20)">
-{`WHERE [Customer Code] = 'C0000500'            logical reads:  2   SEEK
-WHERE LEFT([Customer Code],8) = 'C0000500'    logical reads: 57   SCAN
-
-*** THE NVARCHAR TRAP IS COLLATION-DEPENDENT ***
-The usual advice — "an NVARCHAR parameter against a VARCHAR column kills
-the seek" — is only true on SOME collations. Measured:
-
-  collation                             = 'C..'     = N'C..'
-  Latin1_General_100_CI_AS  (Windows)    2 reads     2 reads   SEEK
-  SQL_Latin1_General_CP1_CI_AS   (SQL)   2 reads    57 reads   SCAN
-
-Windows collations convert order-preservingly, so the seek survives.
-SQL_* collations (the legacy family, and the DEFAULT on many installs)
-do not. The same app code is fast against one database and slow against
-another ON THE SAME SERVER.
-
-  SELECT SERVERPROPERTY('Collation');
-  SELECT [name], [collation_name] FROM sys.databases;
-
-Fix either way: set SqlDbType.VarChar explicitly in .NET.
-Look for CONVERT_IMPLICIT on the COLUMN side of the plan.`}
-      </CodeBlock>
-
-      <CodeBlock language="sql" title="Non-SARGable -> SARGable">
-{`YEAR([Invoice Date]) = 2026   ->  [Invoice Date] >= '2026-01-01'
-                                  AND [Invoice Date] < '2027-01-01'
-LEFT([Code],3) = 'ABC'        ->  [Code] LIKE 'ABC%'
-[Total] * 12 > 100000         ->  [Total] > 100000/12
-[Code] = 12345                ->  [Code] = '12345'
-ISNULL([Dept],'none') = 'x'   ->  [Dept] = 'x' OR [Dept] IS NULL
-[City] LIKE '%burg'           ->  not seekable; full-text or a reversed
-                                  computed column
-
-RULE: keep the indexed column BARE on one side of the operator.`}
-      </CodeBlock>
-
-      <CodeBlock language="text" title="Plans and parameter sniffing">
-{`SET STATISTICS IO ON;    -- logical reads = pages touched. The metric.
-
-Index Seek            good          Key Lookup   add INCLUDE columns
-Clustered Index Scan  = table scan  Hash Match   check the join column
-FIRST CHECK: estimated vs actual rows. A big gap = stale stats or
-sniffing. Fix the ESTIMATE before adding indexes:
-    UPDATE STATISTICS [dbo].[t] WITH FULLSCAN;
-
-PARAMETER SNIFFING: the plan is compiled for the FIRST parameter values
-and reused. Skewed data => a plan that suits one caller ruins another.
-  OPTION (RECOMPILE)                best plan every call, per-call cost
-  OPTION (OPTIMIZE FOR (@p = ...))  compile for a typical value
-  OPTION (OPTIMIZE FOR UNKNOWN)     density average
-  local variable copy               the same thing, by accident
-
-Do NOT blindly apply missing-index suggestions: they ignore write cost
-and existing near-matches, and often propose huge INCLUDE lists.`}
-      </CodeBlock>
-
-      <h2>Numbers (Tally) Table</h2>
-      <CodeBlock language="sql" title="Cascading CTEs — each level squares the row count">
-{`;WITH N1([C]) AS (SELECT 0 UNION ALL SELECT 0)          --      2
-,N2([C]) AS (SELECT 0 FROM N1 AS [T1] CROSS JOIN N1 AS [T2])  --      4
-,N3([C]) AS (SELECT 0 FROM N2 AS [T1] CROSS JOIN N2 AS [T2])  --     16
-,N4([C]) AS (SELECT 0 FROM N3 AS [T1] CROSS JOIN N3 AS [T2])  --    256
-,N6([C]) AS (SELECT 0 FROM N4 AS [T1] CROSS JOIN N4 AS [T2]
-                                      CROSS JOIN N2 AS [T3])  -- 262,144
-,Nums([Num]) AS (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) FROM N6)
-INSERT INTO [dbo].[Numbers]([Num]) SELECT [Num] FROM Nums;
-
-;WITH                     leading semicolon: WITH must start a batch, so
-                          this terminates whatever came before
-N1([C])                   names the CTE's output column
-SELECT 0                  the VALUE is irrelevant; only the COUNT matters
-ORDER BY (SELECT NULL)    "number these, I do not care about order" —
-                          a constant, so the optimiser SKIPS the sort
-PRIMARY KEY CLUSTERED     makes BETWEEN a range SEEK
-
-Watch for a dead N5 in copies of this script: N6 uses N4/N4/N2, so an
-N5 defined as N4 x N4 is never referenced. Verified — deleting it gives
-the identical 262,144 rows.
-
-USES: date series, gap filling, expanding a range into one row per unit,
-splitting strings. Replaces a WHILE loop with one set-based statement.`}
-      </CodeBlock>
-
-      <h2>Section Index</h2>
-      <CodeBlock language="text" title="All 10 lessons">
-{` 1. T-SQL & Which Server You Are On      versions, collation, NULL basics
- 2. Core Queries                         TOP, paging, NULLs, ISNULL trap
- 3. Joins & Set Operations               APPLY, NOT EXISTS, SCD joins
- 4. Aggregation & Window Functions       frames, ROLLUP, dedup
- 5. Modifying Data                       OUTPUT, identity, why not MERGE
- 6. Views, Reusable SQL & Numbers Tables views, SCHEMABINDING, tally
- 7. Procedures, Functions & Errors       TRY/CATCH, UDF cliff, dynamic SQL
- 8. Transactions, Isolation & Locking    RCSI. Read this one.
- 9. Indexing, SARGability & Plans        the 2-vs-57 reads measurement
-10. This cheat sheet
-
-The PostgreSQL material is separate: SQL Fundamentals, SQL Design
-Patterns, SQL Advanced, and the SQL Field Guide.`}
-      </CodeBlock>
-
-      <InfoBox variant="tip" title="If you remember only four things">
-        <p>
-          <strong>1.</strong> Turn on <code>READ_COMMITTED_SNAPSHOT</code> — it is why your reads
-          block. <strong>2.</strong> Join a slowly-changing dimension on the{' '}
-          <em>surrogate</em> key, or you multiply your facts.{' '}
-          <strong>3.</strong> Keep the indexed column bare in the predicate.{' '}
-          <strong>4.</strong> Default collation is case-insensitive, so{' '}
-          <code>&apos;Bob&apos;</code> and <code>&apos;bob&apos;</code> collide in a unique index.
-        </p>
-      </InfoBox>
-    </LessonLayout>
+      <GuidePanel n={15} title="Numbers (Tally) Table" accent="purple" glyph="🔢" span={2}>
+        <GuideCode>{`;WITH N1([C]) AS (SELECT 0 UNION ALL SELECT 0)          --      2
+,N2([C]) AS (SELECT 0 FROM N1 [T1] CROSS JOIN N1 [T2])  --      4
+,N3([C]) AS (SELECT 0 FROM N2 [T1] CROSS JOIN N2 [T2])  --     16
+,N4([C]) AS (SELECT 0 FROM N3 [T1] CROSS JOIN N3 [T2])  --    256
+,N6([C]) AS (SELECT 0 FROM N4 [T1] CROSS JOIN N4 [T2]
+                                   CROSS JOIN N2 [T3])  -- 262,144
+,Nums([Num]) AS (SELECT ROW_NUMBER()
+                 OVER (ORDER BY (SELECT NULL)) FROM N6)
+INSERT INTO [dbo].[Numbers]([Num]) SELECT [Num] FROM Nums;`}</GuideCode>
+        <GuideDefs
+          items={[
+            [';WITH', 'leading semicolon terminates whatever came before'],
+            ['SELECT 0', 'the value is irrelevant — only the row COUNT matters'],
+            ['CROSS JOIN', 'joining a CTE to itself SQUARES its row count'],
+            ['ORDER BY (SELECT NULL)', 'number rows without paying for a sort'],
+          ]}
+        />
+        <GuideRules items={['Uses: date series, gap filling, expanding a range into one row per unit, splitting strings.', 'Replaces a WHILE loop with one set-based statement.', 'Copies of this script often carry a dead N5 that nothing references.']} />
+      </GuidePanel>
+    </GuideLayout>
   );
 }
 

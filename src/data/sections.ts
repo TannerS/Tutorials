@@ -188,7 +188,7 @@ export const sections: Section[] = [
       { id: 'programmability', title: 'Stored Procedures, Functions & Error Handling', path: '/tsql/programmability' },
       { id: 'transactions', title: 'Transactions, Isolation & Locking', path: '/tsql/transactions' },
       { id: 'indexing', title: 'Indexing, SARGability & Execution Plans', path: '/tsql/indexing' },
-      { id: 'cheatsheet', title: '📋 T-SQL Cheat Sheet', path: '/tsql/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 T-SQL Field Guide', path: '/tsql/cheatsheet' },
     ],
   },
   {

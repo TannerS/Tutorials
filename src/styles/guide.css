@@ -1,0 +1,224 @@
+/*
+ * Field guide sheet — a printed-cheat-sheet page.
+ *
+ * Like .poster-sheet, this owns its own colour tokens rather than inheriting the
+ * site theme, so a guide looks the same (dark, high-contrast, colourful) whatever
+ * the surrounding app is set to. A toggle flips it for printing on paper.
+ */
+
+.guide-sheet {
+  --g-bg:        #0b0d14;
+  --g-panel:     #12141e;
+  --g-code:      #0e1018;
+  --g-border:    #262a3a;
+  --g-ink:       #e6e8f0;
+  --g-dim:       #9aa1b8;
+  --g-mast-a:    rgba(91, 156, 246, 0.18);
+  --g-mast-b:    rgba(167, 139, 250, 0.18);
+
+  --g-purple: #a78bfa;
+  --g-blue:   #5b9cf6;
+  --g-green:  #4ade80;
+  --g-amber:  #fbbf24;
+  --g-pink:   #f472b6;
+  --g-cyan:   #22d3ee;
+  --g-red:    #f87171;
+
+  background: var(--g-bg);
+  color: var(--g-ink);
+  border: 1px solid var(--g-border);
+  border-radius: 14px;
+  padding: 1.1rem;
+  margin: 0 auto 2rem;
+  max-width: 1180px;
+}
+
+.guide-sheet[data-mode='light'] {
+  --g-bg:     #ffffff;
+  --g-panel:  #f7f8fb;
+  --g-code:   #f1f3f8;
+  --g-border: #d7dbe6;
+  --g-ink:    #14161f;
+  --g-dim:    #52586b;
+  --g-mast-a: rgba(91, 156, 246, 0.14);
+  --g-mast-b: rgba(167, 139, 250, 0.14);
+
+  --g-purple: #6d28d9;
+  --g-blue:   #1d4ed8;
+  --g-green:  #15803d;
+  --g-amber:  #92400e;
+  --g-pink:   #be185d;
+  --g-cyan:   #0e7490;
+  --g-red:    #b91c1c;
+}
+
+/* ---- masthead ---- */
+.guide-mast {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 1.15rem;
+  margin-bottom: 0.9rem;
+  border: 1px solid var(--g-border);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--g-mast-a), var(--g-mast-b));
+}
+.guide-mast h1 {
+  margin: 0;
+  font-size: clamp(1.55rem, 4vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--g-ink);
+}
+.guide-mast h1 .kicker { color: var(--g-cyan); }
+.guide-mast p { margin: 0.3rem 0 0; font-size: 0.82rem; color: var(--g-dim); }
+.guide-chip {
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--g-border);
+  background: var(--g-panel);
+  font-size: 0.68rem;
+  color: var(--g-dim);
+  white-space: nowrap;
+}
+.guide-chip.page { background: var(--g-cyan); color: var(--g-bg); border-color: transparent; font-weight: 800; }
+.guide-toggle {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--g-border);
+  background: var(--g-panel);
+  color: var(--g-dim);
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+.guide-toggle:hover { color: var(--g-ink); }
+
+/* ---- grid ---- */
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+@media (max-width: 640px) {
+  .guide-grid { grid-template-columns: 1fr; }
+  .guide-panel { grid-column: span 1 !important; }
+}
+
+/* ---- panel ---- */
+.guide-panel {
+  border: 1px solid var(--pa, var(--g-blue));
+  border-radius: 10px;
+  background: var(--g-panel);
+  overflow: hidden;
+}
+.guide-panel[data-accent='purple'] { --pa: var(--g-purple); }
+.guide-panel[data-accent='blue']   { --pa: var(--g-blue); }
+.guide-panel[data-accent='green']  { --pa: var(--g-green); }
+.guide-panel[data-accent='amber']  { --pa: var(--g-amber); }
+.guide-panel[data-accent='pink']   { --pa: var(--g-pink); }
+.guide-panel[data-accent='cyan']   { --pa: var(--g-cyan); }
+.guide-panel[data-accent='red']    { --pa: var(--g-red); }
+
+.guide-panel > header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--g-border);
+  background: color-mix(in srgb, var(--pa) 12%, transparent);
+}
+.guide-panel > header h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pa);
+}
+.guide-num {
+  flex: 0 0 auto;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  background: var(--pa);
+  color: var(--g-bg);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.guide-body {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* ---- content primitives ---- */
+.guide-code {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  background: var(--g-code);
+  border: 1px solid var(--g-border);
+  border-radius: 6px;
+  font-size: 0.71rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  color: var(--g-ink);
+}
+.guide-defs { margin: 0; display: grid; grid-template-columns: auto 1fr; column-gap: 0.6rem; row-gap: 0.28rem; }
+.guide-defs dt { font-size: 0.72rem; font-weight: 700; color: var(--g-cyan); white-space: nowrap; }
+.guide-defs dd { margin: 0; font-size: 0.72rem; color: var(--g-dim); line-height: 1.45; }
+.guide-table { width: 100%; border-collapse: collapse; font-size: 0.71rem; }
+.guide-table th {
+  text-align: left;
+  padding: 0.3rem 0.45rem;
+  border-bottom: 1px solid var(--g-border);
+  color: var(--g-amber);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.guide-table td { padding: 0.3rem 0.45rem; border-bottom: 1px solid var(--g-border); color: var(--g-dim); vertical-align: top; }
+.guide-table td:first-child { color: var(--g-ink); }
+.guide-rules { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.3rem; }
+.guide-rules li { display: flex; gap: 0.45rem; font-size: 0.72rem; color: var(--g-dim); line-height: 1.45; }
+.guide-rules li::before { content: '✔'; color: var(--g-green); flex: 0 0 auto; }
+
+.guide-foot {
+  margin-top: 1rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px dashed var(--g-border);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: var(--g-dim);
+  text-align: center;
+}
+.guide-nav { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.1rem; }
+.guide-nav a { font-size: 0.78rem; color: var(--g-blue); text-decoration: none; }
+.guide-nav a:hover { text-decoration: underline; }
+
+/* monospace everywhere it matters */
+.guide-code, .guide-defs dt, .guide-table td:first-child {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* The global `code` rule (global.css) styles inline code with a background and
+ * padding. Inside a guide snippet that paints a box behind every line, so reset
+ * it — the <pre> already provides the surface. */
+.guide-code code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  color: inherit;
+  font-family: inherit;
+}
+.guide-defs dt code,
+.guide-table code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
