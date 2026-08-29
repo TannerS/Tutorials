@@ -8,10 +8,10 @@ export default function Comparison() {
   return (
     <LessonLayout
       title="The State Escalation Ladder"
-      sectionId="state-mgmt"
-      lessonIndex={1}
-      prev={{ path: '/state-mgmt/intro', label: "When Context Isn't Enough" }}
-      next={{ path: '/state-mgmt/zustand-fundamentals', label: 'Zustand: Fundamentals' }}
+      sectionId="state-basics"
+      lessonIndex={0}
+      prev={null}
+      next={null}
     >
       <h2>Climb Only When Forced</h2>
       <p>

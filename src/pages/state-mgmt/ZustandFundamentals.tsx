@@ -8,9 +8,9 @@ export default function ZustandFundamentals() {
   return (
     <LessonLayout
       title="Zustand: Fundamentals"
-      sectionId="state-mgmt"
-      lessonIndex={2}
-      prev={{ path: '/state-mgmt/comparison', label: 'The State Escalation Ladder' }}
+      sectionId="state-zustand"
+      lessonIndex={0}
+      prev={null}
       next={{ path: '/state-mgmt/zustand-advanced', label: 'Zustand: Advanced Patterns' }}
     >
       <h2>What Zustand Actually Is</h2>

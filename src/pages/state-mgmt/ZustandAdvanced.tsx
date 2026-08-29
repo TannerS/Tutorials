@@ -8,10 +8,10 @@ export default function ZustandAdvanced() {
   return (
     <LessonLayout
       title="Zustand: Advanced Patterns"
-      sectionId="state-mgmt"
-      lessonIndex={3}
+      sectionId="state-zustand"
+      lessonIndex={1}
       prev={{ path: '/state-mgmt/zustand-fundamentals', label: 'Zustand: Fundamentals' }}
-      next={{ path: '/state-mgmt/zustand-cheatsheet', label: 'Zustand Cheat Sheet' }}
+      next={{ path: '/state-mgmt/zustand-cheatsheet', label: '📋 Zustand Field Guide' }}
     >
       <p>
         You already know <code>create()</code>, the store hook, and basic selecting. This lesson is

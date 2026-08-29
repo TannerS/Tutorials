@@ -8,10 +8,10 @@ export default function Intro() {
   return (
     <LessonLayout
       title="When Context Isn't Enough"
-      sectionId="state-mgmt"
+      sectionId="state-context"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/state-mgmt/comparison', label: 'The State Escalation Ladder' }}
+      next={{ path: '/state-mgmt/patterns', label: 'Context Patterns in the Real World' }}
     >
       <h2>React Context Recap</h2>
       <p>

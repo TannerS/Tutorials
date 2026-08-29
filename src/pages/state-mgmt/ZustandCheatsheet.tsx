@@ -5,11 +5,11 @@ import LessonLayout from '../../components/LessonLayout';
 export default function ZustandCheatsheet() {
   return (
     <LessonLayout
-      title="Zustand Cheat Sheet"
-      sectionId="state-mgmt"
-      lessonIndex={4}
+      title="📋 Zustand Field Guide"
+      sectionId="state-zustand"
+      lessonIndex={2}
       prev={{ path: '/state-mgmt/zustand-advanced', label: 'Zustand: Advanced Patterns' }}
-      next={{ path: '/state-mgmt/patterns', label: 'Real-World Patterns' }}
+      next={null}
     >
       <p>
         A single-page reconciliation of the two Zustand lessons that precede this one. Every

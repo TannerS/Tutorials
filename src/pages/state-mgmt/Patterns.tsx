@@ -7,10 +7,10 @@ import LessonLayout from '../../components/LessonLayout';
 export default function Patterns() {
   return (
     <LessonLayout
-      title="Real-World Patterns"
-      sectionId="state-mgmt"
-      lessonIndex={5}
-      prev={{ path: '/state-mgmt/zustand-cheatsheet', label: 'Zustand Cheat Sheet' }}
+      title="Context Patterns in the Real World"
+      sectionId="state-context"
+      lessonIndex={1}
+      prev={{ path: '/state-mgmt/intro', label: "When Context Isn't Enough" }}
       next={null}
     >
       <p>

@@ -85,7 +85,7 @@ export const sections: Section[] = [
   },
   {
     id: 'react18',
-    label: 'React Core',
+    label: 'React 18 (Core)',
     icon: '⚛️',
     color: '#22d3ee',
     lessons: [
@@ -271,20 +271,6 @@ export const sections: Section[] = [
       { id: 'event-storming', title: 'Event Storming: Discovering Bounded Contexts', path: '/ddd/event-storming' },
       { id: 'spring-boot', title: 'DDD in a Spring Boot Codebase', path: '/ddd/spring-boot' },
       { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/ddd/cheatsheet' },
-    ],
-  },
-  {
-    id: 'architecture-docs',
-    label: 'Communicating Architecture',
-    icon: '📐',
-    color: '#0891b2',
-    lessons: [
-      { id: 'adrs', title: 'Architecture Decision Records', path: '/architecture-docs/adrs' },
-      { id: 'c4-model', title: 'The C4 Model for Architecture Diagrams', path: '/architecture-docs/c4-model' },
-      { id: 'nfrs', title: 'Non-Functional Requirements as a Framework', path: '/architecture-docs/nfrs' },
-      { id: 'quality-attributes', title: 'Quality Attributes & Trade-off Analysis', path: '/architecture-docs/quality-attributes' },
-      { id: 'stakeholders', title: 'Presenting Architecture to Stakeholders', path: '/architecture-docs/stakeholders' },
-      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/architecture-docs/cheatsheet' },
     ],
   },
   {
@@ -493,7 +479,7 @@ export const sections: Section[] = [
   },
   {
     id: 'react-router',
-    label: 'React Router v7',
+    label: 'React Router v8 (Current)',
     icon: '🧭',
     color: '#f44250',
     lessons: [
@@ -509,17 +495,33 @@ export const sections: Section[] = [
     ],
   },
   {
-    id: 'state-mgmt',
-    label: 'State Management',
-    icon: '📦',
+    id: 'state-basics',
+    label: 'Core State Patterns',
+    icon: '🧱',
+    color: '#764abc',
+    lessons: [
+      { id: 'comparison', title: 'The State Escalation Ladder', path: '/state-mgmt/comparison' },
+    ],
+  },
+  {
+    id: 'state-context',
+    label: 'Context & Providers',
+    icon: '🔗',
     color: '#764abc',
     lessons: [
       { id: 'intro', title: 'When Context Isn\'t Enough', path: '/state-mgmt/intro' },
-      { id: 'comparison', title: 'The State Escalation Ladder', path: '/state-mgmt/comparison' },
+      { id: 'patterns', title: 'Context Patterns in the Real World', path: '/state-mgmt/patterns' },
+    ],
+  },
+  {
+    id: 'state-zustand',
+    label: 'Zustand',
+    icon: '🐻',
+    color: '#764abc',
+    lessons: [
       { id: 'zustand-fundamentals', title: 'Zustand: Fundamentals', path: '/state-mgmt/zustand-fundamentals' },
       { id: 'zustand-advanced', title: 'Zustand: Advanced Patterns', path: '/state-mgmt/zustand-advanced' },
-      { id: 'zustand-cheatsheet', title: 'Zustand Cheat Sheet', path: '/state-mgmt/zustand-cheatsheet' },
-      { id: 'patterns', title: 'Real-World Patterns', path: '/state-mgmt/patterns' },
+      { id: 'zustand-cheatsheet', title: '📋 Zustand Field Guide', path: '/state-mgmt/zustand-cheatsheet' },
     ],
   },
   {
@@ -687,7 +689,7 @@ export const sections: Section[] = [
   },
   {
     id: 'mui',
-    label: 'MUI (Material UI)',
+    label: 'MUI v4 (Material-UI)',
     icon: '🧩',
     color: '#007fff',
     lessons: [
@@ -701,7 +703,7 @@ export const sections: Section[] = [
   },
   {
     id: 'mui9',
-    label: 'MUI Current (v9)',
+    label: 'MUI v9 (Current)',
     icon: '🆕',
     color: '#007fff',
     lessons: [
@@ -787,7 +789,7 @@ export const groups: Group[] = [
         label: 'React',
         icon: '⚛️',
         color: '#22d3ee',
-        sectionIds: ['react18', 'react19-whats-new', 'react-antipatterns', 'state-mgmt', 'react-query', 'react-testing', 'react-router', 'react-field-guide'],
+        sectionIds: ['react18', 'react19-whats-new', 'react-antipatterns', 'state-basics', 'state-context', 'state-zustand', 'react-query', 'react-testing', 'react-router', 'react-field-guide'],
       },
       {
         id: 'frontend-tooling-group',
@@ -823,7 +825,7 @@ export const groups: Group[] = [
         label: 'Principles & Patterns',
         icon: '🧩',
         color: '#a78bfa',
-        sectionIds: ['solid', 'patterns', 'ddd', 'architecture-docs'],
+        sectionIds: ['solid', 'patterns', 'ddd'],
       },
       {
         id: 'architecture-distributed',

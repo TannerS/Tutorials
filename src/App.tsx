@@ -157,12 +157,6 @@ import DddSpringBoot from './pages/ddd/SpringBoot'
 import DddCheatsheet from './pages/ddd/Cheatsheet'
 
 // Communicating Architecture
-import ArchDocsAdrs from './pages/architecture-docs/Adrs'
-import ArchDocsC4Model from './pages/architecture-docs/C4Model'
-import ArchDocsNfrs from './pages/architecture-docs/Nfrs'
-import ArchDocsQualityAttributes from './pages/architecture-docs/QualityAttributes'
-import ArchDocsStakeholders from './pages/architecture-docs/Stakeholders'
-import ArchDocsCheatsheet from './pages/architecture-docs/Cheatsheet'
 
 // Cloud & Infrastructure
 import CloudWellArchitected from './pages/cloud-architecture/WellArchitected'
@@ -637,12 +631,6 @@ function App() {
         <Route path="ddd/event-storming" element={<DddEventStorming />} />
         <Route path="ddd/spring-boot" element={<DddSpringBoot />} />
         <Route path="ddd/cheatsheet" element={<DddCheatsheet />} />
-        <Route path="architecture-docs/adrs" element={<ArchDocsAdrs />} />
-        <Route path="architecture-docs/c4-model" element={<ArchDocsC4Model />} />
-        <Route path="architecture-docs/nfrs" element={<ArchDocsNfrs />} />
-        <Route path="architecture-docs/quality-attributes" element={<ArchDocsQualityAttributes />} />
-        <Route path="architecture-docs/stakeholders" element={<ArchDocsStakeholders />} />
-        <Route path="architecture-docs/cheatsheet" element={<ArchDocsCheatsheet />} />
         <Route path="cloud-architecture/well-architected" element={<CloudWellArchitected />} />
         <Route path="cloud-architecture/iac" element={<CloudIac />} />
         <Route path="cloud-architecture/multi-region" element={<CloudMultiRegion />} />
