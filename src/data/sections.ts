@@ -474,7 +474,7 @@ export const sections: Section[] = [
       { id: 'error-handling', title: 'Error Handling', path: '/javascript/error-handling' },
       { id: 'modern-tour', title: 'Modern JavaScript: ES2015-2026 Feature Tour', path: '/javascript/modern-tour' },
       { id: 'es2017', title: 'ECMAScript 2017 (ES8): The Complete Deep Dive', path: '/javascript/es2017' },
-      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/javascript/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 JavaScript Field Guide', path: '/javascript/cheatsheet' },
     ],
   },
   {
