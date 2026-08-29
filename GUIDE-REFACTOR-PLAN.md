@@ -50,7 +50,7 @@ Postgres/T-SQL, Spring Boot 2/4.
 - [x] 2 — "React Core" → "React 18 (Core)"
 - [x] 5 — "MUI v4 (Material-UI)", "MUI v9 (Current)"
 - [x] 13 — "Communicating Architecture" (architecture-docs) removed entirely
-- [x] 11 (partial) — field guide format built; T-SQL and JavaScript converted
+- [x] 11 (partial) — field guide format built; T-SQL, JavaScript and React 18 converted
 - [x] 7 (partial) — JavaScript now has a field guide
 - [x] fix — `tsql` and `mui9` were missing from the sidebar (registered but in
       no nav group, and the sidebar renders only groups). Both added.
@@ -59,7 +59,7 @@ Postgres/T-SQL, Spring Boot 2/4.
 
 - [ ] **11** — convert the other 20 cheat-sheet lessons to the field-guide
       format and rename each to "<Topic> Field Guide":
-      java, springboot, springboot2, react18, react19-whats-new, ddd,
+      java, springboot, springboot2, react19-whats-new, ddd,
       cloud-architecture, observability, dsa, version-control, cryptography,
       typescript, react-router, state-mgmt/zustand, react-query, react-testing,
       mui, mui9, css-field-guide/basics
@@ -74,9 +74,9 @@ Postgres/T-SQL, Spring Boot 2/4.
 - [ ] **4** — Spring Boot 2 field guide (falls out of the parity work)
 - [ ] **8** — new lesson on AG Grid (github.com/ag-grid/ag-grid) for React
 - [ ] **9** — React Router: complete v5 section and complete v8 section.
-      NOTE: the existing lessons were written for the v6/v7 data-router API and
-      the section is currently *labelled* v8 — that label is not yet verified
-      against the real v8 API. Treat it as a rewrite, not a relabel.
+      The section label has been corrected to "React Router v6/v7 (Data Router)"
+      so it no longer overstates what the lessons contain. Building v5 and v8 is
+      a rewrite against each real API, not a relabel.
 - [ ] **10** — regenerate every field guide after the version splits land
 - [ ] **12** — SQL: keep SQL Fundamentals, add a complete PostgreSQL section,
       keep T-SQL complete and separate

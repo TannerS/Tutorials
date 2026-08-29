@@ -103,7 +103,7 @@ export const sections: Section[] = [
       { id: 'patterns', title: 'Advanced Patterns', path: '/react18/patterns' },
       { id: 'typescript', title: 'React + TypeScript', path: '/react18/typescript' },
       { id: 'build-toolchain', title: '🔧 Build Toolchain', path: '/react18/build-toolchain' },
-      { id: 'cheat-sheet', title: '📋 Cheat Sheet', path: '/react18/cheat-sheet' },
+      { id: 'cheat-sheet', title: '📋 React 18 Field Guide', path: '/react18/cheat-sheet' },
       { id: 'adapters', title: 'API Adapters & Envelopes', path: '/react18/adapters' },
       { id: 'imperative-bridge', title: 'Imperative Bridge Patterns', path: '/react18/imperative-bridge' },
       { id: 'module-federation', title: 'Module Federation & MFEs', path: '/react18/module-federation' },
@@ -479,7 +479,7 @@ export const sections: Section[] = [
   },
   {
     id: 'react-router',
-    label: 'React Router v8 (Current)',
+    label: 'React Router v6/v7 (Data Router)',
     icon: '🧭',
     color: '#f44250',
     lessons: [
