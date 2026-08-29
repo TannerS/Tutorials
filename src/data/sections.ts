@@ -766,7 +766,7 @@ export const groups: Group[] = [
         label: 'CSS / Sass',
         icon: '🎨',
         color: '#e879f9',
-        sectionIds: ['css-mastery', 'css-field-guide', 'mui'],
+        sectionIds: ['css-mastery', 'css-field-guide', 'mui', 'mui9'],
       },
       {
         id: 'frontend-typescript',
@@ -803,7 +803,7 @@ export const groups: Group[] = [
     label: 'Database',
     icon: '🗄️',
     color: '#5b9cf6',
-    sectionIds: ['sql-fundamentals', 'sql-design-patterns', 'sql-advanced', 'sql-field-guide'],
+    sectionIds: ['sql-fundamentals', 'sql-design-patterns', 'sql-advanced', 'sql-field-guide', 'tsql'],
   },
   {
     id: 'dev-fundamentals',
