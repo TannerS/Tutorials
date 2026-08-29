@@ -23,7 +23,7 @@ export const sections: Section[] = [
       { id: 'build-tools', title: 'Build Tools: Maven & Gradle', path: '/java/build-tools' },
       { id: 'testing-basics', title: 'Unit Testing Fundamentals — Dummies, Stubs, Spies, Mocks', path: '/java/testing-basics' },
       { id: 'mockito', title: 'Mockito in Practice', path: '/java/mockito' },
-      { id: 'cheatsheet', title: 'Java Cheat Sheet', path: '/java/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 Java Field Guide', path: '/java/cheatsheet' },
     ],
   },
   {

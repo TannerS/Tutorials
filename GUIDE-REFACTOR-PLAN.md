@@ -50,16 +50,17 @@ Postgres/T-SQL, Spring Boot 2/4.
 - [x] 2 — "React Core" → "React 18 (Core)"
 - [x] 5 — "MUI v4 (Material-UI)", "MUI v9 (Current)"
 - [x] 13 — "Communicating Architecture" (architecture-docs) removed entirely
-- [x] 11 (partial) — field guide format built; T-SQL, JavaScript and React 18 converted
+- [x] 11 (partial) — field guide format built; converted so far:
+      T-SQL (15 panels), JavaScript (12), React 18 (14), Java (15)
 - [x] 7 (partial) — JavaScript now has a field guide
 - [x] fix — `tsql` and `mui9` were missing from the sidebar (registered but in
       no nav group, and the sidebar renders only groups). Both added.
 
 ## Remaining
 
-- [ ] **11** — convert the other 20 cheat-sheet lessons to the field-guide
+- [ ] **11** — convert the other 18 cheat-sheet lessons to the field-guide
       format and rename each to "<Topic> Field Guide":
-      java, springboot, springboot2, react19-whats-new, ddd,
+      springboot, springboot2, react19-whats-new, ddd,
       cloud-architecture, observability, dsa, version-control, cryptography,
       typescript, react-router, state-mgmt/zustand, react-query, react-testing,
       mui, mui9, css-field-guide/basics
