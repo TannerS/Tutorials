@@ -66,14 +66,28 @@ Postgres/T-SQL, Spring Boot 2/4.
 - [x] 7 (partial) — JavaScript now has a field guide
 - [x] fix — `tsql` and `mui9` were missing from the sidebar (registered but in
       no nav group, and the sidebar renders only groups). Both added.
-
-## Remaining
-
-- [ ] **11** — fold the 6 standalone `*-field-guide` sections into their parent
-      sections as a single dense field-guide lesson each:
-      sql, react, typescript, css, java, spring(boot 4)
-- [ ] **6** — drop the TypeScript cheat sheet once the TS field guide covers it
-      (do this as part of the fold, not before)
+- [x] 11 — folded all 6 standalone `*-field-guide` sections into their parent
+      sections. Two became new lessons (no prior field guide existed there):
+      `sql-advanced/field-guide` (19 panels, folds the old `sql-field-guide`
+      section — SQL's natural "last stop" section, chosen since the 3 SQL
+      sections have no single obvious parent) and `css-mastery/field-guide`
+      (27 panels, folds `css-field-guide`). Four were merged into their
+      section's existing field guide in place: React 18 (14→26 panels, folds
+      `react-field-guide`'s 12 lessons), TypeScript (18→26, folds
+      `typescript-field-guide`'s 6 — also closes item **6**, the old TS cheat
+      sheet is now the single merged page), Java (15→24, folds
+      `java-field-guide`'s 6), Spring Boot 4 (16→20, folds
+      `spring-field-guide`'s 11 — most of its content was already covered, so
+      the count only grew modestly, which is correct not incomplete). All 6
+      standalone section directories were deleted from `src/pages/`, their
+      entries removed from `src/data/sections.ts` (both the `sections` array
+      and every `groups`/`children` `sectionIds` list), and their routes/
+      imports removed from `src/App.tsx`. Two stale cross-links in
+      `src/pages/from-scratch/Intro.tsx` (pointing at
+      `/java-field-guide/concurrency` and `/spring-field-guide/aop-events`)
+      were repointed at `/java/cheatsheet` and `/springboot/cheatsheet`.
+      Verified: `tsc --noEmit` clean, `vite build` clean, every lesson path in
+      `sections.ts` resolves to a real `App.tsx` route (325/325).
 - [ ] **3** — Spring Boot 2 to full parity: mirror Boot 4's DI, REST, Data,
       Testing, Config, Error Handling, Transactions, Kafka, AOP, WebFlux,
       Resilience4j, Observability for Boot 2 APIs (~10 new lessons)

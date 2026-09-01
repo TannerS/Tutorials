@@ -112,7 +112,7 @@ function FromScratchIntro() {
 
       <FlowChart
         title="What each project is, and which parts of this site it explains"
-        chart={"graph LR\n  FS[\"Build From Scratch\"] --> P1[\"1. Task Scheduler<br/>queue + pool + lifecycle\"]\n  FS --> P2[\"2. KV Store with a WAL<br/>append-only log + fsync\"]\n  FS --> P3[\"3. HTTP Server from Sockets<br/>parser + connection lifecycle\"]\n  FS --> P4[\"4. Raft<br/>replicated log + quorum\"]\n\n  P1 --> A1[\"Java: Concurrency and Threads\"]\n  P1 --> A2[\"Spring Boot: Advanced - Async and Scheduled\"]\n  P1 --> A3[\"Spring Field Guide: AOP and Async Events\"]\n\n  P2 --> B1[\"SQL Advanced: Transactions and Locking\"]\n  P2 --> B2[\"System Design: Databases and Caching\"]\n  P2 --> B3[\"Spring Boot: Kafka\"]\n\n  P3 --> C1[\"API Design: REST, Methods, WebSockets\"]\n  P3 --> C2[\"Microservices: Service Communication\"]\n  P3 --> C3[\"Cryptography: TLS and HTTPS\"]\n\n  P4 --> D1[\"System Design: Distributed Systems\"]\n  P4 --> D2[\"Microservices: Event-Driven Architecture\"]\n  P4 --> D3[\"Microservices: Core Patterns\"]\n\n  style FS fill:#3d1f33,stroke:#f472b6\n  style P1 fill:#1a2744,stroke:#5b9cf6\n  style P2 fill:#1a2744,stroke:#5b9cf6\n  style P3 fill:#1a2744,stroke:#5b9cf6\n  style P4 fill:#1a2744,stroke:#5b9cf6"}
+        chart={"graph LR\n  FS[\"Build From Scratch\"] --> P1[\"1. Task Scheduler<br/>queue + pool + lifecycle\"]\n  FS --> P2[\"2. KV Store with a WAL<br/>append-only log + fsync\"]\n  FS --> P3[\"3. HTTP Server from Sockets<br/>parser + connection lifecycle\"]\n  FS --> P4[\"4. Raft<br/>replicated log + quorum\"]\n\n  P1 --> A1[\"Java: Concurrency and Threads\"]\n  P1 --> A2[\"Spring Boot: Advanced - Async and Scheduled\"]\n  P1 --> A3[\"Spring Boot Field Guide: AOP and Async Events\"]\n\n  P2 --> B1[\"SQL Advanced: Transactions and Locking\"]\n  P2 --> B2[\"System Design: Databases and Caching\"]\n  P2 --> B3[\"Spring Boot: Kafka\"]\n\n  P3 --> C1[\"API Design: REST, Methods, WebSockets\"]\n  P3 --> C2[\"Microservices: Service Communication\"]\n  P3 --> C3[\"Cryptography: TLS and HTTPS\"]\n\n  P4 --> D1[\"System Design: Distributed Systems\"]\n  P4 --> D2[\"Microservices: Event-Driven Architecture\"]\n  P4 --> D3[\"Microservices: Core Patterns\"]\n\n  style FS fill:#3d1f33,stroke:#f472b6\n  style P1 fill:#1a2744,stroke:#5b9cf6\n  style P2 fill:#1a2744,stroke:#5b9cf6\n  style P3 fill:#1a2744,stroke:#5b9cf6\n  style P4 fill:#1a2744,stroke:#5b9cf6"}
       />
 
       <h3>1. A Task Scheduler</h3>
@@ -126,12 +126,12 @@ function FromScratchIntro() {
       <p>
         <strong>What it explains:</strong>{' '}
         <a href="/java/concurrency">Java &rarr; Concurrency &amp; Threads</a> and{' '}
-        <a href="/java-field-guide/concurrency">Java Field Guide &rarr; Concurrency &amp; Virtual Threads</a>{' '}
+        <a href="/java/cheatsheet">Java Field Guide &rarr; Concurrency &amp; Virtual Threads</a>{' '}
         stop being an API tour. <a href="/springboot/advanced">Spring Boot &rarr; Advanced Topics</a>{' '}
         tells you the default <code>@Scheduled</code> pool size is 1 and that this is
         dangerous; after project 1 you know precisely what queue that single thread is
         draining and why a hung job stops the world.{' '}
-        <a href="/spring-field-guide/aop-events">Spring Field Guide &rarr; AOP &amp; Async Events</a>{' '}
+        <a href="/springboot/cheatsheet">Spring Boot Field Guide &rarr; AOP, Async &amp; Events</a>{' '}
         documents the <code>applicationTaskExecutor</code> footgun &mdash; an effectively
         unbounded queue means <code>maxPoolSize</code> is never reached. Step 3 of the
         scheduler project makes you build the bug yourself.

@@ -39,8 +39,8 @@ function allGroupIds(groupList: Group[]): string[] {
 }
 
 // Exact path-segment match — a plain `pathname.startsWith('/' + id)` would
-// wrongly match e.g. "/java-field-guide/..." against the "java" section,
-// since "java-field-guide" also starts with the substring "java".
+// wrongly match e.g. "/javascript/..." against the "java" section, since
+// "javascript" also starts with the substring "java".
 function isSectionActive(pathname: string, sectionId: string): boolean {
   const prefix = `/${sectionId}`;
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
