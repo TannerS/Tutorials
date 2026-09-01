@@ -1,5 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 
@@ -303,6 +304,22 @@ console.log('Tag from a different key:', forged);
         CA issues, published so anyone can audit them and cryptographically prove a certificate is (or is
         not) logged — which is how browsers now catch a CA that quietly issued a certificate it should
         not have.
+      </p>
+
+      <FlowChart
+        title="A Merkle Tree: Four Leaves to One Root"
+        chart={"graph BT\n  D1[\"Data A\"] --> L1[\"H(A)\"]\n  D2[\"Data B\"] --> L2[\"H(B)\"]\n  D3[\"Data C\"] --> L3[\"H(C)\"]\n  D4[\"Data D\"] --> L4[\"H(D)\"]\n  L1 --> P1[\"H(H(A) + H(B))\"]\n  L2 --> P1\n  L3 --> P2[\"H(H(C) + H(D))\"]\n  L4 --> P2\n  P1 --> R[\"Root = H(P1 + P2)\"]\n  P2 --> R\n  style D2 fill:#3b1a1a,stroke:#dc2626\n  style L2 fill:#3b1a1a,stroke:#dc2626\n  style P1 fill:#3b1a1a,stroke:#dc2626\n  style R fill:#3b1a1a,stroke:#dc2626"}
+      />
+
+      <p>
+        Every leaf hash feeds exactly one parent, and every parent feeds exactly one grandparent, until
+        one root remains. The diagram highlights what a single-byte change to <strong>Data B</strong>{' '}
+        does: its leaf hash <code>H(B)</code> changes, which changes the parent hash that combines it
+        with <code>H(A)</code>, which changes the root — even though <strong>Data A, C, and D</strong>{' '}
+        never changed at all. That is the whole mechanism in one picture: a change anywhere always
+        propagates to the top, and nowhere else needs to be touched, hashed, or even downloaded to prove
+        it happened — a verifier only needs the sibling hashes along one path (the &quot;proof path&quot;
+        mentioned above) to confirm a single leaf belongs under a given root.
       </p>
 
       <h2>Key Takeaways</h2>

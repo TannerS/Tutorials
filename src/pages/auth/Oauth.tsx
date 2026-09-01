@@ -469,6 +469,19 @@ DPoP: eyJ0eXAiOiJkcG9wK2p3dCIsImFsZyI6IkVTMjU2Ii...
         know <em>why</em> each thing was removed.
       </p>
 
+      <InfoBox variant="info" title="Still a Draft, Not an RFC">
+        <p>
+          &quot;OAuth 2.1&quot; is still the <strong>OAuth 2.1 draft</strong> —
+          an IETF Internet-Draft (<code>draft-ietf-oauth-v2-1</code>), not yet
+          a ratified RFC. That does not weaken anything below: PKCE-everywhere,
+          dropping implicit and password grants, and sender-constrained refresh
+          tokens are already current best practice today, recommended
+          independently by RFC 9700 (OAuth 2.0 Security Best Current Practice)
+          and every major provider&apos;s own guidance, regardless of when — or
+          whether — the consolidation document itself finishes ratification.
+        </p>
+      </InfoBox>
+
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
@@ -495,8 +508,8 @@ DPoP: eyJ0eXAiOiJkcG9wK2p3dCIsImFsZyI6IkVTMjU2Ii...
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Redirect URI matching</strong></td>
-            <td style={{ padding: '0.75rem' }}>Allowed partial/prefix matching</td>
-            <td style={{ padding: '0.75rem' }}><strong>Exact string comparison</strong> required — wildcard matching enabled open-redirect code theft</td>
+            <td style={{ padding: '0.75rem' }}>Spec already required exact string comparison for a fully-registered URI (RFC 6749 §3.1.2.3), but permitted registering only part of the URI — and many implementations were lax about enforcing either</td>
+            <td style={{ padding: '0.75rem' }}><strong>Full, exact-match registration mandated</strong> — closes the implementation gap explicitly (RFC 9700); wildcard/prefix matching is no longer tolerated</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}><strong>Refresh tokens (public clients)</strong></td>

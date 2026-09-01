@@ -26,13 +26,18 @@ export default function Unit() {
       />
 
       <h2>JUnit 5 — Java Unit Testing</h2>
+      <p>
+        &quot;JUnit 5&quot; is still the everyday name for the platform, but JUnit Jupiter
+        6.x is current as of this writing — the annotations and assertions below are
+        unchanged across that jump, so everything in this lesson applies to both.
+      </p>
 
       <h3>Setup &amp; Dependencies</h3>
       <CodeBlock language="java" title="Maven Dependencies (pom.xml)">
 {`<dependency>
     <groupId>org.junit.jupiter</groupId>
     <artifactId>junit-jupiter</artifactId>
-    <version>5.10.2</version>
+    <version>6.1.3</version>
     <scope>test</scope>
 </dependency>`}
       </CodeBlock>
@@ -259,6 +264,15 @@ expect(mockFn).toHaveBeenCalledWith('arg1', 'arg2');
 expect(mockFn).toHaveBeenCalledTimes(3);`}
       </CodeBlock>
 
+      <InfoBox variant="note" title="What Is mockFn?">
+        <code>mockFn</code> above is a stand-in function — call it, and it silently
+        records every call so you can assert on them afterward, with no real
+        implementation required. That is a <strong>spy</strong> in test-double
+        vocabulary. The next lesson, <strong>Mocking &amp; Test Doubles</strong>, covers
+        spies, stubs, and the full <code>jest.fn()</code> / <code>jest.spyOn()</code> API
+        that creates them.
+      </InfoBox>
+
       <h2>React Testing Library</h2>
       <p>
         React Testing Library (RTL) encourages testing components the way users
@@ -295,7 +309,7 @@ describe('LoginForm', () => {
   });
 
   it('should call onSubmit with form data', async () => {
-    const handleSubmit = jest.fn();
+    const handleSubmit = jest.fn(); // a mock function — records calls; see Mocking & Test Doubles next
     const user = userEvent.setup();
     render(<LoginForm onSubmit={handleSubmit} />);
 

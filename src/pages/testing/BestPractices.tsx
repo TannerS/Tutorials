@@ -232,7 +232,7 @@ npx jest path/to/file.test.js -t "the flaky one" --runInBand --bail
 npx vitest run path/to/file.test.ts --repeat 100 --no-file-parallelism
 
 # Randomize order to expose test-order coupling
-npx jest --randomize            # Jest 30+
+npx jest --randomize            # Jest 29.5+
 npx vitest run --sequence.shuffle
 
 # Java — repeat a single test, then force serial execution

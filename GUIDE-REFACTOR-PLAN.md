@@ -88,6 +88,24 @@ Postgres/T-SQL, Spring Boot 2/4.
       were repointed at `/java/cheatsheet` and `/springboot/cheatsheet`.
       Verified: `tsc --noEmit` clean, `vite build` clean, every lesson path in
       `sections.ts` resolves to a real `App.tsx` route (325/325).
+- [x] **14** — accuracy and layout-consistency audit across the whole site,
+      done in 7 topic phases (A–G) tracked in the now-deleted AUDIT-PLAN.md.
+      Each phase ran fact-checker + version-sentinel + learners-advocate in
+      parallel, applied findings, and verified with `tsc --noEmit` + `vite
+      build` before committing. Total: ~90 findings across the 7 phases,
+      the large majority fixed; a handful of lower-confidence/awareness-only
+      notes were deliberately left unactioned (see each phase's findings log
+      in git history — search commit messages for "audit: fix Phase"). No
+      security vulnerabilities or broken auth patterns were found in the
+      Phase G security-content pass. Real bugs caught along the way (not
+      just staleness/teachability): a silently-wrong SQL "SARGable rewrite"
+      that changed query results, a self-contradicting MockMvc test that
+      couldn't actually trigger the 413 it asserted, an npm workspaces
+      protocol that doesn't exist in npm (Yarn/pnpm-only), and a double-
+      submit bug in a React `Effects.tsx` code sample.
+
+## Remaining
+
 - [ ] **3** — Spring Boot 2 to full parity: mirror Boot 4's DI, REST, Data,
       Testing, Config, Error Handling, Transactions, Kafka, AOP, WebFlux,
       Resilience4j, Observability for Boot 2 APIs (~10 new lessons)
@@ -100,9 +118,6 @@ Postgres/T-SQL, Spring Boot 2/4.
 - [ ] **10** — regenerate every field guide after the version splits land
 - [ ] **12** — SQL: keep SQL Fundamentals, add a complete PostgreSQL section,
       keep T-SQL complete and separate
-- [ ] **14** — accuracy and layout-consistency audit across the whole site.
-      In progress, tracked phase-by-phase in AUDIT-PLAN.md (41 sections is too
-      large for one pass).
 
 ## Notes for whoever picks this up
 

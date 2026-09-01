@@ -233,7 +233,7 @@ $ security verify-cert -c cert0.pem -c cert1.pem
           Per the ground rule for this lesson, I am not fabricating what running it would print. What
           follows is the documented workflow, described accurately, and clearly labeled as{' '}
           <strong>not executed here</strong>. Homebrew <em>is</em> installed on this machine (confirmed:{' '}
-          <code>brew --version</code> → Homebrew 6.0.17), so <code>brew install mkcert</code> is the real,
+          <code>brew --version</code> → Homebrew 6.0.18), so <code>brew install mkcert</code> is the real,
           working install path if you want to run this yourself.
         </p>
       </InfoBox>

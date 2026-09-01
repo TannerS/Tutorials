@@ -261,10 +261,11 @@ describe.sequential('migration runner', () => { /* ... */ });
         <code>--maxWorkers</code> explicitly in CI and measure two or three values.
       </InfoBox>
 
-      <h3>Java: JUnit 5 and the Build Tool</h3>
+      <h3>Java: JUnit 5/6 and the Build Tool</h3>
       <p>
         Java has two independent layers. Surefire/Gradle fork <strong>JVMs</strong>;
-        JUnit 5 runs tests on <strong>threads within</strong> a JVM. Forks give real
+        JUnit (5.x or the current 6.x line — this layer is unchanged between them) runs
+        tests on <strong>threads within</strong> a JVM. Forks give real
         isolation and cost a JVM startup each; threads are nearly free and share
         everything — statics, caches, the Spring context, <code>System.setProperty</code>.
       </p>

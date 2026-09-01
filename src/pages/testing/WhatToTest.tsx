@@ -57,7 +57,10 @@ export default function WhatToTest() {
       <p>
         The two versions below test the same feature. Only one survives a rename of the
         private helper, a switch from a loop to <code>reduce</code>, or a change in how
-        the discount is looked up:
+        the discount is looked up. The coupled version reaches for <code>jest.spyOn()</code>{' '}
+        — a spy records what was called without changing behaviour; <strong>Mocking &amp;
+        Test Doubles</strong>, two lessons ahead, covers spies and the rest of that
+        vocabulary in full:
       </p>
 
       <CodeBlock language="javascript" title="Implementation-Coupled vs Behavioural">
@@ -87,7 +90,10 @@ test('gold members pay 15% less than list price', () => {
 
       <p>
         The Java version of the same mistake usually wears Mockito clothes — a{' '}
-        <code>verify()</code> on a collaborator that exists purely as an internal step:
+        <code>verify()</code> call (it checks that a method was actually invoked on a
+        mock; <strong>Mocking &amp; Test Doubles</strong>, two lessons ahead, covers
+        Mockito&apos;s <code>mock()</code>/<code>when()</code>/<code>verify()</code> syntax
+        in full) on a collaborator that exists purely as an internal step:
       </p>
 
       <CodeBlock language="java" title="verify() Is Where Java Tests Leak Implementation">
@@ -542,7 +548,7 @@ test('sends the amount in minor units and maps a declined card to a domain error
         copy-pasted blocks. The boundary row alone usually justifies the technique:
       </p>
 
-      <CodeBlock language="java" title="Boundaries as a Table (JUnit 5)">
+      <CodeBlock language="java" title="Boundaries as a Table (JUnit 5/6)">
 {`@ParameterizedTest(name = "an order of {0} is free-shipping: {1}")
 @CsvSource({
     "49.99, false",   // just below

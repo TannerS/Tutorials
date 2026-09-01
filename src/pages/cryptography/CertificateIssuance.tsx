@@ -27,7 +27,7 @@ export default function CryptoCertificateIssuance() {
           signed by someone.&quot;</strong> That is it. Every field you saw in the TLS lesson&#39;s
           X.509 structure box — Subject, Issuer, Validity, Signature — exists to make that one
           sentence auditable. This lesson demonstrates it directly with real commands and real output,
-          using OpenSSL 3.6.2, actually run in this environment.
+          using OpenSSL 3.6.3, actually run in this environment.
         </p>
       </InfoBox>
 

@@ -1,5 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 
@@ -93,6 +94,21 @@ export default function CryptoAead() {
           ordering question entirely.
         </p>
       </InfoBox>
+
+      <FlowChart
+        title="Same Two Ingredients, Three Different Orders"
+        chart={"graph TD\n  subgraph EM[\"Encrypt-and-MAC (E&M) — unsafe in general\"]\n    direction LR\n    P1[\"Plaintext\"] --> ENC1[\"Cipher\"]\n    P1 --> MAC1[\"MAC over plaintext\"]\n    ENC1 --> OUT1[\"Ciphertext + Tag\"]\n    MAC1 --> OUT1\n  end\n  subgraph MTE[\"MAC-then-Encrypt (MtE) — unsafe in general\"]\n    direction LR\n    P2[\"Plaintext\"] --> MAC2[\"MAC over plaintext\"]\n    MAC2 --> CAT2[\"Plaintext + Tag, then padded\"]\n    CAT2 --> ENC2[\"Cipher (CBC)\"]\n    ENC2 --> OUT2[\"Ciphertext (tag hidden inside — padding checked before MAC)\"]\n  end\n  subgraph ETM[\"Encrypt-then-MAC (EtM) — generically safe\"]\n    direction LR\n    P3[\"Plaintext\"] --> ENC3[\"Cipher\"]\n    ENC3 --> MAC3[\"MAC over ciphertext\"]\n    MAC3 --> OUT3[\"Ciphertext + Tag\"]\n  end\n  OUT1 -.-> P2\n  OUT2 -.-> P3\n  linkStyle 11,12 stroke-width:0,opacity:0\n  style EM fill:#3b1a1a,stroke:#dc2626\n  style MTE fill:#3b1a1a,stroke:#dc2626\n  style ETM fill:#1a3329,stroke:#4ade80"}
+      />
+
+      <p>
+        Laid out side by side, the difference is purely <strong>which input the MAC covers, and where
+        the padding-processing step falls relative to it.</strong> Encrypt-and-MAC feeds the MAC the raw
+        plaintext, so anything that MAC leaks about its input leaks about the plaintext. MAC-then-Encrypt
+        buries the MAC inside the ciphertext, so the receiver must decrypt and unpad before it can even
+        check the MAC — that unpad step is the padding oracle. Encrypt-then-MAC is the only ordering
+        where the MAC covers exactly what an attacker can tamper with in transit (the ciphertext), so a
+        bad MAC check rejects the message before decryption — and therefore before padding — ever runs.
+      </p>
 
       <h2>Modern AEAD: One Step, Not Three Choices</h2>
 

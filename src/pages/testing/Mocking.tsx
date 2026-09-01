@@ -115,13 +115,13 @@ export default function Mocking() {
 {`<dependency>
     <groupId>org.mockito</groupId>
     <artifactId>mockito-core</artifactId>
-    <version>5.11.0</version>
+    <version>5.23.0</version>
     <scope>test</scope>
 </dependency>
 <dependency>
     <groupId>org.mockito</groupId>
     <artifactId>mockito-junit-jupiter</artifactId>
-    <version>5.11.0</version>
+    <version>5.23.0</version>
     <scope>test</scope>
 </dependency>`}
       </CodeBlock>

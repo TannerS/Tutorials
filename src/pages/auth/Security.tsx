@@ -582,7 +582,7 @@ app.post('/register',
     // superseding SP 800-63-3):
     // length + a breach check, NOT character-class rules. See below.
     body('password')
-      .isLength({ min: 12, max: 128 })   // max caps hashing-DoS cost
+      .isLength({ min: 15, max: 128 })   // 15 = NIST SHALL floor for password-only auth; max caps hashing-DoS cost
       .custom(async (pw) => {
         if (await isInBreachCorpus(pw)) {
           throw new Error('This password has appeared in a known breach');
@@ -618,7 +618,13 @@ app.post('/register',
         </p>
         <p><strong>What the current guidance asks for instead:</strong></p>
         <ul>
-          <li><strong>Length is the real control.</strong> Minimum 8 as an absolute floor; 15+ recommended for user-chosen secrets. Allow at least 64 characters so passphrases fit.</li>
+          <li>
+            <strong>Length is the real control.</strong> NIST <em>SHALL</em>-mandates a 15-character
+            minimum for passwords used as the sole (single-factor) authentication mechanism — exactly
+            the <code>/register</code> flow above, which has no MFA. An 8-character minimum is permitted
+            only for passwords that are always paired with a second factor. This is a floor, not a
+            suggestion. Allow at least 64 characters so passphrases fit.
+          </li>
           <li><strong>Check against a breach corpus.</strong> Screen new passwords against known-compromised lists — this is what actually stops credential stuffing. Have I Been Pwned&apos;s range API lets you do it with k-anonymity, never sending the full hash.</li>
           <li><strong>Accept all printable Unicode, including spaces and emoji.</strong> Normalise (NFKC) before hashing.</li>
           <li><strong>Do not truncate, and do not block paste.</strong> Blocking paste actively fights password managers.</li>

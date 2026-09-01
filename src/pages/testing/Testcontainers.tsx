@@ -51,9 +51,10 @@ export default function Testcontainers() {
         real fidelity in exchange.
       </InfoBox>
 
-      <h2>Java: JUnit 5 + Testcontainers</h2>
+      <h2>Java: JUnit 5/6 + Testcontainers</h2>
       <p>
-        The <code>@Testcontainers</code> extension manages container lifecycle for you.
+        The <code>@Testcontainers</code> extension manages container lifecycle for you —
+        unchanged whether the project is on JUnit Jupiter 5.x or the current 6.x line.
         <code>@Container</code> marks the field; a static field is shared across all
         tests in the class (started once), an instance field restarts per test.
       </p>
@@ -61,26 +62,46 @@ export default function Testcontainers() {
       <CodeBlock language="java" title="Maven Dependencies">
 {`<dependency>
     <groupId>org.testcontainers</groupId>
-    <artifactId>junit-jupiter</artifactId>
-    <version>1.19.7</version>
+    <artifactId>testcontainers-junit-jupiter</artifactId>
+    <version>2.0.5</version>
     <scope>test</scope>
 </dependency>
 <dependency>
     <groupId>org.testcontainers</groupId>
-    <artifactId>postgresql</artifactId>
-    <version>1.19.7</version>
+    <artifactId>testcontainers-postgresql</artifactId>
+    <version>2.0.5</version>
     <scope>test</scope>
 </dependency>`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Testcontainers 2.0 Renamed Every Module">
+        <p>
+          Testcontainers 2.0 (April 2026) prefixed every module artifact with{' '}
+          <code>testcontainers-</code> — <code>org.testcontainers:postgresql</code> became{' '}
+          <code>org.testcontainers:testcontainers-postgresql</code> — and moved each
+          container class into its own package: <code>PostgreSQLContainer</code> now
+          lives under <code>org.testcontainers.postgresql</code>, not{' '}
+          <code>org.testcontainers.containers</code>. It also dropped the container
+          classes&apos; self-referencing generic parameter, so construction is now{' '}
+          <code>PostgreSQLContainer postgres = new PostgreSQLContainer(...)</code> — no{' '}
+          <code>&lt;?&gt;</code>, no diamond. The old <code>org.testcontainers:postgresql</code>{' '}
+          artifact still resolves on Maven Central for unmigrated projects, but it is
+          capped at the 1.21.x line and gets no further releases.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="java" title="Repository Integration Test With a Real Postgres">
-{`@Testcontainers
+{`import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+
+@Testcontainers
 @SpringBootTest
 class OrderRepositoryIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:16-alpine")
+    static PostgreSQLContainer postgres =
+            new PostgreSQLContainer("postgres:16-alpine")
                     .withDatabaseName("orders_test")
                     .withUsername("test")
                     .withPassword("test");
