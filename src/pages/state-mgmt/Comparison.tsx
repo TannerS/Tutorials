@@ -355,8 +355,11 @@ function useCartCount() {
         actions, unmatched devtools with time-travel, and conventions that keep a large team
         consistent, at the price of ceremony. <strong>Zustand</strong> is essentially the hook above
         with a nicer API and middleware, roughly 1 KB, no provider required.{' '}
-        <strong>Jotai</strong> (and its predecessor Recoil) inverts the model into independent atoms
-        composed bottom-up, which suits UIs whose state shape isn&apos;t known until runtime.{' '}
+        <strong>Jotai</strong> (and its predecessor Recoil, now archived by Meta as of January 2025 —
+        don&apos;t start new work with it, and it has known incompatibilities with React 19&apos;s
+        concurrent rendering; Jotai is its actively-maintained successor) inverts the model into
+        independent atoms composed bottom-up, which suits UIs whose state shape isn&apos;t known
+        until runtime.{' '}
         <strong>MobX</strong> tracks observable mutations at runtime for an OOP-flavored style. And{' '}
         <strong>XState</strong> solves a different axis entirely — legal transitions in complex
         workflows. This site doesn&apos;t teach them in depth on purpose: the concepts on rungs 1–4

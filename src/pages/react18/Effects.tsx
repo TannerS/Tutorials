@@ -582,36 +582,32 @@ function SubmitForm() {
   const handleSubmit = async () => {
     // 3. The closure captures formDataRef — the ref OBJECT, not .current.
     //    A ref object is one shared pointer, never recreated across renders.
-    await submitToAPI(formDataRef.current); // reads live .current at call time
-
-    // 4. Reading .current here only makes sense if you need to compare
-    //    what was submitted vs what the user may have changed during the await.
-    const submittedData = formDataRef.current; // snapshot at submit time
-    await submitToAPI(submittedData);
-
-    if (formDataRef.current !== submittedData) {
-      // Form changed while request was in flight — handle accordingly
-    }
+    //    Reading .current HERE, at the moment the call actually fires, always
+    //    gets whatever the user has typed up to this instant — never a value
+    //    frozen back when this closure was first created.
+    await submitToAPI(formDataRef.current); // sends the LIVE data — once
   };
 }`}
         </CodeBlock>
         <p>
-          Reading <code>formDataRef.current</code> <em>after</em> the <code>await</code>{' '}
-          is only useful if you need to react to changes that happened during the
-          network request. If you just need to send the data and move on, reading{' '}
-          <code>.current</code> once before the <code>await</code> and storing it in
-          a local variable is cleaner and communicates intent.
+          For a click-triggered submit like this one, <code>handleSubmit</code> is a
+          brand-new closure on every render anyway, so reading the plain{' '}
+          <code>formData</code> state variable directly would already be correct —
+          the ref buys you nothing here. The ref pattern earns its keep in the case
+          called out above: a callback that is <strong>set up once and invoked
+          repeatedly</strong> (a <code>setInterval</code> autosave, a debounced live
+          preview, a long-lived message handler). There, the closure is created a
+          single time and never gets a fresh <code>formData</code> — but{' '}
+          <code>formDataRef.current</code> is always current, because step 2 keeps
+          rewriting it on every render, no matter how old the closure reading it is.
         </p>
         <p style={{ marginBottom: 0 }}>
-          <strong>What's the point of updating <code>.current</code> after the async
-          call if the call already used the value?</strong> There isn't one — by the
-          time the <code>await</code> resolves, the API call has already fired with
-          whatever <code>.current</code> held at that moment. Updating <code>.current</code>{' '}
-          after the call does nothing useful for that request. The ref stays current
-          because <code>formDataRef.current = formData</code> runs on every render
-          automatically — that line is what keeps it live, not anything you do inside
-          the handler. Inside the handler you are only ever <em>reading</em> the ref,
-          never writing it.
+          <strong>Only ever read <code>.current</code> inside the handler — never
+          write it.</strong> Step 2 is the single place that updates{' '}
+          <code>formDataRef.current</code>, and it runs during render, not inside{' '}
+          <code>handleSubmit</code>. Writing to <code>.current</code> from within the
+          handler would fight with that synchronization and serve no purpose — by the
+          time <code>handleSubmit</code> runs, the ref is already correct.
         </p>
       </InfoBox>
 

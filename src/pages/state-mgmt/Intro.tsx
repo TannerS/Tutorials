@@ -138,7 +138,8 @@ function UserAvatar() {
 
 // 3. External Store — selector-based, surgical re-renders
 // (This selector shape is what Zustand and Redux both give you. It is
-//  rung 5 of the ladder in the next lesson — shown here only for contrast.)
+//  rung 5 of the escalation ladder from the Core State Patterns section —
+//  shown here only for contrast.)
 function UserMenu() {
   // The store calls this selector on every change and re-renders ONLY if
   // the SELECTED slice differs. That extra comparison step is the thing
@@ -282,11 +283,15 @@ function Counter() {
 
       <h2>What&apos;s Next</h2>
       <p>
-        Now that you can categorize state, the next lesson walks the escalation ladder rung by
-        rung — <code>useState</code>, lifting state up, <code>useReducer</code>, Context, and finally
-        a dedicated store — with the real re-render cost of each and an honest test for when to
-        climb. After that we cover the production Context + <code>useReducer</code> patterns, and
-        finish with TanStack Query for the server cache, which is a different problem entirely.
+        You already climbed the escalation ladder back in the Core State Patterns section — <code>useState</code>,
+        lifting state up, <code>useReducer</code>, Context, and finally a dedicated store, with the
+        real re-render cost of each rung. This lesson filled in the piece the ladder assumes: how to
+        recognize which category a given piece of state falls into before you decide how to hold it.
+        Next up is the production side of the Context + <code>useReducer</code> rung — splitting
+        state from dispatch, normalizing shape, turning a reducer into a state machine, persistence,
+        and testing. After that, the Zustand section picks up rung 5 in depth: fundamentals, then
+        advanced middleware and TypeScript patterns, for the cases the decision framework above
+        actually recommends reaching for an external store.
       </p>
     </LessonLayout>
   );

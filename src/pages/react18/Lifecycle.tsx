@@ -206,234 +206,10 @@ const MemoChild = React.memo(function MemoChild({ name }) {
 //   (MemoChild does NOT log)   ← memo boundary blocks the cascade`}
       </CodeBlock>
 
-      <FlowChart
-        title="Memo Boundary vs Context — The Gotcha"
-        chart={"graph TD\n  A[Parent setState] --> B[Parent re-renders]\n  B --> C[React.memo Child]\n  C --> D{Props changed?}\n  D -->|No| E[SKIP re-render]\n  D -->|Yes| F[Re-render child]\n  G[Context value changes] --> H[React.memo Child using context]\n  H --> I[RE-RENDERS ANYWAY]\n  style E fill:#1a3329\n  style I fill:#3b1a1a"}
-      />
-
-      <InfoBox variant="danger" title="Context Punches Through React.memo">
-        <p><code>React.memo</code> only checks props. If a component consumes a context via <code>useContext</code>, and the context value changes, the component <strong>will re-render regardless of memo</strong>. This is the #1 reason context-heavy apps feel slow. Solutions: split contexts, memoize context values, or use state management libraries that offer selector-based subscriptions.</p>
+      <InfoBox variant="danger" title="Context Punches Through React.memo — Preview">
+        <p><code>React.memo</code> only checks props. It has no visibility into context: if a component reads a value via <code>useContext</code> and that value changes, the component re-renders <strong>regardless of memo</strong> — and that re-render cascades into its children exactly like any other. Combined with the fact that an unmemoized <code>{'{}'}</code> context value is a brand-new object reference on every provider render, this is the single biggest cause of "my app re-renders way more than it should" in real codebases.</p>
+        <p style={{ marginBottom: 0 }}>The fix — splitting contexts by update frequency, memoizing the provider's value, separating state from dispatch — gets a full walkthrough (box-and-arrow diagrams, before/after code, a decision tree for which fix to reach for) once <code>useContext</code>, <code>useMemo</code>, and <code>useCallback</code> are introduced in depth: see <strong>Hooks Deep Dive</strong> and <strong>Context &amp; Composition</strong> later in this section. For now, the one sentence to carry forward is: <code>React.memo</code> stops the parent-to-child cascade; it does nothing to stop the context broadcast.</p>
       </InfoBox>
-
-      <CodeBlock language="jsx" title="Context vs React.memo — The Gotcha" showLineNumbers>
-{`const ThemeContext = React.createContext('light');
-
-// Even though this is memoized, it re-renders when ThemeContext changes!
-const MemoButton = React.memo(function MemoButton({ label }) {
-  const theme = useContext(ThemeContext);  // ← subscribes to context
-  console.log('MemoButton rendered');
-  return <button className={theme}>{label}</button>;
-});
-
-function App() {
-  const [theme, setTheme] = useState('light');
-  const [count, setCount] = useState(0);
-
-  return (
-    <ThemeContext value={theme}>
-      {/* MemoButton re-renders when theme changes, NOT when count changes */}
-      <MemoButton label="Click me" />
-      <button onClick={() => setCount(c => c + 1)}>Count: {count}</button>
-      <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}>
-        Toggle theme
-      </button>
-    </ThemeContext>
-  );
-}`}
-      </CodeBlock>
-
-      <h2>Solutions to the Context Re-render Problem</h2>
-
-      <p>There are three main strategies to prevent context from causing unnecessary re-renders. Each has different trade-offs:</p>
-
-      <CodeBlock language="jsx" title="Solution 1: Split Contexts by Update Frequency" showLineNumbers>
-{`// ❌ BAD: One mega-context — everything re-renders when ANY value changes
-const AppContext = React.createContext();
-
-function AppProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [theme, setTheme] = useState('dark');
-  const [locale, setLocale] = useState('en');
-
-  // Every child re-renders when user, theme, OR locale changes
-  return (
-    <AppContext value={{ user, setUser, theme, setTheme, locale, setLocale }}>
-      {children}
-    </AppContext>
-  );
-}
-
-// ✅ GOOD: Separate contexts — components only subscribe to what they need
-const UserContext = React.createContext();
-const ThemeContext = React.createContext();
-const LocaleContext = React.createContext();
-
-function AppProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [theme, setTheme] = useState('dark');
-  const [locale, setLocale] = useState('en');
-
-  return (
-    <UserContext value={{ user, setUser }}>
-      <ThemeContext value={{ theme, setTheme }}>
-        <LocaleContext value={{ locale, setLocale }}>
-          {children}
-        </LocaleContext>
-      </ThemeContext>
-    </UserContext>
-  );
-}
-
-// Now: changing theme only re-renders ThemeContext consumers
-// UserContext consumers are completely unaffected`}
-      </CodeBlock>
-
-      <CodeBlock language="jsx" title="Solution 2: Memoize the Context Value" showLineNumbers>
-{`// ❌ BAD: New object created every render → all consumers re-render
-function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [permissions, setPermissions] = useState([]);
-
-  // This creates a NEW object every time AuthProvider re-renders
-  // Even if user and permissions haven't changed!
-  return (
-    <AuthContext value={{ user, permissions, setUser, setPermissions }}>
-      {children}
-    </AuthContext>
-  );
-}
-
-// ✅ GOOD: Memoize the value object so it only changes when data changes
-function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [permissions, setPermissions] = useState([]);
-
-  const value = useMemo(
-    () => ({ user, permissions, setUser, setPermissions }),
-    [user, permissions]  // Only creates new object when these change
-    // setUser and setPermissions are stable (from useState), so they're safe to omit
-  );
-
-  return (
-    <AuthContext value={value}>
-      {children}
-    </AuthContext>
-  );
-}`}
-      </CodeBlock>
-
-      <InfoBox variant="info" title="The Box Analogy — Why Object Literals Are the Problem">
-        <p>Think of it like shipping boxes. The <strong>contents</strong> (user, permissions, setUser, setPermissions) are the same every render. But <code>{'{}'}</code> creates a <strong>new box</strong> every time:</p>
-        <ul>
-          <li><strong>Render 1:</strong> 📦 Box A contains [user=null, permissions=[], setUser, setPermissions]</li>
-          <li><strong>Render 2:</strong> 📦 Box B contains [user=null, permissions=[], setUser, setPermissions]</li>
-          <li>Contents are <strong>identical</strong>. But Box A !== Box B (different box in memory).</li>
-          <li>React checks the <strong>box</strong> (via Object.is), not the contents. New box = new value = re-render all consumers.</li>
-        </ul>
-        <p><code>useMemo</code> fixes this by <strong>reusing the same box</strong> when the contents haven't changed. Render 2 returns Box A again instead of creating Box B.</p>
-      </InfoBox>
-
-      <InfoBox variant="warning" title="When Does This Actually Matter?">
-        <p>The memoized value only helps when <strong>AuthProvider re-renders for a reason unrelated to auth data</strong>. Here is the scenario:</p>
-      </InfoBox>
-
-      <CodeBlock language="jsx" title="The Real-World Scenario: Unrelated Parent State" showLineNumbers>
-{`function App() {
-  const [theme, setTheme] = useState('dark');  // unrelated to auth
-
-  return (
-    // AuthProvider is a child of App.
-    // When App re-renders (theme changes), AuthProvider re-renders too.
-    <AuthProvider>
-      <button onClick={() => setTheme('light')}>Toggle Theme</button>
-      <UserProfile />   {/* uses useContext(AuthContext) */}
-      <PermissionsPanel /> {/* uses useContext(AuthContext) */}
-    </AuthProvider>
-  );
-}
-
-// User clicks "Toggle Theme" → App re-renders → AuthProvider re-renders
-//
-// ❌ WITHOUT useMemo on the context value:
-//   AuthProvider creates a new value object → Object.is(old, new) = false
-//   → UserProfile re-renders (auth data didn't change!)
-//   → PermissionsPanel re-renders (auth data didn't change!)
-//   Both re-render for NO reason — the theme changed, not the auth.
-//
-// ✅ WITH useMemo on the context value:
-//   useMemo returns the CACHED object (user and permissions didn't change)
-//   → Object.is(old, new) = true → same reference
-//   → UserProfile does NOT re-render ✅
-//   → PermissionsPanel does NOT re-render ✅
-//   Only components that care about theme re-render.`}
-      </CodeBlock>
-
-      <InfoBox variant="tip" title="Key Takeaway">
-        <p>Context re-renders consumers when the <code>value</code> prop changes reference. Without useMemo, <strong>any parent re-render</strong> creates a new object reference, triggering all consumers — even if the actual data is identical. useMemo preserves the same reference until the data actually changes.</p>
-      </InfoBox>
-
-      <h2>🌊 The Context Cascade — Why This Matters at Scale</h2>
-
-      <InfoBox variant="danger" title="Context Re-renders Cascade Down the ENTIRE Subtree">
-        <p>When a context consumer re-renders because the context value changed, <strong>all of its children, grandchildren, and every descendant re-render too</strong>. This is React's default behavior — when a parent re-renders, all children re-render. Context doesn't change this rule; it just adds another trigger.</p>
-      </InfoBox>
-
-      <CodeBlock language="text" title="The Full Cascade — One Unmemoized Provider Poisons the Tree">
-{`Provider re-renders (parent state changed — nothing to do with auth)
-  │
-  ├─ value={{ user, permissions }} ← NEW object every render
-  │
-  ├─→ Consumer: <Navbar />  (useContext → sees new ref → RE-RENDERS)
-  │     ├─→ <Logo />                    ← re-renders (parent re-rendered)
-  │     ├─→ <SearchBar />               ← re-renders
-  │     │     └─→ <SearchSuggestions />  ← re-renders
-  │     └─→ <UserAvatar />              ← re-renders
-  │
-  ├─→ Consumer: <Sidebar />  (useContext → sees new ref → RE-RENDERS)
-  │     ├─→ <NavLinks />                ← re-renders
-  │     └─→ <PermissionBadge />         ← re-renders
-  │
-  └─→ Consumer: <MainContent />  (useContext → sees new ref → RE-RENDERS)
-        ├─→ <Dashboard />               ← re-renders
-        │     ├─→ <Chart />             ← re-renders (expensive!)
-        │     └─→ <DataTable />         ← re-renders (expensive!)
-        └─→ <Footer />                  ← re-renders
-
-Total: 1 provider re-render → 3 consumers → 12+ descendant re-renders
-All because {} created a new object. None of the auth data actually changed.`}
-      </CodeBlock>
-
-      <InfoBox variant="info" title="The Chain of Events">
-        <ol>
-          <li><strong>Something unrelated</strong> causes the provider's parent to re-render (e.g., a theme toggle)</li>
-          <li>The provider re-renders → <code>{'{}'}</code> creates a <strong>new value object</strong> (the "new box")</li>
-          <li>React compares old value vs new value with <code>Object.is</code> → <strong>false</strong> (different box)</li>
-          <li><strong>Every component</strong> using <code>useContext(AuthContext)</code> re-renders — regardless of React.memo</li>
-          <li>Each consumer re-renders → <strong>React's default cascade</strong> kicks in → all children of those consumers re-render too</li>
-          <li>Those children's children re-render → <strong>entire subtree</strong> below every consumer re-renders</li>
-        </ol>
-      </InfoBox>
-
-      <FlowChart title="How One Unmemoized Context Poisons the App" chart={"graph TD\n  A[Unrelated parent state changes] --> B[Provider component re-renders]\n  B --> C[value=curly braces creates NEW object]\n  C --> D[Object.is returns false]\n  D --> E[ALL consumers re-render]\n  E --> F[Each consumer's children re-render]\n  F --> G[Children's children re-render]\n  G --> H[Entire subtree below every consumer]\n  style A fill:#3d2f14\n  style C fill:#3b1a1a\n  style H fill:#3b1a1a"} />
-
-      <CodeBlock language="jsx" title="The Fix: useMemo Stops the Cascade at the Source" showLineNumbers>
-{`// With useMemo on the context value:
-//
-// Provider re-renders (parent state changed)
-//   │
-//   ├─ value = useMemo(...) ← SAME object (user/permissions unchanged)
-//   │
-//   ├─→ <Navbar />   → useContext sees same ref → does NOT re-render ✅
-//   │     └─→ children don't re-render either ✅
-//   │
-//   ├─→ <Sidebar />  → does NOT re-render ✅
-//   │     └─→ children don't re-render either ✅
-//   │
-//   └─→ <MainContent /> → does NOT re-render ✅
-//         └─→ <Chart />, <DataTable /> → don't re-render ✅
-//
-// Total: 0 unnecessary re-renders. One line of useMemo saved the entire tree.`}
-      </CodeBlock>
 
       <h2>🔑 What Does "Stable" and "Unstable" Actually Mean?</h2>
 
@@ -501,20 +277,19 @@ function Parent3() {
 
       <h3>Why Are Some Things Stable?</h3>
 
-      <InfoBox variant="note" title="How React Keeps Setters Stable">
-        <p>When React processes <code>useState</code>, it creates the setter function <strong>once</strong> and binds it to the component's internal fiber node. On every subsequent render, React returns the <strong>exact same function object</strong> — it doesn't recreate it. This is different from functions you write yourself:</p>
+      <InfoBox variant="note" title="React Guarantees Certain Values Never Change Reference">
+        <p><code>setState</code> from <code>useState</code>, <code>dispatch</code> from <code>useReducer</code>, and the object returned by <code>useRef</code> are all guaranteed by React to keep the <strong>same reference across every render</strong> of a given component instance — you never need to memoize them yourself.</p>
+        <p style={{ marginBottom: 0 }}>Everything <em>you</em> write inline during render — arrow functions, object literals, array literals — is a <strong>new reference every render</strong> unless you explicitly stabilize it with <code>useMemo</code>/<code>useCallback</code>. Exactly how React achieves that guarantee under the hood is covered in <strong>Hooks Deep Dive</strong>, right after hooks themselves are introduced properly.</p>
       </InfoBox>
 
-      <CodeBlock language="jsx" title="Stable vs Unstable References" showLineNumbers>
+      <CodeBlock language="jsx" title="Stable vs Unstable — What to Expect" showLineNumbers>
 {`function MyComponent() {
   const [count, setCount] = useState(0);
   const [user, setUser] = useState(null);
 
-  // ✅ STABLE — React created these once, returns same reference every render
+  // ✅ STABLE — guaranteed by React, same reference every render
   // setCount on render 1 === setCount on render 50 (literally same object)
   // setUser on render 1 === setUser on render 50
-  // Why? The setter is bound to the fiber's hook slot, not to render-specific values.
-  // It doesn't close over 'count' — it writes directly to React's internal state.
 
   // ❌ UNSTABLE — you created this, so it's a new function every render
   const handleClick = () => setCount(c => c + 1);
@@ -534,64 +309,14 @@ function Parent3() {
   // That's why { color: 'red' } above is unstable — same content, different object.
 }
 
-// How React implements this internally (simplified):
-// On FIRST render (mount):
-//   hook.setter = (newVal) => { hook.state = newVal; scheduleRerender(); }
-//   return [hook.state, hook.setter]
-//
-// On EVERY subsequent render (update):
-//   return [hook.state, hook.setter]  ← same setter, not recreated
-//
-// The setter doesn't need to close over any render values —
-// it writes directly to the hook slot on the fiber node.
-
-// Same applies to useReducer's dispatch:
+// The same guarantee applies to useReducer's dispatch:
 const [state, dispatch] = useReducer(reducer, initial);
-// dispatch is ALSO stable — created once, reused forever.
-// This is why passing dispatch to children is safe without useCallback.`}
+// dispatch is ALSO stable — safe to pass to children without useCallback.`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="Practical Rule of Thumb">
         <p><strong>Stable (safe to omit from deps, safe to pass without useCallback):</strong> <code>setState</code> from useState, <code>dispatch</code> from useReducer, <code>ref</code> from useRef, and functions returned from <code>useCallback</code>.</p>
         <p><strong>Unstable (new reference every render):</strong> inline functions (<code>() =&gt; ...</code>), object/array literals (<code>{'{}'}</code>, <code>[]</code>), and any value computed during render without <code>useMemo</code>.</p>
-      </InfoBox>
-
-      <CodeBlock language="jsx" title="Even better: split state and dispatch" showLineNumbers>
-{`// Even better: split state and dispatch (like useReducer pattern)
-const AuthStateContext = React.createContext();    // { user, permissions }
-const AuthDispatchContext = React.createContext();  // { setUser, setPermissions }
-
-function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [permissions, setPermissions] = useState([]);
-
-  const state = useMemo(() => ({ user, permissions }), [user, permissions]);
-  const dispatch = useMemo(() => ({ setUser, setPermissions }), []);
-  // dispatch never changes → consumers that only call setUser never re-render
-
-  return (
-    <AuthStateContext value={state}>
-      <AuthDispatchContext value={dispatch}>
-        {children}
-      </AuthDispatchContext>
-    </AuthStateContext>
-  );
-}`}
-      </CodeBlock>
-
-      <FlowChart
-        title="Context Solutions — Decision Tree"
-        chart={"graph TD\n  A[Context causing re-render issues?] --> B{How many values in context?}\n  B -->|2-3 values| C[Memoize the value object with useMemo]\n  B -->|Many values with different update rates| D[Split into separate contexts]\n  A --> E{Readers vs Writers?}\n  E -->|Separate| F[Split State and Dispatch contexts]\n  E -->|Mixed| C"}
-      />
-
-      <InfoBox variant="tip" title="Quick Reference — Which Solution When?">
-        <ul>
-          <li><strong>Small app, few contexts:</strong> Memoize context values with <code>useMemo</code> — simple and effective.</li>
-          <li><strong>Medium app, mixed update frequencies:</strong> Split contexts (state vs dispatch, or by domain). Split state/dispatch is the highest-ROI pattern.</li>
-        </ul>
-        <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.8 }}>
-          <em>💡 For very large apps where context splitting isn't enough, external state libraries like Zustand or Jotai offer selector-based subscriptions that bypass the context system entirely — but stick with built-in React patterns first.</em>
-        </p>
       </InfoBox>
 
       <h2>Why Not Wrap Everything in React.memo?</h2>

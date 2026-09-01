@@ -455,6 +455,19 @@ export function usePostsWithAuthors() {
         cancelled request overwriting fresh data.
       </p>
 
+      <FlowChart
+        title="Checkout State Machine — Every Legal Transition"
+        chart={"stateDiagram-v2\n  [*] --> cart\n  cart --> shipping : proceed\n  shipping --> shipping : addressSet\n  shipping --> paying : proceed<br/>(address set)\n  paying --> confirmed : paid\n  paying --> failed : failed\n  failed --> paying : retry\n  confirmed --> [*]"}
+      />
+
+      <p>
+        Notice what is <em>not</em> on this diagram: there is no arrow from <code>confirmed</code>{' '}
+        back to <code>paying</code>, and a second <code>paid</code> event while already{' '}
+        <code>confirmed</code> has nowhere to go. That is the switch-on-status structure doing its
+        job — illegal transitions are not bugs to guard against at the call site, they are simply
+        absent from the type.
+      </p>
+
       <CodeBlock language="tsx" title="Guarding transitions by current state">
 {`type CheckoutState =
   | { status: 'cart' }

@@ -472,7 +472,17 @@ function AnimatedLayout() {
 // app/routes/home.tsx        →  /
 // app/routes/about.tsx       →  /about
 // app/routes/users.$id.tsx   →  /users/:id
-// app/routes/dashboard_.tsx  →  /dashboard (pathless layout escape)
+//
+// Trailing underscore = nesting escape. The URL segment is still there,
+// but the route opts out of nesting inside the same-named layout:
+// app/routes/dashboard.tsx   →  layout at /dashboard, renders an <Outlet />
+// app/routes/dashboard_.tsx  →  ALSO /dashboard, but skips that layout —
+//                                renders standalone instead of nested inside it
+//
+// Leading underscore = pathless layout. It wraps children but contributes
+// no segment of its own to the URL:
+// app/routes/_auth.tsx       →  layout route, no path segment
+// app/routes/_auth.login.tsx →  /login, wrapped by _auth.tsx's layout
 
 // Each route file exports:
 // - default component (the page)

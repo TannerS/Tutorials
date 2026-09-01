@@ -15,7 +15,7 @@ compared to losing track of what's left.
 ## Phases
 
 - [x] **A — Java & Spring backend**: java, springboot, springboot2, from-scratch
-- [ ] **B — React core & ecosystem**: react18, react19-whats-new, react-antipatterns,
+- [x] **B — React core & ecosystem**: react18, react19-whats-new, react-antipatterns,
       state-basics, state-context, state-zustand, react-query, react-testing, react-router
 - [ ] **C — Frontend languages**: typescript, javascript, css-mastery, mui, mui9
 - [ ] **D — Database**: sql-fundamentals, sql-design-patterns, sql-advanced, tsql
@@ -58,37 +58,45 @@ version-sentinel and learners-advocate findings, all fixed:
   (an advanced, rarely-needed skill) no longer sits ahead of foundational
   stream-creation material later in the same lesson.
 
-### Phase B — React core & ecosystem (reviews done, fixes not yet applied)
+### Phase B — React core & ecosystem (done)
 
-fact-checker: pending (agent was killed once by a machine-sleep event mid-run
-and relaunched; awaiting its result).
+fact-checker found 2 confirmed bugs (both fixed):
+- `react18/Effects.tsx` had a real double-submit bug in a code sample (called
+  `submitToAPI` twice in one handler, contradicting its own prose) — reduced
+  to one call and the surrounding explanation rewritten to be coherent.
+- `react-router/Advanced.tsx` conflated two opposite React Router v7
+  flat-routes conventions — trailing-underscore (nesting escape, still has a
+  URL segment) vs leading-underscore (pathless layout, no URL segment) — and
+  mislabeled the former as the latter. Replaced with two correctly-labeled
+  contrasting examples.
+(Everything else it checked across ~60 empirical checks — real Playwright
+browser runs, real npm installs — held up; see the full report for what was
+and wasn't deep-read.)
 
-version-sentinel — 2 minor findings:
-- `state-mgmt/Comparison.tsx` mentions Recoil with no caveat; Meta archived
-  it Jan 2025 and it has known React 19 concurrent-rendering issues — add a
-  "deprecated, migrate to Jotai" note.
-- `state-mgmt/ZustandAdvanced.tsx` cites a TypeScript-5.9 verification; repo
-  is actually on TypeScript 6.0.3 (installed version). Low priority — the
-  underlying technical claim is still correct, just the version citation is
-  stale by one major version.
+version-sentinel — 2 minor findings, both fixed:
+- `state-mgmt/Comparison.tsx` now flags Recoil as archived by Meta (Jan
+  2025) with known React 19 concurrent-rendering issues, pointing to Jotai.
+- `state-mgmt/ZustandAdvanced.tsx`'s TypeScript-5.9 citation corrected to
+  6.0.3 (the repo's actually-installed version) after re-verifying the
+  underlying curried-`create<T>()()` claim still holds under it.
 
-learners-advocate — 5 findings, most notable:
-- **Real sequencing bug**: `react18/Lifecycle.tsx` is lessonIndex 0 (the
-  first lesson, prev=null) but uses `useContext`/`useReducer`/`useMemo`/
-  `useCallback`/`React.memo` and teaches full context-memoization patterns
-  that aren't formally introduced until Hooks Deep Dive (index 2) and
-  Context & Composition (index 6) — the same material then gets re-taught
-  twice more later. Needs restructuring, not just a caveat.
-- "Fiber" / "fiber tree" used repeatedly across 5 files as load-bearing
-  jargon, never defined or diagrammed anywhere in the section.
-- Two state-machine diagrams missing (`react18/State.tsx`,
-  `state-mgmt/Patterns.tsx`) despite both lessons using FlowChart elsewhere.
-- `react18/Portals.tsx` has zero diagrams for its core "same React tree,
-  different DOM tree" concept.
-- `state-mgmt/Intro.tsx`'s closing paragraph describes a lesson sequence
-  that doesn't match its actual `next` prop — looks like leftover copy from
-  before the state-mgmt section was split into state-basics/state-context/
-  state-zustand.
+learners-advocate — 5 findings, all fixed:
+- **Real sequencing bug**: `react18/Lifecycle.tsx` (lessonIndex 0, the very
+  first lesson) was teaching a full context-memoization walkthrough and
+  hook-internals content that isn't introduced until Hooks Deep Dive (index
+  2) and Context & Composition (index 6), and gets taught properly there
+  anyway. Trimmed to a forward-referencing InfoBox; the freed-up "fiber"
+  definition moved to Hooks.tsx where it's genuinely first needed now.
+- "Fiber" jargon: added a proper first-use definition + diagram in
+  `react18/Hooks.tsx` (component tree vs fiber tree).
+- Added missing state-machine diagrams to `react18/State.tsx` and
+  `state-mgmt/Patterns.tsx`.
+- Added the missing "same React tree, different DOM tree" diagram to
+  `react18/Portals.tsx`.
+- Rewrote `state-mgmt/Intro.tsx`'s closing paragraph (and a matching stale
+  comment) to describe the section's real lesson sequence instead of
+  leftover copy from before the state-mgmt split.
 
-Fixes for Phase B's findings not yet applied as of this checkpoint — resume
-here if picking this back up.
+Verified: tsc --noEmit clean, vite build clean, eslint clean on all changed
+files, and several pages spot-checked live via Playwright (zero console
+errors, diagrams render).

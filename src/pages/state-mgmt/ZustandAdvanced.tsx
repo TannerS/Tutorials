@@ -506,7 +506,7 @@ const useBearStore = create<BearState>(
       </CodeBlock>
 
       <InfoBox variant="success" title="Verified — real tsc output, not a description">
-        Compiled both versions above (TypeScript 5.9, strict mode) against the actual installed{' '}
+        Compiled both versions above (TypeScript 6.0, strict mode) against the actual installed{' '}
         <code>zustand</code> type definitions. The non-curried version failed with exactly the{' '}
         <code>TS2345</code> / <code>$$storeMutators</code> error pasted above (exit code 2); the
         curried version compiled with zero errors (exit code 0). Same store, same middleware, same{' '}

@@ -1,5 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 
@@ -46,7 +47,31 @@ function App() {
       <h2>Same Tree, Different DOM Node</h2>
 
       <p>
-        The consequence that matters: an event fired inside a portal bubbles through the{' '}
+        The hard-to-hold-in-your-head part is that a portal splits <strong>two trees that
+        normally move together</strong>. <code>Modal</code> keeps its exact position in the{' '}
+        <strong>React tree</strong> — same parent, same place in the props/context chain, same
+        spot event bubbling travels through. But the DOM node it actually renders into is
+        wherever <code>domNode</code> points, completely detached from that position in the{' '}
+        <strong>DOM tree</strong>. Everything that follows in this lesson is a consequence of
+        that one split:
+      </p>
+
+      <FlowChart
+        title="Portal: One React Tree, Two DOM Locations"
+        chart={"graph TB\n  subgraph ReactTree[\"React Tree - context, event bubbling follow this\"]\n    RA[App] --> RB[div.app]\n    RB --> RC[Modal]\n    RC --> RD[button]\n  end\n  subgraph DomTree[\"DOM Tree - CSS overflow/z-index follow this\"]\n    DA[html] --> DB[body]\n    DB --> DC[div.app]\n    DB --> DE[button]\n  end\n  RC -.->|createPortal renders into| DE\n  style RC fill:#2a1f44\n  style RD fill:#2a1f44\n  style DE fill:#2a1f44"}
+      />
+
+      <p>
+        <code>Modal</code>'s child (the button) is still a React-tree descendant of{' '}
+        <code>div.app</code> — so context providers and click handlers up that chain still reach
+        it. But in the actual DOM, that same button renders as a sibling of <code>div.app</code>,
+        a direct child of <code>body</code> — so <code>div.app</code>'s <code>overflow: hidden</code>{' '}
+        or stacking context has no descendant to clip or bury. The next two sections prove each
+        half of that split in a live app rather than just asserting it.
+      </p>
+
+      <p>
+        The consequence that matters first: an event fired inside a portal bubbles through the{' '}
         <strong>React tree's</strong> ancestor chain, not the DOM tree's. Built this exact scenario
         to check it — an ancestor several React levels up has an <code>onClick</code>, its child
         renders a portal straight into <code>document.body</code>, and a button lives inside that

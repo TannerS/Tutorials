@@ -15,11 +15,23 @@ export default function Hooks() {
     >
       <p>Hooks are functions that let you "hook into" React's state and lifecycle from function components. Let's go beyond the basics into nuances that trip up even experienced developers.</p>
 
+      <h2>What Is a "Fiber"?</h2>
+
+      <InfoBox variant="info" title="One Fiber Per Component Instance">
+        <p>Before hook internals make sense, one term needs a definition: a <strong>fiber</strong> is React's internal object for a single component instance in the tree. React keeps one fiber per rendered component, and that fiber <strong>persists across re-renders</strong> — it is where hook state, refs, and pending work actually live, not in the component function itself (which is just a plain function that reruns from scratch on every render).</p>
+        <p style={{ marginBottom: 0 }}>The component tree you write in JSX and the fiber tree React maintains internally have the same shape — one fiber per element — but they are not the same object. Your function component is stateless code; the fiber next to it is where the state persists between calls.</p>
+      </InfoBox>
+
+      <FlowChart
+        title="Component Tree vs Fiber Tree"
+        chart={"graph TD\n  subgraph Component[\"What you write - re-created every render\"]\n    A1[App function] --> B1[Header function]\n    A1 --> C1[List function]\n  end\n  subgraph Fiber[\"Fiber tree - persists across renders\"]\n    A2[Fiber: App - hooks, state] --> B2[Fiber: Header - hooks, state]\n    A2 --> C2[Fiber: List - hooks, state]\n  end\n  A1 -.->|reads/writes via| A2\n  B1 -.->|reads/writes via| B2\n  C1 -.->|reads/writes via| C2\n  style A2 fill:#1a2744\n  style B2 fill:#1a2744\n  style C2 fill:#1a2744"}
+      />
+
       <h2>Rules of Hooks — The Why</h2>
 
       <InfoBox variant="danger" title="Rules of Hooks (and Why They Exist)">
         <p><strong>1. Only call hooks at the top level</strong> — React relies on call order to associate state with hook calls. Conditionals/loops break this mapping.</p>
-        <p><strong>2. Only call hooks from React functions</strong> — Components or custom hooks. This ensures the hook is bound to a component's fiber node.</p>
+        <p><strong>2. Only call hooks from React functions</strong> — Components or custom hooks. This ensures the hook is bound to a component's fiber.</p>
         <p>Internally, React stores hooks as a linked list on the fiber. Each render, it walks the list in order. If the order changes, hooks get mismatched with their stored state.</p>
       </InfoBox>
 

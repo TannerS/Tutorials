@@ -279,6 +279,13 @@ function ThemeProvider() {
         <p>Instead of multiple booleans (<code>isLoading</code>, <code>isError</code>, <code>isSuccess</code>) that can conflict, model state as explicit states with defined transitions. Libraries like XState formalize this, but you can apply the concept with useReducer.</p>
       </InfoBox>
 
+      <FlowChart
+        title="Fetch State Machine — Valid Transitions Only"
+        chart={"graph LR\n  A[idle] -->|FETCH| B[loading]\n  B -->|SUCCESS| C[success]\n  B -->|ERROR| D[error]\n  C -->|FETCH| B\n  C -->|RESET| A\n  D -->|RETRY| B\n  D -->|RESET| A\n  style A fill:#1a2744\n  style B fill:#3d2f14\n  style C fill:#1a3329\n  style D fill:#3b1a1a"}
+      />
+
+      <p>Every arrow above is a transition the reducer explicitly allows — anything not drawn (like <code>loading</code> jumping straight to <code>idle</code> on a stray <code>RESET</code> mid-fetch, or <code>error</code> accepting a <code>SUCCESS</code> event) is rejected by the <code>machine</code> lookup table and the reducer returns the current state unchanged:</p>
+
       <CodeBlock language="jsx" title="State Machine with useReducer" showLineNumbers>
 {`// Define valid states and transitions explicitly
 const machine = {
