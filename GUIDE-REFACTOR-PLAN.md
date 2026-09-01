@@ -100,7 +100,9 @@ Postgres/T-SQL, Spring Boot 2/4.
 - [ ] **10** — regenerate every field guide after the version splits land
 - [ ] **12** — SQL: keep SQL Fundamentals, add a complete PostgreSQL section,
       keep T-SQL complete and separate
-- [ ] **14** — accuracy and layout-consistency audit across the whole site
+- [ ] **14** — accuracy and layout-consistency audit across the whole site.
+      In progress, tracked phase-by-phase in AUDIT-PLAN.md (41 sections is too
+      large for one pass).
 
 ## Notes for whoever picks this up
 
