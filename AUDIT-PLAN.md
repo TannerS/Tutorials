@@ -21,7 +21,7 @@ compared to losing track of what's left.
 - [x] **D — Database**: sql-fundamentals, sql-design-patterns, sql-advanced, tsql
 - [x] **E — Dev fundamentals & tooling**: dsa, version-control, frontend-tooling,
       npm-deep-dive, npm-packages, accessibility
-- [ ] **F — Architecture & design**: solid, patterns, ddd, systemdesign, microservices,
+- [x] **F — Architecture & design**: solid, patterns, ddd, systemdesign, microservices,
       cloud-architecture, observability, apidesign, api-testing
 - [ ] **G — Security & testing**: auth, cryptography, testing
 
@@ -320,6 +320,59 @@ learners-advocate — 6 findings, all fixed:
 
 version-control and accessibility came back with zero findings from
 learners-advocate — already well-paced and diagrammed.
+
+Verified: tsc --noEmit clean, vite build clean, eslint clean.
+
+### Phase F — Architecture & design (done)
+
+fact-checker — 3 findings, the 1 confirmed real bug fixed:
+- **Real bug, verified empirically**: `api-testing/Controllers.tsx` had a
+  genuine self-contradiction — an InfoBox correctly explains that `MockMvc`
+  slice tests don't run the servlet container, so multipart size limits go
+  unenforced, then the very next code block ships a `MockMvc`-based test
+  asserting 413 as if it works. Verified: a real Spring Boot `@WebMvcTest`
+  given an oversized file returns 201, not 413. Replaced with a real
+  `@SpringBootTest(webEnvironment=RANDOM_PORT)` test, verified to actually
+  return 413; a neighboring 415 test had the same problem and was fixed too.
+- A stale date (GitHub Actions Node-20-runner removal: Sept 16 → the real
+  Sept 23) and an `actions/setup-java@v5` → `@v6` bump, both also caught by
+  version-sentinel below.
+
+version-sentinel — 6 findings, all fixed:
+- `ddd/SpringBoot.tsx` cited Spring Boot 3.5.16 (EOL'd June 2026) as
+  "verified" — the same pattern already fixed in `springboot/Webflux.tsx`
+  during Phase A, just missed there. Rebuilt and re-ran the lesson's actual
+  Maven project against Spring Boot 4.1.1 — all 9 tests passed identically —
+  and found a genuine Boot-4 breaking change in the process
+  (`@DataJpaTest` moved modules and packages), documented as a new InfoBox.
+- `microservices/Containers.tsx`'s "Production-Ready Node.js Dockerfile"
+  used `node:20-alpine` — Node 20 has been EOL since April 2026, so this
+  was actively bad advice, not just stale — bumped to `node:24-alpine`.
+- `apidesign/Websockets.tsx` anchored a still-correct technical claim (no
+  native WebSocket server in Node) to Node 25, EOL since June 2026 —
+  re-verified against real Node 24 and 26 installs and re-anchored.
+- `actions/setup-java@v5` → `@v6` in `cloud-architecture/Cicd.tsx` and
+  `api-testing/Patterns.tsx`; a date fix in the latter (see above).
+- `observability/Tracing.tsx`'s Java OpenTelemetry citation (1.44.1, Nov
+  2024) bumped to 1.65.0, re-verified against a real build that the API
+  surface used in the lesson is unchanged.
+
+learners-advocate — 5 findings, all fixed:
+- `patterns/Singleton.tsx` used "instruction reordering" and "happens-before
+  relationship" undefined in a graded quiz's own explanation — defined both.
+- `ddd/Strategic.tsx`'s context-mapping diagram covered only 3 of the 6
+  relationship patterns the prose names — widened to cover all 6.
+- `ddd/Tactical.tsx` had no diagram for the aggregate/consistency-boundary
+  concept despite the lessons on either side of it using diagrams for
+  comparable structural ideas — added one.
+- `cloud-architecture/Cheatsheet.tsx` undercounted its own source lessons
+  (claimed 4, actually 5) and had zero panels covering the CI/CD lesson
+  entirely — added 3 new panels and corrected the count, the same
+  scope-mismatch pattern already fixed in `sql-advanced/FieldGuide.tsx`
+  during Phase D.
+- `cloud-architecture/Cicd.tsx`'s Blue-Green/Canary/Rolling deployment
+  strategies were prose/table-only despite the lesson diagramming its
+  pipeline-stages sequence just above — added a diagram per strategy.
 
 Verified: tsc --noEmit clean, vite build clean, eslint clean.
 

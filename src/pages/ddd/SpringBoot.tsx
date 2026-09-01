@@ -23,10 +23,12 @@ export default function DddSpringBoot() {
       <InfoBox variant="note" title="What was actually verified here">
         <p>
           Every class on this page was written to a real Maven project and built with{' '}
-          <code>mvn test</code> against <strong>Spring Boot 3.5.16</strong>, which pulled in{' '}
-          <strong>Hibernate ORM 6.6.53.Final</strong> and <strong>Spring Data JPA 3.5.13</strong>,
-          running on a real <strong>JDK 26</strong>. Persistence used a real in-memory{' '}
-          <strong>H2 2.3.232</strong> database via <code>@DataJpaTest</code> — an actual schema
+          <code>mvn test</code> against <strong>Spring Boot 4.1.1</strong> (the version this whole
+          course targets — see the Spring Boot section&apos;s <strong>Boot 4 Novelties</strong>{' '}
+          lesson), which pulled in <strong>Hibernate ORM 7.4.5.Final</strong> and{' '}
+          <strong>Spring Data JPA 4.1.1</strong>, running on a real <strong>JDK 25.0.2</strong>{' '}
+          (the current LTS this course standardizes on). Persistence used a real in-memory{' '}
+          <strong>H2 2.4.240</strong> database via <code>@DataJpaTest</code> — an actual schema
           was generated, actual SQL ran, actual rows round-tripped. None of it is pseudocode. Where
           this page shows the deliberately-wrong version of something, that&apos;s labeled, and
           the working test that proves it&apos;s wrong is shown too — not asserted, demonstrated.
@@ -397,8 +399,28 @@ public class OrderApplicationService {
         </p>
       </InfoBox>
 
+      <InfoBox variant="warning" title="Re-verifying on Boot 4.1.1 surfaced a second, Boot-4-specific friction point">
+        <p>
+          On Spring Boot 3.x, <code>@DataJpaTest</code> shipped inside{' '}
+          <code>spring-boot-test-autoconfigure</code>, which <code>spring-boot-starter-test</code>{' '}
+          already pulls in — nothing extra to add. Boot 4&apos;s module split (covered in{' '}
+          <strong>Boot 4 Novelties</strong>) moved it into its own per-technology module, so the
+          same POM that worked on Boot 3 fails to compile on Boot 4 with{' '}
+          <code>package org.springframework.boot.test.autoconfigure.orm.jpa does not exist</code>{' '}
+          until <code>spring-boot-starter-data-jpa-test</code> (test scope) is added explicitly.
+          The class also <strong>changed package</strong>, not just module —{' '}
+          <code>org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest</code> (Boot 3.x)
+          became <code>org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest</code>{' '}
+          (Boot 4.x). Every other annotation and API used on this page — <code>@Entity</code>,{' '}
+          <code>@Embeddable</code> on a record, <code>@ElementCollection</code>,{' '}
+          <code>JpaRepository</code>, <code>@Transactional</code> — compiled and behaved
+          identically on both versions; this import was the only change this page&apos;s code
+          actually needed for Boot 4.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="text" title="What actually happened when this was built (trimmed, real output)">
-{`$ mvn clean test          # Spring Boot 3.5.16, Hibernate 6.6.53.Final, JDK 26.0.1
+{`$ mvn clean test          # Spring Boot 4.1.1, Hibernate 7.4.5.Final, JDK 25.0.2
 
 Hibernate: create table order_lines (quantity integer, order_id bigint not null,
     unit_price_cents bigint, product_sku varchar(255))

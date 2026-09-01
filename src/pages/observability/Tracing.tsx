@@ -280,7 +280,7 @@ tracer.startActiveSpan('POST /checkout', (parentSpan) => {
         </p>
       </InfoBox>
 
-      <CodeBlock language="java" title="Same Thing in Java (opentelemetry-api / opentelemetry-sdk 1.44.1 — also actually run)">
+      <CodeBlock language="java" title="Same Thing in Java (opentelemetry-api / opentelemetry-sdk 1.65.0 — also actually run)">
 {`Tracer tracer = openTelemetrySdk.getTracer("checkout-service");
 
 Span parentSpan = tracer.spanBuilder("POST /checkout").startSpan();

@@ -7,8 +7,8 @@ export default function CloudArchitectureCheatsheet() {
       title="Cloud & Infrastructure"
       kicker="FIELD GUIDE"
       glyph="☁️"
-      tagline="Well-Architected frameworks, Terraform/IaC, multi-region DR, and capacity planning — condensed from the four lessons that precede this page."
-      meta={['AWS · Azure · GCP', 'no CLI executed here', '11 panels']}
+      tagline="Well-Architected frameworks, Terraform/IaC, multi-region DR, capacity planning, and CI/CD pipelines — condensed from the five lessons that precede this page."
+      meta={['AWS · Azure · GCP', 'no CLI executed here', '14 panels']}
       page="1 / 1"
       footer="Every claim here was checked against live official documentation in the lessons that precede this page. No Terraform or cloud CLI exists in this environment — run terraform plan yourself before trusting any example, here or elsewhere."
       prev={{ path: '/cloud-architecture/cicd', label: 'CI/CD Pipelines & Deployment Strategies' }}
@@ -132,6 +132,49 @@ apply executes the diff (prompts by default)`}</GuideCode>
             'Data egress/transfer.',
             'Storage tiering — hot vs. cold.',
             'Idle/orphaned resources — unattached volumes, unused load balancers. A genuine, common leak.',
+          ]}
+        />
+      </GuidePanel>
+
+      <GuidePanel n={12} title="CI vs Delivery vs Deployment" accent="blue" glyph="🚦" span={2}>
+        <GuideDefs
+          items={[
+            ['Continuous Integration', 'every push auto-built + tested — says nothing about deployment at all'],
+            ['Continuous Delivery', 'auto-built, tested, pushed as far as staging — a human still clicks to release to prod'],
+            ['Continuous Deployment', 'every change that passes CI ships to prod automatically — no approval step, no exceptions'],
+          ]}
+        />
+        <GuideRules
+          items={[
+            'The word that separates the last two is "automatic": Delivery makes every change deployABLE; Deployment makes every change deployED.',
+            'One manual "click to release" button in prod means Delivery, full stop — no matter how automated everything before it is.',
+          ]}
+        />
+      </GuidePanel>
+
+      <GuidePanel n={13} title="Deployment Strategies at a Glance" accent="green" glyph="🚀" span={2}>
+        <GuideTable
+          head={['Strategy', 'Rollback', 'Blast Radius']}
+          rows={[
+            ['Blue-Green', 'Instant — flip router back to blue, which never stopped running', 'All traffic, the instant you cut over'],
+            ['Canary', 'Fast — route the small canary slice back', 'Small and contained — only the canary % is exposed'],
+            ['Rolling', 'Slower — roll the old version back out batch by batch', 'Partial but growing — old + new both serve traffic throughout'],
+          ]}
+        />
+        <GuideRules items={['Rolling is the default K8s strategy precisely because it needs no duplicate environment at all.']} />
+      </GuidePanel>
+
+      <GuidePanel n={14} title="Feature Flags: Deploy ≠ Release" accent="pink" glyph="🚩">
+        <GuideDefs
+          items={[
+            ['Deployment', 'code physically running on prod infrastructure'],
+            ['Release', 'that code actually being visible/active for users'],
+          ]}
+        />
+        <GuideRules
+          items={[
+            'A flag lets code ship dark (deployed, switched off) and get released later, independent of any redeploy.',
+            'Turning a flag back off is instant — no rollback or redeploy required — which is what makes true Continuous Deployment tractable for risky features.',
           ]}
         />
       </GuidePanel>

@@ -44,9 +44,19 @@ export default function Singleton() {
       </CodeBlock>
 
       <h3>Double-Checked Locking</h3>
+      <p>
+        The JVM and CPU are normally free to reorder independent instructions for performance —
+        the constructor&apos;s field writes and the assignment of <code>instance</code> are two
+        separate steps that could otherwise complete out of order. <code>volatile</code> forbids
+        that reordering specifically around this write, which is what establishes a{' '}
+        <strong>happens-before relationship</strong>: everything written before the volatile
+        write (here, the fully-constructed object) is guaranteed visible to any thread that reads
+        <code> instance</code> after.
+      </p>
       <CodeBlock language="java" title="Lazy Singleton with Double-Checked Locking" showLineNumbers={true}>
 {`public class LazySingleton {
-    // volatile prevents instruction reordering issues
+    // volatile prevents instruction reordering: without it, another thread
+    // could see a non-null 'instance' whose constructor hasn't finished yet
     private static volatile LazySingleton instance;
 
     private LazySingleton() {}

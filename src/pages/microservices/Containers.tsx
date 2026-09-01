@@ -43,7 +43,7 @@ export default function Containers() {
 
       <CodeBlock language="dockerfile" title="Production-Ready Node.js Dockerfile">
 {`# Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 
 # Copy package files first (layer caching!)
@@ -64,7 +64,7 @@ RUN npm run build
 RUN npm ci --omit=dev
 
 # Stage 2: Production image
-FROM node:20-alpine AS production
+FROM node:24-alpine AS production
 WORKDIR /app
 
 # Security: run as non-root user

@@ -103,7 +103,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -129,7 +129,7 @@ jobs:
         Walking it top to bottom: <code>on:</code> triggers the workflow on every push to{' '}
         <code>main</code> and on every pull request targeting it — the &quot;every code change&quot; part
         of the CI definition. <code>actions/checkout@v7</code> pulls the repository onto the runner;{' '}
-        <code>actions/setup-java@v5</code> installs a JDK, with <code>distribution: temurin</code> picking
+        <code>actions/setup-java@v6</code> installs a JDK, with <code>distribution: temurin</code> picking
         the Eclipse Temurin OpenJDK build and <code>cache: maven</code> enabling GitHub&#39;s built-in
         caching for the local Maven repository so dependencies aren&#39;t re-downloaded on every run. The
         three <code>mvn</code> steps are deliberately split rather than collapsed into one{' '}
@@ -194,6 +194,11 @@ jobs:
         about as fast a rollback as exists.
       </p>
 
+      <FlowChart
+        title="Blue-Green — Two Full Environments, One Instant Switch"
+        chart={"graph TD\n  subgraph Before Cutover\n    R1[\"Router\"] -->|100% traffic| B1[\"Blue v1 - live\"]\n    G1[\"Green v2 - deployed,\\nbeing verified, no traffic\"]\n  end\n  subgraph Cutover - All Users At Once\n    R2[\"Router\"] -->|100% traffic, instantly| G2[\"Green v2 - now live\"]\n    B2[\"Blue v1 - idle,\\nstill running, untouched\"]\n  end\n  subgraph If Something Is Wrong - Instant Rollback\n    R3[\"Router\"] -->|flip back| B3[\"Blue v1 - never stopped,\\nso this is instant\"]\n  end\n  style G1 fill:#3d2f14,stroke:#d97706\n  style G2 fill:#1a3329,stroke:#4ade80\n  style B2 fill:#1a2744,stroke:#5b9cf6\n  style B3 fill:#1a3329,stroke:#4ade80"}
+      />
+
       <h3>Canary Deployment</h3>
 
       <p>
@@ -206,6 +211,11 @@ jobs:
         decides whether to continue.
       </p>
 
+      <FlowChart
+        title="Canary — a Growing Traffic Slice, Watched Before It Grows Further"
+        chart={"graph TD\n  subgraph \"Before - Canary Deployed, No Traffic Yet\"\n    R1[\"Router\"] -->|100% traffic| S1[\"Stable v1\"]\n    C1[\"Canary v2 - deployed,\\n0% traffic\"]\n  end\n  subgraph Canary Slice - Monitored Before Continuing\n    R2[\"Router\"] -->|90% traffic| S2[\"Stable v1\"]\n    R2 -->|10% traffic - the canary| C2[\"Canary v2\"]\n    C2 -.->|error rate / latency / business metrics| M2{\"Healthy?\"}\n  end\n  subgraph After - Gradually Ramped to 100%\n    R3[\"Router\"] -->|100% traffic| C3[\"v2 - fully promoted\"]\n  end\n  M2 -->|yes -- increase percentage| R3\n  style C1 fill:#3d2f14,stroke:#d97706\n  style C2 fill:#3d2f14,stroke:#d97706\n  style C3 fill:#1a3329,stroke:#4ade80\n  style M2 fill:#2a1f44,stroke:#a78bfa"}
+      />
+
       <h3>Rolling Deployment</h3>
 
       <p>
@@ -217,6 +227,11 @@ jobs:
         until every instance is on the new version. It is the default strategy for most Kubernetes
         deployments precisely because it needs no duplicate environment at all.
       </p>
+
+      <FlowChart
+        title="Rolling — Batch by Batch, No Duplicate Environment"
+        chart={"graph TD\n  subgraph Batch 1 of 3\n    P1[\"Pool: 3 old, 0 new\"] -->|take 1 out, deploy v2, add back| P1a[\"Pool: 2 old, 1 new\\nboth versions serving traffic\"]\n  end\n  subgraph Batch 2 of 3\n    P2[\"Pool: 2 old, 1 new\"] -->|take next 1 out, deploy v2, add back| P2a[\"Pool: 1 old, 2 new\\nboth versions serving traffic\"]\n  end\n  subgraph Batch 3 of 3 - Done\n    P3[\"Pool: 1 old, 2 new\"] -->|take last 1 out, deploy v2, add back| P3a[\"Pool: 0 old, 3 new\\nrollout complete\"]\n  end\n  P1a --> P2\n  P2a --> P3\n  style P1a fill:#3d2f14,stroke:#d97706\n  style P2a fill:#3d2f14,stroke:#d97706\n  style P3a fill:#1a3329,stroke:#4ade80"}
+      />
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>

@@ -80,16 +80,18 @@ Sec-WebSocket-Accept: Sl+9fA8mGZNiael98Q22v+ihAAw=`}
 
       <h2>A Real Server, a Real Client, a Real Round Trip</h2>
 
-      <InfoBox variant="note" title="What Node v25 Actually Ships Natively vs. What Still Needs a Package">
+      <InfoBox variant="note" title="What Node Actually Ships Natively vs. What Still Needs a Package">
         <p>
-          Checked directly rather than assumed: Node&apos;s global <code>WebSocket</code> &mdash;
-          usable with zero imports, exactly like in a browser &mdash; has been stable since{' '}
-          <strong>v22.4.0</strong> (added behind a flag in v21.0.0/v20.10.0). The official docs
-          describe it as &quot;a browser-compatible implementation of WebSocket&quot; &mdash; that
-          wording matters: it is a <strong>client only</strong>. There is no native WebSocket{' '}
-          <em>server</em> in Node as of v25. Building the server side still means reaching for a
-          package, and <code>ws</code> is it &mdash; v8.21.3 on npm as of this writing, published
-          within the last couple of weeks, still the de facto standard for a Node WebSocket server.
+          Checked directly rather than assumed, against both <strong>Node 24</strong> (the current
+          Active LTS) and <strong>Node 26</strong> (Current, becomes LTS in October 2026): Node&apos;s
+          global <code>WebSocket</code> &mdash; usable with zero imports, exactly like in a browser
+          &mdash; has been stable since <strong>v22.4.0</strong> (added behind a flag in
+          v21.0.0/v20.10.0). The official docs describe it as &quot;a browser-compatible
+          implementation of WebSocket&quot; &mdash; that wording matters: it is a{' '}
+          <strong>client only</strong>. There is no native WebSocket <em>server</em> in either LTS
+          line. Building the server side still means reaching for a package, and <code>ws</code>{' '}
+          is it &mdash; v8.21.3 on npm as of this writing, published within the last couple of
+          weeks, still the de facto standard for a Node WebSocket server.
         </p>
       </InfoBox>
 
@@ -305,8 +307,9 @@ es.onmessage = (event) => console.log(\`[client] event id=\${event.lastEventId} 
       <InfoBox variant="info" title="Node Has an Experimental EventSource Too — Not Stable Like WebSocket">
         <p>
           Unlike the stable global <code>WebSocket</code> client, Node&apos;s <code>EventSource</code>{' '}
-          is still behind an explicit flag &mdash; <code>node --experimental-eventsource</code> as
-          of v25 &mdash; and prints an experimental-API warning on use. In a browser,{' '}
+          is still behind an explicit flag &mdash; <code>node --experimental-eventsource</code>,
+          confirmed still required on both Node 24 and Node 26 &mdash; and prints an
+          experimental-API warning on use. In a browser,{' '}
           <code>EventSource</code> needs no flag; it has shipped there for years.
         </p>
       </InfoBox>

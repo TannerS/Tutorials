@@ -190,17 +190,24 @@ public class PaymentGatewayAcl {
       </p>
 
       <FlowChart
-        title="Four Bounded Contexts, Explicit Relationships"
-        chart={"graph LR\n  Sales[Sales Context] -->|Customer-Supplier: Sales upstream| Billing[Billing Context]\n  Sales -->|Customer-Supplier: Sales upstream| Shipping[Shipping Context]\n  Billing <-->|Shared Kernel: Money, Address| Shipping\n  Billing -->|Anti-Corruption Layer| Gateway[Legacy Payment Gateway]"}
+        title="Five Bounded Contexts, All Six Context-Mapping Relationships"
+        chart={"graph LR\n  Sales[\"Sales Context\"] -->|\"Customer-Supplier<br/>(Open Host Service +<br/>Published Language: order schema)\"| Billing[\"Billing Context\"]\n  Sales -->|\"Customer-Supplier<br/>(Open Host Service +<br/>Published Language: order schema)\"| Shipping[\"Shipping Context\"]\n  Billing <-->|\"Shared Kernel: Money, Address\"| Shipping\n  Billing -->|\"Anti-Corruption Layer\"| Gateway[\"Legacy Payment Gateway\"]\n  Shipping -->|\"Conformist\"| Carrier[\"Third-Party Carrier API\"]"}
       />
 
       <p>
         Reading that map: Sales is upstream of both Billing and Shipping, and formally accounts for
-        their needs (Customer-Supplier). Billing and Shipping deliberately share a small, explicit
-        kernel — value objects like <code>Money</code> and <code>Address</code> — small enough that
-        both teams can afford to keep it synchronized. Billing depends on a legacy payment gateway it
-        has zero influence over, so it protects itself with an Anti-Corruption Layer rather than
-        letting the gateway&apos;s model dictate Billing&apos;s own.
+        their needs (Customer-Supplier) — and it exposes that relationship as an{' '}
+        <strong>Open Host Service</strong>, publishing its order data through a documented{' '}
+        <strong>Published Language</strong> (an order schema) rather than negotiating a bespoke
+        integration with each downstream team individually. Billing and Shipping deliberately share
+        a small, explicit kernel — value objects like <code>Money</code> and <code>Address</code> —
+        small enough that both teams can afford to keep it synchronized. Billing depends on a legacy
+        payment gateway it has zero influence over, so it protects itself with an Anti-Corruption
+        Layer rather than letting the gateway&apos;s model dictate Billing&apos;s own. Shipping, by
+        contrast, takes the third-party carrier API&apos;s tracking-status model as-is — a{' '}
+        <strong>Conformist</strong> relationship: the carrier has no incentive to accommodate one
+        delivery app among thousands of integrators, and Shipping has judged the mismatch small
+        enough that a translation layer isn&apos;t worth building.
       </p>
 
       <InfoBox variant="warning" title="Misaligned Boundaries Are a Root Cause, Not a Style Nitpick">

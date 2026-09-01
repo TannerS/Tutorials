@@ -212,17 +212,32 @@ void filtersByQueryParameter() throws Exception {
           documents behavior you don&apos;t actually have.
         </p>
         <p>
-          Likewise the 413 upload test below: multipart size limits are enforced by the
-          servlet container, which <code>MockMvc</code> does not run.{' '}
+          Likewise the 413 test further down this section: multipart size limits are
+          enforced by the servlet container, which <code>MockMvc</code> does not run.{' '}
           <code>MockMultipartFile</code> bypasses the parser entirely, so a slice test
-          will happily accept an 11MB file. Assert 413 in a{' '}
+          will happily accept an 11MB file — verified empirically against a real Spring
+          Boot 3.5.16 <code>@WebMvcTest</code>: given an 11MB <code>MockMultipartFile</code>{' '}
+          and <code>spring.servlet.multipart.max-file-size=10MB</code>, the slice test
+          returns <strong>201</strong>, not 413. Assert 413 in a{' '}
           <code>@SpringBootTest(webEnvironment = RANDOM_PORT)</code> test against a real
-          server instead.
+          server instead — shown below.
         </p>
       </InfoBox>
 
       <h2>Multipart File Uploads</h2>
-      <CodeBlock language="java" title="Testing File Upload Endpoints">
+      <p>
+        The happy path and content-type validation below are genuine controller logic, so
+        a <code>MockMvc</code> slice test is the right tool — it&apos;s exercising code you
+        wrote, not the servlet container. Note what makes the 415 case actually work:
+        Spring&apos;s <code>consumes</code> matching operates on the request&apos;s overall{' '}
+        <code>Content-Type</code> (<code>multipart/form-data</code>), never on an individual
+        file part&apos;s content type, so <code>@PostMapping(consumes = ...)</code> alone can
+        never reject a bad file type. The controller has to check{' '}
+        <code>file.getContentType()</code> itself and throw a{' '}
+        <code>ResponseStatusException(UNSUPPORTED_MEDIA_TYPE, ...)</code> — without that
+        explicit check, this test fails the same silent way the 413 test above does.
+      </p>
+      <CodeBlock language="java" title="Testing File Upload Endpoints — MockMvc, Controller-Level Checks">
 {`@Test
 void uploadsAttachmentAndReturns201() throws Exception {
     MockMultipartFile file = new MockMultipartFile(
@@ -239,17 +254,11 @@ void uploadsAttachmentAndReturns201() throws Exception {
 }
 
 @Test
-void rejectsOversizedUploadWith413() throws Exception {
-    byte[] tooLarge = new byte[11 * 1024 * 1024]; // over a 10MB limit
-    MockMultipartFile file = new MockMultipartFile(
-        "file", "huge.pdf", MediaType.APPLICATION_PDF_VALUE, tooLarge);
-
-    mvc.perform(multipart("/api/orders/{id}/attachments", "ORD-1").file(file))
-        .andExpect(status().isPayloadTooLarge());  // 413
-}
-
-@Test
 void rejectsDisallowedFileTypeWith415() throws Exception {
+    // Passes only because the controller explicitly checks file.getContentType()
+    // against an allow-list and throws ResponseStatusException(UNSUPPORTED_MEDIA_TYPE).
+    // consumes = MULTIPART_FORM_DATA_VALUE on the mapping has no opinion about this --
+    // it already matched, since the REQUEST's Content-Type is multipart/form-data.
     MockMultipartFile exe = new MockMultipartFile(
         "file", "malware.exe", "application/x-msdownload", "binary".getBytes());
 
@@ -257,6 +266,53 @@ void rejectsDisallowedFileTypeWith415() throws Exception {
         .andExpect(status().isUnsupportedMediaType());
 }`}
       </CodeBlock>
+
+      <p>
+        The size limit is different in kind — it&apos;s enforced by Tomcat&apos;s multipart
+        parser before your controller code ever runs, so there&apos;s no controller logic
+        for <code>MockMvc</code> to exercise even in principle. Testing it means booting a
+        real embedded server and sending real bytes over real HTTP:
+      </p>
+
+      <CodeBlock language="java" title="Testing the 413 Size Limit — Real Server, Not MockMvc">
+{`@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class AttachmentUploadLimitTest {
+
+    @Autowired TestRestTemplate restTemplate;
+
+    @Test
+    void rejectsOversizedUploadWith413() {
+        byte[] tooLarge = new byte[11 * 1024 * 1024]; // over the configured 10MB limit
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new ByteArrayResource(tooLarge) {
+            @Override
+            public String getFilename() {
+                return "huge.pdf"; // ByteArrayResource has no filename of its own
+            }
+        });
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+            "/api/orders/{id}/attachments", new HttpEntity<>(body, headers),
+            String.class, "ORD-1");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE);
+    }
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Verified — This One Actually Returns 413">
+        Re-run against the same Spring Boot 3.5.16 project as the InfoBox above: swapping{' '}
+        <code>@WebMvcTest</code> + <code>MockMvc</code> for{' '}
+        <code>@SpringBootTest(webEnvironment = RANDOM_PORT)</code> + <code>TestRestTemplate</code>{' '}
+        boots a real embedded Tomcat, so the same 11MB payload against the same{' '}
+        <code>max-file-size=10MB</code> config now hits the real parser and returns{' '}
+        <strong>413 Payload Too Large</strong> — the difference the InfoBox above describes,
+        confirmed empirically rather than assumed.
+      </InfoBox>
 
       <h2>Partial Updates: PATCH and JSON Merge Patch</h2>
       <CodeBlock language="java" title="Testing PATCH Semantics">
@@ -344,7 +400,7 @@ void streamsOrdersAsServerSentEvents() {
         <li>Test headers explicitly: Location on create, ETag/Cache-Control for caching, conditional GET returning 304</li>
         <li>Content negotiation needs its own tests against the Accept header — 406 vs 415 are opposite failure directions</li>
         <li>Pagination/sorting/filtering endpoints deserve tests for both the happy path and invalid params (negative page size → 400)</li>
-        <li>Multipart uploads test via MockMultipartFile — cover size limits (413) and type restrictions (415) alongside the happy path</li>
+        <li>Multipart uploads: MockMvc + MockMultipartFile is right for controller-level checks (type restrictions, happy path) but the servlet container never runs in a slice test, so the 413 size limit needs a real @SpringBootTest(RANDOM_PORT) server, not MockMvc</li>
         <li>WebTestClient mirrors these assertions for reactive controllers, with StepVerifier for streaming bodies</li>
       </ul>
     </LessonLayout>

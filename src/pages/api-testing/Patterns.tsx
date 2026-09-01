@@ -306,7 +306,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7          # v4 runs on node20, which GitHub
-      - uses: actions/setup-java@v5         # removes from runners 2026-09-16
+      - uses: actions/setup-java@v6         # removes from runners 2026-09-23
         with:
           java-version: 21
           distribution: temurin

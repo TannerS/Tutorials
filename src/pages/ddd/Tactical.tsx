@@ -1,6 +1,7 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
+import FlowChart from '../../components/FlowChart';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function DddTactical() {
@@ -267,6 +268,19 @@ public final class Order {
         Entity in that cluster that external code is allowed to hold a reference to. Everything else in
         the cluster is reached <em>only</em> by going through the root, and the root is where every
         invariant for the whole cluster gets enforced.
+      </p>
+
+      <FlowChart
+        title="The Aggregate Boundary: One Way In"
+        chart={"graph TD\n  Client[\"External code<br/>(a Controller, another Aggregate)\"] -->|\"only entry point\"| Root\n  subgraph Boundary [\"Order Aggregate — consistency boundary\"]\n    Root[\"Order<br/>(Aggregate Root)\"]\n    L1[\"OrderLine<br/>(child Entity)\"]\n    L2[\"OrderLine<br/>(child Entity)\"]\n    Root --> L1\n    Root --> L2\n  end\n  Client -.->|\"no direct access\"| L1\n  Client -.->|\"no direct access\"| L2\n  style Root fill:#1a2744,stroke:#5b9cf6\n  style Boundary stroke-dasharray: 5 5"}
+      />
+
+      <p>
+        That dashed line is the consistency boundary made visible: <code>Order</code> is the only
+        node external code ever holds a reference to (the solid arrow). The two <code>OrderLine</code>{' '}
+        children exist only inside the boundary — nothing outside <code>Order</code> is allowed to
+        reach in and grab one directly (the dotted, crossed-out arrows), which is exactly what{' '}
+        <code>getLines()</code> returning an unmodifiable view enforces below.
       </p>
 
       <p>
