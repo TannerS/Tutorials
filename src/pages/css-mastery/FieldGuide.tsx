@@ -428,7 +428,7 @@ document.documentElement.dataset.theme = theme;  // "light" | "dark"
             ['Inline style prop', "SSR-safe, zero extraction step, reads live custom properties; no :hover/media without JS"],
           ]}
         />
-        <GuideRules items={["This site's own choice, throughout: inline style + CSS custom properties — SSR-safe with no build step, at the cost of the cascade/pseudo-class ergonomics it doesn't need for a single-owner site."]} />
+        <GuideRules items={["This Field Guide's own components (InfoBox, LessonLayout, CodeBlock) make this choice: inline style + CSS custom properties — SSR-safe with no build step, at the cost of the cascade/pseudo-class ergonomics they don't need for a single-owner site. The site as a whole still leans on real stylesheets (App.css, global.css) with className for everything else, including the guide/poster chrome this very page renders inside."]} />
       </GuidePanel>
     </GuideLayout>
   );

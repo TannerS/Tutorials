@@ -103,6 +103,21 @@ function MuiOverrides() {
         have different fixes, so it is worth separating them.
       </p>
 
+      <InfoBox variant="note" title="Specificity notation, recapped">
+        <p style={{ marginBottom: 0 }}>
+          Every tuple below, like <code>(0,1,0)</code>, is the same three-column specificity score
+          introduced in the previous lesson: (ID selectors, class/attribute/pseudo-class selectors,
+          type/pseudo-element selectors), compared column by column, left to right — a higher number
+          in an earlier column wins outright, and equal tuples fall back to source order. It is a
+          three-column simplification of the four-column form{' '}
+          <a href="/css-mastery/fundamentals">CSS Fundamentals from Scratch</a> teaches, which also
+          tracks a leading inline-style column; that column is dropped here because nothing on this
+          page is ever competing against an inline <code>style=&quot;...&quot;</code> attribute. See{' '}
+          <a href="/mui/styling-v4">Styling in v4</a> for the full walkthrough with worked examples,
+          or the CSS Fundamentals lesson for the cascade this all sits on top of.
+        </p>
+      </InfoBox>
+
       <h3>Failure mode A — a tie, decided by injection order</h3>
 
       <p>

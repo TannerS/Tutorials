@@ -32,7 +32,7 @@ function MuiIntro() {
           <code>@mui/material</code> are the same library under two names, split at that line.
         </p>
         <p>
-          <strong>The current version:</strong> <code>@mui/material@9.3.1</code> is the{' '}
+          <strong>The current version:</strong> <code>@mui/material@9.4.0</code> is the{' '}
           <code>latest</code> tag as of <strong>August 2026</strong>; the v9 line opened with 9.0.0 in{' '}
           <strong>April 2026</strong>. The published major timeline is v5 (Sept 2021), v6 (Aug 2024),
           v7 (Mar 2025), v9 (Apr 2026) — npm lists <em>no</em> 8.x release of{' '}

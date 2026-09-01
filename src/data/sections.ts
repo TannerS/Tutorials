@@ -431,7 +431,7 @@ export const sections: Section[] = [
     lessons: [
       { id: 'intro', title: 'Intro & Setup', path: '/typescript/intro' },
       { id: 'types', title: 'Type System Fundamentals', path: '/typescript/types' },
-      { id: 'interfaces', title: 'Interfaces & Type Aliases', path: '/typescript/interfaces' },
+      { id: 'interfaces', title: 'Interfaces, Type Aliases & Classes', path: '/typescript/interfaces' },
       { id: 'generics', title: 'Generics Deep Dive', path: '/typescript/generics' },
       { id: 'advanced', title: 'Advanced Types', path: '/typescript/advanced' },
       { id: 'react', title: 'React + TypeScript', path: '/typescript/react' },

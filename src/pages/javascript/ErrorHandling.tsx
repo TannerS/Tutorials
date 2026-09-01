@@ -11,7 +11,7 @@ export default function JsErrorHandling() {
       sectionId="javascript"
       lessonIndex={6}
       prev={{ path: '/javascript/modules', label: 'Modules & Tooling' }}
-      next={{ path: '/javascript/modern-tour', label: 'Modern JavaScript: ES2015-2024 Feature Tour' }}
+      next={{ path: '/javascript/modern-tour', label: 'Modern JavaScript: ES2015-2026 Feature Tour' }}
     >
       <p>
         Most JavaScript error-handling bugs are not about <code>try</code>/<code>catch</code> syntax &mdash;

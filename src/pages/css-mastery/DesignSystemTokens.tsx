@@ -21,6 +21,16 @@ export default function DesignSystemTokens() {
         compose and theme correctly.
       </p>
 
+      <InfoBox variant="note" title="Optional deep dive — skip or skim freely">
+        This lesson is a single-vendor case study of Carbon&apos;s actual compiled SCSS/CSS
+        internals, not a continuation of the core CSS Mastery progression, and it has nothing to do
+        with this site&apos;s own stack (React + MUI). Nothing later in this section depends on it —
+        the previous lesson, Design Tokens &amp; Theming Architecture, already covers everything the
+        rest of CSS Mastery builds on. If Carbon itself isn&apos;t part of your stack, it is
+        completely fine to skip straight to Style-Inclusion Methods and come back to this one only if
+        you want to see how a real, industrial-scale system implements the tiers you already learned.
+      </InfoBox>
+
       <p>
         We will use one concrete block of CSS as the way in, because it is compact enough to explain
         completely and it happens to sit at the intersection of most of the interesting machinery.

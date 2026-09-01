@@ -421,10 +421,14 @@ export default function Animations() {
 }`}</CodeBlock>
 
       <InfoBox variant="warning" title="Reduced Motion Is Not Optional">
-        Supporting <code>prefers-reduced-motion</code> is a WCAG 2.1 AA requirement
-        (Success Criterion 2.3.3). Auto-playing animations that cannot be paused or disabled are
-        an accessibility failure. The opt-in strategy (Strategy 2 above) is the most robust
-        approach — animations are a progressive enhancement, not a baseline.
+        Supporting <code>prefers-reduced-motion</code> is a WCAG 2.1 <strong>AAA</strong> requirement
+        (Success Criterion 2.3.3, &quot;Animation from Interactions&quot; — unchanged in WCAG 2.2, the
+        current recommendation since October 2023). It is not part of the more commonly-targeted AA
+        tier, but treat it as a baseline anyway: auto-playing animations that cannot be paused or
+        disabled are a real accessibility failure for motion-sensitive users regardless of which
+        conformance level you're contractually required to hit. The opt-in strategy (Strategy 2
+        above) is the most robust approach — animations are a progressive enhancement, not a
+        baseline.
       </InfoBox>
 
       <h2>Entry Animations: @starting-style &amp; allow-discrete</h2>

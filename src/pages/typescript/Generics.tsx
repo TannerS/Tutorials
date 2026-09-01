@@ -10,7 +10,7 @@ export default function Generics() {
       title="Generics Deep Dive"
       sectionId="typescript"
       lessonIndex={3}
-      prev={{ path: '/typescript/interfaces', label: 'Interfaces & Type Aliases' }}
+      prev={{ path: '/typescript/interfaces', label: 'Interfaces, Type Aliases & Classes' }}
       next={{ path: '/typescript/advanced', label: 'Advanced Types' }}
     >
 

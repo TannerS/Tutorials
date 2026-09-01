@@ -21,7 +21,7 @@ function Mui9SilentBreaks() {
 
       <p>
         This page is only those. Everything below was reproduced against a real{' '}
-        <code>@material-ui/core@4.12.4</code> and a real <code>@mui/material@9.3.1</code>, and{' '}
+        <code>@material-ui/core@4.12.4</code> and a real <code>@mui/material@9.4.0</code>, and{' '}
         <strong>every single one produced zero console output</strong>.
       </p>
 
@@ -143,10 +143,10 @@ const offset  = 'calc(' + theme.spacing(2) + ' + 8px)';`}
       <p>
         The Grid API was rewritten. <code>item</code> is gone, and the per-breakpoint size props
         (<code>xs</code>, <code>sm</code>, <code>md</code>) were replaced by a single{' '}
-        <code>size</code> prop. In 9.3.1, <code>Grid</code> accepts exactly these:
+        <code>size</code> prop. In 9.4.0, <code>Grid</code> accepts exactly these:
       </p>
 
-      <CodeBlock language="text" title="Real output — Grid propTypes on 9.3.1">
+      <CodeBlock language="text" title="Real output — Grid propTypes on 9.4.0">
 {`children, columns, columnSpacing, container, direction, offset,
 rowSpacing, size, spacing, sx, unstable_level, wrap
 
@@ -229,7 +229,7 @@ createTheme({ palette: { mode: "dark" } })      // v9 spelling
         gets <em>kept</em>, and does nothing:
       </p>
 
-      <CodeBlock language="text" title="Real output — v4 keys passed to createTheme on 9.3.1">
+      <CodeBlock language="text" title="Real output — v4 keys passed to createTheme on 9.4.0">
 {`createTheme({
   overrides: { MuiButton: { root: { borderRadius: 99 } } },
   props:     { MuiButton: { disableRipple: true } },
@@ -273,7 +273,7 @@ createTheme({
         <code>MuiButton-label</code>. That element no longer exists:
       </p>
 
-      <CodeBlock language="text" title="Real output — buttonClasses on 9.3.1">
+      <CodeBlock language="text" title="Real output — buttonClasses on 9.4.0">
 {`'label' in buttonClasses  ->  false
 
 available keys: root, text, outlined, contained, disableElevation,

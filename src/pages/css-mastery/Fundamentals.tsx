@@ -510,6 +510,11 @@ input, button, select, textarea { font: inherit; }`}
    position: fixed/sticky, and a positioned element with any z-index. */`}
       </CodeBlock>
 
+      <FlowChart
+        title="Stacking Contexts Nest — z-index Only Wins Locally"
+        chart={"graph TD\n  ROOT[\"Page — root stacking context\"] --> PARENT[\".parent — position:relative; z-index:1 — NEW stacking context\"]\n  ROOT --> SIB[\".sibling — position:relative; z-index:2 — a later sibling of .parent, same root context\"]\n  PARENT --> CHILD[\".child — position:relative; z-index:9999 — trapped inside .parent\"]\n  CHILD -.->|\"9999 only ranks among .parent's OWN children\"| PARENT\n  SIB -.->|\".sibling's 2 beats .parent's 1 in the root context — so .sibling renders above .child too, despite 9999\"| PARENT\n  style PARENT fill:#1a2744\n  style CHILD fill:#3b1a1a\n  style SIB fill:#1a3329"}
+      />
+
       <h2>Units</h2>
       <p>
         CSS units split into <strong>absolute</strong> (fixed physical size) and{' '}

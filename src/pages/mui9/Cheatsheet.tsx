@@ -7,15 +7,15 @@ function Mui9Cheatsheet() {
       title="MUI v9"
       kicker="FIELD GUIDE"
       glyph="🆕"
-      tagline="Silent breaking changes, styled()/sx, and CSS-variable theming — everything read out of a real @mui/material@9.3.1 install."
-      meta={['@mui/material 9.3.1', 'v4 → v9 breaking changes', '11 panels']}
+      tagline="Silent breaking changes, styled()/sx, and CSS-variable theming — everything read out of a real @mui/material@9.4.0 install."
+      meta={['@mui/material 9.4.0', 'v4 → v9 breaking changes', '11 panels']}
       page="1 / 1"
       footer="Every figure here came from running the code or reading dist-tags, not from documentation. For v4's makeStyles/withStyles/JSS/classes, see the separate MUI (Material UI) section at /mui/intro."
       prev={{ path: '/mui9/theming', label: 'Theming with CSS Variables & Color Schemes' }}
       next={null}
     >
       <GuidePanel n={1} title="Where the Library Actually Is" accent="blue" glyph="📦" span={2}>
-        <GuideCode>{`latest     = 9.3.1        <- current
+        <GuideCode>{`latest     = 9.4.0        <- current
 latest-v7  = 7.3.11
 latest-v6  = 6.5.0
 latest-v5  = 5.18.0
@@ -156,7 +156,7 @@ createTheme({
         />
       </GuidePanel>
 
-      <GuidePanel n={8} title="Defaults, Verified on 9.3.1" accent="blue" glyph="✅">
+      <GuidePanel n={8} title="Defaults, Verified on 9.4.0" accent="blue" glyph="✅">
         <GuideDefs
           items={[
             ['palette.mode', "'light' ('type' is GONE)"],

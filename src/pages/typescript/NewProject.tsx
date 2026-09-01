@@ -47,13 +47,16 @@ npm run dev`}
         pre-configured &mdash; tsconfig, Vite plugin, .tsx files, all ready.
       </InfoBox>
 
-      <h3>Alternative: Create React App (Legacy)</h3>
-      <CodeBlock language="bash" title="CRA &mdash; not recommended for new projects">
+      <h3>Alternative: Create React App (Deprecated)</h3>
+      <CodeBlock language="bash" title="CRA &mdash; do not use for new projects">
 {`npx create-react-app my-app --template typescript`}
       </CodeBlock>
       <p>
-        CRA is in maintenance mode. It uses Webpack (slow), has no active
-        development, and the React team no longer recommends it. Use Vite instead.
+        This is not just stale tooling advice &mdash; the React team formally
+        <strong> deprecated and sunset Create React App</strong> in an official
+        react.dev blog post (&ldquo;Sunsetting Create React App&rdquo;, Feb 14, 2025). It
+        uses Webpack (slow), receives no active development, and the docs no longer
+        mention it as a way to start a React project at all. Use Vite instead.
       </p>
 
       <h3>Alternative: Next.js with TypeScript</h3>

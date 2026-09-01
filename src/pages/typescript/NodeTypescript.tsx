@@ -88,24 +88,37 @@ SyntaxError [ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX]:
         </p>
       </InfoBox>
 
-      <h2>The escape hatch, and why you probably shouldn&apos;t need it</h2>
+      <h2>There is no escape hatch anymore — avoid the constructs instead</h2>
       <p>
-        Node can do the full transform behind a flag. Running the parameter-property example with
-        it succeeds:
+        Older Node versions could do the full transform behind{' '}
+        <code>--experimental-transform-types</code>, a flag added in v22.7.0 that ran the
+        parameter-property example above successfully. That flag is gone. Node.js{' '}
+        <strong>removed it entirely in v26.0.0</strong> (released May&nbsp;2026, tracked in{' '}
+        <a href="https://github.com/nodejs/node/pull/61803">nodejs/node PR&nbsp;#61803</a>) — it
+        was not stabilised into a permanent option, it was deleted outright. The current Node docs
+        are explicit that <code>enum</code>, parameter properties, and namespaces with runtime code
+        still throw <code>ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX</code> under native execution, with{' '}
+        <strong>no flag left to opt back in</strong> — full-transform support is not on Node&apos;s
+        roadmap; the docs point to third-party tools like <code>tsx</code> instead.
       </p>
-      <CodeBlock language="bash" title="Transforming instead of stripping">
-{`$ node --experimental-transform-types pp.ts
-x
-(node:72502) ExperimentalWarning: Transform Types is an experimental
-feature and might change at any time`}
-      </CodeBlock>
       <p>
-        The better move in new code is usually to avoid the constructs entirely. Two of the three
-        have modern replacements this course already recommends on other grounds — an{' '}
-        <code>as const</code> object instead of <code>enum</code>, and ES modules instead of
-        namespaces. TypeScript ships a compiler option, <code>erasableSyntaxOnly</code>, that turns
-        &quot;this will not run under Node&quot; from a runtime surprise into a compile error.
+        The move in new code, then, is not &ldquo;reach for the flag&rdquo; — it is to avoid the
+        constructs entirely. Two of the three have modern replacements this course already
+        recommends on other grounds — an <code>as const</code> object instead of <code>enum</code>,
+        and ES modules instead of namespaces. TypeScript ships a compiler option,{' '}
+        <code>erasableSyntaxOnly</code>, that turns &quot;this will not run under Node&quot; from a
+        runtime surprise into a compile error, catching the problem long before anyone runs{' '}
+        <code>node app.ts</code>.
       </p>
+      <InfoBox variant="warning" title="If you genuinely need the full transform">
+        <p>
+          Native execution is for lightweight, erasable TypeScript. If your project relies on{' '}
+          <code>enum</code>, parameter properties, decorators, or anything else that needs real
+          code generation, native Node execution is not a fit — reach for a third-party loader
+          such as <code>tsx</code>, which the Node docs themselves now recommend for &ldquo;full
+          support&rdquo;, or keep a conventional <code>tsc</code> build step.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="json" title="tsconfig.json — fail at build time instead of at startup">
 {`{
@@ -245,7 +258,7 @@ export {};   // makes this file a module — without it, declare global is an er
         <p>
           Reaching for <code>declare module &apos;express&apos;</code> here is the intuitive guess
           and it silently does nothing — the interface you want lives in a global namespace, not in
-          the module&apos;s own exports. The <strong>Interfaces &amp; Type Aliases</strong> lesson
+          the module&apos;s own exports. The <strong>Interfaces, Type Aliases &amp; Classes</strong> lesson
           covers this failure mode in detail; it is worth reading before you spend an afternoon on
           an augmentation that appears to be ignored.
         </p>
@@ -271,12 +284,12 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
         question="A teammate's service runs fine with `node server.ts` locally, then fails on a colleague's machine with ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX. Nothing about the code changed. What is the most likely cause?"
         options={[
           'The colleague is on an older Node that lacks native TypeScript support entirely',
-          'The file uses enum, a parameter property, or a namespace, and one machine passes --experimental-transform-types while the other does not',
+          'The file uses enum, a parameter property, or a namespace, and the colleague is on a Node version where nothing can transform it — either machine predates strip-only support, or the colleague is on v26+, which removed the last flag that could',
           'The tsconfig.json is missing from the colleague\'s checkout',
           'Node type-checks differently across versions',
         ]}
         correctIndex={1}
-        explanation="The error is specifically the strip-only one, so Node is running the file — it just met a construct that needs code generation. That means the code contains enum, a parameter property, or a namespace, and it only worked on the first machine because something (a flag, an env var like NODE_OPTIONS, or a newer default) enabled transformation there. Setting erasableSyntaxOnly in tsconfig turns this into a compile error everyone sees, rather than a runtime failure that depends on how each person launches the process. Option 4 is wrong for a more fundamental reason: Node never type-checks at all."
+        explanation="The error is specifically the strip-only one, so Node is running the file — it just met a construct that needs code generation. That means the code contains enum, a parameter property, or a namespace. Before Node v26, --experimental-transform-types could paper over this on machines where it happened to be enabled; Node v26 removed that flag entirely, with no replacement, so any machine on v26+ fails here unconditionally. Setting erasableSyntaxOnly in tsconfig turns this into a compile error everyone sees at build time, rather than a runtime failure that depends on which Node version each person has installed. Option 4 is wrong for a more fundamental reason: Node never type-checks at all."
         code={`enum Status { Active, Inactive }   // needs codegen — cannot be stripped`}
         language="typescript"
       />

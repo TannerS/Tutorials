@@ -395,7 +395,7 @@ export function useCounter(initial = 0) {
   return { count, inc: () => setCount(c => c + 1) } as const;   // preserves literal keys
 }
 
-// React 19: ref is just another prop — forwardRef is deprecated
+// React 19: ref is just another prop — forwardRef no longer necessary (not yet @deprecated)
 function Input({ label, ref, ...rest }: InputProps) { return <input ref={ref} {...rest} />; }
 <ThemeContext value={theme}>{children}</ThemeContext>   // the provider is the context now`}</GuideCode>
         <GuideDefs items={[

@@ -205,270 +205,18 @@ export default function Intro() {
       </CodeBlock>
 
       <p>
-        Running <code>npx tsc --init</code> generates a <code>tsconfig.json</code> in
-        your project root &mdash; the single source of truth for how TypeScript compiles your code.
+        Running <code>npx tsc --init</code> generates a <code>tsconfig.json</code> in your
+        project root &mdash; the single source of truth for how TypeScript compiles your
+        code. On TypeScript 5.9+ (what this course runs), that command writes a short,
+        opinionated file with strict checking already turned on, not the sprawling,
+        every-option-commented-out file older tutorials show. You do not need to understand
+        everything in it today: <strong>tsconfig Mastery</strong>, later in this course, is
+        the dedicated option-by-option reference, including copy-paste-ready production
+        configs for both React and Node.js projects. For now, the three commands above are
+        enough to get a project type-checking.
       </p>
 
-      <CodeBlock language="json" title="What tsc --init generates today (TypeScript 5.9+ / 6.x)">
-        {'{\n' +
-          '  "compilerOptions": {\n' +
-          '    // Environment\n' +
-          '    "module": "nodenext",\n' +
-          '    "target": "esnext",\n' +
-          '    "types": [],\n' +
-          '\n' +
-          '    // Stricter type-checking\n' +
-          '    "noUncheckedIndexedAccess": true,\n' +
-          '    "exactOptionalPropertyTypes": true,\n' +
-          '\n' +
-          '    // Recommended\n' +
-          '    "strict": true,\n' +
-          '    "jsx": "react-jsx",\n' +
-          '    "verbatimModuleSyntax": true,\n' +
-          '    "isolatedModules": true,\n' +
-          '    "noUncheckedSideEffectImports": true,\n' +
-          '    "moduleDetection": "force",\n' +
-          '    "skipLibCheck": true\n' +
-          '  }\n' +
-          '}'}
-      </CodeBlock>
-
-      <InfoBox variant="warning" title="Old Blog Posts Show a Different tsc --init">
-        Up to TypeScript 5.7, <code>tsc --init</code> emitted a ~100-line file with every
-        option listed and commented out, defaulting to <code>&quot;target&quot;: &quot;es2016&quot;</code> and{' '}
-        <code>&quot;module&quot;: &quot;commonjs&quot;</code>. TypeScript 5.9 replaced it with the short,
-        opinionated file above. If a tutorial shows the long commented version, it predates 2025.
-      </InfoBox>
-
-      {/* 4. tsconfig.json Deep Dive */}
-      <h2>tsconfig.json Deep Dive</h2>
-      <p>
-        The <code>tsconfig.json</code> controls every aspect of the TypeScript compiler.
-        Understanding its options is essential for setting up projects correctly.
-      </p>
-
-      <h3>strict</h3>
-      <p>
-        The <code>strict</code> flag is a master switch that enables a family of strict
-        type-checking options all at once:
-      </p>
-      <CodeBlock language="json" title="What strict Enables">
-        {'{\n' +
-          '  "compilerOptions": {\n' +
-          '    "strict": true\n' +
-          '    // Equivalent to enabling ALL of the following:\n' +
-          '    // "noImplicitAny": true,\n' +
-          '    // "strictNullChecks": true,\n' +
-          '    // "strictFunctionTypes": true,\n' +
-          '    // "strictBindCallApply": true,\n' +
-          '    // "strictPropertyInitialization": true,\n' +
-          '    // "strictBuiltinIteratorReturn": true,   // added in TS 5.6\n' +
-          '    // "noImplicitThis": true,\n' +
-          '    // "useUnknownInCatchVariables": true\n' +
-          '  }\n' +
-          '}'}
-      </CodeBlock>
-
-      <InfoBox variant="note" title="alwaysStrict Is No Longer Part of strict">
-        Older references list <code>alwaysStrict</code> as a member of the strict family.
-        It is not any more: it now defaults to <code>true</code> on its own and is only
-        disabled by setting it to <code>false</code> explicitly. Turning <code>strict</code> off
-        does not turn it off. (Run <code>npx tsc --showConfig</code> to see the resolved values
-        for your own project.)
-      </InfoBox>
-
-      <InfoBox variant="warning" title="Always Enable strict — Even Though It Is Now the Default">
-        <p>
-          Retroactively enabling <code>strict</code> on a large codebase means fixing hundreds
-          of errors at once. Turn it on from day one.
-        </p>
-        <p>
-          On TypeScript 6 (what this course runs) it already <em>is</em> on: a config that
-          never mentions <code>strict</code> gets the strict behaviour, and only an explicit{' '}
-          <code>&quot;strict&quot;: false</code> turns it off. Write the line anyway &mdash;
-          it documents the intent and survives being opened by an older compiler. The
-          tsconfig lesson shows the verified before/after.
-        </p>
-      </InfoBox>
-
-      <h3>target</h3>
-      <p>
-        Specifies the ECMAScript version the compiler outputs. This determines which
-        JS features are downleveled and which are emitted as-is.
-      </p>
-      <CodeBlock language="json" title="target Options">
-        {'{\n' +
-          '  "compilerOptions": {\n' +
-          '    // Common targets:\n' +
-          '    "target": "ES2020"   // Supports optional chaining, nullish coalescing\n' +
-          '    // "target": "ES2022" // Supports top-level await, class fields\n' +
-          '    // "target": "ESNext" // Latest — use when a bundler handles downleveling\n' +
-          '  }\n' +
-          '}'}
-      </CodeBlock>
-
-      <h3>module</h3>
-      <p>Determines the module system used in the emitted JavaScript.</p>
-      <CodeBlock language="json" title="module Options">
-        {'{\n' +
-          '  "compilerOptions": {\n' +
-          '    // "module": "commonjs"  // require/module.exports — traditional Node.js\n' +
-          '    // "module": "esnext"    // import/export — for bundlers like Vite, webpack\n' +
-          '    "module": "nodenext"     // Node.js ESM with package.json type awareness\n' +
-          '  }\n' +
-          '}'}
-      </CodeBlock>
-
-      <h3>jsx</h3>
-      <p>
-        Controls how JSX is transformed. For modern React (17+), use
-        <code> react-jsx</code> which uses the automatic runtime and removes the need
-        to import React in every file.
-      </p>
-      <CodeBlock language="json" title="jsx Options">
-        {'{\n' +
-          '  "compilerOptions": {\n' +
-          '    "jsx": "react-jsx"       // React 17+ automatic runtime\n' +
-          '    // "jsx": "react"        // Classic: requires import React\n' +
-          '    // "jsx": "react-jsxdev" // Dev mode with extra checks\n' +
-          '    // "jsx": "preserve"     // Keep JSX as-is — let bundler handle it\n' +
-          '  }\n' +
-          '}'}
-      </CodeBlock>
-
-      <h3>esModuleInterop</h3>
-      <p>
-        Enables compatibility between CommonJS and ES module import syntax.
-      </p>
-      <CodeBlock language="typescript" title="Why esModuleInterop Matters">
-        {'// Without esModuleInterop:\n' +
-          'import * as express from \'express\'; // awkward namespace import\n\n' +
-          '// With esModuleInterop: true\n' +
-          'import express from \'express\';       // clean default import'}
-      </CodeBlock>
-
-      <h3>paths &amp; baseUrl</h3>
-      <p>
-        Path aliases let you avoid deeply nested relative imports by mapping module
-        names to file paths at compile time.
-      </p>
-      <CodeBlock language="json" title="Path Aliases Configuration">
-        {'{\n' +
-          '  "compilerOptions": {\n' +
-          '    "baseUrl": ".",\n' +
-          '    "paths": {\n' +
-          '      "@components/*": ["src/components/*"],\n' +
-          '      "@hooks/*": ["src/hooks/*"],\n' +
-          '      "@utils/*": ["src/utils/*"]\n' +
-          '    }\n' +
-          '  }\n' +
-          '}'}
-      </CodeBlock>
-
-      <CodeBlock language="typescript" title="Using Path Aliases">
-        {'// Before — fragile relative imports\n' +
-          'import { Button } from \'../../../components/Button\';\n\n' +
-          '// After — clean aliased imports\n' +
-          'import { Button } from \'@components/Button\';'}
-      </CodeBlock>
-
-      <InfoBox variant="info" title="Path Aliases Need Bundler Config Too">
-        TypeScript path aliases only resolve at compile time. Your bundler (Vite,
-        webpack) also needs matching config. In Vite, use the
-        <code> vite-tsconfig-paths</code> plugin to sync them automatically.
-      </InfoBox>
-
-      <h3>include &amp; exclude</h3>
-      <p>
-        Top-level options that control which files TypeScript processes via glob patterns.
-      </p>
-      <CodeBlock language="json" title="include / exclude">
-        {'{\n' +
-          '  "include": ["src/**/*.ts", "src/**/*.tsx"],\n' +
-          '  "exclude": ["node_modules", "dist", "**/*.test.ts"]\n' +
-          '}'}
-      </CodeBlock>
-
-      <h3>outDir &amp; rootDir</h3>
-      <p>
-        <code>outDir</code> sets where compiled JS is written. <code>rootDir</code> defines
-        the source root, controlling the directory structure inside <code>outDir</code>.
-      </p>
-      <CodeBlock language="json" title="outDir / rootDir">
-        {'{\n' +
-          '  "compilerOptions": {\n' +
-          '    "rootDir": "src",\n' +
-          '    "outDir": "dist"\n' +
-          '  }\n' +
-          '}\n' +
-          '// src/utils/math.ts  →  dist/utils/math.js\n' +
-          '// src/index.ts       →  dist/index.js'}
-      </CodeBlock>
-
-      {/* 5. Recommended tsconfig for React */}
-      <h2>Recommended tsconfig for React Projects</h2>
-      <p>A production-ready config for a React app using Vite or a modern bundler:</p>
-
-      <CodeBlock language="json" title="tsconfig.json — React + Vite">
-        {'{\n' +
-          '  "compilerOptions": {\n' +
-          '    "target": "ESNext",\n' +
-          '    "module": "ESNext",\n' +
-          '    "moduleResolution": "bundler",\n' +
-          '    "jsx": "react-jsx",\n' +
-          '    "strict": true,\n' +
-          '    "esModuleInterop": true,\n' +
-          '    "skipLibCheck": true,\n' +
-          '    "forceConsistentCasingInFileNames": true,\n' +
-          '    "resolveJsonModule": true,\n' +
-          '    "isolatedModules": true,\n' +
-          '    "noEmit": true,\n' +
-          '    "noUnusedLocals": true,\n' +
-          '    "noUnusedParameters": true,\n' +
-          '    "noFallthroughCasesInSwitch": true,\n' +
-          '    "baseUrl": ".",\n' +
-          '    "paths": {\n' +
-          '      "@/*": ["src/*"]\n' +
-          '    }\n' +
-          '  },\n' +
-          '  "include": ["src"],\n' +
-          '  "exclude": ["node_modules"]\n' +
-          '}'}
-      </CodeBlock>
-      <p>
-        Note <code>noEmit: true</code> &mdash; Vite handles transpilation via esbuild
-        or SWC. TypeScript is only used for type checking.
-      </p>
-
-      {/* 6. Recommended tsconfig for Node.js */}
-      <h2>Recommended tsconfig for Node.js Projects</h2>
-      <p>A config for a Node.js 18+ backend service using ES modules:</p>
-
-      <CodeBlock language="json" title="tsconfig.json — Node.js 18+ ESM">
-        {'{\n' +
-          '  "compilerOptions": {\n' +
-          '    "target": "ES2022",\n' +
-          '    "module": "nodenext",\n' +
-          '    "moduleResolution": "nodenext",\n' +
-          '    "strict": true,\n' +
-          '    "esModuleInterop": true,\n' +
-          '    "skipLibCheck": true,\n' +
-          '    "forceConsistentCasingInFileNames": true,\n' +
-          '    "resolveJsonModule": true,\n' +
-          '    "declaration": true,\n' +
-          '    "declarationMap": true,\n' +
-          '    "sourceMap": true,\n' +
-          '    "outDir": "dist",\n' +
-          '    "rootDir": "src",\n' +
-          '    "noUnusedLocals": true,\n' +
-          '    "noUnusedParameters": true\n' +
-          '  },\n' +
-          '  "include": ["src/**/*.ts"],\n' +
-          '  "exclude": ["node_modules", "dist", "**/*.test.ts"]\n' +
-          '}'}
-      </CodeBlock>
-
-      {/* 7. How TS Compilation Works */}
+      {/* 5. How TS Compilation Works */}
       <h2>How TypeScript Compilation Works</h2>
       <p>
         TypeScript compilation is a two-phase process: type checking and code emission.
@@ -495,44 +243,7 @@ export default function Intro() {
         without blocking builds.
       </p>
 
-      {/* 8. Declaration Files */}
-      <h2>Declaration Files (.d.ts)</h2>
-      <p>
-        Declaration files describe the types of a JavaScript library without containing
-        implementation. They have the <code>.d.ts</code> extension and let TypeScript
-        type-check code that uses plain JS packages.
-      </p>
-
-      <CodeBlock language="bash" title="Installing Type Declarations">
-        {'# Many popular libraries ship their own types.\n' +
-          '# For those that don\'t, install from DefinitelyTyped:\n' +
-          'npm install -D @types/react @types/react-dom\n' +
-          'npm install -D @types/node\n' +
-          'npm install -D @types/express'}
-      </CodeBlock>
-
-      <CodeBlock language="typescript" title="What a .d.ts File Looks Like">
-        {'// express.d.ts (simplified)\n' +
-          'declare namespace Express {\n' +
-          '  interface Request {\n' +
-          '    body: any;\n' +
-          '    params: Record<string, string>;\n' +
-          '    query: Record<string, string | undefined>;\n' +
-          '  }\n' +
-          '  interface Response {\n' +
-          '    json(body: any): Response;\n' +
-          '    status(code: number): Response;\n' +
-          '  }\n' +
-          '}'}
-      </CodeBlock>
-
-      <InfoBox variant="info" title="DefinitelyTyped">
-        DefinitelyTyped is the largest repository of community-maintained TypeScript
-        type definitions. When you run <code>npm install @types/some-lib</code>, you
-        are pulling from this repo. It covers thousands of packages.
-      </InfoBox>
-
-      {/* 9. TypeScript Playground */}
+      {/* 6. TypeScript Playground */}
       <h2>TypeScript Playground</h2>
       <p>
         The official{' '}
@@ -544,24 +255,26 @@ export default function Intro() {
         the AST.
       </p>
 
-      {/* 10. Interactive Challenges */}
+      {/* 7. Interactive Challenges */}
       <h2>Knowledge Check</h2>
 
       <InteractiveChallenge
-        question={"Which tsconfig option enables ALL strict type-checking flags at once?"}
+        question={"A tsconfig.json flips one option and suddenly every unannotated parameter and every possibly-null value becomes an error. Which option is the most likely single cause?"}
         options={[
           '"noImplicitAny": true',
-          '"strictNullChecks": true',
           '"strict": true',
           '"checkAll": true',
+          '"skipLibCheck": true',
         ]}
-        correctIndex={2}
+        correctIndex={1}
         explanation={
-          '"strict": true is a master switch that enables noImplicitAny, strictNullChecks, ' +
-          'strictFunctionTypes, strictBindCallApply, strictPropertyInitialization, ' +
-          'strictBuiltinIteratorReturn, noImplicitThis, and useUnknownInCatchVariables all at ' +
-          'once. Note that alwaysStrict is NOT one of them any more — it defaults to true ' +
-          'independently of strict.'
+          '"strict": true is a master switch that turns on a whole family of stricter checks ' +
+          'at once — noImplicitAny (bans silent any) and strictNullChecks (bans treating null ' +
+          'and undefined as assignable to everything) are the two you will hit constantly, and ' +
+          'together they explain the symptom in the question. TypeScript 6 already turns strict ' +
+          'on by default, but writing the line out documents intent for anyone reading the ' +
+          'config. See tsconfig Mastery, later in this course, for the complete list of what ' +
+          'strict enables and why alwaysStrict is no longer counted among them.'
         }
       />
 

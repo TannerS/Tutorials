@@ -10,13 +10,13 @@ export default function MuiCheatsheet() {
       tagline="Material-UI v4 (makeStyles / withStyles / theme overrides) and the migration path onto v5's styled() and sx."
       meta={['@material-ui/core 4.12.4', '@mui/material 5.18.0', '16 panels']}
       page="1 / 1"
-      footer="Every import path, API name, theme key and error string here was read off a real install — @material-ui/core 4.12.4, @mui/material 5.18.0/9.3.1, @mui/styles 5.18.0. The five lessons before this one carry the reasoning; this page is the recall sheet."
+      footer="Every import path, API name, theme key and error string here was read off a real install — @material-ui/core 4.12.4, @mui/material 5.18.0/9.4.0, @mui/styles 5.18.0. The five lessons before this one carry the reasoning; this page is the recall sheet."
       prev={{ path: '/mui/styled-v5', label: 'v5 and Beyond — styled() and sx' }}
       next={null}
     >
       <GuidePanel n={1} title="Version Reality & the Migration Route" accent="blue" glyph="🧭" span={2}>
         <GuideCode>{`@material-ui/core   latest = 4.12.4        <- final v4; your codebase
-@mui/material       latest = 9.3.1         <- CURRENT (v9 stable)
+@mui/material       latest = 9.4.0         <- CURRENT (v9 stable)
                     latest-v7 = 7.3.11, latest-v6 = 6.5.0, latest-v5 = 5.18.0
 @mui/styles         6.5.0 highest stable   <- JSS bridge; ENDS HERE
 
@@ -93,7 +93,7 @@ npx @mui/codemod@latest v5.0.0/jss-to-tss-react src/ # -> tss-react`}</GuideCode
       <GuidePanel n={6} title="The Silent Killer" accent="red" glyph="⚠️">
         <GuideRules items={[
           'createTheme does NOT validate top-level keys. Leave overrides or props in place and there is no error, no warning, and no styling.',
-          'Verified: at 5.18.0 and 9.3.1 the constructed theme has neither key — they ride along as inert data nothing reads.',
+          'Verified: at 5.18.0 and 9.4.0 the constructed theme has neither key — they ride along as inert data nothing reads.',
           'Grep your theme file for both words before calling a migration done.',
         ]} />
       </GuidePanel>
@@ -176,7 +176,7 @@ function Save() {
             ['everything else', 'per-component: MuiButton-root, MuiChip-label, ...'],
           ]}
         />
-        <GuideRules items={['Verified identical at 4.12.4 and 9.3.1 — safe to target in either major.']} />
+        <GuideRules items={['Verified identical at 4.12.4 and 9.4.0 — safe to target in either major.']} />
       </GuidePanel>
 
       <GuidePanel n={11} title="Specificity — Hatches, Ladder & the Import-Order Gotcha" accent="amber" glyph="🪜" span={2}>
@@ -267,10 +267,10 @@ const Fancy = styled(Button, {
 
       <GuidePanel n={16} title="Going Past v5" accent="purple" glyph="🚀">
         <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--g-dim)' }}>
-          This sheet stops at v5 — the jump out of v4. The current release is 9.3.1, and things
+          This sheet stops at v5 — the jump out of v4. The current release is 9.4.0, and things
           keep moving: Grid grew a <code>size</code> prop, <code>breakpoints.down()</code> changed
           meaning, <code>spacing()</code> returns a string, not a number. Covered, verified against
-          a real <code>@mui/material@9.3.1</code> install, in{' '}
+          a real <code>@mui/material@9.4.0</code> install, in{' '}
           <a href="/mui9/intro">MUI Current (v9)</a> and{' '}
           <a href="/mui9/cheatsheet">its own field guide</a>.
         </p>

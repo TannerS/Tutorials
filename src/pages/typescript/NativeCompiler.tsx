@@ -204,7 +204,7 @@ npx tsc --noEmit`}
 
       <h3>Measured on this repository</h3>
       <p>
-        This site is roughly 269 <code>.ts</code>/<code>.tsx</code> files and about 111k
+        This site is roughly 361 <code>.ts</code>/<code>.tsx</code> files and about 168k
         lines, under <code>strict: true</code>. Both compilers were run against the same
         <code> tsconfig.json</code>:
       </p>

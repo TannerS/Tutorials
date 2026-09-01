@@ -15,9 +15,9 @@ function Mui9Intro() {
     >
       <InfoBox variant="tip" title="✅ Version notice — this section is the current release">
         <p>
-          This section teaches <strong><code>@mui/material@9.3.1</code></strong>, which is the
+          This section teaches <strong><code>@mui/material@9.4.0</code></strong>, which is the
           current stable release. Every version number, API shape and CSS string on these pages was
-          read out of a real install of 9.3.1 rather than from documentation.
+          read out of a real install of 9.4.0 rather than from documentation.
         </p>
         <p style={{ marginTop: '0.5rem' }}>
           If you are working in the v4 codebase, that material lives in its own section:{' '}
@@ -40,13 +40,13 @@ function Mui9Intro() {
 
       <CodeBlock language="bash" title="Read from the npm registry, not from memory">
 {`$ npm view @mui/material dist-tags
-latest     = 9.3.1
+latest     = 9.4.0
 latest-v7  = 7.3.11
 latest-v6  = 6.5.0
 latest-v5  = 5.18.0
 
 $ npm view @mui/material version
-9.3.1
+9.4.0
 
 # published majors:  5, 6, 7, 9
 # there is NO 8.x. The version list goes 7.3.11 -> 9.0.0-alpha.0`}
@@ -90,7 +90,7 @@ Styling engine:  JSS              emotion (or Pigment CSS, opt-in)`}
       <h2>Verified Facts About the Installed Package</h2>
 
       <CodeBlock language="text" title="Read out of node_modules/@mui/material/package.json">
-{`version        9.3.1
+{`version        9.4.0
 peer react     ^17.0.0 || ^18.0.0 || ^19.0.0
 module type    commonjs
 main           ./index.js`}
@@ -140,13 +140,13 @@ next      = 7.0.0-beta.4
         tells you exactly what happened:
       </p>
 
-      <CodeBlock language="text" title="Real output — calling makeStyles from @mui/material/styles on 9.3.1">
+      <CodeBlock language="text" title="Real output — calling makeStyles from @mui/material/styles on 9.4.0">
 {`MUI: makeStyles is no longer exported from @mui/material/styles.`}
       </CodeBlock>
 
       <p>
         Also gone: <code>createMuiTheme</code> is <strong>absent</strong> from{' '}
-        <code>@mui/material/styles</code> in 9.3.1. The v4 spelling was renamed to{' '}
+        <code>@mui/material/styles</code> in 9.4.0. The v4 spelling was renamed to{' '}
         <code>createTheme</code> at v5, kept as a deprecated alias for a while, and has since been
         removed outright.
       </p>

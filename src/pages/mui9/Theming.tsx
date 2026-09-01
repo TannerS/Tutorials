@@ -68,7 +68,7 @@ const theme = createTheme({
 
       <p>Now the same values come out as variable references:</p>
 
-      <CodeBlock language="text" title="Real output — theme.vars on 9.3.1">
+      <CodeBlock language="text" title="Real output — theme.vars on 9.4.0">
 {`vars.palette.primary.main        = var(--mui-palette-primary-main, #1976d2)
 vars.palette.background.default  = var(--mui-palette-background-default, #fff)
 vars.spacing                     = var(--mui-spacing, 8px)
@@ -83,7 +83,7 @@ dark  background.default = #121212`}
       <InfoBox variant="note" title="theme.vars only exists when you ask for it">
         <p>
           A plain <code>createTheme()</code> has no <code>vars</code> property at all — verified on
-          9.3.1. So <code>theme.vars.palette.primary.main</code> throws a &quot;cannot read
+          9.4.0. So <code>theme.vars.palette.primary.main</code> throws a &quot;cannot read
           property of undefined&quot; error unless <code>cssVariables</code> is on. If you are
           writing a shared component library, read <code>theme.palette</code>, which works either
           way, or handle both.
@@ -179,7 +179,7 @@ function ModeToggle() {
 
       <p>
         For server rendering, MUI ships <code>InitColorSchemeScript</code> — verified present in
-        9.3.1 both as a named export and as its own module at{' '}
+        9.4.0 both as a named export and as its own module at{' '}
         <code>@mui/material/InitColorSchemeScript</code>. It emits a tiny blocking script that
         sets the class or data attribute before the page paints, which is what keeps the toggle
         strategies flash-free too.
@@ -224,7 +224,7 @@ const B = styled('div')(({ theme }) => ({
 
       <h2>The Theme Keys You Will Actually Touch</h2>
 
-      <CodeBlock language="text" title="Verified defaults on 9.3.1">
+      <CodeBlock language="text" title="Verified defaults on 9.4.0">
 {`palette.mode              'light'          ('type' is GONE)
 palette.primary.main      #1976d2
 palette.background.default  #fff / #121212 (light / dark)

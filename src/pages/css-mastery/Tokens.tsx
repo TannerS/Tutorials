@@ -25,9 +25,11 @@ export default function Tokens() {
 
       <h2>Three Tiers: Primitive → Semantic → Component</h2>
       <p>
-        Mature token systems (Carbon&apos;s included) separate tokens into three tiers so a single
-        design decision — &quot;make the brand color darker&quot; — propagates everywhere it&apos;s
-        used without a find-and-replace across component code.
+        The Custom Properties &amp; Modern CSS lesson already introduced this exact primitive →
+        semantic → component split, with a generic Indigo/gray example. What&apos;s new here: why
+        the middle tier is the one actually worth naming carefully, and two examples grounded in a
+        real system instead of a hypothetical one — how Carbon itself names its tokens, and how this
+        very site&apos;s token file (<code>global.css</code>) collapses a tier under real constraints.
       </p>
 
       <CodeBlock language="css" title="The Three Tiers, Generically">
@@ -146,6 +148,15 @@ export default function Tokens() {
       </CodeBlock>
 
       <h2>Light/Dark Theming via Token Redefinition</h2>
+      <p>
+        The Custom Properties &amp; Modern CSS lesson&apos;s Dark Mode Implementation section already
+        covered the toggle mechanics in depth — the <code>:root[data-theme]</code> specificity trap,{' '}
+        <code>prefers-color-scheme</code>, and <code>light-dark()</code>. This isn&apos;t a second pass
+        at those mechanics; it&apos;s watching the payoff on the real file this site ships (
+        <code>global.css</code> and <code>ThemeProvider.tsx</code>, not a hypothetical example), and why
+        token discipline turns dark-mode correctness into a structural guarantee instead of something
+        audited page by page.
+      </p>
       <p>
         This is the entire payoff of putting values behind semantic names: a theme switch is nothing
         more than redeclaring the same token names under a different selector. No component CSS

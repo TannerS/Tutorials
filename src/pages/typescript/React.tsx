@@ -617,7 +617,7 @@ const inputRef = useRef<HTMLInputElement>(null);
         </p>
       </InfoBox>
 
-      <CodeBlock language="tsx" title="Legacy — forwardRef (deprecated in React 19)">{
+      <CodeBlock language="tsx" title="Legacy — forwardRef (no longer necessary in React 19)">{
 `import { forwardRef } from 'react';
 
 // Still works, but no longer necessary. You will see this everywhere in
@@ -636,6 +636,19 @@ TextInput.displayName = 'TextInput';   // forwardRef components need this`
           <code>forwardRef&lt;RefType, PropsType&gt;</code> &mdash; the <em>ref element type comes
           first</em>, then props. This trips up almost everyone. It is one more reason to
           migrate to the plain-prop form, where the ref is typed inline with everything else.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="info" title="Precisely: not deprecated yet, but on that path">
+        <p>
+          Be exact about where <code>forwardRef</code> actually stands. It carries no{' '}
+          <code>@deprecated</code> tag in <code>@types/react</code> today, and calling it does not
+          warn. The official React docs say <code>ref</code> being a normal prop makes{' '}
+          <code>forwardRef</code> &ldquo;no longer necessary&rdquo; and that it{' '}
+          <strong>&ldquo;will be deprecated in a future release&rdquo;</strong> &mdash; future
+          tense, not a done deal. The practical advice does not change: write new components with
+          the plain-prop form. Just do not tell a teammate it is deprecated today; it is
+          scheduled to be.
         </p>
       </InfoBox>
 

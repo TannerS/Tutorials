@@ -9,7 +9,7 @@ export default function JsEs2017() {
       title="ECMAScript 2017 (ES8): The Complete Deep Dive"
       sectionId="javascript"
       lessonIndex={8}
-      prev={{ path: '/javascript/modern-tour', label: 'Modern JavaScript: ES2015-2024 Feature Tour' }}
+      prev={{ path: '/javascript/modern-tour', label: 'Modern JavaScript: ES2015-2026 Feature Tour' }}
       next={{ path: '/javascript/cheatsheet', label: '📋 Cheat Sheet' }}
     >
 

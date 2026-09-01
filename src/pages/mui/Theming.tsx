@@ -1,4 +1,5 @@
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
@@ -106,8 +107,13 @@ shadows      shape      spacing  transitions  typography  zIndex`}
 
       <p>
         Below, each one with its actual default content. Print this section&apos;s values once and you
-        will stop guessing at autocomplete.
+        will stop guessing at autocomplete. The shape, before the detail:
       </p>
+
+      <FlowChart
+        title="The Theme Object — Top-Level Shape"
+        chart={"graph TD\n  THEME[\"theme<br/>12 top-level keys\"] --> PAL[\"palette<br/>~17 sub-keys\"]\n  THEME --> TYP[\"typography\"]\n  THEME --> SPC[\"spacing\"]\n  THEME --> BRK[\"breakpoints\"]\n  THEME --> SHP[\"shape\"]\n  THEME --> ZIDX[\"zIndex\"]\n  THEME --> TRANS[\"transitions\"]\n  THEME --> DIR[\"direction\"]\n  THEME --> MIX[\"mixins\"]\n  THEME --> SHDW[\"shadows\"]\n  THEME --> OVR[\"overrides<br/>next lesson\"]\n  THEME --> PROPS[\"props<br/>next lesson\"]\n  PAL --> P1[\"primary\"]\n  PAL --> P2[\"secondary\"]\n  PAL --> P3[\"error\"]\n  PAL --> P4[\"warning\"]\n  PAL --> P5[\"info\"]\n  PAL --> P6[\"success\"]\n  PAL --> P7[\"background\"]\n  PAL --> P8[\"text\"]\n  PAL --> P9[\"divider\"]\n  PAL --> P10[\"...8 more: action, common,<br/>grey, type, tonalOffset,<br/>contrastThreshold,<br/>augmentColor(), getContrastText()\"]\n  style PAL fill:#1a2744\n  style OVR fill:#3d2f14\n  style PROPS fill:#3d2f14"}
+      />
 
       <h3>palette</h3>
 

@@ -36,11 +36,11 @@ function MuiStyledV5() {
 
       <CodeBlock language="bash" title="Verified against the registry, August 2026">
 {`$ npm view @mui/material version
-9.3.1
+9.4.0
 
 $ npm view @mui/material dist-tags
 {
-  latest:     '9.3.1',
+  latest:     '9.4.0',
   'latest-v7': '7.3.11',
   'latest-v6': '6.5.0',
   'latest-v5': '5.18.0',
@@ -93,7 +93,7 @@ $ npm view @material-ui/core dist-tags
           <tr>
             <td style={td}><strong>v9</strong></td>
             <td style={td}><code>@mui/material</code></td>
-            <td style={td}><strong>9.3.1</strong></td>
+            <td style={td}><strong>9.4.0</strong></td>
             <td style={td}>emotion</td>
             <td style={td}>Current. Stable since 7 Apr 2026.</td>
           </tr>
@@ -114,7 +114,7 @@ $ npm view @material-ui/core dist-tags
         <p style={{ marginBottom: 0 }}>
           Every API name, error string, class name, and theme key below was produced by installing
           and running <code>@material-ui/core@4.12.4</code>, <code>@mui/material@5.18.0</code>, and{' '}
-          <code>@mui/material@9.3.1</code> — reading the shipped type definitions and
+          <code>@mui/material@9.4.0</code> — reading the shipped type definitions and
           server-rendering real components. The v6 and v7 rows above are the exception: those are
           inferred from the registry (dist-tags, the absence of a stable{' '}
           <code>@mui/styles@7</code>) and from the shipped changelog, not from a run. Anything
@@ -142,7 +142,7 @@ npm install @mui/material @mui/icons-material @emotion/react @emotion/styled
 
       <p>
         <code>@emotion/react</code> and <code>@emotion/styled</code> are declared as peer
-        dependencies — verified in the shipped <code>package.json</code> at both 5.18.0 and 9.3.1.
+        dependencies — verified in the shipped <code>package.json</code> at both 5.18.0 and 9.4.0.
         Forget them and you get a runtime error, not an install warning.
       </p>
 
@@ -160,7 +160,7 @@ npm install @mui/material @mui/icons-material @emotion/react @emotion/styled
 </button>`}
       </CodeBlock>
 
-      <CodeBlock language="html" title="v9.3.1 — emotion">
+      <CodeBlock language="html" title="v9.4.0 — emotion">
 {`<button class="MuiButtonBase-root MuiButton-root MuiButton-contained
                MuiButton-sizeMedium MuiButton-colorPrimary my-class
                css-xgx37o-MuiButtonBase-root-MuiButton-root">
@@ -199,7 +199,7 @@ npm install @mui/material @mui/icons-material @emotion/react @emotion/styled
         This is stated too softly almost everywhere. <code>makeStyles</code> is not exported from{' '}
         <code>@mui/material/styles</code> with a warning. The export exists and{' '}
         <strong>throws</strong>. Here is the shipped implementation, identical at 5.18.0 and
-        9.3.1:
+        9.4.0:
       </p>
 
       <CodeBlock language="javascript" title="node_modules/@mui/material/styles/makeStyles.js — the entire file">
@@ -263,7 +263,7 @@ next      = 7.0.0-beta.4
           official transform:{' '}
           <code>npx @mui/codemod@latest v5.0.0/jss-to-styled</code> and{' '}
           <code>npx @mui/codemod@latest v5.0.0/jss-to-tss-react</code> — verified present in{' '}
-          <code>@mui/codemod@9.3.1</code>.
+          <code>@mui/codemod@9.4.0</code>.
         </p>
       </InfoBox>
 
@@ -272,7 +272,7 @@ next      = 7.0.0-beta.4
       <p>
         Two v4 keys, <code>overrides</code> and <code>props</code>, collapsed into one{' '}
         <code>components</code> key with named sub-keys. Verified by inspecting the constructed
-        theme object: at 5.18.0 and 9.3.1, <code>overrides</code> and <code>props</code> are{' '}
+        theme object: at 5.18.0 and 9.4.0, <code>overrides</code> and <code>props</code> are{' '}
         <strong>not present at all</strong> on the result of <code>createTheme</code>. They do not
         warn. They are silently ignored.
       </p>
@@ -722,13 +722,13 @@ export default StatusChip;`}
       <p>
         Short version: nothing on the scale of v5, and nothing that changes the mental model you
         just built. <code>styled</code>, <code>sx</code>, <code>components.X.styleOverrides</code>,
-        and the <code>MuiButton-root</code> class names all still mean what they mean at 9.3.1.
+        and the <code>MuiButton-root</code> class names all still mean what they mean at 9.4.0.
         The differences are narrower:
       </p>
 
       <ul>
         <li>
-          <strong>CSS theme variables.</strong> At 9.3.1, <code>createTheme</code> accepts a{' '}
+          <strong>CSS theme variables.</strong> At 9.4.0, <code>createTheme</code> accepts a{' '}
           <code>cssVariables</code> option — verified in the shipped{' '}
           <code>createTheme.d.ts</code> — which emits the theme as real CSS custom properties so
           light/dark switching stops re-rendering the tree. v9 also leans on this internally: a
@@ -739,14 +739,14 @@ export default StatusChip;`}
         <li>
           <strong>Button slot names drifted.</strong> Verified: at 5.18.0{' '}
           <code>buttonClasses</code> contains <code>containedPrimary</code>,{' '}
-          <code>textSecondary</code>, and so on. At 9.3.1 those are gone, replaced by{' '}
+          <code>textSecondary</code>, and so on. At 9.4.0 those are gone, replaced by{' '}
           <code>colorPrimary</code>, <code>colorSecondary</code>, <code>colorError</code>, plus a
           set of new <code>loading*</code> slots. Which major dropped them, I did not verify.
         </li>
         <li>
           <strong>Grid was replaced.</strong> The old grid survived under the name{' '}
           <code>GridLegacy</code> for a while; the shipped v9 changelog records{' '}
-          <em>&quot;Remove GridLegacy component&quot;</em>, and 9.3.1 ships only a{' '}
+          <em>&quot;Remove GridLegacy component&quot;</em>, and 9.4.0 ships only a{' '}
           <code>Grid</code> directory. If your v4 code is grid-heavy, budget for this
           specifically.
         </li>
@@ -818,7 +818,7 @@ export default StatusChip;`}
         <li>
           <strong>The global class names survived every major.</strong>{' '}
           <code>MuiButton-root</code> and <code>Mui-disabled</code> mean the same thing at 4.12.4
-          and 9.3.1. That is your bridge.
+          and 9.4.0. That is your bridge.
         </li>
         <li>
           <strong><code>makeStyles</code> throws</strong> from <code>@mui/material/styles</code>,

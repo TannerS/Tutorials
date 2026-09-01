@@ -7,7 +7,7 @@ import LessonLayout from '../../components/LessonLayout';
 export default function Interfaces() {
   return (
     <LessonLayout
-      title="Interfaces &amp; Type Aliases"
+      title="Interfaces, Type Aliases &amp; Classes"
       sectionId="typescript"
       lessonIndex={2}
       prev={{ path: '/typescript/types', label: 'Type System Fundamentals' }}
@@ -554,12 +554,18 @@ class AppLogger implements Logger, Serializable {
 }`}
       </CodeBlock>
 
-      {/* ── Classes in TypeScript ── */}
-      <h2>Classes in TypeScript</h2>
+      <hr style={{ borderColor: '#333', margin: '3rem 0 2rem' }} />
+
+      {/* ── Part 2: Classes in TypeScript ── */}
+      <h2>Part 2: Classes in TypeScript</h2>
       <p>
-        TypeScript adds a full object-oriented layer on top of JavaScript classes:
-        access modifiers, parameter properties, abstract members, and compile-time
-        checks that the class actually satisfies the interfaces it claims to implement.
+        Everything above described the <em>shape</em> of data. Classes are where TypeScript
+        adds a full object-oriented layer on top of JavaScript&apos;s own <code>class</code>{' '}
+        syntax &mdash; access modifiers, parameter properties, abstract members, and
+        compile-time checks that a class actually satisfies the interfaces it claims to{' '}
+        <code>implement</code>. That last part is the connective tissue back to Part 1:
+        every one of these class features exists to make a class into a value that is
+        structurally compatible with the interfaces you just learned to write.
       </p>
 
       <h3>Access modifiers</h3>

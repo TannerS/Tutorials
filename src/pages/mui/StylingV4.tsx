@@ -422,6 +422,29 @@ Production build:
         reach for <code>!important</code>.
       </p>
 
+      <InfoBox variant="info" title="What the numbers in (0,3,0) actually mean">
+        <p>
+          From here on this lesson writes specificity as a bare three-number tuple, like{' '}
+          <code>(0,3,0)</code> — worth defining precisely if you have not seen it scored before. Each
+          selector earns a count in three columns: <strong>ID selectors</strong>,{' '}
+          <strong>class, attribute, and pseudo-class selectors</strong>, and{' '}
+          <strong>type and pseudo-element selectors</strong>. Compare two tuples column by column, left
+          to right — the first column where the scores differ decides the winner outright, no matter
+          what the remaining columns say. It is not a sum. A tie in every column falls back to whichever
+          rule appears later in the stylesheet.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          This is the same score{' '}
+          <a href="/css-mastery/fundamentals">CSS Fundamentals from Scratch</a> teaches as a{' '}
+          <em>four</em>-column tuple — (inline style, ID, class, element) — where a leading inline-style
+          column beats everything else outright. This lesson drops that column and writes only three
+          numbers, because every comparison below is between two class selectors: nobody here is
+          fighting an inline <code>style=&quot;...&quot;</code> attribute, so that column would just be a
+          0 on both sides and never change the outcome. If specificity scoring is new to you, read that
+          lesson&apos;s cascade section first — everything below assumes it.
+        </p>
+      </InfoBox>
+
       <h3>Failure mode 1: MUI&apos;s selector is more specific</h3>
       <p>
         MUI v4 does not style everything with a single class. Its own emitted CSS is full of multi-class
@@ -433,8 +456,11 @@ Production build:
 {`/* specificity 0,3,0 — three classes deep */
 .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline { ... }
 
-/* specificity 0,2,0 */
+/* specificity 0,3,0 — a class, a pseudo-class, and a class. The pseudo-class
+   ':hover' scores in the SAME column as a class, so this is not 0,2,0. */
 .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline { ... }
+
+/* specificity 0,2,0 */
 .MuiInputBase-root.Mui-disabled { ... }
 .MuiButton-endIcon.MuiButton-iconSizeSmall { ... }
 

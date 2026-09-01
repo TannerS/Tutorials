@@ -11,7 +11,7 @@ export default function Types() {
       sectionId="typescript"
       lessonIndex={1}
       prev={{ path: '/typescript/intro', label: 'Intro & Setup' }}
-      next={{ path: '/typescript/interfaces', label: 'Interfaces & Type Aliases' }}
+      next={{ path: '/typescript/interfaces', label: 'Interfaces, Type Aliases & Classes' }}
     >
       {/* ── Primitive Types ── */}
       <h2>Primitive Types</h2>

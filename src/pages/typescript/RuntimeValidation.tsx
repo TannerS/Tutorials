@@ -110,16 +110,18 @@ async function b(res: Response) {
 
       <InfoBox variant="note" title="Which library, and which version">
         <p>
-          The examples use <strong>Zod v4</strong> &mdash; specifically <code>4.4.3</code>,
-          which was both the latest published version and the copy resolvable in this repo
-          when this lesson was written. Every API call below was executed against it.
+          The examples use <strong>Zod v4</strong> &mdash; verified against{' '}
+          <code>4.5.4</code>, the current <code>latest</code> release on npm. Every API call
+          below was re-run directly against it; behavior is identical to the{' '}
+          <code>4.4.3</code> copy this repo transitively resolves to (see below), which is
+          how the lesson originally shipped.
         </p>
         <p>
           Note that <code>zod</code> is <em>not</em> a direct dependency of this tutorial
           site &mdash; it is present only transitively (via{' '}
-          <code>eslint-plugin-react-hooks</code>). Nothing here is wired into the app; this
-          is a teaching lesson. To use it in a project of your own,{' '}
-          <code>npm install zod</code>.
+          <code>eslint-plugin-react-hooks</code>), currently pinned at <code>4.4.3</code>.
+          Nothing here is wired into the app; this is a teaching lesson. To use it in a
+          project of your own, <code>npm install zod</code>.
         </p>
         <p>
           <strong>Version matters more than usual here.</strong> Zod&rsquo;s API changed
@@ -322,7 +324,7 @@ const user = await fetchJson('/api/users/1', UserSchema);  // user: User`}
 // Throws loudly at import time if the environment is wrong.
 export const env = EnvSchema.parse(process.env);
 
-// env.PORT is number. env.DEBUG is boolean. Verified against zod 4.4.3.`}
+// env.PORT is number. env.DEBUG is boolean. Verified against zod 4.5.4.`}
       </CodeBlock>
 
       <p>
@@ -427,7 +429,7 @@ type Event = z.infer<typeof Event>;
         audience is most of the work.
       </p>
 
-      <CodeBlock language="typescript" title="A failing parse (real output from zod 4.4.3)">
+      <CodeBlock language="typescript" title="A failing parse (real output from zod 4.5.4)">
 {`const bad = UserSchema.safeParse({ id: -1, name: '', email: 'nope', role: 'ghost' });
 
 bad.success;              // false
@@ -489,7 +491,7 @@ bad.error.issues[0];
 {`z.string({ error: 'Name is required' });
 z.string().min(3, { error: 'Too short!' });
 
-// The v3 keyword still functioned in 4.4.3 when tested:
+// The v3 keyword still functioned in 4.5.4 when tested:
 z.string().min(3, { message: 'legacy msg' });   // still produced 'legacy msg'
 // but \`error\` is the documented v4 form — prefer it in new code.`}
       </CodeBlock>
