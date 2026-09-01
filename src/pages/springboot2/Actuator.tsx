@@ -9,8 +9,8 @@ function SpringBoot2Actuator() {
     <LessonLayout
       title="Actuator & Metrics Before the Rename"
       sectionId="springboot2"
-      lessonIndex={6}
-      prev={{ path: '/springboot2/testing', label: 'Testing in Boot 2 — @MockBean and Friends' }}
+      lessonIndex={15}
+      prev={{ path: '/springboot2/observability', label: 'Observability' }}
       next={{ path: '/springboot2/migration', label: 'Migrating 2 → 3 → 4, In Order' }}
     >
       <p>

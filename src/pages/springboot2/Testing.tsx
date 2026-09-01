@@ -9,9 +9,9 @@ function SpringBoot2Testing() {
     <LessonLayout
       title="Testing in Boot 2 — @MockBean and Friends"
       sectionId="springboot2"
-      lessonIndex={5}
-      prev={{ path: '/springboot2/config', label: 'Configuration & Properties That Moved' }}
-      next={{ path: '/springboot2/actuator', label: 'Actuator & Metrics Before the Rename' }}
+      lessonIndex={8}
+      prev={{ path: '/springboot2/error', label: 'Error Handling & Validation' }}
+      next={{ path: '/springboot2/transactions', label: 'Transactions Deep-Dive' }}
     >
       <p>
         Most of a Boot 2 test suite is portable. <code>@SpringBootTest</code>,{' '}

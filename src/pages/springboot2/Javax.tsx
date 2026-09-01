@@ -11,7 +11,7 @@ function SpringBoot2Javax() {
       sectionId="springboot2"
       lessonIndex={1}
       prev={{ path: '/springboot2/intro', label: 'Spring Boot 2 in 2026: Where It Stands' }}
-      next={{ path: '/springboot2/security', label: 'Security the Boot 2 Way' }}
+      next={{ path: '/springboot2/di', label: 'Dependency Injection & IoC' }}
     >
       <p>
         If you only learn one thing about Spring Boot 2, learn this one. Every other difference in

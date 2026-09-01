@@ -8,7 +8,7 @@ export default function SqlAdvancedFieldGuide() {
       kicker="FIELD GUIDE"
       glyph="🗄️"
       tagline="Query shapes, index rules, schema patterns, and the concurrency traps you reach for daily — condensed from SQL Fundamentals through SQL Advanced (Stored Procedures isn't summarized here; see that lesson directly)."
-      meta={['PostgreSQL 12–18', 'verified through 18.6', '19 panels']}
+      meta={['PostgreSQL 12–18', 'verified through 18.6', '21 panels']}
       page="1 / 1"
       footer="This page is for recall. The reasoning, the worked examples, and the verified benchmarks live in the SQL Fundamentals, SQL Design Patterns, and SQL Advanced lessons it draws from."
       prev={{ path: '/sql-advanced/advanced', label: 'Advanced SQL Patterns' }}
@@ -417,6 +417,60 @@ CREATE INDEX ON users (lower(email));`}</GuideCode>
             ['Fastest way to check if a query uses an index', 'EXPLAIN (ANALYZE, BUFFERS) — Seq Scan vs Index Scan'],
             ['Fastest way to bulk-load data', 'COPY, not batched INSERTs'],
             ['Add NOT NULL to a huge table without an outage (PG18+)', 'nullable → ADD CONSTRAINT ... NOT NULL col NOT VALID → backfill in batches → VALIDATE CONSTRAINT (only ShareUpdateExclusiveLock)'],
+          ]}
+        />
+      </GuidePanel>
+
+      <GuidePanel n={20} title="JSON, JSONB & Full-Text Search" accent="amber" glyph="🧬" span={2}>
+        <GuideCode>{`metadata->'author'      -- jsonb  (keep drilling)
+metadata->>'author'     -- text   (final step / cast)
+metadata#>'{a,b}'       -- path form of ->, any depth
+metadata @> '{"k":"v"}' -- containment — what GIN indexes
+metadata ? 'author'     -- top-level key exists
+
+CREATE INDEX ON documents USING gin (metadata);              -- jsonb_ops: @>, ?, ?|, ?&
+CREATE INDEX ON documents USING gin (metadata jsonb_path_ops); -- smaller: @> only
+
+search_vector tsvector GENERATED ALWAYS AS (
+  setweight(to_tsvector('english', coalesce(title,'')), 'A') ||
+  setweight(to_tsvector('english', coalesce(body,'')),  'B')
+) STORED;
+CREATE INDEX ON documents USING gin (search_vector);
+... WHERE search_vector @@ to_tsquery('english', 'a & b')
+ORDER BY ts_rank(search_vector, query) DESC;`}</GuideCode>
+        <GuideRules
+          items={[
+            'jsonb (sorted keys, dupes collapse) beats json (verbatim text, reparsed every read) unless byte-for-byte key order/duplicates must survive.',
+            'jsonb_path_ops is smaller/faster but @> only — verified: a ? query with only a path_ops index falls back to a disabled seq scan, no fallback index exists.',
+            'A tsvector GENERATED column beats tsvector_update_trigger: the trigger cannot express setweight(), silently flattening rank on its first UPDATE.',
+            'coalesce() around each to_tsvector() call is required, not stylistic — || propagates NULL and blanks the whole vector otherwise.',
+          ]}
+        />
+      </GuidePanel>
+
+      <GuidePanel n={21} title="Views, Partitioning & Extensions" accent="pink" glyph="🧱" span={2}>
+        <GuideCode>{`CREATE VIEW active_users AS SELECT * FROM users WHERE deleted_at IS NULL;
+ALTER VIEW active_users SET (security_invoker = true);  -- PG15+: run as the
+                                                          -- CALLER, not the owner
+
+CREATE MATERIALIZED VIEW mv AS SELECT ... WITH DATA;
+CREATE UNIQUE INDEX ON mv (key_col);       -- required before CONCURRENTLY
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv; -- no ACCESS EXCLUSIVE lock
+
+CREATE TABLE logs (..., ts TIMESTAMPTZ, PRIMARY KEY (id, ts))
+  PARTITION BY RANGE (ts);
+CREATE TABLE logs_2026_02 PARTITION OF logs
+  FOR VALUES FROM ('2026-02-01') TO ('2026-03-01');
+DROP TABLE logs_2026_01;   -- instant retention, vs. a slow DELETE
+
+CREATE EXTENSION pg_trgm;    -- similarity()/% fuzzy match, gin_trgm_ops
+CREATE EXTENSION pgcrypto;   -- crypt()/gen_salt() password hashing`}</GuideCode>
+        <GuideRules
+          items={[
+            'A view runs with its OWNER\'s privileges by default — verified this silently bypasses even FORCE ROW LEVEL SECURITY. security_invoker = true (PG15+) is the fix.',
+            'REFRESH ... CONCURRENTLY diffs old vs. new row-by-row, so it needs a unique index to match rows between them — verified error names the fix directly.',
+            'RANGE partitioning prunes by predicate and turns bulk retention into DROP TABLE; LIST for a known discrete set; HASH only for spreading write/vacuum load, not pruning.',
+            'gen_random_uuid() has been CORE since PG13 — verified it still works with pgcrypto dropped. Reach for pgcrypto for hashing/encryption, uuid-ossp only for v1/v3/v5 UUID variants.',
           ]}
         />
       </GuidePanel>

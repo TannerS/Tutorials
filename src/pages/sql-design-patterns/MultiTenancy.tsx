@@ -11,7 +11,7 @@ export default function MultiTenancy() {
       sectionId="sql-design-patterns"
       lessonIndex={3}
       prev={{ path: '/sql-design-patterns/schema-patterns', label: 'Common Schema Design Patterns' }}
-      next={{ path: '/sql-advanced/transactions', label: 'Transactions & Locking' }}
+      next={{ path: '/sql-design-patterns/json', label: 'JSON, JSONB & Full-Text Search' }}
     >
       <p>
         Two schema-level decisions that are painful to reverse once you're in production: how you

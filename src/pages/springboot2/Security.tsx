@@ -9,8 +9,8 @@ function SpringBoot2Security() {
     <LessonLayout
       title="Security the Boot 2 Way"
       sectionId="springboot2"
-      lessonIndex={2}
-      prev={{ path: '/springboot2/javax', label: 'The javax World — Namespace, JPA, Servlets' }}
+      lessonIndex={4}
+      prev={{ path: '/springboot2/rest', label: 'Building REST APIs' }}
       next={{ path: '/springboot2/data', label: 'Spring Data & JPA on Hibernate 5' }}
     >
       <p>

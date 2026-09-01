@@ -104,20 +104,73 @@ Postgres/T-SQL, Spring Boot 2/4.
       protocol that doesn't exist in npm (Yarn/pnpm-only), and a double-
       submit bug in a React `Effects.tsx` code sample.
 
+- [x] **3** — Spring Boot 2 brought to full parity with Boot 4: added DI &
+      IoC, Building REST APIs, Error Handling & Validation, Transactions
+      Deep-Dive, Kafka, AOP & Interceptors, WebFlux, Resilience4j &
+      Circuit Breakers, and Observability (9 new lessons, all built against
+      real Spring Boot 2.7.18 / Spring Framework 5.3.31 / Hibernate
+      5.6.15.Final / javax namespace, verified via javap bytecode
+      decompilation, Maven Central BOM diffs, and live-container testing —
+      not asserted from memory). Section grew from 8 to 18 content lessons
+      + field guide (19 total). Existing lessons (Javax, Security, Data,
+      Config, Testing, Actuator, Migration) renumbered and re-linked into
+      the new prev/next chain.
+- [x] **4** — Spring Boot 2 field guide expanded from 12 to 21 panels,
+      covering all 9 new lessons (panel 12's Section Index rewritten to
+      list all 18 lessons).
+- [x] **8** — `src/pages/react18/AgGrid.tsx` added as the last lesson in
+      React 18 (Core), covering AG Grid v36.1.0 (verified current),
+      `ag-grid-community`/`ag-grid-react`/`ag-grid-enterprise`, the
+      Theming API (`themeQuartz` etc.) vs legacy CSS-import themes, and
+      `AgGridProvider` (added v35.1). React 18 Field Guide grew from 26 to
+      27 panels to cover it; `Portals.tsx`'s `next` repointed from `null`.
+- [x] **9** — React Router v5 (Classic) and v8 (Current) built as complete,
+      fully separate 9-lesson sections (Setup, Nested Routes, Data,
+      Guards, Advanced, Testing, Full App, a version-specific closer
+      lesson, field guide) — real APIs, not relabels. v5 verified against
+      `react-router-dom@5.3.4` (Switch/Route, prefix matching, no
+      Outlet/loaders, useHistory/useRouteMatch, withRouter). v8 verified
+      live: `react-router-dom` is fully removed (no v8 was ever published
+      to it — npm `latest` frozen at 7.18.3), middleware always-on,
+      `data`→`loaderData` field rename, Node 22.22+/React 19.2.7+/Vite 7+,
+      ESM-only, no official v7→v8 codemod. The pre-existing "React Router
+      v6/v7 (Data Router)" section (`react-router`) was left untouched —
+      its own v5→v6→v7→v8 migration narrative already covers that ground
+      and isn't in conflict with the two new sibling sections.
+- [x] **12** — Postgres coverage extended with two new lessons closing the
+      gap against T-SQL's completeness: `sql-design-patterns/Json.tsx`
+      (JSON vs JSONB, operators, GIN indexing, full-text search) and
+      `sql-design-patterns/Views.tsx` (views, materialized views, RANGE/
+      LIST/HASH partitioning, real extensions — pg_trgm, pgcrypto,
+      pg_stat_statements). Both verified against a live `postgres:18`
+      Docker container (current stable major). Two real corrections
+      surfaced and were written up rather than glossed over: (1)
+      `gen_random_uuid()` has been core since Postgres 13 — no extension
+      needed, contradicting the common pgcrypto/uuid-ossp assumption; (2)
+      views run with their **owner's** privileges by default, silently
+      bypassing even `FORCE ROW LEVEL SECURITY` from the Multi-Tenancy
+      lesson — flagged in a danger `InfoBox` with the PG15+
+      `security_invoker = true` fix. Shared field guide
+      (`sql-advanced/FieldGuide.tsx`) grew from 19 to 21 panels.
+      `sql-fundamentals` stays generic/portable per the settled decision;
+      `tsql` stays complete and separate, untouched.
+- [x] **10** — every field guide touched by this round of version-split
+      work was regenerated in the same pass its section changed (React 18:
+      26→27, Spring Boot 2: 12→21, PostgreSQL/`sql-advanced`: 19→21, plus
+      the brand-new React Router v5 and v8 field guides built alongside
+      their sections). PDF regeneration (`dist-pdf/`) is still open —
+      `dist-pdf/` doesn't exist locally right now and needs a full
+      `node scripts/build-pdf.mjs --combined --dark` (or equivalent) run
+      once this content is committed.
+
 ## Remaining
 
-- [ ] **3** — Spring Boot 2 to full parity: mirror Boot 4's DI, REST, Data,
-      Testing, Config, Error Handling, Transactions, Kafka, AOP, WebFlux,
-      Resilience4j, Observability for Boot 2 APIs (~10 new lessons)
-- [ ] **4** — Spring Boot 2 field guide (falls out of the parity work)
-- [ ] **8** — new lesson on AG Grid (github.com/ag-grid/ag-grid) for React
-- [ ] **9** — React Router: complete v5 section and complete v8 section.
-      The section label has been corrected to "React Router v6/v7 (Data Router)"
-      so it no longer overstates what the lessons contain. Building v5 and v8 is
-      a rewrite against each real API, not a relabel.
-- [ ] **10** — regenerate every field guide after the version splits land
-- [ ] **12** — SQL: keep SQL Fundamentals, add a complete PostgreSQL section,
-      keep T-SQL complete and separate
+- [ ] **10 (PDF)** — `dist-pdf/` is empty/missing; regenerate section PDFs
+      (and the combined dark PDF) now that the version-split content has
+      landed: `node scripts/build-pdf.mjs <section> --dark`, or
+      `npm run build:pdf:combined` / `npm run build:pdf:dark` for the
+      whole site. This is a slow Playwright-driven job — run it as its own
+      step, not inline with routine edits.
 
 ## Notes for whoever picks this up
 

@@ -8,7 +8,7 @@ export default function SpringBoot2Cheatsheet() {
       kicker="FIELD GUIDE"
       glyph="🍂"
       tagline="The legacy Boot 2 surface — javax, Hibernate 5, WebSecurityConfigurerAdapter — mapped straight across to what replaced each piece."
-      meta={['Spring Boot 2.7.18', 'javax / Hibernate 5 era', '12 panels']}
+      meta={['Spring Boot 2.7.18', 'javax / Hibernate 5 era', '21 panels']}
       page="1 / 1"
       footer="Every version number here was verified against real jars — see the individual lessons for the commands that produced them."
       prev={{ path: '/springboot2/migration', label: 'Migrating 2 → 3 → 4, In Order' }}
@@ -174,19 +174,155 @@ Hibernate 6.1   that constant is GONE — only DEF_SEQUENCE_SUFFIX = "_SEQ"
       </GuidePanel>
 
       <GuidePanel n={12} title="Section Index" accent="pink" glyph="📖" span={2}>
-        <GuideCode>{`1. Spring Boot 2 in 2026: Where It Stands   support status, version ID
-2. The javax World                          the namespace change
-3. Security the Boot 2 Way                  WebSecurityConfigurerAdapter
-4. Spring Data & JPA on Hibernate 5         ID generators, property moves
-5. Configuration & Properties That Moved    renames, properties-migrator
-6. Testing in Boot 2                        @MockBean and the slices
-7. Actuator & Metrics Before the Rename     httptrace -> httpexchanges
-8. Migrating 2 -> 3 -> 4, In Order          the ordered path
-9. This field guide
+        <GuideCode>{`0.  Spring Boot 2 in 2026: Where It Stands   support status, version ID
+1.  The javax World                          the namespace change
+2.  Dependency Injection & IoC               what actually didn't change
+3.  Building REST APIs                       javax.validation, no ProblemDetail
+4.  Security the Boot 2 Way                  WebSecurityConfigurerAdapter
+5.  Spring Data & JPA on Hibernate 5         ID generators, property moves
+6.  Configuration & Properties That Moved    renames, properties-migrator
+7.  Error Handling & Validation              ApiError DTO, include-message
+8.  Testing in Boot 2                        @MockBean and the slices
+9.  Transactions Deep-Dive                   self-invocation, protected methods
+10. Kafka in Spring Boot 2                   spring-kafka 2.8.11, DLTs
+11. AOP & Interceptors                       CGLIB proxy rules, spring-retry
+12. Reactive Programming with WebFlux        Mono/Flux, R2DBC, no virtual threads
+13. Resilience4j & Circuit Breakers          Hystrix's shadow, aspect order
+14. Observability                            no Observation API, Sleuth
+15. Actuator & Metrics Before the Rename     httptrace -> httpexchanges
+16. Migrating 2 -> 3 -> 4, In Order          the ordered path
+17. This field guide
 
 For the far side of the migration see Spring Boot 4:
   /springboot/security-migration   Security 5/6 -> 7 in detail
   /springboot/boot4                what Boot 4 adds over Boot 3`}</GuideCode>
+      </GuidePanel>
+
+      <GuidePanel n={13} title="DI & IoC — What's Actually Different" accent="cyan" glyph="🧵">
+        <GuideDefs
+          items={[
+            ['@PostConstruct/@PreDestroy', 'still javax.annotation on 2.7 — the jakarta.annotation-api:1.3.5 jar ships javax/* classes inside'],
+            ['@MockBean, not @MockitoBean', '@MockitoBean is Framework 6.2+ — absent from spring-test 5.3.31'],
+            ['circular refs', 'refused by default since Boot 2.6, not a Boot 3 fix — spring.main.allow-circular-references defaults false on 2.7.18 too'],
+            ['@Bean HTTP client factories', 'return RestTemplate — RestClient is Framework 6.1+'],
+          ]}
+        />
+        <GuideRules items={[
+          'Constructor injection, @Qualifier/@Primary, conditional beans, ObjectProvider — all unchanged since Framework 4.3, five Boot releases before 2.7.',
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={14} title="REST APIs — javax.validation & the Missing ProblemDetail" accent="red" glyph="🌐">
+        <GuideCode>{`import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+// jakarta.validation-api:2.0.2 jar -- javax/* classes inside, same pattern
+// as jakarta.annotation-api:1.3.5. Import javax on Boot 2, always.`}</GuideCode>
+        <GuideRules items={[
+          'ProblemDetail (RFC 7807) is a Framework 6.0 class, absent from spring-web 5.3.31 — hand-roll an ApiError DTO or use ResponseStatusException instead.',
+          'PathPatternParser matchOptionalTrailingSeparator defaults TRUE on 5.3.31 (Boot 2), FALSE on 6.0.13+ (Boot 3+) — a trailing-slash URL that matched pre-upgrade 404s after.',
+          'No @HttpExchange/RestClient (Framework 6.0+) — outbound clients are RestTemplate or Feign (@FeignClient, Spring Cloud).',
+          'springdoc-openapi-ui 1.8.0 (not -starter-webmvc-ui, which needs jakarta.servlet) is the Boot 2-compatible OpenAPI artifact.',
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={15} title="Error Handling & Validation" accent="blue" glyph="🧯">
+        <GuideDefs
+          items={[
+            ['ProblemDetail', 'Framework 6.0+ only — hand-roll an ApiError DTO + @RestControllerAdvice instead'],
+            ['server.error.include-message', 'defaults "never" since Boot 2.3 — hides message/binding errors from the JSON body, not from logs'],
+            ['Bean Validation engine', "Hibernate Validator 6.2.5.Final (BV 2.0, javax.validation) vs Boot 4's 8.x (jakarta.validation) — same ~20 constraint annotations either side"],
+          ]}
+        />
+        <GuideRules items={[
+          "The Exception.class catch-all swallows Spring Security's AccessDeniedException too (403 becomes 500) unless a more specific handler is added first.",
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={16} title="Transactions — Self-Invocation, and a Real 2-vs-4 Difference" accent="purple" glyph="💳" span={2}>
+        <GuideCode>{`this.doWork() from inside the bean -> BYPASSES the proxy, @Transactional
+silently ignored. Same rule on every version.
+
+VERIFIED live -- protected/package-private @Transactional methods:
+  spring-tx 5.3.31 (Boot 2.7)  ->  active=false   (CGLIB advises PUBLIC only)
+  spring-tx 6.0.14 (Boot 3+)   ->  active=true    (protected/package-private too)`}</GuideCode>
+        <GuideRules items={[
+          "UnexpectedRollbackException: REQUIRED joins the same physical tx — a caught-and-swallowed exception downstream still marks it rollback-only.",
+          "Never do HTTP/Kafka I/O inside @Transactional — it holds a pooled DB connection for the call's duration and exhausts the pool under load.",
+          "javax.transaction.Transactional (JTA) still works via JtaTransactionAnnotationParser but has no isolation/readOnly/timeout/NESTED — a tell it should convert to Spring's own annotation.",
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={17} title="Kafka in Spring Boot 2" accent="green" glyph="📨" span={2}>
+        <GuideDefs
+          items={[
+            ['spring-kafka / kafka-clients', '2.8.11 / 3.1.2 on Boot 2.7.18 vs 4.1.1 / 4.2.1 on Boot 4.1.1'],
+            ['KafkaTemplate.send()', 'returns ListenableFuture on 2.8.11 — CompletableFuture only from spring-kafka 3.0.0+'],
+            ['DefaultErrorHandler', 'already in 2.8.11 (replaced SeekToCurrentErrorHandler back in 2.8, 2021) — not a Boot 3 upgrade'],
+            ['idempotent producer', "dedupes only the producer's OWN retries, not real exactly-once — assume at-least-once, make handlers idempotent"],
+          ]}
+        />
+        <GuideRules items={[
+          "max.poll.interval.ms (default 5 min), not the heartbeat, is what a slow handler blows through — triggers the rebalance-storm death spiral.",
+          "Kafka 4.0 dropped ZooKeeper mode entirely (KRaft-only) — a client-library fact, independent of Boot/Spring version.",
+          "Cross-system atomicity: transactional outbox (domain row + outbox row in one DB tx, relayed separately), not a Kafka transaction spanning your DB.",
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={18} title="AOP & Interceptors" accent="amber" glyph="🎯">
+        <GuideDefs
+          items={[
+            ['CGLIB proxy advises', 'public, protected, package-visible — never private or final (same on 5.3 and 7.x)'],
+            ['spring-retry 1.3.4 (Boot 2.7.18)', "@Retryable has value/include/exclude — retryFor/noRetryFor/notRecoverable are a LATER release and won't compile"],
+          ]}
+        />
+        <GuideRules items={[
+          "Same self-invocation rule as @Transactional — this.method() bypasses the proxy for any AOP-driven annotation (@Retryable, @Async, a custom @Aspect).",
+          "spring.aop.auto / spring.aop.proxy-target-class both default true on Boot 2.7 — AopAutoConfiguration adds @EnableAspectJAutoProxy for you.",
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={19} title="WebFlux — Reactive on Boot 2" accent="pink" glyph="🌊" span={2}>
+        <GuideDefs
+          items={[
+            ['shipped in', 'Boot 2.0 / Framework 5.0 (March 2018) — not a Boot 3/4 feature'],
+            ['reactor-core', '3.4.34 (Boot 2.7.18) vs 3.8.7 (Boot 4.1.1) — Mono/Flux/map/flatMap/subscribe API unchanged across the gap'],
+            ['spring.threads.virtual.enabled', "does NOT exist in Boot 2.7's metadata — Boot 3.2+ only; Boot 2.7.18 itself supports JDK up to 21, just with no autoconfigured flag"],
+            ['R2DBC entities', '@Table/@Id from org.springframework.data.* — never touched javax.persistence or jakarta.persistence, on any Boot version'],
+          ]}
+        />
+        <GuideRules items={[
+          "RestClient doesn't exist (Framework 6.1+) — reactive code uses WebClient (5.0+); blocking code still only has RestTemplate.",
+          "WebFlux does not make JPA non-blocking — running Hibernate from a handler stalls one of only 4-8 event-loop threads. Needs R2DBC for a truly non-blocking data layer.",
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={20} title="Resilience4j & Circuit Breakers" accent="cyan" glyph="🔌">
+        <GuideDefs
+          items={[
+            ['artifact', 'resilience4j-spring-boot2 (not -boot3) — pulls resilience4j-annotations 2.3.0, missing only the newer configuration() attribute added in 2.4.0'],
+            ['may find instead', 'Hystrix — Netflix maintenance-mode since Nov 2018, but spring-cloud-starter-netflix-hystrix shipped until 2021-11-17; still works, no further releases'],
+            ['default aspect nesting', 'Retry( CircuitBreaker( RateLimiter( TimeLimiter( Bulkhead( Function ) ) ) ) ) — Retry outermost, so each retry re-enters and re-trips the breaker'],
+          ]}
+        />
+        <GuideRules items={[
+          "@CircuitBreaker/@Retry/@RateLimiter/@Bulkhead live in resilience4j-annotations, a plain-Java module with zero Spring-version coupling — safe to add on Boot 2 now.",
+          "limitRefreshPeriod has no sane default (500 nanoseconds) — always set it explicitly or the rate limiter limits nothing.",
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={21} title="Observability — No Observation API on Boot 2.7" accent="red" glyph="📊" span={2}>
+        <GuideDefs
+          items={[
+            ['Micrometer', "1.9.17 (Boot 2.7.18) vs 1.10.13 (Boot 3.0.13) — 1.10 added the Observation API; micrometer-observation 1.9.17 404s, it doesn't exist"],
+            ['bumping micrometer.version', 'does NOT get you Observation — spring-boot-actuator-autoconfigure 2.7.18 ships ZERO ObservationAutoConfiguration classes (Boot 3.0.13 ships 5)'],
+            ['tracing', 'Spring Cloud Sleuth (Brave) + spring-cloud-sleuth-zipkin — a SEPARATE BOM you version-pair yourself; last Sleuth release Feb 2024'],
+            ['log correlation', "Sleuth's TraceEnvironmentPostProcessor sets logging.pattern.level and populates MDC traceId/spanId — same MDC keys Micrometer Tracing uses on Boot 3+"],
+          ]}
+        />
+        <GuideRules items={[
+          "MeterRegistry/Counter/Timer/Gauge (Micrometer core) are portable as-is — what's missing is the unifying Observation call, not metrics themselves.",
+          "On Boot 2.7 a metric and a span for the same operation are two separate hand-written calls with nothing enforcing they agree.",
+        ]} />
       </GuidePanel>
     </GuideLayout>
   );

@@ -9,7 +9,7 @@ function SpringBoot2Data() {
     <LessonLayout
       title="Spring Data & JPA on Hibernate 5"
       sectionId="springboot2"
-      lessonIndex={3}
+      lessonIndex={5}
       prev={{ path: '/springboot2/security', label: 'Security the Boot 2 Way' }}
       next={{ path: '/springboot2/config', label: 'Configuration & Properties That Moved' }}
     >

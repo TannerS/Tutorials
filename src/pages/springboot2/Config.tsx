@@ -9,9 +9,9 @@ function SpringBoot2Config() {
     <LessonLayout
       title="Configuration & Properties That Moved"
       sectionId="springboot2"
-      lessonIndex={4}
+      lessonIndex={6}
       prev={{ path: '/springboot2/data', label: 'Spring Data & JPA on Hibernate 5' }}
-      next={{ path: '/springboot2/testing', label: 'Testing in Boot 2 — @MockBean and Friends' }}
+      next={{ path: '/springboot2/error', label: 'Error Handling & Validation' }}
     >
       <p>
         Configuration is the part of a Boot 2 upgrade that <em>does not fail at compile time</em>.

@@ -9,7 +9,7 @@ function SpringBoot2Migration() {
     <LessonLayout
       title="Migrating 2 → 3 → 4, In Order"
       sectionId="springboot2"
-      lessonIndex={7}
+      lessonIndex={16}
       prev={{ path: '/springboot2/actuator', label: 'Actuator & Metrics Before the Rename' }}
       next={{ path: '/springboot2/cheatsheet', label: '📋 Spring Boot 2 Cheat Sheet' }}
     >

@@ -42,10 +42,19 @@ import SpringResilience from './pages/springboot/Resilience'
 import SpringCheatsheet from './pages/springboot/Cheatsheet'
 import SB2Intro from './pages/springboot2/Intro'
 import SB2Javax from './pages/springboot2/Javax'
+import SB2Di from './pages/springboot2/Di'
+import SB2Rest from './pages/springboot2/Rest'
 import SB2Security from './pages/springboot2/Security'
 import SB2Data from './pages/springboot2/Data'
 import SB2Config from './pages/springboot2/Config'
+import SB2Error from './pages/springboot2/Error'
 import SB2Testing from './pages/springboot2/Testing'
+import SB2Transactions from './pages/springboot2/Transactions'
+import SB2Kafka from './pages/springboot2/Kafka'
+import SB2Aop from './pages/springboot2/Aop'
+import SB2Webflux from './pages/springboot2/Webflux'
+import SB2Resilience from './pages/springboot2/Resilience'
+import SB2Observability from './pages/springboot2/Observability'
 import SB2Actuator from './pages/springboot2/Actuator'
 import SB2Migration from './pages/springboot2/Migration'
 import SB2Cheatsheet from './pages/springboot2/Cheatsheet'
@@ -79,6 +88,7 @@ import ReactFeatureFolder from './pages/react18/FeatureFolder'
 import ReactErrorBoundaries from './pages/react18/ErrorBoundaries'
 import ReactAnimations from './pages/react18/Animations'
 import ReactPortals from './pages/react18/Portals'
+import ReactAgGrid from './pages/react18/AgGrid'
 
 // SQL Fundamentals
 import SqlQuickstart from './pages/sql-fundamentals/Quickstart'
@@ -90,6 +100,8 @@ import SqlDesign from './pages/sql-design-patterns/Design'
 import SqlIndexing from './pages/sql-design-patterns/Indexing'
 import SqlSchemaPatterns from './pages/sql-design-patterns/SchemaPatterns'
 import SqlMultiTenancy from './pages/sql-design-patterns/MultiTenancy'
+import SqlJson from './pages/sql-design-patterns/Json'
+import SqlViews from './pages/sql-design-patterns/Views'
 
 // SQL Advanced
 import SqlTransactions from './pages/sql-advanced/Transactions'
@@ -287,6 +299,15 @@ import JsEs2017 from './pages/javascript/Es2017'
 import JsCheatsheet from './pages/javascript/Cheatsheet'
 
 // React Router v7
+import RRv5Intro from './pages/react-router-v5/Intro'
+import RRv5Nested from './pages/react-router-v5/Nested'
+import RRv5Data from './pages/react-router-v5/Data'
+import RRv5Guards from './pages/react-router-v5/Guards'
+import RRv5Advanced from './pages/react-router-v5/Advanced'
+import RRv5Testing from './pages/react-router-v5/Testing'
+import RRv5Fullapp from './pages/react-router-v5/Fullapp'
+import RRv5Legacy from './pages/react-router-v5/Legacy'
+import RRv5Cheatsheet from './pages/react-router-v5/Cheatsheet'
 import RRIntro from './pages/react-router/Intro'
 import RRNested from './pages/react-router/Nested'
 import RRData from './pages/react-router/Data'
@@ -296,6 +317,15 @@ import RRTesting from './pages/react-router/Testing'
 import RRFullapp from './pages/react-router/Fullapp'
 import RRMigration from './pages/react-router/Migration'
 import RRCheatSheet from './pages/react-router/CheatSheet'
+import RRv8Intro from './pages/react-router-v8/Intro'
+import RRv8Nested from './pages/react-router-v8/Nested'
+import RRv8Data from './pages/react-router-v8/Data'
+import RRv8Guards from './pages/react-router-v8/Guards'
+import RRv8Advanced from './pages/react-router-v8/Advanced'
+import RRv8Testing from './pages/react-router-v8/Testing'
+import RRv8Fullapp from './pages/react-router-v8/Fullapp'
+import RRv8Migration from './pages/react-router-v8/Migration'
+import RRv8Cheatsheet from './pages/react-router-v8/Cheatsheet'
 
 // State Management
 import SMIntro from './pages/state-mgmt/Intro'
@@ -476,10 +506,19 @@ function App() {
         <Route path="springboot/cheatsheet" element={<SpringCheatsheet />} />
         <Route path="springboot2/intro" element={<SB2Intro />} />
         <Route path="springboot2/javax" element={<SB2Javax />} />
+        <Route path="springboot2/di" element={<SB2Di />} />
+        <Route path="springboot2/rest" element={<SB2Rest />} />
         <Route path="springboot2/security" element={<SB2Security />} />
         <Route path="springboot2/data" element={<SB2Data />} />
         <Route path="springboot2/config" element={<SB2Config />} />
+        <Route path="springboot2/error" element={<SB2Error />} />
         <Route path="springboot2/testing" element={<SB2Testing />} />
+        <Route path="springboot2/transactions" element={<SB2Transactions />} />
+        <Route path="springboot2/kafka" element={<SB2Kafka />} />
+        <Route path="springboot2/aop" element={<SB2Aop />} />
+        <Route path="springboot2/webflux" element={<SB2Webflux />} />
+        <Route path="springboot2/resilience" element={<SB2Resilience />} />
+        <Route path="springboot2/observability" element={<SB2Observability />} />
         <Route path="springboot2/actuator" element={<SB2Actuator />} />
         <Route path="springboot2/migration" element={<SB2Migration />} />
         <Route path="springboot2/cheatsheet" element={<SB2Cheatsheet />} />
@@ -512,6 +551,7 @@ function App() {
         <Route path="react18/error-boundaries" element={<ReactErrorBoundaries />} />
         <Route path="react18/animations" element={<ReactAnimations />} />
         <Route path="react18/portals" element={<ReactPortals />} />
+        <Route path="react18/ag-grid" element={<ReactAgGrid />} />
         {/* SQL */}
         <Route path="sql-fundamentals/quickstart" element={<SqlQuickstart />} />
         <Route path="sql-fundamentals/joins" element={<SqlJoins />} />
@@ -520,6 +560,8 @@ function App() {
         <Route path="sql-design-patterns/indexing" element={<SqlIndexing />} />
         <Route path="sql-design-patterns/schema-patterns" element={<SqlSchemaPatterns />} />
         <Route path="sql-design-patterns/multi-tenancy" element={<SqlMultiTenancy />} />
+        <Route path="sql-design-patterns/json" element={<SqlJson />} />
+        <Route path="sql-design-patterns/views" element={<SqlViews />} />
         <Route path="sql-advanced/transactions" element={<SqlTransactions />} />
         <Route path="sql-advanced/cte" element={<SqlCte />} />
         <Route path="sql-advanced/stored-procedures" element={<SqlStoredProcedures />} />
@@ -686,6 +728,15 @@ function App() {
         <Route path="javascript/es2017" element={<JsEs2017 />} />
         <Route path="javascript/cheatsheet" element={<JsCheatsheet />} />
         {/* React Router v7 */}
+        <Route path="react-router-v5/intro" element={<RRv5Intro />} />
+        <Route path="react-router-v5/nested" element={<RRv5Nested />} />
+        <Route path="react-router-v5/data" element={<RRv5Data />} />
+        <Route path="react-router-v5/guards" element={<RRv5Guards />} />
+        <Route path="react-router-v5/advanced" element={<RRv5Advanced />} />
+        <Route path="react-router-v5/testing" element={<RRv5Testing />} />
+        <Route path="react-router-v5/fullapp" element={<RRv5Fullapp />} />
+        <Route path="react-router-v5/legacy" element={<RRv5Legacy />} />
+        <Route path="react-router-v5/cheatsheet" element={<RRv5Cheatsheet />} />
         <Route path="react-router/intro" element={<RRIntro />} />
         <Route path="react-router/nested" element={<RRNested />} />
         <Route path="react-router/data" element={<RRData />} />
@@ -695,6 +746,15 @@ function App() {
         <Route path="react-router/fullapp" element={<RRFullapp />} />
         <Route path="react-router/migration" element={<RRMigration />} />
         <Route path="react-router/cheatsheet" element={<RRCheatSheet />} />
+        <Route path="react-router-v8/intro" element={<RRv8Intro />} />
+        <Route path="react-router-v8/nested" element={<RRv8Nested />} />
+        <Route path="react-router-v8/data" element={<RRv8Data />} />
+        <Route path="react-router-v8/guards" element={<RRv8Guards />} />
+        <Route path="react-router-v8/advanced" element={<RRv8Advanced />} />
+        <Route path="react-router-v8/testing" element={<RRv8Testing />} />
+        <Route path="react-router-v8/fullapp" element={<RRv8Fullapp />} />
+        <Route path="react-router-v8/migration" element={<RRv8Migration />} />
+        <Route path="react-router-v8/cheatsheet" element={<RRv8Cheatsheet />} />
         {/* State Management */}
         <Route path="state-mgmt/intro" element={<SMIntro />} />
         <Route path="state-mgmt/comparison" element={<SMComparison />} />
