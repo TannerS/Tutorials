@@ -94,7 +94,7 @@ npm publish -w packages/utils`}
   "name": "@myorg/ui",
   "version": "1.0.0",
   "dependencies": {
-    "@myorg/utils": "workspace:*"
+    "@myorg/utils": "^1.0.0"
   }
 }
 
@@ -104,19 +104,32 @@ npm publish -w packages/utils`}
   "version": "1.0.0"
 }
 
-// When you npm install at root:
+// When you npm install at root, npm checks the "workspaces" field in the
+// root package.json, sees @myorg/utils is a local workspace package, and
+// links it there INSTEAD of fetching it from the registry:
 // - @myorg/ui gets a symlink to packages/utils
 // - Changes to utils are immediately visible to ui
 // - No need to rebuild or re-install between changes
 
-// "workspace:*" protocol:
-// workspace:*      → any version (resolves to current)
-// workspace:^1.0.0 → must satisfy range
-// workspace:~1.0.0 → must satisfy range
-
-// When publishing, "workspace:*" is replaced with the actual version:
-// "workspace:*" → "^1.0.0" (the current version of @myorg/utils)`}
+// Just use a normal semver range ("^1.0.0", "*", etc.) — npm figures out
+// on its own that the range is satisfied by a local workspace and links it.
+// There is no special protocol keyword to opt into this in npm.`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="No 'workspace:*' Protocol in npm">
+        Yarn and pnpm support a <code>workspace:*</code> / <code>workspace:^1.0.0</code> dependency
+        protocol that explicitly pins a dependency to a local workspace package. <strong>npm does
+        not support this protocol</strong> — writing <code>"@myorg/utils": "workspace:*"</code> in
+        a package.json and running <code>npm install</code> fails outright:
+        <code>npm error code EUNSUPPORTEDPROTOCOL</code> /{' '}
+        <code>Unsupported URL Type &quot;workspace:&quot;: workspace:*</code> (verified against
+        npm 11.6.2). In npm, just write an ordinary semver range. npm reads the root
+        <code>"workspaces"</code> field, notices the range is satisfied by a package that lives in
+        one of those workspace folders, and symlinks it there automatically — no keyword needed.
+        If you're using Yarn or pnpm instead, <code>workspace:*</code> is real and does something
+        similar (with the added benefit of failing loudly if a workspace package doesn't exist,
+        rather than silently falling back to the registry).
+      </InfoBox>
 
       <InfoBox variant="info" title="Workspaces Use Symlinks">
         When workspace A depends on workspace B, npm creates a symlink in A's node_modules
@@ -476,15 +489,15 @@ npx bundlephobia-cli my-package`}
       </InfoBox>
 
       <InteractiveChallenge
-        question={"In an npm workspace, what does 'workspace:*' mean in a dependency declaration?"}
+        question={"In an npm workspace, package A depends on \"@myorg/utils\": \"^1.0.0\", and @myorg/utils also happens to be a local workspace package. What does npm install do?"}
         options={[
-          "Install any version from the public registry",
-          "Link to the local workspace package, and replace with the real version when publishing",
-          "Always use the latest pre-release version",
-          "Skip installing this dependency"
+          "Fails with EUNSUPPORTEDPROTOCOL because ^1.0.0 isn't the workspace protocol",
+          "Fetches @myorg/utils from the public registry, ignoring the local copy",
+          "Symlinks A's node_modules/@myorg/utils to the local workspace package, since the range is satisfied by it",
+          "Only works if you add \"workspace:*\" instead of a semver range"
         ]}
-        correctIndex={1}
-        explanation="The 'workspace:*' protocol tells npm to resolve this dependency to the local workspace package (via symlink). When you publish the package, npm automatically replaces 'workspace:*' with the actual current version (like '^1.2.3'), so consumers get a normal version range in the published package.json."
+        correctIndex={2}
+        explanation="npm has no 'workspace:*' protocol — that's a Yarn/pnpm-only feature, and using it in npm actually fails with EUNSUPPORTEDPROTOCOL. In npm you just write an ordinary semver range. npm reads the root package.json's 'workspaces' field, sees the range is satisfied by a package that lives in one of those workspace folders, and symlinks it there automatically instead of hitting the registry."
       />
 
       <InteractiveChallenge
@@ -502,7 +515,8 @@ npx bundlephobia-cli my-package`}
       <h2>Key Takeaways</h2>
       <ul>
         <li>npm workspaces enable monorepo development with shared node_modules and single lockfile</li>
-        <li><code>workspace:*</code> creates symlinks between local packages; replaced with real versions on publish</li>
+        <li>An ordinary semver range (like <code>^1.0.0</code>) between workspace packages is enough — npm
+          symlinks it automatically; <code>workspace:*</code> is a Yarn/pnpm protocol, not npm's</li>
         <li>Internal packages use <code>private: true</code> and can point <code>main</code> directly at source</li>
         <li>Design packages with single responsibility, minimal deps, and named exports</li>
         <li>Always ship TypeScript declarations and mark <code>sideEffects: false</code> for tree-shaking</li>

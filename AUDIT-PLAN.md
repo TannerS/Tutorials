@@ -19,7 +19,7 @@ compared to losing track of what's left.
       state-basics, state-context, state-zustand, react-query, react-testing, react-router
 - [x] **C — Frontend languages**: typescript, javascript, css-mastery, mui, mui9
 - [x] **D — Database**: sql-fundamentals, sql-design-patterns, sql-advanced, tsql
-- [ ] **E — Dev fundamentals & tooling**: dsa, version-control, frontend-tooling,
+- [x] **E — Dev fundamentals & tooling**: dsa, version-control, frontend-tooling,
       npm-deep-dive, npm-packages, accessibility
 - [ ] **F — Architecture & design**: solid, patterns, ddd, systemdesign, microservices,
       cloud-architecture, observability, apidesign, api-testing
@@ -256,5 +256,71 @@ learners-advocate — 11 findings, all fixed or addressed:
   ISNULL rewrite pitfall from the fact-checker finding above), rather than
   all 9 files, to keep effort proportional to a "minor/informational"
   finding.
+
+Verified: tsc --noEmit clean, vite build clean, eslint clean.
+
+### Phase E — Dev fundamentals & tooling (done)
+
+Note: the machine went to sleep again during this phase, killing this
+phase's review agents mid-run more than once; retried successfully each
+time.
+
+fact-checker — 5 findings, most notably a real npm bug, fixed:
+- **Real bug, verified by actually triggering it**: `npm-packages/Advanced.tsx`
+  taught a `"workspace:*"` protocol for npm workspace dependencies — this is
+  Yarn/pnpm-only. `npm install` with that exact syntax fails with
+  `EUNSUPPORTEDPROTOCOL`. Fixed to the real npm behavior (an ordinary semver
+  range, which npm auto-resolves/symlinks based on the `workspaces` field) —
+  including the InteractiveChallenge, which had been reinforcing the wrong
+  answer as correct.
+- `dsa/LinkedLists.tsx` claimed ArrayList uses a "doubling strategy," directly
+  contradicting `dsa/Complexity.tsx`'s own reflection-measured 1.5× growth
+  factor in the same section — fixed to match.
+- 3 lower-confidence findings also fixed: a stale Renovate config key
+  (`matchPackagePatterns` → `matchPackageNames`), a stale pnpm-lock.yaml
+  format example, and an imprecise reftable claim in
+  `version-control/Internals.tsx`.
+
+version-sentinel — 5 findings, all fixed:
+- Stale `actions/checkout@v4`/`actions/setup-node@v4` pins (current: v7)
+  across `frontend-tooling/Linting.tsx`, `Monorepos.tsx`,
+  `npm-deep-dive/Security.tsx`, `npm-packages/Publishing.tsx`, and
+  `accessibility/Testing.tsx` — also found and fixed 2 more instances in
+  already-committed files from earlier phases
+  (`typescript/Migration.tsx`, `react-testing/Patterns.tsx`).
+- `frontend-tooling/Webpack.tsx` claimed webpack "is still the default" in
+  Next.js/Angular — both flipped to Turbopack/esbuild defaults in 2025/2023
+  respectively; fixed to describe it as the legacy option instead.
+- `accessibility/Testing.tsx`: an internal contradiction (its own commented CI
+  YAML used the `eslint --ext` flag that `frontend-tooling/Vite.tsx`'s own
+  InfoBox says is now a hard error under flat config) — fixed; also added a
+  jest-axe-under-Vitest compatibility caveat.
+- `version-control/Branching.tsx` taught only `git checkout` with no mention
+  that `git switch`/`git restore` graduated from experimental in Git 2.51 —
+  added a caveat (didn't rewrite the lesson's primary commands).
+
+learners-advocate — 6 findings, all fixed:
+- `dsa/Complexity.tsx` (lesson 0) introduced formal O/Ω/Θ notation with no
+  worked numeric example, and Θ/Ω notation is essentially unused in every
+  later lesson — added a worked example and an upfront note that O() is
+  what the rest of the course actually uses.
+- `dsa/Graphs.tsx`'s Dijkstra section had a thinner explanation than every
+  other subtlety in the same lesson for why PQ entries can go stale — fixed.
+- `dsa/LinkedLists.tsx`'s node-deletion "trick question" had no diagram
+  despite the same lesson using two for ordinary insertion — added one.
+- `frontend-tooling/Vite.tsx` and `Webpack.tsx` used "bundler" and
+  "tree-shaking" before either term is defined anywhere in the section —
+  added definitions/forward-pointers at first use.
+- Two redundant-content pairs (npm/yarn/pnpm comparison in
+  `frontend-tooling/Packages.tsx` vs `npm-deep-dive/Intro.tsx`; "what gets
+  published" in `npm-deep-dive/NodeModules.tsx` vs
+  `npm-packages/Anatomy.tsx`) — added cross-references naming what's
+  actually new in the later occurrence, same pattern as Phase C's
+  css-mastery fix.
+
+version-control and accessibility came back with zero findings from
+learners-advocate — already well-paced and diagrammed.
+
+Verified: tsc --noEmit clean, vite build clean, eslint clean.
 
 Verified: tsc --noEmit clean, vite build clean, eslint clean.

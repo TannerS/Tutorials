@@ -273,12 +273,22 @@ npm install`}
 # - Most human-readable
 # - Includes importers (workspace info)
 # - Separates packages from their dependency relationships
-# - Example:
+# - Example (lockfileVersion 9.0+, verified against a real "pnpm add express"):
 #   packages:
-#     /express/4.18.2:
+#     express@4.18.2:
 #       resolution: {integrity: sha512-...}
+#       engines: {node: '>= 0.10.0'}
+#   snapshots:
+#     express@4.18.2:
 #       dependencies:
 #         accepts: 1.3.8
+#         ...
+#   # NOTE: older pnpm (lockfileVersion < 9) used a leading/trailing-slash
+#   # key instead: "/express/4.18.2:" with dependencies nested right under
+#   # the package entry — you'll still see that shape in older lockfiles
+#   # that haven't been regenerated, but current pnpm writes bare
+#   # "name@version:" keys and moves the resolved dependency graph into a
+#   # separate "snapshots:" section.
 
 # All three serve the same purpose:
 # Pin exact versions for reproducible installs`}

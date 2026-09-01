@@ -34,11 +34,13 @@ export default function Webpack() {
       <InfoBox variant="note" title="This Site Runs on Vite — So Why Learn Webpack?">
         This tutorial site is itself built with Vite, and if you're starting a project today
         you'd likely reach for Vite (or a framework's built-in tooling) too. But webpack is far
-        from dead: it's still the default or a first-class option in Next.js (pre-Turbopack
-        setups), Create React App's disappearing but still-deployed apps, Angular, and a huge
-        share of existing enterprise codebases that were started before Vite existed. You'll
-        run into a <code>webpack.config.js</code> in a real job long before you'll need to write
-        a novel one from scratch — this lesson gets you to the point where you can do both.
+        from dead: it was the default in Next.js and Angular until Turbopack (Next.js 16, Oct
+        2025) and the esbuild/Vite-based <code>@angular/build</code> application builder
+        (Angular 17, Nov 2023) took over — you'll still meet it in Next.js and Angular projects
+        started before then, Create React App's disappearing but still-deployed apps, and a huge
+        share of existing enterprise codebases that predate Vite. You'll run into a{' '}
+        <code>webpack.config.js</code> in a real job long before you'll need to write a novel one
+        from scratch — this lesson gets you to the point where you can do both.
       </InfoBox>
 
       <h2>Core Concepts</h2>
@@ -108,6 +110,11 @@ No tree-shaking of dead code         Tree-shakes unused exports
 Readable module/chunk names          Shorter, hashed names
 Verbose runtime error messages       React strips dev-only warnings`}
       </CodeBlock>
+
+      <p>
+        <strong>Tree-shaking</strong> here means removing unused exports from the bundle — it's
+        covered in depth in Bundle Analysis & Performance, the last lesson in this section.
+      </p>
 
       <InfoBox variant="warning" title="Mode Is Not Optional">
         If you don't set <code>mode</code>, webpack defaults to <code>'production'</code> and

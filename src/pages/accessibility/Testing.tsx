@@ -186,6 +186,25 @@ const results = await axe(container, {
         hide in dynamic states that only appear after user interaction.
       </InfoBox>
 
+      <InfoBox variant="warning" title="jest-axe Under Vitest — Use vitest-axe Instead">
+        <p>
+          The example above is written for Jest, but the <strong>react-testing</strong> section of
+          this site standardizes on Vitest, not Jest — and <code>jest-axe</code> does not port over
+          cleanly. It assumes Jest&apos;s global <code>expect</code> wiring, and under Vitest&apos;s{' '}
+          <code>happy-dom</code> environment specifically it has known compatibility issues (matcher
+          registration and serialization both behave differently from Jest&apos;s <code>jsdom</code>{' '}
+          setup).
+        </p>
+        <p>
+          The Vitest-native answer is <code>vitest-axe</code> — a maintained fork of jest-axe with
+          the same <code>axe(container)</code> / <code>toHaveNoViolations</code> API, wired for{' '}
+          <code>vi.expect.extend</code> instead of Jest&apos;s global. If you&apos;d rather stay on
+          jest-axe itself, it can still work under <code>jsdom</code> (not <code>happy-dom</code>)
+          with <code>expect.extend</code> wired manually in a setup file — but for a Vitest project,
+          reach for <code>vitest-axe</code> first and save yourself the debugging.
+        </p>
+      </InfoBox>
+
       {/* ── React Testing Library ─────────────────────────── */}
       <h2>React Testing Library — Accessibility-First Queries</h2>
       <p>
@@ -245,7 +264,7 @@ screen.getByRole('heading', { level: 1, name: 'Dashboard' });
 //   lighthouse:
 //     runs-on: ubuntu-latest
 //     steps:
-//       - uses: actions/checkout@v4
+//       - uses: actions/checkout@v7
 //       - run: npm ci && npm run build
 //       - uses: treosh/lighthouse-ci-action@v11
 //         with:
@@ -418,10 +437,10 @@ test.describe('Accessibility', () => {
 //   a11y:
 //     runs-on: ubuntu-latest
 //     steps:
-//       - uses: actions/checkout@v4
+//       - uses: actions/checkout@v7
 //       - run: npm ci
 //       - name: Lint (jsx-a11y)
-//         run: npx eslint src/ --ext .jsx,.tsx
+//         run: npx eslint . --max-warnings 0
 //       - name: Unit tests (jest-axe)
 //         run: npx jest --testPathPattern=a11y
 //       - run: npm run build

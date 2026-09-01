@@ -78,8 +78,32 @@ required
       <p>
         <strong>Big-O describes how an algorithm&apos;s cost grows as the input grows — not how many
         operations it performs for a specific input.</strong> Formally, f(n) = O(g(n)) means there exist
-        positive constants c and n₀ such that f(n) ≤ c·g(n) for every n ≥ n₀. Two things fall out of that
-        definition that casual usage routinely drops:
+        positive constants c and n₀ such that f(n) ≤ c·g(n) for every n ≥ n₀. That reads abstractly until
+        you plug in real numbers, so before going any further: take <strong>f(n) = 3n + 20</strong> and
+        claim it is O(n) — i.e. g(n) = n. The definition says that claim is true only if <em>some</em>{' '}
+        c and n₀ actually make <code>3n + 20 ≤ c·n</code> hold for every n from n₀ onward. Pick{' '}
+        <strong>c = 4</strong> and <strong>n₀ = 20</strong> and check it directly:
+      </p>
+
+      <CodeBlock language="text" title="Checking f(n) = 3n + 20 is O(n), with c = 4 and n₀ = 20">
+{`claim: 3n + 20 <= 4n   for every n >= 20
+     <=>   20 <= n         (subtract 3n from both sides)
+
+n = 20:    3(20) + 20 = 80   <=   4(20) = 80    true (equal — the boundary case)
+n = 30:    3(30) + 20 = 110  <=   4(30) = 120   true
+n = 100:   3(100) + 20 = 320 <=   4(100) = 400  true
+n = 19:    3(19) + 20 = 77   <=   4(19) = 76    FALSE — this is exactly why n0 = 20 is required,
+                                                  not "for all n >= 1"`}
+      </CodeBlock>
+
+      <p>
+        That is the entire proof obligation of &quot;O(n)&quot;, worked with real numbers instead of left
+        abstract: find one constant multiplier (c = 4) and one starting point (n₀ = 20) past which the
+        straight line <code>4n</code> stays on top of <code>3n + 20</code> forever. It doesn&apos;t have to
+        hold for small n (n = 19 fails above, and that&apos;s fine — the definition only requires n ≥ n₀),
+        and c and n₀ are not unique — c = 5, n₀ = 10 also works, and so do infinitely many other pairs. Big-O
+        only claims that <em>at least one</em> such pair exists. Two things fall out of that definition
+        that casual usage routinely drops:
       </p>
 
       <p>
@@ -104,6 +128,20 @@ required
       </p>
 
       <h2>Big-O vs Big-Omega vs Big-Theta</h2>
+
+      <InfoBox variant="tip" title="Read This Before the Table: You Will Almost Never Write Ω or Θ Again">
+        <p>
+          Set expectations up front so the three symbols below don&apos;t feel like three things to
+          memorize equally hard: <strong>every complexity table in every lesson after this one uses plain
+          O() only.</strong> Ω and Θ exist here for completeness and because &quot;what&apos;s the actual
+          difference between O, Ω, and Θ&quot; is a real interview vocabulary question — being able to
+          say &quot;binary search is Θ(log n), not just O(log n), because log n is both an upper{' '}
+          <em>and</em> a lower bound on its worst case&quot; signals real understanding. But day to day,
+          in this course and in the industry, &quot;Big-O&quot; is used loosely to mean &quot;the tight
+          bound,&quot; and nobody will blink if you say O(n log n) instead of Θ(n log n) for merge sort.
+          Learn the distinction once, here — then let it go and use O() like everyone else does.
+        </p>
+      </InfoBox>
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
         <thead>

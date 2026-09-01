@@ -23,9 +23,12 @@ export default function Vite() {
         If you've used Create React App or Webpack, you've felt the pain: slow cold starts,
         sluggish HMR, and config files that rival War and Peace. Vite (French for "fast")
         was created by Evan You to solve these problems by leveraging native ES modules
-        during development and a Rollup-compatible bundler for production builds. As of
-        Vite 8 that bundler is <strong>Rolldown</strong>, and it now handles both halves of
-        the job — see "How Vite Works Under the Hood" below for what changed.
+        during development and a Rollup-compatible bundler for production builds. (A{' '}
+        <strong>bundler</strong> walks your import graph starting from an entry file and
+        produces the deployable files a browser can load — the next lesson,{' '}
+        <em>Webpack: Getting Started</em>, covers that idea in depth.) As of Vite 8 that
+        bundler is <strong>Rolldown</strong>, and it now handles both halves of the job — see
+        "How Vite Works Under the Hood" below for what changed.
       </p>
 
       <InfoBox variant="info" title="CRA Is Dead">
@@ -76,8 +79,10 @@ export default function Vite() {
 
       <h3>Production: Rolldown</h3>
       <p>
-        For production, Vite creates optimized bundles with tree-shaking, code splitting, and
-        asset hashing. Historically that was Rollup. Rolldown — the Rust-based bundler the Vite
+        For production, Vite creates optimized bundles with tree-shaking (removing unused exports
+        from the bundle — covered in depth in Bundle Analysis & Performance, later in this
+        section), code splitting, and asset hashing. Historically that was Rollup. Rolldown —
+        the Rust-based bundler the Vite
         team built to unify esbuild's pre-bundling role and Rollup's build role in one engine —
         shipped as opt-in <code>rolldown-vite</code> during the Vite 6/7 era and became <em>the</em>{' '}
         bundler in Vite 8, for both dev pre-bundling and the production build. CSS minification is

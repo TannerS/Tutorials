@@ -204,26 +204,27 @@ npm config set @mycompany:registry https://npm.mycompany.com/`}
 
       <h2>npm vs yarn vs pnpm</h2>
       <p>
-        All three are package managers that use the same npm registry. They differ in
-        how they manage node_modules and what guarantees they provide:
+        The Frontend Tooling section&apos;s Package Managers lesson has the full
+        feature-by-feature comparison table — speed, disk usage, lockfile format,
+        hoisting strategy, monorepo support — worth a look if you haven&apos;t seen it
+        yet. What&apos;s worth adding here, since this lesson is specifically about the
+        registry: all three are clients of the exact same registry API described above.
+        Choosing between them is entirely about how each manages{' '}
+        <code>node_modules</code> and lockfiles locally on your machine, not about
+        where the packages themselves come from.
       </p>
 
-      <CodeBlock language="bash" title="Quick comparison">
-{`# npm (ships with Node.js)
-# - Flat node_modules with hoisting
-# - package-lock.json
-# - Workspaces support since v7
+      <CodeBlock language="bash" title="The one difference that's structural, not just speed/UX">
+{`# yarn's Plug'n'Play mode is the outlier worth calling out specifically:
+# it skips node_modules entirely and resolves imports straight out of
+# yarn's cache via a generated .pnp.cjs file. That's why a warm-cache
+# "yarn install" can be near-instant, and also why it occasionally
+# breaks tools that assume node_modules literally exists on disk.
 
-# yarn (Facebook, 2016)
-# - yarn.lock (deterministic)
-# - Plug'n'Play mode (no node_modules!)
-# - Faster parallel installs historically
-
-# pnpm (2017, "performant npm")
-# - Content-addressable store (shared across projects)
-# - Strict node_modules via symlinks (no phantom deps)
-# - pnpm-lock.yaml
-# - Fastest install times, smallest disk usage`}
+# npm and pnpm both still write a real node_modules tree — npm's is
+# flat with hoisting, pnpm's is a tree of symlinks into a shared
+# content-addressable store (see the comparison table linked above
+# for exactly how that changes disk usage and phantom-dependency risk).`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="Which Should You Use?">

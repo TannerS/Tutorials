@@ -284,12 +284,18 @@ pnpm update --interactive --latest`}
   "extends": ["config:recommended"],
   "packageRules": [
     {
-      "matchPackagePatterns": ["eslint", "prettier"],
+      // matchPackagePatterns is deprecated/invalid on current Renovate.
+      // matchPackageNames now covers exact names, globs, AND regex —
+      // wrap in slashes for regex (here, "package name contains eslint
+      // or prettier anywhere"):
+      "matchPackageNames": ["/eslint/", "/prettier/"],
       "groupName": "linting tools",
       "automerge": true
     },
     {
-      "matchPackagePatterns": ["@types/*"],
+      // Plain glob syntax also works when you don't need a regex —
+      // this matches everything under the @types/ scope:
+      "matchPackageNames": ["@types/**"],
       "groupName": "type definitions",
       "automerge": true
     }

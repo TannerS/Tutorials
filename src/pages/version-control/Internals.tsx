@@ -487,11 +487,13 @@ $ cat .git/packed-refs
           resolve the name; <code>cat</code> only works if it guesses the current storage layout right.
           That gap gets permanent with the <strong>reftable</strong> backend
           (<code>git init --ref-format=reftable</code>), a binary format that Git 3.0 makes the default
-          for new repositories. There, <code>.git/refs/</code> holds nothing at all and{' '}
-          <code>.git/HEAD</code> is a fixed stub reading <code>ref: refs/heads/.invalid</code> — even
-          on a perfectly healthy repo sitting on <code>main</code>, so <code>cat</code> cannot ever
-          report the truth. Verified on git 2.50.1: in a reftable repo{' '}
-          <code>git rev-parse --symbolic-full-name HEAD</code> correctly printed{' '}
+          for new repositories. There, <code>.git/refs/heads</code> holds no per-branch loose ref files —
+          verified on git 2.50.1, it&apos;s a single 41-byte placeholder file (not even a directory)
+          reading <code>this repository uses the reftable format</code>, no matter how many branches
+          actually exist — and <code>.git/HEAD</code> is a fixed stub reading{' '}
+          <code>ref: refs/heads/.invalid</code>, even on a perfectly healthy repo sitting on{' '}
+          <code>main</code>, so <code>cat</code> cannot ever report the truth. Verified on git 2.50.1: in
+          a reftable repo <code>git rev-parse --symbolic-full-name HEAD</code> correctly printed{' '}
           <code>refs/heads/main</code> while <code>cat .git/HEAD</code> printed the{' '}
           <code>.invalid</code> stub. Use <code>cat</code> to learn the model; use the porcelain
           commands in scripts.

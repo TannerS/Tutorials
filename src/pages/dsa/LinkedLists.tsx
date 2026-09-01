@@ -412,6 +412,21 @@ size = 2`}
         </p>
       </InfoBox>
 
+      <FlowChart
+        title="Before vs. After deleteGivenNode(n3) — Value Copied Forward, Then n4 Spliced Out"
+        chart={"graph LR\n  subgraph Before\n    A1[\"n1: 1\"] --> B1[\"n2: 2\"] --> C1[\"n3: 3 (only node held)\"] --> D1[\"n4: 4\"] --> E1[\"n5: 5\"]\n  end\n  subgraph After\n    A2[\"n1: 1\"] --> B2[\"n2: 2\"] --> C2[\"n3: 4 (value copied from n4)\"] --> E2[\"n5: 5\"]\n  end"}
+      />
+
+      <p>
+        Notice what didn&apos;t move: <code>n1</code> and <code>n2</code> are untouched, and the object{' '}
+        <em>identity</em> of the node labeled <code>n3</code> in the diagram never changes — only the{' '}
+        <code>value</code> field inside it does, from <code>3</code> to <code>4</code>. The node that used
+        to be <code>n4</code> is gone from the chain entirely; its value lives on inside <code>n3</code>,
+        and <code>n3.next</code> now points straight to <code>n5</code>. That&apos;s the whole trick in one
+        picture: you can&apos;t rewire a predecessor you can&apos;t reach, so instead you overwrite the
+        given node&apos;s contents with its successor&apos;s and delete the successor instead.
+      </p>
+
       <CodeBlock language="java" title="DeleteGivenNodeOnly.java — The &quot;No Head Access&quot; Trick">
 {`static boolean deleteGivenNode(Node node) {
     if (node == null || node.next == null) {
@@ -673,7 +688,7 @@ Reverse single-node list: [99]`}
             <td style={{ padding: '0.75rem' }}>Insert/remove at tail</td>
             <td style={{ padding: '0.75rem' }}>O(1) amortized</td>
             <td style={{ padding: '0.75rem' }}>O(1) (with a maintained tail pointer)</td>
-            <td style={{ padding: '0.75rem' }}>Both are O(1) here — ArrayList&apos;s doubling strategy amortizes resize cost</td>
+            <td style={{ padding: '0.75rem' }}>Both are O(1) here — ArrayList&apos;s real, measured growth factor is 1.5&times; (not 2&times;/&quot;doubling&quot; — see the <em>Complexity Analysis</em> lesson&apos;s reflection-based measurement), which is still enough to amortize resize cost to O(1) per call</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
             <td style={{ padding: '0.75rem' }}>Remove given a direct reference/iterator to the node</td>

@@ -148,6 +148,16 @@ echo "module.exports = { hello: () => 'world' };" > index.js
 
       <h2>What Gets Published</h2>
       <p>
+        The npm Deep Dive section's node_modules &amp; Hoisting lesson already covered the
+        basic always-included/always-excluded rules and the <code>files</code>-vs-
+        <code>.npmignore</code> choice — worth a skim if you haven't seen it. What's new
+        here, since this lesson is specifically about building a package for publication: the
+        gitignore fallback behavior (below) that silently swallows a built <code>dist/</code>{' '}
+        folder if you're not careful, and a real <code>npm pack --dry-run</code> walkthrough so
+        you can see exactly what ends up in the tarball before you ever run{' '}
+        <code>npm publish</code>.
+      </p>
+      <p>
         When you run <code>npm publish</code>, NOT everything in your project goes into the
         tarball. Understanding what's included and excluded prevents common publishing mistakes.
       </p>

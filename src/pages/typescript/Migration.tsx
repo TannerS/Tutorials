@@ -422,10 +422,10 @@ export default function Migration() {
           "  typecheck:\n" +
           "    runs-on: ubuntu-latest\n" +
           "    steps:\n" +
-          "      - uses: actions/checkout@v4\n" +
-          "      - uses: actions/setup-node@v4\n" +
+          "      - uses: actions/checkout@v7\n" +
+          "      - uses: actions/setup-node@v7\n" +
           "        with:\n" +
-          "          node-version: 20\n" +
+          "          node-version: 24\n" +
           "      - run: npm ci\n" +
           "      - run: npx tsc --noEmit\n" +
           "        name: TypeScript Type Check"

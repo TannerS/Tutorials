@@ -432,6 +432,26 @@ hasCycleDirectedCorrect(trueCycle, 4);  // Output: true   <- correct`}
         chart={"graph LR\n  W0((0)) ---|4| W1((1))\n  W0 ---|1| W2((2))\n  W2 ---|2| W1\n  W1 ---|5| W3((3))\n  W2 ---|8| W3\n  W2 ---|10| W4((4))\n  W3 ---|2| W4"}
       />
 
+      <p>
+        One thing the code below has to handle that isn&apos;t obvious from the description above: the{' '}
+        <strong>same node can sit in the priority queue more than once at the same time.</strong> Here&apos;s
+        why. &quot;Relaxing&quot; an edge — finding a cheaper way to reach some node and lowering its
+        recorded distance — happens by calling <code>pq.offer(new int[]{'{'}edge.to(), newDist{'}'})</code>,
+        which <em>adds a brand-new entry</em> to the queue rather than reaching into the existing entry for
+        that node and lowering it in place. That&apos;s not a design choice this lesson made carelessly —
+        Java&apos;s <code>PriorityQueue</code> has no <strong>decrease-key</strong> operation (no way to
+        say &quot;find the entry for node X and re-sort it now that its priority dropped&quot;) without a
+        linear scan to locate it first, which would cost more than the savings. So instead, every time a
+        node&apos;s distance improves, a fresh <code>[node, newDist]</code> pair is pushed and the old,
+        now-obsolete pair is simply left sitting in the queue — cheaper to leave stale entries in place than
+        to hunt them down and fix them. Those stale entries do eventually get popped, just later, once every
+        cheaper entry for that node has already come out first. That is exactly what{' '}
+        <code>if (finalized.contains(node)) continue;</code> in the code below is for: by the time a stale,
+        higher-distance copy of an already-finalized node reaches the front of the queue, its work is
+        already done, so the algorithm just discards it and moves on — a wasted queue slot, not a
+        correctness bug.
+      </p>
+
       <CodeBlock language="java" title="Dijkstra.java — PriorityQueue-Based, Run and Verified Manually">
 {`// A weighted edge. Records give you the constructor, accessors, equals()
 // and hashCode() for free — see the Java "Advanced Features" lesson.

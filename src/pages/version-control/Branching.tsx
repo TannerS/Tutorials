@@ -488,6 +488,25 @@ $ sed -i '' 's/timeout = 30/timeout = 10/' config.txt
 $ git commit -q -am "Tighten timeout to 10 for fast-fail"`}
       </CodeBlock>
 
+      <InfoBox variant="note" title="git checkout -b vs git switch -c">
+        <p>
+          Every branch-creation/switch command in this lesson uses <code>git checkout</code>, including{' '}
+          <code>git checkout -q -b increase-timeout</code> above — deliberately, for consistency with the
+          countless existing codebases and CI scripts you&apos;ll encounter that were written before the
+          alternative existed, and because <code>checkout</code> is not deprecated (the{' '}
+          <em>Git Internals</em> lesson confirms this directly against Git&apos;s own docs). But{' '}
+          <code>git switch</code> and <code>git restore</code> — which split <code>checkout</code>&apos;s
+          two historically-overloaded jobs (moving between branches vs. discarding file changes) into two
+          separate, narrower commands — graduated out of experimental status as of Git 2.51.0 (August
+          2025) and are now Git&apos;s own recommended starting point for newcomers. For exactly what this
+          lesson just did, <code>git switch -c increase-timeout</code> is the direct equivalent of{' '}
+          <code>git checkout -b increase-timeout</code>, and plain <code>git switch feature</code> replaces{' '}
+          <code>git checkout feature</code> for moving between existing branches. Reach for whichever one
+          the codebase you&apos;re in already uses — this lesson sticks to <code>checkout</code> throughout
+          purely so every example stays consistent with itself.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="bash" title="git merge — Real Conflict, Real Markers">
 {`$ git merge increase-timeout
 Auto-merging config.txt
