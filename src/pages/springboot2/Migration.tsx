@@ -492,9 +492,10 @@ REMOVED
 
       <InfoBox variant="danger" title="But be honest about what staying costs">
         <p>
-          Spring Boot <strong>2.7.18</strong> was the final open-source release of the 2.x line,
-          and OSS support for 2.7 ended in <strong>November 2023</strong>. Commercial extended
-          support is available from Broadcom/VMware Tanzu on a paid basis — but if nobody at your
+          Spring Boot <strong>2.7.18</strong> was the final open-source release of the 2.x line —
+          published in November 2023 as a last courtesy patch — but OSS support for 2.7 had
+          already ended on <strong>2023-06-30</strong>. Commercial extended support is available
+          from Broadcom/VMware Tanzu on a paid basis — but if nobody at your
           company has actually bought it, then in practice{' '}
           <strong>your framework receives no security patches at all</strong>. Not
           &quot;delayed&quot; patches. None.

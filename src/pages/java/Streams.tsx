@@ -557,54 +557,6 @@ List<ProductDto> products = ids.stream()
         </p>
       </InfoBox>
 
-      <p>
-        Writing your own is worth seeing once, because it explains the shape. A gatherer is an
-        initializer (optional state), an integrator (called per element, returns{' '}
-        <code>false</code> to short-circuit), and an optional finisher:
-      </p>
-
-      <CodeBlock language="java" title="A custom gatherer: distinctBy(keyExtractor)">
-{`// Stream has distinct() (uses equals) but no distinctBy(). Now you can add it.
-static <T, K> Gatherer<T, ?, T> distinctBy(Function<? super T, ? extends K> key) {
-    return Gatherer.ofSequential(
-        HashSet::new,                              // initializer: the state
-        (seen, element, downstream) -> {           // integrator: per element
-            if (seen.add(key.apply(element))) {
-                return downstream.push(element);   // false => downstream is done
-            }
-            return true;                           // keep going
-        });
-}
-
-List<Employee> onePerDept = staff.stream()
-    .gather(distinctBy(Employee::department))
-    .toList();
-
-// takeWhileCumulativeSum — genuinely impossible with plain takeWhile,
-// because takeWhile's predicate is stateless by contract.
-static Gatherer<Integer, ?, Integer> takeUntilSumExceeds(int limit) {
-    return Gatherer.ofSequential(
-        () -> new int[1],
-        (total, element, downstream) -> {
-            total[0] += element;
-            if (total[0] > limit) return false;    // short-circuit the stream
-            return downstream.push(element);
-        });
-}`}
-      </CodeBlock>
-
-      <InfoBox variant="note" title="When NOT to bother">
-        <p>
-          Most pipelines never need a custom gatherer — <code>map</code>/<code>filter</code>/
-          <code>flatMap</code> cover the ordinary cases, and a plain loop is clearer than a
-          gatherer you wrote for one call site. Reach for <code>Gatherer</code> when the
-          operation is genuinely <em>stateful across elements</em> (windowing, running totals,
-          dedupe-by-key) and you want it reusable across pipelines. Reach for the built-in{' '}
-          <code>Gatherers</code> factories freely — those are just better than the loops they
-          replace.
-        </p>
-      </InfoBox>
-
       <h2>Primitive Streams</h2>
       <p>
         <code>Stream&lt;Integer&gt;</code> boxes every element. For numeric work, the primitive
@@ -707,6 +659,56 @@ items.parallelStream().forEachOrdered(System.out::println);`}
           operations are order-dependent or stateful. The rule of thumb: measure first, and for
           I/O-bound fan-out use virtual threads or <code>StructuredTaskScope</code> instead — see
           the Concurrency lesson.
+        </p>
+      </InfoBox>
+
+      <h2>Writing Your Own Gatherer</h2>
+      <p>
+        Back to <code>Gatherer</code>, introduced earlier in this lesson alongside the built-in{' '}
+        <code>Gatherers</code> factories. Writing your own is worth seeing once, because it
+        explains the shape. A gatherer is an initializer (optional state), an integrator (called
+        per element, returns <code>false</code> to short-circuit), and an optional finisher:
+      </p>
+
+      <CodeBlock language="java" title="A custom gatherer: distinctBy(keyExtractor)">
+{`// Stream has distinct() (uses equals) but no distinctBy(). Now you can add it.
+static <T, K> Gatherer<T, ?, T> distinctBy(Function<? super T, ? extends K> key) {
+    return Gatherer.ofSequential(
+        HashSet::new,                              // initializer: the state
+        (seen, element, downstream) -> {           // integrator: per element
+            if (seen.add(key.apply(element))) {
+                return downstream.push(element);   // false => downstream is done
+            }
+            return true;                           // keep going
+        });
+}
+
+List<Employee> onePerDept = staff.stream()
+    .gather(distinctBy(Employee::department))
+    .toList();
+
+// takeWhileCumulativeSum — genuinely impossible with plain takeWhile,
+// because takeWhile's predicate is stateless by contract.
+static Gatherer<Integer, ?, Integer> takeUntilSumExceeds(int limit) {
+    return Gatherer.ofSequential(
+        () -> new int[1],
+        (total, element, downstream) -> {
+            total[0] += element;
+            if (total[0] > limit) return false;    // short-circuit the stream
+            return downstream.push(element);
+        });
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="note" title="When NOT to bother">
+        <p>
+          Most pipelines never need a custom gatherer — <code>map</code>/<code>filter</code>/
+          <code>flatMap</code> cover the ordinary cases, and a plain loop is clearer than a
+          gatherer you wrote for one call site. Reach for <code>Gatherer</code> when the
+          operation is genuinely <em>stateful across elements</em> (windowing, running totals,
+          dedupe-by-key) and you want it reusable across pipelines. Reach for the built-in{' '}
+          <code>Gatherers</code> factories freely — those are just better than the loops they
+          replace.
         </p>
       </InfoBox>
 

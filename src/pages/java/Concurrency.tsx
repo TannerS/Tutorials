@@ -83,6 +83,12 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
         <strong>the main cause of pinning was removed in Java 24</strong>, so advice
         written for Java 21 is now half-obsolete.
       </p>
+
+      <FlowChart
+        title="N Virtual Threads, M Carrier Threads"
+        chart={"graph LR\nA[N virtual threads] --> B{JVM Scheduler}\nB --> C[M carrier threads - real OS threads]\nC -->|blocks on ordinary I/O| D[Unmounts: carrier freed for another virtual thread]\nC -->|blocks while pinned - native frame, class init, or pre-Java-24 synchronized| E[Stays mounted: carrier stuck until unblocked]"}
+      />
+
       <CodeBlock language="text" title="What actually pins, by JDK version">
 {`Java 21-23   synchronized blocks/methods PIN across blocking calls.
              Native (JNI) frames PIN.

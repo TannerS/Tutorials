@@ -36,7 +36,7 @@ grep -rl "tools.jackson"                # Jackson 3            -> Boot 4`}</Guid
             ['Boot 2.7.18', 'last 2.x release'],
             ['OSS support', 'ended 2023-06-30'],
             ['commercial support', 'through 2029-06-30 — the reason it persists'],
-            ['Boot 3.x', 'current LTS line'],
+            ['Boot 3.x', 'OSS support ended 2026-06-30 (commercial through 2032-06-30)'],
             ['Boot 4.x', 'current'],
           ]}
         />

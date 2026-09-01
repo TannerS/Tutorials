@@ -1,5 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 
@@ -329,6 +330,22 @@ resilience4j.thread-pool-bulkhead:
         Retry inside — an entire 3-attempt retry sequence would look like a single call to the
         breaker, diluting the failure signal and letting retries keep pounding a dead dependency for
         far longer before the breaker had enough evidence to open.
+      </p>
+
+      <FlowChart
+        title="Aspect nesting, outermost to innermost — and where a failed attempt re-enters"
+        chart={"graph LR\nRetry[Retry - outermost] --> CB[CircuitBreaker]\nCB --> RL[RateLimiter]\nRL --> TL[TimeLimiter]\nTL --> BH[Bulkhead - innermost]\nBH --> Fn[Function - the actual call]\nFn -.->|failure| CB\nCB -.->|closed, attempts remain: retry re-enters the whole stack| Retry\nCB -.->|OPEN| Short[CallNotPermittedException - fails in microseconds, no call made]\nstyle CB fill:#3d2f14\nstyle Short fill:#3b1a1a"}
+      />
+
+      <p>
+        Follow the dashed arrows: a failed call at the center does not go straight back out to
+        Retry. It first passes through CircuitBreaker, which records the failure and updates its
+        state <em>before</em> Retry ever gets a chance to fire off another attempt. Only if the
+        breaker is still closed does control return all the way out to Retry, which then re-enters
+        the entire stack — CircuitBreaker, RateLimiter, TimeLimiter, Bulkhead — from the top, exactly
+        as if it were a brand-new call. Once the breaker opens, that loop is cut short: CircuitBreaker
+        diverts straight to <code>CallNotPermittedException</code> instead, and Retry never gets to
+        try again.
       </p>
 
       <InfoBox variant="tip" title="The Order You Type the Annotations Does Not Matter">

@@ -44,7 +44,7 @@ a real, simplified, self-consistent implementation ..... FAKE — write it by ha
       <h2>Setup — Versions That Resolve Today</h2>
       <p>
         Everything in this lesson was compiled and run on <strong>JDK 26.0.1</strong> with{' '}
-        <strong>Mockito 5.23.0</strong> and <strong>JUnit Jupiter 6.0.3</strong>, under Maven
+        <strong>Mockito 5.23.0</strong> and <strong>JUnit Jupiter 6.1.3</strong>, under Maven
         3.9.16 and Surefire 3.5.6. Every console block below is pasted from those runs.
       </p>
 
@@ -52,7 +52,7 @@ a real, simplified, self-consistent implementation ..... FAKE — write it by ha
 {`<dependency>
     <groupId>org.junit.jupiter</groupId>
     <artifactId>junit-jupiter</artifactId>
-    <version>6.0.3</version>
+    <version>6.1.3</version>
     <scope>test</scope>
 </dependency>
 
@@ -75,15 +75,15 @@ a real, simplified, self-consistent implementation ..... FAKE — write it by ha
 
       <CodeBlock language="text" title="mvn dependency:tree — what you actually get">
 {`[INFO] lab:mockito-lab:jar:1.0
-[INFO] +- org.junit.jupiter:junit-jupiter:jar:6.0.3:test
-[INFO] |  +- org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test
+[INFO] +- org.junit.jupiter:junit-jupiter:jar:6.1.3:test
+[INFO] |  +- org.junit.jupiter:junit-jupiter-api:jar:6.1.3:test
 [INFO] |  |  +- org.opentest4j:opentest4j:jar:1.3.0:test
-[INFO] |  |  +- org.junit.platform:junit-platform-commons:jar:6.0.3:test
+[INFO] |  |  +- org.junit.platform:junit-platform-commons:jar:6.1.3:test
 [INFO] |  |  +- org.apiguardian:apiguardian-api:jar:1.1.2:test
 [INFO] |  |  \\- org.jspecify:jspecify:jar:1.0.0:test
-[INFO] |  +- org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test
-[INFO] |  \\- org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test
-[INFO] |     \\- org.junit.platform:junit-platform-engine:jar:6.0.3:test
+[INFO] |  +- org.junit.jupiter:junit-jupiter-params:jar:6.1.3:test
+[INFO] |  \\- org.junit.jupiter:junit-jupiter-engine:jar:6.1.3:test
+[INFO] |     \\- org.junit.platform:junit-platform-engine:jar:6.1.3:test
 [INFO] +- org.mockito:mockito-core:jar:5.23.0:test
 [INFO] |  +- net.bytebuddy:byte-buddy:jar:1.17.7:test
 [INFO] |  +- net.bytebuddy:byte-buddy-agent:jar:1.17.7:test
@@ -95,8 +95,8 @@ a real, simplified, self-consistent implementation ..... FAKE — write it by ha
         <ul>
           <li>
             <strong>mockito-junit-jupiter 5.23.0 declares junit-jupiter-api 5.13.4</strong>, but
-            it runs fine against JUnit Jupiter 6.0.3 — Maven&apos;s nearest-wins resolution puts
-            6.0.3 on the classpath and <code>MockitoExtension</code> works unchanged. Verified,
+            it runs fine against JUnit Jupiter 6.1.3 — Maven&apos;s nearest-wins resolution puts
+            6.1.3 on the classpath and <code>MockitoExtension</code> works unchanged. Verified,
             not assumed. Do not let the transitive 5.13.4 in the tree talk you into downgrading.
           </li>
           <li>

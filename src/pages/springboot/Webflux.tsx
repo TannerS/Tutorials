@@ -187,7 +187,8 @@ public class LazinessDemo {
         A WebFlux controller looks almost identical to the MVC controllers earlier in this section —
         same annotations, same request-mapping vocabulary — except the return types are{' '}
         <code>Mono</code>/<code>Flux</code> instead of the DTO or <code>ResponseEntity&lt;T&gt;</code>{' '}
-        directly. This compiles and runs against real Spring Boot 3.5.16 (<code>spring-boot-starter-webflux</code>{' '}
+        directly. This is written for Spring Boot 4.1.1 — the version pinned throughout this
+        section (<code>spring-boot-starter-webflux</code>{' '}
         + <code>spring-boot-starter-data-r2dbc</code>):
       </p>
 

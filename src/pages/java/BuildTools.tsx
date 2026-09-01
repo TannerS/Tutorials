@@ -1,5 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 
@@ -62,6 +63,11 @@ Launcher JVM:  25.0.2 (Homebrew 25.0.2)`}
         This is the single biggest reason build tools exist — nobody wants to hand-manage a
         transitive dependency graph that can run to hundreds of JARs.
       </p>
+
+      <FlowChart
+        title="One Declared Dependency, One Resolved Version"
+        chart={"graph TD\nA[spring-boot-starter-web] --> B[Spring MVC]\nA --> C[Jackson]\nA --> D[Embedded Tomcat]\nB --> E[transitively pulls spring-web]\nC --> F[transitively pulls jackson-databind]\nE --> G{Another branch also wants jackson-databind, different version}\nF --> G\nG -->|Maven| H[Nearest wins: shallowest depth in the tree, ties by declaration order]\nG -->|Gradle| I[Highest version wins by default: 2.18.0 beats 2.17.0]"}
+      />
 
       <h2>Maven: Declarative XML</h2>
 

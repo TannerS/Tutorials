@@ -1,5 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
+import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
 import InteractiveChallenge from '../../components/InteractiveChallenge';
 
@@ -28,6 +29,12 @@ export default function JvmInternals() {
         The JVM splits memory into a few distinct regions, and they are not interchangeable &mdash;
         each is sized, collected, and can overflow independently of the others.
       </p>
+
+      <FlowChart
+        title="JVM Memory Layout — Which Flag Controls Which Region"
+        chart={"graph TD\nJVM[JVM Process] -->|-Xmx / -Xms| Heap[Heap]\nJVM -->|-XX:MaxMetaspaceSize| Meta[Metaspace: class metadata]\nJVM -->|-Xss, per thread| Stacks[Per-Thread Stacks]\nHeap --> Young[Young Generation]\nHeap --> Old[Old Generation - tenured objects]\nYoung --> Eden[Eden]\nYoung --> S0[Survivor S0]\nYoung --> S1[Survivor S1]\nStacks --> T1[Thread 1 stack]\nStacks --> T2[Thread 2 stack]\nStacks --> T3[Thread N stack ...]"}
+      />
+
       <p>
         <strong>The heap</strong> is where every object you create with <code>new</code> lives &mdash;
         instances, arrays, boxed values that escape the JIT&apos;s ability to keep them in a

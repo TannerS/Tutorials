@@ -200,7 +200,7 @@ void dummyBlowsUpIfTheCodeEverTouchesIt() {
     System.out.println(">>> dummy said: " + err.getMessage());
 }`}
       </CodeBlock>
-      <CodeBlock language="text" title="Real output — JDK 26, JUnit Jupiter 6.0.3">
+      <CodeBlock language="text" title="Real output — JDK 26, JUnit Jupiter 6.1.3">
 {`>>> dummy said: AuditLog must not be called on this path, got: cancelled SKU-1`}
       </CodeBlock>
 
@@ -373,7 +373,7 @@ void placePersistsTheOrder() {
       </InfoBox>
 
       <InfoBox variant="info" title="All five, running">
-        <CodeBlock language="text" title="mvn test — JDK 26.0.1, JUnit Jupiter 6.0.3, no Mockito on the classpath">
+        <CodeBlock language="text" title="mvn test — JDK 26.0.1, JUnit Jupiter 6.1.3, no Mockito on the classpath">
 {`[INFO]  T E S T S
 [INFO] -------------------------------------------------------
 [INFO] Running lab.basics.HandRolledDoublesTest
@@ -658,7 +658,7 @@ PaymentGateway payments = new StubPaymentGateway(new PaymentResult(true, "ref-1"
 {`<dependency>
     <groupId>org.junit.jupiter</groupId>
     <artifactId>junit-jupiter</artifactId>   <!-- aggregate: api + params + engine -->
-    <version>6.0.3</version>
+    <version>6.1.3</version>
     <scope>test</scope>
 </dependency>
 <!-- Surefire 3.5.2+ is required to discover JUnit 6. Older Surefire finds zero tests. -->`}
