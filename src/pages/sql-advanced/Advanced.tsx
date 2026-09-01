@@ -32,7 +32,9 @@ WHERE ordered_at >= '2024-01-01'
 GROUP BY 1
 ORDER BY 1;
 
--- Unpivot: columns to rows (PostgreSQL VALUES + LATERAL)
+-- Unpivot: columns to rows (PostgreSQL VALUES + LATERAL — explained in
+-- full in the next section; the short version: it lets this subquery
+-- reference columns from the row on its left)
 SELECT order_id, metric_name, metric_value
 FROM orders,
 LATERAL (

@@ -259,7 +259,14 @@ WHERE status = 'shipped' AND customer_id = 12345;
           reporting <code>rows=3 loops=10000</code> produced 30,000 rows, and a node reporting{' '}
           <code>actual time=0.5..0.9 loops=10000</code> consumed roughly 9 seconds, not 0.9 ms.
           Forgetting to multiply by <code>loops</code> is the most common misreading of a plan, and
-          it hides exactly the nested-loop blowups you are usually hunting.
+          it hides exactly the nested-loop blowups you are usually hunting: a{' '}
+          <strong>nested-loop join</strong> runs its inner side once per row on the outer side —
+          for each outer row, probe the inner side and keep whatever matches. That's cheap per
+          probe, especially when the inner side is a fast index lookup, but the total cost scales
+          with the outer row count, so a <code>loops=</code> number that balloons is usually this
+          join type reacting to an outer-side estimate that was wrong. (Contrast with Hash Join
+          below, which builds the inner side into memory once and probes it — no re-scanning per
+          outer row.)
         </p>
       </InfoBox>
 

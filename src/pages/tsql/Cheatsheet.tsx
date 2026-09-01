@@ -8,7 +8,7 @@ function TsqlCheatsheet() {
       kicker="FIELD GUIDE"
       glyph="🗄️"
       tagline="Microsoft SQL Server — everything measured on a real 2019 instance (15.0.4480.2)."
-      meta={['SQL Server 2016+', 'verified on 2019', '14 panels']}
+      meta={['SQL Server 2016+', 'verified on 2019', '15 panels']}
       page="1 / 1"
       footer="Every figure here came from running the statement, not from documentation. The lessons in this section carry the reasoning; this page is the recall sheet."
       prev={{ path: '/tsql/indexing', label: 'Indexing, SARGability & Execution Plans' }}
@@ -78,12 +78,12 @@ FROM sys.databases;`}</GuideCode>
             ['ORDER BY x ASC', 'NULLs FIRST', 'NULLs LAST'],
             ['NULLS LAST clause', 'does not exist', 'supported'],
             ['7 / 2', '3 (int division)', '3'],
-            ["'a' + NULL", 'NULL', 'NULL'],
+            ["'a' + NULL", 'NULL', 'ERROR — no + for text'],
             ['SELECT vs writer', 'CAN BLOCK', 'never blocks'],
             ['text types', 'VARCHAR vs NVARCHAR', 'one type, Unicode'],
           ]}
         />
-        <GuideRules items={["Case-insensitive default means 'Bob' and 'bob' COLLIDE in a unique index.", "Emulate NULLS LAST: ORDER BY CASE WHEN x IS NULL THEN 1 ELSE 0 END, x"]} />
+        <GuideRules items={["Case-insensitive default means 'Bob' and 'bob' COLLIDE in a unique index.", "Emulate NULLS LAST: ORDER BY CASE WHEN x IS NULL THEN 1 ELSE 0 END, x", "PostgreSQL has no + for text — it's || only. 'a' + NULL raises operator does not exist."]} />
       </GuidePanel>
 
       <GuidePanel n={5} title="Core Queries" accent="cyan" glyph="🔤">
@@ -206,10 +206,10 @@ END;`}</GuideCode>
       </GuidePanel>
 
       <GuidePanel n={13} title="🔒 Isolation — The Big One" accent="red" glyph="🔒" span={2}>
-        <GuideCode>{`-- RCSI OFF (the default):
+        <GuideCode>{`-- RCSI (Read Committed Snapshot Isolation) OFF (the default):
 A: BEGIN TRAN; UPDATE [Account] SET [Balance]=200 ...  (holds)
 B: SELECT [Balance] FROM [Account] WHERE [Id]=1;
-   -> Msg 1222 — Lock request time out. Reader waited 9s.
+   -> Msg 1222 — Lock request time out. Reader waited 8s.
 
 ALTER DATABASE [db]
   SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE;
@@ -242,10 +242,11 @@ SQL_Latin1_General_CP1_CI_AS (SQL)   2 vs 57 reads  SCAN`}</GuideCode>
             ["LEFT([c],3) = 'ABC'", "[c] LIKE 'ABC%'"],
             ['[t] * 12 > 100000', '[t] > 100000/12'],
             ['[c] = 12345', "[c] = '12345'"],
-            ["ISNULL([d],'x') = 'y'", "[d] = 'y' OR [d] IS NULL"],
+            ["ISNULL([d],'x') = 'y'", "[d] = 'y'   -- default 'x' != target: OR IS NULL would be WRONG"],
+            ["ISNULL([d],'y') = 'y'", "[d] = 'y' OR [d] IS NULL   -- only valid because default = target"],
           ]}
         />
-        <GuideRules items={['Keep the indexed column BARE on one side of the operator.', 'Check estimated vs actual rows FIRST — a big gap means stale stats or parameter sniffing, not a missing index.', 'Fixes for sniffing: OPTION (RECOMPILE) / OPTIMIZE FOR / OPTIMIZE FOR UNKNOWN.']} />
+        <GuideRules items={['Keep the indexed column BARE on one side of the operator.', "ISNULL(col,default)=target only becomes 'OR col IS NULL' when default equals target — otherwise NULL rows can never match and the OR silently changes the result.", 'Check estimated vs actual rows FIRST — a big gap means stale stats or parameter sniffing, not a missing index.', 'Fixes for sniffing: OPTION (RECOMPILE) / OPTIMIZE FOR / OPTIMIZE FOR UNKNOWN.']} />
       </GuidePanel>
 
       <GuidePanel n={15} title="Numbers (Tally) Table" accent="purple" glyph="🔢" span={2}>

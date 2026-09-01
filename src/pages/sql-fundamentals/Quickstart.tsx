@@ -380,6 +380,25 @@ ORDER BY created_at DESC, id DESC
 LIMIT 20;`}
       </CodeBlock>
 
+      <InfoBox variant="info" title="Row-value comparison is lexicographic, not column-by-column AND">
+        <p>
+          <code>(created_at, id) &lt; (x, y)</code> does <strong>not</strong> mean{' '}
+          <code>created_at &lt; x AND id &lt; y</code>. It compares like a tuple (the same rule
+          Python or a dictionary sort uses): compare <code>created_at</code> to <code>x</code>{' '}
+          first; if they differ, that decides the result and <code>id</code> is never even looked
+          at; only if <code>created_at</code> equals <code>x</code> does it fall through to compare{' '}
+          <code>id</code> to <code>y</code>.
+        </p>
+        <p>
+          That is exactly why it works as a pagination cursor. Most rows differ on{' '}
+          <code>created_at</code> alone and the comparison stops there. The <code>id</code>{' '}
+          column only matters for the rare case of two rows sharing the same{' '}
+          <code>created_at</code> — which is precisely the tie a single-column{' '}
+          <code>WHERE created_at &lt; ...</code> cursor would otherwise skip or duplicate across
+          pages.
+        </p>
+      </InfoBox>
+
       <InteractiveChallenge
         question="Given the SQL logical execution order, which clause can reference a SELECT column alias in standard SQL — and in every engine?"
         options={[

@@ -275,7 +275,7 @@ SELECT count(*) FROM (
         <p><strong>Use JOIN when:</strong> You need columns from both tables in the output, or you're combining data from multiple sources.</p>
         <p><strong>Use subquery when:</strong> You need to filter based on another table's data but don't need its columns, or you need aggregated values for comparison.</p>
         <p><strong>Use EXISTS when:</strong> You're checking for the existence of related rows and the condition is correlated to the outer row.</p>
-        <p><strong>Performance:</strong> The "EXISTS is faster than IN" rule you'll hear repeated is Oracle-era folklore that does not describe modern Postgres. The planner turns both into a semi-join and costs them identically. Write whichever reads more clearly; the one genuine reason to prefer <code>NOT EXISTS</code> over <code>NOT IN</code> is <em>correctness</em> around NULLs, not speed.</p>
+        <p><strong>Performance:</strong> The "EXISTS is faster than IN" rule you'll hear repeated is Oracle-era folklore that does not describe modern Postgres. The planner turns both into a <strong>semi-join</strong> and costs them identically — a semi-join checks whether a matching row exists on the other side, returning each outer row at most once no matter how many inner-side rows match. That's exactly what EXISTS/IN mean in plain English, so there's nothing extra for the planner to do by rewriting one into the other. Write whichever reads more clearly; the one genuine reason to prefer <code>NOT EXISTS</code> over <code>NOT IN</code> is <em>correctness</em> around NULLs, not speed.</p>
       </InfoBox>
 
       <h2>Common JOIN Mistakes</h2>
@@ -340,8 +340,9 @@ FROM employees;`}
 
       <CodeBlock language="sql" title="EXISTS vs IN Performance Characteristics" showLineNumbers={true}>
 {`-- These two are SEMANTICALLY different but PLAN the same in modern Postgres:
--- the planner rewrites both into a semi-join and then picks hash/merge/nested-loop
--- on cost. Check EXPLAIN before "optimizing" one into the other.
+-- the planner rewrites both into the same semi-join (defined above), then picks
+-- a physical join strategy based on cost (explained when we get to reading
+-- query plans). Check EXPLAIN before "optimizing" one into the other.
 
 -- IN (subquery)
 SELECT * FROM orders

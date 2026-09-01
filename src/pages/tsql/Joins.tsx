@@ -149,6 +149,15 @@ CROSS APPLY
 
       <h2>Semi-Joins: EXISTS and IN</h2>
 
+      <p>
+        A <strong>semi-join</strong> answers &quot;does a match exist?&quot; instead of &quot;give me
+        the matching columns.&quot; The difference from a regular join is row count: a regular{' '}
+        <code>JOIN</code> returns the outer row <em>once per matching inner row</em> — three matches on
+        the inner side means three output rows. A semi-join returns each outer row{' '}
+        <strong>at most once</strong>, no matter how many inner-side rows match. <code>EXISTS</code> and{' '}
+        <code>IN</code> are both semi-joins: they test for a match and stop, they never multiply rows.
+      </p>
+
       <CodeBlock language="sql" title="Three ways to ask 'does a match exist?'">
 {`-- EXISTS: the clearest, and NULL-safe
 SELECT [c].[City]

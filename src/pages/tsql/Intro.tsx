@@ -198,11 +198,11 @@ SELECT 'a' + NULL AS concat_op, CONCAT('a', NULL) AS concat_fn;
 
       <FlowChart
         title="How the nine lessons build up"
-        chart={"graph TD\n  A[\"1. version + dialect basics\"] --> B[\"2. core queries<br/>SELECT, TOP, paging, NULLs\"]\n  B --> C[\"3. joins & set operations\"]\n  C --> D[\"4. aggregation &<br/>window functions\"]\n  D --> E[\"5. modifying data<br/>OUTPUT, MERGE, upserts\"]\n  E --> F[\"6. procedures, functions,<br/>TRY/CATCH, dynamic SQL\"]\n  F --> G[\"7. transactions & locking<br/>the big one\"]\n  G --> H[\"8. indexing, SARGability,<br/>execution plans\"]\n  H --> I[\"9. cheat sheet\"]\n  style G fill:#3b1a1a,stroke:#f87171\n  style I fill:#1a3329,stroke:#4ade80"}
+        chart={"graph TD\n  A[\"1. version + dialect basics\"] --> B[\"2. core queries<br/>SELECT, TOP, paging, NULLs\"]\n  B --> C[\"3. joins & set operations\"]\n  C --> D[\"4. aggregation &<br/>window functions\"]\n  D --> E[\"5. modifying data<br/>OUTPUT, MERGE, upserts\"]\n  E --> F[\"6. views\"]\n  F --> G[\"7. procedures, functions,<br/>TRY/CATCH, dynamic SQL\"]\n  G --> H[\"8. transactions & locking<br/>the big one\"]\n  H --> I[\"9. indexing, SARGability,<br/>execution plans\"]\n  I -.->|\"separate reference page,<br/>not a numbered lesson\"| J[\"cheat sheet\"]\n  style H fill:#3b1a1a,stroke:#f87171\n  style J fill:#1a3329,stroke:#4ade80,stroke-dasharray: 5 5"}
       />
 
       <p>
-        Lesson 7 is marked because it is the one that matters most if you are coming from Postgres.
+        Lesson 8 is marked because it is the one that matters most if you are coming from Postgres.
         SQL Server&apos;s default isolation is <strong>lock-based</strong>, not snapshot-based, so
         readers and writers block each other in ways that simply do not happen in Postgres. It is the
         single most common source of production surprises on this engine, and it is fixable with one

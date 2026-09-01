@@ -234,6 +234,14 @@ OLTP hot path it usually is not.`}
         <strong>square the row count at each level</strong>:
       </p>
 
+      <InfoBox variant="note" title="On 2022+, GENERATE_SERIES replaces the simple case">
+        <p>
+          On SQL Server 2022+, <code>GENERATE_SERIES</code> replaces this for simple numeric/date
+          ranges — see the Cheat Sheet — but the tally-table technique here is still useful for
+          older targets and as a building block for more complex set-generation.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="sql" title="The cascading-CTE numbers table">
 {`CREATE TABLE [dbo].[Numbers]
 (

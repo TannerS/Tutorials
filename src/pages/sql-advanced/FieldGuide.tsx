@@ -7,10 +7,10 @@ export default function SqlAdvancedFieldGuide() {
       title="PostgreSQL"
       kicker="FIELD GUIDE"
       glyph="🗄️"
-      tagline="Query shapes, index rules, schema patterns, and the concurrency traps you reach for daily — condensed from the four SQL Advanced lessons."
+      tagline="Query shapes, index rules, schema patterns, and the concurrency traps you reach for daily — condensed from SQL Fundamentals through SQL Advanced (Stored Procedures isn't summarized here; see that lesson directly)."
       meta={['PostgreSQL 12–18', 'verified through 18.6', '19 panels']}
       page="1 / 1"
-      footer="This page is for recall. The reasoning, the worked examples, and the verified benchmarks live in the four lessons above it."
+      footer="This page is for recall. The reasoning, the worked examples, and the verified benchmarks live in the SQL Fundamentals, SQL Design Patterns, and SQL Advanced lessons it draws from."
       prev={{ path: '/sql-advanced/advanced', label: 'Advanced SQL Patterns' }}
       next={null}
     >

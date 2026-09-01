@@ -18,7 +18,7 @@ compared to losing track of what's left.
 - [x] **B — React core & ecosystem**: react18, react19-whats-new, react-antipatterns,
       state-basics, state-context, state-zustand, react-query, react-testing, react-router
 - [x] **C — Frontend languages**: typescript, javascript, css-mastery, mui, mui9
-- [ ] **D — Database**: sql-fundamentals, sql-design-patterns, sql-advanced, tsql
+- [x] **D — Database**: sql-fundamentals, sql-design-patterns, sql-advanced, tsql
 - [ ] **E — Dev fundamentals & tooling**: dsa, version-control, frontend-tooling,
       npm-deep-dive, npm-packages, accessibility
 - [ ] **F — Architecture & design**: solid, patterns, ddd, systemdesign, microservices,
@@ -179,3 +179,82 @@ single documents, not two sections stapled together.
 
 Verified: tsc --noEmit clean, vite build clean, eslint clean on all touched
 files.
+
+### Phase D — Database (done)
+
+Note: the machine went to sleep repeatedly during this phase, killing the
+fact-checker and version-sentinel agents 2-3 times each before they
+completed — an environment issue, not a task issue. Also: the first pass
+missed relaunching learners-advocate after its first sleep-kill (only
+fact-checker/version-sentinel got retried) — caught and relaunched in a
+second wave once the gap was noticed.
+
+fact-checker — 5 findings, the 2 confirmed real bugs both fixed:
+- `tsql/Cheatsheet.tsx` claimed Postgres evaluates `'a' + NULL` to `NULL`;
+  Postgres has no `+` operator for text (only `||`) and actually raises
+  `ERROR: operator does not exist: text + text` — fixed.
+- **Real correctness bug, two locations**: `tsql/Cheatsheet.tsx` and
+  `tsql/Indexing.tsx` both showed `ISNULL(col, default) = target` rewritten
+  as `col = target OR col IS NULL` — only valid when default equals target.
+  In both shown examples default ≠ target, so the "SARGable rewrite" as
+  written silently changes query results (wrongly includes NULL rows).
+  Fixed both to the correct rewrite, with a second example showing where
+  `OR IS NULL` genuinely is valid.
+- 3 lower-confidence findings also fixed: a missing Postgres HOT-update
+  caveat in `sql-advanced/Transactions.tsx` (verified empirically against a
+  real Postgres 18.6 container — HOT updates measurably skip index
+  maintenance when no indexed column changes and the page has free space),
+  a function-name mismatch (`get_balance` vs. the actually-defined
+  `account_balance`) plus a stale PG16 citation in
+  `sql-advanced/StoredProcedures.tsx`, and a timeout-value mismatch (9s
+  claimed vs. 8s configured) in `tsql/Transactions.tsx`.
+
+version-sentinel — 3 findings, all fixed: an inconsistent PG16 citation
+(rest of the section cites 18.x), a missing `GENERATE_SERIES` cross-reference
+in `tsql/Views.tsx`'s tally-table section, and a stale panel count in
+`tsql/Cheatsheet.tsx`'s meta chip (claimed 14, actually 15). No real
+version-currency errors — Postgres 18.x and SQL Server 2025 citations both
+confirmed genuinely current.
+
+learners-advocate — 11 findings, all fixed or addressed:
+- **Real diagram defect**: `tsql/Intro.tsx`'s lesson-roadmap FlowChart
+  skipped the Views lesson entirely and mislabeled the final node as "9.
+  cheat sheet" when the real lesson 9 is Indexing — rebuilt to match the
+  actual sequence.
+- "Semi-join" used repeatedly (including as a section heading) without ever
+  being defined, and `sql-fundamentals/Joins.tsx` (the site's *second*
+  lesson) named three physical join algorithms with zero explanation —
+  defined semi-join at first use in both `sql-fundamentals/Joins.tsx` and
+  `tsql/Joins.tsx`; trimmed the unexplained algorithm-name aside.
+- Row-value/tuple comparison (`(a,b) < (x,y)`) used for keyset pagination
+  in `sql-fundamentals/Quickstart.tsx` without explaining it's lexicographic
+  comparison, not per-column — added an explanation.
+- `LATERAL` used unexplained 5 lessons before its own dedicated explanation
+  (`sql-design-patterns/MultiTenancy.tsx` → `sql-advanced/Advanced.tsx`),
+  and used again before its own in-lesson explanation within Advanced.tsx
+  itself — added forward-pointing explanations at both early uses, plus a
+  missing diagram for MultiTenancy.tsx's multi-step JSON-fold query.
+- `GiST` named without definition one lesson before it's actually explained
+  (`sql-design-patterns/Design.tsx` → `Indexing.tsx`) — added a brief
+  inline definition.
+- Nested-loop join never explained anywhere on the site despite being
+  central to reading `EXPLAIN` output, while Hash Join gets a full
+  walkthrough in the same lesson — added a matching explanation.
+- `sql-advanced/FieldGuide.tsx`'s tagline/footer claimed to summarize "the
+  four SQL Advanced lessons" but actually draws from SQL Fundamentals and
+  SQL Design Patterns too, while never covering StoredProcedures.tsx —
+  rewrote to describe its real scope.
+- "RCSI" used a dozen+ times across `tsql/Transactions.tsx` and
+  `tsql/Cheatsheet.tsx` without ever being spelled out — expanded at first
+  use in both.
+- A title/content mismatch (`sql-fundamentals/Aggregation.tsx` promised
+  ROWS/RANGE/GROUPS frame coverage but never showed GROUPS) — added a real
+  GROUPS example, verified against a live Postgres 18.6 container.
+- The entire `tsql/` section had zero InteractiveChallenge components
+  despite every other database section using them — added one each to
+  `tsql/Transactions.tsx` (RCSI misconception) and `tsql/Indexing.tsx` (the
+  ISNULL rewrite pitfall from the fact-checker finding above), rather than
+  all 9 files, to keep effort proportional to a "minor/informational"
+  finding.
+
+Verified: tsc --noEmit clean, vite build clean, eslint clean.

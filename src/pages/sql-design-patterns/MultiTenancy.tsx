@@ -159,6 +159,32 @@ SELECT * FROM orders;  -- resolves to tenant_acme.orders, no tenant_id column ne
         row. Current state becomes a derived value, not the source of truth.
       </p>
 
+      <InfoBox variant="info" title="LATERAL, briefly — the full treatment is in Advanced SQL Patterns">
+        <p>
+          The fold query below uses <code>CROSS JOIN LATERAL jsonb_each(e.payload)</code>, which
+          only works because <code>LATERAL</code> lets the right side of a join reference columns
+          from the left side. Without it, <code>jsonb_each(e.payload)</code> couldn&apos;t see{' '}
+          <code>e</code> at all — a plain <code>JOIN</code>&apos;s right side is evaluated
+          independently of the left, the same way a subquery in <code>FROM</code> can&apos;t
+          reference an outer table. <code>LATERAL</code> re-runs the right side once per left-side
+          row, so each order&apos;s own <code>payload</code> gets exploded, not some other
+          order&apos;s. The fuller explanation, with its own diagram, is in{' '}
+          <a href="/sql-advanced/advanced">Advanced SQL Patterns</a> — this is just enough to read
+          the query below.
+        </p>
+      </InfoBox>
+
+      <p>
+        The fold itself (STEP 2 in the code below) is a three-step pipeline: explode every
+        event&apos;s JSON payload into individual key/value pairs, keep only the latest value per
+        key, then glue those surviving pairs back into one document.
+      </p>
+
+      <FlowChart
+        title="Folding an Event Stream into Current State"
+        chart={"graph TD\n  E[\"order_events (3 rows)\\nOrderPlaced, ItemAdded, OrderShipped\"] --> L[\"LATERAL jsonb_each(payload)\\nexplode each row's JSON into key/value pairs\"]\n  L --> K[\"key/value pairs, one row each\\ncustomer_id, total, sku, qty, carrier, tracking\"]\n  K --> D[\"DISTINCT ON (order_id, key)\\nORDER BY sequence_number DESC\\nkeep only the LATEST value per key\"]\n  D --> A[\"jsonb_object_agg(key, value)\\nGROUP BY order_id\"]\n  A --> R[\"current_state\\none JSONB document\"]\n  style E fill:#1a2744,stroke:#5b9cf6\n  style L fill:#2a1f44,stroke:#a78bfa\n  style K fill:#1a2744,stroke:#5b9cf6\n  style D fill:#3d2f14,stroke:#d97706\n  style A fill:#2a1f44,stroke:#a78bfa\n  style R fill:#1a3329,stroke:#4ade80"}
+      />
+
       <CodeBlock language="sql" title="Append-Only Event Log" showLineNumbers={true}>
 {`CREATE TABLE order_events (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

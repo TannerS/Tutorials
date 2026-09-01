@@ -413,10 +413,10 @@ WHERE account_balance(id) > 1000;`}
           This trips people up constantly, so it is worth stating before any code: a{' '}
           <strong>procedure</strong> is invoked with <code>CALL name(args)</code> and returns
           nothing; a <strong>function</strong> is invoked inside a query with{' '}
-          <code>SELECT name(args)</code> and returns a value. Verified against PostgreSQL 16:{' '}
+          <code>SELECT name(args)</code> and returns a value. Verified against PostgreSQL 18.6:{' '}
           <code>CALL transfer_funds(1, 2, 100)</code> moved the money and returned no rows, while{' '}
-          <code>SELECT get_balance(1)</code> returned <code>900</code>. Calling a procedure with{' '}
-          <code>SELECT</code> is an error, and vice versa.
+          <code>SELECT account_balance(1)</code> returned <code>900</code>. Calling a procedure
+          with <code>SELECT</code> is an error, and vice versa.
         </p>
       </InfoBox>
 
@@ -476,7 +476,7 @@ Long orderId = (Long) out.get("p_order_id");`}
 await pool.query('CALL transfer_funds($1, $2, $3)', [fromId, toId, amount]);
 
 // A function: SELECT, and you read the value out of rows[0].
-const { rows } = await pool.query('SELECT get_balance($1) AS balance', [acctId]);
+const { rows } = await pool.query('SELECT account_balance($1) AS balance', [acctId]);
 const balance = rows[0].balance;
 
 // Parameters are still bound, not interpolated — a stored procedure is

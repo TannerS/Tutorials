@@ -495,8 +495,26 @@ SET lock_timeout = '5s';  -- error after 5 seconds of waiting
           Every <code>UPDATE</code> writes a brand-new row version and marks the old one dead —
           it never mutates in place. This is why a table with heavy UPDATE churn bloats even
           though row <em>count</em> stays constant, and why{' '}
-          <code>UPDATE ... SET col = col</code> (a no-op logically) still costs a full row write
-          and triggers index maintenance on every index, not just ones covering the changed column.
+          <code>UPDATE ... SET col = col</code> (a no-op logically) still costs a full row write.
+        </p>
+        <p style={{ marginTop: '0.5rem' }}>
+          <strong>Caveat — HOT updates:</strong> that new row version doesn&apos;t always touch
+          every index. If <em>no indexed column changed</em> and the new tuple fits in free space
+          left on the <em>same heap page</em>, Postgres performs a Heap-Only Tuple (HOT) update:
+          the old index entries are left untouched and simply redirect to the new version via a
+          chain on that page, so no index is touched at all — not even ones covering unrelated
+          columns. This is why frequently-updated tables sometimes have their{' '}
+          <code>fillfactor</code> lowered below the default 100 (e.g. <code>WITH (fillfactor =
+          70)</code>): it reserves free space per page specifically so future updates have room to
+          HOT-update instead of spilling to a new page. Reproduced on PostgreSQL 18.6:{' '}
+          1,000 updates to a non-indexed column on a table created with <code>fillfactor = 70</code>{' '}
+          produced 385 HOT updates (<code>pg_stat_user_tables.n_tup_hot_upd</code>); the identical
+          workload against a table with the default fillfactor of 100 (no free space) produced
+          zero; and updating the <em>indexed</em> column instead — even with fillfactor 70 free
+          space available — also produced zero. So &quot;every index gets touched&quot; is really
+          the fallback case: it&apos;s what happens when an update changes an indexed column, or
+          when the page has no room left for HOT. An update that avoids every indexed column, on a
+          page with free space, is exactly the case HOT exists to skip.
         </p>
       </InfoBox>
 

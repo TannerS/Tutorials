@@ -350,6 +350,14 @@ CREATE INDEX ON t (total);
 -- the expression isn't per-row. Never leave it to the default.`}
       </CodeBlock>
 
+      <p>
+        This one leans on <strong>GiST</strong> (Generalized Search Tree) — an index type built for
+        "do these overlap/are these near each other" queries rather than plain equality. The next
+        lesson, <a href="/sql-design-patterns/indexing">Indexing &amp; Performance</a>, covers GiST
+        and Postgres's other index types in depth; for now, just know it's the engine underneath{' '}
+        <code>EXCLUDE USING GIST</code> below.
+      </p>
+
       <CodeBlock language="sql" title="EXCLUSION constraints — UNIQUE for things that aren't equality" showLineNumbers={true}>
 {`-- "No two bookings for the same room may OVERLAP IN TIME."
 -- UNIQUE can't express this: no two rows are equal, they merely intersect.

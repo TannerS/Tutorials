@@ -357,6 +357,37 @@ SELECT date, amount,
     AS running_total_by_date
 FROM transactions;
 
+-- GROUPS: frame counts PEER GROUPS (rows tied by ORDER BY) as single units --
+-- not physical rows (ROWS) and not value distance (RANGE). Verified on 18.6
+-- against a leaderboard(name, score) table: Alice/Bob=100, Carol=90,
+-- Dave/Eve/Frank=80, Grace=70.
+SELECT name, score,
+  SUM(score) OVER (
+    ORDER BY score DESC
+    GROUPS BETWEEN 1 PRECEDING AND CURRENT ROW
+  ) AS tier_and_prior_tier
+FROM leaderboard
+ORDER BY score DESC, name;
+--  name  | score | tier_and_prior_tier
+-- -------+-------+----------------------
+--  Alice |   100 |                  200   <- just the 100-tier (100+100); no earlier tier exists
+--  Bob   |   100 |                  200   <- SAME value as Alice: GROUPS gives every tied row
+--                                             the identical frame, because they're one peer group
+--  Carol |    90 |                  290   <- 100-tier (200) + Carol's own 90-tier (90)
+--  Dave  |    80 |                  330   <- 90-tier (90) + 80-tier (240) -- all three 80s agree
+--  Eve   |    80 |                  330
+--  Frank |    80 |                  330
+--  Grace |    70 |                  310   <- 80-tier (240) + Grace's own 70-tier (70)
+--
+-- The same ROWS BETWEEN 1 PRECEDING AND CURRENT ROW on this data would instead
+-- split ties by whatever arbitrary order the tied rows come back in. Reach for
+-- GROUPS when "the previous DISTINCT value" is literally the question being
+-- asked -- e.g. "this rank and the rank above it" -- regardless of how many
+-- rows share each value. It's also the only offset frame of the three that
+-- works on a non-numeric ORDER BY (text, for instance): RANGE's PRECEDING/
+-- FOLLOWING offset requires a numeric/date/interval column to do arithmetic
+-- on, which GROUPS never needs since it only counts distinct peer groups.
+
 -- Percentage of department total
 SELECT name, department, salary,
   ROUND(100.0 * salary / SUM(salary) OVER (PARTITION BY department), 2)
