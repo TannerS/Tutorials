@@ -50,20 +50,25 @@ Postgres/T-SQL, Spring Boot 2/4.
 - [x] 2 — "React Core" → "React 18 (Core)"
 - [x] 5 — "MUI v4 (Material-UI)", "MUI v9 (Current)"
 - [x] 13 — "Communicating Architecture" (architecture-docs) removed entirely
-- [x] 11 (partial) — field guide format built; converted so far:
-      T-SQL (15 panels), JavaScript (12), React 18 (14), Java (15)
+- [x] 11 — field guide format built and applied to all 21 cheat-sheet lessons:
+      T-SQL (15 panels), JavaScript (12), React 18 (14), Java (15), Spring Boot 4 (16),
+      Spring Boot 2 (12), DDD (11), Cloud & Infrastructure (11), Observability (9),
+      DSA (15), Git/Version Control (14), Cryptography (13), TypeScript (18),
+      React Router v6/v7 (15), React Query (10), React Testing (14), MUI v4 (16),
+      MUI v9 (11), React 19 What's New (9), Zustand (9), CSS Basics (12).
+      Each renamed to "📋 <Topic> Field Guide" in the sidebar (React Router,
+      React Query, and CSS Basics previously had no 📋 prefix — added for
+      consistency). TypeScript's field guide is the one exception to "last
+      lesson of its section" — native-compiler/runtime-validation/node still
+      follow it in src/data/sections.ts; its `next` prop points at
+      native-compiler instead of null. Revisit when TypeScript's fold (below)
+      happens.
 - [x] 7 (partial) — JavaScript now has a field guide
 - [x] fix — `tsql` and `mui9` were missing from the sidebar (registered but in
       no nav group, and the sidebar renders only groups). Both added.
 
 ## Remaining
 
-- [ ] **11** — convert the other 18 cheat-sheet lessons to the field-guide
-      format and rename each to "<Topic> Field Guide":
-      springboot, springboot2, react19-whats-new, ddd,
-      cloud-architecture, observability, dsa, version-control, cryptography,
-      typescript, react-router, state-mgmt/zustand, react-query, react-testing,
-      mui, mui9, css-field-guide/basics
 - [ ] **11** — fold the 6 standalone `*-field-guide` sections into their parent
       sections as a single dense field-guide lesson each:
       sql, react, typescript, css, java, spring(boot 4)

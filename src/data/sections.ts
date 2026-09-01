@@ -50,7 +50,7 @@ export const sections: Section[] = [
       { id: 'observability', title: 'Observability', path: '/springboot/observability' },
       { id: 'webflux', title: 'Reactive Programming with WebFlux', path: '/springboot/webflux' },
       { id: 'resilience', title: 'Resilience4j & Circuit Breakers', path: '/springboot/resilience' },
-      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/springboot/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 Spring Boot 4 Field Guide', path: '/springboot/cheatsheet' },
     ],
   },
   {
@@ -67,7 +67,7 @@ export const sections: Section[] = [
       { id: 'testing', title: 'Testing in Boot 2 — @MockBean and Friends', path: '/springboot2/testing' },
       { id: 'actuator', title: 'Actuator & Metrics Before the Rename', path: '/springboot2/actuator' },
       { id: 'migration', title: 'Migrating 2 → 3 → 4, In Order', path: '/springboot2/migration' },
-      { id: 'cheatsheet', title: '📋 Spring Boot 2 Cheat Sheet', path: '/springboot2/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 Spring Boot 2 Field Guide', path: '/springboot2/cheatsheet' },
     ],
   },
   {
@@ -122,7 +122,7 @@ export const sections: Section[] = [
       { id: 'features', title: 'The Complete Feature List', path: '/react19-whats-new/features' },
       { id: 'react19', title: 'React 19 in Depth', path: '/react19-whats-new/react19' },
       { id: 'migration', title: 'Migrating from React 18 to 19', path: '/react19-whats-new/migration' },
-      { id: 'cheatsheet', title: "What's New in React 19 Cheat Sheet", path: '/react19-whats-new/cheatsheet' },
+      { id: 'cheatsheet', title: "📋 What's New in React 19 Field Guide", path: '/react19-whats-new/cheatsheet' },
     ],
   },
   {
@@ -270,7 +270,7 @@ export const sections: Section[] = [
       { id: 'domain-events', title: 'Domain Events & the Repository Pattern', path: '/ddd/domain-events' },
       { id: 'event-storming', title: 'Event Storming: Discovering Bounded Contexts', path: '/ddd/event-storming' },
       { id: 'spring-boot', title: 'DDD in a Spring Boot Codebase', path: '/ddd/spring-boot' },
-      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/ddd/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 DDD Field Guide', path: '/ddd/cheatsheet' },
     ],
   },
   {
@@ -284,7 +284,7 @@ export const sections: Section[] = [
       { id: 'multi-region', title: 'Multi-Region Architecture & Disaster Recovery', path: '/cloud-architecture/multi-region' },
       { id: 'capacity-planning', title: 'Cost & Capacity Planning', path: '/cloud-architecture/capacity-planning' },
       { id: 'cicd', title: 'CI/CD Pipelines & Deployment Strategies', path: '/cloud-architecture/cicd' },
-      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/cloud-architecture/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 Cloud & Infrastructure Field Guide', path: '/cloud-architecture/cheatsheet' },
     ],
   },
   {
@@ -297,7 +297,7 @@ export const sections: Section[] = [
       { id: 'slos', title: 'SLIs, SLOs & Error Budgets', path: '/observability/slos' },
       { id: 'tracing', title: 'Distributed Tracing Design', path: '/observability/tracing' },
       { id: 'incidents', title: 'Alerting & Incident Response', path: '/observability/incidents' },
-      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/observability/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 Observability Field Guide', path: '/observability/cheatsheet' },
     ],
   },
   {
@@ -319,7 +319,7 @@ export const sections: Section[] = [
       { id: 'hashing', title: 'Hash Tables, Deep Dive', path: '/dsa/hashing' },
       { id: 'dynamic-programming', title: 'Dynamic Programming', path: '/dsa/dynamic-programming' },
       { id: 'patterns', title: 'Common Interview Patterns', path: '/dsa/patterns' },
-      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/dsa/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 DSA Field Guide', path: '/dsa/cheatsheet' },
     ],
   },
   {
@@ -331,7 +331,7 @@ export const sections: Section[] = [
       { id: 'internals', title: 'Git Internals: Objects, Refs & the DAG', path: '/version-control/internals' },
       { id: 'branching', title: 'Branching & Rebase Strategies', path: '/version-control/branching' },
       { id: 'collaboration', title: 'Collaborative Workflows', path: '/version-control/collaboration' },
-      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/version-control/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 Git Field Guide', path: '/version-control/cheatsheet' },
     ],
   },
   {
@@ -386,7 +386,7 @@ export const sections: Section[] = [
       { id: 'applied-java', title: 'Applied Cryptography — Java', path: '/cryptography/applied-java' },
       { id: 'applied-node', title: 'Applied Cryptography — Node & TypeScript', path: '/cryptography/applied-node' },
       { id: 'mistakes', title: 'Common Cryptographic Mistakes', path: '/cryptography/mistakes' },
-      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/cryptography/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 Cryptography Field Guide', path: '/cryptography/cheatsheet' },
     ],
   },
   {
@@ -453,7 +453,7 @@ export const sections: Section[] = [
       { id: 'tsconfig', title: 'tsconfig Mastery', path: '/typescript/tsconfig' },
       { id: 'interactive', title: '🧪 Interactive Challenges', path: '/typescript/interactive' },
       { id: 'enterprise', title: 'Enterprise Patterns', path: '/typescript/enterprise' },
-      { id: 'cheatsheet', title: '📋 Cheat Sheet', path: '/typescript/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 TypeScript Field Guide', path: '/typescript/cheatsheet' },
       { id: 'native-compiler', title: 'TypeScript 6 → 7: The Native Compiler', path: '/typescript/native-compiler' },
       { id: 'runtime-validation', title: 'Runtime Validation & Schemas', path: '/typescript/runtime-validation' },
       { id: 'node', title: 'TypeScript on Node', path: '/typescript/node' },
@@ -491,7 +491,7 @@ export const sections: Section[] = [
       { id: 'testing', title: 'Testing Routes', path: '/react-router/testing' },
       { id: 'fullapp', title: 'Complete App Routing', path: '/react-router/fullapp' },
       { id: 'migration', title: 'Migration Guide (v5→v8)', path: '/react-router/migration' },
-      { id: 'cheatsheet', title: 'Cheat Sheet', path: '/react-router/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 React Router Field Guide', path: '/react-router/cheatsheet' },
     ],
   },
   {
@@ -532,7 +532,7 @@ export const sections: Section[] = [
     lessons: [
       { id: 'fundamentals', title: 'React Query: Fundamentals', path: '/react-query/fundamentals' },
       { id: 'advanced', title: 'React Query: Advanced Patterns', path: '/react-query/advanced' },
-      { id: 'cheatsheet', title: 'React Query Cheat Sheet', path: '/react-query/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 React Query Field Guide', path: '/react-query/cheatsheet' },
     ],
   },
   {
@@ -580,7 +580,7 @@ export const sections: Section[] = [
       { id: 'forms', title: 'Testing Forms & Routing', path: '/react-testing/forms' },
       { id: 'patterns', title: 'Testing Patterns & CI', path: '/react-testing/patterns' },
       { id: 'best-practices', title: 'Best Practices & Anti-Patterns', path: '/react-testing/best-practices' },
-      { id: 'cheatsheet', title: '📋 React Testing Library Cheat Sheet', path: '/react-testing/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 React Testing Field Guide', path: '/react-testing/cheatsheet' },
     ],
   },
   {
@@ -679,7 +679,7 @@ export const sections: Section[] = [
     icon: '🃏',
     color: '#38bdf8',
     lessons: [
-      { id: 'basics', title: 'CSS Basics Cheat Sheet', path: '/css-field-guide/basics' },
+      { id: 'basics', title: '📋 CSS Basics Field Guide', path: '/css-field-guide/basics' },
       { id: 'advanced', title: 'Advanced CSS & Modern Selectors', path: '/css-field-guide/advanced' },
       { id: 'gotchas', title: 'Gotchas & Specificity Pitfalls', path: '/css-field-guide/gotchas' },
       { id: 'patterns', title: 'Layout & Design Patterns', path: '/css-field-guide/patterns' },
@@ -698,7 +698,7 @@ export const sections: Section[] = [
       { id: 'theming', title: 'Theming & the Theme Object', path: '/mui/theming' },
       { id: 'overrides', title: 'Overriding Component Styles', path: '/mui/overrides' },
       { id: 'styled-v5', title: 'v5 and Beyond — styled() and sx', path: '/mui/styled-v5' },
-      { id: 'cheatsheet', title: '📋 MUI Cheat Sheet (v4 → v5)', path: '/mui/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 MUI v4 Field Guide', path: '/mui/cheatsheet' },
     ],
   },
   {
@@ -711,7 +711,7 @@ export const sections: Section[] = [
       { id: 'silent-breaks', title: 'The Breaks That Do Not Warn You', path: '/mui9/silent-breaks' },
       { id: 'styling', title: 'Styling in v9 — styled() and sx', path: '/mui9/styling' },
       { id: 'theming', title: 'Theming with CSS Variables & Color Schemes', path: '/mui9/theming' },
-      { id: 'cheatsheet', title: '📋 MUI v9 Cheat Sheet', path: '/mui9/cheatsheet' },
+      { id: 'cheatsheet', title: '📋 MUI v9 Field Guide', path: '/mui9/cheatsheet' },
     ],
   },
   {

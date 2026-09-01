@@ -1,144 +1,137 @@
-import CodeBlock from '../../components/CodeBlock';
-import InfoBox from '../../components/InfoBox';
-import LessonLayout from '../../components/LessonLayout';
+import GuideLayout from '../../components/GuideLayout';
+import GuidePanel, { GuideCode, GuideDefs, GuideRules, GuideTable } from '../../components/GuidePanel';
 
 export default function WhatsNewCheatsheet() {
   return (
-    <LessonLayout
-      title="What's New in React 19 Cheat Sheet"
-      sectionId="react19-whats-new"
-      lessonIndex={3}
+    <GuideLayout
+      title="React 19"
+      kicker="WHAT'S NEW"
+      glyph="✨"
+      tagline="Every headline feature, what got removed, and the honest verdict on upgrading from 18."
+      meta={['react@19.0.0+', '9 panels']}
+      page="1 / 1"
+      footer="This page is the recall sheet for the two lessons that precede it — the feature walkthrough and the migration reasoning live there, not here."
       prev={{ path: '/react19-whats-new/migration', label: 'Migrating from React 18 to 19' }}
       next={null}
     >
-      <p>
-        A single-page reconciliation of both lessons that precede this one — what's new, and
-        what breaks moving from React 18.
-      </p>
-
-      <h2>New in 19 — At a Glance</h2>
-
-      <CodeBlock language="text" title="Every headline feature, one line each">
-{`Actions              useActionState, useFormStatus (react-dom), useOptimistic
-use()                use(promise) + use(Context) — callable conditionally, unlike hooks
-ref as prop           function Foo({ ref }) { ... }  — no forwardRef required
-ref cleanup           ref={(node) => { ...; return () => cleanup(); }}
-Document metadata     <title>/<meta>/<link> anywhere — auto-hoisted to <head>
-Stylesheets           <link rel="stylesheet" precedence="..."> — Suspense-integrated
-Async scripts         <script async> anywhere — deduped + hoisted automatically
-Preloading            preload, preinit, prefetchDNS, preconnect (react-dom)
-Context provider      <ThemeContext value={theme}> — .Provider form still works
-Error handling         onCaughtError / onUncaughtError / onRecoverableError (createRoot)
-React Compiler        separate opt-in BUILD TOOL — not bundled in react@19, off by default`}
-      </CodeBlock>
-
-      <CodeBlock language="jsx" title="Actions — the shape to remember">
-{`const [state, formAction, isPending] = useActionState(actionFn, initialState);
+      <GuidePanel n={1} title="Actions — The Shape to Remember" accent="blue" glyph="⚡" span={2}>
+        <GuideCode>{`const [state, formAction, isPending] = useActionState(actionFn, initialState);
 // actionFn: (prevState, formData) => newState
 
 function SubmitButton() {
-  const { pending } = useFormStatus();   // from react-dom — reads nearest parent <form>
+  const { pending } = useFormStatus();   // react-dom — reads nearest parent <form>
   return <button disabled={pending}>Save</button>;
 }
 
 const [optimisticState, addOptimistic] = useOptimistic(realState, mergeFn);
-// mergeFn: (state, update) => newState — auto-reverts if the action throws`}
-      </CodeBlock>
+// mergeFn: (state, update) => newState — auto-reverts if the action throws`}</GuideCode>
+        <GuideRules items={[
+          'useFormStatus only sees a PARENT <form> — calling it in the same component that renders the <form> tag always returns pending: false.',
+          'useOptimistic auto-reverts to realState if the action throws — no manual rollback needed.',
+        ]} />
+      </GuidePanel>
 
-      <InfoBox variant="warning" title="Two gotchas worth remembering">
-        <p>
-          <code>useFormStatus</code> only sees a parent <code>&lt;form&gt;</code> — calling it in
-          the same component that renders the <code>&lt;form&gt;</code> tag itself always returns{' '}
-          <code>pending: false</code>. And <code>use(somePromise)</code> must receive a{' '}
-          <em>stable</em> promise — creating one inline in the component body
-          (<code>use(fetch(...))</code>) makes a new promise every render and re-suspends forever.
-        </p>
-      </InfoBox>
+      <GuidePanel n={2} title="use() — Not a Hook" accent="purple" glyph="🪝">
+        <GuideDefs
+          items={[
+            ['use(promise)', 'suspends the component until it resolves, then returns the value'],
+            ['use(Context)', 'same function also reads context — no useContext needed'],
+            ['conditional', 'callable inside if / loops — unlike every other hook'],
+          ]}
+        />
+        <GuideRules items={[
+          'A promise created inline in the render body (use(fetch(...))) is a NEW promise every render — re-suspends forever. The promise must be stable.',
+        ]} />
+      </GuidePanel>
 
-      <h2>Removed in 19 — What Actually Breaks</h2>
+      <GuidePanel n={3} title="ref as a Prop" accent="green" glyph="🔗">
+        <GuideCode>{`function Foo({ ref }) {
+  return <div ref={ref} />;
+}   // no forwardRef required
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Removed</th>
-            <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--accent-amber)' }}>Replacement</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-            <td style={{ padding: '0.75rem' }}>PropTypes (all components)</td>
-            <td style={{ padding: '0.75rem' }}>TypeScript types</td>
-          </tr>
-          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-            <td style={{ padding: '0.75rem' }}>defaultProps (function components only)</td>
-            <td style={{ padding: '0.75rem' }}>JS default parameters</td>
-          </tr>
-          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-            <td style={{ padding: '0.75rem' }}>String refs (<code>ref=&quot;x&quot;</code>)</td>
-            <td style={{ padding: '0.75rem' }}>Callback ref / <code>useRef</code></td>
-          </tr>
-          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-            <td style={{ padding: '0.75rem' }}>Legacy Context (<code>contextTypes</code>)</td>
-            <td style={{ padding: '0.75rem' }}><code>createContext</code> + <code>useContext</code></td>
-          </tr>
-          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-            <td style={{ padding: '0.75rem' }}>Module pattern factories</td>
-            <td style={{ padding: '0.75rem' }}>Return JSX directly</td>
-          </tr>
-          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-            <td style={{ padding: '0.75rem' }}><code>ReactDOM.render</code> / <code>.hydrate</code></td>
-            <td style={{ padding: '0.75rem' }}><code>createRoot</code> / <code>hydrateRoot</code></td>
-          </tr>
-          <tr>
-            <td style={{ padding: '0.75rem' }}>UMD builds</td>
-            <td style={{ padding: '0.75rem' }}>ESM CDN (e.g. esm.sh)</td>
-          </tr>
-        </tbody>
-      </table>
+ref={(node) => {
+  attach(node);
+  return () => cleanup();   // NEW: a ref callback can return cleanup
+}}`}</GuideCode>
+        <GuideRules items={[
+          'forwardRef still works and is not deprecated — ref-as-a-prop is additive, not a replacement requirement.',
+        ]} />
+      </GuidePanel>
 
-      <InfoBox variant="danger" title="The one that actually stops your app">
-        <p>
-          Every removal above fails <em>silently</em> except one: <code>ReactDOM.render(...)</code>{' '}
-          is a hard error in React 19, not a warning. Everything else (PropTypes, string refs,
-          legacy Context) just quietly stops working — your build succeeds and the app renders,
-          it just stops validating/applying what you thought it was.
-        </p>
-      </InfoBox>
+      <GuidePanel n={4} title="Document Metadata & Resources" accent="amber" glyph="📄" span={2}>
+        <GuideDefs
+          items={[
+            ['<title> / <meta> / <link>', 'render anywhere in the tree — auto-hoisted into <head>'],
+            ['<link rel="stylesheet" precedence>', 'Suspense-integrated; precedence controls insertion order'],
+            ['<script async>', 'anywhere in the tree — deduped and hoisted automatically'],
+            ['preload / preinit', 'react-dom — fetch, or fetch + execute, a resource early'],
+            ['prefetchDNS / preconnect', 'react-dom — warm up a connection before the request'],
+          ]}
+        />
+      </GuidePanel>
 
-      <h2>Upgrade Steps</h2>
+      <GuidePanel n={5} title="Context & Error Handling" accent="pink" glyph="🌐">
+        <GuideCode>{`<ThemeContext value={theme}>          {/* new shorthand */}
+  ...
+</ThemeContext>
+// <ThemeContext.Provider value={theme}> still works`}</GuideCode>
+        <GuideDefs
+          items={[
+            ['onCaughtError', 'createRoot option — fires when an error boundary catches'],
+            ['onUncaughtError', 'createRoot option — fires when nothing caught it'],
+            ['onRecoverableError', 'createRoot option — React recovered automatically (e.g. a hydration mismatch)'],
+          ]}
+        />
+      </GuidePanel>
 
-      <CodeBlock language="bash" title="In order">
-{`npm install --save-exact react@^19.0.0 react-dom@^19.0.0
+      <GuidePanel n={6} title="React Compiler" accent="cyan" glyph="🛠️">
+        <GuideRules items={[
+          'A separate, opt-in BUILD TOOL — not bundled in react@19 and not on by default.',
+          'Auto-memoizes components at build time; the useMemo/useCallback/memo triage from React 18 still applies to any code it has not run over.',
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={7} title="Removed in 19 — What Actually Breaks" accent="red" glyph="🚫" span={2}>
+        <GuideTable
+          head={['Removed', 'Replacement']}
+          rows={[
+            ['PropTypes (all components)', 'TypeScript types'],
+            ['defaultProps (function components only)', 'JS default parameters'],
+            ['String refs (ref="x")', 'Callback ref / useRef'],
+            ['Legacy Context (contextTypes)', 'createContext + useContext'],
+            ['Module pattern factories', 'Return JSX directly'],
+            ['ReactDOM.render / .hydrate', 'createRoot / hydrateRoot'],
+            ['UMD builds', 'ESM CDN (e.g. esm.sh)'],
+          ]}
+        />
+        <GuideRules items={[
+          'Every removal fails SILENTLY except one: ReactDOM.render(...) is now a hard error, not a warning.',
+          'PropTypes, string refs and legacy Context just quietly stop working — the build succeeds and the app renders, it just stops validating/applying what you thought it was.',
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={8} title="Upgrade Steps, In Order" accent="blue" glyph="⬆️" span={2}>
+        <GuideCode>{`npm install --save-exact react@^19.0.0 react-dom@^19.0.0
 npm install --save-exact @types/react@^19.0.0 @types/react-dom@^19.0.0
 
-npx codemod@latest react/19/migration-recipe   # ReactDOM.render, string refs, useFormState rename, etc.
+npx codemod@latest react/19/migration-recipe
+# ReactDOM.render, string refs, useFormState rename, etc.
 
-npx tsc --noEmit     # defaultProps is dropped from FunctionComponent's type — this alone
-                      # catches most of the PropTypes/defaultProps cleanup for you
+npx tsc --noEmit
+# defaultProps is dropped from FunctionComponent's type — this alone
+# catches most of the PropTypes/defaultProps cleanup for you`}</GuideCode>
+        <GuideRules items={[
+          'Then run the full test suite AND grep manually for .propTypes / .defaultProps / ref=" / contextTypes — these fail silently, a green suite does not prove you caught everything.',
+        ]} />
+      </GuidePanel>
 
-# Then: run the full test suite AND grep manually for .propTypes / .defaultProps /
-# ref=" / contextTypes — these fail silently, a green test run doesn't prove you
-# caught everything.`}
-      </CodeBlock>
-
-      <InfoBox variant="success" title="The honest bottom line">
-        <p>
-          If your app is function-components-only, hooks-based, TypeScript-typed (or no PropTypes
-          at all), and already calling <code>createRoot</code> — none of the removals above apply,
-          and the upgrade really is close to a version-number bump. There's no new mental model to
-          learn moving 18 → 19; every removed API already had a replacement you could have been
-          using in 18.
-        </p>
-      </InfoBox>
-
-      <h2>Section Index</h2>
-
-      <CodeBlock language="text" title="Both lessons, in reading order">
-{`1. The Complete Feature List        Actions, use(), ref-as-prop, metadata/stylesheets/scripts,
-                                     preloading, <Context> shorthand, error handlers, Compiler
-2. Migrating from React 18 to 19     What breaks, why, and the real upgrade steps
-3. This page`}
-      </CodeBlock>
-    </LessonLayout>
+      <GuidePanel n={9} title="The Honest Bottom Line" accent="purple" glyph="✅">
+        <GuideRules items={[
+          'Function-components-only, hooks-based, TypeScript-typed (or PropTypes-free), already on createRoot: none of the removals above apply.',
+          'There is no new mental model to learn moving 18 → 19 — every removed API already had a replacement available in 18.',
+          'For a codebase shaped like that, the upgrade really is close to a version-number bump.',
+        ]} />
+      </GuidePanel>
+    </GuideLayout>
   );
 }
