@@ -158,19 +158,18 @@ Postgres/T-SQL, Spring Boot 2/4.
       work was regenerated in the same pass its section changed (React 18:
       26→27, Spring Boot 2: 12→21, PostgreSQL/`sql-advanced`: 19→21, plus
       the brand-new React Router v5 and v8 field guides built alongside
-      their sections). PDF regeneration (`dist-pdf/`) is still open —
-      `dist-pdf/` doesn't exist locally right now and needs a full
-      `node scripts/build-pdf.mjs --combined --dark` (or equivalent) run
-      once this content is committed.
+      their sections). PDF regeneration completed via
+      `npm run build:pdf:dark`: 44 section PDFs (including the new
+      `react-router-v5-dark.pdf`, `react-router-v8-dark.pdf`,
+      `springboot2-dark.pdf`, `sql-design-patterns-dark.pdf`) plus the
+      57MB combined `tutorials-complete-dark.pdf` — "No lessons skipped"
+      confirmed by the build script itself. `dist-pdf/` is gitignored, so
+      nothing to commit here; regenerate again with the same command
+      whenever content changes.
 
 ## Remaining
 
-- [ ] **10 (PDF)** — `dist-pdf/` is empty/missing; regenerate section PDFs
-      (and the combined dark PDF) now that the version-split content has
-      landed: `node scripts/build-pdf.mjs <section> --dark`, or
-      `npm run build:pdf:combined` / `npm run build:pdf:dark` for the
-      whole site. This is a slow Playwright-driven job — run it as its own
-      step, not inline with routine edits.
+Nothing — all 14 items are done. This file can be deleted.
 
 ## Notes for whoever picks this up
 
