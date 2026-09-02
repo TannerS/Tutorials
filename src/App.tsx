@@ -89,7 +89,9 @@ import ReactBulletproofReact from './pages/react18/BulletproofReact'
 import ReactErrorBoundaries from './pages/react18/ErrorBoundaries'
 import ReactAnimations from './pages/react18/Animations'
 import ReactPortals from './pages/react18/Portals'
-import ReactAgGrid from './pages/react18/AgGrid'
+
+// AG Grid
+import AgGrid from './pages/ag-grid/AgGrid'
 
 // SQL Fundamentals
 import SqlQuickstart from './pages/sql-fundamentals/Quickstart'
@@ -553,7 +555,7 @@ function App() {
         <Route path="react18/error-boundaries" element={<ReactErrorBoundaries />} />
         <Route path="react18/animations" element={<ReactAnimations />} />
         <Route path="react18/portals" element={<ReactPortals />} />
-        <Route path="react18/ag-grid" element={<ReactAgGrid />} />
+        <Route path="ag-grid/data-tables" element={<AgGrid />} />
         {/* SQL */}
         <Route path="sql-fundamentals/quickstart" element={<SqlQuickstart />} />
         <Route path="sql-fundamentals/joins" element={<SqlJoins />} />

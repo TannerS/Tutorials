@@ -10,7 +10,7 @@ export default function Portals() {
       sectionId="react18"
       lessonIndex={22}
       prev={{ path: '/react18/animations', label: 'Animation Libraries (Framer Motion & Beyond)' }}
-      next={{ path: '/react18/ag-grid', label: 'AG Grid — Data Tables at Scale' }}
+      next={null}
     >
       <p>
         <code>createPortal(children, domNode)</code> renders <code>children</code> into{' '}

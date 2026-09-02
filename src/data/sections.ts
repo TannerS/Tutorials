@@ -121,7 +121,15 @@ export const sections: Section[] = [
       { id: 'error-boundaries', title: 'Error Boundaries', path: '/react18/error-boundaries' },
       { id: 'animations', title: 'Animation Libraries (Framer Motion & Beyond)', path: '/react18/animations' },
       { id: 'portals', title: 'Portals, In Depth', path: '/react18/portals' },
-      { id: 'ag-grid', title: 'AG Grid — Data Tables at Scale', path: '/react18/ag-grid' },
+    ],
+  },
+  {
+    id: 'ag-grid',
+    label: 'AG Grid',
+    icon: '📊',
+    color: '#84cc16',
+    lessons: [
+      { id: 'data-tables', title: 'AG Grid — Data Tables at Scale', path: '/ag-grid/data-tables' },
     ],
   },
   {
@@ -744,7 +752,7 @@ export const groups: Group[] = [
         label: 'React',
         icon: '⚛️',
         color: '#22d3ee',
-        sectionIds: ['react18', 'react19-whats-new', 'react-antipatterns', 'state-basics', 'state-context', 'state-zustand', 'react-query', 'react-testing', 'react-router-v5', 'react-router', 'react-router-v8'],
+        sectionIds: ['react18', 'ag-grid', 'react19-whats-new', 'react-antipatterns', 'state-basics', 'state-context', 'state-zustand', 'react-query', 'react-testing', 'react-router-v5', 'react-router', 'react-router-v8'],
       },
       {
         id: 'frontend-tooling-group',

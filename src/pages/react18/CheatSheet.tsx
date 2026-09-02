@@ -8,7 +8,7 @@ export default function CheatSheet() {
       kicker="FIELD GUIDE"
       glyph="⚛️"
       tagline="Hooks, re-renders, refs and effects, plus the patterns, styling, routing, state and testing calls that come up daily — the parts that decide whether an app is fast, stable and shippable."
-      meta={['React 18 core', 'measured on 19.2.6', '27 panels']}
+      meta={['React 18 core', 'measured on 19.2.6', '26 panels']}
       page="1 / 1"
       footer="Behaviour marked 'measured' was verified in a real browser. What's new in React 19 has its own section; this page is the core model."
       prev={{ path: '/react18/build-toolchain', label: '🔧 Build Toolchain' }}
@@ -380,33 +380,6 @@ useState(() => expensiveCompute()); // ✅ React calls this once, on mount only`
         <GuideRules items={[
           "Drilling through 2-3 levels that all use the value is fine — plain props. Drilling through layers that only forward it is the smell context fixes.",
           "Don't over-correct: every context consumer re-renders on any value change, so keep fast-changing state (cursor position, per-keystroke form fields) out of it.",
-        ]} />
-      </GuidePanel>
-
-      <GuidePanel n={27} title="AG Grid — Data Tables at Scale" accent="blue" glyph="📊" span={2}>
-        <GuideCode>{`npm install ag-grid-react      // pulls in ag-grid-community (36.1.0) automatically
-
-import { AllCommunityModule } from 'ag-grid-community';
-import { AgGridProvider, AgGridReact } from 'ag-grid-react';
-
-<AgGridProvider modules={[AllCommunityModule]}>
-  <div style={{ height: 500 }}>          {/* MUST have an explicit height */}
-    <AgGridReact rowData={rowData} columnDefs={colDefs} theme={themeQuartz} />
-  </div>
-</AgGridProvider>`}</GuideCode>
-        <GuideDefs
-          items={[
-            ['theme prop', 'themeQuartz (default) / themeAlpine / themeBalham / themeMaterial — the Theming API; CSS-import themes are Legacy'],
-            ['field', 'straight passthrough of a rowData property (dot notation for nested)'],
-            ['valueGetter', 'computes the cell VALUE — drives sort/filter/export, not just display'],
-            ['valueFormatter', 'only changes the DISPLAYED text; sorting/filtering still use the raw value'],
-          ]}
-        />
-        <GuideRules items={[
-          "No default height: a parent div with no explicit height renders the grid at 0px with no console error — the #1 'blank grid' bug.",
-          "rowData / columnDefs / defaultColDef compare by REFERENCE, not deep-equality — an inline array/object literal looks like a real change every render; useState/useMemo it, useCallback grid-option callbacks.",
-          "Community (MIT, free in prod) covers sort/filter/pin/resize/edit; row grouping, Set Filter, Master/Detail, Excel export and the Server-Side Row Model are Enterprise (commercial license required in prod).",
-          "Client-Side Row Model (default) holds all of rowData in the browser — fine to ~100k rows; past that, the Infinite Row Model (Community) or Server-Side Row Model (Enterprise) fetch rows on demand instead.",
         ]} />
       </GuidePanel>
     </GuideLayout>

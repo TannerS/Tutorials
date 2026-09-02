@@ -7,9 +7,9 @@ export default function AgGrid() {
   return (
     <LessonLayout
       title="AG Grid — Data Tables at Scale"
-      sectionId="react18"
-      lessonIndex={23}
-      prev={{ path: '/react18/portals', label: 'Portals, In Depth' }}
+      sectionId="ag-grid"
+      lessonIndex={0}
+      prev={null}
       next={null}
     >
       <p>
