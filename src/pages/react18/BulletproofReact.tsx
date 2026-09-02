@@ -8,7 +8,7 @@ export default function BulletproofReact() {
     <LessonLayout
       title="Bulletproof React — A Concrete File Structure"
       sectionId="react18"
-      lessonIndex={19}
+      lessonIndex={18}
       prev={{ path: '/react18/feature-folder', label: 'Feature-Based Architecture' }}
       next={{ path: '/react18/error-boundaries', label: 'Error Boundaries' }}
     >

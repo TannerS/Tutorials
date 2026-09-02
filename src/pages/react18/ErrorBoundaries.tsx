@@ -7,7 +7,7 @@ export default function ErrorBoundaries() {
     <LessonLayout
       title="Error Boundaries"
       sectionId="react18"
-      lessonIndex={20}
+      lessonIndex={19}
       prev={{ path: '/react18/bulletproof-react', label: 'Bulletproof React — A Concrete File Structure' }}
       next={{ path: '/react18/animations', label: 'Animation Libraries (Framer Motion & Beyond)' }}
     >

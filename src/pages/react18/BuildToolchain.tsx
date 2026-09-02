@@ -37,7 +37,7 @@ export default function BuildToolchain() {
       sectionId="react18"
       lessonIndex={13}
       prev={{ path: '/react18/typescript', label: 'React + TypeScript' }}
-      next={{ path: '/react18/cheat-sheet', label: '📋 React 18 Field Guide' }}
+      next={{ path: '/react18/adapters', label: 'API Adapters & Envelopes' }}
     >
       {/* ════════════════════════════════════════════════════
           WHY THIS PROBLEM EXISTS

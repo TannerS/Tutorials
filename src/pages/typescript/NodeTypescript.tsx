@@ -8,9 +8,9 @@ export default function NodeTypescript() {
     <LessonLayout
       title="TypeScript on Node"
       sectionId="typescript"
-      lessonIndex={15}
+      lessonIndex={14}
       prev={{ path: '/typescript/runtime-validation', label: 'Runtime Validation & Schemas' }}
-      next={null}
+      next={{ path: '/typescript/cheatsheet', label: '📋 TypeScript Field Guide' }}
     >
       <p>
         Node can now execute a <code>.ts</code> file directly — no build step, no{' '}

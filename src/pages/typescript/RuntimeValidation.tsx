@@ -8,7 +8,7 @@ export default function RuntimeValidation() {
     <LessonLayout
       title="Runtime Validation & Schemas"
       sectionId="typescript"
-      lessonIndex={14}
+      lessonIndex={13}
       prev={{ path: '/typescript/native-compiler', label: 'TypeScript 6 → 7: The Native Compiler' }}
       next={{ path: '/typescript/node', label: 'TypeScript on Node' }}
     >

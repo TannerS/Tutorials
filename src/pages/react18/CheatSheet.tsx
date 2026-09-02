@@ -11,8 +11,8 @@ export default function CheatSheet() {
       meta={['React 18 core', 'measured on 19.2.6', '26 panels']}
       page="1 / 1"
       footer="Behaviour marked 'measured' was verified in a real browser. What's new in React 19 has its own section; this page is the core model."
-      prev={{ path: '/react18/build-toolchain', label: '🔧 Build Toolchain' }}
-      next={{ path: '/react18/adapters', label: 'API Adapters & Envelopes' }}
+      prev={{ path: '/react18/portals', label: 'Portals, In Depth' }}
+      next={null}
     >
       <GuidePanel n={1} title="What Causes a Re-render" accent="red" glyph="🔁" span={2}>
         <GuideDefs

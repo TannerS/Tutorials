@@ -8,7 +8,7 @@ export default function FeatureFolder() {
     <LessonLayout
       title="Feature-Based Architecture"
       sectionId="react18"
-      lessonIndex={18}
+      lessonIndex={17}
       prev={{ path: '/react18/module-federation', label: 'Module Federation & MFEs' }}
       next={{ path: '/react18/bulletproof-react', label: 'Bulletproof React — A Concrete File Structure' }}
     >

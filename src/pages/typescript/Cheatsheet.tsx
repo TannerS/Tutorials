@@ -11,8 +11,8 @@ export default function TypeScriptCheatsheet() {
       meta={['TypeScript 5 → 6', 'React 19 + Node', '26 panels']}
       page="1 / 1"
       footer="This page is for recall. The lessons in this section carry the reasoning, the worked examples and the tsconfig walkthroughs."
-      prev={{ path: '/typescript/enterprise', label: 'Enterprise Patterns' }}
-      next={{ path: '/typescript/native-compiler', label: 'TypeScript 6 → 7: The Native Compiler' }}
+      prev={{ path: '/typescript/node', label: 'TypeScript on Node' }}
+      next={null}
     >
       <GuidePanel n={1} title="Primitives, Literals & Enums" accent="blue" glyph="🔤" span={2}>
         <GuideCode>{`string number boolean bigint symbol null undefined void never unknown any

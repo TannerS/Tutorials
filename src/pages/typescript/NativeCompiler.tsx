@@ -8,8 +8,8 @@ export default function NativeCompiler() {
     <LessonLayout
       title="TypeScript 6 → 7: The Native Compiler"
       sectionId="typescript"
-      lessonIndex={13}
-      prev={{ path: '/typescript/cheatsheet', label: '📋 TypeScript Field Guide' }}
+      lessonIndex={12}
+      prev={{ path: '/typescript/enterprise', label: 'Enterprise TypeScript Patterns' }}
       next={{ path: '/typescript/runtime-validation', label: 'Runtime Validation & Schemas' }}
     >
       <p>
