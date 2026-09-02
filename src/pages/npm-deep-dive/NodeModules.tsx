@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function NodeModules() {
@@ -316,30 +315,6 @@ npm dedupe --dry-run
 npx depcheck           # find unused dependencies
 npx cost-of-modules    # show install time per dep`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="You only installed 'express' in your package.json, but your code successfully imports 'debug' without errors. What's happening?"
-        options={[
-          "debug is a Node.js built-in module",
-          "express re-exports debug for convenience",
-          "debug was hoisted to top-level node_modules because express depends on it",
-          "npm automatically installs commonly-used packages"
-        ]}
-        correctIndex={2}
-        explanation="This is the phantom dependency problem. Since express depends on debug, and npm hoists transitive dependencies to the top-level node_modules, debug becomes accessible to your code even though you never declared it. This works by accident and can break unexpectedly."
-      />
-
-      <InteractiveChallenge
-        question="Why does pnpm prevent phantom dependencies while npm does not?"
-        options={[
-          "pnpm uses a different registry with stricter rules",
-          "pnpm only symlinks YOUR declared dependencies to the top-level node_modules",
-          "pnpm doesn't install transitive dependencies at all",
-          "pnpm modifies Node.js module resolution"
-        ]}
-        correctIndex={1}
-        explanation="pnpm only creates symlinks at the top level of node_modules for packages you explicitly declared in your package.json. Transitive dependencies live in the nested .pnpm directory and are only accessible to the packages that declared them. This enforces correctness — you can only import what you've declared."
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

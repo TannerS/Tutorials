@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function JavaTestingBasics() {
@@ -771,29 +770,6 @@ order (2 failures)
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A colleague's test builds a mock EmailSender, stubs send() to do nothing, calls service.place(...), and then asserts only that the returned order total is 2997. They call the EmailSender a 'mock'. What is it actually, and does the naming matter?"
-        options={[
-          "It is a mock — anything created by a mocking library is a mock, and the terminology is interchangeable in practice",
-          "It is a dummy: send() returns void and the test never asserts on it, so it exists purely to satisfy the constructor. Calling it a mock implies an expectation the test does not have, which is exactly the confusion that makes review conversations about over-specification impossible",
-          "It is a spy, because it is capable of recording the calls even though the test does not read them",
-          "It is a fake, since doing nothing is a valid simplified implementation of sending email"
-        ]}
-        correctIndex={1}
-        explanation="Meszaros classifies by what the double does IN THIS TEST, not by what it could do. The test never reads anything back from the EmailSender and never asserts on it, so its only job is to let the constructor run: that is a dummy. It is not a spy, because nothing is recorded or inspected; not a fake, because it implements no real behaviour; and not a mock, because a mock carries pre-programmed expectations and fails the test on its own. The naming matters precisely because 'mock' signals 'this test asserts on the interaction'. When every double is called a mock, you cannot tell a test that pins down real requirements apart from one that will break on the next refactor — and the review conversation about which is which never gets off the ground."
-      />
-
-      <InteractiveChallenge
-        question="Your OrderService calls a third-party ShippingSdk whose client returns a deeply nested RateResponse. Tests stub it with RETURNS_DEEP_STUBS. After a minor version bump of the SDK, twelve tests fail to compile and, worse, two that still compile now pass while production throws. What is the structural fix?"
-        options={[
-          "Pin the SDK to an exact version and never upgrade it, so the stubs stay valid",
-          "Replace RETURNS_DEEP_STUBS with individually stubbed intermediate objects, which is more verbose but more explicit",
-          "Define your own ShippingRates interface expressing what your domain needs, put the SDK behind a single adapter class covered by an integration test, and let every unit test stub your two-method interface instead of their type tree",
-          "Move all the shipping tests to @SpringBootTest so the real SDK client is wired in"
-        ]}
-        correctIndex={2}
-        explanation="This is 'only mock types you own', and the second symptom is the important one. Tests that fail to compile are annoying but honest — the compiler told you. Tests that still pass while production throws are the real damage: your stub encoded a belief about the SDK's behaviour, nothing ever checked that belief, and when the SDK's behaviour changed the stub kept happily asserting the old world. Pinning the version freezes the misunderstanding in place and blocks security patches. Stubbing the intermediates more explicitly is the same coupling with more typing. Wrapping the SDK in an interface your domain defines confines their types to one adapter, which you verify once against their sandbox with an integration test, and gives every unit test a stable two-method surface you control. It also usually reveals that your domain wanted three fields out of their forty-field response."
-      />
     </LessonLayout>
   );
 }

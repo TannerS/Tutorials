@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Config() {
@@ -438,30 +437,6 @@ app:
 #   GET /actuator/env/spring.datasource.url
 # (On Boot 3+ the VALUE will be masked by default — see the Actuator lesson.)`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="You upgrade a Boot 2.7 service to Boot 3.5 with spring-boot-properties-migrator on the classpath. The app starts, health is UP, and smoke tests pass. The log contains one WARN block listing spring.redis.host and one ERROR block listing server.max-http-header-size. What is the actual state of the running application?"
-        options={[
-          "Both keys are broken — the app is running on defaults for Redis and for the header size",
-          "Redis is working (the migrator temporarily mapped the key); the header size is NOT applied and is running on the default",
-          "Both keys are fine — the migrator maps everything it reports, and the log levels are just cosmetic",
-          "The ERROR block would have prevented startup, so the app you are looking at cannot be running"
-        ]}
-        correctIndex={1}
-        explanation="The two log levels describe two different outcomes. The WARN block says explicitly: 'Each configuration key has been temporarily mapped to its replacement for your convenience' — so spring.redis.host IS reaching spring.data.redis.host and Redis is configured correctly, for as long as the migrator stays on the classpath. The ERROR block says 'no longer supported' and gives a Reason ('Replacement key uses an incompatible target type'); nothing was mapped, so server.max-http-header-size=16KB is being ignored entirely and the server is running on its default header limit. This is why the app can start clean, report UP, and pass smoke tests while still being misconfigured — a header-size limit only shows up under a request with large headers, which is exactly the kind of thing a smoke test does not send. Option 4 is wrong for an important reason: the migrator only reports, it never fails startup."
-      />
-
-      <InteractiveChallenge
-        question={'A Boot 2 service reads @Value("${app.catalog.maxRetries}") and works in every environment until it is deployed to Kubernetes with the value supplied as the env var APP_CATALOG_MAX_RETRIES. It now fails to start with "Could not resolve placeholder". Why, and what is the fix that survives the Boot 3 upgrade too?'}
-        options={[
-          "Relaxed binding was removed in Boot 2.4 — pin the app to 2.3 or set the property in application.yml instead",
-          "Environment variables cannot supply Spring properties without SPRING_APPLICATION_JSON",
-          "@Value is a literal placeholder lookup with no relaxed binding — move the property onto a @ConfigurationProperties class, which binds through the Binder and tries every spelling",
-          "The env var name is wrong; it should be APP_CATALOG_MAXRETRIES to match the camelCase spelling exactly"
-        ]}
-        correctIndex={2}
-        explanation={'Relaxed binding is a feature of the Binder, which is what @ConfigurationProperties classes bind through — it tries kebab-case, camelCase, snake_case and upper-snake-case. @Value is not part of that machinery at all: it is a plain placeholder resolution against the Environment for the exact string you typed, so "${app.catalog.maxRetries}" looks for a property literally named app.catalog.maxRetries and APP_CATALOG_MAX_RETRIES does not match it. Option 4 is a tempting near-miss — the env-var rule is "uppercase, then replace every non-alphanumeric character with underscore", which is applied to the CANONICAL kebab-case name (app.catalog.max-retries), so APP_CATALOG_MAX_RETRIES is the correct variable name; the problem is the @Value on the receiving end, not the variable. Nothing about this changed between Boot 2 and Boot 4, which is the point: fixing it is not migration work you have to sequence, it is a straight improvement you can land on 2.7 today.'}
-      />
 
       <InfoBox variant="success" title="Config-specific checklist for the 2 → 3 leg">
         <ul>

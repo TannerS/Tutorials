@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function MuiIntro() {
@@ -363,32 +362,6 @@ const Red = styled('div')({ color: 'red' });`}
 6. Cheat Sheet (v4 -> v5)
      The lookup table. Old name on the left, new name on the right.`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"You open a file and see: import { styled } from '@material-ui/core/styles'. What can you conclude about which styling engine this code uses?"}
-        options={[
-          "It is v5+, because styled() is the v5 API",
-          "It is v4 and JSS-backed — v4 exports its own styled(), and the @material-ui scope is the actual version signal",
-          "It is ambiguous; styled() exists identically in both versions",
-          "It is a mid-migration file mixing both engines",
-        ]}
-        correctIndex={1}
-        explanation={"The import PATH is the signal, not the function name. @material-ui/core/styles is unambiguously v4, and v4's export list genuinely includes styled — it is a JSS-backed styled() that does not support the sx prop. Reading styled() as 'therefore v5' is the most common misread when moving between versions, which is why the reliable check is the scope (@material-ui vs @mui) or package.json."}
-        language="jsx"
-      />
-
-      <InteractiveChallenge
-        question={"Why does swapping v4 for v5 count as a real migration rather than a version bump, even though the components' props barely changed?"}
-        options={[
-          "v5 dropped support for React, requiring a framework change",
-          "v5 removed most components, so you have to rewrite the UI",
-          "The entire styling engine was replaced — JSS gave way to emotion, so makeStyles/withStyles left the main package, theme.overrides became theme.components, and every generated class name changed",
-          "The Material Design specification was rewritten, so all visual output differs",
-        ]}
-        correctIndex={2}
-        explanation={"The component API is the part that mostly survives — <Button variant=\"contained\" color=\"primary\"> reads the same in both. The breakage is underneath: JSS out, emotion in. That single swap is what forces makeStyles into a deprecated compatibility package, restructures the theme's override keys, and changes class-name generation, which in turn breaks any CSS or test selector that targeted the old generated names."}
-        language="jsx"
-      />
 
       <InfoBox variant="tip" title="Reading the rest of this section">
         Every API asserted here was checked against a real <code>@material-ui/core@4.12.4</code>{' '}

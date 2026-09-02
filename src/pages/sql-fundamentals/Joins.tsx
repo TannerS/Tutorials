@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Joins() {
@@ -378,44 +377,6 @@ WHERE NOT EXISTS (
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You have a query: SELECT * FROM orders WHERE customer_id NOT IN (SELECT id FROM customers). The customers table has a row where id IS NULL. How many rows will this query return?"
-        options={[
-          'All orders with no matching customer',
-          'All orders',
-          'Zero rows',
-          'Only orders where customer_id is NULL',
-        ]}
-        correctIndex={2}
-        explanation="When NOT IN encounters a NULL in the subquery result, every comparison becomes UNKNOWN (not TRUE), so no rows satisfy the condition. This is why NOT EXISTS is always safer than NOT IN."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question={"You join employees (10 rows) to order_items (5 items per order, 3 orders per employee). How many rows does the result set contain?"}
-        options={[
-          '10 rows',
-          '15 rows',
-          '50 rows',
-          '150 rows',
-        ]}
-        correctIndex={3}
-        explanation="Each employee has 3 orders, each order has 5 items. So each employee generates 3 x 5 = 15 rows. With 10 employees: 10 x 15 = 150 rows. This is the 1:N join multiplication trap — always be aware of how joins affect row counts."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question={"Which JOIN type should you use to find all departments that have NO employees?"}
-        options={[
-          'INNER JOIN departments d ON e.department_id = d.id',
-          'LEFT JOIN departments d ON e.department_id = d.id WHERE e.id IS NULL',
-          'departments d LEFT JOIN employees e ON e.department_id = d.id WHERE e.id IS NULL',
-          'CROSS JOIN between departments and employees',
-        ]}
-        correctIndex={2}
-        explanation="You need departments as the LEFT (driving) table, LEFT JOIN to employees, then filter WHERE e.id IS NULL to keep only departments with no matching employee. Option B has the tables reversed — it would find employees without departments."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function LinkedLists() {
   return (
@@ -882,17 +881,6 @@ sizes: 1000000 / 1000000`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"Floyd's Tortoise and Hare uses a slow pointer (1 step) and a fast pointer (2 steps). Why does this guarantee detecting a cycle, rather than the fast pointer just skipping past the slow one forever?"}
-        options={[
-          "It doesn't actually guarantee detection — it only works for small lists",
-          "The fast pointer gains exactly one node on the slow pointer per step, so once both are inside the cycle, the gap between them shrinks by 1 every iteration and must hit exactly zero — it can't jump over zero",
-          "The algorithm relies on the JVM garbage collector to detect the cycle first",
-          "It works because the fast pointer always visits every node before the slow pointer does"
-        ]}
-        correctIndex={1}
-        explanation={"The relative speed between the two pointers is constant: fast always closes the gap by exactly one node per step. Outside a cycle that's irrelevant because fast just runs off the end to null. Inside a cycle, a gap that shrinks by exactly 1 each step, within a loop of finite length, cannot skip over 0 — it must land on 0 within at most one full loop of steps, which is the moment slow == fast. That's a mathematical guarantee, not a heuristic, which is why the algorithm needs no extra memory to work correctly."}
-      />
     </LessonLayout>
   );
 }

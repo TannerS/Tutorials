@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Data() {
@@ -859,17 +858,6 @@ class CustomerRepositoryIT {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A list endpoint that returns 500 orders is running 1000+ queries. Each order has a customer and items relation lazily loaded. What's the fix that fetches everything in one query?"
-        options={[
-          "Change fetch = FetchType.EAGER on the associations",
-          "Use @EntityGraph(attributePaths = { \"customer\", \"items\" }) on the repository method, or a JOIN FETCH in JPQL",
-          "Add @Cacheable on the entity to cache the results",
-          "Increase the JDBC connection pool size"
-        ]}
-        correctIndex={1}
-        explanation="This is the N+1 problem. EAGER fetching is a footgun — it applies everywhere the entity is loaded, not just where you need it, and creates its own N+1 problems. @EntityGraph (declarative) or JOIN FETCH (explicit JPQL) load the associations in the same SQL statement as the parent, turning 1001 queries into 1. Caching would hide the symptom but not fix the underlying query; the pool size doesn't matter if you're doing 1000 queries in serial."
-      />
     </LessonLayout>
   );
 }

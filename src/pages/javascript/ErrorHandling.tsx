@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function JsErrorHandling() {
@@ -409,69 +408,6 @@ EXIT CODE: 1`}
 
       {/* ── Section 7: Interactive Challenges ─────────────────── */}
       <h2>7. Test Your Knowledge</h2>
-
-      <InteractiveChallenge
-        question={"What does this function log and return?"}
-        language="javascript"
-        code={`function f() {
-  try {
-    return 'A';
-  } finally {
-    console.log('cleanup');
-  }
-}
-console.log(f());`}
-        options={[
-          "Throws an error — you cannot return from inside a try block",
-          "Logs 'cleanup' then 'A' — finally runs before the function actually returns",
-          "Logs 'A' then 'cleanup' — the return happens first",
-          "Only logs 'A' — finally is skipped because try succeeded",
-        ]}
-        correctIndex={1}
-        explanation={"finally always runs before the function returns, even when try already hit a return statement. So 'cleanup' logs first (from inside finally), then the outer console.log('A') runs after f() actually returns."}
-      />
-
-      <InteractiveChallenge
-        question={"In this async function, does the catch block run when fetchData() rejects?"}
-        language="javascript"
-        code={`async function load() {
-  try {
-    fetchData(); // returns a Promise that will reject
-  } catch (err) {
-    console.log('caught:', err.message);
-  }
-}`}
-        options={[
-          "Yes — try/catch always catches promise rejections from calls inside it",
-          "No — fetchData() is never awaited, so its rejection happens after the try block has already finished executing",
-          "Yes, but only if fetchData() rejects synchronously",
-          "No — you can never use try/catch with promises, only .catch()",
-        ]}
-        correctIndex={1}
-        explanation={"Without await, fetchData() returns a promise immediately and the try block moves on. The rejection arrives later, outside the try/catch entirely, and surfaces as an unhandledRejection instead. Adding await fetchData() fixes it."}
-      />
-
-      <InteractiveChallenge
-        question={"What is the value of err.cause here?"}
-        language="javascript"
-        code={`try {
-  try {
-    throw new Error('disk read failed');
-  } catch (rootErr) {
-    throw new Error('failed to load user profile', { cause: rootErr });
-  }
-} catch (err) {
-  // err.cause === ?
-}`}
-        options={[
-          "undefined — cause is not a real JavaScript feature",
-          "The string 'disk read failed'",
-          "The original Error object whose message is 'disk read failed'",
-          "err.cause does not exist until you call err.getCause()",
-        ]}
-        correctIndex={2}
-        explanation={"The ES2022 { cause } option on the Error constructor attaches the original error object (not just its message) as err.cause, letting you trace back to the root failure while still throwing a more meaningful outer error."}
-      />
 
       <InfoBox variant="success" title="Checklist: Solid Error Handling">
         <ul>

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Mui9SilentBreaks() {
@@ -318,17 +317,6 @@ npx @mui/codemod@latest v7.0.0/grid-props src/`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="After upgrading v4 to v9, your app looks correct on phones and on desktop, but on tablets the sidebar that should be hidden is visible. Nothing was logged. What is the first thing to check?"
-        options={[
-          'The z-index of the sidebar changed between versions',
-          "A theme.breakpoints.down() call — down('sm') covered up to 960px in v4 and only 600px in v9, so the 600–960px range lost the rule",
-          'The Grid container lost its spacing prop',
-          'Emotion is injecting styles in a different order than JSS did',
-        ]}
-        correctIndex={1}
-        explanation={"Correct at the extremes and wrong in the middle is the signature of a breakpoint range change rather than a broken rule — a rule that was simply gone would be wrong everywhere below the threshold, including on phones. In v4 down('sm') meant max-width:959.95px, so a 'hide on small screens' rule covered tablets. In v9 the same call means max-width:599.95px, so the 600–960px band no longer matches and the sidebar reappears exactly there. Injection order (option 4) is a real v4-to-v5 concern and worth knowing about, but it would not produce a clean phone/desktop-correct, tablet-wrong split."}
-      />
     </LessonLayout>
   );
 }

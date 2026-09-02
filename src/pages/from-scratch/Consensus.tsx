@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function FromScratchConsensus() {
@@ -122,18 +121,6 @@ if (message.term < this.currentTerm) {
         two leaders from being <em>elected</em>; terms ensure that if an old leader was hanging
         around believing stale things, it gives up the moment it learns the truth.
       </p>
-
-      <InteractiveChallenge
-        question="A five-node cluster partitions into a group of two and a group of three. The old leader is in the group of two. What happens?"
-        options={[
-          'Both groups elect a leader, and the logs diverge until an administrator intervenes',
-          'The group of three elects a new leader in a higher term; the group of two cannot elect anyone, and the old leader steps down when the partition heals',
-          'Neither group can elect a leader, because neither has all five nodes',
-          'The old leader keeps its leadership because it was elected first',
-        ]}
-        correctIndex={1}
-        explanation={"A majority of five is three. The group of three can hold an election and win it; the group of two can never gather three votes no matter how many times it tries, so it just burns through terms as a perpetual candidate. Meanwhile the old leader in the minority group can still THINK it is the leader, but it cannot commit anything, because committing also requires a majority to acknowledge. When the partition heals it hears the new, higher term and steps down. Note that option 3 is a common misreading: Raft never needs all nodes, only a majority — that is what makes it available at all."}
-      />
 
       <h2>Step 3: The Election</h2>
 
@@ -272,18 +259,6 @@ t= 202  node1 *** LEADER *** term=1  (2/3 votes, quorum=2)
         split the vote. Randomized barely moves.
       </p>
 
-      <InteractiveChallenge
-        question="Your Raft cluster is stable for hours, then goes through a burst of rapid leader changes with the term number climbing fast, and no data is being committed. What should you suspect first?"
-        options={[
-          'A node has run out of disk space',
-          'The election timeout is too short relative to real network latency and heartbeat interval, so followers keep declaring the healthy leader dead',
-          'The cluster has too many nodes to reach a majority',
-          'A client is sending malformed requests',
-        ]}
-        correctIndex={1}
-        explanation={"A climbing term with no commits is the signature of repeated elections. The usual cause is an election timeout set too close to the real round-trip time or heartbeat interval: a heartbeat gets delayed by a GC pause or a slow link, a follower concludes the leader is dead, and starts an election. That election makes the real leader step down, which costs another round trip, which makes the next timeout more likely to fire. The standard rule of thumb is that the election timeout should be an order of magnitude larger than the broadcast time, and the heartbeat interval well under the election timeout. Disk space and malformed requests would not move the term number, and a cluster cannot have too many nodes to reach a majority — a majority is defined relative to the size."}
-      />
-
       <h2>Step 5: Heartbeats — Staying Elected</h2>
 
       <p>
@@ -385,18 +360,6 @@ t= 270    node2 commitIndex -> 2
         entry cannot collect a majority — it will always be blocked by at least one node that knows
         better. Committed data cannot be elected away.
       </p>
-
-      <InteractiveChallenge
-        question="A leader appends an entry, replicates it to one of its two followers, and crashes before hearing back. Did the entry survive?"
-        options={[
-          'Yes — it was written to two nodes, which is a majority of three, so it is committed',
-          'It depends: the entry is on two nodes, so a future leader must have it, but no client was told it succeeded — it may or may not end up committed',
-          'No — an entry is lost unless the leader acknowledged it',
-          'Yes, but only if the surviving follower becomes the next leader',
-        ]}
-        correctIndex={1}
-        explanation={"This is the genuinely uncomfortable middle state, and it is why 'committed' and 'stored' are different words. The entry is on two of three nodes. Any future leader needs votes from two nodes, and at least one of those two will be a node holding this entry — whose logOk check will refuse to vote for a candidate lacking it. So the entry is guaranteed to reach the next leader, and will almost certainly be committed by it. But the crash happened before the leader counted the acknowledgements, so no client ever received a success response. From the client's point of view the request timed out with an unknown outcome, and it must be safe to retry — which is exactly why commands in real systems carry unique IDs and are made idempotent."}
-      />
 
       <h2>What You Just Built, In Real Names</h2>
 

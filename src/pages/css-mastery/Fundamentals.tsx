@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Fundamentals() {
@@ -659,70 +658,6 @@ html { font-size: 100%; }     /* = 16px by default, RESPECTS user settings */
 
       <h2>Knowledge Check</h2>
 
-      <InteractiveChallenge
-        question="Given #main p { color: blue; } and .content .text .highlight { color: red; }, which color wins on a matching element?"
-        options={[
-          'red — three classes outscore one ID plus one element',
-          'blue — specificity compares column by column, and one ID beats any number of classes',
-          'red — it is declared later in the source',
-          'Neither — the browser treats it as a conflict and falls back to inherited color',
-        ]}
-        correctIndex={1}
-        explanation="Specificity is a tuple compared left to right, not a sum. #main p scores (0,1,0,1) and .content .text .highlight scores (0,0,3,0). The ID column is compared before the class column, so the moment blue has 1 there and red has 0, blue wins outright — the class count never gets consulted. Source order only breaks ties between equal specificity."
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question="An element has width: 300px, padding: 25px, border: 5px, and no box-sizing declared. How wide does it render?"
-        options={[
-          '300px — width always means the final rendered width',
-          '360px — 300 + 25 + 25 + 5 + 5',
-          '350px — padding is included but the border is not',
-          '240px — padding and border are subtracted from the width',
-        ]}
-        correctIndex={1}
-        explanation="The default is box-sizing: content-box, where width sizes the CONTENT layer only and padding and border are added outside it: 300 + 50 padding + 10 border = 360px. With box-sizing: border-box it would render at exactly 300px, with the content shrinking to 240px to make room. This is why every reset sets border-box globally."
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question="A .badge with position: absolute; top: 0 is landing at the top of the whole page instead of inside its .card parent. What is missing?"
-        options={[
-          '.badge needs a z-index',
-          '.card needs a non-static position — usually position: relative',
-          '.badge needs display: block',
-          '.card needs overflow: hidden',
-        ]}
-        correctIndex={1}
-        explanation="An absolutely positioned element measures its offsets from the nearest ancestor whose position is NOT static. If no ancestor qualifies, it falls all the way back to the initial containing block — the page. Adding position: relative to .card makes it the anchor without moving it at all, since relative with no offsets changes nothing visually. This relative-parent/absolute-child pairing is the single most common positioning idiom in CSS."
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question="Why does rem generally beat em for a typographic scale?"
-        options={[
-          'rem is an absolute unit, so it renders identically on every device',
-          'em is not supported for font-size in modern browsers',
-          'rem always resolves against the root font-size so it never compounds, while nested em values multiply through each level',
-          'rem ignores the user browser font-size setting, making layouts predictable',
-        ]}
-        correctIndex={2}
-        explanation="em resolves against the current element's font-size, so a 1.2em inside a 1.2em inside a 1.2em ends up at 1.728x — compounding that is nearly impossible to reason about across a component tree. rem always resolves against the html element, so 1.5rem means the same thing everywhere. Both are relative and both respect the user's browser font-size setting — that is precisely why they beat px for type, and why the 62.5% hack that forces 1rem = 10px is a mistake."
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question="Two stacked block siblings have margin-bottom: 20px and margin-top: 30px. What is the gap between them?"
-        options={[
-          '50px — margins add together',
-          '30px — vertical margins collapse to the larger value',
-          '20px — the first element wins',
-          '0px — margins between siblings are ignored',
-        ]}
-        correctIndex={1}
-        explanation="Adjacent vertical margins collapse: the gap is the larger of the two, 30px, not their sum. This applies only to vertical margins between block-level boxes in normal flow — horizontal margins never collapse, and neither do margins on flex or grid items. Using gap on a flex or grid container sidesteps the whole behavior, which is the main reason gap is preferred over margin for spacing children."
-        language="css"
-      />
     </LessonLayout>
   );
 }

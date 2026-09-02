@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Forms() {
@@ -484,19 +483,6 @@ test('redirects unauthenticated users to login', () => {
   expect(screen.queryByText(/dashboard/i)).not.toBeInTheDocument();
 });`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"When testing a component that uses useParams() from React Router, what should you wrap it with in your test?"}
-        options={[
-          "BrowserRouter with a manually set URL",
-          "MemoryRouter with initialEntries matching the route pattern",
-          "StaticRouter from react-router/dom",
-          "Just mock useParams with jest.mock()"
-        ]}
-        correctIndex={1}
-        explanation={"MemoryRouter with initialEntries is the standard approach for testing routed components. It lets you set the initial URL without needing a real browser environment, and it works with useParams, useSearchParams, and all other router hooks."}
-        language="jsx"
-      />
 
       <h2>Complete Example: Login Form</h2>
 

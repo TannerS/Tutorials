@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Isp() {
@@ -362,17 +361,6 @@ public class AuthFilter {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What is the main problem with a fat interface?"
-        options={[
-          "It makes the interface file too long to read",
-          "It forces implementors to depend on methods they don't use, causing empty stubs or exceptions",
-          "Java limits the number of methods an interface can have",
-          "Fat interfaces run slower than small interfaces at runtime"
-        ]}
-        correctIndex={1}
-        explanation="The core problem with fat interfaces is forced coupling. Implementors must provide bodies for methods they don't need, resulting in UnsupportedOperationException throws or empty no-op stubs. This violates ISP and often LSP as well, since the subtype doesn't truly fulfill the interface contract."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Security() {
@@ -316,19 +315,6 @@ void deleteOrderAccessMatrix(String role, int expectedStatus) throws Exception {
     mvc.perform(request).andExpect(status().is(expectedStatus));
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"An authenticated USER hits an admin-only endpoint. What status code should the test expect, and why?"}
-        options={[
-          "401 — the request lacks proper authentication",
-          "403 — the server knows who they are but denies the action",
-          "404 — hide the endpoint's existence entirely",
-          "400 — treat it as a malformed request"
-        ]}
-        correctIndex={1}
-        explanation="401 is reserved for missing/invalid credentials — this user IS authenticated. 403 correctly signals 'I know who you are, and you're not allowed to do this.' Conflating 401 and 403 is a common bug that both tests and code reviews should catch. (404 is a legitimate deliberate choice when the mere existence of a resource is sensitive, but it is a hardening decision made per-endpoint — not the default answer for a failed role check on a known endpoint.)"
-        language="java"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

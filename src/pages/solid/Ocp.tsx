@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Ocp() {
@@ -283,17 +282,6 @@ public class DiscountCalculator {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Which technique best achieves the Open/Closed Principle?"
-        options={[
-          "Using switch statements to handle every possible case",
-          "Making all fields public so subclasses can override behavior",
-          "Defining abstractions (interfaces) that new implementations can extend",
-          "Marking all classes as final to prevent modification"
-        ]}
-        correctIndex={2}
-        explanation="OCP is achieved by programming to abstractions. When behavior is behind an interface, new implementations can be added (open for extension) without changing the client code that depends on the interface (closed for modification). Switch statements require editing existing code for every new case — the opposite of OCP."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Command() {
@@ -369,17 +368,6 @@ console.log([...recentEvents]); // ['click', 'purchase', 'logout']`}
         implement this pattern for you.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A GUI 'Undo' button needs to reverse the last action, whatever that action happened to be — insert text, delete a shape, resize an image. Which pattern is purpose-built for this?"
-        options={[
-          "Iterator — it walks backward through a history of actions",
-          "Command — each action is encapsulated as an object that knows how to undo itself",
-          "Template Method — the undo steps are defined once in a base class",
-          "Chain of Responsibility — each handler decides whether to undo the action"
-        ]}
-        correctIndex={1}
-        explanation="Command is exactly this: each user action becomes an object with execute() and undo() methods. The invoker (the Undo button/history stack) never needs to know what kind of action it's reversing — it just calls undo() on whatever Command object is on top of the stack."
-      />
     </LessonLayout>
   );
 }

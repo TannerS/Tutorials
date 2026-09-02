@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoAppliedJava() {
   return (
@@ -658,17 +657,6 @@ No-mode ciphertext == explicit AES/ECB/PKCS5Padding ciphertext: true`}
         the concepts stay identical and where the platform&apos;s idioms genuinely differ.
       </p>
 
-      <InteractiveChallenge
-        question={"A teammate writes Cipher.getInstance(\"AES\") with no mode or padding specified, and it compiles and runs with no warning or exception. What actually happens, and why is that dangerous?"}
-        options={[
-          "It throws a NoSuchAlgorithmException at runtime, so the mistake is caught immediately",
-          "The JDK silently resolves it to AES/ECB/PKCS5Padding — verified above by two identical plaintext blocks producing two identical ciphertext blocks — and ECB leaks patterns in the plaintext with no IV or chaining to prevent it",
-          "It defaults to AES/GCM/NoPadding, the same secure mode used throughout this lesson, so nothing is actually wrong",
-          "It picks a random mode each time the program runs, making the ciphertext non-reproducible"
-        ]}
-        correctIndex={1}
-        explanation={"Nothing about calling Cipher.getInstance(\"AES\") alone fails loudly — it compiles, it runs, and it returns a working cipher, which is exactly what makes it dangerous. The demo above proved it two ways on a real JDK 26 install: the no-mode cipher's algorithm string is just \"AES\", and encrypting two identical 16-byte plaintext blocks produced two byte-for-byte identical ciphertext blocks — the unmistakable fingerprint of ECB, which encrypts each block independently with no IV or chaining. That's why every other program in this lesson spells out the full transformation, \"AES/GCM/NoPadding\", explicitly rather than relying on any default."}
-      />
     </LessonLayout>
   );
 }

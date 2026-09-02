@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Dip() {
@@ -323,20 +322,6 @@ public class SmtpEmailSender implements EmailSender {
           architecture. DIP ties all the other SOLID principles together.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question="What is the key difference between Dependency Inversion (DIP) and Dependency Injection (DI)?"
-        options={[
-          "They are the same thing — just different names",
-          "DIP is a design principle about depending on abstractions; DI is a technique for supplying those dependencies",
-          "DI is a principle and DIP is a framework feature",
-          "DIP only applies to databases; DI applies to all dependencies"
-        ]}
-        correctIndex={1}
-        explanation="DIP is a design principle that says 'depend on abstractions, not concretions.' DI is a technique (constructor injection, setter injection, etc.) for providing those abstract dependencies to a class at runtime. You can follow DIP without a DI framework by manually passing interfaces via constructors. Spring's @Autowired automates DI but the principle (DIP) is framework-independent."
-        code={"// DIP: depend on the interface\nprivate final OrderRepository repo;\n\n// DI: inject via constructor\npublic OrderService(OrderRepository repo) {\n    this.repo = repo;\n}"}
-        language="java"
-      />
 
       <h2>SOLID — The Whole Picture</h2>
       <p>

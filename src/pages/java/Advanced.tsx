@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Advanced() {
@@ -731,17 +730,6 @@ pinning (see the Concurrency lesson).`}
 
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question="Which Java feature automatically generates equals(), hashCode(), toString(), and accessor methods for immutable data classes?"
-        options={[
-          "Sealed classes",
-          "Text blocks",
-          "Records",
-          "The var keyword"
-        ]}
-        correctIndex={2}
-        explanation="Records (introduced in Java 14, finalized in Java 16) are special classes designed for holding immutable data. The compiler automatically generates a constructor, accessor methods (e.g., name() instead of getName()), equals(), hashCode(), and toString() based on the record's components. This eliminates the boilerplate typically needed for simple data carrier classes."
-      />
     </LessonLayout>
   );
 }

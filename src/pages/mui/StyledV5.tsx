@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 const th = { padding: '0.75rem', textAlign: 'left' as const, color: 'var(--accent-amber)' };
@@ -295,7 +294,6 @@ const theme = createMuiTheme({
     MuiButton: { disableRipple: true },
   },
 });
-
 
 // ---------- v5 through v9 ----------
 import { createTheme } from '@mui/material/styles';
@@ -772,41 +770,6 @@ export default StatusChip;`}
           state in between — do not.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A v4 theme is copied into createTheme() during a v5 migration. The app builds, boots, and renders — but every button is still SHOUTING IN CAPS. Why is there no error?"}
-        code={`const theme = createTheme({
-  overrides: {
-    MuiButton: { root: { textTransform: 'none' } },
-  },
-});`}
-        options={[
-          "createTheme silently lowercases unknown keys, so 'overrides' became 'overRides'",
-          "textTransform is not a themeable property in v5; it must be set with sx",
-          "v5's createTheme reads 'components', not 'overrides' — an unknown top-level key is just carried onto the theme object and never read by any component",
-          "The ThemeProvider import still points at @material-ui/core, so the theme never reaches the tree",
-        ]}
-        correctIndex={2}
-        explanation={"The v4 keys 'overrides' and 'props' were replaced by components.MuiButton.styleOverrides and components.MuiButton.defaultProps. createTheme does not validate top-level keys, so 'overrides' is carried along as inert data — no error, no warning, no styles. This is the most common silent failure of a v4-to-v5 theme migration, and it is why adaptV4Theme() exists. Option D describes a real and separate migration bug, but it would break far more than text-transform."}
-        language="javascript"
-      />
-
-      <InteractiveChallenge
-        question={"After migrating this component to styled(), React logs: 'Warning: React does not recognize the `isActive` prop on a DOM element.' What is the fix?"}
-        code={`const NavItem = styled(ListItem)(({ theme, isActive }) => ({
-  fontWeight: isActive ? 700 : 400,
-  color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
-}));`}
-        options={[
-          "Rename it to 'is-active' so React treats it as a valid HTML attribute",
-          "Read it from context instead — styled() cannot accept custom props",
-          "Pass shouldForwardProp so 'isActive' is consumed by the style callback and never forwarded to the underlying DOM element",
-          "Wrap the styled component in React.memo to stop the prop propagating",
-        ]}
-        correctIndex={2}
-        explanation={"A styled component forwards every prop it receives to what it wraps, and ListItem eventually renders a real DOM element. The style callback reading isActive does not consume it. styled(ListItem, { shouldForwardProp: (prop) => prop !== 'isActive' }) keeps it available to the callback while stopping it at the boundary. This has no v4 equivalent — makeStyles took props as a hook argument, so they could never leak — which makes it one of the easiest migration bugs to introduce."}
-        language="javascript"
-      />
 
       <h2>Carry this forward</h2>
 

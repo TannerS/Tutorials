@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Grid() {
@@ -150,19 +149,6 @@ export default function Grid() {
   }
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"In grid-template-areas, what does a period (.) represent?"}
-        options={[
-          "A grid line intersection",
-          "An empty cell with no named area",
-          "A cell that spans the full row",
-          "A repeating pattern marker"
-        ]}
-        correctIndex={1}
-        explanation={"A dot (.) designates an empty cell. You can use multiple dots (...) for readability. The cell exists in the grid but has no named area assigned."}
-        language="css"
-      />
 
       <h2>Implicit vs Explicit Grid</h2>
       <p>The <strong>explicit grid</strong> is defined by <code>grid-template-*</code>. Items placed beyond those bounds create <strong>implicit tracks</strong> controlled by <code>grid-auto-*</code>.</p>
@@ -445,32 +431,6 @@ export default function Grid() {
           get a sliver each and overflow their own tracks.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A 3-column grid has items with long text overflowing horizontally. What is the most common fix?"}
-        options={[
-          "Set overflow: visible on the container",
-          "Set min-width: 0 on the grid items",
-          "Change to display: flex instead",
-          "Add word-break: break-all to the container"
-        ]}
-        correctIndex={1}
-        explanation={"Grid items default to min-width: auto, so they won't shrink below their content's intrinsic width. Setting min-width: 0 allows items to shrink within their track, letting text-wrapping and overflow rules work correctly."}
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question={"What does grid-column: 1 / -1 do?"}
-        options={[
-          "Places the item in the first column only",
-          "Removes the item from the grid flow",
-          "Spans the item across ALL columns from first to last line",
-          "Creates a negative-width column"
-        ]}
-        correctIndex={2}
-        explanation={"Negative line numbers count from the end of the explicit grid. Line -1 is always the last line, so 1 / -1 spans every column regardless of how many exist."}
-        language="css"
-      />
 
       <h2>Quick Reference</h2>
 

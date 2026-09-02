@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Graphql() {
   return (
@@ -381,17 +380,6 @@ Total DB calls for items: 1`}
         specific mobile client, not as a wholesale REST replacement.
       </p>
 
-      <InteractiveChallenge
-        question={"A GraphQL query fetches 10 orders, each with a nested `items` field. The Order.items resolver calls db.findItemsByOrderId(order.id) directly. What happens, and what fixes it?"}
-        options={[
-          "Nothing — GraphQL automatically batches nested resolver calls",
-          "This re-introduces the N+1 problem at the resolver level: 10 separate DB calls fire, one per order. A DataLoader instance created per-request batches all `.load()` calls issued in the same event-loop tick into a single call",
-          "This is fine because GraphQL only allows one level of nesting per query",
-          "The fix is to switch back to REST, since GraphQL cannot solve N+1 problems"
-        ]}
-        correctIndex={1}
-        explanation={"GraphQL solves HTTP-level under-fetching, but it does nothing by default about resolver-level N+1 — each parent in a list gets its own resolver call for a nested field, exactly like a naive REST client fetching items per-order in a loop. DataLoader fixes this by coalescing every .load() call issued within one tick into a single batched call to the data source, plus per-request memoization — but it must be instantiated fresh per request, never shared as a singleton."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function E2e() {
@@ -442,19 +441,6 @@ test.describe('Order Management', () => {
   });
 });`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"Which Playwright locator strategy should be your FIRST choice?"}
-        options={[
-          "page.locator('.css-class')",
-          "page.getByTestId('element-id')",
-          "page.getByRole('button', { name: 'Submit' })",
-          "page.locator('#element-id')"
-        ]}
-        correctIndex={2}
-        explanation="getByRole is the preferred locator because it queries elements the way assistive technology and users find them. It also doubles as an accessibility check — if getByRole can't find your element, it may not be accessible."
-        language="javascript"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

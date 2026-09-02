@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -441,7 +440,6 @@ configuration.
   annotation is usually right there and visibly correct, which is exactly
   why people stare at it for ten minutes.
 
-
 (2) Two beans fit, and Spring will not guess
 Parameter 0 of constructor in com.example.CheckoutService required a single
 bean, but 2 were found:
@@ -453,7 +451,6 @@ bean, but 2 were found:
   FIX: @Primary on the default, or @Qualifier at the injection point.
   Covered in the Dependency Injection lesson.
 
-
 (3) The port is taken
 Description:
 Web server failed to start. Port 8080 was already in use.
@@ -464,7 +461,6 @@ this application to listen on another port.
   Almost always a previous run you didn't stop.
   lsof -i :8080     (macOS/Linux)      then kill the pid
   Or just: --server.port=8081
-
 
 (4) The beans depend on each other in a loop
 Description:
@@ -522,29 +518,6 @@ Read this as a decision log. Every bean Spring Boot created for you has a
 line here saying which condition let it in.`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question="What is the primary advantage of Spring Boot over traditional Spring?"
-        options={[
-          "It uses a different programming language",
-          "It eliminates boilerplate configuration through auto-configuration",
-          "It only works with microservices",
-          "It replaces the need for Java"
-        ]}
-        correctIndex={1}
-        explanation="Spring Boot's primary advantage is auto-configuration. It inspects your classpath and automatically configures beans and settings, eliminating the verbose XML and Java configuration that traditional Spring required."
-      />
-
-      <InteractiveChallenge
-        question={"What does @ConditionalOnMissingBean do in a Spring Boot auto-configuration class?"}
-        options={[
-          "Throws an error if the bean is missing",
-          "Creates the bean only if the user has NOT already defined one",
-          "Removes the bean from the application context",
-          "Logs a warning if the bean is missing"
-        ]}
-        correctIndex={1}
-        explanation="@ConditionalOnMissingBean ensures the auto-configured bean is only created if the developer hasn't already defined their own. This is how Spring Boot provides sensible defaults that you can override — your custom @Bean definition takes priority over auto-configuration."
-      />
     </LessonLayout>
   );
 }

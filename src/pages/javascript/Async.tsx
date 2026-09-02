@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function JsAsync() {
@@ -552,47 +551,6 @@ console.log('script end');
       {/* ── Interactive Challenges ── */}
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question={"What logs, and in what order?"}
-        code={`console.log('A');\nsetTimeout(() => console.log('B'), 0);\nPromise.resolve().then(() => console.log('C'));\nconsole.log('D');`}
-        language="javascript"
-        options={[
-          "A, B, C, D",
-          "A, D, C, B",
-          "A, D, B, C",
-          "A, C, D, B",
-        ]}
-        correctIndex={1}
-        explanation={"'A' and 'D' are synchronous and run first, in order. Once the call stack empties, the microtask queue drains completely before the macrotask queue is touched, so the Promise callback ('C') runs before the setTimeout callback ('B') — even though the timer was scheduled first."}
-      />
-
-      <InteractiveChallenge
-        question={"An array has one promise that will resolve and one that will reject. Which combinator lets you see BOTH outcomes, even though one failed?"}
-        code={`const results = await Promise.???([resolvingPromise, rejectingPromise]);\n// need: the fulfilled value AND the rejection reason, both reported`}
-        language="javascript"
-        options={[
-          "Promise.all",
-          "Promise.allSettled",
-          "Promise.race",
-          "Promise.any",
-        ]}
-        correctIndex={1}
-        explanation={"Promise.all rejects immediately on the first rejection, discarding any other pending result. Promise.race and Promise.any only report the first settlement/fulfillment, not every input. Only Promise.allSettled always waits for every promise to settle and reports each outcome individually as { status, value } or { status, reason }."}
-      />
-
-      <InteractiveChallenge
-        question={"What does this async function actually return, at the type level?"}
-        code={`async function getValue() {\n  return 42;\n}\n\nconst result = getValue();\n// what is 'result'?`}
-        language="javascript"
-        options={[
-          "The number 42, immediately",
-          "undefined, since async functions don't return synchronously",
-          "A Promise that will fulfill with 42",
-          "A callback function",
-        ]}
-        correctIndex={2}
-        explanation={"Every async function implicitly wraps its return value in Promise.resolve(). Calling getValue() returns a pending Promise immediately (the function body hasn't necessarily finished yet); you need 'await getValue()' or '.then()' to get the 42 out. This is the core desugaring fact: async/await is sugar over Promises, not a different mechanism."}
-      />
     </LessonLayout>
   );
 }

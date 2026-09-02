@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Webflux() {
@@ -607,29 +606,6 @@ unzip -l spring-web-6.1.14.jar | grep -c 'web/client/RestClient.class'   # Frame
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A Boot 2.7.18 service is timing out under load. A teammate proposes adding spring.threads.virtual.enabled=true to application.properties as a quick fix, having read about it in a Boot 4 blog post. What actually happens?"
-        options={[
-          "It works — virtual threads are a JVM feature, not a Spring Boot feature, so the property works on any Boot version running a new enough JDK",
-          "Spring Boot 2.7.18's configuration metadata has no such property at all — it was introduced in Boot 3.2, so setting it has zero effect; Boot 2.7 keeps using its ordinary Tomcat platform-thread pool",
-          "It throws a startup error because the property is unrecognized",
-          "It works, but only if spring-boot-starter-webflux is also on the classpath"
-        ]}
-        correctIndex={1}
-        explanation="Checked directly against spring-boot-autoconfigure-2.7.18.jar's spring-configuration-metadata.json: spring.threads.virtual.enabled simply is not there. It was added in Boot 3.2. Spring Boot silently ignores unrecognized properties by default (there's no fail-fast on unknown keys unless you've configured strict binding), so setting it produces neither an error nor an effect — the service keeps running on its ordinary bounded Tomcat thread pool exactly as before, and the 'fix' does nothing. This is the same class of silent-no-op mistake the properties-migrator lessons elsewhere in this section warn about, just in the opposite direction: instead of a Boot 3 property that moved, this is a Boot 4 property that doesn't exist yet on Boot 2. The property is unrelated to WebFlux being present, and there is no startup validation that would catch it."
-      />
-
-      <InteractiveChallenge
-        question="A Boot 2.7.18 team migrates a JPA-backed service to WebFlux for throughput, but keeps their existing Spring Data JPA repositories because 'the data layer already works.' Under load, latency gets WORSE, not better. Separately, someone points out this service now has almost no javax.persistence exposure. Are these two facts related?"
-        options={[
-          "Yes — because JPA is blocking, keeping it under WebFlux stalls the small event-loop thread pool (same failure mode as on Boot 4); and no, javax.persistence exposure is unrelated to WebFlux — it depends entirely on whether the persistence layer is JPA or R2DBC, not on which web framework sits in front of it",
-          "Yes to both — WebFlux automatically converts JPA calls to non-blocking calls, so the latency regression must be caused by something else entirely, like network configuration",
-          "No to both — WebFlux and JPA are fully compatible with no performance implications, and javax.persistence exposure is determined by the Spring Boot version alone",
-          "Yes to both — migrating to WebFlux automatically migrates javax.persistence imports to jakarta.persistence as a side effect"
-        ]}
-        correctIndex={0}
-        explanation="Two separate, unrelated facts, and the question is testing whether you'll wrongly connect them. First: Hibernate/JPA is fully blocking, on Boot 2 exactly as on Boot 4 — running it from a WebFlux handler blocks one of only 4-8 event-loop threads instead of one of Tomcat's ~200, so a handful of slow JPA calls stalls the entire server. WebFlux does not and cannot make JPA non-blocking; that requires switching to R2DBC. Second: javax.persistence exposure has nothing to do with which web framework (MVC vs WebFlux) sits in front of the data layer — it depends entirely on whether the repositories are JPA (javax.persistence-based, per the javax lesson) or R2DBC (org.springframework.data-based, never touched by the javax/jakarta split at all, per the InfoBox above). A service can be WebFlux + JPA (blocking data layer, and still full of javax.persistence imports) just as easily as WebFlux + R2DBC (non-blocking, and javax-free) — the two axes are independent."
-      />
     </LessonLayout>
   );
 }

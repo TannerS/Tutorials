@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Responsive() {
@@ -620,45 +619,6 @@ h3 { font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem); line-height: 1.3; }
       <FlowChart
         title="Responsive Design Strategy Decision Tree"
         chart={"graph TD\n  A[Does the component need to adapt?] -->|Yes| B[Based on what?]\n  A -->|No| C[Use fixed or intrinsic sizing]\n  B --> D[Viewport size]\n  B --> E[Parent container size]\n  B --> F[Content amount]\n  D --> G[Use media queries]\n  E --> H[Use container queries]\n  F --> I[Use intrinsic sizing - min/max/clamp]\n  G --> J[Need fluid scaling?]\n  J -->|Yes| K[Use clamp with vw units]\n  J -->|No| L[Use breakpoint steps]\n  H --> M[Set container-type on parent]\n  M --> N[Write @container rules on children]"}
-      />
-
-      <InteractiveChallenge
-        question={"What is the key advantage of container queries over media queries for component-based architectures?"}
-        options={[
-          "Container queries have better browser support",
-          "Components adapt to their parent's size, not the viewport, making them truly reusable in any layout context",
-          "Container queries are faster to render than media queries",
-          "Container queries support animation triggers"
-        ]}
-        correctIndex={1}
-        explanation="Container queries let a component respond to how much space its parent gives it. A card in a 300px sidebar behaves differently than the same card in a 900px main area — without the component knowing anything about the viewport. This is the missing piece for truly portable UI components."
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question={"Which viewport unit should you use for a full-screen hero section on mobile to avoid content being hidden behind browser chrome?"}
-        options={[
-          "100vh — the classic viewport height",
-          "100svh — small viewport height",
-          "100dvh — dynamic viewport height",
-          "100lvh — large viewport height"
-        ]}
-        correctIndex={2}
-        explanation="100dvh (dynamic viewport height) adjusts as the mobile browser toolbar shows and hides, giving you the actual visible area at any moment. 100vh includes space behind the toolbar. 100svh is the smallest possible viewport (toolbar visible), and 100lvh is the largest (toolbar hidden). For hero sections, dvh ensures the content fills exactly the visible area."
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question={"What does clamp(1rem, 0.5rem + 2vw, 2.5rem) do for font-size?"}
-        options={[
-          "Sets font to exactly 2vw at all viewport sizes",
-          "Sets font to 1rem on mobile and 2.5rem on desktop with no transition",
-          "Fluidly scales the font between 1rem minimum and 2.5rem maximum, using the viewport-relative middle value",
-          "Randomly picks a size between 1rem and 2.5rem"
-        ]}
-        correctIndex={2}
-        explanation="clamp(MIN, PREFERRED, MAX) ensures the computed value never goes below MIN or above MAX. The middle value (0.5rem + 2vw) scales with the viewport. On a 320px viewport: 0.5rem + 6.4px ≈ 14.4px, clamped to 1rem (16px). On a 1920px viewport: 0.5rem + 38.4px ≈ 46.4px, clamped to 2.5rem (40px). In between, it scales fluidly."
-        language="css"
       />
 
       <InfoBox variant="tip" title="Debugging Responsive Layouts">

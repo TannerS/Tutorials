@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Openshift() {
@@ -386,30 +385,6 @@ oc expose service order-service`}
         getting something running to iterate against, not a replacement for writing real manifests
         once the application matters.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A teammate says: \"We can't use OpenShift, we're a Docker shop and OpenShift doesn't support Docker.\" What's the most accurate response?"}
-        options={[
-          'They’re right — OpenShift requires you to rewrite every Dockerfile into a different format',
-          'OpenShift still runs the images your Dockerfiles produce (standard OCI format) — it just doesn’t use the Docker daemon to run them in production; that’s CRI-O, which the whole Kubernetes ecosystem moved to',
-          'OpenShift is a competing product to Docker and the two are mutually exclusive by design',
-          'OpenShift only supports images built with Podman, never Docker'
-        ]}
-        correctIndex={1}
-        explanation={"\"Built with a Dockerfile\" and \"run by the Docker daemon\" are different things. A Dockerfile produces a standard OCI-format image, and CRI-O (OpenShift's runtime since OpenShift 4, following the same dockershim-removal path as the rest of Kubernetes) runs that image directly — no Docker daemon involved, and no changes needed to how you build images."}
-      />
-
-      <InteractiveChallenge
-        question={"A Helm chart that works fine on your local Minikube cluster fails to deploy on your company's OpenShift cluster with a permissions error, even though nothing in the chart changed. What's the most likely cause?"}
-        options={[
-          'OpenShift doesn’t support Helm charts at all',
-          'The chart is corrupted and needs to be re-downloaded',
-          'OpenShift’s default Security Context Constraints are stricter than Kubernetes’ defaults — e.g. the chart assumes it can run as root, which OpenShift blocks by default',
-          'OpenShift requires all workloads to be defined as BuildConfigs instead of Helm charts'
-        ]}
-        correctIndex={2}
-        explanation={"This is the single most common surprise moving from plain Kubernetes to OpenShift. Vanilla Kubernetes' permissive defaults let a lot of charts get away with running as root or requesting privileges they don't need. OpenShift's default Security Context Constraints (SCCs) are stricter and reject that out of the box — it's enforcement of a safer baseline, not a bug, and the fix is adjusting the workload to run non-root rather than disabling the SCC."}
-      />
 
       <h2>Where OpenShift Sits in the Market</h2>
       <p>

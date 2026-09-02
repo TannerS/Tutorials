@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Cte() {
@@ -271,31 +270,6 @@ SELECT generate_series('2024-01-01'::date, '2024-12-31'::date, '1 day') AS d;`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="In a recursive CTE with UNION ALL, what happens if the recursive member produces a row that was already in a previous iteration?"
-        options={[
-          'The row is automatically deduplicated',
-          'The row is included again, potentially causing infinite recursion',
-          'The database throws an error',
-          'The row is included but marked as a duplicate',
-        ]}
-        correctIndex={1}
-        explanation="UNION ALL does not deduplicate. If the recursive member produces a previously-seen row, it will be processed again in the next iteration, potentially causing infinite recursion. Use UNION (which deduplicates) or add explicit cycle detection with an array of visited nodes. PostgreSQL 14+ also offers the CYCLE clause for this."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question="What makes PostgreSQL's writable CTEs (WITH ... AS (DELETE ... RETURNING *) INSERT ...) distinctly Postgres-flavored?"
-        options={[
-          'They run faster than a plain DELETE + INSERT',
-          'The SQL standard only defines read-only CTEs; chaining a DELETE/UPDATE/INSERT into one atomic statement is a PostgreSQL extension',
-          'They are required whenever using RETURNING',
-          'They automatically create an audit log entry',
-        ]}
-        correctIndex={1}
-        explanation="Standard SQL CTEs are read-only. PostgreSQL extends the CTE syntax to allow INSERT/UPDATE/DELETE with RETURNING inside a WITH clause, letting you chain data-modifying operations into a single atomic statement — most other database engines don't support this at all."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

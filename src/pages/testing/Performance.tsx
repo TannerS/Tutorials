@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function TestPerformance() {
@@ -856,19 +855,6 @@ npx nx affected --target=test`}
         fast; one that does not gets one second slower every week and is unfixable in a
         year.
       </p>
-
-      <InteractiveChallenge
-        question={"Your integration tests pass when run serially but fail intermittently after you enable parallel execution — usually with unique-constraint violations and counts that are off by a few rows. What is the correct fix?"}
-        options={[
-          "Add a retry policy so the failing tests run again",
-          "Insert a short sleep at the start of each test to stagger them",
-          "Give each worker its own database or schema so tests never share rows",
-          "Disable parallel execution permanently"
-        ]}
-        correctIndex={2}
-        explanation="The symptom is textbook shared state: parallel workers writing to the same tables. Retries and sleeps hide it, and disabling parallelism gives up the speedup. Partitioning the shared resource — a database or schema per worker, keyed on VITEST_WORKER_ID / the fork's id — removes the collision entirely, so tests can truncate and insert freely without seeing each other's data."
-        language="java"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

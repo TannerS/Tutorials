@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Views() {
@@ -329,31 +328,6 @@ SELECT uuid_generate_v1(), uuid_generate_v4();
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A materialized view refresh must not block reads while it runs. What's required before REFRESH MATERIALIZED VIEW CONCURRENTLY will work?"
-        options={[
-          'Nothing extra — CONCURRENTLY always works',
-          'The materialized view needs at least one UNIQUE index with no WHERE clause',
-          'The underlying tables must be partitioned',
-          'The materialized view must be recreated with WITH NO DATA',
-        ]}
-        correctIndex={1}
-        explanation="Verified: without a unique index, REFRESH MATERIALIZED VIEW CONCURRENTLY fails immediately with 'cannot refresh materialized view concurrently' and a hint naming the fix. It needs a unique index because a concurrent refresh diffs the new result against the stored one row-by-row instead of replacing it wholesale, and diffing requires a way to match rows between old and new."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question="A 200-million-row logs table filters almost every query on a timestamp column, and old data is bulk-deleted every month. Which partitioning strategy fits, and why?"
-        options={[
-          'HASH on the timestamp, for even write distribution',
-          'LIST on the timestamp, one partition per exact value',
-          'RANGE on the timestamp, one partition per time window, dropped wholesale when retired',
-          'No partitioning — a B-tree index on the timestamp is always sufficient',
-        ]}
-        correctIndex={2}
-        explanation="RANGE partitioning by timestamp lets partition pruning skip irrelevant time windows entirely (verified: EXPLAIN showed only the matching month's partition in the plan), and lets monthly retention become a DROP TABLE — an instant metadata operation — instead of a DELETE that has to find, mark dead, and later vacuum every matching row across a 200M-row table and its indexes."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

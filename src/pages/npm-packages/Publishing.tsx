@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Publishing() {
@@ -421,30 +420,6 @@ npm version patch  # or minor/major
 npm publish
 git push --follow-tags`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="You published version 2.0.0-beta.1 without any --tag flag. What happened?"
-        options={[
-          "npm rejected the publish because it's a pre-release",
-          "It was published under the 'beta' tag automatically",
-          "It became the 'latest' tag, so npm install your-pkg now gets the beta",
-          "Nothing special — pre-release versions are always installed explicitly"
-        ]}
-        correctIndex={2}
-        explanation="Without a --tag flag, npm publish ALWAYS updates the 'latest' dist-tag — even for pre-release versions. This means every user running 'npm install your-pkg' now gets your unstable beta. You must always use --tag when publishing pre-releases: 'npm publish --tag beta'."
-      />
-
-      <InteractiveChallenge
-        question="What's the difference between npm deprecate and npm unpublish?"
-        options={[
-          "They do the same thing but deprecate is newer",
-          "unpublish removes the package entirely; deprecate keeps it available but shows a warning",
-          "deprecate only works for old versions; unpublish works for any version",
-          "unpublish is free; deprecate requires a paid account"
-        ]}
-        correctIndex={1}
-        explanation="npm unpublish removes the package/version from the registry entirely (only works within 72 hours). npm deprecate keeps the package available and installable but shows a warning message to anyone who installs it. Deprecation is the preferred approach because removing packages can break other people's builds."
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Aop() {
@@ -612,17 +611,6 @@ class AuditAspectTest {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You're reviewing a pull request against a Spring Boot 2.7.18 service. It adds @Retryable(retryFor = { RemoteApiException.class }, maxAttempts = 3) to a method. The build has not been run yet. What do you expect to happen, and why?"
-        options={[
-          "It compiles and works exactly as written — retryFor has been part of @Retryable since Spring Retry 1.0",
-          "It fails to compile: Boot 2.7.18 resolves spring-retry 1.3.4, and the Retryable annotation in that version only has value()/include()/exclude() — there is no retryFor() attribute until a later spring-retry release",
-          "It compiles but silently retries zero times, because retryFor is ignored on old Spring Retry",
-          "It fails at startup with a bean definition error, not a compile error"
-        ]}
-        correctIndex={1}
-        explanation="This is a compile-time failure, not a runtime one — annotation attributes are checked by javac against the actual .class file on the classpath. Decompiling spring-retry-1.3.4.jar (the version Boot 2.7.18's BOM pins) shows Retryable has recover(), interceptor(), value(), include(), exclude(), label(), stateful(), maxAttempts(), maxAttemptsExpression(), backoff(), exceptionExpression(), and listeners() — no retryFor(), noRetryFor(), or notRecoverable(). Those three were added in a later spring-retry release. Unless this project explicitly overrides spring-retry.version above what the Boot BOM manages, the build fails with 'cannot find symbol: method retryFor()'. The fix for Boot 2.7 code is include = { RemoteApiException.class } instead — same semantics, different attribute name. This is exactly the kind of assumption ('newer syntax I've seen elsewhere must work everywhere') that a version check catches before a reviewer has to."
-      />
     </LessonLayout>
   );
 }

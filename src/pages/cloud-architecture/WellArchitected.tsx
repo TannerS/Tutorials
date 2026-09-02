@@ -1,6 +1,5 @@
 import LessonLayout from '../../components/LessonLayout';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CloudArchitectureWellArchitected() {
   return (
@@ -184,17 +183,6 @@ export default function CloudArchitectureWellArchitected() {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"A team runs the AWS Well-Architected Tool against their workload and gets zero High Risk Issues across all six pillars. A teammate concludes: \"Great, this architecture is objectively well-designed — we're done.\" What is the strongest critique of that conclusion?"}
-        options={[
-          "There's no valid critique — zero HRIs is AWS's official sign-off that an architecture is well-designed, full stop",
-          "The review's questions and best practices are authored by AWS around AWS's own services, so a clean result confirms alignment with AWS's opinions and tooling, not an independent, vendor-neutral judgment of quality — Azure's or Google Cloud's own review could reasonably surface different gaps",
-          "The Well-Architected Tool only evaluates the Cost Optimization pillar, so a result covering \"all six pillars\" isn't actually possible",
-          "High Risk Issues only get assigned within the Security pillar, so the other five pillars can never produce a risk finding at all"
-        ]}
-        correctIndex={1}
-        explanation={"The pillars and their review questions are written by the vendor whose services the resulting recommendations point back to. Passing a review with zero HRIs is a genuinely useful signal — it means the workload has no unaddressed gap that vendor considers foundational — but it's a vendor-framed signal, not a neutral verdict, and it says nothing about how the workload would score against a different provider's framework or against constraints that provider's tooling doesn't address. Options C and D are also factually wrong: the tool covers every pillar, and both High and Medium Risk Issues are assigned within each one, not just Security."}
-      />
     </LessonLayout>
   );
 }

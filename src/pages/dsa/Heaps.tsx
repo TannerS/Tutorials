@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Heaps() {
   return (
@@ -297,28 +296,6 @@ Is that sequence sorted ascending? true`}
         never touches the heap at all.
       </p>
 
-      <InteractiveChallenge
-        question={
-          "Using the min-heap from this lesson (root 2; left child 5 with children 8 and 9; right child 3 " +
-          "with children 6 and 7), which statement is the heap actually guaranteed to satisfy?"
-        }
-        options={[
-          "5 must be less than or equal to 3, since they're both one level below the root",
-          "9 must be greater than or equal to 5, since 5 is 9's direct parent",
-          "8 must be less than or equal to 6, since both sit two levels down in the tree",
-          "Reading the underlying array left to right must produce ascending order",
-        ]}
-        correctIndex={1}
-        explanation={
-          "The heap property is a parent-vs-its-own-children promise, edge by edge -- nothing more. 5 <= 9 " +
-          "holds because 5 is 9's direct parent, so that relationship IS guaranteed. But 5 and 3 are " +
-          "siblings (both children of the root, with 5 > 3), and 8 and 6 are cousins (same depth, " +
-          "different subtrees, with 8 > 6) -- neither pair has any guaranteed order, because neither pair " +
-          "is connected by a direct parent-child edge. And the array is never claimed to be fully sorted " +
-          "-- that's exactly why a for-each over a real java.util.PriorityQueue doesn't come out sorted, " +
-          "even though poll() always does."
-        }
-      />
     </LessonLayout>
   );
 }

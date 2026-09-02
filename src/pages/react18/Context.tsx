@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Context() {
@@ -1252,42 +1251,6 @@ function App() {
 
       <hr style={{ borderColor: '#333', margin: '3rem 0 2rem' }} />
 
-      <InteractiveChallenge
-        question={"An AuthProvider has value={{ user, setUser }} without useMemo. A sibling component changes theme state. What happens to components using useContext(AuthContext)?"}
-        options={[
-          "Nothing — the auth data didn't change",
-          "Only components that read 'user' re-render",
-          "All consumers re-render, plus all their descendants",
-          "Only the AuthProvider re-renders, consumers are protected"
-        ]}
-        correctIndex={2}
-        explanation={"Without useMemo, the {} creates a new object every render. When the parent re-renders (theme change), AuthProvider re-renders too, creating a new value object. Object.is fails → all consumers re-render → each consumer's children cascade. The entire subtree below every consumer re-renders unnecessarily."}
-      />
-
-      <InteractiveChallenge
-        question={"A MemoizedChart component is wrapped in React.memo but uses useContext(ThemeContext). The theme changes. What happens?"}
-        options={[
-          "Nothing — React.memo blocks the re-render because props didn't change",
-          "MemoizedChart re-renders because context bypasses React.memo",
-          "Only the children of MemoizedChart re-render",
-          "MemoizedChart re-renders only if it also receives new props"
-        ]}
-        correctIndex={1}
-        explanation={"React.memo only checks props — it has no awareness of context. When a context value changes, every component that calls useContext for that context re-renders, regardless of whether it's wrapped in React.memo. The memo gate only guards against prop changes; context walks right through it."}
-      />
-
-      <InteractiveChallenge
-        question={"A Provider owns state and renders {children}. Its own state changes — the parent above it did NOT re-render. What happens to a child that was passed in as children and does NOT call useContext?"}
-        options={[
-          "It re-renders — the Provider is its parent, so the cascade reaches it",
-          "It bails out — the children element reference is unchanged",
-          "It re-renders only if it is not wrapped in React.memo",
-          "It unmounts and remounts because the Provider produced new JSX"
-        ]}
-        correctIndex={1}
-        explanation={"The children element object was created by the Provider's PARENT, which did not re-render — so it is the exact same object as last render. React compares oldProps === newProps on that fiber, finds no scheduled work, and bails out of the whole subtree. React.memo is not needed and would change nothing. This is the children-as-props optimization, and it holds no matter WHY the Provider re-rendered — own state, parent cascade, or its own context subscription."}
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

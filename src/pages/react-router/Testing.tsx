@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Testing() {
@@ -470,19 +469,6 @@ test('calls navigate on button click', async () => {
           <code>jest.mock</code> only when you cannot render a router at all.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"Which router should you use when testing loaders and actions?"}
-        options={[
-          "BrowserRouter with a test URL",
-          "MemoryRouter with initialEntries",
-          "createMemoryRouter with RouterProvider",
-          "StaticRouter for server-side tests only",
-        ]}
-        correctIndex={2}
-        explanation={"createMemoryRouter supports the full data API — loaders, actions, and errorElement — just like createBrowserRouter. MemoryRouter only supports component rendering and navigation. Use createMemoryRouter + RouterProvider when you need to test data loading or form actions."}
-        language="jsx"
-      />
 
       <h2>Quick Reference: Test Pattern Cheat Sheet</h2>
       <CodeBlock language="jsx" title="When to Use Which Testing Pattern">

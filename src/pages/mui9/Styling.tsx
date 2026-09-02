@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Mui9Styling() {
@@ -219,17 +218,6 @@ The big shift: in v4 you produced CLASS NAMES and applied them.
 In v9 you produce COMPONENTS and render them.`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question="You render a 2,000-row table. Each row uses sx={{ py: 1, bgcolor: row.isError ? 'error.light' : 'transparent' }}. Profiling shows heavy time in style serialization. What is the most effective fix?"
-        options={[
-          'Wrap each row in React.memo — the sx object is not the problem',
-          'Move the static parts into a styled() component and express the variable part as a data attribute or a filtered prop, so the per-row object is not rebuilt and re-serialized each render',
-          'Replace sx with inline style={{ }} to skip emotion entirely',
-          'Add !important to the sx values so emotion can skip specificity resolution',
-        ]}
-        correctIndex={1}
-        explanation={"The sx object is a fresh literal on every row on every render, so emotion re-serializes and re-hashes 2,000 objects each time. Note that the CLASS count stays small — isError only has two outcomes, so emotion deduplicates down to about two classes — which is exactly why this shows up as serialization time rather than stylesheet bloat. Moving the static declarations into a styled() component serializes them once at module scope, and expressing the variance as a data attribute (or a shouldForwardProp-filtered prop) means the per-row work disappears. React.memo may help for unrelated reasons but does not address serialization on the renders that do happen. Inline styles would skip emotion but lose pseudo-selectors, media queries and theme resolution, and !important does not change how emotion works."}
-      />
     </LessonLayout>
   );
 }

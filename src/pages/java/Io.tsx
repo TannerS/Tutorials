@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Io() {
@@ -515,17 +514,6 @@ try (var in = new ObjectInputStream(source)) {
 
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question="Which is the recommended modern API for file operations in Java?"
-        options={[
-          "java.io.File with FileInputStream/FileOutputStream",
-          "java.nio.file.Path and java.nio.file.Files",
-          "java.util.Scanner for all file operations",
-          "System.in and System.out"
-        ]}
-        correctIndex={1}
-        explanation="The java.nio.file package (NIO.2), introduced in Java 7, is the modern recommended API for file operations. Path replaces java.io.File, and the Files utility class provides concise, powerful methods like readString(), readAllLines(), write(), walk(), and more. The classic java.io package still works but is more verbose and less capable."
-      />
     </LessonLayout>
   );
 }

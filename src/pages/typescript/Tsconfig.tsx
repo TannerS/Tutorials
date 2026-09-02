@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Tsconfig() {
@@ -113,18 +112,6 @@ tsc --listFiles`}
   }
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"Which moduleResolution should you use with Vite?"}
-        options={[
-          "node",
-          "classic",
-          "bundler",
-          "nodenext"
-        ]}
-        correctIndex={2}
-        explanation={"The 'bundler' moduleResolution matches how modern bundlers (Vite, Webpack, esbuild) resolve imports. It allows extensionless imports, package.json exports field, and doesn't require .js extensions like nodenext does."}
-      />
 
       <h3>The Strict Family</h3>
       <p>
@@ -727,18 +714,6 @@ npm install -D @tsconfig/strictest          # Maximum strictness`}
 // tsc --build packages/api
 // This auto-builds shared first, then api`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"What does composite: true enable in a tsconfig?"}
-        options={[
-          "Combines multiple tsconfig files into one",
-          "Enables incremental compilation and declaration output for project references",
-          "Compresses the output JavaScript files",
-          "Merges all source files into a single output bundle"
-        ]}
-        correctIndex={1}
-        explanation={"composite: true tells TypeScript this project can be referenced by other projects. It forces declaration: true (so dependents can use the types) and enables incremental builds via .tsbuildinfo files."}
-      />
 
       {/* ── Section 6: Debugging Config Issues ───────────────────── */}
       <h2>6. Debugging Config Issues</h2>

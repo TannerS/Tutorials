@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Kafka() {
@@ -439,17 +438,6 @@ membership changes (rebalance storm indicator).`}
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your consumer occasionally processes the same event twice, causing duplicate side effects. What's the correct response?"
-        options={[
-          "Configure enable.auto.commit=true so offsets commit before the handler runs",
-          "Set isolation.level=read_committed on the consumer",
-          "Make the handler idempotent — Kafka delivers at least once by design, so double delivery is expected under retries and rebalances. Idempotency (upsert on a business key or a dedupe table) is the only safe response.",
-          "Increase max.poll.records so each poll processes more at once"
-        ]}
-        correctIndex={2}
-        explanation="Kafka guarantees at-least-once delivery. Rebalances, network hiccups, and consumer restarts all cause the same offset to be re-read. Auto-commit BEFORE the handler runs makes the problem worse (loses messages on failure), not better. The only safe design is idempotent handlers — usually an UPSERT or a 'processed events' dedupe table keyed by business id + event type."
-      />
     </LessonLayout>
   );
 }

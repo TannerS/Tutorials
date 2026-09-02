@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Patterns() {
@@ -875,19 +874,6 @@ test('useCart throws a useful error outside its provider', () => {
   // the over-engineered version is forcing all five into one store.
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"A data-grid page keeps filters, the selected row, and a per-row inline draft in one Context. Typing in a draft field visibly lags: the Profiler shows all 200 rows re-rendering per keystroke. What's the smallest fix that actually works?"}
-        options={[
-          'Wrap each row in React.memo',
-          'Wrap the context value in useMemo',
-          'Move the draft into a provider mounted per row, and split state from dispatch',
-          'Replace Context with an external store',
-        ]}
-        correctIndex={2}
-        explanation="React.memo cannot stop a context update — rows read the context, so the update goes around memo. useMemo on the value only prevents re-renders when nothing changed; here the draft genuinely changed, so every consumer still re-renders. Colocating the draft in a per-row provider means a keystroke only invalidates that one row, and splitting dispatch out keeps write-only controls inert. An external store would also work, but it's a dependency and a rewrite when a scoping fix costs half an hour."
-        language="tsx"
-      />
 
       <h2>Key Principles</h2>
       <p>

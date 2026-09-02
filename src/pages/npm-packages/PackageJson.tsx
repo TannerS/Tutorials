@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function PackageJson() {
@@ -402,30 +401,6 @@ export default function PackageJson() {
         It verifies entry points exist, exports are correct, and files are properly included.
         Run it before every publish.
       </InfoBox>
-
-      <InteractiveChallenge
-        question="You're building a React component library. Where should 'react' be listed?"
-        options={[
-          "dependencies — it's needed at runtime",
-          "devDependencies — you only need it for development",
-          "peerDependencies — consumers must provide their own React",
-          "optionalDependencies — React might not be available"
-        ]}
-        correctIndex={2}
-        explanation="React should be a peerDependency for a component library. If it were in dependencies, consumers would end up with two copies of React (yours and theirs), breaking hooks and context. As a peerDependency, you declare that you need React but expect the consuming application to provide it, ensuring everyone shares one instance."
-      />
-
-      <InteractiveChallenge
-        question={"What does 'sideEffects: false' tell bundlers?"}
-        options={[
-          "The package has no bugs",
-          "The package doesn't use any dependencies",
-          "Every file can be safely removed if its exports aren't used (tree-shaking)",
-          "The package doesn't modify global state at install time"
-        ]}
-        correctIndex={2}
-        explanation="sideEffects: false is a hint to bundlers like Webpack and Rollup that importing a module from your package has no observable effect beyond providing exports. This means if a consumer imports { slugify } from your package but never uses it, the bundler can safely remove it from the final bundle (tree-shaking)."
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

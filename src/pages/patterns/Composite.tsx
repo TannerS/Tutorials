@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Composite() {
@@ -257,17 +256,6 @@ public class OrderFacade {
         anything.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="In the Composite pattern, what makes it possible to call getSize() on both a File and a Directory?"
-        options={[
-          "Directory inherits from File",
-          "Both implement the same FileSystemNode interface",
-          "Java's dynamic dispatch automatically handles both cases",
-          "The Visitor pattern is used internally"
-        ]}
-        correctIndex={1}
-        explanation="The key to Composite is the shared Component interface (FileSystemNode). Both leaves (File) and composites (Directory) implement it, so clients can call getSize() without knowing whether they're dealing with a single file or an entire directory tree."
-      />
     </LessonLayout>
   );
 }

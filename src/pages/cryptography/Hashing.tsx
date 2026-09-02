@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoHashing() {
   return (
@@ -341,29 +340,6 @@ console.log('Tag from a different key:', forged);
         no manual composition left to get wrong.
       </p>
 
-      <InteractiveChallenge
-        question={"SHA-1 is described as \"broken\" since the 2017 SHAttered attack. What does that actually mean?"}
-        options={[
-          "SHA-1 digests can now be reversed back into their original input",
-          "Collision resistance is broken — researchers found two different inputs producing the same SHA-1 digest — but preimage resistance (finding an input for a chosen digest) is still intact",
-          "SHA-1 no longer runs on modern hardware or software libraries",
-          "SHA-1 was found to produce non-deterministic output on different machines"
-        ]}
-        correctIndex={1}
-        explanation={"SHAttered (Google + CWI Amsterdam, February 2017) produced two distinct PDFs sharing one SHA-1 digest — a practical collision, at a cost of roughly 9.2 quintillion SHA-1 computations (about 6,500 CPU-years plus 110 GPU-years). That breaks collision resistance, the exact guarantee a digital signature depends on. It says nothing about reversing a digest back to its input — preimage resistance remains intact for SHA-1 today, which is a different (and still unbroken) property."}
-      />
-
-      <InteractiveChallenge
-        question={"A team uses CRC32 to verify that a downloaded software update hasn't been tampered with by an attacker. What's wrong with this design?"}
-        options={[
-          "CRC32 digests are too short to represent a large file uniquely",
-          "CRC32 is designed to catch accidental corruption, not deliberate tampering — its linear math lets an attacker compute exactly which bytes to change to hit any target checksum",
-          "CRC32 requires a secret key that the team has not distributed to clients",
-          "Nothing is wrong — CRC32 and SHA-256 provide equivalent security guarantees"
-        ]}
-        correctIndex={1}
-        explanation={"CRC32 was built to catch random bit flips from bad hardware or network noise, not a deliberate adversary. Because it's linear (built from polynomial division over GF(2)), an attacker who controls the tampered bytes can solve for the exact patch needed to preserve the original checksum — this is routinely how tampered firmware images and zip files are made to pass a CRC check. Integrity against a deliberate attacker needs a cryptographic hash at minimum, and HMAC or a signature if the attacker could also recompute a plain hash themselves."}
-      />
     </LessonLayout>
   );
 }

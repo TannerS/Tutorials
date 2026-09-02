@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Bridge() {
@@ -309,17 +308,6 @@ bob.sendTo('alice', 'Hey Alice!');      // only alice receives it`}
         into the colleague objects themselves.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You need a Shape abstraction (Circle, Square) that can render using either a raster renderer or a vector renderer, and you want to add new shapes and new renderers independently without an explosion of subclasses like RasterCircle, VectorCircle, RasterSquare... Which pattern fits?"
-        options={[
-          "Mediator — a central coordinator manages the shapes and renderers",
-          "Bridge — split Shape (abstraction) and Renderer (implementation) into two independent hierarchies connected by composition",
-          "State — the shape changes its rendering behavior based on internal state",
-          "Template Method — a base Shape class defines the rendering algorithm skeleton"
-        ]}
-        correctIndex={1}
-        explanation="This is the textbook Bridge scenario: two dimensions of variation (shape type and rendering technology) that would otherwise multiply into a combinatorial explosion of subclasses. Bridge decouples them into two hierarchies connected by a held reference, so either can be extended independently."
-      />
     </LessonLayout>
   );
 }

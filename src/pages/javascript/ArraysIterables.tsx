@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function JsArraysIterables() {
@@ -511,46 +510,6 @@ console.log(seenViaForIn);
       {/* ── Interactive Challenges ── */}
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question="What does nums.filter(n => n % 2 === 0).map(n => n * n) return for nums = [1, 2, 3, 4]?"
-        code={`const nums = [1, 2, 3, 4];\nconst result = nums.filter(n => n % 2 === 0).map(n => n * n);\nconsole.log(result);`}
-        language="javascript"
-        options={['[1, 4, 9, 16]', '[4, 16]', '[2, 4]', '20']}
-        correctIndex={1}
-        explanation="filter keeps only the even numbers first: [2, 4]. Then map squares each of those: [4, 16]. filter never squares odd numbers, and the final result is still an array, not the reduced sum — that would require a further .reduce() call."
-      />
-
-      <InteractiveChallenge
-        question="const { a = 'x' } = { a: null }; console.log(a); — what logs?"
-        code={`const { a = 'x' } = { a: null };\nconsole.log(a);`}
-        language="javascript"
-        options={["'x'", 'null', 'undefined', 'TypeError']}
-        correctIndex={1}
-        explanation="Destructuring defaults only kick in when the matched value is exactly undefined. null is a real, explicit value, so the default is skipped and 'a' stays null. This is the single most common destructuring-default mistake."
-      />
-
-      <InteractiveChallenge
-        question="let [p, q] = [1, 2]; [p, q] = [q, p]; — what are p and q afterward?"
-        code={`let p = 1;\nlet q = 2;\n[p, q] = [q, p];\nconsole.log(p, q);`}
-        language="javascript"
-        options={['1 2 (unchanged)', '2 1 (swapped)', '2 2', 'SyntaxError']}
-        correctIndex={1}
-        explanation="[q, p] builds a temporary array snapshotting both current values (2, 1) before any assignment happens. The destructuring on the left then assigns from that snapshot: p gets 2, q gets 1. No temp variable needed."
-      />
-
-      <InteractiveChallenge
-        question="An array has Array.prototype.describe = function(){} added somewhere in the app. What does for...in see that for...of does not?"
-        code={`Array.prototype.describe = function () {};\nconst arr = ['x', 'y'];\n\nfor (const v of arr) { /* ? */ }\nfor (const k in arr) { /* ? */ }`}
-        language="javascript"
-        options={[
-          "They see exactly the same thing",
-          "for...in also yields 'describe', inherited from the prototype chain",
-          "for...of throws an error in this case",
-          "for...in only shows the array indices, never inherited properties",
-        ]}
-        correctIndex={1}
-        explanation="for...in walks every enumerable property it can see, own or inherited, so a property added to Array.prototype leaks into every for...in loop over every array in the program as an extra string key, 'describe'. for...of only ever yields actual iterated elements via the Symbol.iterator protocol, so it's unaffected. This is the core reason for...in is considered unsafe on arrays."
-      />
     </LessonLayout>
   );
 }

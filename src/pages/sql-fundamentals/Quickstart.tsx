@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Quickstart() {
@@ -399,44 +398,6 @@ LIMIT 20;`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Given the SQL logical execution order, which clause can reference a SELECT column alias in standard SQL — and in every engine?"
-        options={[
-          'WHERE',
-          'GROUP BY',
-          'HAVING',
-          'ORDER BY',
-        ]}
-        correctIndex={3}
-        explanation="ORDER BY is processed after SELECT, so it can always reference SELECT aliases. WHERE, GROUP BY, and HAVING all execute before SELECT in the logical order. Postgres-specific footnote: Postgres additionally accepts an output-column name or ordinal (GROUP BY 1) in GROUP BY as a non-standard extension — but never in WHERE or HAVING."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question={"What does INSERT ... ON CONFLICT DO UPDATE (upsert) do when the target row already exists?"}
-        options={[
-          'Throws a duplicate key error',
-          'Silently ignores the insert',
-          'Updates the existing row with the new values',
-          'Deletes the old row and inserts the new one',
-        ]}
-        correctIndex={2}
-        explanation="ON CONFLICT DO UPDATE performs an upsert: if the row already exists (conflict on a unique constraint), it updates the existing row with the values from the EXCLUDED pseudo-table instead of raising an error."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question={"Why prefer GENERATED ALWAYS AS IDENTITY over SERIAL for new Postgres schemas?"}
-        options={[
-          'IDENTITY is faster at insert time',
-          'IDENTITY is SQL-standard syntax and integrates more cleanly with permissions and table renames',
-          'SERIAL was removed in Postgres 15',
-          'IDENTITY supports UUID types and SERIAL does not',
-        ]}
-        correctIndex={1}
-        explanation="SERIAL is Postgres-specific sugar that creates a sequence and default behind the scenes, but it's non-standard and has quirks around ownership and renaming. GENERATED ALWAYS AS IDENTITY is the SQL-standard way to get the same auto-increment behavior, available since Postgres 10."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

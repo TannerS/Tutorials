@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function NodeTypescript() {
@@ -279,20 +278,6 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
         a narrowing check is the honest type. This is the assignability rule from{' '}
         <strong>Type System Fundamentals</strong> doing real work.
       </p>
-
-      <InteractiveChallenge
-        question="A teammate's service runs fine with `node server.ts` locally, then fails on a colleague's machine with ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX. Nothing about the code changed. What is the most likely cause?"
-        options={[
-          'The colleague is on an older Node that lacks native TypeScript support entirely',
-          'The file uses enum, a parameter property, or a namespace, and the colleague is on a Node version where nothing can transform it — either machine predates strip-only support, or the colleague is on v26+, which removed the last flag that could',
-          'The tsconfig.json is missing from the colleague\'s checkout',
-          'Node type-checks differently across versions',
-        ]}
-        correctIndex={1}
-        explanation="The error is specifically the strip-only one, so Node is running the file — it just met a construct that needs code generation. That means the code contains enum, a parameter property, or a namespace. Before Node v26, --experimental-transform-types could paper over this on machines where it happened to be enabled; Node v26 removed that flag entirely, with no replacement, so any machine on v26+ fails here unconditionally. Setting erasableSyntaxOnly in tsconfig turns this into a compile error everyone sees at build time, rather than a runtime failure that depends on which Node version each person has installed. Option 4 is wrong for a more fundamental reason: Node never type-checks at all."
-        code={`enum Status { Active, Inactive }   // needs codegen — cannot be stripped`}
-        language="typescript"
-      />
 
       <h2>Where this leaves you</h2>
       <InfoBox variant="success" title="Rules of thumb">

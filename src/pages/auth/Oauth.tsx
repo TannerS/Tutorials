@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Oauth() {
@@ -644,29 +643,6 @@ public class SecurityConfig {
         credential stripped before anything internal ever sees it.
       </p>
 
-      <InteractiveChallenge
-        question={"In the OAuth 2.0 Authorization Code Flow, why is the authorization code exchanged server-to-server rather than directly returning the access token to the browser?"}
-        options={[
-          "The browser cannot handle access tokens",
-          "The authorization code exchange requires the client_secret, which must never be exposed to the browser. This server-to-server exchange keeps the secret safe.",
-          "Access tokens are too large for browser redirects",
-          "The authorization server only supports server-to-server communication"
-        ]}
-        correctIndex={1}
-        explanation={"The authorization code is a short-lived, one-time-use code returned to the browser via redirect. The browser forwards it to your server, which then exchanges it for tokens in a server-to-server request that includes the client_secret. This keeps the client_secret out of the browser entirely. With PKCE, even if someone intercepts the code, they cannot exchange it without the code_verifier."}
-      />
-
-      <InteractiveChallenge
-        question={"What does OpenID Connect (OIDC) add on top of OAuth 2.0?"}
-        options={[
-          "Encryption for all tokens",
-          "An ID Token (JWT) with user identity, a /userinfo endpoint, and the openid scope — adding authentication to OAuth's authorization",
-          "A way to revoke access tokens",
-          "Support for mobile applications"
-        ]}
-        correctIndex={1}
-        explanation={"OAuth 2.0 only handles authorization — it tells you what the app can access, but not who the user is. OIDC adds an identity layer: the ID Token is a JWT containing user claims (sub, email, name), the /userinfo endpoint provides additional profile data, and the openid scope signals you want authentication. Together, these give you both authentication (who is the user) and authorization (what can they access)."}
-      />
     </LessonLayout>
   );
 }

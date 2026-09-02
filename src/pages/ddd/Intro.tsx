@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function DddIntro() {
   return (
@@ -226,17 +225,6 @@ public class OrderService {
         something different over here&quot; instead of pretending it doesn&apos;t.
       </p>
 
-      <InteractiveChallenge
-        question={"A codebase has OrderService.applyDiscountToOrder() containing 40 lines of business rules, while the Order class itself has only getters and setters. According to DDD, what does this indicate, and what's the correct fix?"}
-        options={[
-          "This is a healthy layered architecture — services should own logic, entities should stay pure data. No change needed.",
-          "This is an anemic domain model: behavior has drained out of the domain object into a service. The fix is to move logic that's intrinsically about an Order (like applying a discount) back onto Order or a close collaborator — not to keep adding it to more services.",
-          "The method name is unclear; renaming applyDiscountToOrder() to a more descriptive name resolves the issue.",
-          "DDD requires removing OrderService entirely and replacing all business logic with database stored procedures."
-        ]}
-        correctIndex={1}
-        explanation={"An anemic domain model is what happens when every entity becomes a pure data holder and all behavior is externalized into services. It compiles and passes tests, but the same rule tends to get reimplemented slightly differently by every caller, since there's no single owned method to call. DDD's fix isn't 'no services' — domain services are a legitimate tactical pattern for behavior that doesn't belong to one entity — it's putting behavior back on the object whose concept it actually describes, so there's one place the rule lives and one place to fix it."}
-      />
     </LessonLayout>
   );
 }

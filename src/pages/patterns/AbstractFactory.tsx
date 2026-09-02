@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function AbstractFactory() {
@@ -490,17 +489,6 @@ public class ReportRunner {
         </li>
       </ul>
 
-      <InteractiveChallenge
-        question="You ship a SqlDialectFactory with three concrete implementations (Postgres, SQL Server, Oracle). A new requirement adds a BulkLoader to the family. What does that cost, and why does it matter?"
-        options={[
-          "Only the client changes — the factories are unaffected because they share an interface",
-          "The interface plus all three concrete factories must change: adding a product is O(number of variants), the pattern's known weakness",
-          "Only the Postgres factory changes; the other two inherit a default implementation automatically",
-          "Nothing changes — the DI container generates the missing product by type inference",
-        ]}
-        correctIndex={1}
-        explanation="Abstract Factory is open/closed along exactly one axis. Adding a new VARIANT is cheap — one new class, no existing file edited. Adding a new PRODUCT to the family is the reverse: the interface plus every concrete factory must be updated, so the cost scales with the number of variants. GoF call this out as the pattern's main liability. Java default methods hide the compile error but not the problem: an un-updated factory then silently returns a wrong-vendor product, which is precisely the mismatched-family bug the pattern was adopted to prevent. Choose Abstract Factory when your variants keep growing and your product set is stable — not the other way round."
-      />
     </LessonLayout>
   );
 }

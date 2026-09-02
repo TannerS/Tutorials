@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Exceptions() {
@@ -591,17 +590,6 @@ List<String> contents = paths.stream().map(unchecked(Files::readString)).toList(
 
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question="What happens if a checked exception is thrown inside a method but not caught or declared in the method signature?"
-        options={[
-          "The program handles it automatically at runtime",
-          "The JVM catches it and logs a warning",
-          "The code does not compile",
-          "The exception is silently ignored"
-        ]}
-        correctIndex={2}
-        explanation="Checked exceptions MUST be either caught with a try-catch block or declared in the method signature using the 'throws' keyword. If you do neither, the Java compiler produces an error. This is the key difference between checked and unchecked exceptions — the compiler enforces handling of checked exceptions."
-      />
     </LessonLayout>
   );
 }

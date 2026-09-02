@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoSecureLoginFlow() {
   return (
@@ -157,29 +156,6 @@ export default function CryptoSecureLoginFlow() {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"At which step does your username and password actually leave the browser?"}
-        options={[
-          "Step 1, alongside the DNS lookup, so the server can pre-authenticate you",
-          "Step 3, as part of the ClientHello, so the server knows who's connecting before the handshake",
-          "Step 9, only after the TLS tunnel from steps 3-8 is fully established",
-          "It never leaves the browser — only a hash is ever sent"
-        ]}
-        correctIndex={2}
-        explanation={"The credentials are sent as an ordinary HTTP POST body, but critically, only after the TLS handshake (steps 3-8) has finished and the connection is encrypted. If a login form could submit before that tunnel existed, the password would cross the network in plain text -- which is exactly why serving a login page over plain http:// is a real vulnerability, not just a cosmetic warning."}
-      />
-
-      <InteractiveChallenge
-        question={"Your browser already has the keys needed to validate mybank.com's certificate, even though you've never visited that site before. How is that possible?"}
-        options={[
-          "Your browser downloaded mybank.com's specific public key the first time you typed the URL, before this visit",
-          "Your OS/browser trust store holds a small set of root CA certificates; mybank.com's certificate chains up to one of those roots through a chain of signatures, so no site-specific key was ever needed in advance",
-          "Banks are pre-registered with every major browser vendor individually",
-          "The connection isn't actually verified the first time -- only on repeat visits"
-        ]}
-        correctIndex={1}
-        explanation={"This is the trust store from two lessons back: a bundled list of root certificates the OS/browser already decided to trust, completely independent of which sites you'll ever visit. mybank.com's leaf certificate chains through one or more intermediates up to one of those roots -- the same 158-root list (on a typical Mac) that validates any other site whose CA is in that chain, first visit or not."}
-      />
     </LessonLayout>
   );
 }

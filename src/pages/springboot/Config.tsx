@@ -1,6 +1,5 @@
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Config() {
@@ -490,17 +489,6 @@ public class RateLimitConfig {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You want the app to fail startup if the API_TOKEN environment variable is missing. Which yaml reference does that?"
-        options={[
-          "${API_TOKEN:}",
-          "${API_TOKEN:default}",
-          "${API_TOKEN}",
-          "${env.API_TOKEN}"
-        ]}
-        correctIndex={2}
-        explanation="Placeholder syntax without a default (${API_TOKEN}) makes the value required — Spring throws IllegalArgumentException at startup if it's missing. ${API_TOKEN:} defaults to empty string (silent failure at runtime). ${API_TOKEN:default} always resolves. ${env.API_TOKEN} isn't Spring's syntax (it's a common environment-variable convention in other systems)."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Advanced() {
@@ -465,17 +464,6 @@ public class CacheWarmer implements ApplicationRunner {
             virtual threads, ProblemDetail, structured concurrency.</li>
       </ul>
 
-      <InteractiveChallenge
-        question="You annotate a service method with @Async and call it from another method in the same class with this.doWorkAsync(). It runs synchronously — why?"
-        options={[
-          "@Async only works on public methods; check the visibility",
-          "You forgot @EnableAsync on a @Configuration class",
-          "Self-invocation via 'this' bypasses the Spring AOP proxy, so the @Async annotation is silently ignored",
-          "The default executor pool is exhausted"
-        ]}
-        correctIndex={2}
-        explanation="Same self-invocation trap that plagues @Transactional, @Cacheable, and every other proxy-based annotation. Spring's async behavior lives in a proxy that wraps your bean. Calls through 'this' go directly to the underlying method, bypassing the proxy. Fix by moving the call out of the class (into a caller), injecting the bean into itself with @Lazy, or restructuring so the async method is on a separate service."
-      />
     </LessonLayout>
   );
 }

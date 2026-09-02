@@ -1,15 +1,14 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function ErrorBoundaries() {
   return (
     <LessonLayout
       title="Error Boundaries"
       sectionId="react18"
-      lessonIndex={19}
-      prev={{ path: '/react18/feature-folder', label: 'Feature-Based Architecture' }}
+      lessonIndex={20}
+      prev={{ path: '/react18/bulletproof-react', label: 'Bulletproof React — A Concrete File Structure' }}
       next={{ path: '/react18/animations', label: 'Animation Libraries (Framer Motion & Beyond)' }}
     >
       <p>
@@ -388,44 +387,6 @@ function SaveButton() {
         </tbody>
       </table>
 
-      <InteractiveChallenge
-        question="Why does React 19 still require error boundaries to be class components?"
-        options={[
-          "Function components technically can't hold state, so they can't track whether an error occurred",
-          "There is no hook equivalent to getDerivedStateFromError/componentDidCatch — checked directly against react@19.2.6's exports, no such hook exists",
-          "Hooks aren't allowed to render fallback UI under any circumstances",
-          "It's a build-tool limitation in Vite, not a React limitation"
-        ]}
-        correctIndex={1}
-        explanation="Function components hold state fine (useState exists precisely for that). The actual reason is narrower: React has not shipped a hooks-based equivalent for getDerivedStateFromError or componentDidCatch. Checking react@19.2.6's own exports directly confirms there's no useErrorBoundary or similar hook — Component, with those two static/instance methods, remains the only built-in way to catch a render-phase error in React."
-        language="jsx"
-      />
-
-      <InteractiveChallenge
-        question="An ErrorBoundary wraps a button whose onClick handler throws. What happens when the button is clicked, verified by actually running it?"
-        options={[
-          "getDerivedStateFromError runs and the fallback UI replaces the button",
-          "componentDidCatch runs to log it, but the button stays visible",
-          "Neither lifecycle method runs — it's an uncaught exception exactly like there was no boundary at all, and the button stays mounted and clickable",
-          "React silently swallows the error since it's inside a try/catch React adds around all event handlers"
-        ]}
-        correctIndex={2}
-        explanation="Verified live: clicking the button does not invoke getDerivedStateFromError or componentDidCatch, and the fallback never renders. Error boundaries only catch errors thrown during React's render phase. Event handlers run outside that call stack entirely, so a throw there is a plain uncaught exception — it fires a window 'error' event and prints to the console, the same as it would with zero boundaries anywhere in the app."
-        language="jsx"
-      />
-
-      <InteractiveChallenge
-        question="What does the resetKeys prop actually do on react-error-boundary's <ErrorBoundary>, per the library's own source?"
-        options={[
-          "It lists which child components are allowed to trigger the fallback",
-          "When any value in the array changes between renders, the boundary automatically clears its error state and retries rendering the children",
-          "It sets a timeout after which the boundary auto-resets regardless of props",
-          "It's a list of error messages that should be ignored and not caught"
-        ]}
-        correctIndex={1}
-        explanation="Confirmed against the library's actual componentDidUpdate implementation: it compares the previous and next resetKeys arrays, and if any entry changed (via Object.is), it calls onReset and resets state back to { didCatch: false, error: null } — which makes React attempt to render the children again. A common use is tying resetKeys to a route param, so navigating away from the page that crashed automatically clears the error instead of leaving the fallback stuck forever."
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

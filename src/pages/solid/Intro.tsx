@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -180,17 +179,6 @@ public interface NotificationService {
         virtuous cycle.
       </p>
 
-      <InteractiveChallenge
-        question="What does the 'S' in SOLID stand for?"
-        options={[
-          "Separation of Concerns",
-          "Single Responsibility Principle",
-          "Simple Design Principle",
-          "Structured Responsibility Pattern"
-        ]}
-        correctIndex={1}
-        explanation="The 'S' stands for the Single Responsibility Principle — a class should have only one reason to change. While 'Separation of Concerns' is a related concept, the specific acronym letter refers to SRP as defined by Robert C. Martin."
-      />
     </LessonLayout>
   );
 }

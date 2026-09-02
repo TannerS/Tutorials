@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function TsqlTransactions() {
@@ -220,18 +219,6 @@ ORDER  BY [transaction_begin_time];
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You turn on READ_COMMITTED_SNAPSHOT (RCSI) on a database. What actually changes for a plain SELECT running under the default READ COMMITTED isolation level?"
-        options={[
-          'Nothing — RCSI only affects SERIALIZABLE transactions',
-          'The reader now takes a shared lock that is held for the whole transaction instead of just the statement',
-          'The reader stops taking shared locks and instead reads a row-versioned snapshot from tempdb, so it no longer blocks on, or is blocked by, writers',
-          'The reader is silently upgraded from READ COMMITTED to SNAPSHOT isolation for every query in the database',
-        ]}
-        correctIndex={2}
-        explanation="RCSI swaps the IMPLEMENTATION of READ COMMITTED itself — from locking to row versioning in tempdb — without changing the isolation level any query is asking for. It is easy to confuse this with switching to the separate, opt-in SNAPSHOT isolation level, but that requires its own ALLOW_SNAPSHOT_ISOLATION setting and an explicit SET TRANSACTION ISOLATION LEVEL SNAPSHOT — RCSI changes nothing about which level a query requests, only how READ COMMITTED behaves once it's requested. The cost is real too: row versions live in tempdb and every row carries a 14-byte version pointer, which is why this is a deliberate database setting and not a free upgrade."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

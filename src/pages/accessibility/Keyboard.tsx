@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Keyboard() {
@@ -549,32 +548,6 @@ function App() {
   );
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"What value should tabindex be set to for a modal container that needs to receive focus programmatically but should NOT be in the natural tab order?"}
-        options={[
-          "tabindex=\"0\"",
-          "tabindex=\"1\"",
-          "tabindex=\"-1\"",
-          "No tabindex needed"
-        ]}
-        correctIndex={2}
-        explanation={"tabindex=\"-1\" makes an element focusable via JavaScript (element.focus()) but keeps it out of the natural tab order. This is perfect for modal containers, section headings after route changes, and error summary containers that need programmatic focus."}
-        language="html"
-      />
-
-      <InteractiveChallenge
-        question={"In the roving tabindex pattern for a tab list, what happens when the user presses the Right Arrow key on the last tab?"}
-        options={[
-          "Focus stays on the last tab",
-          "Focus moves to the first tab (wraps around)",
-          "Focus moves to the tab panel",
-          "Nothing happens"
-        ]}
-        correctIndex={1}
-        explanation={"The roving tabindex pattern wraps around — pressing Right Arrow on the last item moves focus to the first item, and Left Arrow on the first item moves to the last. This creates a circular navigation pattern that users of composite widgets expect per the ARIA Authoring Practices Guide."}
-        language="html"
-      />
 
     </LessonLayout>
   );

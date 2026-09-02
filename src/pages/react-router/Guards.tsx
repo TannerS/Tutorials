@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Guards() {
@@ -454,19 +453,6 @@ export default function App() {
   );
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"Where is the best place to check authentication in a React Router v7 config-based app?"}
-        options={[
-          "Inside the component's useEffect",
-          "In a ProtectedRoute wrapper that checks context",
-          "In the route's loader function",
-          "In a global middleware before RouterProvider",
-        ]}
-        correctIndex={2}
-        explanation={"In React Router v7's config-based API, the loader function is the ideal place to check auth. It runs before the component renders, prevents flash of protected content, and can return a redirect() before any client-side code executes. It also works with SSR."}
-        language="jsx"
-      />
 
       <FlowChart
         title="Complete Auth Flow"

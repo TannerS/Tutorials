@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function StyleInclusion() {
@@ -199,31 +198,6 @@ Inline style (React) folds     none           good (JS-computed)      per-render
         chart={"graph TD\n  Q[Styling this?] --> SHARED{Reused across many components?}\n  SHARED -->|Yes, static-ish| MOD[CSS Modules / Sass @use]\n  SHARED -->|No, one-off dynamic value| DYN{Needs :hover/media query?}\n  DYN -->|Yes| MOD\n  DYN -->|No, just computed JS values| INLINE[Inline style prop]\n  Q --> PERF{Perf-sensitive, high render frequency?}\n  PERF -->|Yes| MOD\n  PERF -->|No, DX / full theme logic matters more| CIJ[CSS-in-JS]\n  style MOD fill:#1a3329\n  style INLINE fill:#1a2744\n  style CIJ fill:#3d2f14"}
       />
 
-      <InteractiveChallenge
-        question={"Why does runtime CSS-in-JS (like classic styled-components) carry ongoing runtime cost that CSS Modules doesn't?"}
-        options={[
-          "CSS-in-JS files are larger to download over the network",
-          "CSS Modules use a different CSS syntax that parses faster",
-          "CSS Modules hash class names and extract styles to a static file at BUILD time; runtime CSS-in-JS serializes style objects to CSS strings and injects them into the DOM on the CLIENT, repeatedly, as props/theme change",
-          "Runtime CSS-in-JS doesn't support the cascade at all"
-        ]}
-        correctIndex={2}
-        explanation={"CSS Modules' hashing and extraction happen once, at build time — the browser just gets a normal stylesheet. Runtime CSS-in-JS libraries generate and inject styles in the browser as components mount and props change, which is real ongoing JS work on every affected render, not a one-time build cost."}
-        language="tsx"
-      />
-
-      <InteractiveChallenge
-        question={"Why can inline React styles safely use var(--accent-blue) for theming, but can't express a :hover state the same way a stylesheet rule can?"}
-        options={[
-          "var() doesn't work inside the style prop at all",
-          "The style prop reads a live custom property fine (it's just a runtime CSSOM value), but pseudo-classes like :hover aren't expressible as a JS object property — they require an actual CSS rule or a JS event handler standing in for the interaction state",
-          ":hover only works with class selectors, never inline styles, for any value",
-          "Custom properties can't be read from JavaScript"
-        ]}
-        correctIndex={1}
-        explanation={"The style prop maps directly to an element's inline style declaration, which var() resolves against the CSSOM just fine — the limitation is structural: there's no way to write '&:hover' as a plain JS style object key. You'd need onMouseEnter/onMouseLeave to toggle state and recompute the style object, standing in for what a stylesheet's :hover selector gets for free."}
-        language="tsx"
-      />
     </LessonLayout>
   );
 }

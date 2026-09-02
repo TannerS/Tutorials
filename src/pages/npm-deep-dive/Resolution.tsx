@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Resolution() {
@@ -299,30 +298,6 @@ npm doctor
 # See outdated packages with current/wanted/latest
 npm outdated`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"If your package.json has \"lodash\": \"^4.17.0\" and the latest lodash is 5.1.0, what will npm install?"}
-        options={[
-          "5.1.0 (always gets latest)",
-          "4.17.21 (latest 4.x version)",
-          "4.17.0 (the exact version specified)",
-          "It depends on the lockfile"
-        ]}
-        correctIndex={1}
-        explanation="The caret (^) allows minor and patch updates within the same major version. So ^4.17.0 matches anything >=4.17.0 and <5.0.0. npm will install the latest version in that range, which would be 4.17.21 (assuming that's the latest 4.x). However, if a lockfile exists with a specific version pinned, npm install will use THAT version unless you run npm update."
-      />
-
-      <InteractiveChallenge
-        question="What's the key difference between peerDependencies and regular dependencies?"
-        options={[
-          "Peer dependencies are faster to install",
-          "Peer dependencies must be provided by the consuming project, not installed by the package itself",
-          "Peer dependencies are only used in development",
-          "Peer dependencies are always optional"
-        ]}
-        correctIndex={1}
-        explanation="Peer dependencies declare that a package NEEDS another package but expects the consumer to provide it. This prevents duplicate installations of framework-level packages (like React) that must be singletons in the dependency tree."
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function ObservabilitySlos() {
   return (
@@ -214,17 +213,6 @@ all to protect a budget measured in single-digit minutes per month.`}
         to justify its cost.
       </p>
 
-      <InteractiveChallenge
-        question={"A service has an SLO of 99.95% availability over a rolling 30-day window. So far this month it has already accumulated 30 minutes of downtime. A 30-day window is 43,200 minutes. How much error budget does the team have left, and what does the SRE book say should happen if that budget hits zero before the window ends?"}
-        options={[
-          "Budget remaining: 43.2 - 30 = 13.2 minutes. If it hits zero, the book says to keep deploying as normal since SLOs are just guidelines.",
-          "Budget remaining: (100% - 99.95%) x 43,200 = 21.6 minutes total, minus 30 already used = the budget is already blown by 8.4 minutes. Per the book, that should trigger a release freeze, with effort redirected to reliability work until the budget recovers.",
-          "Budget remaining: 43,200 - 30 = 43,170 minutes, because the SLO only applies to planned maintenance windows.",
-          "There's no way to compute this without knowing the SLA as well."
-        ]}
-        correctIndex={1}
-        explanation={"The total budget is (100% - 99.95%) = 0.05% = 0.0005 of the 43,200-minute window, which is 43,200 x 0.0005 = 21.6 minutes for the whole 30-day period — not 43.2, which is the budget for a 99.9% SLO, a different target. With 30 minutes already spent against a 21.6-minute budget, this team is already 8.4 minutes over. Per Chapter 3 of the SRE book, once the budget is exhausted the documented response is to halt risky releases and redirect engineering effort toward reliability work until the SLI recovers enough to rebuild the budget — not to keep shipping at normal velocity."}
-      />
     </LessonLayout>
   );
 }

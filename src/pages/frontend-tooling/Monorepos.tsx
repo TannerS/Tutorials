@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Monorepos() {
@@ -348,18 +347,6 @@ jobs:
       # Only build/test/lint what changed
       - run: npx nx affected -t lint test build --base=origin/main`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"What does NX's 'affected' command do?"}
-        options={[
-          "Runs all tasks across every project in the monorepo",
-          "Runs tasks only for projects impacted by changes since the base branch",
-          "Generates new projects affected by a schema change",
-          "Clears the computation cache for affected projects"
-        ]}
-        correctIndex={1}
-        explanation={"The affected command analyzes the project graph and git diff to determine which projects are impacted by your changes. It then runs the specified task (build, test, lint) only for those projects and their dependents. This dramatically reduces CI time."}
-      />
 
       <InfoBox variant="tip" title="Start Simple, Scale Up">
         You don't need NX or Turborepo on day one. Start with pnpm workspaces and

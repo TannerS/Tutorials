@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoAppliedNode() {
   return (
@@ -363,17 +362,6 @@ Digests match: true`}
         wired together carelessly.
       </p>
 
-      <InteractiveChallenge
-        question={"An older Node.js tutorial calls crypto.createCipher('aes-256-cbc', password) directly with a password string. Why does every program in this lesson use createCipheriv() instead?"}
-        options={[
-          "createCipher() is only slower — it is otherwise cryptographically equivalent to createCipheriv()",
-          "createCipher() derived the key and IV from the password using EVP_BytesToKey() — MD5 with no salt and a static IV — and Node removed it entirely as of v22.0.0, so typeof crypto.createCipher is 'undefined' today",
-          "createCipheriv() is required only when encrypting files, not in-memory strings",
-          "createCipher() still works fine today; it was deprecated only for stylistic reasons"
-        ]}
-        correctIndex={1}
-        explanation={"createCipher()/createDecipher() are not just discouraged, they are gone — Node's own DEP0106 entry is marked Type: End-of-Life, removed in v22.0.0, and confirms the reason was a weak key derivation function (MD5 with no salt) plus a static, non-random IV baked into EVP_BytesToKey(). A static IV is exactly the kind of mistake this section's other lessons call out repeatedly: reusing an IV/nonce breaks the confidentiality guarantee GCM and CBC both depend on. createCipheriv() forces you to supply your own IV explicitly — paired with crypto.randomBytes(), never Math.random() — which is the only path Node supports now, and was already the only secure one."}
-      />
     </LessonLayout>
   );
 }

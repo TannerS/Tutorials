@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -332,19 +331,6 @@ export default function App() {
   return <RouterProvider router={router} />;
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"Which API should you use in React Router v7 to unlock loaders, actions, and route-level error boundaries?"}
-        options={[
-          "BrowserRouter with <Routes>",
-          "createBrowserRouter with RouterProvider",
-          "HashRouter with <Routes>",
-          "StaticRouter with renderToString",
-        ]}
-        correctIndex={1}
-        explanation={"createBrowserRouter is the config-based API that enables v7's data APIs — loaders, actions, fetchers, and errorElement. The classic BrowserRouter + <Routes> approach still works but cannot use these features."}
-        language="jsx"
-      />
 
       <h2>Quick Reference</h2>
       <CodeBlock language="jsx" title="Hook & Component Cheat Sheet">

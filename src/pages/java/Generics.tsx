@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Generics() {
@@ -588,19 +587,6 @@ copy(dest, src);        // T = Integer; Object is a supertype. Compiles.`}
 
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question="Given a method that needs to add Integer elements to a list parameter, which wildcard should you use?"
-        options={[
-          "List<? extends Integer>",
-          "List<? super Integer>",
-          "List<?>",
-          "List<Object>"
-        ]}
-        correctIndex={1}
-        explanation="According to the PECS principle (Producer Extends, Consumer Super), when a method needs to write (consume) values into a collection, you use '? super T'. Using '? extends Integer' would prevent adding elements. '<?>' is equivalent to '? extends Object' and also prevents adding. 'List<Object>' would work but is less flexible — it wouldn't accept List<Number>."
-        code={"public static void addIntegers(List<? super Integer> list) {\n    list.add(1);\n    list.add(2);\n}"}
-        language="java"
-      />
     </LessonLayout>
   );
 }

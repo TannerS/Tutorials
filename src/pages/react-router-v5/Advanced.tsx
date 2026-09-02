@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Advanced() {
@@ -347,19 +346,6 @@ function EditProfileForm() {
           can&apos;t find <code>Prompt</code>, this is why.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"You have <Route path=\"/reports/:id\" /> and <Route path=\"/reports/summary\" /> inside a <Switch>, in that order. Visiting /reports/summary renders the wrong thing. Why?"}
-        options={[
-          "Switch requires the exact prop on every Route in v5",
-          "The :id route is checked first and matches \"summary\" as the id value",
-          "React Router can't have two routes under the same parent path",
-          "useRouteMatch must be called before the Switch renders",
-        ]}
-        correctIndex={1}
-        explanation={"Switch scans top to bottom and renders the first match — there's no specificity ranking in v5. Since \":id\" matches any single path segment, it happily matches \"summary\" before the router ever reaches the more specific /reports/summary route below it. The fix: declare /reports/summary first."}
-        language="jsx"
-      />
 
       <h2>Quick Reference: When to Use What</h2>
       <CodeBlock language="jsx" title="Pattern Decision Guide">

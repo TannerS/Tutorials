@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function BestPractices() {
@@ -489,17 +488,6 @@ function Modal({ isOpen, onClose, title, children }) {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"A component stores a filtered list in useState and keeps it in sync with the source array via useEffect. A colleague suggests replacing this with useMemo to derive the filtered list. Which combination of best practices does this refactoring align with?"}
-        options={[
-          "Avoid derived state + avoid unnecessary effects",
-          "Use composition over inheritance + keep components small",
-          "Use TypeScript for type safety + test with React Testing Library",
-          "Embrace React 19 features + avoid premature optimisation"
-        ]}
-        correctIndex={0}
-        explanation="Replacing a useState + useEffect synchronisation pair with useMemo eliminates derived state and removes an unnecessary effect. This aligns with two core best practices: never store values that can be computed, and avoid useEffect for keeping state in sync."
-      />
     </LessonLayout>
   );
 }

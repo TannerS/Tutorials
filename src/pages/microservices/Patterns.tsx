@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 import MtlsExplainer from '../../components/security/MtlsExplainer';
 
@@ -497,30 +496,6 @@ public class OrderService {
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"Your order service needs to call the payment gateway, which has 10% downtime. What pattern prevents cascading failures?"}
-        options={[
-          'API Gateway',
-          'Circuit Breaker',
-          'Saga Pattern',
-          'Event Sourcing'
-        ]}
-        correctIndex={1}
-        explanation={"The Circuit Breaker pattern wraps the unreliable downstream call. When failures exceed a threshold, the circuit opens and requests fail fast with a fallback response, preventing the order service from being blocked by the payment gateway's downtime."}
-      />
-
-      <InteractiveChallenge
-        question={"You need to ensure that creating an order, processing payment, and reserving inventory either all succeed or all roll back — but these are in separate services. Which pattern?"}
-        options={[
-          'Database per Service',
-          'CQRS',
-          'Saga Pattern',
-          'Strangler Fig'
-        ]}
-        correctIndex={2}
-        explanation={"The Saga pattern manages distributed transactions across multiple services using a sequence of local transactions with compensating transactions for rollback. Each step publishes an event that triggers the next step, and if any step fails, compensating transactions undo the previous steps."}
-      />
 
       <h2>Combined Architecture</h2>
 

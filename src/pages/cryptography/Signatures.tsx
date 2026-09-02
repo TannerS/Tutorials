@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoSignatures() {
   return (
@@ -366,29 +365,6 @@ Private key encoded (48 bytes)
         came from you and wasn&#39;t tampered with in transit?
       </p>
 
-      <InteractiveChallenge
-        question={"Why is ECDSA's per-signature nonce (k) so dangerous to get wrong, as demonstrated by the 2010 Sony PS3 key recovery?"}
-        options={[
-          "A weak nonce makes the signature slower to compute",
-          "If the same nonce is reused across two signatures from the same key, an attacker with both (message, signature) pairs can solve for the private key algebraically — no brute force required",
-          "A reused nonce only allows forging signatures for the exact same message, which is low risk",
-          "ECDSA nonces are not actually security-critical; the PS3 break was caused by a separate bug"
-        ]}
-        correctIndex={1}
-        explanation={"Sony's PS3 code-signing implementation reused the same constant nonce k for every ECDSA signature instead of generating a fresh random one each time. Because two signatures with the same nonce and the same private key produce two equations sharing an unknown, an attacker can solve directly for the private key with basic algebra — no brute force, no factoring. fail0verflow demonstrated this at 27C3 in December 2010, and the recovered key let anyone sign code the PS3 would accept as genuine."}
-      />
-
-      <InteractiveChallenge
-        question={"What makes Ed25519 (EdDSA) immune to the nonce-reuse vulnerability class that broke ECDSA on the PS3?"}
-        options={[
-          "Ed25519 doesn't use a nonce at all — it signs the raw message without hashing",
-          "Ed25519 derives its per-signature nonce deterministically from a hash of the private key and the message, so there is no random number generator involved at signing time to fail or get reused",
-          "Ed25519 signatures are encrypted, so even a reused nonce can't be exploited",
-          "Ed25519 uses a hardware security module by default, which ECDSA cannot"
-        ]}
-        correctIndex={1}
-        explanation={"EdDSA (RFC 8032) computes its nonce as Hash(private key, message) instead of drawing fresh randomness. Signing the same message with the same key always produces the same signature. Since there's no RNG in the signing path, there's nothing that can be biased, predictable, or accidentally reused across signatures — the exact failure mode that leaked Sony's PS3 signing key is structurally impossible in EdDSA."}
-      />
     </LessonLayout>
   );
 }

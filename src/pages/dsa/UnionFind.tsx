@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function UnionFind() {
   return (
@@ -376,17 +375,6 @@ All 6 nodes connected after MST edges only: true`}
         confirms it landed on exactly five.
       </p>
 
-      <InteractiveChallenge
-        question={"In Kruskal's algorithm, before adding a candidate edge (u, v), you need to know whether u and v are already connected by previously-added MST edges. Why is Union-Find specifically the right tool for that check, rather than re-running BFS/DFS from u every time?"}
-        options={[
-          "BFS/DFS cannot detect cycles at all, only Union-Find can",
-          "Union-Find's find() is near-O(1) amortized (path compression + union by size), so checking connectivity for every one of E sorted edges stays fast overall -- re-running BFS/DFS from scratch on every edge would re-walk the whole current forest each time, far more work over many edges",
-          "Union-Find only works correctly on undirected graphs, and MST problems are always undirected",
-          "Kruskal's algorithm requires sorting the disjoint sets themselves, and only Union-Find supports sorting"
-        ]}
-        correctIndex={1}
-        explanation={"The previous lesson's cycle-detection section showed BFS/DFS CAN detect cycles and connectivity fine, so that isn't the reason -- it's purely about doing it fast, repeatedly. Kruskal checks connectivity once per edge, up to E times. Re-running BFS/DFS from u each time costs O(V+E) per check, O(E * (V+E)) total. Union-Find's find()/union() cost close to O(1) amortized each (formally O(alpha(n)), the inverse Ackermann function), so all E connectivity checks together cost close to O(E) -- leaving edge sorting, at O(E log E), as the actual bottleneck of the whole algorithm. Same data structure from Part 1, applied to a graph problem it wasn't obviously about at first glance."}
-      />
     </LessonLayout>
   );
 }

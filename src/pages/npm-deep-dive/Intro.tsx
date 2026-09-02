@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -233,18 +232,6 @@ npm config set @mycompany:registry https://npm.mycompany.com/`}
         superior but npm has the lowest friction since it ships with Node.js. yarn is
         fine but its v1→v2+ migration confused many teams.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"When you run npm install lodash, what does npm download from the registry?"}
-        options={[
-          "The raw JavaScript source files from GitHub",
-          "A tarball (.tgz) containing the package contents",
-          "A Docker container with the package",
-          "A binary executable compiled for your OS"
-        ]}
-        correctIndex={1}
-        explanation="npm packages are distributed as gzipped tarballs (.tgz files). The registry stores a tarball for each published version. npm downloads and extracts these tarballs into your node_modules directory."
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -365,19 +364,6 @@ afterEach(() => {
   cleanup();
 });`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"Which query should you use to assert that an error message does NOT appear on screen?"}
-        options={[
-          "getByText('Error')",
-          "findByText('Error')",
-          "queryByText('Error')",
-          "getAllByText('Error')"
-        ]}
-        correctIndex={2}
-        explanation={"queryBy returns null when the element is not found, so you can assert .not.toBeInTheDocument(). getBy would throw an error immediately if the element is missing."}
-        language="jsx"
-      />
 
       <h2>Common jest-dom Matchers</h2>
       <CodeBlock language="jsx" title="jest-dom Custom Matchers">

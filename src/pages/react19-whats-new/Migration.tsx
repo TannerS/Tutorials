@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function WhatsNewMigration() {
@@ -392,17 +391,6 @@ graph TD
       </InfoBox>
 
       {/* ── 11. Check yourself ── */}
-      <InteractiveChallenge
-        question="Your team's React 18 app uses only function components and hooks, has no PropTypes anywhere, and its entry file calls createRoot(). What happens when you upgrade to React 19?"
-        options={[
-          'The app fails to build until every component is rewritten with the new JSX transform',
-          'The app keeps working essentially unchanged — none of the removed APIs apply to this codebase',
-          'All components need new TypeScript prop types added before the build will pass',
-          'ReactDOM.render must be replaced first, or the build fails',
-        ]}
-        correctIndex={1}
-        explanation="Every removal in React 19 — PropTypes, string refs, legacy Context, module pattern factories, ReactDOM.render/hydrate, UMD builds — targets old class-component or pre-hooks patterns. An app that's already function-components-only, hook-based, and on createRoot() doesn't touch any of those code paths, so upgrading is close to a no-op version bump."
-      />
     </LessonLayout>
   );
 }

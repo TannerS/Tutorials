@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Indexing() {
@@ -582,19 +581,6 @@ DROP INDEX CONCURRENTLY idx_orders_lookup;`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You have a composite index on (a, b, c). Which WHERE clause can use this index as a full prefix scan — every column seekable, no leading value skipped?"
-        options={[
-          'WHERE b = 1 AND c = 2',
-          'WHERE a = 1 AND c = 2',
-          'WHERE c = 1 AND b = 2 AND a = 3',
-          'WHERE b = 1',
-        ]}
-        correctIndex={2}
-        explanation="The optimizer can reorder equality conditions, so WHERE c=1 AND b=2 AND a=3 is equivalent to WHERE a=3 AND b=2 AND c=1 — the full (a,b,c) prefix, one index search. Option B seeks on 'a' and then filters on 'c' inside the index. Options A and D cannot use it as a PREFIX scan, because they don't constrain the leftmost column: through PG17 that meant a sequential scan, and on PG18+ the planner may still choose the index via a skip scan (verified: 'Index Searches: 5' instead of 1) — but only when 'a' is low-cardinality, so the left-prefix rule remains the way to design the index."
-        language="sql"
-      />
-
       <h2>Index Strategy Cheat Sheet</h2>
 
       <CodeBlock language="sql" title="Common Index Patterns" showLineNumbers={true}>
@@ -632,31 +618,6 @@ WHERE is_deleted = FALSE;
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"Your EXPLAIN output shows: Seq Scan on orders, Filter: customer_id = 42, Rows Removed by Filter: 999,958. What does this tell you?"}
-        options={[
-          'The query is optimally using an index',
-          'The table has no index on customer_id — add one',
-          'The index exists but the table is too small to use it',
-          'The query returned 999,958 rows',
-        ]}
-        correctIndex={1}
-        explanation="A Seq Scan with a Filter and nearly a million Rows Removed means the database read the entire table and discarded most rows. This is a textbook case for adding an index on customer_id. The query is doing far more I/O than necessary."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question={"Which PostgreSQL index type would you use for full-text search on a document content column?"}
-        options={[
-          'B-tree',
-          'Hash',
-          'GIN',
-          'BRIN',
-        ]}
-        correctIndex={2}
-        explanation="GIN (Generalized Inverted Index) is designed for full-text search, arrays, and JSONB. It creates an inverted index mapping each word/token to the rows that contain it. B-tree can't efficiently search within text content, Hash only supports equality, and BRIN is for physically ordered data."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

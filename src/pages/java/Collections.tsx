@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Collections() {
@@ -666,29 +665,6 @@ ConcurrentHashMap    Thread-safe, lock-striped. Use computeIfAbsent/merge for at
 
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question="You add an object to a HashSet, then change a field that its hashCode() is computed from. What happens?"
-        options={[
-          "The set automatically rehashes the object into the correct bucket",
-          "The object becomes unreachable — contains() and remove() fail, but it still appears when you iterate",
-          "The set throws ConcurrentModificationException on the next operation",
-          "Nothing — HashSet caches the hash code at insertion time and keeps using it"
-        ]}
-        correctIndex={1}
-        explanation="HashSet places the object in a bucket derived from its hash code at insertion time. Mutating a hash-relevant field changes what hashCode() returns, so lookups now probe a different bucket than the one holding the object. contains() and remove() both fail, yet iteration still walks every bucket and finds it — a genuinely confusing bug. The rule: keys and set elements must be immutable in their hash-relevant fields. Records are ideal here because their components are final."
-      />
-
-      <InteractiveChallenge
-        question="Which collection should you use if you need unique elements stored in sorted order?"
-        options={[
-          "ArrayList",
-          "HashSet",
-          "TreeSet",
-          "LinkedHashMap"
-        ]}
-        correctIndex={2}
-        explanation="TreeSet implements the Set interface (unique elements) and stores elements in sorted order using their natural ordering or a custom Comparator. HashSet provides uniqueness but no ordering. ArrayList allows duplicates. LinkedHashMap is a Map, not a Set, and maintains insertion order of key-value pairs."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Distributed() {
@@ -175,18 +174,6 @@ export default function Distributed() {
           cost of latency). This gives a more nuanced view of system trade-offs.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A social media app needs to show users' feeds. Posts can be slightly delayed but the feed must always load. During a network partition between data centers, what should the system prioritize?"}
-        options={[
-          'Consistency — block the feed until all data centers agree on the latest posts',
-          'Availability — show the feed with potentially stale posts rather than returning an error',
-          'Partition Tolerance — this is always required so it is not a choice',
-          'None of the above — CAP does not apply to social media'
-        ]}
-        correctIndex={1}
-        explanation={"Social media feeds are a classic AP use case. Users expect the feed to always load even if some posts are slightly delayed. Showing a slightly stale feed is far better than showing an error page. Partition tolerance is always required, so the real choice during a partition is between consistency and availability."}
-      />
 
       {/* ===== Section 2: Consistency Models ===== */}
       <h2>Consistency Models</h2>
@@ -801,17 +788,6 @@ const result = await retryWithBackoff(
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"A microservice is experiencing intermittent timeouts when calling a payment provider. The payment provider occasionally goes down for 30-60 seconds. What combination of patterns would best handle this?"}
-        options={[
-          'Only retry failed requests immediately with no delay',
-          'Circuit breaker to stop calling when down, retries with exponential backoff when circuit is closed, and a fallback to queue payments for later processing',
-          'Increase the timeout to 5 minutes so requests always succeed',
-          'Use distributed locking to ensure only one request at a time reaches the payment provider'
-        ]}
-        correctIndex={1}
-        explanation={"The circuit breaker detects when the payment provider is down and stops sending requests, preventing resource exhaustion. Retries with exponential backoff handle transient failures gracefully. A fallback mechanism such as queuing payments ensures the system degrades gracefully rather than failing entirely. Immediate retries would overwhelm the provider, long timeouts waste resources, and distributed locking is unrelated to resilience."}
-      />
     </LessonLayout>
   );
 }

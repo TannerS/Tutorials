@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Fullapp() {
@@ -500,19 +499,6 @@ src/
     └── AuthContext.js          Same Context + useAuth pattern as v6/v7
 */`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"In react-router-dom@5, where must <Route path=\"*\" component={NotFound} /> go inside a <Switch>?"}
-        options={[
-          "Anywhere — Switch ranks routes the same way v6's Routes does",
-          "Last — Switch renders the first matching child, and \"*\" matches every URL",
-          "First, so unmatched requests fail fast before checking other routes",
-          "It doesn't matter as long as every other Route has exact",
-        ]}
-        correctIndex={1}
-        explanation={"Switch has no ranking algorithm — it evaluates children top to bottom and stops at the first match. Because path=\"*\" matches every URL at any depth, it must be the last child; placed anywhere else it silently swallows every route declared after it, exact or not."}
-        language="jsx"
-      />
 
       <InfoBox variant="success" title="Full App Complete">
         You now have a full v5 routing architecture: public pages, an auth flow

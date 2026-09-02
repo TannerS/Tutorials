@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Advanced() {
@@ -487,30 +486,6 @@ npx bundlephobia-cli my-package`}
         use built output. Always test with <code>npm pack</code> → install in a fresh project
         before publishing.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"In an npm workspace, package A depends on \"@myorg/utils\": \"^1.0.0\", and @myorg/utils also happens to be a local workspace package. What does npm install do?"}
-        options={[
-          "Fails with EUNSUPPORTEDPROTOCOL because ^1.0.0 isn't the workspace protocol",
-          "Fetches @myorg/utils from the public registry, ignoring the local copy",
-          "Symlinks A's node_modules/@myorg/utils to the local workspace package, since the range is satisfied by it",
-          "Only works if you add \"workspace:*\" instead of a semver range"
-        ]}
-        correctIndex={2}
-        explanation="npm has no 'workspace:*' protocol — that's a Yarn/pnpm-only feature, and using it in npm actually fails with EUNSUPPORTEDPROTOCOL. In npm you just write an ordinary semver range. npm reads the root package.json's 'workspaces' field, sees the range is satisfied by a package that lives in one of those workspace folders, and symlinks it there automatically instead of hitting the registry."
-      />
-
-      <InteractiveChallenge
-        question="Why should internal shared packages in a monorepo set 'private: true'?"
-        options={[
-          "It makes the code invisible to other workspaces",
-          "It prevents accidental publication to the npm registry",
-          "It makes npm install faster",
-          "It enables special monorepo features"
-        ]}
-        correctIndex={1}
-        explanation="Setting 'private: true' causes npm publish to refuse to publish that package. For internal packages that are only used within your monorepo and should never be on the public registry, this is a safety net against accidental publication (e.g., running 'npm publish --workspaces' when only some packages should be public)."
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

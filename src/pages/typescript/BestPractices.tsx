@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function BestPractices() {
@@ -862,46 +861,6 @@ if (res.ok && res.data) {
 
       {/* ── Section 14: Interactive Challenges ───────────────────── */}
       <h2>14. Test Your Knowledge</h2>
-
-      <InteractiveChallenge
-        question={"What is the anti-pattern in this code?"}
-        language="typescript"
-        code={`function processInput(data: any) {\n  return data.name.toUpperCase();\n}\n\nconst user = processInput(42);`}
-        options={[
-          "Missing return type annotation",
-          "Using any instead of unknown — no type narrowing before property access",
-          "The function name is too generic",
-          "toUpperCase is not a valid method",
-        ]}
-        correctIndex={1}
-        explanation={"The parameter is typed as any, so TypeScript will not flag data.name on a number. Using unknown would force a type check before accessing properties, catching the bug at compile time."}
-      />
-
-      <InteractiveChallenge
-        question={"Which approach correctly ensures type safety for an API response?"}
-        language="typescript"
-        code={`// Option A:\nconst user = response.data as User;\n\n// Option B:\nfunction isUser(val: unknown): val is User {\n  return typeof val === 'object'\n    && val !== null\n    && 'id' in val\n    && 'name' in val;\n}\nif (isUser(response.data)) {\n  const user = response.data;\n}`}
-        options={[
-          "Option A — type assertion is simpler and sufficient",
-          "Option B — type guard validates at runtime and narrows the type safely",
-          "Both are equally safe",
-          "Neither is correct — you should use JSON.parse instead",
-        ]}
-        correctIndex={1}
-        explanation={"Type assertions with 'as' do not perform any runtime check. If the API returns unexpected data, the assertion silently lies and bugs appear later. A type guard validates the shape at runtime and lets TypeScript narrow the type safely."}
-      />
-
-      <InteractiveChallenge
-        question={"Which TypeScript feature prevents you from accidentally passing a UserId where an OrderId is expected?"}
-        options={[
-          "Generics",
-          "Type aliases",
-          "Branded types",
-          "Enums",
-        ]}
-        correctIndex={2}
-        explanation={"Branded types add a phantom property to a primitive type, making UserId and OrderId structurally incompatible even though both are strings at runtime. This catches mix-ups at compile time."}
-      />
 
       <InfoBox variant="success" title="Checklist: Ship-Ready TypeScript">
         <ul>

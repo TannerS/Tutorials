@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Flyweight() {
@@ -338,17 +337,6 @@ console.log(expr.interpret()); // 14`}
         interpret it repeatedly.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A game renders 100,000 tree sprites on a map. Each tree shares the same texture and mesh, but has a unique x/y position. Which pattern minimizes memory usage here, and what state should be shared vs. per-instance?"
-        options={[
-          "Flyweight — share the texture/mesh (intrinsic state) across all trees; store x/y (extrinsic state) separately per placement",
-          "Interpreter — parse each tree's position as a small expression and evaluate it at render time",
-          "Memento — snapshot each tree's state so it can be restored if the map reloads",
-          "Visitor — add a render() operation to each tree without modifying the Tree class"
-        ]}
-        correctIndex={0}
-        explanation="This is the canonical Flyweight scenario. The heavy, identical data (texture, mesh) is intrinsic state shared via a factory/cache, while the small, unique data (x/y position) is extrinsic state supplied by the caller at render time. Instead of 100,000 copies of the texture, you get one shared texture and 100,000 lightweight position records."
-      />
     </LessonLayout>
   );
 }

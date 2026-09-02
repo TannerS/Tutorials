@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -303,30 +302,6 @@ GET /api/users?page=1&size=20
   }
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"Which of the following is NOT one of the six REST constraints defined by Roy Fielding?"}
-        options={[
-          "Statelessness",
-          "Client-Server separation",
-          "Database normalization",
-          "Uniform Interface"
-        ]}
-        correctIndex={2}
-        explanation={"Database normalization is a relational database concept, not a REST constraint. The six REST constraints are: Client-Server, Stateless, Cacheable, Uniform Interface, Layered System, and Code on Demand (optional)."}
-      />
-
-      <InteractiveChallenge
-        question={"At which level of the Richardson Maturity Model does an API start using proper HTTP methods (GET, POST, PUT, DELETE)?"}
-        options={[
-          "Level 0 — The Swamp of POX",
-          "Level 1 — Resources",
-          "Level 2 — HTTP Verbs",
-          "Level 3 — Hypermedia Controls"
-        ]}
-        correctIndex={2}
-        explanation={"Level 2 is where APIs start using HTTP methods correctly. Level 0 uses a single endpoint for everything, Level 1 introduces unique resource URIs but still uses POST for all operations, and Level 3 adds HATEOAS links to responses."}
-      />
 
     </LessonLayout>
   );

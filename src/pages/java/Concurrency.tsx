@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Concurrency() {
@@ -698,17 +697,6 @@ Non-blocking composition ............................. CompletableFuture`}
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A Spring Boot service on Java 21 enables spring.threads.virtual.enabled=true. Under load, latency gets WORSE, and JFR shows virtual threads pinned to a small number of carrier threads. Which answer is correct for Java 21 AND explains what changes on Java 24+?"
-        options={[
-          "Increase carrier threads with -Djdk.virtualThreadScheduler.parallelism; pinning is unavoidable on every JDK",
-          "Add a fixed-size virtual thread pool to bound concurrency",
-          "On Java 21-23, synchronized held across I/O pins the vthread — move the I/O out of the lock or use ReentrantLock. On Java 24+, JEP 491 lets vthreads unmount inside synchronized, so only native/JNI and class-initializer frames still pin",
-          "Disable virtual threads and go back to platform threads"
-        ]}
-        correctIndex={2}
-        explanation="Pinning is when the JVM cannot unmount a blocked virtual thread from its carrier, so a small carrier pool gets stuck and throughput collapses. Through Java 23, synchronized was the usual culprit and the standard fix was ReentrantLock (which supports unmounting) or restructuring so no lock is held across I/O. JEP 491 in Java 24 reimplemented object monitors so virtual threads unmount inside synchronized too — leaving native/JNI frames and class initializers as the remaining pin sites. Note the best fix is version-independent: don't hold any lock across a slow call, because that serialises callers whether or not it pins. Raising carrier parallelism is a band-aid and pooling virtual threads defeats their purpose."
-      />
     </LessonLayout>
   );
 }

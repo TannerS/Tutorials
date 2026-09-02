@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Testing() {
@@ -444,17 +443,6 @@ void anyStatusRendersToJson(OrderStatus status) throws Exception {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your JPA repository test passes on H2 in CI but the same query fails in production against Postgres. What's the fix?"
-        options={[
-          "Add more @DataJpaTest coverage to hit edge cases",
-          "Use TestContainers to run tests against a real Postgres — H2 differs from Postgres in JSON columns, arrays, case-insensitive collation, and CTE semantics, so tests that pass on H2 can silently fail on the real engine",
-          "Set spring.jpa.database=POSTGRESQL so H2 emulates Postgres",
-          "Add @ActiveProfiles(\"test\") to the test class"
-        ]}
-        correctIndex={1}
-        explanation="H2 is fast and convenient but a lying test double. It ignores or differently interprets features that real databases handle — array columns, JSON operators, ILIKE, CTE materialization behavior, window function edge cases. spring.jpa.database=POSTGRESQL only sets the SQL dialect for Hibernate; H2's engine still runs H2 SQL. Only running your tests against the same engine you deploy on gives real confidence."
-      />
     </LessonLayout>
   );
 }

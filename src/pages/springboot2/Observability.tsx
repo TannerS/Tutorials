@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Observability() {
@@ -462,29 +461,6 @@ Governing BOM    A second BOM (Spring Cloud) that must be version-paired
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A teammate wants Micrometer's Observation API on your Spring Boot 2.7.18 service without upgrading Boot. Their plan: set <micrometer.version>1.12.5</micrometer.version> in the POM and start using ObservationRegistry. What actually happens?"
-        options={[
-          "It works exactly like Boot 3 — Observation calls produce both metrics and spans",
-          "The build fails immediately because Micrometer 1.12 requires Java 17",
-          "The jars resolve and the code compiles, but Spring MVC, RestTemplate/WebClient and JDBC never get instrumented automatically, because that auto-configuration lives in spring-boot-actuator-autoconfigure, and Boot 2.7's copy has zero ObservationAutoConfiguration classes",
-          "Spring Boot's dependency management blocks any micrometer.version override above 1.9.x"
-        ]}
-        correctIndex={2}
-        explanation="Micrometer's Java artifacts don't require Java 17, and Boot's dependency management explicitly allows overriding a managed version, so options 2 and 4 are both invented. The jar resolves fine — that's exactly what makes this trap convincing. What you don't get is the plumbing: verified directly by listing ObservationAutoConfiguration classes inside spring-boot-actuator-autoconfigure for both releases, Boot 2.7.18's jar has zero and Boot 3.0.13's has five. That autoconfiguration is what wires an ObservationRegistry into the web filter chain, the HTTP clients and JDBC — without it you have a registry bean and nothing feeding it. Raising micrometer.version alone gets you a newer jar with no autoconfiguration behind it; the Observation API is a Boot-3-and-up capability, not a dependency-version toggle."
-      />
-
-      <InteractiveChallenge
-        question="You open a Boot 2.7.18 service's logs and see 'INFO [orders-service,4bf92f3577b34da6,00f067aa0ba902b7] ... order placed' — nobody wrote a custom Logback pattern and nobody calls MDC.put anywhere in the codebase. Where does the bracketed part come from?"
-        options={[
-          "Boot 2.7's default Logback starter always adds trace correlation to console output",
-          "spring-cloud-starter-sleuth's TraceEnvironmentPostProcessor sets logging.pattern.level to a pattern reading MDC keys traceId/spanId (via %X{key}), and separately populates those same MDC keys by decorating Brave's trace context — both defaults, both on once the starter is present",
-          "The Actuator /loggers endpoint was used to configure this pattern at runtime",
-          "It is coming from the Observation API's default logging integration"
-        ]}
-        correctIndex={1}
-        explanation="Verified by disassembling TraceEnvironmentPostProcessor.class from spring-cloud-sleuth-autoconfigure-3.1.10.jar: with spring.sleuth.enabled=true and spring.sleuth.default-logging-pattern-enabled=true — both defaults once the starter is on the classpath — the postProcessEnvironment method sets logging.pattern.level to a literal string containing %X{traceId:-} and %X{spanId:-}, the standard SLF4J/Logback MDC accessor syntax. That only produces real values because Sleuth also decorates Brave's CurrentTraceContext to write those same two MDC keys on every span. Option 1 is wrong because plain Logback has no concept of a trace id — it needs something populating MDC, which is Sleuth's job, not the logging framework's. Option 4 doesn't apply here: the Observation API doesn't exist in Micrometer 1.9, which is what Boot 2.7.18 ships. Option 3 describes a real endpoint (runtime log level changes) that has nothing to do with the pattern layout."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function ZustandFundamentals() {
@@ -309,23 +308,6 @@ function Controls() {
         covered in full in the next lesson. For now, the habit to build is: never call the hook
         with zero arguments in a component that only needs one field.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={
-          "A component only displays the bear count and never triggers any action. " +
-          "Which of these re-renders it on every unrelated store change (e.g. a fish count " +
-          "elsewhere in the same store), and which doesn't?"
-        }
-        options={[
-          "const bears = useBearStore((state) => state.bears); — re-renders on every store change",
-          "const state = useBearStore(); const bears = state.bears; — re-renders only when bears changes",
-          "const { bears } = useBearStore(); — re-renders only when bears changes",
-          "const bears = useBearStore((state) => state.bears); — re-renders only when bears changes",
-        ]}
-        correctIndex={3}
-        explanation="Passing a selector — state => state.bears — is what makes Zustand compare the selected value between renders and skip re-rendering when it hasn't changed. Calling the hook with no selector (options 2 and 3 both do this, then destructure afterwards) always returns the whole state object, which is a new reference-compared value on every store update, so the component re-renders on any change to any field — fish count included."
-        language="tsx"
-      />
 
       <h2>Key Takeaways</h2>
       <p>

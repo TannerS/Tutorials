@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function StacksQueues() {
   return (
@@ -298,29 +297,6 @@ poll() order: 1 2 3 5 7 8 9 `}
         </tbody>
       </table>
 
-      <InteractiveChallenge
-        question={
-          "You insert 5, 1, 8, 2, 9, 3, 7 into a PriorityQueue<Integer> with natural ordering, " +
-          "then iterate it with a for-each loop and print each element. What should you expect?"
-        }
-        options={[
-          'The elements print in fully sorted order: 1 2 3 5 7 8 9',
-          'The elements print in insertion order: 5 1 8 2 9 3 7',
-          "The elements print in the heap's internal array order, which starts with the minimum but is not fully sorted — only poll() guarantees sorted order",
-          'PriorityQueue does not support iteration at all',
-        ]}
-        correctIndex={2}
-        explanation={
-          "PriorityQueue only guarantees the heap property (each parent ≤ its children), not a fully " +
-          "sorted array. Its iterator() is documented to traverse elements in no particular order. " +
-          "Running this exact sequence on JDK 26 prints \"1 2 3 5 9 8 7\" from a for-each loop, but " +
-          "\"1 2 3 5 7 8 9\" from repeated poll() calls — sorted order requires draining the queue, " +
-          "not just iterating it."
-        }
-        code={`PriorityQueue<Integer> pq = new PriorityQueue<>();
-for (int v : new int[]{5, 1, 8, 2, 9, 3, 7}) pq.offer(v);
-for (int v : pq) System.out.print(v + " ");`}
-      />
     </LessonLayout>
   );
 }

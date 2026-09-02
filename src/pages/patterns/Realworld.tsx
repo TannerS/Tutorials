@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Realworld() {
@@ -258,17 +257,6 @@ public class NotificationEventListener {
         Show you understand the WHY, not just the structure.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Why should you NEVER expose JPA entities directly in your REST API responses?"
-        options={[
-          "JPA entities are too slow to serialize",
-          "Entities may expose sensitive fields, create circular references, and couple your API contract to your database schema",
-          "Spring Boot doesn't support serializing entities to JSON",
-          "Entities can only be used within @Transactional methods"
-        ]}
-        correctIndex={1}
-        explanation="Exposing entities directly means: (1) database schema changes break your API, (2) lazy-loaded relationships cause N+1 queries or LazyInitializationExceptions, (3) sensitive fields (passwords, internal IDs) leak to clients, (4) bidirectional relationships cause infinite JSON recursion. DTOs decouple your API contract from your persistence model."
-      />
     </LessonLayout>
   );
 }

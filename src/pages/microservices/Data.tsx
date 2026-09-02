@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Data() {
@@ -527,30 +526,6 @@ class OrderService {
 // Separate process: poll outbox table and publish to Kafka
 // (or use CDC / Debezium to stream outbox changes automatically)`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"In CQRS Level 3, the read model shows stale data for a few milliseconds after a write. What is this called?"}
-        options={[
-          'Strong consistency',
-          'Causal consistency',
-          'Eventual consistency',
-          'Linearizability'
-        ]}
-        correctIndex={2}
-        explanation={"In CQRS Level 3 with separate read and write databases, there is a delay between when data is written and when it appears in the read model. This is eventual consistency — the read model will eventually catch up, but there is a window where it shows stale data. This is the tradeoff for having optimized read models."}
-      />
-
-      <InteractiveChallenge
-        question={"What is the key advantage of the Transactional Outbox pattern over publishing events directly to Kafka?"}
-        options={[
-          'It is faster than direct publishing',
-          'It guarantees at-least-once delivery by making DB write and event publish atomic',
-          'It eliminates the need for a message broker',
-          'It provides exactly-once delivery'
-        ]}
-        correctIndex={1}
-        explanation={"The Transactional Outbox pattern writes the event to an outbox table in the SAME database transaction as the business data. This guarantees that if the data is written, the event is also written — atomically. A separate process then publishes the outbox events to Kafka, ensuring at-least-once delivery."}
-      />
 
       <h2>Summary</h2>
 

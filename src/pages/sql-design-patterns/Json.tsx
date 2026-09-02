@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Json() {
@@ -326,31 +325,6 @@ ORDER BY rank DESC;
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A column stores exact API responses that must be re-emitted byte-for-byte later, preserving duplicate keys and original key order. Which type should you use?"
-        options={[
-          'jsonb, because it is always faster',
-          'json, because it stores the input text verbatim without normalizing it',
-          'Neither — store it as plain TEXT',
-          'jsonb with a GIN index on the whole document',
-        ]}
-        correctIndex={1}
-        explanation="json stores the exact text it was given and reparses it on read, so key order and duplicate keys survive round-trips. jsonb normalizes at write time — keys are sorted and duplicates collapse to the last value — which is the right tradeoff for querying and indexing, but wrong when byte-for-byte fidelity is the requirement."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question="Queries against a jsonb column only ever use the containment operator (@>), and the index needs to be as small and fast as possible. Which index definition fits?"
-        options={[
-          'CREATE INDEX ON documents USING gin (metadata)',
-          'CREATE INDEX ON documents USING gin (metadata jsonb_path_ops)',
-          'CREATE INDEX ON documents USING btree (metadata)',
-          'CREATE INDEX ON documents ((metadata::text))',
-        ]}
-        correctIndex={1}
-        explanation="jsonb_path_ops indexes value paths only, producing a smaller, faster index — but it supports @> alone, not ?, ?| or ?&. The default jsonb_ops (plain USING gin (metadata)) supports all four operators but costs more index size for the ones you're not using. A B-tree can't index inside a jsonb document at all."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Caching() {
@@ -319,18 +318,6 @@ async function updateUser(userId, data) {
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"Your cache is full and you observe a periodic batch job scanning millions of records once per day. After the batch job runs, your cache hit rate drops from 95% to 20%. Which eviction policy would best prevent this?"}
-        options={[
-          'FIFO — evict the oldest entries first',
-          'LRU — evict least recently used entries',
-          'LFU — evict least frequently used entries',
-          'Random — evict random entries'
-        ]}
-        correctIndex={2}
-        explanation={"LFU protects frequently accessed (hot) data from being evicted by a burst of one-time accesses. The batch job reads each record once, giving each a frequency count of 1. With LFU, these low-frequency entries are evicted first, preserving the hot data that your application actually needs. LRU would fail here because the batch job's one-time reads would be the 'most recently used' entries, causing hot data to be evicted."}
-      />
 
       {/* ================================================================
           SECTION 8: REDIS OVERVIEW
@@ -789,18 +776,6 @@ ETag: "abc123"
 # User-specific data:     private, no-cache
 # Public content:         public, max-age=300, s-maxage=3600`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"You are designing a social media feed that shows posts from followed users. Each user's feed is unique. You need low latency but the feed must reflect new posts within 30 seconds. Which caching strategy combination would you use?"}
-        options={[
-          'Write-through cache with no TTL — perfect consistency',
-          'Cache-aside with 30-second TTL + event-based invalidation on new posts',
-          'Write-behind cache with LFU eviction',
-          'CDN caching with 1-hour TTL for all feeds'
-        ]}
-        correctIndex={1}
-        explanation={"Cache-aside with a short TTL ensures feeds are never more than 30 seconds stale. Event-based invalidation (when a new post is created, invalidate the feed caches of all followers) provides near-real-time updates for active users. Write-through would be wasteful since feeds are computed, not directly written. CDN caching won't work because each user's feed is unique (private data). Write-behind doesn't apply to reads."}
-      />
 
       {/* ================================================================
           SECTION 13: WORKED EXAMPLE — REDIS SESSION CACHE AT THE AUTH GATEWAY

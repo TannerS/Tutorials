@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Internals() {
   return (
@@ -506,41 +505,6 @@ $ cat .git/packed-refs
         versus rebase are two different ways of adding commits and rewriting which hash a ref points at.
       </p>
 
-      <InteractiveChallenge
-        question={"You run git commit on the main branch. In terms of what actually changes on disk, which is most accurate?"}
-        options={[
-          "Git rewrites the entire .git/refs/heads/main file's content to be the new commit's hash — a small text-file overwrite, nothing else in prior history is touched",
-          "Git recalculates and rewrites every previous commit object to include the new one in a chain",
-          "Git creates a brand new 'main' object that replaces the old one",
-          "Nothing changes until you run git push"
-        ]}
-        correctIndex={0}
-        explanation={"Demonstrated directly: cat .git/refs/heads/main read 5beb974b7178f5bf3bf709d496e45da77bbf282c before a commit and 9f1c9e163102480f8da2e37ae50aecf75b94cfda after — the file's entire content was overwritten with the new commit hash. Every earlier commit object was untouched; only the small pointer file changed."}
-      />
-
-      <InteractiveChallenge
-        question={"You copy an existing 50KB file to a brand-new path and commit it unchanged. How much does Git's object store grow?"}
-        options={[
-          "Another full 50KB — Git always stores a fresh copy per path",
-          "Roughly nothing — Git hashes the content, finds a blob with that hash already exists (as demonstrated with two identical app.conf files both hashing to 95c8bb63...), and the new tree entry just references the existing blob",
-          "It depends on the file extension",
-          "Git refuses to commit an exact duplicate"
-        ]}
-        correctIndex={1}
-        explanation={"Content-addressable storage means the hash is derived purely from content — src/config/app.conf and lib/settings/app.conf, with identical text, both hashed to 95c8bb63928321e7d1793928ceae6211d58a2bd3, and git ls-tree -r HEAD confirmed both paths in the committed tree point at that same single blob object. No duplicate blob was stored."}
-      />
-
-      <InteractiveChallenge
-        question={"You run git checkout <commit-hash> directly (not a branch name), make a new commit, then git checkout main. What happens to that new commit?"}
-        options={[
-          "It gets automatically merged into main",
-          "Git refuses to let you switch branches until you handle it",
-          "It becomes unreachable from any ref — .git/HEAD held the raw hash while detached (verified: cat .git/HEAD printed 1470db8983dc1872872e70e8b45e607e3864dd2b, not a ref: line), so nothing points at the new commit once HEAD moves elsewhere; it's recoverable via git reflog for a while, then eligible for garbage collection",
-          "The commit is deleted immediately"
-        ]}
-        correctIndex={2}
-        explanation={"Detached HEAD means HEAD itself holds a commit hash instead of 'ref: refs/heads/<branch>'. Committing there advances only that raw HEAD value. Since no branch ref was ever updated, switching to main leaves the new commit with zero incoming refs — same fate as the reset-away 9f1c9e1 commit shown earlier: still a real object, just unreferenced, and only reflog keeps it findable."}
-      />
     </LessonLayout>
   );
 }

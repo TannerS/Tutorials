@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Adapters() {
@@ -444,17 +443,6 @@ test('round-trip is stable', () => {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your UI shows dates by calling new Date(customer.created_at).toLocaleDateString() in dozens of components. The backend suddenly starts returning epoch milliseconds instead of ISO strings. What's the right structural fix — not just a hotfix?"
-        options={[
-          "Add a defensive if-check inline at every component that formats a date",
-          "Add a Jackson deserializer on the backend that always emits ISO strings",
-          "Put an adapter layer between fetch and state: adapter.toModel() converts created_at to a real Date object exactly once, and components consume a Date, not a string. When the wire shape changes, only the adapter changes.",
-          "Use a global custom hook that memoizes date parsing"
-        ]}
-        correctIndex={2}
-        explanation="The reason the change is painful is that the wire shape (a string) leaked into every consumer. An adapter layer is the seam where wire shape becomes UI shape: consumers hold a `Date`, and switching between ISO strings, epoch millis, or a whole new field structure only requires updating the adapter. This is the same reason enterprise codebases universally have some form of adapter/mapper/translator between API and UI models."
-      />
     </LessonLayout>
   );
 }

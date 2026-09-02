@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Security() {
@@ -571,17 +570,6 @@ class OrderControllerSecurityTest {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You have a stateless JWT-authenticated REST API. What's the correct CSRF setting?"
-        options={[
-          "Enable CSRF with CookieCsrfTokenRepository — always safer",
-          "Disable CSRF — the bearer token cannot be attached to cross-origin requests automatically, so there's nothing to forge",
-          "Enable CSRF only for POST/PUT/PATCH/DELETE",
-          "CSRF is enabled by default in Spring Security 6 and shouldn't be changed"
-        ]}
-        correctIndex={1}
-        explanation="CSRF exploits the fact that browsers automatically attach cookies to cross-origin requests. A bearer token in an Authorization header is NOT automatically attached — it must be added by JavaScript. So a stateless API using only bearer-token auth is immune to CSRF by construction, and CSRF protection just adds friction without value. For cookie-session apps, the opposite is true and CSRF should be on."
-      />
     </LessonLayout>
   );
 }

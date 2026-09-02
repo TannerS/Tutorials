@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Errors() {
@@ -538,30 +537,6 @@ module.exports = { errorHandler, AppError, NotFoundError, ValidationError, Confl
         <p><strong>Be complete</strong> — Return all validation errors at once, not one at a time.</p>
         <p><strong>Be documented</strong> — Every error code should be in your API documentation.</p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A client submits a form with 3 invalid fields. What is the best API behavior?"}
-        options={[
-          "Return 400 Bad Request with a generic error message",
-          "Return only the first validation error so the client can fix and resubmit",
-          "Return 422 Unprocessable Entity with all 3 field-level errors in one response",
-          "Return 500 Internal Server Error because the data was invalid"
-        ]}
-        correctIndex={2}
-        explanation={"The best practice is to return all validation errors at once with 422 Unprocessable Entity. Each error should include the field name, error code, and human-readable message. This lets the client display all errors to the user simultaneously. Returning errors one at a time wastes server round trips and frustrates users."}
-      />
-
-      <InteractiveChallenge
-        question={"Which field in RFC 9457 Problem Details (the spec that obsoleted RFC 7807) should contain a link to documentation about the error type?"}
-        options={[
-          "detail",
-          "instance",
-          "type",
-          "title"
-        ]}
-        correctIndex={2}
-        explanation={"The 'type' field is a URI reference that identifies the problem type and should link to documentation. 'detail' is a human-readable description of this specific occurrence. 'instance' identifies this specific error occurrence (usually the request URL). 'title' is a short human-readable summary of the problem type."}
-      />
 
     </LessonLayout>
   );

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Generics() {
@@ -1181,66 +1180,6 @@ if (!form.ok) {
 
       {/* ── Section 14: Interactive Challenges ── */}
       <h2>Test Your Knowledge</h2>
-
-      <InteractiveChallenge
-        question={"Which function signature correctly constrains T to objects that have a 'name' property of type string?"}
-        code={`// Which signature is correct?
-// A) function greet<T>(obj: T): string
-// B) function greet<T extends { name: string }>(obj: T): string
-// C) function greet<T extends string>(obj: T): string
-// D) function greet<T = { name: string }>(obj: T): string`}
-        language="typescript"
-        options={[
-          "function greet<T>(obj: T): string — no constraint at all",
-          "function greet<T extends { name: string }>(obj: T): string — extends constrains shape",
-          "function greet<T extends string>(obj: T): string — constrains T to string type",
-          "function greet<T = { name: string }>(obj: T): string — default, not constraint",
-        ]}
-        correctIndex={1}
-        explanation={"The extends keyword constrains T so that only types with a 'name: string' property are accepted. Option A has no constraint. Option C constrains T to string itself, not objects with a name. Option D sets a default type but does not enforce the constraint — callers could pass any type explicitly."}
-      />
-
-      <InteractiveChallenge
-        question={"You have a User type and want to create a type with only 'id' and 'email'. Which utility type do you use?"}
-        code={`interface User {
-  id: number;
-  name: string;
-  email: string;
-  password: string;
-  createdAt: Date;
-}
-
-// Goal: { id: number; email: string; }`}
-        language="typescript"
-        options={[
-          "Partial<User>",
-          "Omit<User, \"name\" | \"password\" | \"createdAt\">",
-          "Pick<User, \"id\" | \"email\">",
-          "Extract<User, \"id\" | \"email\">",
-        ]}
-        correctIndex={2}
-        explanation={"Pick<User, \"id\" | \"email\"> selects exactly those two properties. Omit would also work but requires listing everything to remove — Pick is cleaner when you want fewer fields than you are excluding. Partial makes all fields optional but keeps them all. Extract works on union types, not object properties."}
-      />
-
-      <InteractiveChallenge
-        question={"What does the return type T[K] resolve to in this function call?"}
-        code={`function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
-  return obj[key];
-}
-
-const user = { id: 1, name: "Alice", active: true };
-const result = getProperty(user, "active");
-// What is the type of result?`}
-        language="typescript"
-        options={[
-          "string",
-          "unknown",
-          "boolean",
-          "string | number | boolean",
-        ]}
-        correctIndex={2}
-        explanation={"T is inferred as { id: number; name: string; active: boolean } and K is inferred as the literal type \"active\". T[K] therefore resolves to the type of the 'active' property, which is boolean. This is the power of indexed access types combined with generics — TypeScript tracks the exact property type."}
-      />
 
       <InfoBox variant="success" title="Generics Mastery">
         You now understand the core building blocks of TypeScript generics — from basic type

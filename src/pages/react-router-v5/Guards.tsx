@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Guards() {
@@ -390,19 +389,6 @@ export default function App() {
         isn&apos;t in v6.4+ — this is one of the biggest adjustments when moving
         between the two.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"Why does PrivateRoute use render={(props) => ...} instead of passing a custom function to the component prop?"}
-        options={[
-          "render is faster at runtime than component",
-          "component only accepts class components, not functions",
-          "An inline function passed to component creates a new component type every render, forcing an unmount/remount; render does not have this problem",
-          "render is required for TypeScript projects, component is JavaScript-only",
-        ]}
-        correctIndex={2}
-        explanation={"React Router v5's own docs warn about this: component expects a stable reference to a component. Pass it a fresh inline arrow function on every render and React treats each one as a different component type, unmounting the old instance and mounting a new one — losing state and re-firing effects. render takes a function that's simply called to produce elements, so it never affects component identity."}
-        language="jsx"
-      />
 
       <FlowChart
         title="Complete Auth Flow with Redirect-Back"

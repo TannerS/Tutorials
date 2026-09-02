@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoTrustStores() {
   return (
@@ -298,29 +297,6 @@ mkcert localhost 127.0.0.1 ::1
         and how systems avoid re-encrypting an entire dataset every time a protecting key is rotated.
       </p>
 
-      <InteractiveChallenge
-        question={"Why doesn't your browser warn you when connecting to your bank's website, but it does warn you for a self-signed certificate on localhost?"}
-        options={[
-          "Banks pay browser vendors a fee to skip the warning",
-          "The bank's certificate chains up to a root CA already bundled in the OS/browser's trust store; a self-signed cert has no such chain to a trusted root",
-          "Bank websites use a special encryption algorithm that localhost doesn't support",
-          "The warning is based on the website's traffic volume, not its certificate"
-        ]}
-        correctIndex={1}
-        explanation={"The trust store is a finite, bundled list of root CA certificates (158 on a typical Mac, verified with `security find-certificate`). A bank's leaf certificate chains through an intermediate up to a root that CAs like DigiCert got audited into that list years ago. A self-signed cert has no issuer chaining to any of those roots, so the browser has nothing to resolve trust against -- hence the warning. mkcert works around this for local development by installing its own CA root into your trust store, at which point certs it issues resolve exactly the same way."}
-      />
-
-      <InteractiveChallenge
-        question={"What is the key difference between a trust store and a TPM/Secure Enclave?"}
-        options={[
-          "They are two names for the same thing",
-          "A trust store holds public root certificates used to validate certificate chains; a TPM/Secure Enclave is hardware that stores private keys so they can be used without ever being extracted",
-          "A trust store is hardware, a TPM is software",
-          "TPMs replace the need for trust stores entirely"
-        ]}
-        correctIndex={1}
-        explanation={"A trust store (like macOS's SystemRootCertificates.keychain, or Firefox's cert9.db) is a list of public root CA certificates the OS or browser has decided to believe -- it contains no secrets. A TPM or Secure Enclave is separate hardware whose job is protecting private key material: it can perform sign/decrypt operations with a key on request, but the raw private key is never handed to the OS, even if the OS is compromised. One is about which public certificates to trust; the other is about where a private key physically lives."}
-      />
     </LessonLayout>
   );
 }

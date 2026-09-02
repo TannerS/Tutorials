@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Singleton() {
@@ -293,17 +292,6 @@ public class PushDispatcher extends NotificationDispatcher {
         (Spring @Component with default singleton scope) over hand-rolled Singletons.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What problem does the 'volatile' keyword solve in the double-checked locking singleton?"
-        options={[
-          "It makes the variable thread-local",
-          "It prevents instruction reordering that could expose a partially constructed object",
-          "It locks the variable so only one thread can read it at a time",
-          "It forces the variable to be stored on the heap instead of the stack"
-        ]}
-        correctIndex={1}
-        explanation="Without volatile, the JVM may reorder instructions such that the reference is assigned before the constructor completes. Another thread could then see a non-null but partially constructed instance. The volatile keyword establishes a happens-before relationship preventing this reordering."
-      />
     </LessonLayout>
   );
 }

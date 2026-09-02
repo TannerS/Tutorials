@@ -1,6 +1,5 @@
 import LessonLayout from '../../components/LessonLayout';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CloudArchitectureMultiRegion() {
   return (
@@ -194,17 +193,6 @@ export default function CloudArchitectureMultiRegion() {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"A system has an RPO of 15 minutes and an RTO of 4 hours. During an incident, the last successful data replication to the DR region completed 10 minutes before the primary region went down, and the team fully restores service 3 hours after the outage began. Did the system meet its targets?"}
-        options={[
-          "No — both targets were missed",
-          "Yes to RPO (10 minutes of data loss is within the 15-minute target) and yes to RTO (3 hours of downtime is within the 4-hour target)",
-          "Yes to RTO, but RPO doesn't apply here since no backup was actually restored",
-          "The scenario is contradictory — RTO and RPO can't both be satisfied in the same incident"
-        ]}
-        correctIndex={1}
-        explanation={"RPO measures data loss, independent of how long recovery took: 10 minutes of lost writes is within the 15-minute RPO target. RTO measures downtime, independent of how much data was lost: 3 hours of downtime is within the 4-hour RTO target. They are two separate measurements of two separate failures (data loss vs. unavailability), and a single incident is scored against each one on its own — there's nothing contradictory about meeting both, missing both, or meeting only one."}
-      />
     </LessonLayout>
   );
 }

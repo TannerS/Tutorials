@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Gateway() {
@@ -542,29 +541,6 @@ spec:
         attack surface: CORS, CSRF, and XSS, and what each of them breaks in the flow you just built.
       </p>
 
-      <InteractiveChallenge
-        question={"In the Envoy + Redis auth wall pattern, why is revoking access (e.g., an admin force-logging-out a compromised account) instant, while it's hard with a self-contained JWT?"}
-        options={[
-          "Redis is simply faster than a database",
-          "The session is server-side state that can be deleted directly (DEL session:token) — the very next request finds nothing and is denied. A self-contained JWT is valid until it expires, since no server-side record needs to be consulted to trust it",
-          "JWTs cannot be revoked under any circumstances",
-          "Envoy automatically expires all sessions every hour"
-        ]}
-        correctIndex={1}
-        explanation={"This is the core trade-off of the whole pattern. A self-contained JWT is trusted purely by its signature — nothing needs to be looked up, which is fast but means the token remains valid until it naturally expires (you'd need a blocklist checked on every request to revoke it early, which reintroduces the exact server-side lookup JWTs were meant to avoid). An opaque token backed by a Redis session has no meaning on its own — the auth service must find session:<token> in Redis for every request to succeed. Delete that key, and the very next request fails immediately, with zero propagation delay."}
-      />
-
-      <InteractiveChallenge
-        question={"Why does the Envoy config strip x-user-id and x-user-roles from the incoming request BEFORE the ext_authz filter runs, rather than trusting whatever the auth service later sets?"}
-        options={[
-          "To save bandwidth on large headers",
-          "Because if a client could set x-user-id=admin themselves and the backend blindly trusts that header (since it never validates a token itself), they could impersonate any user — stripping ensures the ONLY way those headers reach the backend is via the auth service's verified response",
-          "Envoy requires all custom headers to be removed by policy",
-          "It has no security purpose, only a performance one"
-        ]}
-        correctIndex={1}
-        explanation={"The entire pattern relies on backend services implicitly trusting x-user-id and x-user-roles instead of validating a token themselves. That trust is only safe if it's structurally impossible for anyone but the auth service to set those headers. If Envoy didn't strip client-supplied copies first, an attacker could simply attach x-user-id: admin-user directly to their request and skip authentication entirely — the backend would happily believe it. Stripping-then-injecting is what makes the 'invisible wall' actually a wall."}
-      />
     </LessonLayout>
   );
 }

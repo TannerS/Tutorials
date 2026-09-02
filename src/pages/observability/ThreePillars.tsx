@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function ObservabilityThreePillars() {
   return (
@@ -231,17 +230,6 @@ card network cost 335ms — that's where 80% of the 420ms total actually went.`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"Your checkout service's dashboard shows a metric: error rate jumped from 0.5% to 12% at 14:14. You need to find out exactly why one specific failing request failed — the precise exception and stack trace. Which pillar answers that, and why can't the metric?"}
-        options={[
-          "The metric, if you zoom in far enough on the graph",
-          "A log — metrics are aggregated numbers with the per-request detail discarded by design; logs keep the discrete record with the exception and stack trace",
-          "A trace, because traces always include full exception messages and stack traces for every span",
-          "None of them — you'd need to reproduce the bug locally"
-        ]}
-        correctIndex={1}
-        explanation={"Metrics are cheap precisely because they throw away per-event detail and keep only aggregated numbers — there is no stack trace hiding inside a time series, no matter how far you zoom in. A log keeps the full discrete record for one event, including the exception type and stack trace. A trace would tell you which service/hop the failure occurred in and how long it took, but the exception detail itself lives in the log line the failing span produced — which is exactly why traces and logs get correlated by trace ID in modern tooling rather than treated as fully separate systems."}
-      />
     </LessonLayout>
   );
 }

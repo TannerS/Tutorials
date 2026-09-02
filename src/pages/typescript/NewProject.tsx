@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function NewProject() {
@@ -640,18 +639,6 @@ export function UserCard({ user, onSelect, variant = 'compact', children }: User
 }`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question={"When using Vite path aliases like @/components, which files must BOTH be updated?"}
-        options={[
-          "tsconfig.json and package.json",
-          "tsconfig.app.json and vite.config.ts",
-          "vite.config.ts and .eslintrc",
-          "tsconfig.json and index.html"
-        ]}
-        correctIndex={1}
-        explanation={"TypeScript uses tsconfig paths for type checking and Vite uses resolve.alias for bundling. Both must be configured or imports will fail at either type-check time or build time."}
-      />
-
       {/* ── Section 6: Common First-Day Issues ───────────────────── */}
       <h2>6. Common First-Day Issues</h2>
 
@@ -746,18 +733,6 @@ declare module 'totally-untyped-lib';
         It will warn you when the error is fixed, so you can remove the suppression.
         <code>@ts-ignore</code> silently hides errors forever.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"What is the correct type for useRef when referencing an HTML input element?"}
-        options={[
-          "useRef<HTMLElement>(null)",
-          "useRef<InputElement>(null)",
-          "useRef<HTMLInputElement>(null)",
-          "useRef<React.Input>(null)"
-        ]}
-        correctIndex={2}
-        explanation={"DOM refs use the specific HTML element type. HTMLInputElement gives you access to .value, .checked, .focus() etc. The generic HTMLElement would work but loses input-specific properties."}
-      />
 
       <h2>Quick Start Checklist</h2>
       <InfoBox variant="success" title="Your project is ready when you can...">

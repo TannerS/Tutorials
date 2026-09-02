@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function BestPractices() {
@@ -605,19 +604,6 @@ npx stryker run
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"A test passes locally but fails randomly in CI. What is this called?"}
-        options={[
-          "A regression test",
-          "A flaky test",
-          "A mutation test",
-          "An integration test"
-        ]}
-        correctIndex={1}
-        explanation="A flaky test is one that passes and fails non-deterministically. Common causes include timing issues, shared state, external dependencies, and test order coupling. Flaky tests should be fixed immediately or quarantined — never ignored."
-        language="java"
-      />
 
       <h2>Testing Checklist</h2>
       <InfoBox variant="success" title="Before Merging Your PR">

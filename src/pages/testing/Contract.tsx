@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Contract() {
@@ -366,19 +365,6 @@ describe('array reverse properties', () => {
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"A team wants confidence that their service's client library still matches the shape of a downstream API, without standing up the full system in CI. Which testing approach fits best?"}
-        options={[
-          "Property-based testing",
-          "Consumer-driven contract testing",
-          "Manual exploratory testing",
-          "Increasing unit test coverage"
-        ]}
-        correctIndex={1}
-        explanation="Consumer-driven contract testing (e.g. Pact) is designed exactly for this: the consumer records its expectations as a contract, and the provider verifies it independently in its own CI pipeline — no need to run both services together."
-        language="java"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

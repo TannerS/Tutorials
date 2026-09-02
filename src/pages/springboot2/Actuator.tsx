@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Actuator() {
@@ -515,30 +514,6 @@ Micrometer 1.x (metrics only)           Micrometer 1.10+ (metrics + tracing +
                                           the Observation API)
 [no equivalent]                         Observation.createNotStarted(...)`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="After migrating a service from Boot 2.7 to Boot 3.5, the app starts cleanly, /actuator/health returns UP, and Prometheus is scraping fine. But your ops dashboard's 'recent requests' panel has been empty since the deploy, and nobody has seen an error anywhere. What is the most likely cause?"
-        options={[
-          "Prometheus scraping and httptrace share a registry that failed to initialise — check the Micrometer logs",
-          "The panel calls /actuator/httptrace, which was renamed to /actuator/httpexchanges in Boot 3 and now returns 404 with no error on the server side",
-          "Boot 3 masks all actuator response bodies by default; set management.endpoint.env.show-values=ALWAYS",
-          "The HttpTraceRepository bean failed validation at startup and Boot silently skipped it"
-        ]}
-        correctIndex={1}
-        explanation="The endpoint id changed from httptrace to httpexchanges at the Boot 2 to 3 boundary, along with HttpTraceRepository -> HttpExchangeRepository, InMemoryHttpTraceRepository -> InMemoryHttpExchangeRepository, and the package org.springframework.boot.actuate.trace.http -> org.springframework.boot.actuate.web.exchanges. Verified directly: the Boot 2.7.18 app returns 200 on /actuator/httptrace and 404 on /actuator/httpexchanges; the Boot 3.5.16 app returns exactly the opposite. Crucially, listing 'httptrace' in management.endpoints.web.exposure.include on Boot 3 is not an error — it is simply an id matching no endpoint, so the app starts clean and only the consumer sees a 404. Option 3 describes a real Boot 3 change (env and configprops now mask everything by default, opt back in with show-values) but it affects those two endpoints' values, not whether a panel has data. This whole class of failure is why Actuator changes are more dangerous than compile errors: nothing tells you, and the symptom appears in a different system."
-      />
-
-      <InteractiveChallenge
-        question="A Boot 2 service has a @Component HealthIndicator that pings the downstream payment gateway. The gateway has a 90-second partial outage. What happens to the service, assuming a standard Kubernetes readiness probe on /actuator/health?"
-        options={[
-          "Nothing — a single DOWN contributor is reported in the details but the top-level status stays UP",
-          "The top-level status becomes DOWN (worst-wins aggregation), /actuator/health returns 503, every pod fails readiness at once and is pulled from the load balancer — turning a partial downstream outage into a total outage of your own service",
-          "Kubernetes restarts the pods, which clears the condition once the gateway recovers",
-          "Only the pods that actually served a checkout request during the window are affected"
-        ]}
-        correctIndex={1}
-        explanation="Health aggregation is worst-wins: the top-level status is the worst status among all contributors, so one DOWN indicator makes the whole endpoint DOWN and it responds 503. Because every replica runs the same indicator and polls the same downstream, they all flip together — this is a correlated failure, not a rolling one, so there is no healthy pod left to take traffic. You have amplified someone else's degradation into your own complete outage, and worse, your service might have been perfectly capable of serving the 95% of requests that never touch the payment gateway. Option 3 gets the probe types backwards: readiness failure removes a pod from the load balancer, liveness failure restarts it — and restarting will not fix a downstream outage, it just adds crash-looping to your problems. The fix is health groups: keep readiness limited to dependencies you genuinely cannot serve without (your own database), and put downstream checks in a separate diagnostic group that no probe consumes."
-      />
 
       <InfoBox variant="success" title="Actuator checklist for the 2 → 3 leg">
         <ul>

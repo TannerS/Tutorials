@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function ReactQueryFundamentals() {
@@ -112,38 +111,6 @@ function App() {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        language="jsx"
-        question="With this config, a user opens /users (fetch happens), navigates to /settings for 2 minutes, then navigates back to /users. What does the second visit do?"
-        code={`const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000,      // 1 minute
-      gcTime: 5 * 60 * 1000,     // 5 minutes
-    },
-  },
-});
-
-// Only mounted on the /users route:
-function UserList() {
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers,
-  });
-  ...
-}`}
-        options={[
-          'Nothing — the data is still cached, so no request is made',
-          'Shows a loading spinner and refetches from scratch, because the component unmounted',
-          'Renders the cached list immediately, then refetches it in the background',
-          'Throws, because the query was garbage collected after 1 minute',
-        ]}
-        correctIndex={2}
-        explanation={
-          'Two clocks ran during those 2 minutes, and only one of them expired. gcTime is 5 minutes and the countdown started when UserList unmounted, so at 2 minutes the entry is still in the cache — nothing was deleted. But staleTime is 1 minute, so the data went stale at the 1-minute mark. Remounting an observer on a stale-but-cached query is the stale-while-revalidate path: React Query returns the cached array synchronously (isLoading stays false, so no spinner) and fires a background refetch (isFetching goes true). If you want the "nothing happens" answer, raise staleTime above 2 minutes. If you want the "spinner and refetch" answer, drop gcTime below 2 minutes — then the entry really is gone and there is nothing to render while fetching.'
-        }
-      />
-
       <h2>useQuery — The Foundation</h2>
 
       <p>
@@ -224,29 +191,6 @@ queryClient.invalidateQueries({ queryKey: todoKeys.all });
 // Invalidate just todo #42's detail
 queryClient.invalidateQueries({ queryKey: todoKeys.detail(42) });`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        language="jsx"
-        question="Five queries are in the cache. Four are currently rendered by mounted components; ['todos', 'detail', 42] is not (the detail page was closed a moment ago). You call invalidateQueries({ queryKey: ['todos'] }). Which queries send a network request?"
-        code={`// In the cache right now:
-['todos']                                  // mounted
-['todos', 'list']                          // mounted
-['todos', 'list', { status: 'done' }]      // mounted
-['todos', 'detail', 42]                    // NOT mounted (inactive)
-['users']                                  // mounted
-
-queryClient.invalidateQueries({ queryKey: ['todos'] });`}
-        options={[
-          "Only ['todos'] — invalidation is an exact-key match",
-          "The three mounted ['todos', ...] queries. ['todos', 'detail', 42] is marked stale but not refetched; ['users'] is untouched",
-          "All four ['todos', ...] queries, including the inactive one",
-          'All five — invalidating any key clears the whole cache',
-        ]}
-        correctIndex={1}
-        explanation={
-          "Two separate rules are in play, and each option above gets one of them wrong. (1) MATCHING is by array PREFIX, not exact equality — ['todos'] matches every key that starts with 'todos', so four queries match and ['users'] does not. Pass exact: true if you want only the literal key. (2) What happens to a match depends on whether it is ACTIVE: invalidateQueries marks every match stale, but only refetches the ones a mounted component is currently observing. The inactive ['todos', 'detail', 42] is flagged stale and left alone — it refetches the next time that detail page mounts, which is exactly the behaviour you want, since firing requests for screens nobody is looking at is waste. Measured against @tanstack/react-query 5.102.0: fetch counts went 1 → 2 for the three mounted todo queries and stayed at 1 for the inactive one and for ['users']."
-        }
-      />
 
       <h2>useMutation — Writing Data</h2>
 

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Scaling() {
@@ -366,18 +365,6 @@ server {
       <FlowChart
         title="Stateless Architecture with External Session Store"
         chart={"graph TD\n  Client[Client with Session Token] --> LB[Load Balancer]\n  LB --> S1[App Server 1]\n  LB --> S2[App Server 2]\n  LB --> S3[App Server 3]\n  S1 --> Redis[(Redis Session Store)]\n  S2 --> Redis\n  S3 --> Redis\n  S1 --> DB[(Primary Database)]\n  S2 --> DB\n  S3 --> DB"}
-      />
-
-      <InteractiveChallenge
-        question={"Your e-commerce application stores shopping cart data in server memory. During a deployment, one server is restarted and several users lose their carts. How would you redesign this to be stateless?"}
-        options={[
-          "Use sticky sessions so users always hit the same server",
-          "Move cart data to an external store like Redis and reference it via a session token",
-          "Increase server memory so carts are never evicted",
-          "Store cart data in browser cookies only"
-        ]}
-        correctIndex={1}
-        explanation={"Moving cart data to an external store like Redis makes the application servers stateless. Any server can retrieve any user's cart via the session token. Sticky sessions don't solve the restart problem, cookies have size limits and security concerns, and more memory doesn't prevent data loss on restart."}
       />
 
       {/* ==================== SECTION 6 ==================== */}
@@ -772,17 +759,6 @@ return {1, limit, remaining}  -- allowed, limit, remaining`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"Your API allows 100 requests per minute per API key. A client sends 60 requests in the last 10 seconds of minute 1 and 60 requests in the first 10 seconds of minute 2. With a fixed-window counter, what happens?"}
-        options={[
-          "All 120 requests are rejected because the total exceeds 100",
-          "All 120 requests are allowed because each window only sees 60",
-          "The first 100 requests are allowed and the rest are rejected",
-          "Only the 60 requests in minute 2 are rejected"
-        ]}
-        correctIndex={1}
-        explanation={"This is the classic fixed-window boundary burst problem. Each minute window independently counts 60 requests, both under the 100 limit. The client effectively gets 120 requests in a 20-second span. A sliding window algorithm solves this by considering overlapping time windows."}
-      />
     </LessonLayout>
   );
 }

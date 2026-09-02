@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Builder() {
@@ -243,17 +242,6 @@ myInvoice.customize(Map.of("customer", "Acme Corp", "amount", "$5,000"));`}
         risk above for no real savings.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Why does the Builder pattern make the constructed object immutable (all fields final, no setters)?"
-        options={[
-          "To save memory by allowing the JVM to optimize field storage",
-          "To ensure thread safety and prevent invalid state after construction",
-          "Because Java requires final fields when using inner classes",
-          "To make serialization with Jackson easier"
-        ]}
-        correctIndex={1}
-        explanation="The Builder validates all constraints during build(), guaranteeing the object is in a valid state. Making it immutable ensures no one can put it into an invalid state later. This also makes the object inherently thread-safe — it can be shared across threads without synchronization."
-      />
     </LessonLayout>
   );
 }

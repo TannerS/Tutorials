@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Reflection() {
   return (
@@ -402,17 +401,6 @@ public static void main(String[] args) throws Exception {
         loaded.
       </p>
 
-      <InteractiveChallenge
-        question={"You have working reflection code that calls setAccessible(true) on a private field of a class in java.util, compiled and tested years ago on Java 8. On a current JDK it throws java.lang.reflect.InaccessibleObjectException. What actually changed, and what's the correct fix?"}
-        options={[
-          "setAccessible(true) was removed from the API; you must rewrite the code to avoid reflection entirely",
-          "The field was renamed between JDK versions, so getDeclaredField needs an updated field name",
-          "The Java Platform Module System (Java 9+) added strong encapsulation — java.util's module doesn't open that package to reflection by default; add the JVM flag --add-opens <module>/<package>=<target-module> (or ALL-UNNAMED) at launch to restore the old behavior",
-          "This only happens in unit tests, not in a normally launched application, so no fix is needed"
-        ]}
-        correctIndex={2}
-        explanation={"Nothing about the field or the setAccessible API changed. Java 9 added a second access-control layer on top of public/private: a named module must explicitly 'opens' a package before code outside that module can call setAccessible(true) on its members, and the JDK's own modules don't open their internals by default. The fix isn't rewriting the reflection code — it's telling the JVM to allow it at launch time with --add-opens, exactly as demonstrated by java.lang.String's private 'value' field above: identical code, InaccessibleObjectException without the flag, success with it."}
-      />
     </LessonLayout>
   );
 }

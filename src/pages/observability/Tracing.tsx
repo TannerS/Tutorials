@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function ObservabilityTracing() {
   return (
@@ -320,17 +319,6 @@ INFO: 'POST /checkout' : c9e715b3b6f3e6a3fc0a309ea3f5bb8b 09d4c75ecf903c8a INTER
         backend like Jaeger or Zipkin reconstructs the same tree from either one.
       </p>
 
-      <InteractiveChallenge
-        question={"Your system uses head-based sampling at a flat 1% rate. A chain of five downstream calls occasionally spikes to 8 seconds, but you can never find a trace of it happening. What's the most direct explanation, and what would actually fix it?"}
-        options={[
-          "The sampling implementation is broken — you should sample 100% of requests instead",
-          "Head-based sampling decides whether to keep a trace before anything about its outcome is known, so a blind 1% draw will rarely land on a rare 8s outlier by chance — tail-based sampling (keep everything over, say, 2s) would catch it because it decides after seeing the duration",
-          "Traces don't record latency information, only which services were called",
-          "This is unrelated to sampling — check whether the span exporter is configured correctly"
-        ]}
-        correctIndex={1}
-        explanation={"This is exactly the trade-off head-based sampling makes: the keep/drop decision happens at the start of the trace, before any span exists, so it can't be conditioned on how the trace turns out. A rare, interesting outlier gets the same 1% chance of being kept as a routine fast request — meaning it usually isn't. Tail-based sampling buffers the whole trace and decides after it completes, so a rule like \"keep all errors and all traces over 2s\" reliably captures exactly the outliers that matter, at the cost of buffering every in-flight trace's spans until it finishes."}
-      />
     </LessonLayout>
   );
 }

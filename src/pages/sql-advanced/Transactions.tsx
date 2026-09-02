@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Transactions() {
@@ -518,44 +517,6 @@ SET lock_timeout = '5s';  -- error after 5 seconds of waiting
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Two transactions run concurrently under REPEATABLE READ in PostgreSQL. TX1 reads all orders with status='pending' (gets 5 rows). TX2 inserts a new pending order and commits. TX1 re-reads pending orders. How many rows does TX1 see?"
-        options={[
-          "5 — the snapshot was frozen by TX1's first statement, and every later statement reuses it",
-          '6 — new committed data is always visible',
-          'Error — conflict detected',
-          'Depends on the database engine',
-        ]}
-        correctIndex={0}
-        explanation={"Under REPEATABLE READ one snapshot is taken at the FIRST STATEMENT of the transaction — not at BEGIN — and every later statement reuses it, so TX1's re-read still returns 5. Reproduced on PostgreSQL 18.6 with two genuinely concurrent sessions: TX1's first SELECT returned 5, TX2 inserted and committed, TX1's re-read still returned 5, and only after TX1 committed did the same query return 6. The distinction is not pedantry — running the same script but leaving TX1 IDLE after BEGIN, so TX2's insert lands before TX1 issues any statement, makes TX1's first SELECT return 6. BEGIN alone freezes nothing. (This also blocks phantom reads in Postgres's snapshot implementation, which the SQL standard does not require of REPEATABLE READ.)"}
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question={"TX1 locks row A then requests row B. TX2 locks row B then requests row A. What happens?"}
-        options={[
-          'TX1 gets priority because it started first',
-          'Both transactions succeed after a brief wait',
-          'A deadlock occurs — the database kills one transaction',
-          'Both transactions are rolled back',
-        ]}
-        correctIndex={2}
-        explanation="This is a classic deadlock: each transaction holds a lock the other needs, and neither can proceed. PostgreSQL's deadlock detector identifies the cycle and terminates one transaction (error 40P01), allowing the other to continue."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question={"Which locking strategy should you use when conflicts are RARE and you want maximum throughput?"}
-        options={[
-          'Pessimistic locking with FOR UPDATE',
-          'Table-level EXCLUSIVE lock',
-          'Optimistic locking with a version column',
-          'SERIALIZABLE isolation level',
-        ]}
-        correctIndex={2}
-        explanation="Optimistic locking is ideal when conflicts are rare. It avoids acquiring locks entirely, allowing maximum concurrency. It only detects conflicts at write time via a version check. Pessimistic locking blocks other transactions preemptively, which reduces throughput when conflicts are infrequent."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

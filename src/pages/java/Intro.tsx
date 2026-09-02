@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Intro() {
@@ -427,17 +426,6 @@ System.out.println(users.get("alan").name().toUpperCase());
 
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question="What does the JVM do in the Java execution process?"
-        options={[
-          "Compiles .java files into machine code directly",
-          "Interprets and executes Java bytecode on any platform",
-          "Converts Java code to C++ before running it",
-          "Only runs on Windows operating systems"
-        ]}
-        correctIndex={1}
-        explanation="The JVM (Java Virtual Machine) interprets and executes Java bytecode. The Java compiler (javac) first compiles .java source files into .class bytecode files, and then the JVM executes that bytecode. Because each OS has its own JVM implementation that understands the same bytecode, Java achieves its 'Write Once, Run Anywhere' capability."
-      />
     </LessonLayout>
   );
 }

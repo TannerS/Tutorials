@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 import MtlsExplainer from '../../components/security/MtlsExplainer';
 
@@ -464,29 +463,6 @@ https.get(options, (res) => {
         the Auth section — the classic stateful one first.
       </p>
 
-      <InteractiveChallenge
-        question={"In the TLS 1.3 handshake, why is the shared secret never transmitted over the network?"}
-        options={[
-          "It is encrypted with AES before being sent",
-          "Both sides independently compute the same shared secret using ECDH — each combines their private key with the other party's public value",
-          "The certificate authority sends it through a secure side channel",
-          "It is split into fragments and sent in different packets"
-        ]}
-        correctIndex={1}
-        explanation={"ECDH (Elliptic Curve Diffie-Hellman) allows both parties to compute the same shared secret independently. The client computes: client_private × server_public = S. The server computes: server_private × client_public = S. Both get the same S due to the mathematical properties of elliptic curves. An eavesdropper who sees both public values cannot compute S without one of the private keys."}
-      />
-
-      <InteractiveChallenge
-        question={"Why do Certificate Authorities use intermediate certificates instead of signing directly with the root CA?"}
-        options={[
-          "Root certificates are too large to use for signing",
-          "Intermediate certificates are faster at signing",
-          "If the root CA is compromised, all certificates everywhere are compromised — intermediates provide damage containment, security, and scalability",
-          "Web browsers only accept certificates from intermediate CAs"
-        ]}
-        correctIndex={2}
-        explanation={"The root CA private key is the most valuable secret in the PKI system. It is kept offline in hardware security modules (HSMs) in secure facilities. If it were used to sign leaf certificates directly and got compromised, every certificate in the world signed by that root would be untrustworthy. With intermediate CAs, a compromise only affects certificates issued by that intermediate — you revoke it and the root remains trusted."}
-      />
     </LessonLayout>
   );
 }

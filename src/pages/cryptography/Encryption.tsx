@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Encryption() {
@@ -533,29 +532,6 @@ async function checkPassword(plaintext, storedHash) {
         approach above, plus an identity check, turned into a real handshake.
       </p>
 
-      <InteractiveChallenge
-        question={"Why does TLS use a hybrid approach (asymmetric + symmetric encryption) rather than just asymmetric encryption for everything?"}
-        options={[
-          "Asymmetric encryption is not secure enough for bulk data",
-          "Asymmetric encryption is approximately 1000x slower than symmetric encryption, making it impractical for bulk data transfer",
-          "Symmetric encryption provides better key distribution",
-          "Asymmetric encryption cannot encrypt data larger than its key size"
-        ]}
-        correctIndex={1}
-        explanation={"RSA-2048 is roughly 1000x slower than AES-256. Using asymmetric encryption for all data would make HTTPS connections unbearably slow. The hybrid approach uses slow asymmetric (ECDH) just once to exchange a shared secret, then fast symmetric (AES-256-GCM) for all data. This gives you the security of asymmetric key exchange with the speed of symmetric bulk encryption."}
-      />
-
-      <InteractiveChallenge
-        question={"What is the fundamental problem with symmetric encryption that asymmetric encryption solves?"}
-        options={[
-          "Symmetric encryption is too slow for modern hardware",
-          "Symmetric encryption cannot handle large files",
-          "Both parties must share the same secret key, but transmitting it securely is difficult",
-          "Symmetric encryption does not provide any authentication"
-        ]}
-        correctIndex={2}
-        explanation={"The key distribution problem is the core limitation of symmetric encryption. If Alice wants to send Bob an encrypted message, they both need the same key. But how does Alice get the key to Bob securely? If she sends it over the network, an eavesdropper can intercept it. Asymmetric encryption (like ECDH) solves this by allowing both parties to independently compute a shared secret without ever transmitting it."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Resilience() {
@@ -532,29 +531,6 @@ resilience4j.thread-pool-bulkhead:
         chart={"graph LR\nA[\"Spring Boot 1.x era - Spring Cloud Netflix / Hystrix is the default\"] --> B[\"Boot 2.0.0 ships - 2018-03-01\"]\nB --> C[\"Netflix declares Hystrix maintenance mode - 2018-11\"]\nC --> D[\"Spring Cloud keeps publishing the Hystrix starter anyway\"]\nD --> E[\"Last spring-cloud-starter-netflix-hystrix release - 2021-11-17\"]\nE --> F[\"Today: inherited Boot 2 codebase may hold EITHER, depending on when it was written\"]\nstyle B fill:#1a2744,stroke:#5b9cf6\nstyle C fill:#3a2f1a,stroke:#fbbf24\nstyle F fill:#3a1f1f,stroke:#f87171"}
       />
 
-      <InteractiveChallenge
-        question="You inherit a Spring Boot 2.7.18 service. Its payment-charging code is annotated with @HystrixCommand(fallbackMethod = 'chargeFallback', commandProperties = {...}), and application.yml has a hystrix.command.default.* block. What's the most accurate read of this codebase?"
-        options={[
-          "It's broken — Hystrix was removed from Spring Boot 2, so this must be dead code that never actually runs",
-          "It's a real, working circuit breaker, just on a library Netflix itself put into maintenance mode in November 2018 and stopped releasing (Spring Cloud kept shipping the integration starter until 2021-11-17, three years later) — it works fine, gets no further releases, and migrating it to Resilience4j is separate, deliberate work",
-          "It must have been written after 2021, since that's when Spring officially deprecated it",
-          "Hystrix and Resilience4j are actually the same library under different names, so nothing needs to change"
-        ]}
-        correctIndex={1}
-        explanation="Hystrix was never removed from anything — it's a third-party library that Netflix itself put into maintenance mode in November 2018 (verified from the project's own README) and made its final release, 1.5.18, that same month. It still works exactly as written; nothing about Spring Boot 2 or 3 removes or breaks it. What makes it notable is Spring Cloud kept publishing spring-cloud-starter-netflix-hystrix point releases until 2021-11-17 — three years after Netflix's own announcement — which is exactly why @HystrixCommand shows up in Boot 2 codebases written well after 2018, not just in code from the Boot 1.x/early-Boot-2.0 era. It is not dead code, not evidence of a specific write date, and not the same library as Resilience4j (they are separate, incompatible APIs). Treat it as a frozen dependency: functional, unmaintained, and a real migration candidate on its own timeline."
-      />
-
-      <InteractiveChallenge
-        question="Your team is deciding whether to add circuit breaking to a Boot 2.7.18 service now, or wait until the Boot 3 migration lands so they only have to learn the pattern once. What does the dependency chain (resilience4j-spring-boot2 -> resilience4j-spring -> resilience4j-annotations) tell you about that decision?"
-        options={[
-          "Wait — the annotations are different on Boot 3, so work done now would need to be rewritten",
-          "It doesn't matter either way — Resilience4j configuration is entirely YAML-driven and has no code dependency on Spring Boot version",
-          "Add it now — the @CircuitBreaker/@Retry/@RateLimiter/@Bulkhead annotations live in resilience4j-annotations, a plain-Java module with no Spring dependency, shared by both the Boot 2 and Boot 3/4 integration chains (one point release apart, with a single new optional attribute added on the newer side); only the integration starter coordinate changes at migration time, not the code you'd write today",
-          "Add it now, but expect the YAML configuration keys to need renaming during the Boot 3 migration, the same way spring.redis.* did"
-        ]}
-        correctIndex={2}
-        explanation="The verified dependency chain shows resilience4j-spring-boot2 pulls in resilience4j-spring, which pulls in resilience4j-annotations:2.3.0 — and resilience4j-spring-boot3 pulls in resilience4j-spring6, which pulls in resilience4j-annotations:2.4.0. Same module, one point release apart (decompiling both shows 2.4.0 added a single new optional configuration() attribute across all five annotations; every attribute this lesson actually uses — name, fallbackMethod, type, permits — is present and unchanged in both). The Spring-AOP integration layer underneath genuinely differs between resilience4j-spring and resilience4j-spring6, because Spring Framework's AOP proxying changed between major versions — but that's a layer you never touch directly. So there is effectively no rewrite penalty for adding it now: the one line that changes at migration time is the <artifactId> in pom.xml (resilience4j-spring-boot2 -> resilience4j-spring-boot3), not the annotated code or the YAML. This is a clean case for doing the work now rather than waiting, unlike genuinely coupled changes such as the Redis property rename covered in the config lesson."
-      />
     </LessonLayout>
   );
 }

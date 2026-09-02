@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Hooks() {
@@ -433,19 +432,6 @@ describe('useAuth', () => {
   });
 });`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"When testing a custom hook that calls setState, why do you wrap the call in act()?"}
-        options={[
-          "To make the test run faster",
-          "To ensure React processes the state update and re-renders before assertions",
-          "To prevent memory leaks",
-          "To mock the state update"
-        ]}
-        correctIndex={1}
-        explanation={"act() ensures all state updates, effects, and re-renders triggered by the wrapped code are fully processed before your test continues to make assertions. Without it, you might assert against stale state."}
-        language="jsx"
-      />
 
       <h2>Testing Hook Cleanup</h2>
 

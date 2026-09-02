@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Performance() {
@@ -690,33 +689,6 @@ function App() {
         </ol>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Which of these is a GOOD use of useMemo?"
-        options={[
-          "const doubled = useMemo(() => count * 2, [count])",
-          "const greeting = useMemo(() => `Hello, ${name}!`, [name])",
-          "const sorted = useMemo(() => bigArray.sort((a, b) => a.score - b.score), [bigArray])",
-          "const len = useMemo(() => str.length, [str])"
-        ]}
-        correctIndex={2}
-        explanation={"Sorting a large array is genuinely expensive — O(n log n) — and the result should be cached until the source data changes. The other three are trivial O(1) operations where useMemo overhead exceeds the computation cost. Remember: useMemo is for expensive work, not every expression."}
-        language="jsx"
-      />
-
-      <InteractiveChallenge
-        question={"You added useCallback to a handler passed to a child component, but the child still re-renders every time the parent renders. What is the most likely cause?"}
-        options={[
-          "useCallback is broken in your React version",
-          "The child component is not wrapped in React.memo",
-          "useCallback only works with class components",
-          "You need to also wrap the handler in useMemo"
-        ]}
-        correctIndex={1}
-        explanation={"useCallback stabilizes the function reference, but that only matters if something checks that reference. Without React.memo on the child, React re-renders it every time the parent renders — regardless of whether props changed. useCallback + React.memo work as a pair: useCallback keeps the prop stable, React.memo skips the render when props are unchanged."}
-        language="jsx"
-        code={"// The fix: wrap the child in React.memo\nconst MemoizedChild = React.memo(function Child({ onClick }) {\n  return <button onClick={onClick}>Click me</button>;\n});\n\n// Now useCallback in the parent actually prevents re-renders\nfunction Parent() {\n  const handleClick = useCallback(() => { /* ... */ }, []);\n  return <MemoizedChild onClick={handleClick} />;\n}"}
-      />
-
       <h2>Code Splitting with lazy + Suspense</h2>
 
       <CodeBlock language="jsx" title="Dynamic Imports & Route-Based Splitting" showLineNumbers>
@@ -827,19 +799,6 @@ function VirtualList({ items }) {
         <p>1. Open React DevTools → Profiler tab. 2. Click record, perform the slow interaction, stop recording. 3. Look at the flamegraph — wide bars = slow renders. 4. Check "Why did this render?" for each component. 5. Gray bars = components that didn't re-render (good). 6. Focus on the widest/tallest bars first — optimize the bottleneck, not everything.</p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You wrap a component in React.memo but it still re-renders every time its parent renders. What's the most likely cause?"
-        options={[
-          "React.memo doesn't work with function components",
-          "A prop is an object/array/function created inline in the parent",
-          "The component uses useState internally",
-          "React.memo only works in production builds"
-        ]}
-        correctIndex={1}
-        explanation="React.memo does a shallow comparison of props. If the parent creates a new object, array, or function on every render (e.g., `style={{color: 'red'}}` or `onClick={() => ...}`), the prop reference changes every time, making memo useless. Fix with useMemo/useCallback in the parent, or move the creation outside the component."
-        language="jsx"
-        code={"// Memo is useless here — options is new every render\n<MemoizedChild options={{ sort: 'asc' }} />\n\n// Fix: memoize in parent\nconst options = useMemo(() => ({ sort: 'asc' }), []);\n<MemoizedChild options={options} />"}
-      />
     </LessonLayout>
   );
 }

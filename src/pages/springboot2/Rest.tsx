@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Rest() {
@@ -666,29 +665,6 @@ class UserControllerTest {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={'A Boot 2.7 service is upgraded to Boot 3.0. After the upgrade, an external client that has always called GET /api/orders/ (with a trailing slash) starts getting 404s, even though the mapping @GetMapping("/api/orders") never changed. What happened?'}
-        options={[
-          "The upgrade broke @GetMapping path resolution and needs a Boot 3 bug workaround",
-          "Framework 6.0's PathPatternParser changed its default for matchOptionalTrailingSeparator from true to false -- a mapping for /api/orders no longer automatically matches /api/orders/, where Framework 5.3 always allowed it",
-          "The client needs to add spring.mvc.pathmatch.matching-strategy=ant-path-matcher to restore old behavior",
-          'This only happens if the controller also has a separate @GetMapping("/api/orders/") that was removed during the upgrade'
-        ]}
-        correctIndex={1}
-        explanation="Confirmed directly from bytecode: PathPatternParser's constructor sets matchOptionalTrailingSeparator to true (iconst_1) in spring-web 5.3.31, the version Boot 2.7.18 resolves, and to false (iconst_0) in spring-web 6.0.13, the version Boot 3.0.13 resolves. Note this is NOT the same as the matching-strategy property -- Boot 2.7.18 already defaults to path-pattern-parser, same as Boot 3+, so option 3's suggested fix doesn't address the actual change. The trailing-slash behavior is a default INSIDE PathPatternParser itself, changed between Framework 5.3 and 6.0. This is exactly the kind of change that survives a clean compile and a passing test suite -- your own tests rarely exercise the trailing-slash variant of every endpoint -- and then surfaces as a 404 reported by an external consumer, not as a build failure."
-      />
-
-      <InteractiveChallenge
-        question="You need a global 4xx/5xx error response shape for a Boot 2.7.18 service, and a teammate suggests using Spring's ProblemDetail class the way the Boot 4 course does. What's wrong with that plan?"
-        options={[
-          "Nothing -- ProblemDetail works fine on Boot 2.7, it's just an unfamiliar API",
-          "ProblemDetail requires a javax-to-jakarta import change but is otherwise usable",
-          "org.springframework.http.ProblemDetail is a Spring Framework 6.0 addition and does not exist anywhere in the Framework 5.3.x line that Boot 2.7.18 resolves -- confirmed by its absence from spring-web-5.3.31.jar. A hand-rolled error DTO, or ResponseStatusException, is the correct Boot 2.7 answer",
-          "ProblemDetail exists on 2.7 but is deprecated in favor of a hand-rolled DTO"
-        ]}
-        correctIndex={2}
-        explanation="unzip -l against spring-web-5.3.31.jar finds zero ProblemDetail-related classes; the same check against spring-web-6.0.13.jar finds four. ProblemDetail is a genuine Framework 6.0 addition, not a rename or a relocated class -- there is no javax/jakarta equivalent to import instead, because the type simply doesn't exist yet on 2.7.18. This is different in kind from most of this section's gaps: it isn't a namespace problem tooling can mechanically fix, it's a feature that has to wait for the Boot 3 upgrade. Boot 2.7's actually-available options are a hand-rolled error DTO from a @RestControllerAdvice, or org.springframework.web.server.ResponseStatusException, which does exist on 5.3.31. Neither is a workaround to be embarrassed about -- they're the correct tools for this Framework version."
-      />
     </LessonLayout>
   );
 }

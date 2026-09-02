@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function SpringBoot2Transactions() {
@@ -528,29 +527,6 @@ spring:
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your order service saves an order and calls an external inventory API — all inside one @Transactional method. Under moderate load, the app hangs on 'Connection is not available' errors. Why?"
-        options={[
-          "The connection pool is too small — increase spring.datasource.hikari.maximum-pool-size",
-          "The @Transactional method holds a database connection for the duration of the external HTTP call, so slow downstream calls exhaust the pool. Move the HTTP call outside the transaction.",
-          "The HTTP client isn't configured with a timeout",
-          "You need to add @Async to release the connection"
-        ]}
-        correctIndex={1}
-        explanation="A @Transactional method holds a DB connection from method entry to commit or rollback — true on Boot 2's spring-tx 5.3.31 exactly as on Boot 4. Make an HTTP call inside it and the connection stays held for the length of that call. Under load, all connections in the pool are stuck waiting for slow downstream responses, and no new requests can grab one — hence 'Connection is not available'. Raising the pool size hides the symptom until it comes back. The real fix is to shrink the transaction: do the I/O first, then persist the result in a small transaction on a separate bean — or use the transactional-outbox pattern for atomic cross-system operations."
-      />
-
-      <InteractiveChallenge
-        question="You're reading a Spring Boot 2.7.18 codebase and find @Transactional on a protected method, called from another bean in the same package (not self-invocation). On Boot 4 this would work fine. What actually happens here, on Boot 2?"
-        options={[
-          "Identical behaviour to Boot 4 — @Transactional's visibility rules never changed between Spring versions",
-          "It throws IllegalStateException at startup because CGLIB cannot proxy a protected method",
-          "The call succeeds with no error, but no transaction is opened — verified live: Spring 5.3's CGLIB interceptor only advises public methods, while Spring 6.0+ advises protected and package-private methods too",
-          "It falls back to a JDK dynamic proxy automatically, which can advise protected methods"
-        ]}
-        correctIndex={2}
-        explanation="This is a genuine, verified difference between the two Spring lines, not a hypothetical. Running the identical bean — one public, one protected, one package-private @Transactional method, each reporting TransactionSynchronizationManager.isActualTransactionActive() — against spring-tx 5.3.31 (Boot 2.7.18) shows protected and package-private both report false: no transaction opened, no error raised, no log line. The exact same class run against spring-tx 6.0.14 (Boot 3.0.13) shows both report true. Framework 6.0 extended class-based proxies to advise protected/package-private methods; Boot 2 has the older, stricter rule. Option 2 is wrong because nothing fails loudly — that's what makes this dangerous. Option 4 is wrong because CGLIB is used automatically here (the bean implements no interface) and a JDK dynamic proxy would actually be MORE restrictive, not less — it can only see public interface methods."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Security() {
@@ -693,29 +692,6 @@ new MvcRequestMatcher(...)             ->  PathPatternRequestMatcher  (removed i
         also has the upgrade checklist to work through in order.
       </p>
 
-      <InteractiveChallenge
-        question="Your team is on Boot 2.7 with Spring Security 5.8. The security config extends WebSecurityConfigurerAdapter and compiles with deprecation warnings. When is the best time to rewrite it as SecurityFilterChain beans?"
-        options={[
-          "During the Boot 3 upgrade, since that is when it stops compiling anyway",
-          "Now, on Boot 2.7 — the SecurityFilterChain style works on Security 5.7+, so it ships as an isolated, independently testable change",
-          "After the Boot 3 upgrade, once the javax and Hibernate work has settled",
-          "Never rewrite it — add @SuppressWarnings(\"deprecation\") and revisit if it actually breaks"
-        ]}
-        correctIndex={1}
-        explanation="SecurityFilterChain beans, the lambda DSL, authorizeHttpRequests, requestMatchers and @EnableMethodSecurity all arrived in Spring Security 5.7, which Boot 2.7 ships. That overlap is deliberate: the adapter was deprecated rather than removed precisely to give you a window where both styles compile. Doing it now means one focused PR, reviewable in isolation, testable against your existing suite, and in production long before the big upgrade. Option 1 is the common choice and the expensive one — you get javax errors, Java 17 errors, Hibernate errors and five security errors per config class in one build log, and security is the area where a compiling result proves the least. Option 3 is impossible: the code will not compile on Boot 3, so it cannot wait until after. Option 4 suppresses the warning without removing the problem, and guarantees that whoever does the upgrade meets it cold."
-      />
-
-      <InteractiveChallenge
-        question={'A Boot 2 config contains: @Override public void configure(WebSecurity web) { web.ignoring().antMatchers("/api/internal/**"); }. What should you do when migrating it?'}
-        options={[
-          "Translate it directly to .requestMatchers(\"/api/internal/**\").permitAll() — that is the documented replacement",
-          "Treat it as a security finding: web.ignoring() bypasses the filter chain entirely, so those endpoints have had no security headers and no CSRF protection",
-          "Leave it as configure(WebSecurity), which was not removed alongside the adapter",
-          "Replace it with PathRequest.toStaticResources().atCommonLocations()"
-        ]}
-        correctIndex={1}
-        explanation="web.ignoring() does not mean 'allow this request' — it means the request never enters the Spring Security filter chain at all. No security headers, no CSRF token, no SecurityContext. For genuinely static files (/css/**, /js/**) that is a deliberate performance choice. For a path like /api/internal/**, it means a dynamic API has been running with no security headers and no CSRF protection, quite possibly without anyone realising. Option 1 is the mechanically correct translation and is exactly the trap: permitAll() routes the request THROUGH the chain and then allows it, which is stricter than what was there, so it may also change behaviour you did not intend to change — either way you should be making that call consciously, not by find-and-replace. Option 3 is wrong: configure(WebSecurity) was an adapter method and went with it (the bean-based equivalent is a WebSecurityCustomizer). Option 4 applies to static resources, not to an API path."
-      />
     </LessonLayout>
   );
 }

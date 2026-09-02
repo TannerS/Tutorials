@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function DddStrategic() {
   return (
@@ -225,17 +224,6 @@ public class PaymentGatewayAcl {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"Your Billing context calls a third-party payment processor's API, which returns objects like GatewayTransactionRecord with fields such as merchantRef, authCode, and avsResult — vocabulary that has nothing to do with Billing's own ubiquitous language of Invoice, Payment, and Refund. Which context mapping pattern fits, and why?"}
-        options={[
-          "Conformist — just use GatewayTransactionRecord directly throughout Billing's domain logic to avoid writing extra translation code",
-          "Anti-Corruption Layer — build a translation layer that converts the gateway's model into Billing's own Payment/Invoice/Refund vocabulary at the boundary, so the gateway's fields never leak past it",
-          "Shared Kernel — merge Billing's model with the payment gateway's model so both sides use identical types",
-          "Open Host Service — expose Billing's own API as a public protocol for the payment gateway to consume"
-        ]}
-        correctIndex={1}
-        explanation={"An Anti-Corruption Layer is exactly for this situation: a downstream context with no influence over an upstream system (especially a third-party one) builds an isolating translation layer so the upstream's model can't contaminate its own domain. Shared Kernel requires joint control over the shared code with a cooperating team — not available with a vendor's API. Conformist is a valid choice when the downstream domain doesn't care about the mismatch, but here the vocabularies are genuinely different and the mismatch matters, which is the ACL's exact use case. Open Host Service describes how an upstream exposes services to others, not how you protect yourself as a consumer of one."}
-      />
     </LessonLayout>
   );
 }

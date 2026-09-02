@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Testing() {
@@ -458,32 +457,6 @@ test.describe('Accessibility', () => {
         seconds. A jest-axe failure costs 5 minutes. A screen reader bug found in QA costs hours.
         A lawsuit costs millions. Invest in automated checks and make them blocking in CI.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"You will see automated a11y coverage quoted as \"20-30%\" and as \"57%\" (Deque's study of 13,000+ pages with axe). Why do the two figures differ so much, and what does that change?"}
-        options={[
-          "The 57% figure is vendor marketing; 20-30% is the real number, so automation is barely worth running",
-          "They use different denominators — 20-30% counts WCAG success criteria a machine can decide, 57% counts share of total issues found. Automation is worth more than the old number suggests, and a manual pass is still mandatory under either figure.",
-          "axe simply got better, so the old figure is obsolete and automation now covers most of what matters",
-          "It is a sampling difference; averaged over enough sites the true value is about 40%"
-        ]}
-        correctIndex={1}
-        explanation={"Both numbers are honest measurements of different things. Counting success criteria is a harsh denominator: \"is the alt text meaningful\" is one criterion and is permanently un-automatable, so tools score 20-30%. Counting issue volume is kinder: real pages fail the machine-checkable criteria hundreds of times each, so Deque measured 57% of found issues fully covered. Neither figure changes the strategy — automation clears the high-volume, unambiguous defects (missing alt text, low contrast, invalid ARIA, missing labels) and cannot evaluate whether alt text is meaningful, whether focus order is logical, or whether a screen reader user can actually complete the flow. Estimates vary by methodology; quote the denominator with the number."}
-        language="html"
-      />
-
-      <InteractiveChallenge
-        question={"In React Testing Library, which query should you use FIRST when looking for a button labeled \"Submit\"?"}
-        options={[
-          "getByTestId('submit-button')",
-          "getByText('Submit')",
-          "getByRole('button', { name: /submit/i })",
-          "querySelector('button')"
-        ]}
-        correctIndex={2}
-        explanation={"getByRole is the preferred query because it validates that the element has the correct accessible role AND name. If getByRole can't find your element, it means the element isn't accessible — the test failure is telling you to fix your HTML, not to use a weaker query."}
-        language="jsx"
-      />
 
       {/* ── Wrap-up ───────────────────────────────────────── */}
       <h2>Accessibility Is a Journey</h2>

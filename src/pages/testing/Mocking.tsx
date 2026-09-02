@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Mocking() {
@@ -475,19 +474,6 @@ test('should handle server errors', async () => {
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"What is the key difference between a stub and a mock?"}
-        options={[
-          "Stubs are for Java, mocks are for JavaScript",
-          "Stubs provide canned data; mocks verify interactions",
-          "Mocks are simpler than stubs",
-          "There is no difference — they are the same thing"
-        ]}
-        correctIndex={1}
-        explanation="Stubs supply predetermined responses (state verification), while mocks set expectations about how the system under test should interact with dependencies (behavior verification). Both are useful in different scenarios."
-        language="java"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

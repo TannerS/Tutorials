@@ -1,6 +1,5 @@
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function OptionalDeepDive() {
@@ -326,17 +325,6 @@ Optional<String> opt = Optional.ofNullable(maybeEmpty);
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A service method looks up a customer by id and, if not found, returns a new default Customer built from the id. Which is the correct signature and body?"
-        options={[
-          "public Customer find(UUID id) { return repo.findById(id).orElse(new Customer(id, 'default')); }",
-          "public Optional<Customer> find(UUID id) { return repo.findById(id).or(() -> Optional.of(new Customer(id, 'default'))); }",
-          "public Customer find(UUID id) { return repo.findById(id).orElseGet(() -> new Customer(id, 'default')); }",
-          "public Customer find(UUID id) { return repo.findById(id).get(); }"
-        ]}
-        correctIndex={2}
-        explanation="Two problems with option 1: (a) orElse eagerly evaluates its argument, so `new Customer(...)` runs on every call even when the lookup succeeds, and (b) the constructor may not be free — a large default object should not be created for the 99% of calls that don't need it. orElseGet(Supplier) evaluates only when the Optional is empty. Option 2 leaks the wrapper unnecessarily (the caller wanted a Customer). Option 4 throws NoSuchElementException if the customer doesn't exist, defeating the purpose of returning a default."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Comparison() {
@@ -415,19 +414,6 @@ function useCartCount() {
         rewrite state management.&quot; The ladder exists so you can move one rung at a time, with a
         reason you can name.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A settings panel has 9 related fields, several of which are only valid depending on the others (e.g. `notifyBy: 'email'` requires an email address). It is used on exactly one route. What's the right rung?"}
-        options={[
-          'Rung 1: nine useState calls, one per field',
-          'Rung 3: a useReducer whose state is a discriminated union',
-          'Rung 4: a SettingsContext so the fields can be read anywhere',
-          'Rung 5: an external store, since the validation logic is complex',
-        ]}
-        correctIndex={1}
-        explanation="The fields change together and have interdependent validity — that is exactly the useReducer signal. It stays local because only one route uses it, the reducer is a pure function you can unit test without rendering, and a discriminated union makes the invalid combinations unrepresentable. Nothing here is shared across distant components, so Context and an external store are both pure overhead."
-        language="tsx"
-      />
 
       <h2>Key Takeaways</h2>
       <p>

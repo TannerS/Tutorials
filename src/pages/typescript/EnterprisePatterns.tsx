@@ -1,6 +1,5 @@
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function EnterprisePatterns() {
@@ -481,17 +480,6 @@ export function format(m: Money): string { /* ... */ }
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You define type Status = 'draft' | 'published' | 'archived' and a switch on it. Later someone adds a 'scheduled' case to the type. Where does TypeScript complain?"
-        options={[
-          "TypeScript doesn't complain — it just returns undefined at runtime for unhandled cases",
-          "TypeScript complains at every function that returns Status",
-          "TypeScript complains only if you use exhaustiveness checking via const _: never = value in the default branch — otherwise the switch silently misses the new case",
-          "TypeScript complains only if strict mode is enabled"
-        ]}
-        correctIndex={2}
-        explanation="TypeScript by itself won't flag a switch that doesn't cover every case of a union — it just infers the return type more loosely. The exhaustiveness pattern (`const _exhaustive: never = value;` in the default branch, or an `assertNever(value)` helper) forces the type system to check every case, because `never` only assigns from a value TypeScript has narrowed to `never`. Add 'scheduled' to the union, and every switch that relies on this pattern breaks — you find them all at compile time instead of in production."
-      />
     </LessonLayout>
   );
 }

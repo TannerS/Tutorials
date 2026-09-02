@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Tokens() {
@@ -210,31 +209,6 @@ export default function Tokens() {
         chart={"graph TD\n  V[New value needed in CSS] --> SHARED{Used by 2+ semantic tokens\\nor needs its own name in the palette?}\n  SHARED -->|Yes| PRIM[Primitive tier: --blue-60, --gray-100]\n  SHARED -->|No, one-off| SKIP[Skip primitive tier, go straight to semantic]\n  PRIM --> SEM[Semantic tier: --text-primary maps to primitive]\n  SKIP --> SEM\n  SEM --> SCOPE{Only ONE component will ever read it?}\n  SCOPE -->|Yes| COMP[Component tier: --button-color-primary]\n  SCOPE -->|No| USE[Components reference the semantic token directly]\n  style PRIM fill:#1a2744\n  style SEM fill:#1a3329\n  style COMP fill:#3d2f14"}
       />
 
-      <InteractiveChallenge
-        question={"In this site's global.css, why does --bg-card exist as a separate token from --bg-secondary instead of components just reusing --bg-secondary?"}
-        options={[
-          "--bg-card is faster to parse than --bg-secondary",
-          "They happen to be the same color so it doesn't matter",
-          "They're named by INTENT (where they're used) rather than by value — even if two tokens started at the same hex, keeping them separate lets one change later (e.g. giving cards more visual lift) without touching the other's usages",
-          "CSS requires a unique token per selector"
-        ]}
-        correctIndex={2}
-        explanation={"This is the core argument for semantic naming: --bg-card and --bg-secondary might coincidentally share a value today, but naming them for their ROLE rather than collapsing them into one token means a future design change to cards specifically doesn't have to hunt down every non-card usage of the same shade."}
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question={"Why can't FlowChart.tsx just write var(--accent-blue) into its Mermaid theme config the way regular CSS does?"}
-        options={[
-          "Mermaid doesn't support CSS at all",
-          "Mermaid's themeVariables and inline node-style overrides need literal hex/color strings at render time, not live CSS custom properties, so the token mapping has to be duplicated by hand",
-          "var() only works inside .css files, never inside .tsx files",
-          "--accent-blue isn't defined for SVG contexts"
-        ]}
-        correctIndex={1}
-        explanation={"Mermaid renders to an SVG string using a JS config object and literal per-node style overrides — it has no CSSOM to resolve var(--accent-blue) against. FlowChart.tsx works around this with a hardcoded lightSwap hex-to-hex map that has to be kept in sync with global.css by hand, which is exactly the kind of drift risk a pure-CSS token system avoids."}
-        language="tsx"
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Semantic() {
@@ -100,7 +99,6 @@ function Semantic() {
 <search>              <!-- search              "search landmark"          -->
 <!-- <search> is a 2023 addition to the HTML Living Standard, now in all
      major browsers. Before it, you used <form role="search">. -->
-
 
 <!-- Rules: -->
 <!-- • Only ONE <main> per page -->
@@ -367,32 +365,6 @@ function Semantic() {
      ✅ Returns focus to trigger element on close
      ✅ Inert attribute applied to background content -->`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"Which HTML element should you use to group related radio buttons and give them a shared label?"}
-        options={[
-          "<div> with a <span> label",
-          "<fieldset> with a <legend>",
-          "<section> with a <h2>",
-          "<label> wrapping all inputs"
-        ]}
-        correctIndex={1}
-        explanation={"<fieldset> groups related form controls and <legend> provides the group label. Screen readers announce the legend text for each input in the group, so users understand the context. For example: \"Choose a plan, radio button, Free, 1 of 2\"."}
-        language="html"
-      />
-
-      <InteractiveChallenge
-        question={"An image is purely decorative (adds no information). What alt text should it have?"}
-        options={[
-          "alt=\"decorative image\"",
-          "No alt attribute at all",
-          "alt=\"\"",
-          "aria-hidden=\"true\" with no alt"
-        ]}
-        correctIndex={2}
-        explanation={"An empty alt attribute (alt=\"\") tells screen readers to skip the image entirely. Omitting alt altogether causes some screen readers to announce the filename, which is worse. For decorative images, alt=\"\" is the correct approach."}
-        language="html"
-      />
 
     </LessonLayout>
   );

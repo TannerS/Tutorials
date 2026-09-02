@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Data() {
@@ -614,29 +613,6 @@ class OrderRepositoryTest {
         that came with them.
       </p>
 
-      <InteractiveChallenge
-        question="Your Boot 2 entity uses @GeneratedValue(strategy = GenerationType.SEQUENCE) with no explicit @SequenceGenerator. Production has a sequence named hibernate_sequence currently at 4.8 million. You upgrade to Boot 3 with spring.jpa.hibernate.ddl-auto=update. What is the most likely outcome?"
-        options={[
-          "Startup fails because the order_seq sequence does not exist",
-          "Hibernate keeps using hibernate_sequence — the default name is stable across versions",
-          "Hibernate creates a new per-entity sequence starting at 1, the app starts normally, and inserts later fail with duplicate key violations",
-          "Hibernate automatically detects and reuses the existing sequence by inspecting the table"
-        ]}
-        correctIndex={2}
-        explanation={'Hibernate 5\'s SequenceStyleGenerator declared DEF_SEQUENCE_NAME = "hibernate_sequence"; that constant does not exist in Hibernate 6.1, where per-entity naming (DEF_SEQUENCE_SUFFIX = "_SEQ") is the only remaining default. So Hibernate 6 looks for a per-entity sequence, not hibernate_sequence. Option 1 is what you would get with ddl-auto=validate — a loud startup failure, and genuinely the outcome you WANT. But with ddl-auto=update, Hibernate creates the missing sequence instead, starting from 1, against a table that already contains 4.8 million rows. The application starts cleanly and serves traffic, then fails on insert with primary key violations, several layers away from the cause. Option 4 is wishful — Hibernate does not reconcile sequence state against table contents. The fix is to pin the generator name explicitly with @SequenceGenerator(sequenceName = "hibernate_sequence") WHILE STILL ON BOOT 2, where it is a behavioural no-op.'}
-      />
-
-      <InteractiveChallenge
-        question="After upgrading to Boot 3, your application starts with no errors but cannot reach Redis. Your application.yml still has spring.redis.host and spring.redis.password under it. Why was there no startup error?"
-        options={[
-          "Redis auto-configuration is lazy, so the error only appears on first use — the property name is fine",
-          "spring.redis.* is marked deprecated at level 'error' in Boot 3 metadata, meaning it is no longer bound at all, so Redis fell back to its localhost default",
-          "Boot 3 requires spring.data.redis.enabled=true to be set before any Redis property is read",
-          "The properties are still bound but the Lettuce client changed its default port"
-        ]}
-        correctIndex={1}
-        explanation="Boot 3's configuration metadata marks spring.redis.host as deprecated with level 'error' and replacement spring.data.redis.host. In Boot's metadata format, level 'error' means the property is no longer bound at all — so from the application's point of view you simply never set a host, and Redis auto-configuration used its default of localhost:6379. Unknown properties are not errors in Spring Boot, so nothing fails at startup. The password is the genuinely alarming part of this: it moved too, so you are now attempting to connect with no credentials. Option 1 has the timing right but the cause wrong. Options 3 and 4 are invented. Catch this whole class of problem by adding spring-boot-properties-migrator as a temporary runtime dependency — it reads this same metadata, reports every deprecated property you are setting, and temporarily binds the renamed ones while you fix them."
-      />
     </LessonLayout>
   );
 }

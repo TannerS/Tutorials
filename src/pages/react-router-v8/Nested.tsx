@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Nested() {
@@ -435,19 +434,6 @@ function Settings() {
   },
 ]);`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"What renders inside an Outlet when the user visits /dashboard and you have { path: 'dashboard', element: <DashboardLayout />, children: [{ index: true, element: <Overview /> }, { path: 'stats', element: <Stats /> }] }?"}
-        options={[
-          "Nothing — the Outlet is empty",
-          "Both Overview and Stats render",
-          "Overview renders (the index route)",
-          "DashboardLayout renders without any child",
-        ]}
-        correctIndex={2}
-        explanation={"The index route (index: true) is the default child. When the URL matches the parent exactly (/dashboard), the index route's element renders inside the parent's Outlet. This is unchanged from v7 — v8 hasn't touched nested route matching."}
-        language="jsx"
-      />
 
       <FlowChart
         title="Route Matching Priority"

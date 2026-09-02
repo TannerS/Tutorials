@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function JavaMockito() {
@@ -1017,29 +1016,6 @@ Stubbing and verification are IDENTICAL:
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A test does spy(new PaymentProcessor()) and stubs it with when(processor.charge(card, amount)).thenReturn(APPROVED). The test passes. In production the team then notices duplicate charges appearing on the day the test suite runs. What happened, and what is the fix?"
-        options={[
-          "The spy leaked across tests because it was not reset in @AfterEach; add reset(processor)",
-          "Evaluating the argument to when() invoked the real charge() method — so stubbing the spy actually charged the card once, in addition to any call the test then made. Stub spies with doReturn(APPROVED).when(processor).charge(card, amount), which never invokes the real method",
-          "spy() only wraps the object when the class is non-final; PaymentProcessor must be made non-final for the stub to take effect",
-          "thenReturn is evaluated eagerly, so the APPROVED value was computed too early; use thenAnswer instead"
-        ]}
-        correctIndex={1}
-        explanation="when(processor.charge(card, amount)) is ordinary Java evaluation order: before when() can receive anything, the JVM must call processor.charge(card, amount). On a mock that is inert, but a spy delegates to the real instance, so the real charge() ran and hit the real payment path. The lesson's reproduction shows this directly — the real method's println appears BEFORE the stubbing line, and its guard clause threw during stubbing. Here the real method does not throw, which is the dangerous case: the side effect happens silently and the test still passes. reset() does not help because the charge already occurred. Mockito 5 mocks final classes fine, so finality is irrelevant. The fix is the doX family: doReturn(APPROVED).when(processor).charge(card, amount) puts the spy into stubbing mode before the method is evaluated, so nothing real is invoked."
-      />
-
-      <InteractiveChallenge
-        question="After upgrading Mockito, a suite that was green goes red with a dozen UnnecessaryStubbingException failures, plus one test that fails only when the whole suite runs and passes in isolation. The team proposes adding @MockitoSettings(strictness = Strictness.LENIENT) to a shared base test class. What is wrong with that plan?"
-        options={[
-          "Nothing — LENIENT restores the pre-Mockito-2 behaviour, which is the correct way to unblock a large legacy suite",
-          "It only fixes the UnnecessaryStubbingException failures while switching off a real bug detector, and it does nothing for the order-dependent failure, which is a separate problem — most likely a matcher misuse or unfinished when() in an earlier test leaking through Mockito's thread-local state",
-          "LENIENT is not inheritable, so it must be applied to each test class individually",
-          "It will work, but strictness should be set with MockitoSettings on each @Mock field for finer control"
-        ]}
-        correctIndex={1}
-        explanation="Two distinct problems are being treated as one. UnnecessaryStubbingException means a stub was never used, which is either dead test code or — the case that matters — code that should have called the collaborator and does not. Blanket LENIENT hides both, permanently, across every class extending the base. The order-dependent failure is unrelated to strictness: a test that passes alone and fails in a suite is Mockito's thread-local state being corrupted by an earlier test. The lesson reproduces exactly this — a misused argument matcher in MatchersTest left the matcher stack dirty, and the failure surfaced in StrictStubsTest with a stack trace pointing back into MatchersTest. Chasing the reported test finds nothing wrong with it. The fix is to remove the dead stubs (usually a fast mechanical pass, since the exception names the exact line) and to find the unfinished when() or raw-value-among-matchers in the earlier test."
-      />
     </LessonLayout>
   );
 }

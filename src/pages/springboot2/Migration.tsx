@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Migration() {
@@ -536,30 +535,6 @@ If you get interrupted after step 7, you have still left the codebase
 meaningfully better than you found it — which is what makes this ordering
 survivable in a real team, where migrations get paused.`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="Your team has a Boot 2.7 service and a two-week window. Someone proposes going straight to Boot 4 to 'avoid doing the work twice'. What is the strongest technical argument against it?"
-        options={[
-          "Boot 4 cannot read Boot 2 configuration files, so the app would not start",
-          "Deprecation is the mechanism that tells you what to fix: things removed in 4 were deprecated in 3, and things removed in 3 were deprecated in 2.7. Skipping means every warning arrives as a simultaneous compile error, with no working test suite to validate the fixes",
-          "Maven cannot resolve a parent POM more than one major version ahead of the current one",
-          "It is only a licensing problem — Boot 4 requires a commercial agreement for migrations from 2.x"
-        ]}
-        correctIndex={1}
-        explanation="Spring's deprecate-then-remove policy is the migration documentation. WebSecurityConfigurerAdapter is deprecated on 2.7 and removed on 3.0; @MockBean is deprecated on 3.4 and removed on 4.0. If you sit on each major version long enough to build with -Xlint:deprecation and clear the warnings, the next major upgrade is largely a version bump. Skip a major and you never see the warnings — you meet the removals as compile errors instead, all at once, and critically your test suite does not compile either, so you are making large changes with no way to check them. There is also no official 2.x-to-4 migration guide, because that path is not supported. Note that 'doing the work twice' is mostly a misconception: the work is the same set of edits either way, the difference is whether you do them incrementally with a green build or all at once with a red one. Options 1 and 3 are fabrications — nothing mechanically prevents the version bump, which is precisely why this mistake is easy to make."
-      />
-
-      <InteractiveChallenge
-        question="You have completed the 2.7 → 3.0 jump. The app compiles, all tests pass, it starts cleanly, and the properties-migrator (run on 3.0) reports nothing. What is the item most likely to still bite you in production, and why did none of the above catch it?"
-        options={[
-          "The jakarta namespace change — some javax imports may not have been rewritten",
-          "Hibernate 6 ID generation and type mapping changes, which alter generated DDL and runtime type handling rather than anything that compiles or fails a test against a fresh schema",
-          "The @MockBean deprecation, which will begin failing at runtime once the app is under load",
-          "Spring Security, because SecurityFilterChain beans are not registered until the first request arrives"
-        ]}
-        correctIndex={1}
-        explanation="Compilation catches the jakarta namespace completely — a missed javax import for a Jakarta EE type is a 'cannot find symbol', so option 1 cannot survive a successful build. @MockBean is test-scope only and, on Boot 3, merely deprecated, so it has no runtime effect whatsoever. Hibernate 6 is different in kind: GenerationType.AUTO can resolve to a different generation strategy than it did under Hibernate 5, and several basic type mappings changed. Against a fresh test schema created by ddl-auto, everything is self-consistent and every test passes — the new code and the new schema agree with each other. The mismatch only appears against your EXISTING production data, where the old schema was created under the old rules. This is why 'diff the generated DDL before and after' belongs in the plan as an explicit step, and why this is the one migration item where the rollback question is about the database rather than the deployment. The general lesson: your test suite validates behaviour against a schema it just built, so it structurally cannot see a schema-compatibility problem."
-      />
 
       <InfoBox variant="success" title="The short version">
         <ol>

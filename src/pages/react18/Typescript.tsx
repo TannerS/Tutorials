@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Typescript() {
@@ -1144,30 +1143,6 @@ dispatch({ type: 'FETCH_STAR' });
         <code>type: string</code>.
       </p>
 
-      <InteractiveChallenge
-        language="typescript"
-        question="A reducer needs to handle a 'CLOSE_MODAL' event. The reducer sets openProductId back to null when it happens. Which action variant is correct?"
-        code={`// A
-{ type: 'CLOSE_MODAL'; openProductId: null }
-
-// B
-{ type: 'CLOSE_MODAL' }
-
-// C
-{ type: 'CLOSE_MODAL'; payload?: unknown }
-
-// D
-{ type: string; openProductId: number | null }`}
-        options={[
-          'A — the action should carry the value the state will end up with',
-          'B — the event carries no ingredients, so type alone is the whole variant',
-          'C — always include an optional payload so the shape stays uniform',
-          'D — a general shape that covers every modal action at once',
-        ]}
-        correctIndex={1}
-        explanation={"B. openProductId is a STATE field, so putting it on the action (A) forces every dispatch site to compute the next state — backwards. C and D are the loose-shape trap: optional payloads and type: string make typos and nonsense payloads compile. Closing the modal delivers no ingredients, so { type: 'CLOSE_MODAL' } is the complete and correct variant. The reducer is the thing that knows CLOSE_MODAL means openProductId: null."}
-      />
-
       <h3>Step 2 — Type the STATE: Union or Plain Object?</h3>
 
       <p>
@@ -1340,19 +1315,6 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       <InfoBox variant="warning" title="Actions are always a union. State sometimes is.">
         <p>These two decisions are independent and it is easy to conflate them. Actions are a discriminated union in <em>every</em> reducer, because different events genuinely carry different payloads. State is a union only when its fields are correlated. <code>uiReducer</code> above has union actions and plain-object state, and that combination is completely normal.</p>
       </InfoBox>
-
-      <InteractiveChallenge
-        language="typescript"
-        question="A form reducer holds { name: string; email: string; agreedToTerms: boolean; submitCount: number }. Every case is written as { ...state, oneField: value }. Should the state type be a discriminated union or a plain object?"
-        options={[
-          'Discriminated union — reducers should always use unions for state',
-          'Plain object — the fields are independent and every combination is a valid form state',
-          'Discriminated union — submitCount correlates with agreedToTerms',
-          'Plain object, but only because there are more than three fields',
-        ]}
-        correctIndex={1}
-        explanation={'Plain object. Run the test: is there a combination of name, email, agreedToTerms and submitCount that would be nonsense at runtime? No — any name with any email with either checkbox value and any submit count is a legitimate form state. There is nothing to forbid, so there is nothing to narrow, so a union buys you nothing and costs you the ...state spread. The mechanical tell agrees: every case spreads ...state and changes one field, which means fields accumulate independently.'}
-      />
 
       <h3>Step 3 — The Reducer's Return Type Is the Contract</h3>
 
@@ -1802,32 +1764,6 @@ sortBy(products, 'nmae', 'asc');   // ❌ 'nmae' is not a key of Product
       <InfoBox variant="tip" title="The rule, in one line">
         <p>If a function's return type or a local variable's type depends on <strong>which key</strong> was passed, that key needs its own generic parameter (<code>K extends keyof T</code>), and the value type is <code>T[K]</code> — not <code>T</code>, and not <code>keyof T</code>.</p>
       </InfoBox>
-
-      <InteractiveChallenge
-        language="typescript"
-        question="You want a getField helper whose return type is the type of the field being read. Which signature works?"
-        code={`interface Product { id: number; name: string }
-
-// A
-function getField<T>(obj: T, key: keyof T): T { return obj[key]; }
-
-// B
-function getField<T>(obj: T, key: typeof T) { return obj[key]; }
-
-// C
-function getField<T, K extends keyof T>(obj: T, key: K): T[K] { return obj[key]; }
-
-// D
-function getField<T>(obj: T, key: string) { return obj[key]; }`}
-        options={[
-          'A — keyof T already constrains the key, so obj[key] is safe',
-          'B — typeof T extracts the key names from T',
-          'C — a second type parameter tied to the first, with T[K] as the value type',
-          'D — string is the simplest key type and TypeScript can figure out the rest',
-        ]}
-        correctIndex={2}
-        explanation={"C. A fails with TS2322: with key typed keyof T, obj[key] collapses to T[keyof T] — the union of every value type on T (number | string for Product) — which is not assignable to T. B fails with TS2693, because typeof needs a value and T is a type; keyof is the type-to-keys operator. D fails with TS7053, because an unconstrained T behaves like unknown inside the body and cannot be indexed by a string. Only C keeps hold of WHICH key was passed, so getField(product, 'name') returns string and getField(product, 'id') returns number."}
-      />
 
       <h3>The same mechanism with number: (typeof ARR)[number]</h3>
 

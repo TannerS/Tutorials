@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Components() {
@@ -545,30 +544,6 @@ function SearchBar() {
 
       {/* ─── Challenges ─── */}
       <h2>Test Your Knowledge</h2>
-
-      <InteractiveChallenge
-        question={"A component has 22 props, including headerIcon, bodyText, footerLeftButton, and footerLink. What is the best refactoring strategy?"}
-        options={[
-          'Add PropTypes to document every prop',
-          'Split into composed sub-components using the children prop',
-          'Convert all props to a single config object',
-          'Use defaultProps to reduce the number of required props',
-        ]}
-        correctIndex={1}
-        explanation="When a component suffers from prop explosion, the solution is composition. Break it into smaller sub-components (e.g., CardHeader, CardBody, CardFooter) that accept children, letting consumers compose any content they need without adding more props."
-      />
-
-      <InteractiveChallenge
-        question={"You have a Context that holds user info, theme, shopping cart, search query, and mouse position. Users report the app feels sluggish. What is the most likely cause and fix?"}
-        options={[
-          'The Context value is too large — compress it with JSON.stringify',
-          'Too many providers — merge them into one for simplicity',
-          'Fast-changing values (search, mouse) in Context trigger re-renders on every consumer — split into separate Contexts by change frequency',
-          'Add React.memo to every component that consumes the Context',
-        ]}
-        correctIndex={2}
-        explanation="Context re-renders every consumer when any value changes. Putting fast-changing values like mouse position and search queries alongside stable values like user info causes unnecessary re-renders across the entire tree. The fix is to split contexts by how often their values change."
-      />
 
       <InfoBox variant="success" title="Key Takeaways">
         Keep components small and focused. Prefer composition over configuration.

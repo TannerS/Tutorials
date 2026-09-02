@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Websockets() {
   return (
@@ -359,17 +358,6 @@ es.onmessage = (event) => console.log(\`[client] event id=\${event.lastEventId} 
         </tbody>
       </table>
 
-      <InteractiveChallenge
-        question={"You're building a dashboard that shows live stock price ticks pushed from the server. The browser never needs to send anything back over that channel. Which fits best, and why?"}
-        options={[
-          "WebSocket, because it's the newer and more powerful technology",
-          "Server-Sent Events (SSE) — the traffic is one-directional, and EventSource gives you auto-reconnect and Last-Event-ID resumption for free, without building bidirectional plumbing you don't need",
-          "Long-polling, because WebSockets are experimental",
-          "Plain polling every 100ms, since that's simpler than either"
-        ]}
-        correctIndex={1}
-        explanation={"When the server only ever pushes and the client never talks back over that channel, SSE is the better-fitting tool: it's plain HTTP, the browser's EventSource reconnects automatically using the retry field and Last-Event-ID header, and you skip building reconnect/heartbeat logic by hand. WebSockets earn their complexity when the client also needs to send messages frequently and independently — reaching for one just because it's more powerful, when the traffic pattern is purely one-directional, is the wrong trade."}
-      />
     </LessonLayout>
   );
 }

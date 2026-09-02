@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Sso() {
   return (
@@ -206,17 +205,6 @@ Host: idp.example.org
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"A teammate says: \"Our new SSO integration uses SAML.\" Another teammate replies: \"No, SSO and SAML are the same thing.\" What's the correct relationship between the two?"}
-        options={[
-          "They are the same thing — SSO is just the marketing name for SAML",
-          "SSO is the goal (log in once, access many applications without re-authenticating); SAML is one protocol — alongside OIDC — that can implement that goal",
-          "SAML is the goal and SSO is the protocol that implements it",
-          "SSO only refers to consumer logins like 'Sign in with Google', while SAML is used for everything else"
-        ]}
-        correctIndex={1}
-        explanation={"SSO describes an outcome: authenticate once at an Identity Provider and reach multiple Service Providers without re-entering credentials. It is not itself a wire protocol. SAML (XML-based, standardized in 2005) and OIDC (JSON/JWT-based, covered in the OAuth lesson) are two different, unrelated protocols that both happen to be common ways of delivering SSO. A stack can be 'SSO via SAML,' 'SSO via OIDC,' or even both at once for different applications."}
-      />
     </LessonLayout>
   );
 }

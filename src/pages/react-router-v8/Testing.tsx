@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Testing() {
@@ -621,19 +620,6 @@ test('calls navigate on button click', async () => {
           only when you genuinely cannot render a router at all.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"You're testing a route with a middleware array using createMemoryRouter. What do you need to add to make the middleware run, compared to a v7 setup with future.v8_middleware disabled?"}
-        options={[
-          "Nothing — middleware always runs in v8, no future flag required",
-          "Pass future={{ v8_middleware: true }} to createMemoryRouter",
-          "Wrap the test in an unstable_MiddlewareProvider",
-          "Middleware cannot be tested with createMemoryRouter, only createRoutesStub",
-        ]}
-        correctIndex={0}
-        explanation={"React Router 8 removed the future.v8_middleware flag entirely — middleware is unconditionally enabled, so createMemoryRouter runs any middleware array on a route exactly as the browser would, with no opt-in flag or extra provider needed. The same applies to createRoutesStub, which used to need a future prop for typed context and no longer does."}
-        language="tsx"
-      />
 
       <h2>Quick Reference: Test Pattern Cheat Sheet</h2>
       <CodeBlock language="text" title="When to Use Which Testing Pattern">

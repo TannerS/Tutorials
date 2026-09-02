@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Tries() {
   return (
@@ -282,21 +281,6 @@ startsWith("cat")  = true`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={
-          "A Trie has \"cat\", \"car\", and \"cats\" inserted (matching the diagram in this lesson). What do search(\"ca\") and startsWith(\"ca\") each return?"
-        }
-        options={[
-          'Both return true, because "ca" is a valid path in the trie',
-          'Both return false, because "ca" was never inserted as its own word',
-          'search("ca") returns false and startsWith("ca") returns true -- the path to the "a" node exists, but that node is not flagged as isEndOfWord',
-          'search("ca") returns true and startsWith("ca") returns false -- search only needs the path to exist, and startsWith is stricter',
-        ]}
-        correctIndex={2}
-        explanation={
-          'startsWith just needs the walk to succeed -- and it does, since "c" then "a" are real nodes shared by "cat", "car", and "cats". search needs that same successful walk to ALSO land on a node with isEndOfWord = true, and nobody ever inserted "ca" by itself, so that flag is unset on the "a" node. This is exactly what the real Java run in this lesson showed: search("ca") = false, startsWith("ca") = true, on the identical trie.'
-        }
-      />
     </LessonLayout>
   );
 }

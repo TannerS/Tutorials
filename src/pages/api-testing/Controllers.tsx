@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Controllers() {
@@ -380,19 +379,6 @@ void streamsOrdersAsServerSentEvents() {
         drive it with Reactor&apos;s <code>StepVerifier</code>, which understands
         backpressure and can assert on individual emitted elements.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A client sends Accept: application/pdf to an endpoint that only produces JSON and XML. What status code should the test expect?"}
-        options={[
-          "400 Bad Request",
-          "415 Unsupported Media Type",
-          "406 Not Acceptable",
-          "200 OK with a JSON fallback"
-        ]}
-        correctIndex={2}
-        explanation="406 Not Acceptable is for the server-can't-produce-what-you-asked-for direction (Accept header). 415 Unsupported Media Type is the opposite direction — the server can't parse the Content-Type of what the client sent."
-        language="java"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function DesignSystemTokens() {
@@ -1382,57 +1381,6 @@ background-color: var(--cds-layer, #00ff00);
         the Sass source emits those two rules separately with identical bodies.
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"A .cds--g100 dark theme class sets --cds-layer-01: #262626 on a wrapper div. Inside it, a Carbon Tile that writes background-color: var(--cds-layer) still renders white. The theme class definitely applied — DevTools confirms --cds-layer-01 is #262626 on the wrapper. What is wrong?"}
-        options={[
-          "The Tile's CSS has higher specificity than the theme class, so it wins the cascade",
-          "The wrapper sets the numbered token but does not re-declare --cds-layer, so the Tile inherits the already-substituted value computed back at :root",
-          "--cds-layer-01 does not inherit to descendants; only --cds-layer does",
-          "The theme class must be applied to <html>, never to a wrapper div"
-        ]}
-        correctIndex={1}
-        explanation={"This is carbon issue #11138, measured in the lesson. Custom properties are substituted once per element at computed-value time. :root computed --cds-layer by substituting the value --cds-layer-01 had AT :root, producing the literal #ffffff. Descendants that never declare --cds-layer inherit that finished value, not the var(--cds-layer-01, #fff) recipe, so redefining --cds-layer-01 further down changes nothing. The fix — which Carbon applies in both its theme mixin and _zone.scss — is to re-emit the contextual tokens inside the same rule that sets the numbered ones. Specificity is irrelevant here: the wrapper never made a competing --cds-layer declaration at all."}
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question={"Why can a Carbon Tile nested inside another Tile automatically use a different background, when neither Tile's CSS contains any reference to nesting, depth, or the other component?"}
-        options={[
-          "Carbon's JavaScript walks the DOM after mount and assigns each component a depth-appropriate background",
-          "Each Tile's CSS uses descendant selectors like .cds--tile .cds--tile to target nested instances",
-          "The outer component renders a wrapper carrying .cds--layer-two, which redeclares the inherited --cds-layer to point at --cds-layer-02; the inner Tile reads var(--cds-layer) as it always did, and inheritance delivers the new value",
-          "CSS automatically increments custom properties that end in a number as elements nest"
-        ]}
-        correctIndex={2}
-        explanation={"Neither component knows about the other, and no code coordinates them. The wrapper redefines one inherited custom property for its subtree; the inner component was already reading that property. Measured in the lesson: three identical <div class=\"tile\"> elements from one .tile rule computed rgb(38, 38, 38), rgb(57, 57, 57) and rgb(82, 82, 82) purely on the basis of which wrapper they sat inside. On the React side, <Layer> only tracks a depth number in context and turns it into a class name — it never computes a color."}
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question={"A designer asks for a 'compact' Carbon theme that keeps the current colors but halves all the padding. You plan to ship it as a fifth theme alongside white/g10/g90/g100. Why will that not work?"}
-        options={[
-          "Carbon only permits exactly four themes; the theme map is a fixed-length list",
-          "Themes only carry color — the emitters skip any value that is not a color type, and the spacing scale compiles to literal rem values, so no theme can change padding",
-          "Padding cannot be expressed as a CSS custom property in any browser",
-          "It would work, but only if the app re-imports the Carbon stylesheet after switching"
-        ]}
-        correctIndex={1}
-        explanation={"A theme is just a map of tokens that _zone.scss and _theme.scss walk, and both emit a custom property only when meta.type-of($value) == color. Spacing/type/motion used directly compile to literals — padding: $spacing-05 ships as padding: 1rem with no var() to override. The right tool is the separate contextual layout system: wrap the subtree in .cds--layout--density-condensed, which IS built from runtime custom properties. Measured in the lesson: a tile went from 16px to 8px padding purely from that wrapper class. Adding themes is not length-limited (option 1), and custom properties handle lengths fine (option 3) — Carbon simply chose not to emit them for spacing by default."}
-        language="scss"
-      />
-
-      <InteractiveChallenge
-        question={"You are adding a Card component to an app that uses this token architecture. Which single line most reliably breaks theming, in a way that no test, lint pass, or build step will catch by default?"}
-        options={[
-          "background: var(--surface);",
-          "background: #ffffff;",
-          "background: var(--surface, #ffffff);",
-          "background: var(--surface-02);"
-        ]}
-        correctIndex={1}
-        explanation={"A literal color opts the component out of theming permanently. Measured in the lesson: inside a fully correct dark zone where --cds-layer computed to #262626, a component with background-color: #ffffff still rendered rgb(255, 255, 255) — the correct value was available and simply unused. Nothing errors and nothing warns; it looks perfect in whichever theme its author was using. Option 4 is a milder bug worth noting — reading a numbered token hardcodes a nesting depth, so the component will still theme correctly but will not step when nested. Option 3 is fine: a fallback inside var() is one of only two legitimate places for a literal color, the other being the primitive tier."}
-        language="css"
-      />
     </LessonLayout>
   );
 }

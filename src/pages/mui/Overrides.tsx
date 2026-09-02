@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 const th = { padding: '0.75rem', textAlign: 'left' as const, color: 'var(--accent-amber)' };
@@ -142,7 +141,6 @@ const useStyles = makeStyles({ mine: { backgroundColor: 'hotpink' } });
 //   MuiButton-containedPrimary   at char 3xxx
 //   makeStyles-mine-1            at char 253x   <- LATER
 //   => your rule wins. Button is hotpink.
-
 
 // ---- Case 2: makeStyles evaluated first ----
 const useStyles = makeStyles({ mine: { backgroundColor: 'hotpink' } });
@@ -763,46 +761,6 @@ export default function DangerButton({ className, ...props }) {
           </li>
         </ol>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"This override applies at rest but the button reverts to grey the moment you hover it. Why?"}
-        code={`const useStyles = makeStyles({
-  mine: { backgroundColor: 'hotpink' },
-});
-
-<Button variant="contained" className={classes.mine}>Save</Button>`}
-        options={[
-          "MUI puts its class name after yours in the class attribute, so it wins",
-          "The hover style comes from '.MuiButton-contained:hover', a (0,2,0) selector — your single class is (0,1,0) and cannot outweigh it regardless of injection order",
-          "makeStyles does not support hover states, so MUI's default takes over",
-          "className is ignored by MUI components; only the classes prop is read",
-        ]}
-        correctIndex={1}
-        explanation={"Specificity, not order. A single class is (0,1,0); '.MuiButton-contained:hover' is a class plus a pseudo-class, (0,2,0), and it wins every time. Attribute order is irrelevant to the cascade, and className IS applied — it just loses. The fix is to match the shape: add '&:hover' inside your own rule so you emit a (0,2,0) selector too."}
-        language="javascript"
-      />
-
-      <InteractiveChallenge
-        question={"A developer writes this, and nothing changes when the button is disabled. There is no console warning. What is missing?"}
-        code={`const useStyles = makeStyles({
-  root: {
-    color: 'green',
-    '&$disabled': { color: 'purple' },
-  },
-  disabled: {},
-});
-
-<Button disabled classes={{ root: classes.root }}>Save</Button>`}
-        options={[
-          "The 'disabled' rule must contain at least one property; empty rules are dropped",
-          "'&$disabled' should be '&.Mui-disabled' — the $ form only works inside theme overrides",
-          "classes.disabled is never passed, so the generated disabled class never lands on the element and the two-class selector cannot match",
-          "makeStyles needs the theme callback form for state selectors to compile",
-        ]}
-        correctIndex={2}
-        explanation={"'&$disabled' compiles to '.makeStyles-root-1.makeStyles-disabled-2' — a two-class selector. BOTH classes have to be on the element. MUI only applies your generated disabled class if you hand it to the disabled slot, so the fix is classes={{ root: classes.root, disabled: classes.disabled }}. The empty rule is required and correct: it exists purely to give $disabled a name to resolve. And there is no warning because nothing is wrong — the CSS is valid, it just never matches."}
-        language="javascript"
-      />
 
       <h2>Carry this forward</h2>
 

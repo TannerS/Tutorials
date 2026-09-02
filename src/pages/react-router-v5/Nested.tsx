@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Nested() {
@@ -288,19 +287,6 @@ function UserPostsSection() {
         <code>/users/42/edit</code> too, since both start with{' '}
         <code>match.url</code>.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A component is rendered by <Route path=\"/users/:userId\" component={UserDetail} />. Which value should it use to build <Link to={...}> to its own \"posts\" child route?"}
-        options={[
-          'match.path, because it already contains the full pattern',
-          'match.url, because it is the resolved, real URL segment this component owns',
-          'A relative Link to="posts" is always safest, since v5 resolves it against the route tree',
-          'window.location.pathname, built manually',
-        ]}
-        correctIndex={1}
-        explanation={"match.url is the resolved URL for the current match (e.g. \"/users/42\"), so `${match.url}/posts` always produces a correct, navigable link. match.path still contains the raw :userId placeholder, which would put a literal \":userId\" into the href. A relative to=\"posts\" is resolved against the current browser pathname, not against match.url or the route tree, which is exactly the trap covered above."}
-        language="jsx"
-      />
 
       <FlowChart
         title="match.path vs match.url Through Two Levels of Nesting"

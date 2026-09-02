@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function RuntimeValidation() {
@@ -595,29 +594,6 @@ public ResponseEntity<User> create(@Valid @RequestBody CreateUserRequest req) {
           boundary is what actually lands.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question="This code compiles cleanly under strict mode. What is the actual problem?"
-        language="typescript"
-        code={`interface Product { id: number; price: number }
-
-async function getProduct(id: number): Promise<Product> {
-  const res = await fetch(\`/api/products/\${id}\`);
-  const product: Product = await res.json();
-  return product;
-}
-
-const p = await getProduct(1);
-console.log(p.price.toFixed(2));`}
-        options={[
-          'Nothing — the annotation on `product` guarantees the shape at runtime',
-          '`res.json()` returns `any`, so the annotation is an unchecked assertion; if the API returns a different shape, `p.price.toFixed` throws at runtime',
-          'It fails to compile because `await` cannot be used on `res.json()`',
-          'The bug is the missing `res.ok` check, and nothing else',
-        ]}
-        correctIndex={1}
-        explanation="`Response.json()` is typed as `Promise<any>`, and `any` is assignable to anything — so `const product: Product` asks the compiler no question at all. It is an assertion wearing declaration syntax. If the endpoint returns `{ id, cost }` instead of `{ id, price }`, this compiles, runs, and then throws `Cannot read properties of undefined (reading 'toFixed')` at the call site rather than at the boundary where the real mistake is. The missing `res.ok` check (option 4) is a genuine second bug, but it is not what makes the type unsound. The fix: annotate the raw value `: unknown` and run it through a schema — `ProductSchema.parse(raw)` — so the returned type is one that was actually verified."
-      />
 
       <h2>Recap</h2>
       <ul>

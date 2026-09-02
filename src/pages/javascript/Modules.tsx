@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function JsModules() {
@@ -261,18 +260,6 @@ counterB.count (same require cache) = 0`}
         chart={"graph LR\n  subgraph ESM[\"ESM: live binding\"]\n    E1[\"counter.js: let count = 0\"] -.live link.-> E2[\"main.js: import count\"]\n    E1 --> E3[\"increment() does count++\"]\n    E3 -.reflected instantly.-> E2\n    E2 --> E4[\"count reads as 2\"]\n  end\n  subgraph CJS[\"CJS: value copy\"]\n    C1[\"counter.js: module.exports = { count }\"] --copied once at require()--> C2[\"main.js: counterA.count\"]\n    C1 --> C3[\"increment() does count++\"]\n    C3 -.does NOT reach.-> C2\n    C2 --> C4[\"count still reads as 0\"]\n  end"}
       />
 
-      <InteractiveChallenge
-        question={"A CommonJS module does module.exports = { value: 1 }. Later in that same file, its internal `value` variable is reassigned to 99. What does an importer's `require('./mod').value` show if it required the module before the reassignment?"}
-        options={[
-          "99 — CommonJS exports are always live",
-          "1 — it was copied into the exports object before the reassignment happened",
-          "undefined — the export becomes stale and is removed",
-          "It depends on whether strict mode is enabled",
-        ]}
-        correctIndex={1}
-        explanation={"module.exports = { value: 1 } copies the current primitive value into a new object property at that exact line. Reassigning the original variable afterward has no effect on the already-copied property — this is exactly what the counter.js / main.js CJS example above demonstrates for real."}
-      />
-
       <InfoBox variant="warning" title="Why this trips people up in interviews and in real bugs">
         The bug shows up as: &quot;I updated a config/singleton value in one module but another
         module that imported it still has the old value.&quot; In CommonJS that's expected
@@ -517,18 +504,6 @@ named import from CJS via exports.x = assignments (cjs-module-lexer CAN see thes
         <code>import pkg from '...'; const &#123; someExport &#125; = pkg;</code>), which
         works regardless of how the CJS file wrote its exports.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"You're writing a CommonJS library and want ESM consumers to be able to write import { helper } from 'your-lib'. Which export style guarantees that works?"}
-        options={[
-          "module.exports = { helper, otherThing }",
-          "exports.helper = helper; exports.otherThing = otherThing;",
-          "Either style works identically — the analyzer inspects the runtime object",
-          "Named imports from CJS never work, only default imports do",
-        ]}
-        correctIndex={1}
-        explanation={"Node's cjs-module-lexer statically scans the source text for exports.x = ... / module.exports.x = ... assignment patterns to decide what to expose as named exports. A single module.exports = { helper, otherThing } object literal was verified to fail with a SyntaxError on the named import, even though it produces the exact same runtime shape. The default-import fallback (import pkg from '...') always works either way."}
-      />
 
       <h2>Summary</h2>
 

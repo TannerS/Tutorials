@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CloudArchitectureIac() {
   return (
@@ -368,17 +367,6 @@ output "web_instance_public_ip" {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"A teammate wants to speed up the deploy pipeline by changing `terraform apply` to always run with `-auto-approve`, skipping the confirmation prompt on every deploy. What's the real risk?"}
-        options={[
-          "None — plan and apply always compute the exact same diff, so skipping confirmation changes nothing about what happens",
-          "It removes the last human review step before a change (including a destructive one, like recreating a database) actually executes — plan/apply's two-step design exists specifically so someone reviews the diff before it's real",
-          "-auto-approve makes Terraform skip writing to the state file, so the change won't be tracked",
-          "It only affects formatting of the CLI output, not what gets executed"
-        ]}
-        correctIndex={1}
-        explanation={"terraform plan never touches infrastructure — it's a pure preview. terraform apply, run normally, generates that same plan and then pauses for a human to approve it before executing anything. -auto-approve removes that pause. That's fine for some low-risk, well-tested pipelines, but it means the first time anyone actually sees what a change does is after it has already happened — which is exactly the failure mode the plan/apply split was designed to prevent."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Di() {
@@ -619,29 +618,6 @@ class ApplicationSmokeTest {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A Boot 2.7.18 project fails to compile with 'cannot find symbol: class MockitoBean' after a developer copies a slice test from a Boot 4 codebase. What's actually wrong?"
-        options={[
-          "A missing spring-boot-starter-test dependency in the pom",
-          "@MockitoBean is a Spring Framework 6.2+ type; Boot 2.7.18 resolves Framework 5.3.31, which doesn't contain that class at all — the fix is @MockBean, not a missing dependency",
-          "The test class needs @ExtendWith(SpringExtension.class) added manually",
-          "MockitoBean was renamed to MockBean in a later 2.7.x patch and the developer used the old name"
-        ]}
-        correctIndex={1}
-        explanation="This runs backwards from most Boot 2 -> Boot 4 traps: it isn't that Boot 2 lost something, it's that Boot 4 gained something that doesn't exist yet on the Framework version 2.7.18 is locked to. @MockitoBean and @MockitoSpyBean live in Spring Framework itself (not Boot), added in Framework 6.2. Boot 2.7.18 resolves Framework 5.3.31 for its entire supported life -- there's no patch that moves it forward, because the Framework/Security/Hibernate versions are a locked set per Boot minor line. spring-test-5.3.31.jar simply doesn't contain the class -- confirmed by unzip -l. The correct, current, non-deprecated annotation on 2.7 is @MockBean from org.springframework.boot.test.mock.mockito. Option 4 has the direction backwards -- MockBean is the original, MockitoBean is the newer replacement, and the replacement only exists starting Framework 6.2 / Boot 3.4."
-      />
-
-      <InteractiveChallenge
-        question="You're reviewing a Boot 2.7 codebase and find spring.main.allow-circular-references=true in application.yml. A colleague says 'that's just an old Boot 2 thing, Boot 3 fixed it.' Is that accurate?"
-        options={[
-          "Yes -- circular reference refusal was introduced in Boot 3.0 as part of the Framework 6 cleanup",
-          "No -- Spring Boot has always silently allowed circular references via setter injection; the property is a new Boot 3 addition to explicitly enable the old behavior",
-          "No -- refusing circular references by default shipped in Boot 2.6, two releases before 2.7; the property already existed and already defaulted to false on 2.7.18. Finding it set to true means someone deliberately opted out of that default, not that they're on an old version that lacks it",
-          "Yes, but only for beans wired through @Autowired fields -- constructor-injected cycles were always rejected"
-        ]}
-        correctIndex={2}
-        explanation="Confirmed directly from spring-boot-2.7.18.jar's own configuration metadata: spring.main.allow-circular-references has defaultValue: false on 2.7.18, exactly as it does on Boot 4. The refuse-by-default behavior landed in Boot 2.6 -- a full minor release before 2.7, and years before Boot 3. So finding this property set to true in a Boot 2.7 codebase doesn't mean the app predates the fix; it means somebody hit a real cycle, chose not to redesign around it, and explicitly re-enabled the legacy behavior. That is worth flagging in review on ANY version, including Boot 4, where the same property with the same default still exists."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Decorator() {
@@ -228,17 +227,6 @@ public class LegacyPaymentAdapter implements PaymentProcessor {
         seam, not a permanent architectural layer.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What is the key structural difference between Decorator and Adapter?"
-        options={[
-          "Decorator uses inheritance while Adapter uses composition",
-          "Decorator enhances existing behavior while Adapter translates between incompatible interfaces",
-          "Decorator is a structural pattern while Adapter is behavioral",
-          "Decorator works with multiple objects while Adapter works with only one"
-        ]}
-        correctIndex={1}
-        explanation="Both use composition (wrapping another object). The intent differs: Decorator adds/enhances behavior while keeping the same interface. Adapter converts one interface into another to make incompatible systems work together. Both are structural patterns."
-      />
     </LessonLayout>
   );
 }

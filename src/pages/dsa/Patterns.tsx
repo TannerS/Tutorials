@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Patterns() {
   return (
@@ -523,29 +522,6 @@ Trial 3 -- heap(O(n log k)): 3.979 ms | full sort(O(n log n)): 225.745 ms | sort
         cycle? ranges? bounded K? — before reaching for any code at all.
       </p>
 
-      <InteractiveChallenge
-        question={"A problem statement reads: \"You're given an unsorted array of integers representing daily stock prices. Find the 5 highest prices in the dataset, without fully sorting the entire array.\" Which pattern applies, and why?"}
-        options={[
-          "Two Pointers — because it's an array problem",
-          "Sliding Window — because you need a contiguous range of prices",
-          "Top-K Elements — a size-5 min-heap tracks the 5 highest seen so far in O(n log 5), avoiding the O(n log n) cost of sorting the whole array",
-          "Merge Intervals — because prices form a range over time"
-        ]}
-        correctIndex={2}
-        explanation={"The signal is a bounded K (5) alongside a much larger N (\"entire array\"), plus an explicit hint against full sorting — that's the Top-K Elements pattern. A size-5 min-heap keeps only the 5 largest values seen at any point: anything smaller than the heap's minimum gets discarded outright, and the heap never grows past 5 elements, so each operation costs O(log 5) instead of the O(log n) a full sort would pay per element. There's no sortedness to exploit (ruling out Two Pointers), no contiguous-range requirement (ruling out Sliding Window), and no interval merging involved (ruling out Merge Intervals)."}
-      />
-
-      <InteractiveChallenge
-        question={"Why does a size-K heap beat sorting the entire array when you only need the top K elements out of a much larger N?"}
-        options={[
-          "A heap is always faster than any sort, regardless of size",
-          "Sorting is O(n log n) over all n elements; a size-K heap is O(n log k) — when k is much smaller than n, log k is far cheaper than log n, and you never pay to order the elements you're going to discard",
-          "Heaps use less memory than arrays, which is what makes them faster",
-          "PriorityQueue in Java automatically parallelizes across cores, unlike Arrays.sort"
-        ]}
-        correctIndex={1}
-        explanation={"Full sort is O(n log n) no matter how small K is — it fully orders every element, including the n - k you'll throw away. A size-K heap processes each of the n elements with an O(log k) insert/evict decision, so the total is O(n log k). When k is small and fixed relative to n (top 10 out of 5 million, for instance), log(10) ≈ 3.3 versus log(5,000,000) ≈ 22.3 is a large, measurable gap — confirmed here at roughly 55–59x in real timing across three trials, not just in theory."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Fullapp() {
@@ -548,23 +547,6 @@ src/
         tests (<code>createMemoryRouter</code> with the same route array, same{' '}
         <code>getContext</code>) and keeps <code>main.jsx</code> clean.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={
-          "The /dashboard route has middleware: [authMiddleware], which calls " +
-          "context.set(userContext, user). A request comes in for /dashboard/settings. " +
-          "Which loaders can read context.get(userContext)?"
-        }
-        options={[
-          "Only the dashboard route's own loader",
-          "The dashboard loader and the settings loader — any loader nested under the route the middleware is attached to",
-          "Every loader in the entire router, regardless of which route it belongs to",
-          "No loader — context set during middleware is discarded once the middleware function returns",
-        ]}
-        correctIndex={1}
-        explanation={"Middleware runs top-down before the matched leaf's loaders execute, and anything written to context during that pass is visible to every loader and action nested under (and including) the route the middleware is attached to. Routes outside that subtree — Home, Pricing, Login — never see it, because their branch of the tree never ran authMiddleware."}
-        language="jsx"
-      />
 
       <h2>Loading States with useNavigation</h2>
       <CodeBlock language="jsx" title="Global and Local Loading Indicators">

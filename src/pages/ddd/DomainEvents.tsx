@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function DddDomainEvents() {
   return (
@@ -297,17 +296,6 @@ System.out.println(missing.isPresent());         // false`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"Your team's OrderRepository currently exposes only save(Order) and findById(OrderId). A teammate proposes adding List<OrderLine> findLinesByProduct(String product) directly to the repository, to avoid loading a whole Order just to inspect its lines. What's the problem with this, in DDD terms?"}
-        options={[
-          "Nothing — it's a reasonable performance optimization and repositories can expose whatever queries are convenient",
-          "It bypasses the aggregate boundary: OrderLine is a child entity that should only be reached through its Order root, and a Repository should only load or save whole Aggregate Roots",
-          "It's fine as long as OrderLine gets its own equals() and hashCode() methods",
-          "It's only a problem if OrderLine objects are mutable"
-        ]}
-        correctIndex={1}
-        explanation={"A DDD Repository's vocabulary is restricted to Aggregate Roots — that's what makes it give the illusion of an in-memory collection of Orders rather than a generic query API. Handing out a bare OrderLine lets callers mutate or persist it without ever going through Order.addLine(), which is exactly where invariants like 'no lines on a cancelled order' get enforced. Needing to look something up by product is a real requirement, but the fix is a method that still returns Order (or a read-only projection built for that one query), not one that leaks a child entity out of its aggregate."}
-      />
     </LessonLayout>
   );
 }

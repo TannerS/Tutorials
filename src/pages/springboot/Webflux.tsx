@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Webflux() {
   return (
@@ -441,17 +440,6 @@ public interface ProductRepository extends ReactiveCrudRepository<Product, Long>
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A team migrates a Spring Boot service to WebFlux for better throughput under load. They keep their existing Spring Data JPA repositories unchanged, since 'the data access code already works.' Under load testing, latency gets dramatically WORSE than the original Spring MVC version, not better. What's happening?"
-        options={[
-          "WebFlux is simply slower than Spring MVC for database-heavy workloads",
-          "JPA/Hibernate is fundamentally blocking, and calling it from a WebFlux handler blocks one of the small, fixed pool of Netty event-loop threads — with only 4-8 of those threads total (vs. Tomcat's ~200), a handful of slow JPA calls stalls the entire server",
-          "R2DBC and JPA are interchangeable, so the repositories should have kept working identically",
-          "The migration needs Mono.fromCallable() around every JPA call and nothing else changes"
-        ]}
-        correctIndex={1}
-        explanation="This is the single most damaging real-world WebFlux mistake. WebFlux's entire performance model depends on never blocking one of its handful of event-loop threads. Regular Spring Data JPA/Hibernate calls are blocking JDBC calls under the hood — running under WebFlux does not make them non-blocking. Since WebFlux typically runs on only 4-8 event-loop threads (versus Tomcat's ~200 platform threads), blocking even a few of them on slow JPA calls stalls the entire server far faster than the same blocking calls would under Spring MVC. Wrapping the call in Mono.fromCallable() alone does not fix this — by default that still runs on whichever thread subscribes, which is an event-loop thread. It would need an explicit .subscribeOn(Schedulers.boundedElastic()) to move the blocking work off the event loop entirely, and even that is a stopgap, not a real fix — it caps blocking work on a separate bounded pool instead of removing it. The actual fix is switching to a genuinely non-blocking driver (R2DBC), or reconsidering whether this service needed WebFlux at all instead of Spring MVC with virtual threads."
-      />
     </LessonLayout>
   );
 }

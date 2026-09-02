@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Async() {
@@ -469,19 +468,6 @@ describe('SearchInput with debounce', () => {
           assertion is wrong rather than like the clock is stopped.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"What's the recommended way to mock API calls in React Testing Library tests?"}
-        options={[
-          "jest.mock() the fetch function in every test",
-          "Use MSW to intercept requests at the network level",
-          "Mock the component's props to skip the fetch entirely",
-          "Use jest.spyOn(window, 'fetch')"
-        ]}
-        correctIndex={1}
-        explanation={"MSW intercepts at the network layer, keeping your component code untouched. It tests the real fetch/axios calls your component makes, providing the highest confidence that your integration works correctly."}
-        language="jsx"
-      />
 
       <h2>MSW Handler Organization</h2>
 

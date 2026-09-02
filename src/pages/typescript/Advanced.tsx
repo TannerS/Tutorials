@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Advanced() {
@@ -1297,62 +1296,6 @@ type Good<T> = HandleA<T> | HandleB<T>;`}
 
       {/* ── 15. Interactive Challenges ── */}
       <h2>Test Your Knowledge</h2>
-
-      <InteractiveChallenge
-        question={"What does the following conditional type resolve to?\n\ntype Result = string extends any ? 'yes' : 'no';"}
-        options={[
-          "'yes'",
-          "'no'",
-          "string",
-          "'yes' | 'no'",
-        ]}
-        correctIndex={0}
-        explanation={"string extends any is always true, so the conditional resolves to 'yes'. The extends keyword checks if the left side is assignable to the right side, and every type is assignable to any."}
-        language="typescript"
-      />
-
-      <InteractiveChallenge
-        question={"What type does TemplateName produce?\n\ntype TemplateName = `on${Capitalize<'click' | 'hover'>}`;"}
-        options={[
-          "'onClick' | 'onHover'",
-          "'onclick' | 'onhover'",
-          "'onCLICK' | 'onHOVER'",
-          "string",
-        ]}
-        correctIndex={0}
-        explanation={"Template literal types distribute over unions. Capitalize<'click' | 'hover'> becomes 'Click' | 'Hover'. Then the template produces 'onClick' | 'onHover'."}
-        language="typescript"
-      />
-
-      <InteractiveChallenge
-        question={"In what order do these decorators wrap the method, and what runs first at call time?"}
-        code={`class Service {
-  @log
-  @retry(3)
-  async fetch() { /* ... */ }
-}`}
-        language="typescript"
-        options={[
-          "@log wraps first; @retry's logic runs first at call time",
-          "@retry wraps first; @log's logic runs first at call time",
-          "They apply in source order and run in source order",
-          "Only the closest decorator (@retry) is applied",
-        ]}
-        correctIndex={1}
-        explanation={"Decorator expressions evaluate top-to-bottom (so retry(3) is called before @log is read), but decorators are APPLIED bottom-to-top. @retry wraps fetch first, then @log wraps that result — equivalent to log(retry(3)(fetch)). Because @log is the outermost wrapper, its code runs first when the method is called."}
-      />
-
-      <InteractiveChallenge
-        question={"Your team is adding NestJS to a TypeScript 5 project. NestJS injects dependencies through constructor parameters. What does the tsconfig need?"}
-        options={[
-          "Nothing — Stage 3 decorators are on by default in TS 5",
-          "\"experimentalDecorators\": true and \"emitDecoratorMetadata\": true",
-          "\"target\": \"ES2022\" only",
-          "\"useDefineForClassFields\": false only",
-        ]}
-        correctIndex={1}
-        explanation={"The Stage 3 standard decorators that TS 5 enables by default have no parameter decorators at all, and no metadata emit. Constructor-parameter injection therefore requires opting back into the legacy system with experimentalDecorators, plus emitDecoratorMetadata so the DI container can read parameter types via reflect-metadata. The flag is project-wide — you cannot mix the two decorator systems."}
-      />
 
     </LessonLayout>
   );

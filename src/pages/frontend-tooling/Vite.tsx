@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Vite() {
@@ -375,18 +374,6 @@ cd my-app
 npm install
 npm run dev`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"In Vite, which prefix must environment variables have to be exposed to client-side code?"}
-        options={[
-          "REACT_APP_",
-          "VITE_",
-          "PUBLIC_",
-          "NEXT_PUBLIC_"
-        ]}
-        correctIndex={1}
-        explanation={"Vite uses the VITE_ prefix. REACT_APP_ was CRA's convention, PUBLIC_ is SvelteKit, and NEXT_PUBLIC_ is Next.js. Only VITE_ variables are statically replaced in client code at build time."}
-      />
 
       <h2>Common Configuration Patterns</h2>
 

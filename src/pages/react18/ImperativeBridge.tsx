@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function ImperativeBridge() {
@@ -440,17 +439,6 @@ Keep single-context when:
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your auth token refreshes every 5 minutes. Every consumer of useAuth() re-renders on refresh, including the header that only reads user.name. What's the surgical fix?"
-        options={[
-          "Wrap every consumer in React.memo",
-          "Move the auth state into a Redux store",
-          "Split the provider into two contexts: one for the auth state value, one for the actions. Components that only need user.name subscribe to a slice that changes rarely; the token consumer subscribes to a slice that changes often.",
-          "Use useReducer instead of useState in the provider"
-        ]}
-        correctIndex={2}
-        explanation="The re-render fan-out comes from the single context value being replaced on every token refresh, invalidating every consumer. Splitting the context lets you route consumers to only the slices they need — the header component reading user.name never re-renders on token refresh at all. React.memo doesn't help here because context change triggers consumers regardless of memoization. useReducer changes how state transitions but not the fan-out. A full state library works but is heavier than the dual-context split."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function FromScratchScheduler() {
@@ -144,18 +143,6 @@ virtual thread per task    :    76 ms   peak platform threads 22
         blocking tasks, finished in 76ms, on <strong>22 platform threads</strong>. A virtual thread
         that blocks unmounts from its carrier, so blocking stops costing you a thread.
       </p>
-
-      <InteractiveChallenge
-        question="Your Spring Boot service has a @Async method that calls a slow third-party API (about 300ms per call). Traffic rises and throughput flatlines, but CPU sits near idle. What is the most likely cause?"
-        options={[
-          'The JVM is garbage collecting too often — increase heap',
-          'The task executor pool is sized around the core count, so only that many calls can be in flight at once',
-          'The third-party API is rate limiting you',
-          'Async methods cannot scale — the calls must be made synchronously',
-        ]}
-        correctIndex={1}
-        explanation={"Idle CPU with flat throughput is the signature of threads blocked on I/O, not of a CPU or GC problem. A pool sized to core count caps you at that many concurrent in-flight calls no matter how much traffic arrives — exactly the 19.45s result above. The fixes are to size the pool for the blocking factor rather than the core count, or to run the calls on virtual threads so blocking no longer consumes a pool slot. Rate limiting is worth ruling out, but it would usually show as errors or rising latency per call rather than a hard throughput ceiling."}
-      />
 
       <h2>Step 3: The Queue Decides More Than You Think</h2>
 
@@ -305,18 +292,6 @@ submit() returning a handle ->  Future / CompletableFuture
 worker unmounts on block    ->  virtual threads (JEP 444)
 graceful vs forced stop     ->  shutdown() vs shutdownNow()`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="You replace a fixed thread pool with virtual threads for a workload that is almost entirely CPU-bound number crunching. What should you expect?"
-        options={[
-          'A large speedup, because virtual threads are cheaper than platform threads',
-          'Roughly no improvement — the work is limited by cores, not by threads waiting',
-          'A crash, because virtual threads cannot run CPU-bound work',
-          'Slower results, because virtual threads always add scheduling overhead',
-        ]}
-        correctIndex={1}
-        explanation={"Virtual threads win when threads spend their time BLOCKED, because a blocked virtual thread unmounts and stops occupying a carrier. CPU-bound work never blocks, so there is nothing to unmount — you still have the same number of cores doing the same arithmetic. That is why the blocking benchmark above went from 19.45s to 76ms while the CPU-bound one would not move. They are not a general-purpose speedup; they are a fix for the specific case where you needed thousands of concurrent blocking operations and platform threads made that too expensive."}
-      />
 
       <h2>What This Toy Does Not Do</h2>
 

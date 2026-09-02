@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Aop() {
@@ -456,17 +455,6 @@ class AuditAspectTest {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You add an @Aspect that logs every method annotated @Audited. It fires when other beans call methods on OrderService, but NOT when OrderService.audit() calls this.saveInternal() which is also annotated @Audited. Why?"
-        options={[
-          "@Aspect requires @EnableAspectJAutoProxy to be added explicitly",
-          "The pointcut expression is wrong",
-          "Spring AOP is proxy-based — self-invocation via 'this' bypasses the proxy, so the aspect doesn't fire on internal calls",
-          "@Audited must be on the interface, not the implementation"
-        ]}
-        correctIndex={2}
-        explanation="Spring AOP intercepts method calls that go through the proxy Spring creates around your bean. Calls with 'this.' skip the proxy and go straight to the underlying object, so annotations on the target method are ignored. To make it fire, either restructure so the call comes from outside (a separate bean), inject the bean into itself (with @Lazy to break the circular dependency), or switch to AspectJ load-time weaving which intercepts direct calls too. This is the same trap that plagues @Transactional, @Async, and @Cacheable."
-      />
     </LessonLayout>
   );
 }

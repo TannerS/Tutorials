@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Memento() {
@@ -346,17 +345,6 @@ console.log(cart.map((item) => item.accept(labels)));`}
         the operations are what's likely to grow.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You need to add a completely new report (e.g., 'carbon footprint estimate') over an existing, rarely-changing hierarchy of Order line-item types, without modifying any of those line-item classes. Which pattern fits best?"
-        options={[
-          "Memento — snapshot each line item's state and compute the report from the snapshots",
-          "Visitor — define a new visitor class implementing the new operation; existing element classes stay untouched",
-          "Bridge — decouple the report abstraction from the line-item implementation",
-          "Command — encapsulate the report generation as a command object"
-        ]}
-        correctIndex={1}
-        explanation="This is exactly what Visitor is for: the object structure (line-item types) is stable, and you're adding a new cross-cutting operation. A new ConcreteVisitor implements the new report logic with one method per element type, and none of the existing element classes need to change."
-      />
     </LessonLayout>
   );
 }

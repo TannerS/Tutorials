@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function JsObjectsPrototypes() {
@@ -634,107 +633,6 @@ console.log(Object.keys(derived));
       {/* ── Section 7: Interactive Challenges ── */}
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question={"What does Object.getPrototypeOf(new Dog()) point to, given: function Dog() {}; Dog.prototype.bark = () => {};"}
-        code={`function Dog() {}
-Dog.prototype.bark = () => {};
-const d = new Dog();`}
-        language="javascript"
-        options={[
-          "Dog itself, the function object",
-          "Dog.prototype, the object holding bark",
-          "d.prototype, a property on the instance",
-          "null, because Dog is not a class",
-        ]}
-        correctIndex={1}
-        explanation={
-          "Object.getPrototypeOf(d) === Dog.prototype is true — verified directly. The " +
-          "instance's internal [[Prototype]] link points at the object assigned to the " +
-          "constructor function's .prototype property, which is where bark lives. Instances " +
-          "have no .prototype property of their own (typeof d.prototype is 'undefined') — " +
-          "only functions carry that property."
-        }
-      />
-
-      <InteractiveChallenge
-        question={"Which of these is something class syntax adds that a hand-written constructor-function + prototype does NOT do?"}
-        options={[
-          "Instance methods end up on the constructor's .prototype object",
-          "new SomeClass() sets the instance's [[Prototype]] to SomeClass.prototype",
-          "Calling the constructor without 'new' throws a TypeError instead of running with the wrong 'this'",
-          "Static methods can be attached to the constructor function",
-        ]}
-        correctIndex={2}
-        explanation={
-          "The first, second, and fourth are exactly what plain constructor functions have " +
-          "always done — class is sugar over that same mechanism, confirmed by inspecting " +
-          "Foo.prototype directly. But calling Foo(5) without 'new' threw 'TypeError: Class " +
-          "constructor Foo cannot be invoked without new' — a real runtime guard. A plain " +
-          "function called without 'new' does not throw; it just runs with the wrong 'this'."
-        }
-      />
-
-      <InteractiveChallenge
-        question={"An object O has an inherited property 'x' (on its prototype, not on O itself). What do 'x' in O and Object.hasOwn(O, 'x') return?"}
-        options={[
-          "Both return true",
-          "Both return false",
-          "'x' in O is true; Object.hasOwn(O, 'x') is false",
-          "'x' in O is false; Object.hasOwn(O, 'x') is true",
-        ]}
-        correctIndex={2}
-        explanation={
-          "Verified directly: with derived inheriting inheritedProp from base, " +
-          "'inheritedProp' in derived is true (in walks the whole prototype chain) while " +
-          "Object.hasOwn(derived, 'inheritedProp') is false (hasOwn only checks the object's " +
-          "own properties, ignoring inheritance entirely) — even though derived.inheritedProp " +
-          "reads back the value just fine through normal property access."
-        }
-      />
-
-      <InteractiveChallenge
-        question={"const f = Object.freeze({ a: 1, nested: { b: 2 } }); f.nested.b = 999; — what happens?"}
-        code={`const f = Object.freeze({ a: 1, nested: { b: 2 } });
-f.nested.b = 999;
-console.log(f.nested.b);`}
-        language="javascript"
-        options={[
-          "Throws, because f is frozen",
-          "Silently does nothing; f.nested.b stays 2",
-          "Succeeds; f.nested.b becomes 999",
-          "Throws only in non-strict mode",
-        ]}
-        correctIndex={2}
-        explanation={
-          "Object.freeze is shallow. Verified: frozen.nested.b = 999 succeeded with no " +
-          "error, and reading frozen.nested.b back afterward genuinely returned 999. freeze " +
-          "only locks the object's OWN top-level property slots (a, in this case) — the " +
-          "object stored at 'nested' is a separate object with its own, unfrozen property " +
-          "slots. A real deep-freeze has to walk the object graph and freeze every level."
-        }
-      />
-
-      <InteractiveChallenge
-        question={"const s = Object.seal({ a: 1 }); s.a = 2; delete s.a; — what is the final state of s?"}
-        code={`const s = Object.seal({ a: 1 });
-s.a = 2;
-try { delete s.a; } catch (e) { console.log(e.message); }
-console.log(s.a);`}
-        language="javascript"
-        options={[
-          "{} — both the reassignment and the delete succeed",
-          "{ a: 1 } — seal blocks both the reassignment and the delete",
-          "{ a: 2 } — the reassignment succeeds, but delete throws and is blocked",
-          "Throws immediately on 's.a = 2'",
-        ]}
-        correctIndex={2}
-        explanation={
-          "Verified: sealed.a = 42 succeeded (seal does not lock existing VALUES, only the " +
-          "property set), but the delete threw \"Cannot delete property 'a' of #<Object>\" " +
-          "and s.a read back unchanged afterward. seal blocks adding and removing keys, not " +
-          "modifying the values already there — that's the concrete distinction from freeze."
-        }
-      />
     </LessonLayout>
   );
 }

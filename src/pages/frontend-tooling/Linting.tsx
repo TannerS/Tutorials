@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Linting() {
@@ -335,18 +334,6 @@ echo "npx lint-staged" > .husky/pre-commit`}
   }
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"What is the modern recommended way to prevent Prettier and ESLint from conflicting?"}
-        options={[
-          "Use eslint-plugin-prettier to run Prettier as an ESLint rule",
-          "Use eslint-config-prettier as the last config to disable formatting rules",
-          "Only use Prettier and skip ESLint entirely",
-          "Configure both tools with identical formatting rules manually"
-        ]}
-        correctIndex={1}
-        explanation={"eslint-config-prettier disables all ESLint rules that would conflict with Prettier. It must be the last config in your array so it overrides everything else. Running Prettier inside ESLint (eslint-plugin-prettier) is slower and deprecated in modern setups."}
-      />
 
       <h2>CI Pipeline Integration</h2>
 

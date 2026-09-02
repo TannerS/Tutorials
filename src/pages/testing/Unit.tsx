@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Unit() {
@@ -446,19 +445,6 @@ it('should match snapshot', () => {
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"Which React Testing Library query best follows the \"test like a user\" philosophy?"}
-        options={[
-          "getByTestId('submit-btn')",
-          "container.querySelector('.btn-primary')",
-          "getByRole('button', { name: /submit/i })",
-          "wrapper.find('Button').props()"
-        ]}
-        correctIndex={2}
-        explanation="getByRole queries by accessibility role and visible label — exactly how a user or screen reader would find the button. getByTestId is acceptable as a last resort, but role-based queries should be preferred."
-        language="javascript"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

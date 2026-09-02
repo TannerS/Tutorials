@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Migration() {
@@ -356,19 +355,6 @@ npm install react-router@latest @react-router/{dev,node,etc.}@latest`}
         <code>engines</code> in <code>package.json</code> and your CI runner image
         together, not just one of them.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"You upgrade a project straight from react-router@7.16.0 to 8.3.1 and forget to run npm uninstall react-router-dom first. What actually happens?"}
-        options={[
-          "The build fails immediately with a clear 'package not found' error",
-          "npm install fails because react-router-dom has no v8 release",
-          "It still resolves — react-router-dom's last published version (7.18.3) stays in node_modules alongside react-router@8, and any lingering import from it silently pulls in a second copy of the router",
-          "React Router automatically redirects react-router-dom imports to react-router at runtime",
-        ]}
-        correctIndex={2}
-        explanation={"react-router-dom was never un-published — its latest dist-tag is simply frozen at 7.18.3 forever, since no v8 build was ever released for it. npm happily installs that last version as a dependency; nothing stops your build. The danger is exactly that it doesn't fail loudly: a stray react-router-dom import quietly loads a second, older copy of the router next to react-router@8, which is a much harder bug to spot than a missing package."}
-        language="jsx"
-      />
 
       <h2>Quick Reference: Step-by-Step Checklist</h2>
       <CodeBlock language="jsx" title="Migration Checklist">

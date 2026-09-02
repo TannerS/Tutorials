@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -222,19 +221,6 @@ class ProductApiIntegrationTest {
         <li><strong>Testing Secured Endpoints</strong> — <code>@WithMockUser</code>, mocking JWTs, 401 vs 403, CSRF, method security</li>
         <li><strong>API Testing Patterns &amp; CI</strong> — REST Assured, Postman/Newman, parallel execution, flaky test mitigation</li>
       </ul>
-
-      <InteractiveChallenge
-        question={"You need to test a Spring WebFlux controller that returns Flux<ProductDto>. Which tool is purpose-built for this?"}
-        options={[
-          "MockMvc — it works identically for reactive and blocking controllers",
-          "WebTestClient — designed for the reactive request/response pipeline",
-          "TestRestTemplate — the only option for streaming responses",
-          "None of these; reactive controllers can't be tested in isolation"
-        ]}
-        correctIndex={1}
-        explanation="MockMvc assumes a blocking servlet request/response cycle and doesn't understand Mono/Flux. WebTestClient was built specifically for WebFlux's reactive pipeline, though it can also be pointed at a real running server (blocking or reactive) for full integration tests."
-        language="java"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

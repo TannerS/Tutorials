@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Rest() {
@@ -759,17 +758,6 @@ class UserControllerTest {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You need a controller endpoint that returns a 300 MB export. What return type should you use?"
-        options={[
-          "byte[] — it's simplest and Spring handles it",
-          "ResponseEntity<byte[]> for control over headers",
-          "StreamingResponseBody or InputStreamResource so bytes flow from source to socket without buffering the whole file in the JVM heap",
-          "Return a String with the file base64-encoded"
-        ]}
-        correctIndex={2}
-        explanation="Returning byte[] means the entire 300 MB payload sits in the JVM heap simultaneously — a straight path to OutOfMemoryError under moderate concurrent load. StreamingResponseBody accepts an OutputStream and lets you pipe bytes from disk / a database blob / an S3 stream directly to the response, using constant memory regardless of file size."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Testcontainers() {
@@ -400,19 +399,6 @@ test('cancelled orders are excluded from revenue', async () => {
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"Why is Testcontainers generally preferred over an in-memory database like H2 for integration tests?"}
-        options={[
-          "It runs faster than H2",
-          "It requires no configuration at all",
-          "It uses the real database engine, avoiding behavior drift from dialect and constraint differences",
-          "It replaces the need for unit tests entirely"
-        ]}
-        correctIndex={2}
-        explanation="H2 and similar in-memory databases don't perfectly replicate Postgres/MySQL SQL dialects or constraint enforcement. Testcontainers runs the actual database engine in Docker, so tests catch real compatibility issues — at the cost of slower startup, which is why it's reserved for integration-level tests rather than unit tests."
-        language="java"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Communication() {
@@ -558,30 +557,6 @@ async function startConsumer() {
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"Your order service needs to notify the payment, inventory, and notification services after an order is placed. The user should see order confirmation immediately. Which communication pattern?"}
-        options={[
-          'Synchronous REST calls to all three services',
-          'gRPC streaming to all three services',
-          'Publish an event to a message queue, let services subscribe',
-          'GraphQL mutation that calls all services'
-        ]}
-        correctIndex={2}
-        explanation={"Publishing an async event decouples the order service from downstream services. The order service confirms the order immediately, and the payment, inventory, and notification services process the event independently. If one is slow or temporarily down, the others are unaffected."}
-      />
-
-      <InteractiveChallenge
-        question={"When is gRPC a better choice than REST for service-to-service communication?"}
-        options={[
-          'When you need browser support',
-          'When you need high throughput with binary serialization and streaming',
-          'When debugging with curl is a priority',
-          'When your services are written in different languages'
-        ]}
-        correctIndex={1}
-        explanation={"gRPC excels at service-to-service communication: binary Protobuf serialization (payloads roughly 3-10x smaller than the equivalent JSON), HTTP/2 multiplexing over a single connection, native bidirectional streaming, and auto-generated typed clients. Note the honest form of the performance claim — the compact payload is a size fact, not a speed multiplier. Lower per-call overhead matters most for small, chatty, high-QPS calls and matters very little when the handler is dominated by database time, so benchmark your own endpoints rather than quoting a ratio. It does support multiple languages (option D), but REST does too."}
-      />
 
       <h2>Summary</h2>
 

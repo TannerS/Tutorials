@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Design() {
@@ -551,18 +550,6 @@ currency TEXT NOT NULL CHECK (currency ~ '^[A-Z]{3}$')
         <p><strong>Indexes:</strong> <code>idx_tablename_columns</code>. Foreign keys: <code>fk_tablename_reference</code>.</p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A table has columns: (student_id, course_id, instructor_name, instructor_office). The PK is (student_id, course_id). instructor_office depends on instructor_name, which depends on course_id. What is the highest normal form this table satisfies?"
-        options={[
-          '1NF',
-          '2NF',
-          '3NF',
-          'BCNF',
-        ]}
-        correctIndex={0}
-        explanation="instructor_name depends on course_id alone (partial dependency on the composite PK), which violates 2NF. And instructor_office depends on instructor_name (transitive dependency), which violates 3NF. Since it violates 2NF, the highest form it satisfies is 1NF."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

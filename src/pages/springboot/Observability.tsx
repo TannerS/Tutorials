@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Observability() {
@@ -424,17 +423,6 @@ curl -X POST http://localhost:8081/actuator/loggers/com.example.orders \\
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your Prometheus keeps OOM'ing after a service was updated. A quick look shows millions of time series named http_server_requests. Why?"
-        options={[
-          "You need to shard Prometheus horizontally",
-          "The scrape interval is too short",
-          "Someone added a high-cardinality tag (e.g., user ID, request ID, or path variable) to the metric. Every unique value creates a new time series.",
-          "The retention period should be reduced"
-        ]}
-        correctIndex={2}
-        explanation="This is the metric-cardinality trap. Prometheus stores a distinct time series for every unique combination of metric name + tag values. Tagging a request metric with a UUID request ID or path variable like /users/{id} means every request creates a new series, which is unbounded. Fix by removing the high-cardinality tag; if you need per-request insight, that data belongs in traces or structured logs, not metrics."
-      />
     </LessonLayout>
   );
 }

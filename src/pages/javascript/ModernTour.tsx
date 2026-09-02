@@ -1,6 +1,5 @@
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function JsModernTour() {
@@ -195,13 +194,6 @@ const mod = await import('./feature.js');   // dynamic import — code-splitting
 
 globalThis.setTimeout;   // works in browser, Node, and workers — one name for 'the global object'`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="What does `0 ?? 'fallback'` evaluate to?"
-        options={["'fallback'", '0', 'undefined', 'A TypeError is thrown']}
-        correctIndex={1}
-        explanation="?? only falls through to its right-hand side when the left is null or undefined. 0 is neither, so it's returned as-is — unlike ||, which treats 0 as falsy and would return 'fallback'."
-      />
 
       <h2>ES2021 / ES12 — Logical Assignment &amp; Readable Numbers</h2>
       <CodeBlock language="javascript" title="replaceAll, Promise.any, ||= &&= ??=, numeric separators">

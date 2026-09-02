@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function State() {
@@ -376,17 +375,6 @@ const result = await job.run('customers.csv');`}
         swaps the whole algorithm rather than individual steps, usually fits better there.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A base class's run() method calls step1(), step2(), then step3() in that exact order every time, but lets subclasses override step1() and step3() individually. Which pattern is this?"
-        options={[
-          "State — the object's behavior changes based on which subclass is active",
-          "Template Method — the algorithm's skeleton and step order are fixed in the base class; subclasses only fill in specific steps",
-          "Command — each step is encapsulated as a separate object",
-          "Strategy — the entire algorithm is swapped out at runtime"
-        ]}
-        correctIndex={1}
-        explanation="Template Method fixes the overall algorithm structure (the order of steps) in the base class/method, while letting subclasses customize individual steps. This differs from Strategy, which swaps out an entire algorithm as one interchangeable unit rather than customizing pieces of a shared skeleton."
-      />
     </LessonLayout>
   );
 }

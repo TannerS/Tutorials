@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Security() {
@@ -727,29 +726,6 @@ app.post('/register',
         step of it fails.
       </p>
 
-      <InteractiveChallenge
-        question={"A CORS preflight request is triggered when the browser needs to send a non-simple request (like DELETE or a request with custom headers). What HTTP method does the browser use for the preflight?"}
-        options={[
-          "GET",
-          "POST",
-          "HEAD",
-          "OPTIONS"
-        ]}
-        correctIndex={3}
-        explanation={"The browser sends an OPTIONS request as the preflight. This request includes Access-Control-Request-Method and Access-Control-Request-Headers to tell the server what the actual request will look like. The server must respond with appropriate Access-Control-Allow-* headers. Only if the preflight response allows it will the browser send the actual request. The preflight is cached (via Access-Control-Max-Age) to avoid repeating it."}
-      />
-
-      <InteractiveChallenge
-        question={"Which security measure is the PRIMARY defense against XSS attacks in modern web applications?"}
-        options={[
-          "CORS headers",
-          "CSRF tokens",
-          "Content-Security-Policy (CSP) header combined with output encoding and input sanitization",
-          "Rate limiting"
-        ]}
-        correctIndex={2}
-        explanation={"CSP is the most powerful defense against XSS — but note HOW, because the intuitive answer is the weak one. A host allowlist is largely bypassable: allowlisting a CDN also allowlists every JSONP endpoint and stale library hosted on it. The policy that actually works is nonce-based with 'strict-dynamic': an injected script tag carries no per-response nonce, so it never executes, and host allowlists are ignored entirely. Combined with output encoding and input sanitization this forms a multi-layered defense. React auto-escapes JSX output, providing built-in XSS protection."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Advanced() {
@@ -480,44 +479,6 @@ ORDER BY day;`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You need the last 5 orders per customer, for all 10,000 customers. Which approach is most efficient?"
-        options={[
-          'Correlated subquery in SELECT with LIMIT 5',
-          'Window function with ROW_NUMBER + filter WHERE rn <= 5',
-          'CROSS JOIN LATERAL with ORDER BY + LIMIT 5 (with proper index)',
-          'Self-join with GROUP BY and HAVING',
-        ]}
-        correctIndex={2}
-        explanation="LATERAL JOIN with an indexed ORDER BY + LIMIT is typically fastest for top-N-per-group queries. It performs an index scan for each outer row, fetching exactly 5 rows per customer. The window function approach must first assign row numbers to ALL orders, then filter — much more work if there are millions of orders. The LATERAL approach leverages the index to avoid reading unneeded rows."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question="A 200-million-row events table needs old data deleted every month, and queries almost always filter on event_date. What's the most effective strategy?"
-        options={[
-          'Add a B-tree index on event_date and run DELETE ... WHERE event_date < ? monthly',
-          'Range-partition the table by event_date and DROP old partitions instead of deleting',
-          'Switch the primary key to a UUID',
-          'Convert the table to use EAV so old rows are cheaper to remove',
-        ]}
-        correctIndex={1}
-        explanation="Range partitioning by date lets you drop an entire month's partition instantly with DROP TABLE — no scanning, no index maintenance, no bloat from mass deletes. A plain DELETE on a 200M-row table, even with an index, still has to find and mark every matching row dead, bloating indexes and requiring vacuum afterward."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question="Why default to JSONB over JSON for a column storing semi-structured data in PostgreSQL?"
-        options={[
-          'JSON is deprecated and will be removed',
-          'JSONB stores a decomposed binary format that supports GIN indexing and faster queries, at the cost of not preserving key order',
-          'JSON cannot store nested objects',
-          'JSONB is required for full-text search'
-        ]}
-        correctIndex={1}
-        explanation="JSON stores an exact text copy that must be reparsed on every access and preserves key order/duplicates. JSONB decomposes the document into a binary format once, enabling GIN indexing and much faster containment/path queries — the tradeoff is losing exact key ordering and whitespace, which is rarely needed."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

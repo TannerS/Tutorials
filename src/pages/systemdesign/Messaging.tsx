@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Messaging() {
@@ -520,18 +519,6 @@ async function startConsumer() {
         </tbody>
       </table>
 
-      <InteractiveChallenge
-        question={"Your e-commerce platform needs to process 500K checkout events per second and allow the analytics team to replay last week's data. Which broker should you choose and why?"}
-        options={[
-          'RabbitMQ — it has better routing and per-message acknowledgment',
-          'Kafka — it handles high throughput and supports replay via offset reset',
-          'Either would work — they have equivalent throughput',
-          'Neither — you need a dedicated streaming framework like Flink',
-        ]}
-        correctIndex={1}
-        explanation={"Kafka is designed for exactly this scenario. Its log-based storage allows replay by resetting consumer offsets, and its partitioned architecture handles millions of messages per second. RabbitMQ deletes messages after consumption, making replay impossible, and its throughput ceiling is significantly lower."}
-      />
-
       {/* ───────────────────────────────────────────────
           Section 6 – Event Sourcing
       ─────────────────────────────────────────────── */}
@@ -776,18 +763,6 @@ async function startConsumer() {
         writes logs to Elasticsearch for searching, another archives them to S3 for long-term
         storage, and a third feeds a monitoring system that triggers alerts on error rate spikes.
       </p>
-
-      <InteractiveChallenge
-        question={"You're designing a notification system that sends emails, push notifications, and SMS. Each notification type has different processing logic and failure modes. Which pattern should you use?"}
-        options={[
-          'Single queue with a router that inspects message type',
-          'Topic exchange with routing keys per notification type, separate queues and consumers for each',
-          'Single Kafka topic with one consumer group',
-          'Direct HTTP calls between services',
-        ]}
-        correctIndex={1}
-        explanation={"A topic exchange with separate queues per notification type gives you independent scaling, failure isolation, and the ability to add new notification channels without modifying existing consumers. If emails are slow, only the email queue backs up — push and SMS continue unaffected. Direct HTTP calls would create tight coupling and no retry capability."}
-      />
 
       <h3>Summary Cheat Sheet</h3>
       <table>

@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoEncodingVsEncryption() {
   return (
@@ -197,29 +196,6 @@ console.log(typeof crypto.unhash); // 'undefined' — there is no such function,
         and how TLS combines them — and the one after that goes deep on the third.
       </p>
 
-      <InteractiveChallenge
-        question={"A teammate says: \"We're storing user passwords Base64-encoded in the database, so they're encrypted.\" What's wrong with this statement?"}
-        options={[
-          "Nothing — Base64 is a form of encryption",
-          "Base64 is encoding, not encryption — it's reversible by anyone with zero secret information, so it provides no confidentiality at all",
-          "Base64 should be replaced with hex encoding for better security",
-          "The statement is correct as long as the Base64 output is also hashed"
-        ]}
-        correctIndex={1}
-        explanation={"Base64 is encoding: a public, keyless, fully reversible transformation. Anyone who sees the stored value can run it through atob() or Base64.getDecoder() and get the original password back instantly. Encryption requires a key to reverse; encoding requires nothing. Passwords should be hashed with a slow, purpose-built algorithm (argon2id/bcrypt), not encoded or encrypted."}
-      />
-
-      <InteractiveChallenge
-        question={"Why can't you write an unhash() function that recovers the original input from a SHA-256 digest?"}
-        options={[
-          "It's technically possible but no one has implemented it yet",
-          "SHA-256 requires a private key to reverse, and that key is kept secret by the algorithm's designers",
-          "Hashing is a one-way function by design — no key exists to reverse it, and information is lost when many possible inputs map to the same fixed-size output",
-          "You can reverse it, but only with a supercomputer"
-        ]}
-        correctIndex={2}
-        explanation={"Hashing has no key at all, in either direction — that's what separates it from encryption. It's designed to be one-way: SHA-256 always produces a 256-bit output regardless of input size, so it can't be a lossless, invertible mapping for inputs longer than 256 bits. The only way to find an input producing a target digest is to guess and check, which is what password cracking is."}
-      />
     </LessonLayout>
   );
 }

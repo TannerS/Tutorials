@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function StoredProcedures() {
@@ -534,31 +533,6 @@ migrations/
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="An app currently does a SELECT to check inventory, an UPDATE to decrement it, and an INSERT to record the order — three separate calls to the database. What is the primary, measurable benefit of moving this into a single stored procedure call?"
-        options={[
-          'The SQL runs faster inside the database engine itself',
-          'It reduces three network round trips to one, cutting latency and shrinking the window for a race condition between steps',
-          'It automatically makes the three statements portable to any other database',
-          'It removes the need for any transaction or locking logic',
-        ]}
-        correctIndex={1}
-        explanation="The core win is round-trip reduction: one CALL instead of three separate statement round trips, which matters under real load and also narrows (but does not by itself eliminate) the window where a concurrent request could interleave between the SELECT and the UPDATE. It doesn't inherently make anything faster at the SQL-execution level, doesn't improve portability (the opposite, in fact — see vendor lock-in), and still needs proper locking/transaction discipline to be safe under concurrency."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question="Why is PL/pgSQL, T-SQL, and PL/SQL being three different, incompatible languages a genuine downside of stored procedures?"
-        options={[
-          'It means stored procedures run slower than equivalent application code',
-          'Standard SQL queries port across databases fairly well, but procedural logic written in one dialect has to be rewritten, not just ported, for a different database engine',
-          'It means you cannot use stored procedures with an ORM',
-          'It only affects performance, not portability',
-        ]}
-        correctIndex={1}
-        explanation="This is the vendor lock-in problem: plain SQL queries are close to portable across engines, but PL/pgSQL (Postgres), T-SQL (SQL Server), and PL/SQL (Oracle) are separate procedural languages. Business logic written as a stored procedure in one has to be rewritten from scratch to run on another, which is a real cost if you ever need to change database vendors."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

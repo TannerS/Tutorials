@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Data() {
@@ -453,18 +452,6 @@ export default function Contacts() {
 }`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question={"After a Form method=\"post\" action completes successfully in React Router v7, what happens next?"}
-        options={[
-          "The page reloads from scratch",
-          "Nothing — you must manually refetch data",
-          "React Router revalidates all active loaders automatically",
-          "The action's return value replaces the loader data",
-        ]}
-        correctIndex={2}
-        explanation={"React Router automatically revalidates (re-runs) all active loaders after a successful action. This ensures the UI always reflects the latest server state without manual refetching. This is similar to how a traditional HTML form POST/redirect/GET cycle works."}
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Performance() {
@@ -391,18 +390,6 @@ if (import.meta.env.DEV) {
 // import React from 'react';
 // ...`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"Which Core Web Vital replaced First Input Delay (FID) in 2024?"}
-        options={[
-          "Largest Contentful Paint (LCP)",
-          "Time to First Byte (TTFB)",
-          "Interaction to Next Paint (INP)",
-          "Cumulative Layout Shift (CLS)"
-        ]}
-        correctIndex={2}
-        explanation={"INP (Interaction to Next Paint) replaced FID in March 2024 as an official Core Web Vital. While FID only measured the first interaction's delay, INP measures responsiveness across ALL interactions during the entire page session, giving a much more accurate picture of real-world interactivity."}
-      />
 
       <InfoBox variant="note" title="Performance Is Iterative">
         Don't try to optimize everything at once. Use Lighthouse and bundle analysis to

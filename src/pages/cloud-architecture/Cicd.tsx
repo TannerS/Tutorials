@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Cicd() {
   return (
@@ -288,17 +287,6 @@ jobs:
         the incident that made RTO matter in the first place.
       </p>
 
-      <InteractiveChallenge
-        question={"A team says: \"We practice continuous deployment — every commit that passes CI automatically ships, but a release manager still has to click approve before anything reaches production.\" What does this setup actually describe?"}
-        options={[
-          "Continuous Deployment, exactly as they described it",
-          "Continuous Integration only — nothing here counts as delivery or deployment",
-          "Continuous Delivery — the pipeline automatically prepares every passing change for release, but a required human approval before production means the last step isn't automatic, which is what Continuous Deployment specifically requires",
-          "A canary deployment"
-        ]}
-        correctIndex={2}
-        explanation={"The release manager's approval click is the exact detail that settles this. Continuous Delivery means every change that passes CI is automatically built, tested, and made release-ready — but a human still decides when it actually goes to production. Continuous Deployment removes that decision entirely: passing CI is the only gate, and production happens with no approval step at all. A required manual click before prod, no matter how automated everything before it is, makes this Continuous Delivery — not Continuous Deployment, regardless of what the team calls it."}
-      />
     </LessonLayout>
   );
 }

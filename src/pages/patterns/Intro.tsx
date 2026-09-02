@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -328,18 +327,6 @@ Greeter greeter = new SimpleGreeter();
         <li><strong>Are you the only developer?</strong> → Patterns help teams communicate, but may be overkill for solo projects</li>
       </ul>
 
-      <InteractiveChallenge
-        question="Which category of design pattern would you use to ensure only one database connection pool exists in your application?"
-        options={[
-          "Behavioral - it's about how objects communicate",
-          "Structural - it's about composing objects together",
-          "Creational - it's about controlling object creation",
-          "None - patterns aren't needed for this"
-        ]}
-        correctIndex={2}
-        explanation="Singleton is a Creational pattern that ensures a class has only one instance. A database connection pool is a classic use case — you want exactly one pool managing all connections."
-      />
-
       <h2>Pattern Complexity Guide</h2>
 
       <InfoBox variant="note" title="Start Simple, Refactor to Patterns">
@@ -385,17 +372,6 @@ public class OrderService {
 }`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question={"Your Express.js app uses app.use(cors()), app.use(auth()), app.use(logger()). Which design pattern does this middleware pipeline represent?"}
-        options={[
-          "Observer — each middleware observes the request",
-          "Decorator — each middleware wraps the next one",
-          "Chain of Responsibility — each handler decides to process or pass along",
-          "Strategy — each middleware is an interchangeable algorithm"
-        ]}
-        correctIndex={2}
-        explanation="Middleware pipelines are a textbook Chain of Responsibility pattern. Each middleware in the chain can process the request, modify it, or pass it to the next handler via next(). The request flows through the chain until one handler completes the response."
-      />
     </LessonLayout>
   );
 }

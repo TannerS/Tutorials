@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Graphs() {
   return (
@@ -402,18 +401,6 @@ hasCycleDirectedCorrect(trueCycle, 4);  // Output: true   <- correct`}
           eventually feed into the same downstream node.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A directed graph has edges 0->1, 0->2, 1->3, 2->3. Node 3 is reached via two different paths (0-1-3 and 0-2-3) during a DFS. Does this graph contain a cycle, and why does a cycle-detection algorithm that only tracks a global \"visited\" set get this wrong?"}
-        options={[
-          "Yes, it has a cycle — node 3 being visited twice proves a cycle exists",
-          "No cycle exists. A global-visited-only check incorrectly flags it as a cycle because it can't distinguish \"revisiting a node on the current recursion path\" (a real cycle) from \"reaching an already-finished node via a different branch\" (just a converging path, common in DAGs)",
-          "No cycle exists, and the global-visited-only check gets it right — the bug only shows up in undirected graphs",
-          "It depends on which node the DFS starts from"
-        ]}
-        correctIndex={1}
-        explanation={"This is the diamond shape: 0 branches to 1 and 2, both of which lead to 3. Node 3 is visited twice, but never while it's an ancestor of itself on the current path — by the time DFS reaches 3 via 2, the 1-3 branch has already fully finished and backtracked. Directed-graph cycle detection needs a second set (\"onStack\", the current recursion path) in addition to the global \"visited\" set — a cycle only exists if you reach a node that is currently on that path, i.e. an ancestor of the node you're standing on, not merely a node you've seen at some point before. Undirected cycle detection doesn't need onStack because it tracks the immediate parent instead, which is enough there since every edge is bidirectional."}
-      />
 
       <h2>Dijkstra&apos;s Algorithm: Shortest Path in a Weighted Graph</h2>
 

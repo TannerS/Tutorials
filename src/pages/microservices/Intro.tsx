@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -236,18 +235,6 @@ Year 5 — Full Microservices (50 developers, 8 teams)
 └── Deploy: GitOps, each team deploys independently`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question={"Your startup has 5 developers, an unclear domain, and no DevOps team. Which architecture should you choose?"}
-        options={[
-          'Full microservices for future scalability',
-          'Modular monolith with clear boundaries',
-          'Mini-services with 5 separate deployments',
-          'Serverless functions for each endpoint'
-        ]}
-        correctIndex={1}
-        explanation={"A modular monolith gives you clear boundaries and team ownership without the operational overhead of distributed systems. With 5 developers and an unclear domain, you would spend more time on infrastructure than on building features. Start simple, extract later when you have concrete reasons."}
-      />
-
       <h2>Common Anti-Patterns</h2>
 
       <InfoBox variant="danger" title="Distributed Monolith">
@@ -272,18 +259,6 @@ Year 5 — Full Microservices (50 developers, 8 teams)
 ✅ Async communication for non-critical paths
 ✅ Circuit breakers prevent cascade failures`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"What is the biggest risk when migrating from a monolith to microservices?"}
-        options={[
-          'Choosing the wrong programming language',
-          'Creating a distributed monolith',
-          'Using too many databases',
-          'Having too many API endpoints'
-        ]}
-        correctIndex={1}
-        explanation={"A distributed monolith gives you all the complexity of microservices (network calls, distributed debugging, multiple deployments) with none of the benefits (independent deployment, isolated failures, team autonomy). This is the most common failure mode and happens when services are tightly coupled, share databases, or must be deployed together."}
-      />
 
       <h2>Summary</h2>
 

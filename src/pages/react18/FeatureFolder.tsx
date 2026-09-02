@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function FeatureFolder() {
@@ -11,7 +10,7 @@ export default function FeatureFolder() {
       sectionId="react18"
       lessonIndex={18}
       prev={{ path: '/react18/module-federation', label: 'Module Federation & MFEs' }}
-      next={{ path: '/react18/error-boundaries', label: 'Error Boundaries' }}
+      next={{ path: '/react18/bulletproof-react', label: 'Bulletproof React — A Concrete File Structure' }}
     >
       <h2>The Two Ways to Organize a Frontend</h2>
       <p>
@@ -307,17 +306,6 @@ Multiple orgs, no shared monorepo:
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Which of these BEST belongs in features/orders/ rather than shared/?"
-        options={[
-          "useDebounce — a hook that debounces any value",
-          "Button — a themed <button> wrapper",
-          "OrderStatusBadge — a badge that renders 'Placed', 'Shipped', 'Cancelled' with domain-specific colors and translation keys",
-          "apiFetch — the generic fetch wrapper that applies auth and error normalization"
-        ]}
-        correctIndex={2}
-        explanation="OrderStatusBadge encodes business meaning: the labels 'Placed / Shipped / Cancelled', the mapping from status to color, likely feature-specific translation keys. It's owned by the orders feature and belongs in features/orders/components. useDebounce, Button, and apiFetch are all generic — no business domain concept in their names, useful in many features — and belong in shared. The moment a business-domain component moves into shared/, the boundary is porous and everyone loses."
-      />
     </LessonLayout>
   );
 }

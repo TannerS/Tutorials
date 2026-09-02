@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Data() {
@@ -400,18 +399,6 @@ function App() {
 }`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question={"A user clicks from /users/1 to /users/2. Why doesn't UserProfile automatically refetch unless userId is in the useEffect dependency array?"}
-        options={[
-          "React Router v5 unmounts and remounts the component on every navigation, so it should refetch regardless",
-          "The same Route matches both URLs and reuses the same component instance, so only a dependency-array change re-triggers the effect",
-          "useParams() only reads the param once, on the very first render, ever",
-          "fetch() automatically caches by URL in v5, so it intentionally skips the second request",
-        ]}
-        correctIndex={1}
-        explanation={"React Router v5 does not remount a component just because a route param changed — /users/1 and /users/2 match the same <Route>, so the same component instance sticks around and just receives new props. useEffect only re-runs when something in its dependency array changes, so userId has to be listed there or the effect has no way of knowing the param moved."}
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

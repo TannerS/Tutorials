@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Authz() {
@@ -399,29 +398,6 @@ Phase 6: Logout
         section first and come back; everything from here on will land better.
       </p>
 
-      <InteractiveChallenge
-        question={"What is the correct relationship between authentication and authorization?"}
-        options={[
-          "They are the same thing with different names",
-          "Authorization must happen before authentication",
-          "Authentication (who are you?) must happen first, then authorization (what can you do?) checks permissions based on the verified identity",
-          "Authentication handles permissions while authorization handles identity"
-        ]}
-        correctIndex={2}
-        explanation={"Authentication and authorization are sequential: first you prove your identity (AuthN), then the system checks what you are allowed to do (AuthZ). You cannot authorize someone whose identity you have not verified. In a typical web app: the user logs in (AuthN via password/OAuth), receives a session/JWT, and then on each request the server checks their roles/permissions (AuthZ via RBAC) before allowing access to resources."}
-      />
-
-      <InteractiveChallenge
-        question={"In RBAC, why is it better to assign permissions to roles rather than directly to users?"}
-        options={[
-          "Roles are faster to check than individual permissions",
-          "Users cannot have permissions without roles",
-          "Roles group permissions logically — when a user changes position, you change their role instead of updating dozens of individual permissions, making the system maintainable and auditable",
-          "Roles provide encryption for permissions"
-        ]}
-        correctIndex={2}
-        explanation={"RBAC provides a layer of indirection: permissions are grouped into roles (admin, editor, viewer), and users are assigned roles. When someone gets promoted, you change their role from 'editor' to 'admin' — one change instead of updating 20 individual permissions. This is more maintainable, less error-prone, and easier to audit. You can answer 'what can admins do?' and 'who are the admins?' easily."}
-      />
     </LessonLayout>
   );
 }

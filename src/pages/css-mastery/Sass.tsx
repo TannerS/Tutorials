@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Sass() {
@@ -305,31 +304,6 @@ $unit: 8px;
         chart={"graph TD\n  Q[Need a reusable value?] --> RT{Changes after page load?}\n  RT -->|Yes: theme, JS, media query| CP[CSS Custom Property --var]\n  RT -->|No: fixed build-time constant| BT{Used in Sass logic? @each/@if/math}\n  BT -->|Yes| SV[Sass Variable $var]\n  BT -->|No, just a literal| SV\n  CP --> WRITE[Written once into :root via Sass @each if generated]\n  style CP fill:#1a2744\n  style SV fill:#1a3329"}
       />
 
-      <InteractiveChallenge
-        question={"Why is a CSS custom property (--color) able to support runtime dark-mode theming, while a Sass variable ($color) cannot on its own?"}
-        options={[
-          "Sass variables are always slower to compile than custom properties",
-          "Custom properties live in the CSSOM and can be reassigned per-selector or via JS at runtime; Sass variables are substituted into static text at build time and no longer exist in the shipped CSS",
-          "Custom properties only work inside media queries",
-          "Sass variables can only hold color values, not numbers"
-        ]}
-        correctIndex={1}
-        explanation={"A Sass variable is gone by the time CSS ships — every usage was replaced with its literal value during compilation. A custom property is still a named, live value in the browser, so redeclaring --color under [data-theme='light'] retheme's every var(--color) reference without recompiling anything."}
-        language="scss"
-      />
-
-      <InteractiveChallenge
-        question={"What's the main problem with Sass's deprecated @import that @use fixes?"}
-        options={[
-          "@import doesn't support nesting",
-          "@import can't be used with mixins",
-          "@import dumps everything into one global namespace and re-evaluates the same partial every time it's imported, with no way to tell where a variable came from",
-          "@import only works with the indented Sass syntax, not SCSS"
-        ]}
-        correctIndex={2}
-        explanation={"@import has no module isolation: two partials defining the same variable name silently collide, and importing the same partial from multiple files re-parses it each time. @use loads each file exactly once and namespaces everything behind the partial's name (tokens.$primary), removing the ambiguity entirely."}
-        language="scss"
-      />
     </LessonLayout>
   );
 }

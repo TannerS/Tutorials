@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Setup() {
@@ -325,17 +324,6 @@ ENTRYPOINT ["java", "-jar", "application.jar"]`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What does the spring-boot-starter-parent POM provide?"
-        options={[
-          "The actual application code for your project",
-          "Dependency version management and sensible default configurations",
-          "A pre-built database schema",
-          "Automatic deployment to cloud platforms"
-        ]}
-        correctIndex={1}
-        explanation="The spring-boot-starter-parent POM provides dependency version management (so you don't need to specify versions for common libraries), sensible plugin defaults, and resource filtering. It ensures all Spring-related dependencies use compatible versions."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -347,18 +346,6 @@ useHistory()  useLocation()  useParams()  useRouteMatch()
 withRouter(MyClassComponent)                  // injects history, location, match`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question={'Given <Route path="/settings" component={Settings} /> with no exact prop, which URLs render <Settings>?'}
-        options={[
-          'Only /settings, exactly',
-          '/settings and any URL that starts with /settings, like /settings/profile',
-          'Nothing — v5 requires exact on every Route by default',
-          'Only the last matching Route in the whole app, regardless of path',
-        ]}
-        correctIndex={1}
-        explanation={"exact defaults to false in React Router v5, so matchPath tests pathnames as a prefix — /settings, /settings/profile, and /settings/profile/edit would all match. Add exact to restrict the match to /settings only. This is verified directly against v5.3.4's matchPath() function."}
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

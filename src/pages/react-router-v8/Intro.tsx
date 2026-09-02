@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -445,19 +444,6 @@ export default function App() {
   return <RouterProvider router={router} />;
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"You have a v7 project that imports Link, useNavigate, and RouterProvider from 'react-router-dom'. What's the minimum change required to run on React Router v8?"}
-        options={[
-          "No change needed — react-router-dom still works in v8",
-          "Swap the RouterProvider import to 'react-router/dom' and everything else to 'react-router' — react-router-dom is gone in v8",
-          "Rewrite the whole app using createBrowserRouter — BrowserRouter was removed",
-          "Install both react-router and react-router-dom side by side",
-        ]}
-        correctIndex={1}
-        explanation={"react-router-dom is fully removed in v8 — there is no v8 release of it on npm. RouterProvider and HydratedRouter come from 'react-router/dom'; everything else (Link, useNavigate, Routes, Route, etc.) comes from 'react-router' itself, exactly as in v7 — the only difference is that the react-router-dom re-export shim that used to paper over the wrong import is now gone."}
-        language="jsx"
-      />
 
       <h2>Quick Reference</h2>
       <CodeBlock language="jsx" title="Hook & Component Cheat Sheet">

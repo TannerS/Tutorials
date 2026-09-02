@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function BuildTools() {
   return (
@@ -377,17 +376,6 @@ dependencies {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"Your library module declares implementation(\"com.google.guava:guava:33.0.0-jre\") and another team's app module depends on your library. Their code tries to import com.google.common.collect.ImmutableList directly. What happens?"}
-        options={[
-          "It compiles fine — implementation dependencies are always visible to consumers",
-          "It fails to compile — implementation hides the dependency from consumers' compile classpath; only api would have exposed it transitively",
-          "It compiles, but only in test source sets",
-          "It fails only at runtime, not at compile time"
-        ]}
-        correctIndex={1}
-        explanation={"implementation deliberately keeps a dependency off the compile classpath of anything that depends on your module — that's the whole point of the configuration. Their build would fail at compile time with an unresolved import. To let Guava types leak through to consumers on purpose, the library would need to declare it with api(...) instead, which does put it on downstream compile classpaths transitively."}
-      />
     </LessonLayout>
   );
 }

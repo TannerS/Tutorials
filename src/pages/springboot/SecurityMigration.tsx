@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function SecurityMigration() {
@@ -784,17 +783,6 @@ repository.setCookieCustomizer(c -> c.maxAge(86400));`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your React SPA gets 403 on every POST. The chain uses CookieCsrfTokenRepository.withHttpOnlyFalse() and the frontend reads the XSRF-TOKEN cookie and sends it as X-XSRF-TOKEN. What is happening, and what is the right fix on Spring Security 7?"
-        options={[
-          "CSRF is broken for SPAs — disable it with csrf(AbstractHttpConfigurer::disable)",
-          "The cookie needs httpOnly=true so the browser sends it automatically",
-          "The default XorCsrfTokenRequestAttributeHandler expects a BREACH-randomised token, but the cookie holds the raw value — use csrf(csrf -> csrf.spa())",
-          "Set csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()) — it is the documented SPA handler"
-        ]}
-        correctIndex={2}
-        explanation="Spring Security's default token request handler is XorCsrfTokenRequestAttributeHandler, which encodes randomness into the rendered token so the value changes per request and BREACH cannot recover it. The cookie written by CookieCsrfTokenRepository holds the RAW token, so a SPA echoing the cookie back sends a value the Xor handler then tries to decode — mismatch, 403. Option 4 is the answer you will find online and it does stop the 403, but only because that handler's documented purpose is to opt OUT of BREACH protection; you have removed a mitigation to fix a symptom. Option 1 is worse: a cookie-authenticated app genuinely needs CSRF. Option 2 is backwards — httpOnly=false is required precisely so JavaScript can read the token, and the CSRF token is not a credential. Spring Security 7 adds csrf.spa(), which wires a cookie repository plus a handler that resolves the actual token value instead of the encoded one, keeping BREACH protection on the rendering path."
-      />
     </LessonLayout>
   );
 }

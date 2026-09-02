@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Cookies() {
@@ -541,29 +540,6 @@ res.cookie('sessionId', sessionId, {
         end, and it trades away the one thing sessions are best at: instant revocation.
       </p>
 
-      <InteractiveChallenge
-        question={"Which cookie attribute prevents JavaScript from accessing a session cookie, mitigating XSS attacks?"}
-        options={[
-          "Secure",
-          "SameSite=Strict",
-          "HttpOnly",
-          "Path=/"
-        ]}
-        correctIndex={2}
-        explanation={"The HttpOnly flag makes the cookie completely invisible to JavaScript — document.cookie will not include it. This is the primary defense against XSS cookie theft. Even if an attacker injects malicious JavaScript into your page, they cannot read HttpOnly cookies. This is why session cookies and JWT cookies should ALWAYS be HttpOnly."}
-      />
-
-      <InteractiveChallenge
-        question={"What is the key difference between a session cookie and a persistent cookie?"}
-        options={[
-          "Session cookies are encrypted while persistent cookies are not",
-          "Session cookies have no Max-Age/Expires and are held in memory; persistent cookies have one and are written to disk",
-          "Session cookies can only be used for authentication",
-          "Persistent cookies are larger than session cookies"
-        ]}
-        correctIndex={1}
-        explanation={"A session cookie has no Max-Age or Expires attribute, so the browser holds it in memory rather than writing it to disk. A persistent cookie has one, so it is stored on disk and survives a restart. Note the careful wording: a session cookie dies with the BROWSER, not the tab — and session-restore features routinely bring it back, so it is not a reliable expiry mechanism. 'Remember me' features typically use persistent cookies with a longer Max-Age."}
-      />
     </LessonLayout>
   );
 }

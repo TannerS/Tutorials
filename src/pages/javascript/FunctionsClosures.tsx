@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function JsFunctionsClosures() {
@@ -530,68 +529,6 @@ for (let j = 0; j < 3; j++) {
 
       {/* ── Section 9: Interactive Challenges ── */}
       <h2>Test Your Knowledge</h2>
-
-      <InteractiveChallenge
-        question={"Which statement about calling a function before its definition line is correct?"}
-        code={`// Somewhere above these definitions...
-foo();  // ?
-bar();  // ?
-baz();  // ?
-
-function foo() { return 'a'; }
-var bar = function () { return 'b'; };
-const baz = () => 'c';`}
-        language="javascript"
-        options={[
-          "All three throw the same error, because nothing is ever hoisted early",
-          "foo() works; bar() throws TypeError (bar is undefined at that point); baz() throws ReferenceError (TDZ)",
-          "All three work fine, because every function is hoisted with its body",
-          "foo() throws, but bar() and baz() both work because var and const are hoisted",
-        ]}
-        correctIndex={1}
-        explanation={"Function declarations (foo) are hoisted with their full body, so calling them early works. var bar is hoisted as a binding initialized to undefined — calling it early calls undefined(), a TypeError. const baz is hoisted but sits in the temporal dead zone until its declaration line runs, so touching it early throws a ReferenceError instead."}
-      />
-
-      <InteractiveChallenge
-        question={"An object has a regular method and an arrow function method, both just returning this.name. Called as obj.regular() and obj.arrow(), what happens?"}
-        code={`const obj = {
-  name: 'Ada',
-  regular: function () { return this.name; },
-  arrow: () => { return this.name; },
-};
-
-obj.regular(); // ?
-obj.arrow();   // ?`}
-        language="javascript"
-        options={[
-          "Both return 'Ada', since both are called on obj",
-          "regular() returns 'Ada'; arrow() returns undefined, because the arrow captured 'this' from the enclosing (module) scope, not from obj",
-          "Both throw a ReferenceError, since 'this' is never defined",
-          "regular() returns undefined; arrow() returns 'Ada', because arrows are 'smarter' about objects",
-        ]}
-        correctIndex={1}
-        explanation={"this in a regular function is determined by the call site: obj.regular() sets this to obj, so this.name is 'Ada'. Arrow functions never get their own this — they close over whatever this was where they were WRITTEN, which for obj.arrow is the module's top-level scope, not obj. That's why arrow methods on object literals are a common bug source."}
-      />
-
-      <InteractiveChallenge
-        question={"A loop schedules three setTimeout callbacks that each log the loop variable. What logs if the loop uses let, versus var?"}
-        code={`for (let j = 0; j < 3; j++) {
-  setTimeout(() => console.log(j), 10);
-}
-// vs
-for (var i = 0; i < 3; i++) {
-  setTimeout(() => console.log(i), 10);
-}`}
-        language="javascript"
-        options={[
-          "let logs 0, 1, 2 — var logs 3, 3, 3",
-          "Both log 0, 1, 2, since setTimeout always preserves loop order",
-          "Both log 3, 3, 3, since the loop always finishes before any timeout fires",
-          "let logs 3, 3, 3 — var logs 0, 1, 2",
-        ]}
-        correctIndex={0}
-        explanation={"let creates a fresh binding per iteration, so each callback closes over its own j and prints the value it captured: 0, 1, 2. var has exactly one i for the whole loop — every callback closes over that same variable, and by the time any timeout fires (after the loop has already finished), it holds its final value, 3. All three var callbacks print 3."}
-      />
 
       <InfoBox variant="success" title="What You Now Know">
         You've seen — with real, run output — how the three function syntaxes differ in

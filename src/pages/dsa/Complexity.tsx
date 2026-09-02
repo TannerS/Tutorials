@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Complexity() {
   return (
@@ -612,29 +611,6 @@ Calls under 100 ns: 298,989 out of 300,000 (99.663%)`}
         practice, not just in theory.
       </p>
 
-      <InteractiveChallenge
-        question={"A function is described as \"O(n).\" Which statement is the most accurate interpretation?"}
-        options={[
-          "The function always performs exactly n operations, no more and no less",
-          "The function's operation count grows linearly as n grows, though the exact count could be 0.5n, 3n + 20, or any other linear expression",
-          "The function performs at most n² operations",
-          "The function is faster than any O(log n) function for all n"
-        ]}
-        correctIndex={1}
-        explanation={"Big-O describes the growth trend, not an exact operation count — that's the single most common misconception about the notation. O(n) means the operation count scales linearly as n grows; the constant multiplier and lower-order terms are deliberately dropped because they don't change the shape of the curve. (Option C is also technically true for many O(n) functions since n <= n^2, but it's a looser, less useful bound — not what 'O(n)' is asserting.)"}
-      />
-
-      <InteractiveChallenge
-        question={"Naive recursive Fibonacci is commonly called \"O(2^n).\" This lesson measured its real call-count growth ratio at exactly 2.618 every 2 steps of n — not 4.0. What does that tell you?"}
-        options={[
-          "The O(2^n) claim is simply wrong and should never be used",
-          "2.618 = phi^2, so the tight bound is actually Theta(phi^n) where phi ~ 1.618 (the golden ratio) — O(2^n) is still a technically true, but looser, upper bound",
-          "The measurement was flawed because JIT warm-up wasn't long enough",
-          "Fibonacci's complexity depends on the specific JVM being used"
-        ]}
-        correctIndex={1}
-        explanation={"O(2^n) is a valid upper bound for naive Fibonacci (phi^n <= 2^n for all n, since phi ~ 1.618 < 2), but it isn't the tightest one. The measured ratio of 2.618 per 2 steps matches phi^2 precisely, meaning the true growth rate is Theta(phi^n). This is the same O-vs-Theta gap as linear search being 'technically O(n^2)' -- both true, neither the tightest available statement."}
-      />
     </LessonLayout>
   );
 }

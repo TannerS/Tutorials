@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Syntax() {
@@ -641,19 +640,6 @@ public class ArrayExamples {
 
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question="What is the output of the following code?"
-        options={[
-          "3.33",
-          "3",
-          "3.0",
-          "Compilation error"
-        ]}
-        correctIndex={1}
-        explanation="When both operands are integers, Java performs integer division, which truncates the decimal part. So 10 / 3 = 3 (not 3.33). To get a decimal result, at least one operand must be a floating-point type: (double) x / y would give 3.3333..."
-        code={"int x = 10;\nint y = 3;\nSystem.out.println(x / y);"}
-        language="java"
-      />
     </LessonLayout>
   );
 }

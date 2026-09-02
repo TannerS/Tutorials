@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Mui9Theming() {
@@ -235,17 +234,6 @@ shape.borderRadius        4
 components                {}               (was 'overrides' + 'props')`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question="You enable cssVariables and colorSchemes with the defaults, then add a light/dark toggle button wired to setMode from useColorScheme. The button runs without errors but the colours never change. Why?"
-        options={[
-          'colorSchemes needs to list dark explicitly as an object, not true',
-          "The default colorSchemeSelector is 'media', so the scheme is chosen by a prefers-color-scheme media query that JavaScript cannot override — the theme needs colorSchemeSelector: 'class' or a data strategy",
-          'useColorScheme only works inside CssVarsProvider, not ThemeProvider',
-          'setMode requires a page reload to take effect',
-        ]}
-        correctIndex={1}
-        explanation={"With the default 'media' strategy, getColorSchemeSelector('dark') produces @media (prefers-color-scheme: dark). That is a media query evaluated by the browser against the OS setting, and nothing in JavaScript can make it match differently — so setMode updates state and the stored preference while the CSS keeps following the operating system. Switching to colorSchemeSelector: 'class' generates '.dark &' instead, which the provider can control by toggling a class on the root element. This is a common first-time stumble because the API gives no error: setMode is a real function and it really is being called."}
-      />
     </LessonLayout>
   );
 }

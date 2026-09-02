@@ -1,6 +1,5 @@
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Boot4() {
@@ -534,17 +533,6 @@ class HttpClientConfig { }`}
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your Spring MVC app makes 50 downstream HTTP calls per request and is thread-pool bound. What single Boot 3+ setting most helps?"
-        options={[
-          "spring.datasource.hikari.maximum-pool-size: 200",
-          "server.tomcat.threads.max: 500",
-          "spring.threads.virtual.enabled: true — virtual threads let the servlet container hold thousands of concurrent requests waiting on I/O without pinning platform threads",
-          "management.metrics.enable.jvm: true"
-        ]}
-        correctIndex={2}
-        explanation="Enabling virtual threads (Java 21 + Boot 3.2+) lets the servlet container spin up a fresh virtual thread per request. Because virtual threads are cheap and scheduler-multiplexed onto a small number of carrier threads, waiting on I/O costs almost nothing. Bumping the platform-thread pool works up to ~500 threads; virtual threads scale into the tens of thousands. One caveat worth stating precisely: on Java 21-23 a 'synchronized' block held across I/O pins the virtual thread to its carrier, so prefer 'ReentrantLock' there; Java 24's JEP 491 removed that restriction, leaving only native/JNI and class-initializer frames as pin sites."
-      />
     </LessonLayout>
   );
 }

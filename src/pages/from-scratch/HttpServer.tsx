@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function FromScratchHttpServer() {
@@ -405,18 +404,6 @@ client closed after 1 request(s)`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your service returns JSON with a user's display name in it. Almost all responses are fine, but a handful of users report requests that hang until the client times out. Those users' names contain accented characters. What is the bug?"
-        options={[
-          'The JSON serializer is emitting invalid UTF-8 and the client rejects it',
-          'Content-Length is computed with String.length() (UTF-16 chars) but the body is written as UTF-8 bytes, so it under-counts multi-byte characters',
-          'The database connection pool is exhausted for those requests',
-          'The client does not send an Accept-Charset header, so the server waits for one',
-        ]}
-        correctIndex={1}
-        explanation={"A hang that correlates with non-ASCII content is the signature of a byte-versus-character length mismatch. String.length() counts UTF-16 code units; an accented character encodes to two or more bytes in UTF-8, so the declared length is SMALLER than what gets written... which is the /short case, poisoning the connection. If the arithmetic goes the other way -- for example a length computed over a longer buffer than you actually write -- you get the /long case, and the client waits for bytes that never come. The fix is to encode first and measure the byte array: byte[] b = body.getBytes(UTF_8); then declare b.length. Never measure the String."}
-      />
-
       <p>
         So the response writer encodes first and measures the bytes. This is the version everything
         below uses:
@@ -613,18 +600,6 @@ while (true) { Socket s = ss.accept(); ex.submit(() -> handle(s)); }`}
           seven thousand rather than a factor of two.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question="Your service runs on a 16-thread pool. It calls a downstream API that normally takes 50ms. That API degrades to 5 seconds. Your service's CPU is near zero, yet almost every request now times out. Why?"
-        options={[
-          'The CPU is thermally throttling',
-          'All 16 threads are parked waiting on the slow downstream call, so new requests queue with no thread available — the pool size, not the CPU, is the limit',
-          'The downstream API is rejecting your connections',
-          'Garbage collection pauses are blocking the request threads',
-        ]}
-        correctIndex={1}
-        explanation={"Near-zero CPU with everything timing out is the signature of threads blocked on I/O rather than a resource shortage. Sixteen threads each held for 5 seconds means a ceiling of about 3.2 requests per second no matter how many arrive — exactly the 24.46s measurement above, scaled. This is why one slow dependency takes down a service that has nothing to do with it, and why bulkheads exist: give the risky downstream its own small pool so exhausting it cannot starve everything else. Virtual threads change the arithmetic because a parked virtual thread does not hold an OS thread, but they do not remove the need for timeouts and circuit breakers — without those you just queue a much larger number of doomed requests."}
-      />
 
       <h2>Step 6: When You Do Not Know the Length Yet</h2>
 

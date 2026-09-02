@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Data() {
@@ -470,18 +469,6 @@ export default function Contacts() {
 }`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question={"What actually changed for data loading between React Router v7 and v8?"}
-        options={[
-          "useLoaderData() was renamed to useData()",
-          "loader and action were merged into a single resolver function",
-          "The data field on meta() args and useMatches() results was renamed to loaderData; useLoaderData() itself is untouched",
-          "Loaders can no longer run in parallel for nested routes",
-        ]}
-        correctIndex={2}
-        explanation={"Per the real v8.0.0 changelog, the only rename here is narrow: the deprecated data field on MetaArgs/MetaMatch (meta() function args) and on the objects useMatches() returns (UIMatch) was removed in favor of loaderData, completing a deprecation that started in v7.8.0. useLoaderData() and useActionData() were never renamed and behave exactly as they did in v7. Parallel loader execution for nested routes is also unchanged."}
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

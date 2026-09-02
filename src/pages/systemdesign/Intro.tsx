@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -646,18 +645,6 @@ Media bandwidth (reads):          Dominated by CDN`}
         different parts of your system.
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"A social media platform needs to display user feeds across multiple data centers. During a network partition between data centers, the team decides that users should still be able to see their feeds, even if the content might be slightly outdated. Which CAP theorem trade-off is this system making?"}
-        options={[
-          'CP — Choosing consistency over availability',
-          'AP — Choosing availability over consistency',
-          'CA — Choosing consistency over partition tolerance',
-          'CAP — Achieving all three guarantees simultaneously',
-        ]}
-        correctIndex={1}
-        explanation={"This is an AP (Availability + Partition tolerance) system. By allowing users to see potentially stale feeds during a network partition, the system prioritizes availability over strict consistency. This is a common and appropriate trade-off for social media platforms where showing slightly outdated content is far better than showing an error page. Strong consistency would require waiting for all data centers to agree, which would make the system unavailable during partitions."}
-      />
-
       {/* ====== Section 8: Estimation Challenge ====== */}
       <h2>Test Your Knowledge</h2>
 
@@ -667,17 +654,6 @@ Media bandwidth (reads):          Dominated by CDN`}
         challenge.
       </p>
 
-      <InteractiveChallenge
-        question={"You are designing a photo-sharing service with 50 million daily active users. Each user uploads an average of 2 photos per day, and each photo is 2 MB. What is the approximate daily storage requirement for new photos?"}
-        options={[
-          '10 TB per day',
-          '50 TB per day',
-          '100 TB per day',
-          '200 TB per day',
-        ]}
-        correctIndex={3}
-        explanation={"Daily storage = 50 million users × 2 photos/user × 2 MB/photo = 200 million MB = 200 TB per day. This kind of back-of-envelope estimation is critical in system design interviews. It immediately tells you that you need a distributed storage system (like S3 or HDFS), a CDN for serving images, and a strategy for data retention and archival. A single server simply cannot handle this volume of data."}
-      />
     </LessonLayout>
   );
 }

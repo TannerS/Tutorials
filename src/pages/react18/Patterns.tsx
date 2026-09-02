@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Patterns() {
@@ -350,18 +349,6 @@ function MyCombobox() {
 }`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question="You're building a reusable Accordion component. Users need to control which panels are open, customize panel headers, and have multiple panels open simultaneously. Which pattern fits best?"
-        options={[
-          "Higher-Order Component wrapping each panel",
-          "Render props on the Accordion root",
-          "Compound Components with shared context",
-          "A single component with many configuration props"
-        ]}
-        correctIndex={2}
-        explanation="Compound Components shine here: Accordion manages open/close state in context, AccordionItem reads that context to show/hide. Users compose panels declaratively, control order and content freely, and the shared context handles coordination. This avoids prop explosion and gives maximum layout flexibility."
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoKeyWrapping() {
   return (
@@ -332,29 +331,6 @@ data size=  5242880 bytes -> ciphertext size=  5242880 bytes | wrapped DEK size=
         rely on, and what happens when code reaches for the wrong random source instead.
       </p>
 
-      <InteractiveChallenge
-        question={"A company's KEK is suspected to be compromised. They have 50 million encrypted database rows, each with its own DEK wrapped by that KEK. What does rotating the KEK actually require?"}
-        options={[
-          "Decrypt and re-encrypt all 50 million rows of underlying data with a new key",
-          "For each of the 50 million rows, unwrap its small DEK with the old KEK and re-wrap that same DEK with the new KEK -- the row's actual data ciphertext is never touched",
-          "Nothing needs to change -- the KEK compromise doesn't affect stored data",
-          "Generate one new KEK and manually re-encrypt only the rows that were accessed during the suspected compromise window"
-        ]}
-        correctIndex={1}
-        explanation={"This is the entire point of envelope encryption. The DEK's value never changes during KEK rotation -- it's unwrapped with the old KEK and immediately re-wrapped with the new one, byte-identical inside. Since the DEK is unchanged, the data ciphertext it produced is still valid and is never re-read or re-encrypted. The measured proof in this lesson: a wrapped DEK is a constant ~32 bytes of ciphertext regardless of whether the row holds 40 bytes or 5 MB -- that's the fixed cost rotation actually pays, per row, instead of touching the row's real payload."}
-      />
-
-      <InteractiveChallenge
-        question={"In AWS KMS / GCP KMS / Vault's Transit engine, why does the application never receive the KEK (master key) in plaintext, even though it receives the plaintext DEK?"}
-        options={[
-          "It's a performance optimization -- transmitting the KEK would be slower",
-          "The KEK protects every DEK/record in the system, so keeping it inside the KMS's HSM boundary means a compromised application server only exposes whatever DEKs are in memory at that moment, not the master key",
-          "The DEK and KEK are actually the same key, just encoded differently",
-          "Plaintext KEKs cannot be transmitted over TLS for technical reasons"
-        ]}
-        correctIndex={1}
-        explanation={"The KEK is the single point of protection for potentially every record in the system, so its blast radius if exposed is enormous. The KMS pattern is: send the KMS a wrapped DEK, it unwraps internally using the KEK it never exports, and returns you the plaintext DEK over TLS. Your application briefly holds one DEK at a time in memory and never touches the KEK at all -- so a server compromise leaks at most the DEKs currently in use, never the master key protecting everything."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Flexbox() {
@@ -491,44 +490,6 @@ export default function Flexbox() {
 
       <h2>Knowledge Check</h2>
 
-      <InteractiveChallenge
-        question={"What does flex: 1 expand to?"}
-        options={[
-          "flex-grow: 1; flex-shrink: 1; flex-basis: auto;",
-          "flex-grow: 1; flex-shrink: 1; flex-basis: 0%;",
-          "flex-grow: 1; flex-shrink: 0; flex-basis: 0%;",
-          "flex-grow: 1; flex-shrink: 1; flex-basis: 100%;"
-        ]}
-        correctIndex={1}
-        explanation={"flex: 1 is shorthand for flex: 1 1 0%. The key insight is that flex-basis becomes 0%, not auto. This means all items ignore their intrinsic width and divide space purely by flex-grow ratio, giving you truly equal-width columns."}
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question="Which property controls spacing between wrapped flex lines?"
-        options={[
-          "justify-content",
-          "align-items",
-          "align-content",
-          "gap"
-        ]}
-        correctIndex={2}
-        explanation="align-content controls the distribution of space between flex lines on the cross axis when wrapping occurs. justify-content handles the main axis, align-items handles individual item alignment within a line, and gap sets fixed spacing between items but does not distribute remaining space."
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question={"An item has flex: 0 0 250px. What behavior does this produce?"}
-        options={[
-          "The item is 250px wide and can grow or shrink",
-          "The item is exactly 250px wide and will not flex at all",
-          "The item starts at 250px but shrinks if the container is smaller",
-          "The item ignores 250px and uses its content width"
-        ]}
-        correctIndex={1}
-        explanation={"flex: 0 0 250px means flex-grow: 0 (won't grow), flex-shrink: 0 (won't shrink), flex-basis: 250px (starts at 250px). This creates a rigid, fixed-width item — perfect for sidebars or fixed-width panels that should never change size."}
-        language="css"
-      />
     </LessonLayout>
   );
 }

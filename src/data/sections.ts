@@ -117,6 +117,7 @@ export const sections: Section[] = [
       { id: 'imperative-bridge', title: 'Imperative Bridge Patterns', path: '/react18/imperative-bridge' },
       { id: 'module-federation', title: 'Module Federation & MFEs', path: '/react18/module-federation' },
       { id: 'feature-folder', title: 'Feature-Based Architecture', path: '/react18/feature-folder' },
+      { id: 'bulletproof-react', title: 'Bulletproof React — A Concrete File Structure', path: '/react18/bulletproof-react' },
       { id: 'error-boundaries', title: 'Error Boundaries', path: '/react18/error-boundaries' },
       { id: 'animations', title: 'Animation Libraries (Framer Motion & Beyond)', path: '/react18/animations' },
       { id: 'portals', title: 'Portals, In Depth', path: '/react18/portals' },

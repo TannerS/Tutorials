@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Transactions() {
@@ -494,17 +493,6 @@ spring:
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your order service saves an order and calls an external inventory API — all inside one @Transactional method. Under moderate load, the app hangs on 'Connection is not available' errors. Why?"
-        options={[
-          "The connection pool is too small — increase spring.datasource.hikari.maximum-pool-size",
-          "The @Transactional method holds a database connection for the duration of the external HTTP call, so slow downstream calls exhaust the pool. Move the HTTP call outside the transaction.",
-          "The HTTP client isn't configured with a timeout",
-          "You need to add @Async to release the connection"
-        ]}
-        correctIndex={1}
-        explanation="A @Transactional method holds a DB connection from method entry to commit or rollback. If you make an HTTP call inside, the connection stays held for the length of that call. Under load, all connections in the pool are stuck waiting for slow downstream responses, and no new requests can grab one — hence 'Connection is not available'. Raising the pool size hides the symptom until it comes back. The real fix is to shrink the transaction: do the I/O first, then persist the result in a small transaction — or use the transactional-outbox pattern for atomic cross-system operations."
-      />
     </LessonLayout>
   );
 }

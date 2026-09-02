@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function JvmInternals() {
   return (
@@ -421,17 +420,6 @@ Recording 1: name=liveDemo duration=5s (running)`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="During a G1 'Pause Young' stop-the-world collection, what is actually blocked?"
-        options={[
-          "Only the thread that triggered the garbage collection — other threads keep running normally",
-          "Only threads currently allocating new objects; threads doing pure computation are unaffected",
-          "Every application thread in the JVM is suspended for the duration of the pause, regardless of what each thread was doing",
-          "Only I/O operations are paused; CPU-bound work continues uninterrupted"
-        ]}
-        correctIndex={2}
-        explanation="Stop-the-world means exactly that: every application thread is suspended so the collector can scan and move objects without the object graph changing underneath it. It doesn't matter whether a given thread was allocating, computing, or idle — all of them stop for the pause's full duration. That's why a GC pause shows up as added latency across every concurrent request at once, not just the one 'unlucky' thread that happened to trigger the collection."
-      />
     </LessonLayout>
   );
 }

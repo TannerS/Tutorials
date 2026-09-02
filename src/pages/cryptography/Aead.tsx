@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoAead() {
   return (
@@ -268,29 +267,6 @@ public class GcmTamper {
         where the next lesson picks up.
       </p>
 
-      <InteractiveChallenge
-        question={"Why was TLS's old CBC-mode MAC-then-Encrypt construction vulnerable to attacks like Lucky Thirteen, while Encrypt-then-MAC is not?"}
-        options={[
-          "MAC-then-Encrypt uses a weaker MAC algorithm than Encrypt-then-MAC",
-          "In MAC-then-Encrypt, padding is inside the ciphertext, so the receiver must decrypt and check padding before reaching the MAC -- the timing of that check leaks information. Encrypt-then-MAC rejects tampered ciphertext via the MAC before decryption ever runs",
-          "MAC-then-Encrypt only works with RSA, which is inherently insecure",
-          "Encrypt-then-MAC uses a longer key, making brute-force attacks infeasible"
-        ]}
-        correctIndex={1}
-        explanation={"MAC-then-Encrypt (plaintext + MAC, then encrypt the whole thing with CBC) buries the padding inside the ciphertext, so decryption -- and a padding-validity check -- has to happen before the MAC can even be checked. How long that takes is a timing side channel; Lucky Thirteen (AlFardan & Paterson, 2013) turned it into a practical attack against TLS/DTLS. Encrypt-then-MAC computes the MAC over the ciphertext, so a tampered ciphertext is rejected before decryption runs at all -- no padding oracle exists to time. Bellare and Namprempre proved in 2000 that only Encrypt-then-MAC is generically safe regardless of which specific cipher and MAC are plugged in."}
-      />
-
-      <InteractiveChallenge
-        question={"In the AES-256-GCM demo above, Node's decipher.update() returned a provisional (and wrong) plaintext before final() threw, while Java's Cipher.update() returned 0 bytes for the same tampered input. What's the practical lesson?"}
-        options={[
-          "Java's AES-GCM implementation is broken and should not be used",
-          "Node's AES-GCM implementation is insecure because it returns data before verifying the tag",
-          "Both implementations ultimately reject the tampered ciphertext with the same security guarantee -- but code that acts on streaming update() output before the final call succeeds can be exposed to unverified data, depending on the library's buffering strategy",
-          "GCM mode cannot detect single-bit tampering reliably, which is why both languages behave differently"
-        ]}
-        correctIndex={2}
-        explanation={"Both implementations correctly reject the tampered ciphertext -- Node throws in final(), Java throws in doFinal() -- so the security guarantee is identical. The difference is purely a buffering strategy: GCM can't verify the tag until it has seen the whole ciphertext, so any implementation that streams plaintext out via update() before that point is, by construction, handing back data it hasn't verified yet. Node does this and Java doesn't for this particular API, which is exactly why code should only trust output once the final call (final()/doFinal()) has returned successfully, never mid-stream."}
-      />
     </LessonLayout>
   );
 }

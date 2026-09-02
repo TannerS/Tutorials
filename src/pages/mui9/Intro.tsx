@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Mui9Intro() {
@@ -174,18 +173,6 @@ grep -rl "@mui/styles"          # -> capped at v6
 grep -rl "Grid item"            # -> v5/v6 Grid API
 grep -rl "createMuiTheme"       # -> v4 spelling`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="A codebase imports from @mui/material and styles components with makeStyles imported from @mui/styles. What is the most important thing to know about it?"
-        options={[
-          'It is on v4 and needs the full rename before anything else',
-          'It is on v5 or v6, and its dependency on @mui/styles caps it at 6.x — there is no stable @mui/styles for 7 or 9',
-          'It is fully current, since it uses the @mui/ package names',
-          'It cannot work at all, because makeStyles was removed',
-        ]}
-        correctIndex={1}
-        explanation={"The @mui/ import prefix rules out v4, so the rename is already done. But @mui/styles is the JSS bridge, and its highest stable release is 6.5.0 with only 7.0.0 alphas and betas after that. The codebase works fine today and can reach v6, but it cannot go to 7 or 9 while it depends on that package — the remaining work is converting makeStyles to styled()/sx or to tss-react, which is exactly the work the bridge was adopted to postpone. Option 4 is a near miss worth separating: makeStyles is removed from @mui/material/styles and throws there, but the separate @mui/styles package still provides a working one."}
-      />
 
       <h2>What This Section Covers</h2>
 

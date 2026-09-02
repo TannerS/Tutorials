@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoSigningFiles() {
   return (
@@ -299,29 +298,6 @@ Date:   Fri Aug 14 22:13:08 2026 -0500
         by a CA, using the same mechanism you just ran three times above.
       </p>
 
-      <InteractiveChallenge
-        question={"Why do you hash a large file before signing it, rather than feeding the raw file bytes directly into the signature algorithm?"}
-        options={[
-          "Hashing is faster than signing, so it's purely a performance optimization with no other purpose",
-          "RSA and ECDSA mathematically operate on a fixed-size bounded number, not arbitrary-length data — a fixed-size digest is the only kind of input the signature algorithm can accept, and it changes if even one bit of the file changes",
-          "Signing raw bytes would leak the file's contents to anyone who intercepts the signature",
-          "Hashing is required only for files larger than 4GB due to a limit in most signature algorithms"
-        ]}
-        correctIndex={1}
-        explanation={"Signature algorithms like RSA and ECDSA are defined over fixed-size numbers (bounded by the modulus or curve order) — there's no mathematical operation for 'sign this 5GB file' directly. Hashing reduces any input to one fixed-size digest, which is what actually gets signed. Since a cryptographic hash changes completely if even one bit of input changes, a signature over the hash is just as sensitive to tampering as signing the whole file would be, at a fraction of the cost."}
-      />
-
-      <InteractiveChallenge
-        question={"What is the main practical advantage of a detached signature (a separate .sig file) over embedding the signature inside the artifact itself?"}
-        options={[
-          "Detached signatures are cryptographically stronger than embedded ones",
-          "A verifier can check a detached signature using only generic hash-and-verify logic, without needing to understand or parse the artifact's specific file format",
-          "Detached signatures don't require a public key to verify",
-          "Embedding a signature inside a file is not technically possible for binary formats"
-        ]}
-        correctIndex={1}
-        explanation={"A detached signature works identically no matter what the artifact is — a tarball, a container layer, a PDF, a raw binary — because the verifier just hashes the bytes and checks the signature against that hash. Embedding the signature inside the file instead means every consumer needs format-specific logic to locate and strip the signature before hashing the rest. Detached signatures also let you distribute, mirror, or attach multiple signers' signatures to the exact same unmodified artifact."}
-      />
     </LessonLayout>
   );
 }

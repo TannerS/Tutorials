@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Aria() {
@@ -656,32 +655,6 @@ document.getElementById('tablist').addEventListener('keydown', (e) => {
         <code>aria-checked</code>. <strong>progressbar</strong> — exposes a numeric progress value
         through <code>aria-valuenow</code>/<code>min</code>/<code>max</code>.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"You have an icon-only button with an SVG icon. What is the correct accessible pattern?"}
-        options={[
-          "Add role=\"img\" to the SVG",
-          "Add aria-label to the button and aria-hidden to the SVG",
-          "Add alt text to the SVG element",
-          "Add a title attribute to the button"
-        ]}
-        correctIndex={1}
-        explanation={"The button gets aria-label to provide its accessible name, and the SVG gets aria-hidden=\"true\" since it's decorative — the label on the button is what screen readers need. Title attributes are unreliable for accessibility."}
-        language="html"
-      />
-
-      <InteractiveChallenge
-        question={"When should you use aria-live=\"assertive\" instead of \"polite\"?"}
-        options={[
-          "For all dynamic content changes",
-          "For error messages and time-critical alerts only",
-          "When the content is inside a modal",
-          "When using React state updates"
-        ]}
-        correctIndex={1}
-        explanation={"assertive interrupts whatever the screen reader is currently saying — use it only for critical errors, session timeouts, or urgent alerts. For everything else (search results, status updates, toasts), use polite so you don't disrupt the user's workflow."}
-        language="html"
-      />
 
     </LessonLayout>
   );

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Patterns() {
@@ -355,19 +354,6 @@ jobs:
         This lesson only adds what&apos;s specific to API-layer black-box tooling and the
         parallel/flaky concerns unique to running real HTTP tests at CI scale.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A test does Thread.sleep(2000) then checks if an async-indexed order is searchable. Under CI load the indexing sometimes takes longer, and the test flakes. What's the right fix?"}
-        options={[
-          "Increase the sleep to 5000ms",
-          "Retry the whole test method up to 3 times",
-          "Replace the sleep with Awaitility's await().atMost(...).untilAsserted(...) to poll until the condition holds or a timeout is hit",
-          "Remove the assertion since async behavior can't be tested reliably"
-        ]}
-        correctIndex={2}
-        explanation="A longer fixed sleep just moves the flakiness threshold rather than fixing it, and wastes time when indexing is fast. Awaitility polls repeatedly up to a bounded timeout, succeeding as soon as the condition is true and failing with a clear message if it never is — the correct tool for eventual-consistency assertions."
-        language="java"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

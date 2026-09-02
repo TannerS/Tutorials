@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function ZustandAdvanced() {
@@ -521,19 +520,6 @@ const useBearStore = create<BearState>(
         it&apos;s common to default to it everywhere so adding middleware later never means
         revisiting the call site.
       </p>
-
-      <InteractiveChallenge
-        question={"A component reads three fields from a Zustand store: useStore(s => ({ user: s.user, theme: s.theme, cart: s.cart })). It re-renders on every keystroke anywhere else in the app that touches the store, even fields it never reads. What's actually wrong, and what's the fix?"}
-        options={[
-          'The store needs immer middleware to fix the re-renders',
-          'The selector returns a new object every call, so Object.is always sees a change — wrap it in useShallow, or select the three fields with three separate calls',
-          'The component needs to be wrapped in React.memo',
-          'Zustand stores should never hold more than one field',
-        ]}
-        correctIndex={1}
-        explanation="immer solves deep-update immutability, not selector equality — unrelated problem. React.memo can't help because the PROPS (the selector's return value) genuinely change identity every render, so memo sees a real diff and re-renders anyway. The actual cause is the object literal: { user: ..., theme: ..., cart: ... } is a brand-new object reference on every single call, so Object.is(prev, next) is always false regardless of whether user, theme, or cart actually changed. Either call useStore three separate times (one field each) or wrap the whole selector in useShallow so the comparison happens one level deep instead of by reference."
-        language="tsx"
-      />
 
       <h2>Key Principles</h2>
       <p>

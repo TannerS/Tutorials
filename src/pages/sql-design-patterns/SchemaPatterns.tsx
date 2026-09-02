@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function SchemaPatterns() {
@@ -346,31 +345,6 @@ WHERE path <@ 'electronics.computers';`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A comments table needs to attach to posts, photos, or videos. Which approach gives the database real referential integrity (no orphaned comments possible)?"
-        options={[
-          'A single commentable_type VARCHAR + commentable_id INT with no foreign key',
-          'Separate join tables (post_comments, photo_comments, ...) each with a real REFERENCES constraint',
-          'Store the target table name and ID as a JSON blob',
-          'A trigger that periodically checks for orphans',
-        ]}
-        correctIndex={1}
-        explanation="Only a real REFERENCES constraint lets the database itself guarantee the referenced row exists and cascades correctly on delete. A polymorphic type+id column can't have a single FK target, and periodic orphan checks are a detection mechanism, not prevention."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question="Which hierarchical data strategy makes 'read the entire subtree' a single non-recursive query but makes inserting a new node expensive?"
-        options={[
-          'Adjacency list (parent_id column)',
-          'Nested set (lft/rgt bounds)',
-          'ltree extension',
-          'EAV attributes table',
-        ]}
-        correctIndex={1}
-        explanation="Nested set encodes tree position as left/right numeric bounds, so subtree reads are a single BETWEEN query. The cost is that inserting or moving a node requires renumbering lft/rgt for every node to its right — expensive on frequently-changing trees."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

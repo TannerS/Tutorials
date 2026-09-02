@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Fullapp() {
@@ -470,19 +469,6 @@ src/
         tests (<code>createMemoryRouter</code> with the same route array) and
         keeps <code>main.jsx</code> clean.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"Where should ScrollRestoration be placed in a React Router v7 app?"}
-        options={[
-          "In main.jsx, above RouterProvider",
-          "In the root layout component, after all content",
-          "In every page component that needs scroll behavior",
-          "In the router config as a route property",
-        ]}
-        correctIndex={1}
-        explanation={"ScrollRestoration should be placed once, inside your root layout component, after all rendered content. It uses sessionStorage to track scroll positions and automatically restores them during back/forward navigation. It only works with createBrowserRouter."}
-        language="jsx"
-      />
 
       <h2>Loading States with useNavigation</h2>
       <CodeBlock language="jsx" title="Global and Local Loading Indicators">

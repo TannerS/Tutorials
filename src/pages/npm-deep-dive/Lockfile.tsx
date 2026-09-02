@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Lockfile() {
@@ -293,30 +292,6 @@ npm install`}
 # All three serve the same purpose:
 # Pin exact versions for reproducible installs`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="Your CI pipeline runs 'npm install' instead of 'npm ci'. What risk does this create?"
-        options={[
-          "No risk — they do the same thing",
-          "npm install is slower so CI takes longer",
-          "npm install might resolve newer versions than the lockfile specifies, creating inconsistency",
-          "npm install skips security checks"
-        ]}
-        correctIndex={2}
-        explanation="npm install reads package.json ranges and may resolve to newer versions than what's in the lockfile, potentially updating the lockfile. This means CI could test different code than what developers have locally. npm ci reads ONLY the lockfile and fails if there's a mismatch, guaranteeing reproducibility."
-      />
-
-      <InteractiveChallenge
-        question="What does the 'integrity' field in package-lock.json protect against?"
-        options={[
-          "Packages being deleted from the registry",
-          "Network errors during download",
-          "Tampered or corrupted package contents",
-          "Version conflicts between dependencies"
-        ]}
-        correctIndex={2}
-        explanation="The integrity field contains a SHA-512 hash of the package tarball. When npm downloads or reads a package from cache, it computes the hash and compares it to the lockfile. If they don't match, the package has been tampered with or corrupted, and npm refuses to install it."
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

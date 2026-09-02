@@ -2,14 +2,13 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Portals() {
   return (
     <LessonLayout
       title="Portals, In Depth"
       sectionId="react18"
-      lessonIndex={21}
+      lessonIndex={22}
       prev={{ path: '/react18/animations', label: 'Animation Libraries (Framer Motion & Beyond)' }}
       next={{ path: '/react18/ag-grid', label: 'AG Grid — Data Tables at Scale' }}
     >
@@ -329,44 +328,6 @@ function PortaledTooltip() {
         </tbody>
       </table>
 
-      <InteractiveChallenge
-        question="A portal renders a <button> directly into document.body. An ancestor several levels up in the React tree (but nowhere in the DOM tree) has an onClick handler. What happens when the button is clicked, verified by actually running it?"
-        options={[
-          "Nothing — DOM event bubbling can't reach a handler on an element that isn't a DOM ancestor",
-          "The ancestor's onClick fires, because React dispatches events along the React tree's ancestry, not the DOM tree's",
-          "It throws an error, because portaled elements aren't allowed to have ancestor handlers",
-          "Only the button's own handler fires; ancestor handlers need the element to be a literal DOM descendant"
-        ]}
-        correctIndex={1}
-        explanation="Verified live: even though document.body.contains-style checks confirm the button is nowhere inside the ancestor's actual DOM subtree, clicking it fires both the button's own handler and the React-tree ancestor's onClick. React's synthetic event system dispatches along the component tree it renders, not the physical DOM structure — that's the entire point of a portal: different DOM location, same React tree."
-        language="jsx"
-      />
-
-      <InteractiveChallenge
-        question="A tooltip is rendered as a normal DOM child inside a card with overflow: hidden and position: relative. What actually happens to it, verified with document.elementFromPoint hit-testing?"
-        options={[
-          "React automatically detects the overflow and renders it via a portal instead",
-          "It has a real bounding box and exists in the DOM, but the browser's paint clips it — hit-testing at its coordinates returns the ancestor, not the tooltip",
-          "The overflow: hidden only affects text content, not positioned children",
-          "It renders fine as long as z-index is set high enough"
-        ]}
-        correctIndex={1}
-        explanation="Verified directly: getBoundingClientRect() on the non-portaled tooltip returns real coordinates, but document.elementFromPoint() at those same coordinates returned <html>, not the tooltip — proving it's genuinely clipped from the actual rendered page, not just visually offset. z-index doesn't fix this because overflow: hidden clips at the box level, before stacking order is even considered. A portal into document.body sidesteps the clipping ancestor entirely."
-        language="jsx"
-      />
-
-      <InteractiveChallenge
-        question="A modal is built with createPortal but no explicit focus handling code. A sighted mouse user opens it and it looks correct. What's actually broken, verified by checking document.activeElement and pressing Tab?"
-        options={[
-          "Nothing — createPortal automatically moves and traps focus for accessibility",
-          "Focus silently stays on the now-hidden trigger button behind the modal, and Tab moves focus into unrelated page content behind the modal instead of into it",
-          "The modal fails to render at all for keyboard users",
-          "Tab presses are blocked entirely until JavaScript adds a focus trap"
-        ]}
-        correctIndex={1}
-        explanation="Verified live with a naive portal-based modal: after opening it, document.activeElement was still the trigger button, now visually hidden behind the modal. Pressing Tab once moved focus straight into a page element positioned after the trigger in DOM order — completely skipping the modal's own buttons. createPortal only relocates DOM output; it has no opinion on focus. Moving focus in on open, trapping Tab within the dialog, and restoring focus on close all have to be written explicitly (or provided by a library like Radix UI or React Aria)."
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

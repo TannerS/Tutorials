@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Branching() {
   return (
@@ -622,41 +621,6 @@ $ git log --graph --oneline --all
         actually gets drawn.
       </p>
 
-      <InteractiveChallenge
-        question={"A branch ref file is roughly 41 bytes and creating 50 branches took 0.01s of actual CPU time in the demo above. What does this concretely explain about git workflows?"}
-        options={[
-          "Why git repos eventually need to be deleted and recreated",
-          "Why creating many short-lived branches per feature/bugfix/experiment is normal practice — a branch is a tiny pointer write, not a copy of the codebase, unlike older centralized systems where branching meant copying the whole tree server-side",
-          "Why git branches expire automatically after a fixed time",
-          "Why branch names must be short"
-        ]}
-        correctIndex={1}
-        explanation={"Verified directly: .git/refs/heads/feature was 41 bytes, and creating 50 additional branches consumed 0.01s of CPU time (0.756s wall-clock was almost entirely process-spawn overhead from the shell loop, not git). Because a branch is just a tiny text file, not a codebase copy, git-based workflows default to creating branches liberally — one per feature, bugfix, or even short experiment — and discarding them just as cheaply."}
-      />
-
-      <InteractiveChallenge
-        question={"Alice pushes commits to a shared branch. Bob pulls them and adds his own commit on top. Alice then rebases her already-pushed commits and force-pushes. What actually happens when Bob runs git pull?"}
-        options={[
-          "It succeeds silently with no issues",
-          "Git refuses outright ('fatal: Need to specify how to reconcile divergent branches'), because Bob's history and the rewritten remote history no longer share the same commit hashes past their common ancestor — even though the underlying content is identical",
-          "Bob's local commit is automatically deleted to match the remote",
-          "Git automatically detects the rebase and silently discards Alice's duplicate content"
-        ]}
-        correctIndex={1}
-        explanation={"Reproduced with two real clones: after Alice's force-push, Bob's `git pull origin main` printed exactly 'fatal: Need to specify how to reconcile divergent branches.' Choosing --no-rebase (merge) to resolve it produced a real conflict at the seam where Bob's own commit met the rewritten history, and the final log showed Alice's change permanently duplicated under two different commit hashes, stitched together by an unplanned merge commit. This is the concrete mechanism behind 'never rebase commits someone else has already pulled.'"}
-      />
-
-      <InteractiveChallenge
-        question={"In the real conflict markers below, what does the text between <<<<<<< HEAD and ======= represent?\n\n<<<<<<< HEAD\ntimeout = 10\n=======\ntimeout = 60\n>>>>>>> increase-timeout"}
-        options={[
-          "The version from the branch being merged in (increase-timeout)",
-          "The version on the branch currently checked out (HEAD) — here, main's timeout = 10; the block after ======= down to the >>>>>>> line is the incoming branch's version",
-          "Both blocks are from the incoming branch, shown twice for comparison",
-          "A diff format that must be manually converted before resolving"
-        ]}
-        correctIndex={1}
-        explanation={"Verified directly against the real merge: main was checked out and had 'timeout = 10' — that's the text between <<<<<<< HEAD and =======. The increase-timeout branch had 'timeout = 60' — that's the text between ======= and >>>>>>> increase-timeout. Resolving means deleting all three marker lines and leaving whichever final content is correct (or a combination), then git add and git commit to finish the merge."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Variables() {
@@ -631,44 +630,6 @@ p { overflow-wrap: break-word; text-wrap: pretty; }
         chart={"graph TD\n  START[Styling decision] --> VARS{Dynamic value?}\n  VARS -->|Yes| CP[Custom Properties]\n  VARS -->|No| STATIC[Static value]\n  CP --> ANIM{Animate it?}\n  ANIM -->|Yes| PROP[\"@property typed registration\"]\n  ANIM -->|No| THEME{Theming?}\n  THEME -->|Yes| TOKEN[Semantic tokens + dark mode]\n  THEME -->|No| SCOPE{Scope issues?}\n  SCOPE -->|Yes| LAYER{Cascade conflict?}\n  LAYER -->|Yes| ATLAYER[\"@layer\"]\n  LAYER -->|No| ATSCOPE[\"@scope\"]\n  SCOPE -->|No| NEST[Native nesting]\n  START --> SEL{Complex selector?}\n  SEL -->|Parent-based| HAS[:has]\n  SEL -->|Grouping| ISWR[:is / :where]\n  style CP fill:#1a2744\n  style PROP fill:#3b1a1a\n  style TOKEN fill:#1a3329\n  style HAS fill:#3d2f14\n  style ATLAYER fill:#1a3329"}
       />
 
-      <InteractiveChallenge
-        question={"What is the key difference between :is() and :where() in CSS?"}
-        options={[
-          ":is() only works with classes, :where() works with any selector",
-          ":is() takes the specificity of its most specific argument, :where() has zero specificity",
-          ":where() is faster because it skips specificity calculations",
-          ":is() supports nesting but :where() does not"
-        ]}
-        correctIndex={1}
-        explanation={"Both accept the same selectors and match identically. The only difference is specificity: :is(.foo, #bar) has specificity (1,0,0) from #bar, while :where(.foo, #bar) has (0,0,0). This makes :where() ideal for defaults that should be easy to override."}
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question={"Why does @property make custom properties animatable?"}
-        options={[
-          "It adds !important to custom property declarations",
-          "It pre-computes all intermediate values at parse time",
-          "It declares the value type so the browser can interpolate between states",
-          "It converts custom properties into standard CSS properties"
-        ]}
-        correctIndex={2}
-        explanation={"Without @property, the browser treats custom properties as opaque strings — it cannot interpolate '0deg' to '180deg' because it doesn't know they're angles. The syntax descriptor declares the type, enabling smooth intermediate value computation during transitions."}
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question={"Among NORMAL (non-!important) declarations, which styles have the highest priority?"}
-        options={[
-          "Styles in the first declared layer",
-          "Styles in the last declared layer",
-          "Unlayered styles not in any @layer",
-          "Styles with the highest selector specificity"
-        ]}
-        correctIndex={2}
-        explanation={"For normal declarations, unlayered styles beat layered styles regardless of specificity or layer order, and among layered styles the later-declared layer wins — the order declaration (@layer reset, base, components, utilities) defines that priority. The question says NORMAL for a reason: !important inverts both halves of this rule. Between two important declarations, the LAYERED one beats the unlayered one, and the EARLIER layer beats the later one."}
-        language="css"
-      />
     </LessonLayout>
   );
 }

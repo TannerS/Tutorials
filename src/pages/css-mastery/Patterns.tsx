@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Patterns() {
@@ -195,14 +194,6 @@ export default function Patterns() {
       </CodeBlock>
       <p><strong>Why it works:</strong> <code>place-items: center</code> on a grid centers the child on both axes. <code>min(90vw, 500px)</code> keeps it responsive.</p>
 
-      <InteractiveChallenge
-        question={"Which single CSS declaration centers a child both horizontally and vertically inside a grid container?"}
-        options={["justify-content: center", "align-items: center", "place-items: center", "margin: 0 auto"]}
-        correctIndex={2}
-        explanation="place-items: center is shorthand for align-items + justify-items, centering on both axes."
-        language="css"
-      />
-
       {/* ───── 7. Toast Notifications ───── */}
       <h2>7. Toast Notification Positioning</h2>
       <CodeBlock language="css" title="Toasts — CSS">
@@ -337,19 +328,6 @@ export default function Patterns() {
    just whatever 1fr of the CONTENT width happens to be. */`}
         </CodeBlock>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"What CSS makes an element break out of a centered container to full viewport width?"}
-        options={[
-          "width: 100%; margin: 0;",
-          "width: 100vw; margin-left: calc(50% - 50vw);",
-          "position: absolute; left: 0; right: 0;",
-          "max-width: none;"
-        ]}
-        correctIndex={1}
-        explanation="The calc trick offsets the left margin by the exact distance from container edge to viewport edge, then 100vw spans the full viewport."
-        language="css"
-      />
 
       {/* ───── 12. Pricing Table ───── */}
       <h2>12. Pricing Table Layout</h2>

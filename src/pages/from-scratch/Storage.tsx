@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function FromScratchStorage() {
@@ -536,18 +535,6 @@ SQLite       PRAGMA synchronous = FULL | NORMAL | OFF
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your service acknowledges a write after appending to a log file with a BufferedWriter, but never calls flush() or fsync(). The pod is OOM-killed by Kubernetes (SIGKILL). What do you lose?"
-        options={[
-          'Nothing — the OS writes the file out regardless',
-          'Only writes from the last second or so, since the OS flushes frequently',
-          'Everything still sitting in the BufferedWriter, because that buffer died with the process',
-          'The entire file, because it was never closed properly',
-        ]}
-        correctIndex={2}
-        explanation={"A SIGKILL destroys the process and every byte of its address space, and a BufferedWriter's buffer lives in that address space. The measurement above is exactly this case: 285 records acknowledged, zero on disk. Note what the other options get wrong. Option 1 is true only for bytes that reached the kernel via a write(2) syscall — the page-cache row of the experiment, which survived kill -9 completely. Option 2 describes fsync-once-a-second (MySQL's flush_log_at_trx_commit=2), which is a different configuration than the one described. Option 4 is wrong because closing a file is not what makes data durable; the syscall is, and previously flushed data is already safe. The uncomfortable part is that this bug is invisible in testing — it only appears under an ungraceful kill, which is precisely what a production OOM is."}
-      />
-
       <p>
         There is one more thing wrong with the write path, and it is the one that turns a
         crash from &ldquo;lost the last write&rdquo; into &ldquo;the database will not
@@ -692,18 +679,6 @@ recovered 2 live keys from 2 log records (58 bytes)`}
           200,000.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question="A log record's header survives a crash intact, its 4-byte length field says 400 bytes, and there are exactly 400 bytes after it in the file — but only the first 200 were actually flushed before the power died; the rest is whatever was in that disk block already. What catches this?"
-        options={[
-          'The length prefix — the arithmetic will not add up',
-          'Nothing, but it is harmless because the record will fail to parse',
-          'The checksum, because the stored CRC will not match the bytes that are there',
-          'The filesystem, which guarantees writes are all-or-nothing',
-        ]}
-        correctIndex={2}
-        explanation={"The length prefix only proves the record is the size it claims to be, and here it is — 400 bytes are present. They are simply not all the RIGHT 400 bytes. Only a checksum computed over the payload before the write and verified after can tell that the content changed, which is exactly the bit-flip experiment above: valid framing, wrong bytes, silently served. Option 2 is the dangerous assumption — stale block contents can parse perfectly into a plausible key and value, which is worse than a parse failure, not better. Option 4 is a common and expensive misconception: most filesystems guarantee atomicity only for a single sector, and often not even that. Databases assume torn writes are possible and defend against them rather than trusting the layer below."}
-      />
 
       <p>
         The store is now durable and it can tell corrupt bytes from real ones. It has a
@@ -898,18 +873,6 @@ GET key:1 -> null                 # deleted key stayed deleted`}
         is why a null value in a compacted topic is called a tombstone there too.
       </p>
 
-      <InteractiveChallenge
-        question="A log-structured store compacts by keeping only the newest record per key. During compaction of an old segment it finds a PUT for user:7 and no tombstone anywhere in that segment. Can it drop the PUT?"
-        options={[
-          'Yes — if there is no tombstone in the segment, the key was never deleted',
-          'No — a newer segment may hold a newer PUT or a tombstone for that key, so the decision needs the newer segments too',
-          'Yes, but only if the segment is older than the retention window',
-          'No, because compaction may never drop a PUT record under any circumstances',
-        ]}
-        correctIndex={1}
-        explanation={"Records for one key are spread across segments in write order, so an old segment simply cannot see its own future. A newer segment may contain a newer PUT (making this one superseded) or a tombstone (making it deleted), and either way the old record must go — but neither fact is visible from inside the old segment alone. This is why real compaction merges a RANGE of segments and resolves each key across all of them, rather than cleaning files independently, and why merging is the part of an LSM engine where all the difficulty lives. Option 3 confuses compaction with retention: Kafka offers both, and they are different policies — retention drops old data by age regardless of liveness, compaction drops superseded data regardless of age."}
-      />
-
       <p>
         One thing has been quietly assumed for the last three steps: that a read is cheap. It is
         worth checking whether that is true.
@@ -985,18 +948,6 @@ String get(String key) throws IOException {
         &quot;this segment definitely does not contain your key&quot; without touching the disk at
         all.
       </p>
-
-      <InteractiveChallenge
-        question="Your log-structured store keeps every key in an in-memory hash index. Reads are fast, but the service now takes four minutes to start. What is the most likely cause, and the right fix?"
-        options={[
-          'The disk is failing — replace the hardware',
-          'Startup replays the entire log to rebuild the index, so boot time grows with total write history; the fix is compaction plus periodic snapshots of the index',
-          'The index hash function is too slow — switch to a faster hash',
-          'The JVM heap is too small — increase -Xmx',
-        ]}
-        correctIndex={1}
-        explanation={"Rebuilding the index is a full replay of the log, so startup time is proportional to how much has ever been written rather than to how much data currently exists — a store holding 1,000 live keys can still take minutes to boot if those keys were overwritten ten million times. Compaction fixes the underlying cause by collapsing superseded records so the log reflects live data instead of full history; snapshotting the index (or the hint files Bitcask writes alongside each segment) fixes the symptom by letting startup load a prebuilt index and replay only the tail. A bigger heap or faster hash does not help, because the cost is reading and parsing the whole file, not hashing."}
-      />
 
       <h2>What You Just Built, In Real Names</h2>
 

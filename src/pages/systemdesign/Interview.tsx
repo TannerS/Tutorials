@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Interview() {
@@ -606,18 +605,6 @@ export default function Interview() {
         </li>
       </ul>
 
-      <InteractiveChallenge
-        question={"During a system design interview, you realize your initial design will not handle the required scale. What should you do?"}
-        options={[
-          'Start over with a completely new design from scratch',
-          'Acknowledge the limitation, explain why it fails at scale, and evolve the design to address it',
-          'Hope the interviewer does not notice the scalability issue',
-          'Immediately jump to discussing database sharding without explaining the context'
-        ]}
-        correctIndex={1}
-        explanation={"Interviewers want to see you identify problems in your own design and iterate systematically. Acknowledging a limitation shows self-awareness, and evolving the design demonstrates real problem-solving ability. Starting over wastes precious interview time, and hiding problems destroys trust immediately."}
-      />
-
       {/* ===== Section 11: Handling Unknown Topics ===== */}
       <h2>Handling Unknown Topics</h2>
 
@@ -730,18 +717,6 @@ export default function Interview() {
         interesting. Showing that you can prioritize under pressure is itself a
         positive signal.
       </p>
-
-      <InteractiveChallenge
-        question={"You are 25 minutes into a 45-minute interview and have not started the deep dive yet. What is the best approach?"}
-        options={[
-          'Rush through the remaining content as fast as possible',
-          'Ask the interviewer for extra time to finish your design',
-          'Quickly summarize your high-level design, then prioritize the single most critical deep-dive topic',
-          'Skip the deep dive entirely and go straight to the wrap-up phase'
-        ]}
-        correctIndex={2}
-        explanation={"When time is tight, prioritize demonstrating depth on at least one critical component rather than rushing or skipping. A concise summary of your high-level design shows you have the complete picture, and a focused deep dive on the most important area demonstrates genuine technical depth. Interviewers prefer quality insight over shallow coverage."}
-      />
 
       <h2>Final Thoughts</h2>
 

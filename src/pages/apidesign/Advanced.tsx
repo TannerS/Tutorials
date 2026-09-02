@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Advanced() {
@@ -653,30 +652,6 @@ components:
         <p><strong>Security:</strong> Input validation, CORS configured, security headers set</p>
         <p><strong>Performance:</strong> Response times measured, caching strategy in place</p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A client sends a POST request to create a payment, receives a network timeout, and does not know if the payment was processed. What pattern prevents a duplicate charge on retry?"}
-        options={[
-          "The client should just not retry — timeouts mean the server crashed",
-          "Use an idempotency key header so the server recognizes the retry",
-          "Switch to GET requests for payments since GET is idempotent",
-          "Always use synchronous processing so timeouts cannot occur"
-        ]}
-        correctIndex={1}
-        explanation={"Idempotency keys solve exactly this problem. The client includes a unique key (Idempotency-Key header) with each payment request. If the server already processed a request with that key, it returns the cached response instead of charging again. Stripe, PayPal, and all major payment APIs use this pattern."}
-      />
-
-      <InteractiveChallenge
-        question={"You need to build an API that generates large reports taking 2-5 minutes. What is the correct pattern?"}
-        options={[
-          "Set the HTTP timeout to 10 minutes and make the client wait",
-          "Return 202 Accepted immediately with a task ID, and let the client poll for completion",
-          "Generate the report synchronously but compress it to make the response faster",
-          "Break the report into small pages and return one page per request"
-        ]}
-        correctIndex={1}
-        explanation={"The async request pattern is correct for long-running operations. Return 202 Accepted immediately with a task resource URL. The client can poll the task endpoint or receive a webhook when complete. This avoids HTTP timeouts, keeps connections free, and provides progress visibility."}
-      />
 
     </LessonLayout>
   );

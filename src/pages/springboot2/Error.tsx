@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function SpringBoot2Error() {
@@ -647,29 +646,6 @@ class CustomerControllerErrorTest {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You copy a Boot 4 tutorial's error handler into a Spring Boot 2.7.18 project: ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, 'not found'). What happens?"
-        options={[
-          "It works identically — ProblemDetail has been part of Spring Framework since 5.0",
-          "It compiles but throws NoSuchMethodError at runtime because the method signature changed between versions",
-          "It fails to compile — package org.springframework.http does not export a class named ProblemDetail on Framework 5.3.x, verified by the absence of ProblemDetail.class in spring-web-5.3.31.jar",
-          "It compiles and runs, but silently falls back to the classic {timestamp,status,error,path} shape"
-        ]}
-        correctIndex={2}
-        explanation="ProblemDetail is a Spring Framework 6.0 class. Boot 2.7.18 depends on Framework 5.3.x, and spring-web-5.3.31.jar simply does not contain org/springframework/http/ProblemDetail.class — checked directly against the published jar. This is a compile error ('cannot find symbol: class ProblemDetail'), not a runtime surprise and not a silent fallback: the import itself doesn't resolve. The idiomatic Boot 2 substitute is a hand-written response DTO (this page calls it ApiError) built by a @RestControllerAdvice — less standardized than ProblemDetail, which is exactly why every Boot 2 codebase's version looks a little different, and why reading someone else's version is a skill worth having before you assume it's 'wrong'."
-      />
-
-      <InteractiveChallenge
-        question={'A teammate is confused: a Boot 2.7.18 service throws an unhandled NullPointerException, but curl against the endpoint shows only {"timestamp":...,"status":500,"error":"Internal Server Error","path":"/api/x"} — no message, no stack info. They assume logging is broken. What\'s actually happening?'}
-        options={[
-          "Logging IS broken — check the logging.level configuration",
-          "server.error.include-message defaults to 'never' as of Boot 2.3 (verified: the property doesn't even exist in 2.1/2.2 metadata, and defaults to never from its introduction through 2.7.18) — the message is deliberately withheld from the HTTP response, not from the logs",
-          "The exception needs @ResponseStatus to be reported at all",
-          "DefaultErrorAttributes only activates once a custom @ControllerAdvice is registered"
-        ]}
-        correctIndex={1}
-        explanation="This is a response-shaping default, not a logging problem — the two are unrelated. Spring Boot's own configuration metadata confirms server.error.include-message and server.error.include-binding-errors were introduced in Boot 2.3 (absent entirely in 2.1 and 2.2's metadata) with a default of never, unchanged all the way through 2.7.18. That default hides the exception message and validation field errors from the JSON body specifically — the server-side stack trace still logs normally through the usual exception-resolution path. Flipping both properties to always does surface the raw internals (this page shows the real curl output), but the better fix for anything client-facing is a @RestControllerAdvice that builds its own message deliberately, which is what removes the need to touch these properties at all."
-      />
     </LessonLayout>
   );
 }

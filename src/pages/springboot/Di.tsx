@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Di() {
@@ -704,17 +703,6 @@ class ApplicationSmokeTest {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You add @Transactional to method B in service A, but changes aren't being rolled back on error when method A calls this.B(). Why?"
-        options={[
-          "You forgot @EnableTransactionManagement on your config class",
-          "@Transactional doesn't work on private methods, which B must be",
-          "Self-invocation via 'this' bypasses the Spring AOP proxy, so the transaction annotation is silently ignored",
-          "You need to set propagation = REQUIRES_NEW explicitly"
-        ]}
-        correctIndex={2}
-        explanation="This is the self-invocation trap — the single most common Spring gotcha. Spring adds transactional behavior via a proxy that wraps your bean. When code inside the bean calls its own methods with 'this.b()', it bypasses that proxy. Fix by extracting method B into a separate service, injecting the bean into itself (with @Lazy to break the cycle), or restructuring so the call comes from outside."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function MuiStylingV4() {
@@ -727,32 +726,6 @@ function Panel({ isLoading, data }) {
         relying on argument order to win a fight, you are not actually fixing anything; go back to the
         diagnosis chart above.
       </p>
-
-      <InteractiveChallenge
-        question={"You add className={classes.outline} to an outlined TextField to change its border color, and nothing changes. DevTools shows your class on the element, and shows your rule struck through, beaten by .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline. What is the correct fix?"}
-        options={[
-          "Add !important to the border-color declaration",
-          "Move the makeStyles call inside the component so it is created later",
-          "Write the override as a descendant selector anchored on your own class — '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline' — so your selector is more specific than MUI's",
-          "Wrap the app in StylesProvider injectFirst",
-        ]}
-        correctIndex={2}
-        explanation={"MUI's selector is 0,3,0; a bare .makeStyles-outline-1 is 0,1,0, so no amount of reordering helps — this is a specificity loss, not an ordering loss. Anchoring the same selector on your own class raises yours to 0,4,0 and it wins. !important works but escalates a war you will keep re-fighting. Moving makeStyles inside the component is the performance bug from the gotchas section and does not change specificity. injectFirst fixes ordering against non-JSS stylesheets, which is a different failure mode entirely."}
-        language="jsx"
-      />
-
-      <InteractiveChallenge
-        question={"In makeStyles({ focused: {}, label: { '&$focused': { color: 'red' } } }), why is the empty focused: {} rule required rather than removable dead code?"}
-        options={[
-          "It reserves the name so JSS does not warn about an unknown rule",
-          "$focused compiles to the generated class name of the sibling 'focused' rule — with no such rule there is no class name to substitute, so the selector never forms",
-          "Empty rules are how JSS marks a rule as dynamic",
-          "It is a TypeScript requirement, and can be deleted in plain JavaScript",
-        ]}
-        correctIndex={1}
-        explanation={"$ruleName is a compile-time reference to a sibling rule's generated class. The empty rule exists purely so JSS mints a class name (MyThing-focused-2) that $focused can resolve to, and that you can then apply conditionally with clsx. A real render confirms the output: .MyThing-label-3.MyThing-focused-2 { color: red; }. Delete the empty rule and the compound selector silently fails to materialise — no error, just no styling."}
-        language="jsx"
-      />
 
       <InfoBox variant="tip" title="Next">
         Every example above leaned on <code>theme.spacing</code>, <code>theme.palette</code>,{' '}

@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoCertificateIssuance() {
   return (
@@ -275,29 +274,6 @@ issuer=CN=Example Lesson Root CA, O=Example Lesson Co`}
         implemented by hand.
       </p>
 
-      <InteractiveChallenge
-        question={"A CSR (Certificate Signing Request) is signed by the applicant's own private key before being sent to a CA. What does that self-signature actually prove?"}
-        options={[
-          "It proves the CA has already verified the applicant's identity",
-          "It proves the applicant possesses the private key matching the public key in the CSR — it is proof of possession, not an identity guarantee",
-          "It proves the domain named in the CSR is currently reachable over HTTPS",
-          "It is purely decorative and CAs ignore it"
-        ]}
-        correctIndex={1}
-        explanation={"The CSR's self-signature demonstrates that whoever submitted it actually controls the private key paired with the public key inside — otherwise the CA could end up certifying a public key on behalf of someone who doesn't hold the corresponding private key. It says nothing about identity; that's a separate step (domain validation via ACME's HTTP-01/DNS-01, or human verification for OV/EV certs) that happens before the CA will sign anything with its own key."}
-      />
-
-      <InteractiveChallenge
-        question={"What is structurally different between signing a plain message (the Signatures lesson) and signing a certificate?"}
-        options={[
-          "Certificates require a completely different signature algorithm than messages do",
-          "Nothing about the cryptographic operation — it's the same sign/verify primitive (e.g. ecdsa-with-SHA256) applied to a different payload: a structure containing a public key and identity information instead of an arbitrary message",
-          "Certificate signing requires a hardware security module; message signing does not",
-          "Certificates are encrypted in addition to being signed, unlike plain messages"
-        ]}
-        correctIndex={1}
-        explanation={"A CA issuing a certificate runs the exact same signature operation you used to sign a message with java.security.Signature — same algorithm, same sign-with-private-key / verify-with-public-key shape. The only thing that changes is what bytes are being signed: a certificate's payload is a structure containing the subject's public key, their claimed identity, and validity dates, rather than an arbitrary string. That's the entire trick behind 'a certificate is a public key and an identity, signed by someone.'"}
-      />
     </LessonLayout>
   );
 }

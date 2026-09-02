@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Intro() {
@@ -274,32 +273,6 @@ function Intro() {
         Firefox also has an excellent Accessibility Inspector. Use these constantly during development
         to verify your elements are exposed correctly.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"Which WCAG principle requires that all functionality be available from a keyboard?"}
-        options={[
-          "Perceivable",
-          "Operable",
-          "Understandable",
-          "Robust"
-        ]}
-        correctIndex={1}
-        explanation={"The Operable principle states that all UI components and navigation must be operable via keyboard. This is WCAG Success Criterion 2.1.1. Users who cannot use a mouse must be able to access every interactive element."}
-        language="html"
-      />
-
-      <InteractiveChallenge
-        question={"What is the minimum color contrast ratio required by WCAG 2.2 AA for normal text?"}
-        options={[
-          "3:1",
-          "4.5:1",
-          "7:1",
-          "2:1"
-        ]}
-        correctIndex={1}
-        explanation={"WCAG 2.2 AA requires a minimum contrast ratio of 4.5:1 for normal text (Success Criterion 1.4.3 — unchanged from 2.0 and 2.1; 2.2 added no new contrast thresholds). Large text (18pt or 14pt bold) can use 3:1. Level AAA requires 7:1 for normal text."}
-        language="html"
-      />
 
       {/* ── Getting Started ───────────────────────────────── */}
       <h2>Your Accessibility Mindset</h2>

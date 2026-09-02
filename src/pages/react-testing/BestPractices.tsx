@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function BestPractices() {
@@ -452,19 +451,6 @@ maxLength = 20000:    15523 < 20000 -> no truncation, printing all 49600 chars`}
           test, open the link, click the element you wanted, copy the query it gives you.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"getByRole('textbox', { name: 'Password' }) throws, but the field is clearly on screen with a <label> attached. What is going on?"}
-        options={[
-          "The label is not wired to the input, so it has no accessible name",
-          "<input type=\"password\"> has no ARIA role, so no role query can ever find it",
-          "getByRole cannot see inputs until the user has focused them",
-          "The name option needs to be a regex, not a string"
-        ]}
-        correctIndex={1}
-        explanation={"Password inputs are deliberately mapped to no role at all, so assistive tech does not announce the value. Rendering text/password/search/number/email inputs plus a textarea together, logRoles reports only textbox, searchbox and spinbutton — the password field is absent. Use getByLabelText(/password/i). This is the one common case where the ladder's top rung simply does not apply."}
-        language="jsx"
-      />
 
       <h2>The Anti-Pattern Catalogue</h2>
       <p>
@@ -1117,19 +1103,6 @@ test('shows the loaded name', async () => {
           the seams between them are untested — and the seams are where React apps break.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A test does `await waitFor(() => { await user.click(retryBtn); expect(screen.getByText('Done')).toBeInTheDocument(); })` and the fetch spy reports 14 calls instead of 1. Why?"}
-        options={[
-          "user.click queues a click per pointer event, so one call becomes many",
-          "waitFor re-runs its whole callback on a ~50ms poll until it stops throwing, replaying the click each time",
-          "The component is re-mounting because waitFor triggers a re-render",
-          "waitFor runs the callback once but React StrictMode double-invokes it"
-        ]}
-        correctIndex={1}
-        explanation={"waitFor retries the entire callback until it no longer throws — measured against a real component, a permanently-failing callback ran 20 times inside its 1000ms timeout. Any side effect inside the callback is replayed on every one of those polls. Side effects go on the line above; only a single pure assertion belongs inside waitFor."}
-        language="jsx"
-      />
 
       <h2>The Review Checklist</h2>
       <p>

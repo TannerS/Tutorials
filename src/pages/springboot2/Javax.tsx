@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Javax() {
@@ -783,29 +782,6 @@ grep -rn '"javax\\.' --include='*.java' --include='*.xml' \\
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A colleague migrates the codebase with: find . -name '*.java' | xargs sed -i 's/javax\\./jakarta./g'. Everything compiles except a handful of files. What went wrong?"
-        options={[
-          "Nothing conceptually — sed is the standard approach and those files just need manual fixes",
-          "It rewrote JDK-owned javax packages (javax.sql, javax.crypto, javax.naming, javax.net.ssl) that never moved to jakarta",
-          "sed cannot handle multi-line import statements, so some imports were missed",
-          "The regex needed to be case-insensitive to catch all variants"
-        ]}
-        correctIndex={1}
-        explanation="Only the Java EE packages moved to jakarta. The javax packages that ship with the JDK — javax.sql.DataSource, javax.crypto.Cipher, javax.naming.InitialContext, javax.net.ssl.SSLContext, javax.management, javax.security.auth, javax.imageio, javax.swing, javax.script, javax.xml.parsers, javax.xml.transform — were never Oracle's to donate to Eclipse and are still called javax today. A blanket rewrite turns javax.sql.DataSource into jakarta.sql.DataSource, which does not exist. The failures are loud here, which is lucky; the genuinely nasty version of this mistake is javax.xml.bind (JAXB, which DID move) sitting next to javax.xml.parsers (JAXP, which did NOT) — they look like siblings and behave differently. This is exactly why OpenRewrite is the right tool: it operates on resolved types, so it knows which is which."
-      />
-
-      <InteractiveChallenge
-        question="Your Boot 3 migration compiles cleanly and all unit tests pass, but the application dies at startup with 'NoClassDefFoundError: javax/servlet/Filter' and defineClass1 near the top of the trace. What is the cause?"
-        options={[
-          "You missed a javax import somewhere — search the source again",
-          "The jakarta.servlet-api dependency is missing from the pom",
-          "A third-party jar on the classpath was compiled against javax.servlet and needs a Jakarta-compatible release from its maintainer",
-          "Spring Boot 3 needs spring.jakarta.enabled=true set in application.properties"
-        ]}
-        correctIndex={2}
-        explanation="The fact that it COMPILED is the key evidence. If one of your own imports were still javax, javac would have failed with 'package javax.servlet does not exist' — a compile break, not a runtime one. Compiling clean means your source is fully migrated. The javax reference is therefore in bytecode you did not compile: a third-party jar whose constant pool still contains javax/servlet/Filter. javap -c on the offending class shows the reference baked in. Option 2 would produce a failure about the jakarta types instead. Option 4 is invented — there is no such flag, and no compatibility mode exists precisely because the rename is a hard break. Your fix is a Jakarta-compatible release of that library, a replacement, Eclipse Transformer as a last resort, or isolating it behind a service boundary. Find these with a bytecode audit BEFORE starting the migration, not after."
-      />
     </LessonLayout>
   );
 }

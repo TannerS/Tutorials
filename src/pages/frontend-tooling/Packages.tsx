@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Packages() {
@@ -303,18 +302,6 @@ pnpm update --interactive --latest`}
   "schedule": ["before 7am on Monday"]
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"What does the caret (^) in \"^18.3.1\" allow?"}
-        options={[
-          "Only exact version 18.3.1",
-          "Patch updates only (18.3.x)",
-          "Minor and patch updates (18.x.x)",
-          "Any version including major updates"
-        ]}
-        correctIndex={2}
-        explanation={"The caret (^) is the most common semver range. ^18.3.1 means >=18.3.1 and <19.0.0 — it allows any minor or patch update within the same major version. This is npm's default behavior when you run npm install."}
-      />
 
       <h2>The exports Field</h2>
       <p>

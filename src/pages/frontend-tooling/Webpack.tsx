@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Webpack() {
@@ -490,17 +489,6 @@ vendors.bee306ac427cf43682a1.js.map 896 KB`}
         lesson exists.
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"You add optimization.splitChunks to a config that also uses a dynamic import() for one route component. After a production build, you see vendors.[hash].js, main.[hash].js, and about.[hash].js as separate files. Why three files instead of one?"}
-        options={[
-          "Webpack always splits output into exactly three files",
-          "splitChunks pulled node_modules code into vendors.js, and the dynamic import() gave the lazy-loaded component its own chunk, leaving app entry code in main.js",
-          "main.js failed to build so webpack fell back to two smaller files",
-          "TypeScript compilation always produces one file per exported component"
-        ]}
-        correctIndex={1}
-        explanation={"splitChunks with a node_modules cacheGroup extracts shared dependency code (react/react-dom here) into its own long-cacheable vendors chunk. Separately, any import() call — static or via React.lazy — tells webpack to give that module its own chunk, fetched only when it's actually needed. The two features are independent and compose: one config option controls vendor extraction, the syntax you use for imports controls route-level splitting."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Security() {
@@ -422,30 +421,6 @@ npm install  # install the new versions
         Configure them to group patch updates (merge quickly) but separate major updates
         (review carefully). This keeps you current without manual labor.
       </InfoBox>
-
-      <InteractiveChallenge
-        question="A package you depend on has a critical vulnerability in a transitive dependency (3 levels deep). npm audit fix doesn't resolve it. What's the safest next step?"
-        options={[
-          "Run npm audit fix --force to force the update",
-          "Add an override in package.json to pin the fixed version of the transitive dep",
-          "Ignore it since it's not a direct dependency",
-          "Delete node_modules and reinstall"
-        ]}
-        correctIndex={1}
-        explanation="The 'overrides' field in package.json lets you force a specific version of any transitive dependency without major version bumps to your direct dependencies. This is safer than --force (which may introduce breaking changes) and more responsible than ignoring it. Test thoroughly after adding overrides."
-      />
-
-      <InteractiveChallenge
-        question="What makes typosquatting attacks particularly dangerous in the npm ecosystem?"
-        options={[
-          "npm doesn't check package names for typos",
-          "Malicious postinstall scripts execute immediately on npm install, before you ever import the package",
-          "Typosquatted packages look identical on npmjs.com",
-          "npm automatically installs suggested packages"
-        ]}
-        correctIndex={1}
-        explanation="The most dangerous aspect is that npm packages can define postinstall scripts that run immediately when the package is installed. A typosquatted package can steal your environment variables, SSH keys, or credentials the instant you accidentally install it — you don't even need to use it in your code."
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

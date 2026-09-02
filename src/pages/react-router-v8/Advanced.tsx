@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Advanced() {
@@ -557,19 +556,6 @@ function useSmartNavigate() {
         <code>RouterContextProvider</code> instance; returning a plain object,
         which worked pre-flag in some v7 setups, is no longer supported.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"In React Router 8, what changed about middleware compared to React Router 7?"}
-        options={[
-          "Middleware was introduced for the first time in v8",
-          "Middleware became always-on (future.v8_middleware removed) and context is always a RouterContextProvider",
-          "Middleware was removed in v8 in favor of loaders",
-          "Middleware now only runs on the server, never the client",
-        ]}
-        correctIndex={1}
-        explanation={"Middleware and createContext stabilized back in React Router 7.9 — they already existed. What v8 changes is that the future.v8_middleware flag is gone: middleware is unconditionally enabled, and the context argument passed to loaders, actions, and middleware is always a RouterContextProvider instance, with no Future module augmentation required to type it."}
-        language="tsx"
-      />
 
       <h2>Quick Reference: When to Use What</h2>
       <CodeBlock language="text" title="Pattern Decision Guide">

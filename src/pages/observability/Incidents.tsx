@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function ObservabilityIncidents() {
   return (
@@ -174,17 +173,6 @@ Next day  POSTMORTEM
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"A Spring service's GC pauses spike to 4 seconds on one of eight pods for about 90 seconds, but request error rate and p99 latency both stay completely flat — the load balancer is routing around it. Should this page an on-call engineer at 3am?"}
-        options={[
-          "Yes — any internal anomaly of that size should always page immediately, better safe than sorry",
-          "No — this is a cause-level internal signal with no observed user-facing symptom; it's worth a dashboard or a lower-urgency ticket, not a page, unless it starts actually burning the error budget",
-          "No — GC pauses are never worth monitoring or recording at all",
-          "Yes — GC pauses always precede a full outage, so this should be treated as equivalent to detection of an active incident"
-        ]}
-        correctIndex={1}
-        explanation={"This is the symptom-vs-cause distinction in practice. Nobody outside the system is experiencing anything right now — error rate and latency, the actual symptoms users would feel, are flat. Paging on every internal condition that could theoretically matter (and usually self-corrects, as this one did) trains engineers to ignore pages. The right response is to record it for context and page only if it starts showing up as a real symptom — elevated errors, elevated latency, or burning the error budget faster than sustainable."}
-      />
     </LessonLayout>
   );
 }

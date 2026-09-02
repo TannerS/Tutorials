@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Interfaces() {
@@ -952,126 +951,6 @@ const permissions: RolePermissions = {
       {/* ── Section 15: Interactive Challenges ── */}
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question={"Why does the second call fail when the first one succeeds with the exact same data?"}
-        code={`interface Point { x: number; y: number }
-declare function plot(p: Point): void;
-
-const data = { x: 1, y: 2, z: 3 };
-plot(data);                  // OK
-plot({ x: 1, y: 2, z: 3 });  // error TS2353`}
-        language="typescript"
-        options={[
-          "Structural typing does not apply to object literals",
-          "Excess property checking: a fresh literal assigned straight to a typed position is checked for unknown keys",
-          "'data' was inferred as any, so the first call skipped checking",
-          "Interfaces require exact property matches; type aliases would allow both",
-        ]}
-        correctIndex={1}
-        explanation={
-          "Structurally, both values satisfy Point — extra properties never break compatibility. " +
-          "Excess property checking is a deliberate extra rule that fires only on a FRESH object " +
-          "literal written directly at the typed position, on the reasoning that an inline literal " +
-          "exists for nobody else, so an unrecognised key is almost certainly a typo. Assigning to " +
-          "a variable first removes the literal's 'freshness' and the check no longer applies — " +
-          "which is a loophole, not a fix."
-        }
-      />
-
-      <InteractiveChallenge
-        question={"Removing 'implements Serializable' from a class that already has a matching serialize() method would…"}
-        options={[
-          "break every call site that passes it where Serializable is expected",
-          "change nothing about which functions accept the class",
-          "make the class incompatible with Serializable until it is re-declared",
-          "cause a runtime error the first time serialize() is called",
-        ]}
-        correctIndex={1}
-        explanation={
-          "TypeScript is structurally typed: compatibility is decided by shape, so the class was " +
-          "already assignable to Serializable before the keyword was there and stays assignable " +
-          "after it is gone. 'implements' is a self-check — it makes the compiler verify the class " +
-          "really satisfies the interface, and it gives you a clear error at the class rather than " +
-          "at every call site. Worth keeping for that reason, but it creates no connection. Note " +
-          "it also supplies no contextual types: parameters still need their own annotations."
-        }
-      />
-
-      <InteractiveChallenge
-        question={"You are designing a public SDK. Users should be able to add custom properties to your Config type. Which should you use?"}
-        options={[
-          "type Config = { host: string; port: number }",
-          "interface Config { host: string; port: number }",
-          "const Config = { host: '', port: 0 }",
-          "enum Config { Host, Port }",
-        ]}
-        correctIndex={1}
-        explanation={"Interfaces support declaration merging, allowing SDK consumers to extend Config with their own properties by simply redeclaring the interface. Type aliases cannot be merged and would require intersection types instead."}
-      />
-
-      <InteractiveChallenge
-        question={"Which utility type would you use to create a function that accepts any subset of User fields for a PATCH endpoint?"}
-        code={`interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
-function patchUser(id: string, data: ??? ) { /* ... */ }`}
-        language="typescript"
-        options={[
-          "Required<User>",
-          "Partial<User>",
-          "Pick<User, 'name'>",
-          "Readonly<User>",
-        ]}
-        correctIndex={1}
-        explanation={"Partial<T> makes every property optional, which is exactly what a PATCH endpoint needs — callers send only the fields they want to update. Required would force all fields, Pick limits to specific fields, and Readonly prevents mutation."}
-      />
-
-      <InteractiveChallenge
-        question={"What happens if you add a new variant to a discriminated union but forget to handle it in the switch statement that assigns to never?"}
-        options={[
-          "Nothing — it silently returns undefined",
-          "A runtime error is thrown",
-          "A compile-time error flags the unhandled variant",
-          "TypeScript infers the return type as any",
-        ]}
-        correctIndex={2}
-        explanation={"The never type cannot accept any value. When a new variant is added but not handled, the default branch receives that variant's type which is not assignable to never — producing a compile-time error that catches the oversight immediately."}
-      />
-
-      <InteractiveChallenge
-        question={"Which fields exist on an instance of this class at runtime?"}
-        code={`class Order {
-  constructor(
-    private id: string,
-    public total: number,
-    customer: string,
-  ) {}
-}`}
-        language="typescript"
-        options={[
-          "id, total, and customer — all constructor params become fields",
-          "id and total only — 'customer' has no access modifier",
-          "total only — private fields are erased at compile time",
-          "None — you must assign this.x explicitly",
-        ]}
-        correctIndex={1}
-        explanation={"A constructor parameter is promoted to an instance field only when it carries an access modifier (public, private, protected, or readonly). 'customer' has none, so it stays a plain local parameter and is gone once the constructor returns. Note that 'private id' DOES exist at runtime — TypeScript's private is a compile-time check only, unlike the ECMAScript #private syntax."}
-      />
-
-      <InteractiveChallenge
-        question={"You need a base type that supplies shared implementation AND forces subclasses to fill in specific methods. What do you reach for?"}
-        options={[
-          "An interface — classes implement it",
-          "An abstract class with abstract members",
-          "A type alias with function properties",
-          "A class with methods that throw 'not implemented'",
-        ]}
-        correctIndex={1}
-        explanation={"An abstract class is the only construct that does both: it can hold concrete methods and state that subclasses inherit, while its abstract members have no body and must be implemented by every concrete subclass — enforced at compile time. An interface can enforce the contract but carries no implementation, and throwing 'not implemented' pushes the error to runtime."}
-      />
     </LessonLayout>
   );
 }

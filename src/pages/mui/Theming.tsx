@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function MuiTheming() {
@@ -626,32 +625,6 @@ const theme = createMuiTheme({
 
 export default theme;`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"In a v4 app you write [theme.breakpoints.down('sm')]: { flexDirection: 'column' } expecting it to apply on phones only. On a 900px-wide tablet the layout is also stacked. What happened?"}
-        options={[
-          "The rule needs theme.breakpoints.only('sm') because down() is not a valid media-query helper",
-          "In v4, down(key) resolves to the NEXT breakpoint minus 0.05px — down('sm') is max-width:959.95px, which covers sm AND md, so a 900px tablet matches",
-          "makeStyles cannot nest media queries, so the rule leaked to all widths",
-          "The theme's breakpoint values were customised and sm is set to 960",
-        ]}
-        correctIndex={1}
-        explanation={"v4's down(key) means 'this breakpoint and everything below it', implemented as the next breakpoint's value minus 0.05px. down('sm') is verifiably '@media (max-width:959.95px)', so every viewport up to 959.95px matches — phones and tablets alike. v5 redefined down() to mean strictly below the key's own value, so the identical line becomes max-width:599.95px there. Writing up() and going mobile-first sidesteps the whole issue, because up() means the same thing in both versions."}
-        language="jsx"
-      />
-
-      <InteractiveChallenge
-        question={"You nest <ThemeProvider theme={{ palette: { primary: { main: 'red' } } }}> inside your app's main ThemeProvider. Buttons inside turn red, but text throughout the subtree loses its color and theme.palette.text.primary is undefined. Why?"}
-        options={[
-          "A nested ThemeProvider always resets to MUI's default theme; only the root provider can supply a full theme",
-          "The inner theme must be created with createMuiTheme or it is rejected entirely",
-          "Passing an OBJECT does a shallow merge — { ...outerTheme, ...localTheme } — so the whole palette key is replaced rather than merged. Use the function form theme={outer => ...} to spread the outer palette",
-          "palette.text can only be set at the root because CssBaseline reads it once at mount",
-        ]}
-        correctIndex={2}
-        explanation={"v4's ThemeProvider merges an object theme one level deep only — its source does the equivalent of { ...outerTheme, ...localTheme }. Supplying a palette therefore replaces the outer palette entirely, taking text, background, error, grey and action with it. The function form gives you the outer theme so you can spread it: theme={outer => createMuiTheme({ ...outer, palette: { ...outer.palette, primary: { main: 'red' } } })}. Re-running createMuiTheme also matters, because it re-derives primary.light/.dark/.contrastText for the new main."}
-        language="jsx"
-      />
 
       <InfoBox variant="tip" title="Next">
         You now have the theme object and three ways to read it. The obvious next question is how to

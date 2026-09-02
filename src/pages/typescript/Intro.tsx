@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -258,65 +257,6 @@ export default function Intro() {
       {/* 7. Interactive Challenges */}
       <h2>Knowledge Check</h2>
 
-      <InteractiveChallenge
-        question={"A tsconfig.json flips one option and suddenly every unannotated parameter and every possibly-null value becomes an error. Which option is the most likely single cause?"}
-        options={[
-          '"noImplicitAny": true',
-          '"strict": true',
-          '"checkAll": true',
-          '"skipLibCheck": true',
-        ]}
-        correctIndex={1}
-        explanation={
-          '"strict": true is a master switch that turns on a whole family of stricter checks ' +
-          'at once — noImplicitAny (bans silent any) and strictNullChecks (bans treating null ' +
-          'and undefined as assignable to everything) are the two you will hit constantly, and ' +
-          'together they explain the symptom in the question. TypeScript 6 already turns strict ' +
-          'on by default, but writing the line out documents intent for anyone reading the ' +
-          'config. See tsconfig Mastery, later in this course, for the complete list of what ' +
-          'strict enables and why alwaysStrict is no longer counted among them.'
-        }
-      />
-
-      <InteractiveChallenge
-        question={"tsc prints the chain below. Which line tells you what is actually wrong?"}
-        code={`error TS2322: Type '{ user: { profile: { age: string; }; }; }' is not
-              assignable to type 'Account'.
-  The types of 'user.profile.age' are incompatible between these types.
-    Type 'string' is not assignable to type 'number'.`}
-        language="text"
-        options={[
-          "The first line — it names the two types involved",
-          "The last, most-indented line — 'string' is not assignable to 'number'",
-          "The middle line — it names the property path",
-          "None of them; you need the source file to know",
-        ]}
-        correctIndex={1}
-        explanation={
-          "Read TypeScript chains bottom-up. The last line is always the real conflict: you " +
-          "supplied a string where a number was required. The middle line is the path the " +
-          "checker walked to reach it (user.profile.age), so it tells you WHERE to look. The " +
-          "headline just restates the whole assignment and is the least useful part — which " +
-          "is exactly why long chains feel unreadable if you start at the top."
-        }
-      />
-
-      <InteractiveChallenge
-        question={"For a React 17+ project using Vite, which \"jsx\" option should you use in tsconfig.json?"}
-        options={[
-          '"jsx": "react"',
-          '"jsx": "react-jsx"',
-          '"jsx": "preserve"',
-          '"jsx": "react-native"',
-        ]}
-        correctIndex={1}
-        explanation={
-          '"react-jsx" uses the automatic JSX runtime introduced in React 17, so you ' +
-          'no longer need to import React in every file that uses JSX. "preserve" is ' +
-          'also valid when the bundler handles JSX, but "react-jsx" gives you both ' +
-          'type-checking and the automatic runtime.'
-        }
-      />
     </LessonLayout>
   );
 }

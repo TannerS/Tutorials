@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -267,19 +266,6 @@ function Counter() {
         the performance penalty of Context and make <code>useMemo</code>/<code>useCallback</code> largely
         unnecessary for most components.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"A component reads `user.name` from a Context that also contains `cart`, `notifications`, and `preferences`. When does this component re-render?"}
-        options={[
-          "Only when user.name changes",
-          "When user.name or any other context value changes",
-          "Only on mount and unmount",
-          "When the parent component re-renders"
-        ]}
-        correctIndex={1}
-        explanation="React Context has no selector mechanism. When any value in the provider changes, every consumer re-renders — even if it only reads a single field. This is the core limitation that external state libraries solve with selector-based subscriptions."
-        language="jsx"
-      />
 
       <h2>What&apos;s Next</h2>
       <p>

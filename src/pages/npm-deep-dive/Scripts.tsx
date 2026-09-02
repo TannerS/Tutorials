@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Scripts() {
@@ -421,30 +420,6 @@ npx npm-run-all --sequential build deploy`}
   }
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"You run 'npm run test --watch'. Why doesn't Jest enter watch mode?"}
-        options={[
-          "Jest doesn't support --watch",
-          "The --watch flag is consumed by npm, not passed to Jest",
-          "You need to install jest-watch separately",
-          "Watch mode only works with npm test, not npm run test"
-        ]}
-        correctIndex={1}
-        explanation={"Without the -- separator, flags are interpreted by npm itself, not passed to the underlying script. The correct command is 'npm run test -- --watch' (or 'npm test -- --watch'). The double dash tells npm to pass everything after it to the script command."}
-      />
-
-      <InteractiveChallenge
-        question="What does the 'prepare' lifecycle script do?"
-        options={[
-          "Runs before every npm command",
-          "Runs after npm install in dev and before npm publish",
-          "Runs only when you explicitly call npm run prepare",
-          "Runs before the package is downloaded from the registry"
-        ]}
-        correctIndex={1}
-        explanation="The 'prepare' script runs automatically after 'npm install' during local development and before 'npm publish'. This makes it perfect for setting up git hooks (husky) or running build steps. It does NOT run when your package is installed as a dependency by someone else (unless they install from git)."
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

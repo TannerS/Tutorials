@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Legacy() {
@@ -302,19 +301,6 @@ function App() {
           </li>
         </ul>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"You're handed a large v5 codebase and asked to move it toward modern React Router without a full rewrite. What's the realistic path?"}
-        options={[
-          "You can't — v5 and v6+ can never coexist in any form, so it must be a single all-at-once cutover",
-          "Install react-router-dom-v5-compat and migrate one component, hook, and route at a time, per React Router's own guidance",
-          "Run two separate <BrowserRouter> instances side by side, one per version",
-          "Import react-router-dom (v5) and react-router (v8) into the same file and mix Switch with Routes",
-        ]}
-        correctIndex={1}
-        explanation={"React Router publishes react-router-dom-v5-compat specifically for this: a CompatRouter lets v5 Switch/Route code and newly-migrated v6 Routes/Route code run side by side, so teams can migrate incrementally rather than in one risky cutover. It's officially recommended for apps with more than a few routes. It only bridges v5 to v6, though — later hops to v7/v8 follow the same staged path as any v6 app."}
-        language="jsx"
-      />
 
       <h2>Quick Reference: What to Do on Day One</h2>
       <CodeBlock language="jsx" title="A legacy-v5 checklist">

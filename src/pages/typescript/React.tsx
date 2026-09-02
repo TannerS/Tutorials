@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function TsReact() {
@@ -1027,53 +1026,6 @@ export function useShoppingCart(
       </InfoBox>
 
       <h2>15. Interactive Challenges</h2>
-
-      <InteractiveChallenge
-        question={"Under React 19's types, which of these does NOT give you a usable <input> ref?"}
-        options={[
-          "useRef<HTMLInputElement>(null)",
-          "useRef<HTMLInputElement | null>(null)",
-          "useRef<HTMLInputElement>(undefined)",
-          "Both A and B work and produce the identical type",
-        ]}
-        correctIndex={2}
-        explanation={"A and B are indistinguishable in React 19 — both resolve to RefObject<HTMLInputElement | null>, so option D is a true statement and neither is 'wrong'. C is the odd one out: it selects the `initialValue: T | undefined` overload and yields RefObject<HTMLInputElement | undefined>, which JSX will not accept as a ref (a ref's current must be able to hold null). Note that pre-19 answers claiming option B creates a 'MutableRefObject' are stale — useRef has no MutableRefObject overload any more."}
-        language="tsx"
-        code={`const a = useRef<HTMLInputElement>(null);        // RefObject<HTMLInputElement | null>
-const b = useRef<HTMLInputElement | null>(null); // RefObject<HTMLInputElement | null>  — same
-const c = useRef<HTMLInputElement>(undefined);   // RefObject<HTMLInputElement | undefined>
-
-a.current?.focus();  // safe, typed
-<input ref={a} />    // c would be rejected here`}
-      />
-
-      <InteractiveChallenge
-        question={"What is the correct type for an onChange handler on a <select> element?"}
-        options={[
-          "React.ChangeEvent<HTMLInputElement>",
-          "React.ChangeEvent<HTMLSelectElement>",
-          "React.SelectEvent<HTMLSelectElement>",
-          "React.FormEvent<HTMLSelectElement>",
-        ]}
-        correctIndex={1}
-        explanation={"Select elements fire change events, so use React.ChangeEvent<HTMLSelectElement>. There is no React.SelectEvent. FormEvent would compile but lacks e.target.value typing."}
-        language="tsx"
-        code={`function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
-  console.log(e.target.value);  // correctly typed as string
-}`}
-      />
-
-      <InteractiveChallenge
-        question={"When creating a context, what should the default value be?"}
-        options={[
-          "createContext(null)",
-          "createContext({} as MyContextType)",
-          "createContext<MyContextType | undefined>(undefined)",
-          "createContext<MyContextType>(defaultValue)",
-        ]}
-        correctIndex={2}
-        explanation={"Use createContext<T | undefined>(undefined) plus a custom hook with an undefined check. Casting with 'as' hides bugs — components silently get wrong values if used outside the Provider."}
-      />
 
       <InfoBox variant="success" title="Key takeaways">
         <ul>

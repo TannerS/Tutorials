@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Migration() {
@@ -396,30 +395,6 @@ Month 10-12: Extract remaining and decommission
 ├── Decommission monolith
 └── Full microservices running in production`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"You are migrating a monolith and need to pick the first service to extract. Which is the best candidate?"}
-        options={[
-          'The most complex module with the most dependencies',
-          'A simple, well-bounded module with few dependencies (e.g., auth)',
-          'The core business logic that generates the most revenue',
-          'A module that is rarely used or changed'
-        ]}
-        correctIndex={1}
-        explanation={"Start with a simple, well-bounded module that has few dependencies on other modules. Auth is a classic first extraction because it has clear boundaries, a well-defined API, and other services depend on it but it does not depend on many services. This lets you prove the extraction process and infrastructure before tackling more complex extractions."}
-      />
-
-      <InteractiveChallenge
-        question={"In a modular monolith, how should modules communicate with each other?"}
-        options={[
-          "Direct database queries to each other's tables",
-          'Shared global state and singletons',
-          'Through well-defined interfaces / public APIs',
-          'Through a shared message queue'
-        ]}
-        correctIndex={2}
-        explanation={"Modules in a modular monolith should communicate ONLY through well-defined interfaces (public APIs). This is the key principle that makes later extraction to microservices possible — when you extract a module to its own service, you simply replace the in-process implementation with an HTTP client that implements the same interface. Direct database access creates tight coupling that prevents extraction."}
-      />
 
       <h2>Summary</h2>
 

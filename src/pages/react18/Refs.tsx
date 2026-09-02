@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function ReactRefs() {
@@ -290,18 +289,6 @@ function Clock() {
         state buys you sixty re-renders a second in exchange for nothing.
       </p>
 
-      <InteractiveChallenge
-        question="A form component tracks whether the user has edited any field, so it can warn on navigate-away inside a beforeunload handler. The warning text itself is rendered by the browser, not by React — nothing in the component's own JSX changes when the flag flips. Ref or state?"
-        options={[
-          "State — 'has the user edited anything' is clearly component state, and calling it a ref is an optimisation that will confuse the next reader",
-          "A ref — the flag must survive re-renders and is read only inside an event handler; nothing the component renders depends on it, so state would buy a re-render on the first keystroke for no visible change",
-          "Neither — derive it during render by comparing current values to the initial props",
-          "A module-level variable, since beforeunload is a global browser event anyway"
-        ]}
-        correctIndex={1}
-        explanation="Apply the rule literally: does the UI reflect it? No — the component's JSX is identical whether the flag is true or false, because the browser draws the warning dialog. It must survive renders so the handler can read it, so it is a ref. Option 1 sounds responsible but ignores the actual test; it costs a render on the first keystroke and every reset. Option 3 (derive it) is the right instinct in general and is often better — but only if you actually hold the initial values and the comparison is cheap, which for a large form with file inputs and nested objects it usually isn't. Option 4 breaks the moment two forms are on screen: module scope is shared by every instance, so one form's edits would trigger the other's warning."
-      />
-
       <h2>Callback Refs — Being Told, Instead of Looking</h2>
 
       <p>
@@ -470,18 +457,6 @@ function Clock() {
           exactly when it goes away — and no <code>null</code> call to handle.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question="A list item uses an inline ref callback that creates an IntersectionObserver for analytics. The list re-renders whenever a sibling search box's text changes — the list items themselves are unchanged. What actually happens on each keystroke, in React 19?"
-        options={[
-          "Nothing — React sees the DOM node is the same and skips the ref entirely",
-          "The callback is invoked once more with the same node, so a second observer is added on top of the first and they accumulate",
-          "React detaches using the previous render's callback and attaches using the new one, so the observer is disconnected and rebuilt per keystroke — unless the callback returns no cleanup, in which case the old observer leaks instead",
-          "React batches the ref updates and re-attaches once when typing stops"
-        ]}
-        correctIndex={2}
-        explanation="Ref identity, not node identity, drives detach/attach. An inline arrow is a new function every render, so React runs the teardown path for the old callback and the setup path for the new one on every keystroke — measured as old-callback-with-null followed by new-callback-with-node. If the callback returns a cleanup, that cleanup runs and the observer is correctly disconnected, just wastefully often. If it does not return a cleanup, the old callback is invoked with null and unless you explicitly disconnect in that null branch the previous observer is never disconnected — that is the leak. Option 2 describes the leak's effect but gets the mechanism wrong: the callback is not simply called again with the same node. The fix in both cases is useCallback so the identity stops changing."
-      />
 
       <h2><code>forwardRef</code> — What Is Actually True Today</h2>
 
@@ -817,18 +792,6 @@ useLayoutEffect(() => {
           incomplete: whatever <code>create</code> did, <code>destroy</code> must fully undo.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question="A map component instantiates a library in useEffect with [] deps and, in the cleanup, calls map.remove() and then containerRef.current.replaceChildren() to clear leftover nodes. In dev with StrictMode, the map renders twice stacked; in production, unmounting a route leaves detached DOM in memory. What single fact explains both?"
-        options={[
-          "StrictMode is running the effect twice, so the fix is a hasInitialised ref guard that skips the second run",
-          "map.remove() is async, so replaceChildren() runs before the library has finished tearing down",
-          "React nulls the container ref before useEffect cleanups run, so replaceChildren() never executes — the cleanup is silently incomplete, which StrictMode's remount exposes as a doubled widget and production exposes as a leak",
-          "The [] deps array is wrong — it should list containerRef so the effect re-runs when the node attaches"
-        ]}
-        correctIndex={2}
-        explanation="Measured: a React-managed object ref is already null during a useEffect cleanup (it is still populated during a useLayoutEffect cleanup). So containerRef.current?.replaceChildren() is a no-op, leftover nodes survive, and the cleanup does not undo what setup did. StrictMode's mount-unmount-remount then stacks a second widget on top of the surviving nodes, and in production the same incomplete teardown leaves detached DOM alive. The fix is to capture const node = containerRef.current in the effect body and call node.replaceChildren() in the cleanup, or move the teardown to useLayoutEffect. Option 1 is the common wrong fix: a hasInitialised guard hides the symptom in dev while leaving the production leak completely intact. Option 4 is a non-fix — ref objects have stable identity, so listing containerRef in deps changes nothing."
-      />
 
       <h2>The Eight Mistakes You Will Actually Meet</h2>
 

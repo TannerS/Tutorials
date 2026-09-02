@@ -1,14 +1,13 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Animations() {
   return (
     <LessonLayout
       title="Animation Libraries (Framer Motion & Beyond)"
       sectionId="react18"
-      lessonIndex={20}
+      lessonIndex={21}
       prev={{ path: '/react18/error-boundaries', label: 'Error Boundaries' }}
       next={{ path: '/react18/portals', label: 'Portals, In Depth' }}
     >
@@ -276,22 +275,6 @@ function SpringList({ items, onRemove }: {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={
-          "A component fades via `transition: opacity 200ms` when a conditional render " +
-          "(`{show && <div>...}`) flips to false. In the browser it just vanishes instantly — no fade. " +
-          "A teammate wraps the same JSX in `<AnimatePresence>` with an `exit` prop instead, and the fade " +
-          "plays correctly. What's actually different?"
-        }
-        options={[
-          "AnimatePresence applies the CSS with !important, which forces the fade to override other styles",
-          "AnimatePresence delays the actual DOM removal until its exit animation finishes, so the node still exists to animate; the plain conditional render lets React remove the node in the same commit that flips `show`, before any transition has a frame to run",
-          "CSS transitions can only animate `transform`, never `opacity`, so the fade was never going to work",
-          "The `show` variable is stale by one render, so the condition never actually becomes false in time"
-        ]}
-        correctIndex={1}
-        explanation={"AnimatePresence intercepts removal at the React-tree level: when a child would be unmounted, it keeps that child's DOM node in place long enough to run its exit animation, then removes it itself. A plain conditional render has no such interception — React removes the DOM node in the same commit that the condition flips, so there is no 'before' frame left on screen for a CSS transition to interpolate away from. This is the one thing a CSS-only approach structurally cannot do, no matter how the transition is written."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Components() {
@@ -331,19 +330,6 @@ test('renders header and footer slots', () => {
   expect(screen.getByRole('button', { name: /action/i })).toBeInTheDocument();
 });`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"You need to test that clicking a delete button calls the onDelete handler with the item's ID. Which approach is best?"}
-        options={[
-          "Check that the component's internal state changes",
-          "Spy on the component's useState call",
-          "Pass a jest.fn() as onDelete, click the button, assert toHaveBeenCalledWith(id)",
-          "Use a snapshot test to compare before and after"
-        ]}
-        correctIndex={2}
-        explanation={"RTL encourages testing observable behavior. Pass a mock function, simulate the user action, and assert the callback was called with the correct arguments. Never reach into implementation details like internal state."}
-        language="jsx"
-      />
 
       <h2>Complete Example: UserCard</h2>
 

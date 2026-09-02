@@ -1,6 +1,5 @@
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function JsEs2017() {
@@ -385,71 +384,6 @@ console.log(sab.byteLength);             // 4`}
 
       {/* ── 8. Test Your Knowledge ── */}
       <h2>Test Your Knowledge</h2>
-
-      <InteractiveChallenge
-        question={"What does an async function return when you call it, the instant it hits its first await?"}
-        options={[
-          "The final resolved value, computed synchronously",
-          "undefined, until the await finishes",
-          "A pending Promise — the rest of the calling code keeps running immediately",
-          "A generator object that must be manually iterated",
-        ]}
-        correctIndex={2}
-        explanation={"Calling an async function returns a Promise right away, even before any awaited work finishes. The function body pauses at the first await and resumes later on the microtask queue — meanwhile, the code after the call site keeps executing. That's why async/await is sugar over Promises, not a way to make code synchronous."}
-        language="javascript"
-      />
-
-      <InteractiveChallenge
-        question={"const obj = { b: 2, a: 1 }; What does Object.entries(obj) return?"}
-        options={[
-          "[['a', 1], ['b', 2]] — alphabetically sorted",
-          "[['b', 2], ['a', 1]] — insertion order",
-          "{ a: 1, b: 2 } — a new object",
-          "['b', 'a'] — just the keys",
-        ]}
-        correctIndex={1}
-        explanation={"Object.entries() follows the same enumeration order as Object.keys(): for string keys (no integer-like keys here), that's insertion order — 'b' was defined before 'a', so it comes first. It does not sort alphabetically."}
-        language="javascript"
-      />
-
-      <InteractiveChallenge
-        question={"\"hello world\".padStart(5, \"0\") — what does this return?"}
-        options={[
-          "\"0hello world\"",
-          "\"hello\" — truncated to length 5",
-          "\"hello world\" — unchanged",
-          "Throws a RangeError",
-        ]}
-        correctIndex={2}
-        explanation={"padStart/padEnd only ADD padding to reach a target length — they never truncate. Since \"hello world\" is already longer than the target length of 5, it's returned completely unchanged."}
-        language="javascript"
-      />
-
-      <InteractiveChallenge
-        question={"Why does Object.getOwnPropertyDescriptors() + Object.defineProperties() copy an object more faithfully than Object.assign()?"}
-        options={[
-          "It's faster, which is the only difference",
-          "Object.assign copies a getter's current VALUE as a plain property; the descriptor-based copy preserves the getter/setter itself",
-          "Object.assign doesn't work on objects with getters at all — it throws",
-          "There's no real difference; they're aliases",
-        ]}
-        correctIndex={1}
-        explanation={"Object.assign() invokes any getter on the source and writes the resulting value onto the target as an ordinary data property — the accessor doesn't survive. Object.getOwnPropertyDescriptors() captures the actual get/set functions, and Object.defineProperties() installs them as real accessors on the target, so the copy keeps behaving live."}
-        language="javascript"
-      />
-
-      <InteractiveChallenge
-        question={"Why was SharedArrayBuffer disabled by default in most browsers shortly after ES2017 shipped it?"}
-        options={[
-          "It was replaced by a newer API almost immediately",
-          "Browser vendors decided threads were unnecessary on the web",
-          "The Spectre side-channel disclosures (Jan 2018) showed shared memory + high-resolution timing could leak data across security boundaries",
-          "It never actually shipped in any browser",
-        ]}
-        correctIndex={2}
-        explanation={"Following the January 2018 Spectre disclosures, browser vendors disabled SharedArrayBuffer by default because it — combined with Atomics — gave untrusted code a high-resolution timer, a key ingredient in Spectre-style timing attacks. It was later re-enabled, but only for pages that opt into cross-origin isolation via the Cross-Origin-Opener-Policy and Cross-Origin-Embedder-Policy headers."}
-        language="javascript"
-      />
 
     </LessonLayout>
   );

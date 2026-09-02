@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Testing() {
@@ -425,19 +424,6 @@ test('blocks navigation and surfaces the message when dirty', () => {
           in tests.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"How do you test a <Prompt> without triggering the browser's native window.confirm dialog?"}
-        options={[
-          "You can't — Prompt requires a real browser environment",
-          "Mock window.confirm globally before every test",
-          "Pass a getUserConfirmation function to MemoryRouter and control the callback",
-          "Use createMemoryRouter instead of MemoryRouter",
-        ]}
-        correctIndex={2}
-        explanation={"MemoryRouter (and BrowserRouter) accept a getUserConfirmation prop that intercepts the confirmation step Prompt normally hands to window.confirm. You get the message text and a callback — call it with true or false to simulate the user's choice, no real dialog involved. (createMemoryRouter isn't a v5 API at all — that's the v6.4+ data router.)"}
-        language="jsx"
-      />
 
       <h2>Reusable Test Wrapper</h2>
       <CodeBlock language="jsx" title="Test Utility Wrapper">

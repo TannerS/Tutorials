@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Srp() {
@@ -251,19 +250,6 @@ class PayCalculatorTest {
         <li>Unit tests require complex setup with many mocks</li>
       </ul>
 
-      <InteractiveChallenge
-        question="Which of the following is a violation of the Single Responsibility Principle?"
-        options={[
-          "A UserValidator class with methods validateEmail() and validatePassword()",
-          "A UserService class that validates input, saves to DB, and sends welcome emails",
-          "A PayCalculator class with methods for gross pay, tax, and net pay",
-          "A UserRepository class with save(), findById(), and delete() methods"
-        ]}
-        correctIndex={1}
-        explanation="The UserService class has three reasons to change: validation rules, persistence logic, and email sending. Each of these concerns belongs to a different actor (security team, DBA, marketing team) and should be in separate classes. The other options each focus on a single responsibility."
-        code={"public class UserService {\n    public void registerUser(User user) {\n        // validates input\n        // saves to database\n        // sends welcome email\n    }\n}"}
-        language="java"
-      />
     </LessonLayout>
   );
 }

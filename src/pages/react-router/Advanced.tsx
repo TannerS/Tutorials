@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Advanced() {
@@ -534,19 +533,6 @@ function PrefetchLink({ to, children, ...props }) {
   );
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"What is the advantage of React Router v7's lazy() property over React.lazy()?"}
-        options={[
-          "lazy() is faster because it uses Web Workers",
-          "lazy() loads the entire route module (component + loader + action) in one import",
-          "lazy() works without Suspense boundaries",
-          "lazy() pre-renders the component on the server",
-        ]}
-        correctIndex={1}
-        explanation={"React Router's lazy() property loads the complete route module — component, loader, action, and error boundary — in a single dynamic import. This means the loader can run as soon as the chunk downloads, in parallel with render preparation. React.lazy() only handles the component, leaving loader/action separate."}
-        language="jsx"
-      />
 
       <h2>Quick Reference: When to Use What</h2>
       <CodeBlock language="jsx" title="Pattern Decision Guide">

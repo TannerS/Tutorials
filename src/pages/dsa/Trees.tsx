@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Trees() {
   return (
@@ -551,18 +550,6 @@ Searching for 9999, 200000 times each (post-warmup):
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"You insert 10,000 already-sorted integers (1, 2, 3, …, 10000) into a plain, non-self-balancing BST using the standard recursive/iterative insert (compare, go left or right, attach at the first null). What happens, and why?"}
-        options={[
-          "Nothing bad — BSTs are balanced by definition, so search stays O(log n) regardless of insertion order",
-          "The tree degenerates into a height-10,000 chain because every new value is larger than all previous ones, so every insert attaches to the rightmost node's right child — search becomes O(n), which was measured as roughly 1,255x slower than the same values inserted in random order",
-          "The JVM automatically rebalances the tree during insertion, so performance is unaffected",
-          "It only matters for delete, not for search or insert"
-        ]}
-        correctIndex={1}
-        explanation={"A plain BST has no built-in balancing — insert just walks left/right and attaches at the first empty spot the invariant allows. Sorted input means every value is greater than everything already in the tree, so every insert goes right, producing a straight chain (height == n instead of ~log2(n)). The measured demo above showed exactly this: height 10,000 for the sorted-insert tree vs. height 30 for the same values inserted in random order, and search on the degenerate tree ran about 1,255x slower. This is exactly the failure case AVL and Red-Black trees exist to prevent — they add rebalancing so height stays O(log n) no matter what order values arrive in."}
-      />
 
       <h2>Self-Balancing Trees: AVL and Red-Black</h2>
 

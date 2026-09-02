@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Resources() {
@@ -433,30 +432,6 @@ router.post('/users/:userId/addresses', async (req, res, next) => {
 
 module.exports = router;`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"Which URL correctly follows REST resource naming conventions?"}
-        options={[
-          "POST /api/createUser",
-          "GET /api/user/42",
-          "GET /api/users/42/orders",
-          "GET /api/fetchUserOrders?userId=42"
-        ]}
-        correctIndex={2}
-        explanation={"GET /api/users/42/orders follows REST conventions: it uses plural nouns (users, orders), expresses the parent-child relationship through nesting, uses no verbs in the URL, and relies on the HTTP method (GET) for the action. The others use verbs in URLs or singular resource names."}
-      />
-
-      <InteractiveChallenge
-        question={"You need to search for products with a price range and sort by rating. Which URL design is most RESTful?"}
-        options={[
-          "POST /api/searchProducts { minPrice: 10, maxPrice: 100, sortBy: 'rating' }",
-          "GET /api/products/search/price/10/100/sort/rating",
-          "GET /api/products?minPrice=10&maxPrice=100&sort=rating:desc",
-          "GET /api/getFilteredProducts?min=10&max=100"
-        ]}
-        correctIndex={2}
-        explanation={"Query parameters are the correct place for filtering, sorting, and searching. GET /api/products with query params uses the correct HTTP method for reading, plural noun for the resource, and query parameters for modifying the result set. POST should not be used for read operations, and embedding filter values in the URL path is not RESTful."}
-      />
 
     </LessonLayout>
   );

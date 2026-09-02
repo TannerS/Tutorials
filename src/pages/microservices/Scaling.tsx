@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Scaling() {
@@ -484,30 +483,6 @@ server_idle_timeout = 300`}
 #    other than the shard key, every read fans out and you have paid
 #    for sharding without getting the benefit.`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"Your Node.js API is slow under load. CPU is at 30%, memory at 40%, but p99 latency is 2 seconds. Where is the bottleneck most likely?"}
-        options={[
-          'CPU — need bigger machine',
-          'Memory — need more RAM',
-          'Database — slow queries or connection exhaustion',
-          'Network — need better bandwidth'
-        ]}
-        correctIndex={2}
-        explanation={"Low CPU and memory utilization combined with high latency strongly suggests the bottleneck is I/O bound — most likely slow database queries or connection pool exhaustion. The application is spending most of its time waiting for the database to respond. Profile your queries, add indexes, and check your connection pool settings."}
-      />
-
-      <InteractiveChallenge
-        question={"What is the correct order for the database scaling playbook?"}
-        options={[
-          'Sharding → Caching → Read Replicas → Vertical',
-          'Vertical → Read Replicas → Connection Pooling → Caching → Sharding',
-          'Caching → Vertical → Sharding → Read Replicas',
-          'Read Replicas → Sharding → Caching → Vertical'
-        ]}
-        correctIndex={1}
-        explanation={"Always start with the simplest option: vertical scaling (bigger machine, zero code changes). Then add read replicas for read-heavy workloads. Connection pooling reduces connection overhead. Caching reduces database load. Sharding is the last resort due to its complexity."}
-      />
 
       <h2>Summary</h2>
 

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Aggregation() {
@@ -411,31 +410,6 @@ FROM employees;`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="What is the default frame specification when you use ORDER BY inside OVER()?"
-        options={[
-          'ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING',
-          'RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW',
-          'ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW',
-          'RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING',
-        ]}
-        correctIndex={1}
-        explanation="When ORDER BY is specified, the default frame is RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW. Note it's RANGE, not ROWS — meaning ties are included. Without ORDER BY, the default is the entire partition."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question="Which aggregate function counts only non-NULL values in a column?"
-        options={[
-          'COUNT(*)',
-          'COUNT(column_name)',
-          'SUM(column_name)',
-          'COUNT(DISTINCT column_name)',
-        ]}
-        correctIndex={1}
-        explanation="COUNT(column_name) counts only non-NULL values in that column. COUNT(*) counts all rows regardless of NULLs. COUNT(DISTINCT column_name) counts unique non-NULL values. SUM adds values, it doesn't count them."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

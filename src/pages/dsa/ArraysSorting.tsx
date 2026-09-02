@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import FlowChart from '../../components/FlowChart';
 
 export default function ArraysSorting() {
@@ -486,17 +485,6 @@ Relative order preserved within equal-score groups: true`}
         O(n) shift.
       </p>
 
-      <InteractiveChallenge
-        question={"A naive single-pivot Quicksort (pivot = last element) is run on an array that is already sorted in ascending order. What actually happens, and why?"}
-        options={[
-          "It runs faster than on random input, since the array is already in the correct order",
-          "It degrades to O(n^2): the pivot (always the largest remaining element) puts every element on one side of the partition, so the recursion depth becomes O(n) instead of O(log n) and total comparisons approach n(n-1)/2",
-          "It throws an exception, since Quicksort requires unsorted input to function",
-          "It still runs in O(n log n) because Quicksort's average case dominates regardless of input order"
-        ]}
-        correctIndex={1}
-        explanation={"With pivot = last element on ascending input, the pivot is always the largest value remaining in the range, so partition() puts everything else on the 'less than' side and nothing on the 'greater than' side -- an (n-1, 0) split every single level instead of a balanced (n/2, n/2) split. That turns log n recursion levels into n recursion levels, and the measured comparison count for n=10,000 landed at exactly 49,995,000 -- precisely n(n-1)/2, the closed form for the O(n^2) worst case. Java's actual Arrays.sort(int[]) avoids this specific trigger via run-detection and other heuristics that this naive textbook implementation doesn't have."}
-      />
     </LessonLayout>
   );
 }

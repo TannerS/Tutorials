@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Testing() {
@@ -421,30 +420,6 @@ public class OldStyleTest {
 // package-private is the idiomatic form and it is what Boot's own
 // generated tests use.`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="You are upgrading a Boot 2.7 service. Your plan is: bump straight to Boot 4, then fix whatever breaks. The test suite has 180 classes using @MockBean. What actually happens when you run the build, and what would a better plan have been?"
-        options={[
-          "Tests compile with deprecation warnings and pass; you fix them later at your leisure",
-          "Test compilation fails outright — the package org.springframework.boot.test.mock.mockito no longer exists — so you have no working test suite while debugging the rest of the upgrade. Convert to @MockitoBean on 3.4+ first, where both spellings work",
-          "Spring Boot 4 provides a compatibility shim, so @MockBean still resolves but logs a runtime warning per test class",
-          "Only the @SpyBean usages break; @MockBean was kept as an alias for @MockitoBean"
-        ]}
-        correctIndex={1}
-        explanation="On Boot 4 the whole package is gone. Real output: 'package org.springframework.boot.test.mock.mockito does not exist' followed by 'cannot find symbol: class MockBean' — a testCompile failure, so nothing in src/test compiles and you cannot run a single test. That is the worst possible moment to lose your test suite, because the rest of a Boot 2 to 4 upgrade (jakarta namespace, Jackson 3, property renames) is exactly the kind of change you want a green suite to validate. The better plan uses the overlap window: @MockitoBean exists from Boot 3.4 onward while @MockBean is merely deprecated, so on 3.4/3.5 you can convert all 180 classes with the suite passing the entire time, then bump to 4 with the test code already correct. Note also that the fix is not a pure rename — the annotation moved from a Spring Boot package to a Spring Framework one (org.springframework.test.context.bean.override.mockito), so replacing only the annotation name while leaving the old import leaves you exactly as broken."
-      />
-
-      <InteractiveChallenge
-        question="A Boot 2 suite of 200 test classes takes 25 minutes. Almost every class is annotated @SpringBootTest, and most declare two or three @MockBean fields — but the specific set of mocks differs from class to class. Where is the time going?"
-        options={[
-          "Mockito mock creation is expensive; switching to hand-written stubs is the fix",
-          "The @MockBean definitions are part of the context cache key, so each distinct combination of mocks builds a separate ApplicationContext — you are booting the app up to 200 times",
-          "@SpringBootTest starts a real Tomcat by default, so 200 servers are being started and stopped",
-          "MockReset.AFTER forces a full context refresh between test methods"
-        ]}
-        correctIndex={1}
-        explanation="Spring's TestContext framework caches an ApplicationContext and reuses it across classes only when the whole context key matches — configuration classes, active profiles, inline properties, initializers, web environment, AND the set of bean override (@MockBean / @MockitoBean) definitions. Varying the mock set per class therefore varies the key per class, so almost nothing is reused and the application is built from scratch each time. Turn on logging.level.org.springframework.test.context.cache=DEBUG and read missCount: if it approaches your class count, that is the whole story. Also watch maxSize, which defaults to 32 — beyond that, contexts are evicted and can be rebuilt more than once in a single run. Option 3 is wrong because @SpringBootTest defaults to WebEnvironment.MOCK, which starts no server. Option 4 is wrong because MockReset resets the mock, not the context — that is the cheap part, and it is exactly what lets a context be shared safely. The fixes are structural: one abstract base class holding the shared configuration and the standard mock set, and slices instead of full-context tests wherever the test only touches one layer."
-      />
 
       <InfoBox variant="success" title="Testing checklist for the upgrade">
         <ul>

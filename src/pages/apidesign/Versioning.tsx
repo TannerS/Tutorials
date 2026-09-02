@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Versioning() {
@@ -523,30 +522,6 @@ app.use('/api/auth/register', authLimiter);`}
           free users get 100 req/min, paid users get 1000 req/min, enterprise gets 10000.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"Which API versioning strategy is most widely adopted and recommended for public APIs?"}
-        options={[
-          "Query parameter versioning (?v=1)",
-          "URL path versioning (/api/v1/)",
-          "Content negotiation (Accept header)",
-          "Custom header versioning (X-API-Version)"
-        ]}
-        correctIndex={1}
-        explanation={"URL path versioning (/api/v1/) is the most widely adopted strategy. It is the simplest to implement, most visible, and easiest to test — you can exercise it from a browser address bar. While purists may prefer content negotiation, the pragmatic benefits make it the default recommendation. Note that Stripe and GitHub, the usual examples, actually use date-based versioning via a header; Stripe's /v1/ path segment has not changed in over a decade."}
-      />
-
-      <InteractiveChallenge
-        question={"You are building a social media feed API where new posts are constantly being created. Users scroll through an infinite feed. Which pagination strategy is best?"}
-        options={[
-          "Offset-based pagination (page=1&size=20) because it supports page numbers",
-          "Cursor-based pagination because it handles real-time data consistently",
-          "No pagination — return all posts at once for the best user experience",
-          "Random sampling — return a random subset of posts each time"
-        ]}
-        correctIndex={1}
-        explanation={"Cursor-based pagination is ideal for social media feeds. With offset-based pagination, new posts being inserted at the top would cause items to shift — users would see duplicate posts or miss posts entirely. Cursor-based pagination uses a stable reference point (like a post ID or timestamp) so results are consistent regardless of new inserts."}
-      />
 
     </LessonLayout>
   );

@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function DddSpringBoot() {
   return (
@@ -487,17 +486,6 @@ BUILD SUCCESS`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A junior developer on your team writes: public interface ProductRepository extends JpaRepository<Product, Long> {} and injects it directly into a ProductController, reasoning 'it's less code and Spring Data already gives me save() and findById() for free.' Product has no state-machine invariants -- it's a name, a price, and a description, each independently editable. What's the correct response?"
-        options={[
-          "Always wrong -- every aggregate must be protected behind a narrow domain repository interface, no exceptions",
-          "It's fine here -- Product has no cross-field invariants or illegal state transitions for a generic save()/findById() to bypass, so the extra indirection of a hand-written repository and package-private Spring Data interface would be pure cost with nothing to protect",
-          "It's wrong, but only because the interface name should be OrderRepository",
-          "It's wrong because JpaRepository should never be used in a Spring Boot application"
-        ]}
-        correctIndex={1}
-        explanation="The Repository indirection exists to protect aggregate invariants that a generic save()/deleteById() could otherwise bypass -- exactly what was demonstrated with the Order aggregate's shipped-order-deletion bug. Product, as described, has no such invariants: nothing connects its fields, and no operation is illegal in some state and legal in another. Building six classes and three packages to protect nothing is the anti-pattern in the other direction -- as the cost section states, this pattern only pays for itself once there's a real invariant on the line."
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Patterns() {
@@ -530,19 +529,6 @@ src/
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"Which of these is a test smell (anti-pattern) you should avoid?"}
-        options={[
-          "Using getByRole to query elements",
-          "Testing the component after a user clicks a button",
-          "Checking internal component state with wrapper.state()",
-          "Using a custom render that includes providers"
-        ]}
-        correctIndex={2}
-        explanation={"Accessing internal component state (wrapper.state()) is an implementation detail. RTL doesn't even support it. Test what the user sees and interacts with, not internal state variables."}
-        language="jsx"
-      />
 
       <h2>Test Smell Anti-Patterns</h2>
 

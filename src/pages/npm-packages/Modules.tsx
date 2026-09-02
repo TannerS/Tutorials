@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Modules() {
@@ -393,30 +392,6 @@ import pkg from './package.json' with { type: 'json' };  // ESM — 'with', not 
         won't be shared between them. For stateful packages, consider ESM-only or document
         this limitation clearly.
       </InfoBox>
-
-      <InteractiveChallenge
-        question="A user reports: 'Error: require() of ES Module not supported'. What happened?"
-        options={[
-          "They're using an outdated version of Node.js",
-          "Their project uses CommonJS and your package only ships ESM",
-          "They forgot to install your package",
-          "Their package.json is missing the 'type' field"
-        ]}
-        correctIndex={1}
-        explanation="A CommonJS project tried to require() an ES-Module-only package on a Node version older than 20.19 / 22.12. Node has since unflagged require(esm), so on current Node this usually just works — unless the module uses top-level await, which fails with ERR_REQUIRE_ASYNC_MODULE instead. Fixes, in order of preference: tell them to upgrade Node, dual-publish (.cjs + .mjs), or have them switch to import syntax."
-      />
-
-      <InteractiveChallenge
-        question="In the exports field, why should 'types' come before 'import' and 'require'?"
-        options={[
-          "Alphabetical ordering is required by npm",
-          "TypeScript reads conditions top-to-bottom and uses the first applicable match",
-          "The types file must be loaded before runtime code",
-          "It's just a convention with no technical impact"
-        ]}
-        correctIndex={1}
-        explanation="TypeScript's module resolution reads the exports conditions from top to bottom and uses the first condition that matches. If 'import' comes before 'types', TypeScript may resolve to the .mjs file instead of the .d.ts file, losing type information. Always put 'types' first in each export condition."
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

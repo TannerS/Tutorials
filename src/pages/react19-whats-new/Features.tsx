@@ -1,6 +1,5 @@
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function WhatsNewFeatures() {
@@ -657,18 +656,6 @@ Error handling       onCaughtError / onUncaughtError / onRecoverableError (creat
 React Compiler       separate opt-in build tool — NOT bundled in react@19`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question="Which of these is NOT actually part of the react/react-dom 19 packages themselves?"
-        options={[
-          'useOptimistic',
-          'The React Compiler',
-          'The use() API',
-          'Ref cleanup functions',
-        ]}
-        correctIndex={1}
-        explanation="The React Compiler is a separate, opt-in build-time tool (a Babel plugin) announced alongside React 19 — it's versioned and installed independently, and enabling React 19 does not turn it on. Everything else listed (useOptimistic, use(), ref cleanup functions) ships directly inside the react/react-dom runtime packages."
-        language="jsx"
-      />
     </LessonLayout>
   );
 }

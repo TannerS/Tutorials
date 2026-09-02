@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Performance() {
@@ -666,29 +665,6 @@ function ProductDashboard({ products, categories }) {
       {/* ------------------------------------------------------------------ */}
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question={"A parent component passes style={{ color: 'red' }} to a React.memo child. The parent re-renders due to unrelated state. What happens?"}
-        options={[
-          'The child skips re-rendering because the style value is the same',
-          'The child re-renders because a new object reference is created each time',
-          'React.memo performs a deep comparison and skips the re-render',
-          'The child only re-renders if color actually changed',
-        ]}
-        correctIndex={1}
-        explanation="Inline object literals create a new reference on every render. React.memo uses shallow comparison (Object.is), so it sees a different reference and re-renders the child even though the values are identical. Move the object outside the component or wrap it in useMemo."
-      />
-
-      <InteractiveChallenge
-        question={"You have a list of 1,000 items rendered with index as the key. A user deletes the third item. What problem will React encounter?"}
-        options={[
-          'React throws an error because keys must be unique strings',
-          'React unmounts and remounts every item after the deleted one',
-          'React incorrectly recycles DOM nodes, shifting state to the wrong items',
-          'There is no problem — index keys work fine for deletions',
-        ]}
-        correctIndex={2}
-        explanation="When an item is removed, every subsequent index shifts down by one. React matches the old key=2 element to the new key=2 (which is now a different item), causing it to reuse DOM state for the wrong data. Use a stable, unique id instead."
-      />
     </LessonLayout>
   );
 }

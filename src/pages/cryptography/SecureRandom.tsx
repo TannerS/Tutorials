@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoSecureRandom() {
   return (
@@ -392,17 +391,6 @@ securerandom.strongAlgorithms=NativePRNGBlocking:SUN,DRBG:SUN`}
         lesson that decides which generator that is.
       </p>
 
-      <InteractiveChallenge
-        question={"Earlier in this lesson, an attacker recovered java.util.Random's full internal state — and predicted every future draw — from just two observed nextInt() outputs, with no seed knowledge at all. What actually makes that attack possible?"}
-        options={[
-          "The demo happened to run with a weak, predictable seed value",
-          "The LCG recurrence and its multiplier/addend constants are public, and every nextInt() call directly leaks 32 of the generator's only 48 bits of internal state — small enough that the remaining 16 bits are a 65,536-entry brute force",
-          "The attacker had direct memory access to the running JVM process",
-          "java.util.Random silently re-seeds itself from the system clock on every call"
-        ]}
-        correctIndex={1}
-        explanation={"The seed was never touched — that's the point. A linear congruential generator's entire security rests on its internal state staying secret, but java.util.Random's state is only 48 bits, its recurrence (seed = (seed * 0x5DEECE66DL + 0xBL) & mask) is published in the Javadoc, and each nextInt() call hands the attacker the top 32 of those 48 bits directly. That leaves only 65,536 possibilities for the missing 16 bits — a brute force that finishes instantly, not a cryptographic barrier. Any PRNG where public math plus a couple of outputs can reconstruct the full state is unsafe for anything an attacker benefits from predicting, no matter how the seed was chosen."}
-      />
     </LessonLayout>
   );
 }

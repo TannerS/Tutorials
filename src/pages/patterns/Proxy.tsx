@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Proxy() {
@@ -323,17 +322,6 @@ ApiResponse response = auth.handle(incomingRequest);`}
         authentication fails, validation never runs. This "fail fast" behavior is the key distinction.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="In Spring Boot, which annotation creates a proxy that adds caching behavior to a method?"
-        options={[
-          "@Proxy",
-          "@Cacheable",
-          "@CacheProxy",
-          "@Cached"
-        ]}
-        correctIndex={1}
-        explanation="@Cacheable tells Spring to create a proxy around your bean. The proxy intercepts method calls, checks the cache first, and only calls the real method on a cache miss. This is the Proxy pattern implemented via Spring AOP."
-      />
     </LessonLayout>
   );
 }

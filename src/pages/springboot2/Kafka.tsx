@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Kafka() {
@@ -574,17 +573,6 @@ membership changes (rebalance storm indicator).`}
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A teammate says: 'We can't use DefaultErrorHandler.addNotRetryableExceptions() — that's a Spring Boot 3+ API, and we're stuck on Boot 2.7.' You check the BOM and find Boot 2.7.18 resolves spring-kafka 2.8.11. Is the teammate right?"
-        options={[
-          "Yes — DefaultErrorHandler was introduced in spring-kafka 3.0 alongside Boot 3",
-          "No — DefaultErrorHandler and addNotRetryableExceptions() both exist in spring-kafka 2.8.11, which Boot 2.7.18 already ships; the class replaced the older SeekToCurrentErrorHandler back in spring-kafka 2.8 (2021), well before Boot 3 existed",
-          "Yes — the method exists in 2.8.11 but throws UnsupportedOperationException on Boot 2",
-          "It depends on whether spring-boot-starter-aop is on the classpath"
-        ]}
-        correctIndex={1}
-        explanation="Checking the actual resolved jar (javap -p -cp spring-kafka-2.8.11.jar org.springframework.kafka.listener.DefaultErrorHandler) shows the class, its (ConsumerRecordRecoverer, BackOff) constructor, and addNotRetryableExceptions() all present. DefaultErrorHandler replaced SeekToCurrentErrorHandler in spring-kafka 2.8, released in 2021 — a full minor Spring Boot line before 3.0 shipped. This is the recurring trap in a Boot 2 codebase: 'Boot 2' and 'old API' are not synonyms. The Kafka error-handling API you'd reach for today is exactly the one Boot 2.7 already has. What genuinely differs between 2.8.11 and 4.1.1 is smaller than people assume (KafkaTemplate.send()'s return type is the one real break) — verify against the resolved jar rather than assuming a version gate that isn't there."
-      />
     </LessonLayout>
   );
 }

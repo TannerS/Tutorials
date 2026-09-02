@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Recursion() {
   return (
@@ -317,17 +316,6 @@ Total recursive calls: 15`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"In the factorial(4) call-stack diagram, factorial(4) cannot produce a final number until which of the following happens?"}
-        options={[
-          "factorial(4) is called a second time",
-          "factorial(1), the base case, returns its answer, and every waiting call above it finishes multiplying on the way back up",
-          "The Java compiler pre-computes the answer before the program runs",
-          "factorial(3) is called before factorial(4)"
-        ]}
-        correctIndex={1}
-        explanation={"Every call from factorial(4) down to factorial(2) is paused, waiting on the call below it -- none of them can multiply and return until they have a real number to multiply. That number only exists once factorial(1), the base case, answers directly with 1 instead of making another call. From there, the answer unwinds back up the stack: factorial(2) returns 2, factorial(3) returns 6, and finally factorial(4) returns 24. This 'nothing can finish until the base case answers' idea is exactly why a missing or unreachable base case (as in the NoBaseCase.java demo) never produces an answer -- it just keeps piling up calls until the stack overflows."}
-      />
     </LessonLayout>
   );
 }

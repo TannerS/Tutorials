@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Animations() {
@@ -337,19 +336,6 @@ export default function Animations() {
 /* Percentages pin a stop to a point in the timeline; omit them
    and the stops are distributed evenly. Generate these curves with
    a spring-to-linear() tool rather than hand-tuning them. */`}</CodeBlock>
-
-      <InteractiveChallenge
-        question={"What does animation-fill-mode: backwards do during the animation-delay period?"}
-        options={[
-          "Keeps the element invisible",
-          "Applies styles from the last keyframe (100%)",
-          "Applies styles from the first keyframe (0%)",
-          "Has no effect during the delay period"
-        ]}
-        correctIndex={2}
-        explanation={"backwards applies the first keyframe's styles during the delay period. This prevents the element from showing its original (pre-animation) styles before the animation starts. forwards handles post-animation, backwards handles pre-animation (delay), and both does both."}
-        language="css"
-      />
 
       <h2>Performance: GPU Compositing &amp; will-change</h2>
 
@@ -782,31 +768,6 @@ dialog:not([open])::backdrop { background: rgb(0 0 0 / 0); }
 }
 /* Set --i in HTML: style="--i: 0", style="--i: 1", etc. */`}</CodeBlock>
 
-      <InteractiveChallenge
-        question="Which CSS properties can be animated on the GPU compositor thread without triggering layout or paint?"
-        options={[
-          "background-color and border-radius",
-          "transform and opacity",
-          "width and height",
-          "box-shadow and filter"
-        ]}
-        correctIndex={1}
-        explanation={"Only transform and opacity are composited on the GPU without triggering layout or paint. They run on the compositor thread, completely off the main thread. Properties like width/height trigger full layout, background-color triggers paint, and box-shadow/filter also trigger paint. This is why performant animations should only animate transform and opacity whenever possible."}
-        language="css"
-      />
-
-      <InteractiveChallenge
-        question={"In the shorthand animation: fadeIn 500ms ease-out 200ms both, what does \"both\" control?"}
-        options={[
-          "Runs the animation in both directions (alternate)",
-          "Applies to both ::before and ::after pseudo-elements",
-          "Applies first keyframe during delay AND retains last keyframe after completion",
-          "Enables both GPU acceleration and will-change"
-        ]}
-        correctIndex={2}
-        explanation={"In the animation shorthand, 'both' is the fill-mode value. It combines 'backwards' (apply first keyframe styles during the delay period) and 'forwards' (retain last keyframe styles after animation ends). This prevents visual glitches where the element flashes its original styles before/after the animation."}
-        language="css"
-      />
     </LessonLayout>
   );
 }

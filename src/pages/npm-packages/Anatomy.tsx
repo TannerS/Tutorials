@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Anatomy() {
@@ -375,30 +374,6 @@ npm pack  # creates my-utils-1.0.0.tgz
 cd ../test-project
 npm install ../my-utils/my-utils-1.0.0.tgz`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question="You published a package but forgot to include the dist/ directory. What's the most likely cause?"
-        options={[
-          "dist/ was in .gitignore and no 'files' field was specified",
-          "npm always excludes directories named 'dist'",
-          "The build didn't run before publishing",
-          "TypeScript files can't be published to npm"
-        ]}
-        correctIndex={0}
-        explanation="When no 'files' field exists in package.json and no .npmignore exists, npm falls back to using .gitignore to determine what to exclude. Since dist/ is commonly gitignored (it's generated), it gets excluded from the published package too. The fix: add a 'files' field listing dist/, or add an .npmignore that doesn't exclude dist/."
-      />
-
-      <InteractiveChallenge
-        question="What is the purpose of the 'exports' field in package.json?"
-        options={[
-          "It lists all functions the package exports",
-          "It defines conditional entry points and controls which subpaths consumers can import",
-          "It exports environment variables for scripts",
-          "It replaces the need for index.js"
-        ]}
-        correctIndex={1}
-        explanation="The 'exports' field serves two purposes: (1) it defines conditional entry points — different files for import vs require, for Node vs browser, etc. (2) It controls encapsulation — consumers can ONLY import paths listed in exports. If './internal' isn't in exports, 'import x from pkg/internal' fails."
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

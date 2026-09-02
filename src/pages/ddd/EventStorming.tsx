@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function DddEventStorming() {
   return (
@@ -312,17 +311,6 @@ export default function DddEventStorming() {
         other planning exercises do, though remote tooling for it does exist and is commonly used.
       </p>
 
-      <InteractiveChallenge
-        question="A group event-storms an insurance claims process. They notice a run of orange stickies — ClaimSubmitted, DocumentsUploaded, ClaimReviewed — all using the word 'claim,' followed by a sharp shift to a different vocabulary: PayoutCalculated, PayoutApproved, PayoutIssued, handled by a completely different department using terms like 'disbursement' and 'ledger entry.' What does this pattern most likely indicate?"
-        options={[
-          "A bug in the workshop — the group should merge these back into one continuous timeline",
-          "Nothing structural — it's just two departments using different jargon for the same thing",
-          "A likely bounded-context boundary — the vocabulary and ownership shift at exactly this seam, which is the pattern that usually corresponds to a real context boundary in the code and org chart",
-          "That the second group of events should be deleted since they're redundant with the first"
-        ]}
-        correctIndex={2}
-        explanation="A pile-up of related events sharing a vocabulary, followed by a sudden shift in language, actor, and pace, is the standard tell for a bounded-context seam. Here it lines up with a real organizational boundary too (claims handling vs. payouts/finance), which is exactly the kind of corroborating signal that makes a candidate boundary worth taking seriously — a separate Claims context and a separate Payments/Disbursement context, communicating by the ClaimReviewed event crossing into a policy that triggers PayoutCalculated."
-      />
     </LessonLayout>
   );
 }

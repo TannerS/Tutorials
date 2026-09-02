@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function ModuleFederation() {
@@ -364,17 +363,6 @@ Weird 'is not part of the concatenation' build errors:
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="You add a new page to a remote MFE and calls to useContext() from that page start returning undefined even though the shell wraps everything in a Provider. What's the most likely cause?"
-        options={[
-          "The context value isn't memoized correctly",
-          "React isn't declared as a shared singleton in Module Federation, so the shell and remote each loaded their own React instance — their createContext identities don't match",
-          "You need to pass the context as a prop through the remote's boundary",
-          "The provider is inside a Suspense boundary and hasn't hydrated"
-        ]}
-        correctIndex={1}
-        explanation="This is the singleton trap. Contexts are keyed by the context object itself, which is created by React's createContext. If shell and remote each load their own React instance, they each create their own context objects — even if they share the same name — and useContext in the remote never sees the shell's Provider. Fix by declaring 'react' (and typically react-dom, MUI, Emotion) as singleton: true in every remote and the shell's Module Federation config."
-      />
     </LessonLayout>
   );
 }

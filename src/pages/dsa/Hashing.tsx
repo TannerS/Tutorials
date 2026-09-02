@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import FlowChart from '../../components/FlowChart';
 
 export default function Hashing() {
@@ -251,23 +250,6 @@ No exception — both keys landed in valid buckets.`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={
-          "A minimal hash table has 4 buckets and computes the index as " +
-          "`int index = key.hashCode() % buckets.length;`. For a key whose " +
-          "hashCode() is -1396355227, what happens when that line runs?"
-        }
-        options={[
-          "index becomes 1, and the key is stored normally — % always returns a non-negative result in Java",
-          "index becomes -3, and buckets[-3] throws ArrayIndexOutOfBoundsException — Java's % takes the sign of the dividend, so a negative hashCode() can produce a negative remainder",
-          "The code fails to compile, because hashCode() is not allowed to return a negative int",
-          "index silently wraps around to a valid positive bucket automatically, since arrays in Java support negative indexing from the end"
-        ]}
-        correctIndex={1}
-        explanation={
-          "Java's % is a remainder operator: the sign of the result matches the sign of the dividend, not the divisor. -1396355227 % 4 is -3, and buckets[-3] is not a legal array index, so this throws at runtime — it compiles fine and only fails for keys whose hash happens to be negative. The fix is Math.floorMod(key.hashCode(), buckets.length), which always takes the sign of the divisor (non-negative for a positive capacity), or key.hashCode() & (buckets.length - 1) when the capacity is a power of two, which is what java.util.HashMap actually does."
-        }
-      />
     </LessonLayout>
   );
 }

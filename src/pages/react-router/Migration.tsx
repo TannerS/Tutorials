@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Migration() {
@@ -460,19 +459,6 @@ function App() {
 
 // Migrate one route at a time, then remove compat when done`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"What replaces useHistory().push('/path') in React Router v6+?"}
-        options={[
-          "useRouter().push('/path')",
-          "useNavigate()('/path')",
-          "navigate('/path') from useNavigate()",
-          "useRedirect('/path')",
-        ]}
-        correctIndex={2}
-        explanation={"useNavigate() returns a navigate function. Call it with a path string: navigate('/path'). For replace behavior, pass { replace: true } as the second argument. For going back, use navigate(-1)."}
-        language="jsx"
-      />
 
       <h2>Quick Reference: Full Migration Checklist</h2>
       <CodeBlock language="jsx" title="Migration Checklist">

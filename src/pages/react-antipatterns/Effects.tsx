@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Effects() {
@@ -549,29 +548,6 @@ function Products() {
         chart={"graph TD\nA[useEffect that calls setState] --> B{What triggers it?}\nB -->|Props/state changed| C{Is the new state derived from those?}\nC -->|Yes| D[Remove effect - compute during render]\nC -->|No| E{Is it in response to user action?}\nE -->|Yes| F[Move to event handler]\nE -->|No| G[Effect might be correct - external sync]\nstyle D fill:#1a3329\nstyle F fill:#1a3329\nstyle G fill:#1a2744"}
       />
 
-      <InteractiveChallenge
-        question={"Which useEffect usage is correct?"}
-        options={[
-          'useEffect to filter a list when search term changes',
-          'useEffect to set up a WebSocket connection on mount',
-          'useEffect to call setState with a computed value from props',
-          'useEffect to update state when a button is clicked',
-        ]}
-        correctIndex={1}
-        explanation={"Setting up a WebSocket is synchronizing with an external system — the correct use of useEffect. Filtering a list is derived state (compute during render). Setting state from props is the derived state anti-pattern. Button clicks should be handled in event handlers."}
-      />
-
-      <InteractiveChallenge
-        question={"What causes a stale closure in useEffect?"}
-        options={[
-          'Using async/await inside the effect',
-          'Having too many dependencies',
-          'Missing a variable from the dependency array that the effect reads',
-          'Returning a cleanup function',
-        ]}
-        correctIndex={2}
-        explanation={"A stale closure happens when the effect reads a variable (state or prop) but that variable is not in the dependency array. The effect captures the value from the render when it was created and never sees updates."}
-      />
     </LessonLayout>
   );
 }

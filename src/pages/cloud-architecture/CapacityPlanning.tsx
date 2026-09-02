@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CloudArchitectureCapacityPlanning() {
   return (
@@ -264,17 +263,6 @@ actually arrives.`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"Your team runs a fleet of stateless workers that process an overnight batch job — if a worker is interrupted mid-job, it resumes cleanly from the last checkpoint on a new instance. Your primary Postgres database runs as a single always-on instance with no standby configured yet. Which pricing model should each use?"}
-        options={[
-          "Spot for both — it's the cheapest option and neither is user-facing during the batch window",
-          "Reserved (or on-demand) for the database, spot for the batch workers — the database can't tolerate its only instance being reclaimed, while the batch workers are built to absorb exactly that",
-          "On-demand for the database and reserved for the batch workers, because reserved instances can't be interrupted",
-          "Spot for the database because it's cheaper, and reserved for the batch workers because they run at a predictable time every night"
-        ]}
-        correctIndex={1}
-        explanation={"The batch workers are the textbook spot use case: interruption costs a delay (resume from checkpoint), not an outage, so it's safe to take the deepest discount and accept reclaim risk. The database is the opposite profile — a single instance with no standby means losing it, even briefly and even with warning, is a full outage. That workload needs the provider's uptime guarantee (on-demand, or reserved once the load is predictable enough to commit to), never spot's 'we might take this back' guarantee."}
-      />
     </LessonLayout>
   );
 }

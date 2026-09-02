@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Integration() {
@@ -439,19 +438,6 @@ mockMvc.perform(put("/api/users/{id}", userId)
           with REST Assured and Newman.
         </p>
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"When should you use @WebMvcTest instead of @SpringBootTest?"}
-        options={[
-          "When you need to test the full application stack with real database",
-          "When you only need to test the controller layer with mocked services",
-          "When you want to test JavaScript code",
-          "When you need to run E2E tests with a real browser"
-        ]}
-        correctIndex={1}
-        explanation="@WebMvcTest loads only the web layer (controllers, filters, advice) and is much faster than @SpringBootTest. Services and repositories are supplied as @MockitoBean (the replacement for the deprecated @MockBean). Use @SpringBootTest when you need the full context."
-        language="java"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

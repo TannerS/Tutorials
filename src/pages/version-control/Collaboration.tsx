@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Collaboration() {
   return (
@@ -266,17 +265,6 @@ git commit -m "feat(api): remove deprecated /v1/users endpoint" \\
         company with forty independently-deployed services and forty teams.
       </p>
 
-      <InteractiveChallenge
-        question={"A team's release manager approves and merges PR #101 (renames a shared getUserData() helper to fetchUserProfile()) and PR #102 (adds a new caller of getUserData()) within a minute of each other. Both PRs were opened separately, both passed CI cleanly against main before merging, and there was no text-level merge conflict. main is now broken. What actually went wrong, and which practice would have caught it before it reached main?"}
-        options={[
-          "Git's merge algorithm has a bug — this shouldn't be possible if there's no textual conflict",
-          "The team should have used GitFlow instead of trunk-based development",
-          "This is a semantic conflict: each PR was only ever tested against main as it existed when that PR was opened, not against the other PR merging alongside it. A merge queue would have re-run CI against the actual combination of main + both PRs before allowing either to merge, catching the broken call site before it landed",
-          "The PRs were too small — larger PRs would have prevented this"
-        ]}
-        correctIndex={2}
-        explanation={"This is the exact gap plain branch-protection-plus-CI cannot close: CI on PR #102 ran against main as it was when #102 was tested, before #101's rename had landed, so it never saw the now-broken call site. Git itself sees no conflict because the two PRs don't touch overlapping lines of text — the break is semantic, not textual. A merge queue solves precisely this by testing each queued PR against the combined state of main plus every PR ahead of it, including PR #101, before letting PR #102 actually merge. GitFlow, PR size, and Git's merge algorithm are all unrelated to this specific failure mode."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Validation() {
@@ -250,19 +249,6 @@ class OrderControllerErrorHandlingTest {
     // ...
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"A test asserts jsonPath(\"$.errors\", hasSize(2)) on a 400 response but doesn't check which fields failed. What's the risk?"}
-        options={[
-          "None — count is sufficient for validation testing",
-          "The test would pass even if validation started failing on the wrong two fields",
-          "hasSize() doesn't work with jsonPath arrays",
-          "It's slower than asserting field names"
-        ]}
-        correctIndex={1}
-        explanation="A count-only assertion is blind to which fields actually failed. If a refactor accidentally swaps validation from 'email' + 'quantity' to 'email' + 'items', the test still shows 2 errors and passes, hiding a real regression. Pair count assertions with field-name assertions."
-        language="java"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

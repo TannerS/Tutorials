@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function SpringBoot2Intro() {
@@ -483,29 +482,6 @@ spring-web 6.2.11   jakarta/servlet/http/HttpServletRequest`}
         combination worth understanding properly.
       </p>
 
-      <InteractiveChallenge
-        question="You inherit a Spring Boot 2.7.18 service. It is internal-only, has had four commits in two years, is scheduled for decommission next quarter, and your company pays for Broadcom commercial support. What is the right call?"
-        options={[
-          "Migrate to Boot 4 immediately — 2.7 is out of OSS support and that is unacceptable",
-          "Leave it alone; the decommission date and the subscription together make migration a waste of risk",
-          "Migrate to Boot 3 only, as a compromise",
-          "Half-migrate the modules that are easy and leave the rest"
-        ]}
-        correctIndex={1}
-        explanation="Every factor points the same way. Commercial support for the 2.7 line runs to 2029-06-30, so the service IS being patched — the 2023-06-30 OSS cutoff does not apply to you. It is internal-only, so the blast radius is small. It is not under development, so there is no compounding cost. And it has a real end date next quarter, so migration effort would be spent on something about to be deleted. Option 1 mistakes a general rule for this specific situation. Option 3 spends most of the cost (javax to jakarta, Java 17, Hibernate 6) for a service that will not exist long enough to benefit. Option 4 is the one genuinely wrong answer in every scenario: a codebase split across two namespaces with a shim between them is worse than either endpoint."
-      />
-
-      <InteractiveChallenge
-        question="Your pom.xml inherits from a corporate parent POM with no visible Spring Boot version. What is the most reliable way to find out which Boot version you are actually running?"
-        options={[
-          "Search the corporate parent POM in its own repository and read the version from there",
-          "Check the Spring Boot version in your IDE's project settings panel",
-          "Run ./mvnw dependency:tree and read the resolved spring-boot artifact version",
-          "Look at which Java version the project targets and infer it — Java 17 means Boot 3+"
-        ]}
-        correctIndex={2}
-        explanation="dependency:tree reports what Maven ACTUALLY resolved after inheritance, BOM imports, dependency management and any version overrides have all been applied. Option 1 is the right instinct but incomplete — the corporate parent may itself inherit from something else, or a dependencyManagement block in your own POM may override it, so you can read the wrong number confidently. Option 2 shows you the IDE's model of the project, which is usually right and is exactly the kind of 'usually' that costs you an afternoon. Option 4 is backwards: Java 17 is REQUIRED by Boot 3+, but Boot 2 runs perfectly well on Java 17 too, so a Java 17 target tells you nothing about the Boot version. Only the resolved classpath is authoritative."
-      />
     </LessonLayout>
   );
 }

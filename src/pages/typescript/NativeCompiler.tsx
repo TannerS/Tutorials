@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function NativeCompiler() {
@@ -249,18 +248,6 @@ Same tsconfig. Same file set. Same result: zero errors from both.`}
         anything to your team.
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"You run the native compiler on your project and it finishes in 0.3s instead of 6s, but reports 40 errors your current compiler does not. What is the most likely explanation?"}
-        options={[
-          "The native compiler is stricter by design and you must fix all 40",
-          "It resolved a different set of files or a different config than you think",
-          "The type system changed in TypeScript 7",
-          "Native compilation cannot support strict mode"
-        ]}
-        correctIndex={1}
-        explanation={"TypeScript 7 aims for diagnostic parity — the type system is deliberately unchanged. A sudden pile of new errors almost always means you pointed it at a different tsconfig, a different include set, or different lib/@types resolution. Verify with --showConfig and --listFiles on BOTH compilers before concluding the checker changed."}
-      />
-
       {/* ── Section 5: Editors and LSP ────────────────────────────── */}
       <h2>5. What It Means For Your Editor</h2>
 
@@ -401,18 +388,6 @@ TsTypeChecker needs real type CHECKING, which transpilers cannot do.`}
         than a guarantee of 7.x support. Check the release notes rather than trusting this
         paragraph.
       </InfoBox>
-
-      <InteractiveChallenge
-        question={"Your build script calls ts.transpileModule() from a Node CLI. Your teammate's CI just runs `tsc --noEmit`. Who has more migration work for TypeScript 7?"}
-        options={[
-          "Your teammate — CLI flags were redesigned",
-          "You — the programmatic API changed shape entirely",
-          "Neither, the migration is automatic for both",
-          "Both equally, since the type system changed"
-        ]}
-        correctIndex={1}
-        explanation={"CLI usage is the smooth path: same tsconfig, same flags, same diagnostics. Programmatic consumers are the disrupted group — the root export no longer includes transpileModule or createProgram, and the replacement API under 'unstable/*' is an RPC client with a different object model rather than an in-process library."}
-      />
 
       {/* ── Section 7: Migration expectations ─────────────────────── */}
       <h2>7. Migration Expectations</h2>

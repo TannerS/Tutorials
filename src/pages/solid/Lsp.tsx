@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Lsp() {
@@ -337,19 +336,6 @@ public class Ostrich implements Bird {
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Why does making Square extend Rectangle violate LSP?"
-        options={[
-          "Squares have fewer methods than Rectangles",
-          "Square overrides setters with side-effects that break Rectangle's expected behavior",
-          "Java does not allow Square to extend Rectangle",
-          "Rectangles cannot be instantiated if Square exists"
-        ]}
-        correctIndex={1}
-        explanation="When Square overrides setWidth() to also set height (and vice versa), it changes the postcondition of the setter. Client code that calls setWidth(5) then setHeight(4) on a Rectangle expects area = 20, but gets 16 from a Square. The subclass is not safely substitutable for the parent — a textbook LSP violation."
-        code={"Rectangle r = new Square();\nr.setWidth(5);\nr.setHeight(4);\n// Expected area: 20\n// Actual area:  16 (4 * 4)"}
-        language="java"
-      />
     </LessonLayout>
   );
 }

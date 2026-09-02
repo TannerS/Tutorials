@@ -85,6 +85,7 @@ import ReactAdapters from './pages/react18/Adapters'
 import ReactImperativeBridge from './pages/react18/ImperativeBridge'
 import ReactModuleFederation from './pages/react18/ModuleFederation'
 import ReactFeatureFolder from './pages/react18/FeatureFolder'
+import ReactBulletproofReact from './pages/react18/BulletproofReact'
 import ReactErrorBoundaries from './pages/react18/ErrorBoundaries'
 import ReactAnimations from './pages/react18/Animations'
 import ReactPortals from './pages/react18/Portals'
@@ -548,6 +549,7 @@ function App() {
         <Route path="react18/imperative-bridge" element={<ReactImperativeBridge />} />
         <Route path="react18/module-federation" element={<ReactModuleFederation />} />
         <Route path="react18/feature-folder" element={<ReactFeatureFolder />} />
+        <Route path="react18/bulletproof-react" element={<ReactBulletproofReact />} />
         <Route path="react18/error-boundaries" element={<ReactErrorBoundaries />} />
         <Route path="react18/animations" element={<ReactAnimations />} />
         <Route path="react18/portals" element={<ReactPortals />} />

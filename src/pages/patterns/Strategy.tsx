@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Strategy() {
@@ -365,17 +364,6 @@ public class ShippingListener {
         making the code harder to trace for no real benefit.
       </InfoBox>
 
-      <InteractiveChallenge
-        question="In the Strategy pattern, what is the main benefit of injecting a List<PaymentStrategy> in Spring?"
-        options={[
-          "It makes the code run faster due to parallel processing",
-          "New strategies can be added without modifying the PaymentService class",
-          "It allows multiple payments to be processed simultaneously",
-          "It prevents null pointer exceptions in the payment flow"
-        ]}
-        correctIndex={1}
-        explanation="This is the Open/Closed Principle (the 'O' in SOLID). The PaymentService is open for extension (add a new @Component implementing PaymentStrategy) but closed for modification (never need to change PaymentService itself). Spring auto-discovers and injects all implementations."
-      />
     </LessonLayout>
   );
 }

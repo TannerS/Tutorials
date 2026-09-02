@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function JsFundamentals() {
@@ -387,56 +386,6 @@ line two\`);
       {/* ── Challenges ── */}
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question="What does this log?"
-        code={`console.log(x);\nlet x = 5;`}
-        language="javascript"
-        options={[
-          'undefined',
-          '5',
-          'ReferenceError: Cannot access \'x\' before initialization',
-          'SyntaxError',
-        ]}
-        correctIndex={2}
-        explanation="x is hoisted (the engine knows a let binding named x exists in this scope) but not initialized. Reading it before the declaration line falls inside the Temporal Dead Zone, which throws a ReferenceError — not a SyntaxError, and not a silent undefined like var would give you."
-      />
-
-      <InteractiveChallenge
-        question="What does console.log(varResults.map(fn => fn())) print?"
-        code={`const varResults = [];\nfor (var i = 0; i < 3; i++) {\n  varResults.push(() => i);\n}\nconsole.log(varResults.map(fn => fn()));`}
-        language="javascript"
-        options={['[0, 1, 2]', '[3, 3, 3]', '[undefined, undefined, undefined]', 'ReferenceError']}
-        correctIndex={1}
-        explanation="var is function-scoped, not block-scoped, so there is exactly one 'i' binding shared by every loop iteration and every closure created inside it. By the time the callbacks run, the loop has finished and i is 3, so all three closures read the same final value. Swapping var for let creates a fresh binding per iteration and fixes this."
-      />
-
-      <InteractiveChallenge
-        question="Which of these is truthy?"
-        code={`Boolean([]);   // ?\nBoolean('0');  // ?\nBoolean(0);    // ?`}
-        language="javascript"
-        options={[
-          'None of them',
-          'Only Boolean(0)',
-          'Boolean([]) and Boolean(\'0\') — both truthy',
-          'All three',
-        ]}
-        correctIndex={2}
-        explanation="There are exactly 8 falsy values in JS: false, 0, -0, 0n, '', null, undefined, and NaN. An empty array is still an object (truthy), and the string '0' is a non-empty string (truthy). Only the number 0 itself is falsy — Boolean(0) is false, so it's excluded."
-      />
-
-      <InteractiveChallenge
-        question="What is [] == false?"
-        code={`console.log([] == false);\nconsole.log([] === false);`}
-        language="javascript"
-        options={[
-          'true, then true',
-          'true, then false',
-          'false, then false',
-          'TypeError',
-        ]}
-        correctIndex={1}
-        explanation="With ==, both sides coerce toward number: [] → '' → 0, and false → 0, so the comparison becomes 0 == 0, which is true. === never coerces — a different-typed array and boolean are simply not equal, so it's false."
-      />
     </LessonLayout>
   );
 }

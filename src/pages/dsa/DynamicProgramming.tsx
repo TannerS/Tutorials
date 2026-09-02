@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import FlowChart from '../../components/FlowChart';
 
 export default function DynamicProgramming() {
@@ -565,17 +564,6 @@ Items chosen: A B`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"The memoized recursive fib(n) above threw a real StackOverflowError somewhere between n=14,300 and n=14,350 on this JVM's default 2 MB stack, while the purely iterative (tabulated) version computed fib(1,000,000) without any problem — despite both approaches computing each subproblem exactly once and running in O(n) time. Why does only the recursive one crash?"}
-        options={[
-          "Tabulation uses less total memory than memoization, so it can handle larger n before running out",
-          "The very first call still has to recurse all the way down to the base case before the cache helps — that initial descent is n stack frames deep regardless of caching, while a loop never recurses at all",
-          "HashMap lookups are too slow for large n, causing the JVM to abort the computation",
-          "Java automatically converts tail-recursive calls into loops, and fib() should have been written in tail-recursive form to avoid this"
-        ]}
-        correctIndex={1}
-        explanation={"Caching prevents recomputing a subproblem you've already solved, but it does nothing to shorten the first descent to the base case — fib(n) still calls fib(n-1) still calls fib(n-2)... all the way to fib(1)/fib(0) before there's anything in the cache to short-circuit. That's n stack frames, exactly like naive recursion, which is why n≈14,300-14,350 broke it here. Tabulation is a loop with no recursive calls at all, so it has no stack depth tied to n — it's limited only by how much heap the table itself needs. (Note: the JVM does not perform tail-call optimization regardless of how the function is written, and fib's recursive calls aren't in tail position anyway, since the addition happens after both calls return.)"}
-      />
     </LessonLayout>
   );
 }

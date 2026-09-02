@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -319,30 +318,6 @@ function ParentComponent() {
       </InfoBox>
 
       <h2>Test Your Knowledge</h2>
-
-      <InteractiveChallenge
-        question={"Which of the following is a React anti-pattern?"}
-        options={[
-          'Using useMemo to cache an expensive computation',
-          'Storing a value in useState that could be computed from props',
-          'Lifting state up to a common ancestor component',
-          'Splitting a large component into smaller, focused components',
-        ]}
-        correctIndex={1}
-        explanation="Storing a value in useState that could be computed from props is the 'derived state' anti-pattern. It introduces unnecessary state synchronization and is a common source of bugs. Instead, compute the value directly during render."
-      />
-
-      <InteractiveChallenge
-        question={"Why do anti-patterns commonly appear in React codebases?"}
-        options={[
-          'React is inherently flawed',
-          'Copy-paste from tutorials, deadline pressure, and incomplete mental models',
-          'JavaScript does not support good design patterns',
-          'React documentation encourages anti-patterns',
-        ]}
-        correctIndex={1}
-        explanation="Anti-patterns emerge from very human causes: copying tutorial code without adapting it, rushing under deadline pressure, and working with an incomplete understanding of React's declarative rendering model. None of these reflect a flaw in React itself."
-      />
 
       <InfoBox variant="success" title="Ready to Dive In?">
         Now that you understand what anti-patterns are, why they matter, and

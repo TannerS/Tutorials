@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Jwt() {
@@ -607,29 +606,6 @@ app.post('/auth/refresh', async (req, res) => {
         <code>exp</code>. This lesson is what makes the next one readable.
       </p>
 
-      <InteractiveChallenge
-        question={"Why should JWTs be stored in HttpOnly cookies instead of localStorage?"}
-        options={[
-          "localStorage has a smaller size limit than cookies",
-          "HttpOnly cookies cannot be read by JavaScript, protecting against XSS attacks that could steal the token",
-          "Cookies are encrypted while localStorage is not",
-          "localStorage does not work in all browsers"
-        ]}
-        correctIndex={1}
-        explanation={"localStorage is fully accessible to any JavaScript running on the page. If an attacker exploits an XSS vulnerability (injecting malicious JS), they can read localStorage and steal the JWT. HttpOnly cookies are invisible to JavaScript — document.cookie cannot access them. The browser sends them automatically, but no script can read or exfiltrate them. This is why security-sensitive tokens should always use HttpOnly cookies."}
-      />
-
-      <InteractiveChallenge
-        question={"What is the main advantage of JWTs over server-side sessions?"}
-        options={[
-          "JWTs are more secure because they are encrypted",
-          "JWTs can be easily revoked by the server",
-          "JWTs are self-contained and can be verified without a database lookup, making them ideal for stateless distributed systems",
-          "JWTs are smaller than session IDs"
-        ]}
-        correctIndex={2}
-        explanation={"JWTs encode all necessary information (user ID, roles, expiration) directly in the token. Any service with the public key can verify a JWT independently — no shared session store needed. This is the key advantage in microservices architectures where many services need to authenticate requests. The trade-off is that JWTs are harder to revoke (you cannot just delete them from a store) and are larger than a simple session ID."}
-      />
     </LessonLayout>
   );
 }

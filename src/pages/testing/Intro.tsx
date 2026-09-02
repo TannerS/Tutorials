@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Intro() {
@@ -403,19 +402,6 @@ export default defineConfig({
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"In the testing pyramid, which layer should have the MOST tests?"}
-        options={[
-          "End-to-End tests",
-          "Integration tests",
-          "Unit tests",
-          "Manual tests"
-        ]}
-        correctIndex={2}
-        explanation="Unit tests form the base of the pyramid. They are fast, cheap, and should make up the majority of your test suite. E2E tests are at the top — few in number but high in confidence."
-        language="java"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

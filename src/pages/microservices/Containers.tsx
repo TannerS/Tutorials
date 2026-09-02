@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 import MtlsExplainer from '../../components/security/MtlsExplainer';
 
@@ -709,30 +708,6 @@ spec:
           </tr>
         </tbody>
       </table>
-
-      <InteractiveChallenge
-        question={"Your Java application takes 45 seconds to start (JVM warm-up + loading reference data). Which Kubernetes probe should you configure to prevent premature restarts?"}
-        options={[
-          'Liveness probe with a 45-second initialDelaySeconds',
-          'Readiness probe with a long timeout',
-          'Startup probe with failureThreshold: 30 and periodSeconds: 2',
-          'No probe — Kubernetes will wait automatically'
-        ]}
-        correctIndex={2}
-        explanation={"The startup probe is designed for slow-starting containers. It disables liveness and readiness probes until it succeeds. With failureThreshold: 30 and periodSeconds: 2, Kubernetes will wait up to 60 seconds for the app to start before considering it failed. Using initialDelaySeconds on the liveness probe is fragile — if startup takes longer than expected, the pod gets killed."}
-      />
-
-      <InteractiveChallenge
-        question={"What is the primary benefit of a service mesh like Istio over implementing retries and circuit breakers in application code?"}
-        options={[
-          'Better performance — sidecars are faster than application code',
-          'Language-agnostic — works the same for Java, Node, Go, Python without code changes',
-          'Eliminates the need for load balancers',
-          'Provides a database for each service automatically'
-        ]}
-        correctIndex={1}
-        explanation={"A service mesh handles cross-cutting concerns (mTLS, retries, circuit breaking, observability) in the sidecar proxy, which is transparent to the application. This means a Java service, a Node.js service, and a Go service all get the same resilience features without any code changes or library dependencies."}
-      />
 
       <h2>Summary</h2>
 

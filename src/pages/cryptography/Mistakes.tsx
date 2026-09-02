@@ -1,7 +1,6 @@
 import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function CryptoMistakes() {
   return (
@@ -339,17 +338,6 @@ MessageDigest.isEqual(shortArr, longArr); // false, no exception`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"ECB mode and GCM nonce reuse both leak information about the plaintext without ever exposing the key. What's the actual difference in what each one leaks?"}
-        options={[
-          "There is no real difference — both are just \"weak encryption\" in roughly the same way",
-          "ECB leaks a structural pattern (which blocks of plaintext repeat, visible in any single message) because identical blocks always produce identical ciphertext under one key; GCM nonce reuse leaks the literal XOR of two plaintexts, because the same (key, nonce) regenerates the same keystream for both messages, canceling it out when the ciphertexts are XORed together",
-          "ECB is only a performance problem, not a security one; nonce reuse is the only real vulnerability of the two",
-          "Both failures require the attacker to already know the encryption key before either leak becomes exploitable"
-        ]}
-        correctIndex={1}
-        explanation={"They're both \"repetition breaks the guarantee,\" but at different levels. ECB's leak is structural and needs only ONE message: because every block is encrypted independently with no chaining, identical plaintext blocks always produce identical ciphertext blocks — that's why an ECB-encrypted bitmap still shows the outline of the original image, no second message required. GCM nonce reuse needs TWO messages under the same (key, nonce): the demo above showed that XORing the two ciphertexts together exactly reproduces XOR(plaintext1, plaintext2), because the identical keystream cancels out — no key needed to compute it. Different mechanism, same underlying lesson: a cipher's security guarantees hold only under the exact usage rules (unique blocks-worth-of-chaining for CBC/GCM's design, unique nonces for GCM) — break the rule and the guarantee doesn't degrade gracefully, it disappears."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Error() {
@@ -510,17 +509,6 @@ class CustomerControllerErrorTest {
         </ul>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="Your controller currently checks 'if (customer == null) return ResponseEntity.status(404).body(errorDto);'. What's the idiomatic Spring approach?"
-        options={[
-          "Return Optional<Customer> from the service and let the controller unwrap it",
-          "Throw a domain exception (e.g., CustomerNotFoundException) from the service and let a @RestControllerAdvice translate it to a 404 ProblemDetail response",
-          "Return null and let Spring auto-generate a 404",
-          "Return ResponseEntity.notFound() and log the error"
-        ]}
-        correctIndex={1}
-        explanation="'Throw at the fault line, translate once at the edge' is the guiding principle. The service that discovers the problem raises a typed domain exception; a single @RestControllerAdvice converts it into HTTP. Controllers stay clean of if-return error logic. Optional works for a genuine 'may or may not exist' return type in a service, but it doesn't scale — every consumer would have to reinvent the 'convert to HTTP 404' step."
-      />
     </LessonLayout>
   );
 }

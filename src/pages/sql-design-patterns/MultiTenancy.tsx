@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function MultiTenancy() {
@@ -313,31 +312,6 @@ CREATE TABLE orders_current (
 SELECT * FROM orders_current WHERE status = 'shipped';`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question="A SaaS product has thousands of small tenants and needs to add a new column to every tenant's data with minimal operational overhead. Which multi-tenancy strategy fits best?"
-        options={[
-          'Database-per-tenant',
-          'Schema-per-tenant',
-          'Shared schema with a tenant_id column and Row-Level Security',
-          'EAV attributes table shared across tenants',
-        ]}
-        correctIndex={2}
-        explanation="With thousands of tenants, schema-per-tenant and database-per-tenant both require running a migration once per tenant — that becomes an operational bottleneck at scale. Shared schema with tenant_id means one ALTER TABLE handles every tenant at once, and RLS keeps tenant data isolated at query time."
-        language="sql"
-      />
-
-      <InteractiveChallenge
-        question="In an event-sourced order system, why add a snapshots table instead of always replaying every event from the beginning?"
-        options={[
-          'Snapshots are required by the SQL standard for event sourcing',
-          'Replaying millions of historical events to compute current state gets slow; a snapshot lets you replay only the tail since the last snapshot',
-          'Snapshots replace the need for an append-only event table entirely',
-          'Snapshots make events mutable so old ones can be corrected',
-        ]}
-        correctIndex={1}
-        explanation="Snapshots are a performance optimization: instead of folding every event ever recorded for an entity, you load the most recent snapshot and only replay events after it. The event table remains the append-only source of truth; snapshots are a derived, disposable cache."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

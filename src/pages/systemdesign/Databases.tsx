@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Databases() {
@@ -486,18 +485,6 @@ ORDER BY created_at DESC;`}
         to verify your indexes are being used — unused indexes are pure overhead.
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"You have a query: SELECT * FROM orders WHERE customer_id = 123 AND status = 'shipped' ORDER BY created_at DESC. Which composite index best supports this query?"}
-        options={[
-          'CREATE INDEX idx ON orders (created_at, customer_id, status)',
-          'CREATE INDEX idx ON orders (customer_id, status, created_at)',
-          'CREATE INDEX idx ON orders (status, created_at, customer_id)',
-          'CREATE INDEX idx ON orders (customer_id, created_at, status)',
-        ]}
-        correctIndex={1}
-        explanation={"The optimal index is (customer_id, status, created_at). Equality columns (customer_id, status) should come first, followed by the sort column (created_at). This lets the database seek directly to the matching customer_id + status combination and then scan the index in order for created_at DESC, avoiding a separate sort step. Putting created_at first would waste the index's sorted structure on a column that isn't filtered by equality."}
-      />
-
       {/* ===== Section 5: Sharding Strategies ===== */}
       <h2>Sharding Strategies</h2>
       <p>
@@ -891,17 +878,6 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY daily_sales_summary;`}
         database category and name specific technologies.
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"You are designing a social media platform that needs to store user profiles, posts, and friend relationships. The system must support friend-of-friend queries, news feed generation, and real-time notifications. Which database strategy is most appropriate?"}
-        options={[
-          'Single PostgreSQL instance for everything',
-          'MongoDB for all data with embedded documents',
-          'PostgreSQL for profiles and posts, Neo4j for friend graph, Redis for caching and notifications',
-          'Cassandra for all data with denormalized tables',
-        ]}
-        correctIndex={2}
-        explanation={"Polyglot persistence is the best approach here. PostgreSQL handles structured user and post data with ACID transactions. Neo4j efficiently traverses friend relationships for friend-of-friend queries and recommendations. Redis provides low-latency caching for news feeds and pub/sub for real-time notifications. Each database is used for what it does best, rather than forcing one technology to handle all access patterns."}
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Types() {
@@ -892,47 +891,6 @@ log("INFO", "Also works");           // OK
       {/* ── Interactive Challenges ── */}
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question={"What is the type of 'value' inside the if block?"}
-        code={`function process(input: string | number | boolean) {\n  if (typeof input === "string") {\n    // What is 'input' here?\n    console.log(input);\n  }\n}`}
-        language="typescript"
-        options={[
-          "string | number | boolean",
-          "string",
-          "string | number",
-          "unknown",
-        ]}
-        correctIndex={1}
-        explanation={"typeof narrowing reduces the union to only the branch that matches. Inside the if block, TypeScript knows input passed a typeof === 'string' check, so it narrows to just 'string'."}
-      />
-
-      <InteractiveChallenge
-        question={"Which type should you use for a value from an untrusted source like JSON.parse?"}
-        code={`const data = JSON.parse(rawInput);\n// What should 'data' be typed as?`}
-        language="typescript"
-        options={[
-          "any — so you can use it immediately",
-          "unknown — narrow it before use",
-          "never — because we don't know the shape",
-          "object — because JSON always returns objects",
-        ]}
-        correctIndex={1}
-        explanation={"unknown is the correct choice for untrusted data. It forces you to narrow the type before accessing properties, preventing runtime errors. any would skip all checks, never represents impossible values, and object is too specific since JSON.parse can return primitives and arrays too."}
-      />
-
-      <InteractiveChallenge
-        question={"What happens if you add a new variant to a discriminated union but forget to handle it?"}
-        code={`type Shape =\n  | { kind: "circle"; radius: number }\n  | { kind: "square"; side: number }\n  | { kind: "triangle"; base: number };\n\nfunction area(s: Shape): number {\n  switch (s.kind) {\n    case "circle": return Math.PI * s.radius ** 2;\n    case "square": return s.side ** 2;\n    default:\n      const _check: never = s;\n      return _check;\n  }\n}`}
-        language="typescript"
-        options={[
-          "Runtime error only",
-          "Compile error — 'triangle' is not assignable to never",
-          "No error — default handles it",
-          "Warning only",
-        ]}
-        correctIndex={1}
-        explanation={"The never type in the default branch acts as an exhaustiveness check. The unhandled 'triangle' variant falls to default where TypeScript tries to assign it to never — which fails at compile time, catching the missing case."}
-      />
     </LessonLayout>
   );
 }

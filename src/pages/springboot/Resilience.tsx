@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function Resilience() {
   return (
@@ -402,17 +401,6 @@ resilience4j.thread-pool-bulkhead:
         </tbody>
       </table>
 
-      <InteractiveChallenge
-        question={"You stack @Retry and @CircuitBreaker on the same Resilience4j-annotated method, using the same instance name and default configuration. Which one ends up as the outer wrapper, and why does that matter?"}
-        options={[
-          "@CircuitBreaker is outer, so an entire multi-attempt retry sequence only ever counts as one call toward the failure rate",
-          "@Retry is outer and @CircuitBreaker is inner — so each individual retry attempt passes back through the breaker and is recorded separately, letting the breaker trip mid-sequence and short-circuit any further attempts",
-          "Whichever annotation is written first (higher up) in the source code becomes the outer wrapper",
-          "It doesn't matter — Resilience4j runs all aspects concurrently on separate threads"
-        ]}
-        correctIndex={1}
-        explanation={"Resilience4j's documented default nesting is Retry(CircuitBreaker(RateLimiter(TimeLimiter(Bulkhead(Function))))) — Retry outermost, CircuitBreaker just inside it. Because the breaker sits closer to the actual call, every retry attempt is recorded as its own success or failure, so a burst of failing retries is exactly what trips the breaker open — and once open, further attempts fail in microseconds with CallNotPermittedException instead of hammering a dead dependency. Annotation order in your source file has no effect on this; the nesting is controlled by each aspect's precedence, overridable only via the *AspectOrder properties."}
-      />
     </LessonLayout>
   );
 }

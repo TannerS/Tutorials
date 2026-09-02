@@ -2,7 +2,6 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function DddTactical() {
   return (
@@ -352,17 +351,6 @@ lines.add(new OrderLine("hack-1", "Smuggled Item", 1, 1));
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question={"Two Order objects both have id = \"order-42\". orderBefore has status OPEN and 1 line item (loaded from the database this morning). orderAfter has status CANCELLED and 2 line items (loaded this afternoon, after changes were made). Using the Entity-style equals() from this lesson (based on id only), what does orderBefore.equals(orderAfter) return, and why?"}
-        options={[
-          "false — their status and line counts are different, so they can't be equal",
-          "true — they share the same id, and Entity equality is identity-based, not field-based, so it doesn't matter that the fields changed between the two reads",
-          "It throws an exception, because equals() can't compare objects in different states",
-          "true, but only because line count doesn't matter — status changing would make it false"
-        ]}
-        correctIndex={1}
-        explanation={"Entities are defined by identity, not by their current attribute values. orderBefore and orderAfter represent the same order at two different moments — exactly the scenario Entity semantics exist for. If equals() compared fields (the way it correctly does for a Value Object), an order would stop being 'equal to itself' the instant any field changed, which breaks things like re-fetching an order from a repository and expecting it to match a cached reference. The OrderIdentityDemo above proves this: identical id, completely different fields, equals() still returns true."}
-      />
     </LessonLayout>
   );
 }

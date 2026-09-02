@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function SsrHydration() {
@@ -589,23 +588,6 @@ function useOnlineStatus() {
 // object each call causes an infinite render loop.`}
       </CodeBlock>
 
-      <InteractiveChallenge
-        question="A component renders a 'Last seen 3 minutes ago' label using new Date(). It hydrates fine locally but throws a hydration error for real users. What is the actual root cause?"
-        options={[
-          'The component needs to be wrapped in Suspense',
-          'The server and client evaluated the date at different moments and in different timezones — the first render must be identical, so the time must come from a prop and be localized after mount',
-          'useEffect is not supported during SSR, so the label must move to a Server Component',
-          'suppressHydrationWarning on the parent div will resolve it correctly',
-        ]}
-        correctIndex={1}
-        explanation="Any value that changes between the server render and the client render breaks hydration, and time is the worst offender because it differs both in the instant it was sampled and in the timezone used to format it. It passes locally because your dev server and browser share a clock and a timezone. The fix is to pass a fixed ISO timestamp down as a prop, render a stable server-safe format during the first client render, and only switch to the localized relative format inside an effect. suppressHydrationWarning is wrong here on its own — it silences the warning but keeps the server's markup, so the label would just stay stale."
-        language="tsx"
-        code={`function LastSeen() {
-  const ago = Math.floor((Date.now() - lastSeenAt) / 60000);
-  return <span>Last seen {ago} minutes ago</span>;
-}`}
-      />
-
       <h2>Streaming SSR with <code>&lt;Suspense&gt;</code></h2>
 
       <p>
@@ -780,24 +762,6 @@ Needs a framework?      No — renderToPipeableStream  Yes — RSC is a protocol
       <FlowChart
         title="How they compose in one Next.js App Router request"
         chart={"graph TD\n  A[Request] --> B[RSC render: Server Components execute]\n  B --> C[Server Component code stays on the server forever]\n  B --> D[Produces RSC payload with holes for Client Components]\n  D --> E[SSR pass: render Client Components to HTML]\n  E --> F[Response: HTML + RSC payload + bundle tags]\n  F --> G[Browser paints HTML instantly]\n  G --> H[Bundle loads - hydrateRoot]\n  H --> I[ONLY Client Component islands hydrate]\n  I --> J[RSC payload reconciles the tree - no refetch]\n  style C fill:#1a3329\n  style G fill:#1a2744\n  style I fill:#3d2f14"}
-      />
-
-      <InteractiveChallenge
-        question={'A component marked "use client" calls localStorage.getItem() directly in its function body. It works in a Vite SPA but crashes with "localStorage is not defined" after moving to Next.js App Router. Why?'}
-        options={[
-          'The "use client" directive was placed on the wrong line — it must be inside the component',
-          'Next.js strips browser globals from Client Components for security',
-          'Client Components are still server-rendered to produce the initial HTML, so the component body executes in Node where localStorage does not exist',
-          'localStorage requires a Server Action to be accessed from a Client Component',
-        ]}
-        correctIndex={2}
-        explanation={'"use client" is a bundling boundary, not an execution boundary. It means the component ships to the browser and hydrates — but the initial HTML still has to come from somewhere, and that somewhere is a server render of that exact component. Anything in the render path runs in Node first. Move the localStorage read into a useEffect (effects never run on the server), or read it through useSyncExternalStore with a getServerSnapshot that returns a safe default.'}
-        language="tsx"
-        code={`"use client";
-export function ThemeToggle() {
-  const theme = localStorage.getItem('theme') ?? 'light';
-  return <button>{theme}</button>;
-}`}
       />
 
       <h2>Where Frameworks Fit</h2>

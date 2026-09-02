@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function State() {
@@ -618,30 +617,6 @@ function SearchResults({ query }) {
 
       {/* ---- Interactive Challenges ---- */}
       <h2>Test Your Knowledge</h2>
-
-      <InteractiveChallenge
-        question={"You need to track how many times a component has rendered for debugging. Which hook should you use?"}
-        options={[
-          'useState — increment a counter on every render',
-          'useRef — mutate .current without triggering re-renders',
-          'useEffect with a counter stored in state',
-          'useMemo with an incrementing counter',
-        ]}
-        correctIndex={1}
-        explanation="useRef is the correct choice because updating a ref does not trigger a re-render. Using useState would cause an infinite render loop — every state update triggers another render, which increments the counter, which triggers another render."
-      />
-
-      <InteractiveChallenge
-        question={"A component stores a filteredUsers array in state and syncs it via useEffect whenever the users prop or searchTerm state changes. Which anti-patterns does this exhibit?"}
-        options={[
-          'Only prop drilling',
-          'Duplicated derived state AND state that should be computed',
-          'Mutating state directly',
-          'Using state for non-rendering values',
-        ]}
-        correctIndex={1}
-        explanation="Storing filteredUsers in state duplicates information that can be derived from users and searchTerm. The useEffect that syncs it is a symptom of derived-state duplication. The fix is to replace both the extra state and the effect with a useMemo or inline computation."
-      />
 
       {/* ---- Summary ---- */}
       <h2>Summary</h2>

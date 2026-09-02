@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function TsqlIndexing() {
@@ -248,18 +247,6 @@ DECLARE @T NVARCHAR(100) = @SalesTerritory;   -- then use @T`}
         </p>
       </InfoBox>
 
-      <InteractiveChallenge
-        question="A query filters WHERE ISNULL([Sales Territory], N'none') = N'Mideast'. A reviewer proposes rewriting it as WHERE [Sales Territory] = N'Mideast' OR [Sales Territory] IS NULL to make it SARGable. Is that rewrite safe?"
-        options={[
-          "Yes — ISNULL just means \"treat NULL as this default\", so adding OR IS NULL is always an equivalent rewrite",
-          "No — it's only safe when the ISNULL default equals the value being compared. Here the default is 'none' and the target is 'Mideast', so a NULL row could never satisfy the original expression, and OR IS NULL wrongly includes it",
-          'No — ISNULL expressions can never be made SARGable, regardless of the default value',
-          'Yes, but only if the column has a NOT NULL constraint',
-        ]}
-        correctIndex={1}
-        explanation="ISNULL(col, default) = target is only equivalent to col = target OR col IS NULL when default equals target — because that's the only case where a NULL row would have passed the original filter too. Here default ('none') != target ('Mideast'), so the original expression is FALSE for every NULL row, and the OR IS NULL rewrite silently starts returning rows the original query never matched. The safe SARGable rewrite when the default differs from the target is just col = target, dropping the NULL case entirely — NULL rows were never included to begin with."
-        language="sql"
-      />
     </LessonLayout>
   );
 }

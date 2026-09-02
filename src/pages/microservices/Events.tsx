@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Events() {
@@ -552,30 +551,6 @@ const stateTransfer = {
 };
 // Prefer Event-Carried State Transfer for true decoupling`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"You need to process uploaded images — resize, generate thumbnails, and apply filters. Each image should be processed exactly once. Which broker?"}
-        options={[
-          'Kafka — for its high throughput',
-          'RabbitMQ — task queue with competing consumers',
-          'Redis Pub/Sub — for speed',
-          'Direct HTTP calls between services'
-        ]}
-        correctIndex={1}
-        explanation={"Image processing is a classic task queue use case: each image is a job that should be processed exactly once and then removed from the queue. RabbitMQ excels at this with competing consumers, acknowledgments, dead-letter queues for failures, and prefetch for back-pressure control."}
-      />
-
-      <InteractiveChallenge
-        question={"Your analytics team wants to replay all order events from the past year to build a new dashboard. Your notification team wants the same events in real-time. Which broker?"}
-        options={[
-          'RabbitMQ — it supports multiple queues',
-          'Kafka — event retention and multiple consumer groups',
-          'Redis Streams — for real-time processing',
-          'Amazon SQS — for managed queuing'
-        ]}
-        correctIndex={1}
-        explanation={"Kafka retains events for a configurable period (or forever). The analytics team can create a consumer group and replay from the beginning of the topic, while the notification team runs its own consumer group processing events in real-time. A classic RabbitMQ queue deletes messages after acknowledgment, so it cannot do this. (RabbitMQ Streams, added in 3.9, is a log-structured queue type that does support offset-based replay — but for a year of retention at this scale, Kafka is still the natural fit.)"}
-      />
 
       <h2>Summary</h2>
 

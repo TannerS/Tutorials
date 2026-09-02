@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Methods() {
@@ -494,30 +493,6 @@ X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 0
 X-RateLimit-Reset: 1699900000`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"Which HTTP method is idempotent but NOT safe?"}
-        options={[
-          "GET",
-          "POST",
-          "PUT",
-          "PATCH"
-        ]}
-        correctIndex={2}
-        explanation={"PUT is idempotent (calling it multiple times produces the same result) but not safe (it modifies server state). GET is both safe and idempotent. POST is neither safe nor idempotent. PATCH is not safe and not necessarily idempotent."}
-      />
-
-      <InteractiveChallenge
-        question={"A client sends a POST request to create a new user, but receives a network timeout with no response. What is the correct concern?"}
-        options={[
-          "The user was definitely not created",
-          "The user was definitely created",
-          "The user may or may not have been created — retrying could create a duplicate",
-          "The server will automatically roll back the request"
-        ]}
-        correctIndex={2}
-        explanation={"POST is not idempotent — the server may have processed the request before the timeout occurred. Retrying could create a duplicate user. This is why idempotency keys are important for critical POST operations like payments and order creation."}
-      />
 
     </LessonLayout>
   );

@@ -2,14 +2,13 @@ import LessonLayout from '../../components/LessonLayout';
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 
 export default function AgGrid() {
   return (
     <LessonLayout
       title="AG Grid — Data Tables at Scale"
       sectionId="react18"
-      lessonIndex={22}
+      lessonIndex={23}
       prev={{ path: '/react18/portals', label: 'Portals, In Depth' }}
       next={null}
     >
@@ -414,36 +413,6 @@ const datasource: IDatasource = {
         </tbody>
       </table>
 
-      <InteractiveChallenge
-        question={
-          "A component renders `<AgGridReact rowData={orders} columnDefs={[{ field: 'customerName' }, " +
-          "{ field: 'total' }]} />` with the columnDefs array defined inline, right there in the JSX. " +
-          "The parent re-renders on an unrelated state change every few seconds. What actually happens to " +
-          "the grid, per AG Grid's own React best-practices docs?"
-        }
-        options={[
-          "Nothing — React memoizes array literals in JSX automatically, so this is harmless",
-          "The grid receives a brand-new columnDefs array reference on every render and may reset column state (order, width, sort) even though the column definitions never actually changed",
-          "AG Grid throws a runtime error because columnDefs must always come from useState",
-          "It only matters if rowData is also defined inline — columnDefs identity doesn't affect the grid"
-        ]}
-        correctIndex={1}
-        explanation="AG Grid compares columnDefs (and rowData, and object props like defaultColDef) by reference between renders, not by deep equality — and JSX array/object literals are NOT memoized by React, they're brand-new objects every render. AG Grid's own docs are explicit: an inline columnDefs array means the grid gets a new array every render, and this may reset column state to match the 'new' definitions. The fix is useState (if columnDefs can change) or useMemo (if it can't) so the reference stays stable across renders that don't actually change the columns."
-        language="tsx"
-      />
-
-      <InteractiveChallenge
-        question="rowData holds 10,000 rows, and the grid's visible viewport plus its default row buffer covers about 70 rows. Roughly how many actual <div> row elements does AG Grid keep in the DOM at once, per its own DOM Virtualisation docs?"
-        options={[
-          "All 10,000 — the grid renders everything and relies on CSS overflow to hide the rest",
-          "Roughly the visible + buffered rows only (about 70 here) — the rest of rowData exists in JS memory but has no corresponding DOM node until scrolled into range",
-          "Exactly 500, because that's a hard-coded row count regardless of viewport size",
-          "Zero until the user scrolls at least once, then all 10,000 render permanently"
-        ]}
-        correctIndex={1}
-        explanation="Per AG Grid's DOM Virtualisation docs, the grid only renders rows currently in the visible viewport plus a small buffer above and below (10 rows each way by default) — roughly 70 DOM row elements here, regardless of whether rowData holds 10,000 rows or 10 million. Rows that scroll out of that window are torn down; rows that scroll into it are created. The 500-row cap (suppressMaxRenderedRowRestriction) is a separate safety backstop for misconfigured containers, not the normal operating number — it only comes into play if virtualization math would otherwise try to render more than that."
-        language="tsx"
-      />
     </LessonLayout>
   );
 }

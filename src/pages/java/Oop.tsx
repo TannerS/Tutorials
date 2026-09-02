@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Oop() {
@@ -649,19 +648,6 @@ public class CountingSet<E> implements Set<E> {
 
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question={"What is the output of this code?"}
-        options={[
-          "Rex (age 3)",
-          "Rex the Labrador (age 3)",
-          "Compilation error — Animal reference cannot hold Dog object",
-          "Runtime error"
-        ]}
-        correctIndex={1}
-        explanation="This demonstrates runtime polymorphism. Even though the variable type is Animal, the actual object is a Dog. Java uses Dog's overridden toString() at runtime (dynamic method dispatch)."
-        code={'Animal a = new Dog("Rex", 3, "Labrador");\nSystem.out.println(a.toString());'}
-        language="java"
-      />
     </LessonLayout>
   );
 }

@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function WhatToTest() {
@@ -603,19 +602,6 @@ void freeShippingThreshold(BigDecimal total, boolean expected) {
           number is at 78%? If it is the number, stop.
         </li>
       </ul>
-
-      <InteractiveChallenge
-        question={"You add a test that asserts your service calls a private helper method with the right argument. You then refactor that helper away entirely — the service's output is unchanged, but the test fails. What does that tell you?"}
-        options={[
-          "The refactor was unsafe and should be reverted",
-          "The test was coupled to implementation, not behaviour, and should be rewritten against the observable output",
-          "The service needs more mocks so the test keeps passing",
-          "The helper should be made public so the test can keep calling it"
-        ]}
-        correctIndex={1}
-        explanation="A test that fails when behaviour did not change is testing implementation. That is exactly what the refactor check catches: 'would this fail if I changed the internals without changing what a caller observes?' Rewrite it against the service's observable output so it survives future refactors — and so a real failure means something."
-        language="javascript"
-      />
 
       <h2>Key Takeaways</h2>
       <ul>

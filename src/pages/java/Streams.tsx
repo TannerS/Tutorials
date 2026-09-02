@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 function Streams() {
@@ -793,19 +792,6 @@ public class OptionalExamples {
 
       <h2>Test Your Knowledge</h2>
 
-      <InteractiveChallenge
-        question="What does the following stream expression return?"
-        options={[
-          "15",
-          "120",
-          "150",
-          "60"
-        ]}
-        correctIndex={1}
-        explanation="Step by step: filter(n > 2) keeps [3, 4, 5]. Then map(n * 10) transforms to [30, 40, 50]. Finally reduce(0, Integer::sum) adds them: 0 + 30 + 40 + 50 = 120."
-        code={"List.of(1,2,3,4,5).stream()\n  .filter(n -> n > 2)\n  .map(n -> n * 10)\n  .reduce(0, Integer::sum)"}
-        language="java"
-      />
     </LessonLayout>
   );
 }

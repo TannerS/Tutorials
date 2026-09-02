@@ -1,7 +1,6 @@
 import CodeBlock from '../../components/CodeBlock';
 import FlowChart from '../../components/FlowChart';
 import InfoBox from '../../components/InfoBox';
-import InteractiveChallenge from '../../components/InteractiveChallenge';
 import LessonLayout from '../../components/LessonLayout';
 
 export default function Guards() {
@@ -558,19 +557,6 @@ export default function App() {
   );
 }`}
       </CodeBlock>
-
-      <InteractiveChallenge
-        question={"In React Router v8, what's the main practical benefit of using middleware for auth instead of checking auth in each route's loader?"}
-        options={[
-          "Middleware runs faster than a loader",
-          "Middleware is required — loader-based auth checks no longer work in v8",
-          "One middleware attached to a parent route protects every nested child route, instead of repeating the check in each child's loader",
-          "Middleware replaces the need for an errorElement",
-        ]}
-        correctIndex={2}
-        explanation={"Middleware runs before the loaders of the route it's attached to AND every route nested under it, so a single authMiddleware on a parent route protects an entire subtree. Loader-based checks (Pattern 2) still work fine and are still valid in v8 — they're just repeated per-route rather than shared. Middleware isn't required, and it doesn't replace errorElement; a middleware that throws still bubbles to the nearest errorElement exactly like a loader would."}
-        language="jsx"
-      />
 
       <FlowChart
         title="Complete Auth Flow with Middleware"
