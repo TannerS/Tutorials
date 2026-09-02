@@ -10,7 +10,7 @@ export default function WhatsNewMigration() {
       sectionId="react19-whats-new"
       lessonIndex={2}
       prev={{ path: '/react19-whats-new/react19', label: 'React 19 in Depth' }}
-      next={{ path: '/react19-whats-new/cheatsheet', label: "What's New in React 19 Cheat Sheet" }}
+      next={{ path: '/react19-whats-new/cheatsheet', label: "📋 What's New in React 19 Field Guide" }}
     >
       {/* ── 1. Framing ── */}
       <p>

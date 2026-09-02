@@ -10,7 +10,7 @@ function TsqlIndexing() {
       sectionId="tsql"
       lessonIndex={8}
       prev={{ path: '/tsql/transactions', label: 'Transactions, Isolation & Locking' }}
-      next={{ path: '/tsql/cheatsheet', label: '📋 T-SQL Cheat Sheet' }}
+      next={{ path: '/tsql/cheatsheet', label: '📋 T-SQL Field Guide' }}
     >
       <p>
         An index only helps if the optimiser can <em>seek</em> on it. Most &quot;the index is not

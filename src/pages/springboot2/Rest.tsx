@@ -234,7 +234,8 @@ public class UserService {
       <p>
         This is the biggest REST-shaped gap between the two worlds, and it is a gap you cannot
         paper over with an import change. <code>org.springframework.http.ProblemDetail</code>{' '}
-        (RFC 7807 support built into Spring itself) is a <strong>Spring Framework 6.0</strong>{' '}
+        (RFC 9457, formerly RFC 7807, support built into Spring itself) is a{' '}
+        <strong>Spring Framework 6.0</strong>{' '}
         addition. It is not present at any point in the Framework 5.3 line:
       </p>
 
@@ -242,19 +243,19 @@ public class UserService {
 {`echo "=== spring-web 5.3.31 (Boot 2.7.18) ==="
 unzip -l spring-web-5.3.31.jar | grep -i ProblemDetail
 echo "exit=$?"
-echo "=== spring-web 6.0.13 (Boot 3.0.13) ==="
-unzip -l spring-web-6.0.13.jar | grep -i ProblemDetail`}
+echo "=== spring-web 6.0.14 (Boot 3.0.13) ==="
+unzip -l spring-web-6.0.14.jar | grep -i ProblemDetail`}
       </CodeBlock>
 
       <CodeBlock language="text" title="Real output">
 {`=== spring-web 5.3.31 (Boot 2.7.18) ===
 exit=1
 
-=== spring-web 6.0.13 (Boot 3.0.13) ===
-  6006  10-12-2023 09:18   org/springframework/http/ProblemDetail.class
-  1473  10-12-2023 09:18   org/springframework/http/converter/json/ProblemDetailJacksonXmlMixin.class
-   936  10-12-2023 09:18   org/springframework/http/converter/json/ProblemDetailJacksonMixin.class
-  1235  10-12-2023 09:18   org/springframework/http/converter/json/ProblemDetailRuntimeHints.class`}
+=== spring-web 6.0.14 (Boot 3.0.13) ===
+  6232  11-16-2023 13:58   org/springframework/http/ProblemDetail.class
+  1473  11-16-2023 13:58   org/springframework/http/converter/json/ProblemDetailJacksonXmlMixin.class
+   936  11-16-2023 13:58   org/springframework/http/converter/json/ProblemDetailJacksonMixin.class
+  1700  11-16-2023 13:58   org/springframework/http/converter/json/ProblemDetailRuntimeHints.class`}
       </CodeBlock>
 
       <InfoBox variant="danger" title="What this means for a Boot 2 codebase's error handling">
@@ -360,7 +361,7 @@ public ResponseEntity<OrderDto> place(@Valid @RequestBody PlaceOrderRequest req)
 javap -p /tmp/MediaType.class | grep -i sortBySpecificity`}
       </CodeBlock>
 
-      <CodeBlock language="text" title="Real output — present, on both 5.3.31 and 6.0.13">
+      <CodeBlock language="text" title="Real output — present, on both 5.3.31 and 6.0.14">
 {`public static void sortBySpecificity(java.util.List<org.springframework.http.MediaType>);
 public static void sortBySpecificityAndQuality(java.util.List<org.springframework.http.MediaType>);`}
       </CodeBlock>
@@ -415,7 +416,7 @@ public static void sortBySpecificityAndQuality(java.util.List<org.springframewor
       </p>
 
       <CodeBlock language="bash" title="The check">
-{`for jar in spring-web-5.3.31.jar spring-web-6.0.13.jar; do
+{`for jar in spring-web-5.3.31.jar spring-web-6.0.14.jar; do
   echo "=== $jar ==="
   unzip -p "$jar" org/springframework/web/util/pattern/PathPatternParser.class > /tmp/ppp.class
   javap -c -p /tmp/ppp.class | grep -A1 'putfield.*matchOptionalTrailingSeparator' | head -2
@@ -428,7 +429,7 @@ done`}
    5: iconst_1                       <- TRUE. Trailing slash matches by default.
    6: putfield #2  // matchOptionalTrailingSeparator:Z
 
-=== spring-web 6.0.13 ===
+=== spring-web 6.0.14 ===
    4: aload_0
    5: iconst_0                       <- FALSE. Trailing slash does NOT match.
    6: putfield #7  // matchOptionalTrailingSeparator:Z`}

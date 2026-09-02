@@ -10,7 +10,7 @@ function Mui9Theming() {
       sectionId="mui9"
       lessonIndex={3}
       prev={{ path: '/mui9/styling', label: 'Styling in v9 — styled() and sx' }}
-      next={{ path: '/mui9/cheatsheet', label: '📋 MUI v9 Cheat Sheet' }}
+      next={{ path: '/mui9/cheatsheet', label: '📋 MUI v9 Field Guide' }}
     >
       <p>
         The theme in v9 does the same job it did in v4 — one object holding palette, typography,

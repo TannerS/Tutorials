@@ -10,7 +10,7 @@ export default function Patterns() {
       sectionId="css-mastery"
       lessonIndex={10}
       prev={{ path: '/css-mastery/style-inclusion', label: 'Style-Inclusion Methods' }}
-      next={null}
+      next={{ path: '/css-mastery/field-guide', label: '📋 CSS Field Guide' }}
     >
       <p>
         Battle-tested layout patterns you can drop into any project. Each recipe includes

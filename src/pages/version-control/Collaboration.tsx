@@ -10,7 +10,7 @@ export default function Collaboration() {
       sectionId="version-control"
       lessonIndex={2}
       prev={{ path: '/version-control/branching', label: 'Branching & Rebase Strategies' }}
-      next={{ path: '/version-control/cheatsheet', label: '📋 Cheat Sheet' }}
+      next={{ path: '/version-control/cheatsheet', label: '📋 Git Field Guide' }}
     >
       <p>
         Objects, refs, and the DAG are how Git stores history. Merge and rebase are how you shape it.

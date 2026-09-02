@@ -9,7 +9,7 @@ export default function JsEs2017() {
       sectionId="javascript"
       lessonIndex={8}
       prev={{ path: '/javascript/modern-tour', label: 'Modern JavaScript: ES2015-2026 Feature Tour' }}
-      next={{ path: '/javascript/cheatsheet', label: '📋 Cheat Sheet' }}
+      next={{ path: '/javascript/cheatsheet', label: '📋 JavaScript Field Guide' }}
     >
 
       <p>

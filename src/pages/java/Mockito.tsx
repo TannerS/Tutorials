@@ -10,7 +10,7 @@ function JavaMockito() {
       sectionId="java"
       lessonIndex={15}
       prev={{ path: '/java/testing-basics', label: 'Unit Testing Fundamentals — Dummies, Stubs, Spies, Mocks' }}
-      next={{ path: '/java/cheatsheet', label: 'Java Cheat Sheet' }}
+      next={{ path: '/java/cheatsheet', label: '📋 Java Field Guide' }}
     >
       <p>
         The previous lesson built all five test doubles by hand. Mockito generates four of

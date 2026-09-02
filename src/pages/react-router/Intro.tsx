@@ -55,10 +55,10 @@ npm install react-router@latest`}
           <code>loaderData</code> in <code>meta</code>/<code>matches</code>/
           <code>useMatches</code>, promotes middleware out of{' '}
           <code>future.v8_middleware</code> to a default, and raises the floors to
-          Node 22.22+, React 19.2.7+ and Vite 7+. v7 is now the security-only branch
-          and <strong>v6 is end-of-life</strong>. This section teaches v7 because that
-          is what is pinned here — the import style above is the same in both, which
-          is most of the migration.
+          Node 22.22+, React 19.2.7+ and Vite 7+. The team&apos;s development focus
+          has shifted to v8 — if you are starting something new, treat v6 and v7 as
+          legacy. This section teaches v7 because that is what is pinned here — the
+          import style above is the same in both, which is most of the migration.
         </p>
       </InfoBox>
 

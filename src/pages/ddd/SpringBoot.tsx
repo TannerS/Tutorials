@@ -9,7 +9,7 @@ export default function DddSpringBoot() {
       sectionId="ddd"
       lessonIndex={5}
       prev={{ path: '/ddd/event-storming', label: 'Event Storming: Discovering Bounded Contexts' }}
-      next={{ path: '/ddd/cheatsheet', label: '📋 Cheat Sheet' }}
+      next={{ path: '/ddd/cheatsheet', label: '📋 DDD Field Guide' }}
     >
       <p>
         Everything so far — <strong>Entities</strong>, <strong>Value Objects</strong>,{' '}

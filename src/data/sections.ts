@@ -185,7 +185,7 @@ export const sections: Section[] = [
   {
     id: 'tsql',
     label: 'T-SQL (SQL Server)',
-    icon: '🗄️',
+    icon: '📇',
     color: '#cc2927',
     lessons: [
       { id: 'intro', title: 'T-SQL & Which Server You Are On', path: '/tsql/intro' },
@@ -672,7 +672,7 @@ export const sections: Section[] = [
   {
     id: 'playground',
     label: 'Playground',
-    icon: '🧪',
+    icon: '🕹️',
     color: '#14b8a6',
     lessons: [
       { id: 'compiler', title: 'JS/TS Compiler Comparison', path: '/playground/compiler' },
@@ -725,6 +725,11 @@ export const groups: Group[] = [
     label: 'Frontend',
     icon: '⚛️',
     color: '#22d3ee',
+    // 'typescript' and 'javascript' are listed directly in sectionIds below
+    // rather than each wrapped in its own single-section child group — a
+    // 'TypeScript' group containing only a 'TypeScript' section produced a
+    // redundant "TypeScript > TypeScript" label in the sidebar.
+    sectionIds: ['typescript', 'javascript'],
     children: [
       {
         id: 'frontend-css',
@@ -732,20 +737,6 @@ export const groups: Group[] = [
         icon: '🎨',
         color: '#e879f9',
         sectionIds: ['css-mastery', 'mui', 'mui9'],
-      },
-      {
-        id: 'frontend-typescript',
-        label: 'TypeScript',
-        icon: '🔷',
-        color: '#3178c6',
-        sectionIds: ['typescript'],
-      },
-      {
-        id: 'frontend-javascript',
-        label: 'JavaScript',
-        icon: '🟨',
-        color: '#f7df1e',
-        sectionIds: ['javascript'],
       },
       {
         id: 'frontend-react',
@@ -813,11 +804,17 @@ export const groups: Group[] = [
     color: '#ef4444',
     sectionIds: ['auth', 'cryptography'],
   },
-  {
-    id: 'playground',
-    label: 'Playground',
-    icon: '🧪',
-    color: '#14b8a6',
-    sectionIds: ['playground'],
-  },
 ];
+
+// Sections that sit directly at the sidebar root, as siblings of `groups`,
+// with no wrapping group at all — for standalone sections that don't belong
+// under any thematic group. A 'Playground' group that wrapped only the
+// 'playground' section produced a redundant "Playground > Playground" label
+// in the sidebar (and doubled as a group id colliding with the section id of
+// the same name), so it is promoted here instead.
+//
+// Sidebar.tsx renders these after `groups` at the same top-level depth.
+// scripts/build-pdf.mjs's sidebarSectionOrder() must also be kept in sync —
+// it appends these ids after walking `groups` so combined-PDF ordering and
+// the table of contents match what the sidebar shows.
+export const rootSectionIds: string[] = ['playground'];

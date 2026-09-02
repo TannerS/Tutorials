@@ -54,24 +54,42 @@ SELECT id, title FROM documents;
 -- SELECT * FROM pg_depend WHERE refobjid = 'recent_documents'::regclass).`}
       </CodeBlock>
 
-      <InfoBox variant="danger" title="Views silently bypass Row-Level Security — verified against Multi-Tenancy's RLS setup">
+      <InfoBox variant="warning" title="Views check table access as their owner — but Row-Level Security is not affected">
         <p>
-          A view runs with its <strong>owner's</strong> privileges by default, the same way a{' '}
-          <code>SECURITY DEFINER</code> function does — not the privileges of whoever queries it.
-          Reproduced: an RLS-protected <code>orders</code> table with{' '}
-          <code>FORCE ROW LEVEL SECURITY</code> correctly filtered a direct query from a non-owning
-          role to only its tenant's row. A plain view over the same table, queried by that same role
-          with that same tenant setting, returned <strong>every tenant's rows</strong> — the view's
-          owner (who created it, typically during migrations) has no tenant, so no policy filtered
-          anything.
+          A view's <em>permission check</em> against its underlying tables runs as the view's{' '}
+          <strong>owner</strong> by default, the same way a <code>SECURITY DEFINER</code> function
+          does — not as the role that queries it. That's normal, intentional behavior: it's exactly
+          what lets you <code>GRANT SELECT ON recent_documents</code> to a role with{' '}
+          <em>no</em> direct grant on <code>documents</code> at all, hiding the base table entirely
+          behind a narrower view. Reproduced: a role granted access to the view only gets{' '}
+          <code>ERROR: permission denied for table documents</code> querying the table directly, but
+          reads the view fine.
         </p>
         <p style={{ marginTop: '0.5rem' }}>
-          The fix, verified on the same setup: <code>ALTER VIEW recent_documents SET
-          (security_invoker = true);</code> — a PostgreSQL 15+ option that makes the view run with
-          the <em>querying</em> user's privileges instead of the owner's. With it set, the same query
-          correctly returned only the calling tenant's row. If you put views in front of any
-          RLS-protected table, set this explicitly — the default is the unsafe one.
+          What this does <strong>not</strong> do is bypass Row-Level Security. Rebuilt Multi-Tenancy's
+          exact setup — a session-GUC policy (<code>current_setting('app.current_tenant')</code>),{' '}
+          <code>FORCE ROW LEVEL SECURITY</code>, a view owned by the migrations role, queried by a
+          separate non-owning role with the tenant GUC set — and the view correctly returned only the
+          calling tenant's own row, never every tenant's. Retested with a policy based on{' '}
+          <code>current_user</code> instead of a GUC and got the same result. Postgres always
+          evaluates row-security policies against the <em>invoking</em> user, regardless of who owns
+          the view being queried through — that's documented behavior, not something fragile about
+          this particular schema.
         </p>
+        <p style={{ marginTop: '0.5rem' }}>
+          So what does <code>security_invoker</code> actually buy you, if RLS was never the gap? The{' '}
+          <em>permission check</em>, not row filtering. Verified: with it set, the same role that
+          could read <code>recent_documents</code> a moment ago now gets{' '}
+          <code>permission denied for table documents</code> — it needs its own direct grant on the
+          base table, the owner's privileges no longer satisfy the check.
+        </p>
+        <CodeBlock language="sql" title="Verified on PostgreSQL 18.6">
+{`ALTER VIEW recent_documents SET (security_invoker = true);
+-- Now querying recent_documents requires the CALLER to have their own
+-- privilege on documents — reach for this when you want "can only read
+-- through the view if you could already read the base table yourself,"
+-- not as a fix for an RLS gap that doesn't exist.`}
+        </CodeBlock>
       </InfoBox>
 
       <h2>Materialized Views — Caching a Query's Result</h2>

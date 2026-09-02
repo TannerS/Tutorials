@@ -10,7 +10,7 @@ function SpringBoot2Migration() {
       sectionId="springboot2"
       lessonIndex={16}
       prev={{ path: '/springboot2/actuator', label: 'Actuator & Metrics Before the Rename' }}
-      next={{ path: '/springboot2/cheatsheet', label: '📋 Spring Boot 2 Cheat Sheet' }}
+      next={{ path: '/springboot2/cheatsheet', label: '📋 Spring Boot 2 Field Guide' }}
     >
       <p>
         There is one rule, and everything else in this lesson is a consequence of it:

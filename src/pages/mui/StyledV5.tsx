@@ -16,7 +16,7 @@ function MuiStyledV5() {
       sectionId="mui"
       lessonIndex={4}
       prev={{ path: '/mui/overrides', label: 'Overriding Component Styles' }}
-      next={{ path: '/mui/cheatsheet', label: '📋 MUI Cheat Sheet (v4 → v5)' }}
+      next={{ path: '/mui/cheatsheet', label: '📋 MUI v4 Field Guide' }}
     >
       <p>
         v5 is the version where MUI stopped being the library you know. The package changed name,

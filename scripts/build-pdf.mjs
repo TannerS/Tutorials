@@ -212,8 +212,8 @@ async function findFreePort(preferred) {
 }
 
 async function loadSections() {
-  // sections.ts only uses two TypeScript features that Node cannot execute
-  // as-is: a type-only import and two explicit type annotations. Both are
+  // sections.ts only uses TypeScript features that Node cannot execute
+  // as-is: a type-only import and a few explicit type annotations. All are
   // trivial to strip. Rewrite to a temp .mjs file and dynamic-import it.
   const { tmpdir } = await import('node:os');
   const src = await readFile(join(APP_ROOT, 'src/data/sections.ts'), 'utf8');
@@ -221,26 +221,29 @@ async function loadSections() {
   const stripped = src
     .replace(/^\s*import\s+type\s+.*?;\s*\r?\n/m, '')       // drop `import type { ... };`
     .replace(/:\s*Section\[\]/g, '')                          // drop `: Section[]`
-    .replace(/:\s*Group\[\]/g, '');                           // drop `: Group[]`
+    .replace(/:\s*Group\[\]/g, '')                            // drop `: Group[]`
+    .replace(/:\s*string\[\]/g, '');                          // drop `: string[]`
 
   const outfile = join(tmpdir(), `sections-${process.pid}.mjs`);
   await writeFile(outfile, stripped);
   try {
     const mod = await import(`file://${outfile}`);
-    return { sections: mod.sections, groups: mod.groups };
+    return { sections: mod.sections, groups: mod.groups, rootSectionIds: mod.rootSectionIds ?? [] };
   } finally {
     await rm(outfile, { force: true });
   }
 }
 
-// Flattens `groups` into an ordered list of section ids matching exactly how
-// Sidebar.tsx renders them: for each group, its child GROUPS render first (in
-// array order), then its own direct sectionIds — recursively, depth-first.
-// This is what makes the combined PDF read in the same order a reader
-// browsing the sidebar would encounter, not sections.ts's declaration order
-// (which is unrelated — e.g. 'auth' is declared early but displays late,
-// under the Security group).
-function sidebarSectionOrder(groups) {
+// Flattens `groups` (plus any root-level sections in `rootSectionIds`) into
+// an ordered list of section ids matching exactly how Sidebar.tsx renders
+// them: for each group, its child GROUPS render first (in array order), then
+// its own direct sectionIds — recursively, depth-first — and finally
+// rootSectionIds render after all of `groups`, as siblings with no wrapping
+// group (e.g. 'playground'). This is what makes the combined PDF read in the
+// same order a reader browsing the sidebar would encounter, not sections.ts's
+// declaration order (which is unrelated — e.g. 'auth' is declared early but
+// displays late, under the Security group).
+function sidebarSectionOrder(groups, rootSectionIds = []) {
   const order = [];
   const walk = (groupList) => {
     for (const g of groupList) {
@@ -249,6 +252,7 @@ function sidebarSectionOrder(groups) {
     }
   };
   walk(groups);
+  order.push(...rootSectionIds);
   return order;
 }
 
@@ -310,7 +314,7 @@ async function main() {
   const url = `http://${HOST}:${port}`;
 
   console.log(`[pdf] Loading sections...`);
-  const { sections, groups } = await loadSections();
+  const { sections, groups, rootSectionIds } = await loadSections();
   let targets = wantedSections.length
     ? sections.filter((s) => wantedSections.includes(s.id))
     : sections;
@@ -342,7 +346,7 @@ async function main() {
   // Section numbering for the divider pages, derived from the FULL sidebar
   // order so a partial build (`pdf:section java`) still labels Java with its
   // real position in the site rather than "Section 1 of 1".
-  const fullOrder = sidebarSectionOrder(groups);
+  const fullOrder = sidebarSectionOrder(groups, rootSectionIds);
   const positionOf = new Map(fullOrder.map((id, i) => [id, i + 1]));
 
   console.log(`[pdf] Launching Chromium (headless)...`);
@@ -580,7 +584,7 @@ async function main() {
   console.log(`[pdf] Done. PDFs in ${OUT_DIR}`);
 
   if (COMBINED) {
-    await buildCombinedPdf({ sections: targets, groups, writtenFiles, dark: DARK, cheatsheetsOnly: CHEATSHEETS_ONLY });
+    await buildCombinedPdf({ sections: targets, groups, rootSectionIds, writtenFiles, dark: DARK, cheatsheetsOnly: CHEATSHEETS_ONLY });
   }
 
   if (CHEATSHEETS_ONLY) {
@@ -598,10 +602,10 @@ async function main() {
  * sidebar order (not sections.ts declaration order — see sidebarSectionOrder),
  * with a generated cover page listing the table of contents by group.
  */
-async function buildCombinedPdf({ sections, groups, writtenFiles, dark, cheatsheetsOnly }) {
+async function buildCombinedPdf({ sections, groups, rootSectionIds, writtenFiles, dark, cheatsheetsOnly }) {
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
 
-  const order = sidebarSectionOrder(groups).filter((id) => writtenFiles.has(id));
+  const order = sidebarSectionOrder(groups, rootSectionIds).filter((id) => writtenFiles.has(id));
   if (order.length === 0) {
     console.error('[pdf] --combined: no rendered sections to combine — skipping.');
     return;

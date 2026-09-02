@@ -13,13 +13,16 @@ export default function Legacy() {
       next={{ path: '/react-router-v5/cheatsheet', label: '📋 React Router v5 Field Guide' }}
     >
       <p>
-        You&apos;ve learned modern React Router — the config-based router, loaders,{' '}
-        <code>useNavigate</code>, <code>&lt;Outlet /&gt;</code>. Now a job hands you
-        a codebase that predates all of it, and you need to ship a change in it{' '}
+        A job hands you a codebase built on React Router v5 — no config-based
+        router, no loaders, no <code>useNavigate</code>, no{' '}
+        <code>&lt;Outlet /&gt;</code> — and you need to ship a change in it{' '}
         <em>this week</em>, not rewrite it. This lesson is a field checklist for
         that first day: how to recognize v5 on sight, the three bugs that show up
         constantly in real v5 code and don&apos;t exist at all in v6+, and an
         honest answer to &ldquo;can I just upgrade the router without a rewrite?&rdquo;
+        (If you&apos;ve also worked with modern React Router — v6/v7 or v8 — the
+        comparisons throughout this lesson will call out exactly what&apos;s
+        missing here; if not, everything still stands on its own.)
       </p>
 
       <FlowChart

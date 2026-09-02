@@ -9,7 +9,7 @@ export default function BestPractices() {
       title="Best Practices &amp; Pitfalls"
       sectionId="typescript"
       lessonIndex={7}
-      prev={{ path: '/typescript/migration', label: 'Migration Guide' }}
+      prev={{ path: '/typescript/migration', label: 'Migration Guide (JS → TS)' }}
       next={{ path: '/typescript/newproject', label: 'New Project from Scratch' }}
     >
       <p>

@@ -10,7 +10,7 @@ export default function ObservabilityIncidents() {
       sectionId="observability"
       lessonIndex={3}
       prev={{ path: '/observability/tracing', label: 'Distributed Tracing Design' }}
-      next={{ path: '/observability/cheatsheet', label: '📋 Cheat Sheet' }}
+      next={{ path: '/observability/cheatsheet', label: '📋 Observability Field Guide' }}
     >
       <p>
         Metrics, logs, and traces exist to answer a question the moment something goes wrong: what's

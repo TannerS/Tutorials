@@ -13,15 +13,17 @@ export default function Fullapp() {
       next={{ path: '/react-router-v5/legacy', label: 'Reading Legacy v5 Codebases' }}
     >
       <p>
-        Let&apos;s build a complete routing structure for a production-style app —
-        the same shape of app the <strong>React Router v6/v7</strong> section built,
-        but assembled entirely from real <code>react-router-dom@5</code> API:{' '}
+        Let&apos;s build a complete routing structure for a production-style app,
+        assembled entirely from real <code>react-router-dom@5</code> API:{' '}
         <code>&lt;BrowserRouter&gt;</code>, <code>&lt;Switch&gt;</code>,{' '}
         <code>exact</code>, a hand-rolled <code>&lt;PrivateRoute&gt;</code> guard,
         nested routes built off <code>match.path</code>, and a <code>path=&quot;*&quot;</code>{' '}
         catch-all. This is what a real v5 app&apos;s router setup actually looked
         like — no <code>&lt;Outlet /&gt;</code>, no loaders, no{' '}
-        <code>useNavigate</code>.
+        <code>useNavigate</code>. (If you go on to — or already have — the{' '}
+        <strong>React Router v6/v7</strong> section, its own Complete App Routing
+        lesson builds this same shape of app with the modern data router, so you
+        can compare the two directly.)
       </p>
 
       <FlowChart

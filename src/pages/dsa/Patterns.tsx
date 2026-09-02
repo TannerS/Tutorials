@@ -9,7 +9,7 @@ export default function Patterns() {
       sectionId="dsa"
       lessonIndex={12}
       prev={{ path: '/dsa/dynamic-programming', label: 'Dynamic Programming' }}
-      next={{ path: '/dsa/cheatsheet', label: '📋 Cheat Sheet' }}
+      next={{ path: '/dsa/cheatsheet', label: '📋 DSA Field Guide' }}
     >
       <p>
         Every lesson so far has handed you a data structure and a technique that goes with it. The

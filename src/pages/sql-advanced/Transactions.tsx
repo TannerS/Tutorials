@@ -9,7 +9,7 @@ export default function Transactions() {
       title="Transactions & Locking"
       sectionId="sql-advanced"
       lessonIndex={0}
-      prev={{ path: '/sql-design-patterns/multi-tenancy', label: 'Multi-Tenancy & Event Sourcing' }}
+      prev={{ path: '/sql-design-patterns/views', label: 'Views, Partitioning & Extensions' }}
       next={{ path: '/sql-advanced/cte', label: 'CTEs & Recursive Queries' }}
     >
 

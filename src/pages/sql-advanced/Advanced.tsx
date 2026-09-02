@@ -10,7 +10,7 @@ export default function Advanced() {
       sectionId="sql-advanced"
       lessonIndex={3}
       prev={{ path: '/sql-advanced/stored-procedures', label: 'Stored Procedures' }}
-      next={null}
+      next={{ path: '/sql-advanced/field-guide', label: '📋 PostgreSQL Field Guide' }}
     >
       <p>This is the grab bag of power techniques — patterns you reach for when standard queries hit a wall. Pivoting, JSON, LATERAL joins, upserts, full-text search, partitioning, and materialized views, all PostgreSQL-flavored.</p>
 

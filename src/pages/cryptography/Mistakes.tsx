@@ -9,7 +9,7 @@ export default function CryptoMistakes() {
       sectionId="cryptography"
       lessonIndex={14}
       prev={{ path: '/cryptography/applied-node', label: 'Applied Cryptography — Node & TypeScript' }}
-      next={{ path: '/cryptography/cheatsheet', label: '📋 Cheat Sheet' }}
+      next={{ path: '/cryptography/cheatsheet', label: '📋 Cryptography Field Guide' }}
     >
       <p>
         Every mistake below has shipped to production somewhere, more than once. None of them require

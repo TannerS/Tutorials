@@ -65,7 +65,6 @@ export default function BulletproofReact() {
 │  └─ users/
 ├─ hooks/                # shared hooks used across the whole app
 ├─ lib/                  # preconfigured libraries: api-client.ts, react-query.ts, auth.tsx
-├─ stores/                # global state (zustand)
 ├─ testing/               # test utilities and MSW mocks
 ├─ types/                 # shared types used across the app
 ├─ utils/                 # shared utility functions
@@ -78,7 +77,11 @@ export default function BulletproofReact() {
         <code>hooks/</code>, <code>lib/</code>, <code>types/</code>, and <code>utils/</code> sit
         directly under <code>src/</code>, each one a distinct shared concern. <code>app/</code>{' '}
         is the shell: routing and top-level providers, nothing feature-specific. Everything
-        else lives inside a feature.
+        else lives inside a feature. Note there&apos;s no top-level <code>stores/</code>{' '}
+        folder in the live repo, despite the project-structure docs sketching one — global
+        Zustand stores are colocated with the UI they back instead. The notifications store used
+        later in this lesson, for example, actually lives at{' '}
+        <code>src/components/ui/notifications/notifications-store.ts</code>.
       </p>
 
       <h2>Inside a Single Feature</h2>
@@ -208,6 +211,20 @@ export default function BulletproofReact() {
         enough to need no further splitting, and visually distinct from a{' '}
         <code>node_modules</code> package.
       </p>
+
+      <InfoBox variant="info" title="TanStack Query and Zustand are covered later in this path">
+        <p style={{ marginBottom: 0 }}>
+          The code below uses TanStack Query (<code>useQuery</code>, <code>useMutation</code>,{' '}
+          <code>queryOptions</code>, cache invalidation) and Zustand (
+          <code>useNotifications.getState()</code>) at full production depth, ahead of where this
+          site actually teaches either library from scratch. If a hook below looks unfamiliar,
+          that's expected — the dedicated lessons are{' '}
+          <a href="/react-query/fundamentals">React Query: Fundamentals</a> and{' '}
+          <a href="/state-mgmt/zustand-fundamentals">Zustand: Fundamentals</a>, both later in this
+          learning path. Treat this section as a preview of what a production API layer looks
+          like once you know both tools, not the place to learn them for the first time.
+        </p>
+      </InfoBox>
 
       <h2>The API Layer</h2>
       <p>

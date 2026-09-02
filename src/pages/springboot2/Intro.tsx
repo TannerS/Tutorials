@@ -472,7 +472,7 @@ spring-web 6.2.11   jakarta/servlet/http/HttpServletRequest`}
 
       <FlowChart
         title="Section map"
-        chart={"graph TD\nA[\"You inherited a Boot 2 codebase\"] --> B[\"javax: the namespace, JPA, servlets\"]\nA --> C[\"Security the Boot 2 way\"]\nA --> D[\"Spring Data on Hibernate 5\"]\nB --> E[\"Config and properties that moved\"]\nC --> E\nD --> E\nE --> F[\"Testing: @MockBean and friends\"]\nF --> G[\"Actuator before the rename\"]\nG --> H[\"Migrating 2 to 3 to 4, in order\"]\nstyle A fill:#1a2744,stroke:#5b9cf6\nstyle H fill:#1a3329,stroke:#4ade80"}
+        chart={"graph TD\nA[\"You inherited a Boot 2 codebase\"] --> B[\"javax: the namespace, JPA, servlets\"]\nB --> C[\"Dependency Injection & IoC\"]\nC --> D[\"Building REST APIs\"]\nD --> E[\"Security the Boot 2 way\"]\nD --> F[\"Spring Data on Hibernate 5\"]\nE --> G[\"Config and properties that moved\"]\nF --> G\nG --> H[\"Error handling & validation\"]\nH --> I[\"Testing: @MockBean and friends\"]\nI --> J[\"Transactions deep-dive\"]\nJ --> K[\"Kafka in Spring Boot 2\"]\nK --> L[\"AOP & interceptors\"]\nL --> M[\"Reactive programming with WebFlux\"]\nM --> N[\"Resilience4j & circuit breakers\"]\nN --> O[\"Observability\"]\nO --> P[\"Actuator & metrics before the rename\"]\nP --> Q[\"Migrating 2 to 3 to 4, in order\"]\nstyle A fill:#1a2744,stroke:#5b9cf6\nstyle Q fill:#1a3329,stroke:#4ade80"}
       />
 
       <p>

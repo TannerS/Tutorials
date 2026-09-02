@@ -172,7 +172,9 @@ SELECT jsonb_agg(
 FROM documents;
 --                                                docs
 -- --------------------------------------------------------------------------------------------------
---  [{"title": "Postgres Indexing Guide", "views": 120}, {"title": "JSONB Deep Dive", "views": 340}]`}
+--  [{"title": "Postgres Indexing Guide", "views": 120}, {"title": "JSONB Deep Dive", "views": 341}]
+-- 341, not 340 — the jsonb_set UPDATE above already ran against this same
+-- data, and these queries run in sequence.`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="jsonb_agg needs ORDER BY inside the call, not after the query">
@@ -270,10 +272,17 @@ ORDER BY rank DESC;
 --           title          |    rank
 -- -------------------------+------------
 --  Postgres Indexing Guide | 0.99587005
--- Only one row: "JSONB Deep Dive"'s body never uses the word "index", so
--- the AND (&) query correctly excludes it. to_tsquery is strict about
--- syntax — websearch_to_tsquery (Advanced SQL Patterns) parses free-text
--- search boxes instead.`}
+--  JSONB Deep Dive         | 0.39641288
+-- Both rows match — and that's the actual lesson. "JSONB Deep Dive"'s body
+-- never uses the literal word "index", but it does say "indexes", and the
+-- english stemmer reduces both to the same lexeme ('index'). Full-text
+-- search matches on stemmed lexemes, not literal substrings — it's less
+-- exact than it looks. ts_rank is what separates them: the Indexing Guide
+-- ranks over 2x higher because "index" appears twice for that row — once
+-- as a title word (weight A) and once in the body (weight B) — while
+-- "JSONB Deep Dive" only earns the single, lower-weighted body occurrence.
+-- to_tsquery is strict about syntax — websearch_to_tsquery (Advanced SQL
+-- Patterns) parses free-text search boxes instead.`}
       </CodeBlock>
 
       <InfoBox variant="warning" title="A stale tsvector silently stops matching — there is no error">

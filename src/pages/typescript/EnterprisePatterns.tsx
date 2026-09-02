@@ -9,7 +9,7 @@ export default function EnterprisePatterns() {
       sectionId="typescript"
       lessonIndex={11}
       prev={{ path: '/typescript/interactive', label: 'Interactive Challenges' }}
-      next={{ path: '/typescript/cheatsheet', label: 'Cheat Sheet' }}
+      next={{ path: '/typescript/cheatsheet', label: '📋 TypeScript Field Guide' }}
     >
       <h2>Why This Lesson Exists</h2>
       <p>

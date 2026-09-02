@@ -10,7 +10,7 @@ export default function Cicd() {
       sectionId="cloud-architecture"
       lessonIndex={4}
       prev={{ path: '/cloud-architecture/capacity-planning', label: 'Cost & Capacity Planning' }}
-      next={{ path: '/cloud-architecture/cheatsheet', label: '📋 Cheat Sheet' }}
+      next={{ path: '/cloud-architecture/cheatsheet', label: '📋 Cloud & Infrastructure Field Guide' }}
     >
       <p>
         &quot;We do CI/CD&quot; is one of the most common claims on a resume and one of the least

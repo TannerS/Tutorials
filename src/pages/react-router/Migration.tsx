@@ -10,7 +10,7 @@ export default function Migration() {
       sectionId="react-router"
       lessonIndex={7}
       prev={{ path: '/react-router/fullapp', label: 'Complete App Routing' }}
-      next={{ path: '/react-router/cheatsheet', label: 'Cheat Sheet' }}
+      next={{ path: '/react-router/cheatsheet', label: '📋 React Router Field Guide' }}
     >
       <p>
         Migrating from React Router v5 to v7 is a two-step jump: v5 → v6
@@ -341,8 +341,8 @@ function UserList() {
 
       <InfoBox variant="warning" title="Which Version Should You Actually Be On?">
         <p>
-          <strong>v6 is end-of-life</strong> and <strong>v7 is security-only</strong>. If you
-          are starting something new, start on v8. If you are on v6, the useful path is
+          The team&apos;s development focus has shifted to v8. If you are starting something
+          new, treat v6 and v7 as legacy and start on v8. If you are on v6, the useful path is
           v6&nbsp;&rarr;&nbsp;v7&nbsp;&rarr;&nbsp;v8 rather than a single jump: v7 is where the
           data APIs and the package unification land, and it is much easier to verify one of
           those at a time.

@@ -360,6 +360,24 @@ public final class MaskUtil {
                                     : local.charAt(0) + "***" + local.charAt(local.length() - 1))
              + domain;
     }
+
+    // Masks everything but the last 4 characters -- for SSNs, phone numbers,
+    // card numbers, and anything else that is not shaped like an email.
+    public static String maskLastFour(String value) {
+        if (value == null) return null;
+        if (value.length() <= 4) return "*".repeat(value.length());
+        return "*".repeat(value.length() - 4) + value.substring(value.length() - 4);
+    }
+
+    // Dispatches on field name, because "sensitive" does not mean "email-shaped".
+    // maskEmail() silently returns its input unmasked if there is no "@" in it --
+    // calling it on an SSN would log the SSN in plaintext.
+    public static String mask(String fieldName, String value) {
+        if (value == null) return null;
+        return fieldName.toLowerCase().contains("email")
+            ? maskEmail(value)
+            : maskLastFour(value);
+    }
 }
 
 @Aspect
@@ -402,7 +420,7 @@ public class LogSanitizingAspect {
                 Object value = args[i];
                 if (value == null) return name + "=null";
                 if (!sensitive.contains(name)) return name + "=" + value;
-                return name + "=" + MaskUtil.maskEmail(value.toString());
+                return name + "=" + MaskUtil.mask(name, value.toString());
             })
             .collect(Collectors.joining(", "));
     }
@@ -413,13 +431,13 @@ public class LogSanitizingAspect {
 public class AccountService {
     @LogSanitized(sensitiveArgs = { "email", "ssn" })
     public Account register(String email, String ssn, String displayName) { ... }
-    // logs: register(email=a***e@example.com, ssn=***6789, displayName=Alice)
+    // logs: register(email=a***e@example.com, ssn=*******6789, displayName=Alice)
 }`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="Why this is worth an aspect">
         <p>
-          You could put <code>maskEmail()</code> at every log call site. Someone will forget. You
+          You could put <code>MaskUtil.mask()</code> at every log call site. Someone will forget. You
           could code-review it. Reviewers get tired. The aspect enforces it once, and new methods
           pick up the behavior automatically as long as they carry the annotation.
         </p>

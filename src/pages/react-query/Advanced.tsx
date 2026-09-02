@@ -10,7 +10,7 @@ export default function ReactQueryAdvanced() {
       sectionId="react-query"
       lessonIndex={1}
       prev={{ path: '/react-query/fundamentals', label: 'React Query: Fundamentals' }}
-      next={{ path: '/react-query/cheatsheet', label: 'React Query Cheat Sheet' }}
+      next={{ path: '/react-query/cheatsheet', label: '📋 React Query Field Guide' }}
     >
       <p>
         You already know <code>useQuery</code>, <code>useMutation</code>, query keys, and pagination

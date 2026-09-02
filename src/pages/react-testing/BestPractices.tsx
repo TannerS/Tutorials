@@ -10,7 +10,7 @@ export default function BestPractices() {
       sectionId="react-testing"
       lessonIndex={6}
       prev={{ path: '/react-testing/patterns', label: 'Testing Patterns & CI' }}
-      next={{ path: '/react-testing/cheatsheet', label: '📋 React Testing Library Cheat Sheet' }}
+      next={{ path: '/react-testing/cheatsheet', label: '📋 React Testing Field Guide' }}
     >
       <p>
         Every lesson up to here has shown you <em>how</em> to write a test. This one is

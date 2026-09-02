@@ -165,8 +165,6 @@ import DddEventStorming from './pages/ddd/EventStorming'
 import DddSpringBoot from './pages/ddd/SpringBoot'
 import DddCheatsheet from './pages/ddd/Cheatsheet'
 
-// Communicating Architecture
-
 // Cloud & Infrastructure
 import CloudWellArchitected from './pages/cloud-architecture/WellArchitected'
 import CloudIac from './pages/cloud-architecture/Iac'
@@ -238,10 +236,6 @@ import AuthAuthz from './pages/auth/Authz'
 import AuthGateway from './pages/auth/Gateway'
 import AuthSecurity from './pages/auth/Security'
 import AuthSso from './pages/auth/Sso'
-
-// Java Cheat Sheet
-
-// React Cheat Sheet
 
 // Testing Strategies
 import TestIntro from './pages/testing/Intro'

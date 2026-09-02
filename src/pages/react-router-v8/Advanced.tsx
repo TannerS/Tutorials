@@ -473,7 +473,7 @@ function Breadcrumbs() {
     .map((match) => ({
       path: match.pathname,
       label: typeof match.handle.breadcrumb === 'function'
-        ? match.handle.breadcrumb(match.data)
+        ? match.handle.breadcrumb(match.loaderData)
         : match.handle.breadcrumb,
     }));
 
@@ -540,7 +540,7 @@ function useSmartNavigate() {
 │ future.v8_trailingSlashAware…  │ Trailing-slash-aware .data URLs always on │
 │ meta() data field (deprecated) │ data field REMOVED — use loaderData       │
 │ CJS + ESM published            │ ESM-only package                          │
-│ Node 20+, React 18.2+/19+      │ Node 22.22.0+, React 19.2.7+, Vite 7+     │
+│ Node 20+, React 18+/19+        │ Node 22.22.0+, React 19.2.7+, Vite 7+     │
 │ future.unstable_previewServer… │ Vite-preview-server prerendering is the   │
 │  Prerendering flag             │  only path — flag removed                 │
 └───────────────────────────────┴──────────────────────────────────────────┘`}

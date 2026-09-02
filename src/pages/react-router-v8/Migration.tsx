@@ -26,7 +26,7 @@ export default function Migration() {
         This lesson is verified against the official{' '}
         <code>CHANGELOG.md</code> and the <em>Upgrading from v7</em> guide on{' '}
         reactrouter.com, plus the live npm registry, as of the v8.3.1 release
-        (2026-08-27). Confirmed dist-tags: <code>react-router</code>{' '}
+        (2026-08-28). Confirmed dist-tags: <code>react-router</code>{' '}
         <code>latest</code> = <strong>8.3.1</strong>, <code>version-7</code> ={' '}
         <strong>7.18.3</strong>. <code>react-router-dom</code>&apos;s{' '}
         <code>latest</code> tag is frozen at <strong>7.18.3</strong> — no v8 build
@@ -323,7 +323,7 @@ npm install react-router@latest @react-router/{dev,node,etc.}@latest`}
 │ matches[i].data                     │ matches[i].loaderData                     │
 │ @react-router/dev/vite/cloudflare   │ REMOVED — use @cloudflare/vite-plugin    │
 │ useRequestContextDomainName option  │ REMOVED — that behavior is the default   │
-│ Node 20+, React 18.3+/19+, Vite 5+  │ Node 22.22+, React 19.2.7+, Vite 7+       │
+│ Node 20+, React 18+/19+, Vite 5+    │ Node 22.22+, React 19.2.7+, Vite 7+       │
 │ CJS + ESM builds                    │ ESM-only                                  │
 └────────────────────────────────────┴─────────────────────────────────────────┘
 */`}

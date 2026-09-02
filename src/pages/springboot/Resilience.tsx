@@ -10,7 +10,7 @@ export default function Resilience() {
       sectionId="springboot"
       lessonIndex={17}
       prev={{ path: '/springboot/webflux', label: 'Reactive Programming with WebFlux' }}
-      next={{ path: '/springboot/cheatsheet', label: '📋 Cheat Sheet' }}
+      next={{ path: '/springboot/cheatsheet', label: '📋 Spring Boot 4 Field Guide' }}
     >
       <p>
         The microservices patterns lesson already covered <em>what</em> a circuit breaker is —

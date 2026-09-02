@@ -351,7 +351,7 @@ public class ApiExceptionHandler {
 
       <CodeBlock language="text" title="Real output — compiled against javax.servlet, run on Boot 2.7.18 (JDK 21)">
 {`$ curl -s http://localhost:8080/api/boom
-{"timestamp":"2026-09-01T10:15:41.883271Z","status":404,"code":"CUSTOMER_NOT_FOUND","title":"Customer not found","detail":"No customer exists with id cust-123","path":"/api/boom","extra":{},"errors":null}
+{"timestamp":"2026-09-01T10:15:41.883271Z","status":404,"code":"CUSTOMER_NOT_FOUND","title":"Customer Not Found","detail":"No customer exists with id cust-123","path":"/api/boom","extra":{},"errors":null}
 
 $ curl -s -X POST http://localhost:8080/api/validate -H "Content-Type: application/json" -d '{"name":""}'
 {"timestamp":"2026-09-01T10:15:41.953913Z","status":400,"code":"VALIDATION_FAILED","title":"Validation failed","detail":"One or more fields are invalid","path":"/api/validate","extra":{},"errors":[{"field":"name","message":"must not be blank"}]}`}

@@ -1,9 +1,15 @@
 import { NavLink, useLocation } from 'react-router';
 import { useState, useEffect } from 'react';
-import { sections, groups } from '../data/sections';
+import { sections, groups, rootSectionIds } from '../data/sections';
 import type { Group, Section } from '../data/types';
 import { useProgress } from './ProgressTracker';
 import { useTheme } from './ThemeProvider';
+
+// Sections rendered directly at the sidebar root, as siblings of `groups`,
+// with no wrapping group header — see rootSectionIds in data/sections.ts.
+const rootSections: Section[] = rootSectionIds
+  .map((id) => sections.find((s) => s.id === id))
+  .filter((s): s is Section => s !== undefined);
 
 // Build (a) a map of sectionId → its immediate parent group, and (b) a map of
 // groupId → its immediate parent group (undefined for root-level groups).
@@ -388,7 +394,10 @@ export default function Sidebar() {
             ))}
           </div>
         ) : (
-          groups.map(group => renderGroup(group, 0))
+          <>
+            {groups.map(group => renderGroup(group, 0))}
+            {rootSections.map(section => renderSection(section, 0))}
+          </>
         )}
       </div>
 
