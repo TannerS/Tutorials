@@ -9,7 +9,7 @@ export default function ZustandFundamentals() {
       title="Zustand: Fundamentals"
       sectionId="state-zustand"
       lessonIndex={0}
-      prev={null}
+      prev={{ path: '/state-mgmt/patterns', label: 'Context Patterns in the Real World' }}
       next={{ path: '/state-mgmt/zustand-advanced', label: 'Zustand: Advanced Patterns' }}
     >
       <h2>What Zustand Actually Is</h2>

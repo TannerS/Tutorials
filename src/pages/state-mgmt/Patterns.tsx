@@ -10,7 +10,7 @@ export default function Patterns() {
       sectionId="state-context"
       lessonIndex={1}
       prev={{ path: '/state-mgmt/intro', label: "When Context Isn't Enough" }}
-      next={null}
+      next={{ path: '/state-mgmt/zustand-fundamentals', label: 'Zustand: Fundamentals' }}
     >
       <p>
         The previous lesson decided <em>which rung</em> to stand on. This one is the production

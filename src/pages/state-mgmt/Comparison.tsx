@@ -10,7 +10,7 @@ export default function Comparison() {
       sectionId="state-basics"
       lessonIndex={0}
       prev={null}
-      next={null}
+      next={{ path: '/state-mgmt/intro', label: "When Context Isn't Enough" }}
     >
       <h2>Climb Only When Forced</h2>
       <p>
