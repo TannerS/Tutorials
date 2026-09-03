@@ -213,6 +213,126 @@ export default useBearStore;`}
         store exists the moment this module is imported.
       </p>
 
+      <h2>How <code>create()</code> Actually Works — No Magic, Just Modules and Closures</h2>
+      <p>
+        &quot;No Provider needed&quot; is easy to state and hard to actually believe until
+        you&apos;ve seen the mechanism. So here it is — not a metaphor, the real thing, trimmed
+        down from the actual source of the <code>zustand</code> package you just installed
+        (compare against <code>node_modules/zustand/esm/vanilla.mjs</code> and{' '}
+        <code>react.mjs</code> yourself; this is a faithful simplification, not an approximation):
+      </p>
+
+      <CodeBlock language="tsx" title="createStore() — the whole store, ~12 lines">
+{`function createStore(initializer) {
+  let state;
+  const listeners = new Set();          // who to notify on change
+
+  const setState = (partial) => {
+    state = { ...state, ...(typeof partial === 'function' ? partial(state) : partial) };
+    listeners.forEach((listener) => listener(state));   // notify EVERY subscriber
+  };
+  const getState = () => state;
+  const subscribe = (listener) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);            // unsubscribe function
+  };
+
+  state = initializer(setState, getState);   // run your (set) => ({ bears: 0, ... }) fn
+  return { setState, getState, subscribe };  // "api" — a plain object, not a component
+}`}
+      </CodeBlock>
+
+      <p>
+        Notice what that returns: <code>{'{ setState, getState, subscribe }'}</code> — three
+        functions closing over one <code>state</code> variable and one <code>listeners</code>{' '}
+        set. No JSX. No component. Nothing React-specific at all — this is exactly the object{' '}
+        <code>zustand/vanilla</code>&apos;s <code>createStore</code> gave you two sections ago,
+        and it&apos;s the same object you called <code>.getState()</code> and{' '}
+        <code>.subscribe()</code> on directly, with real console output, before any React was
+        involved.
+      </p>
+
+      <p>
+        Now the part that replaces the Provider — the React binding. This is what{' '}
+        <code>create()</code> hands back to you as the hook:
+      </p>
+
+      <CodeBlock language="tsx" title="create() — wrapping the store in a hook, ~8 lines">
+{`function create(initializer) {
+  const api = createStore(initializer);   // ONE store object, built right here
+
+  function useBoundStore(selector) {
+    return useSyncExternalStore(
+      api.subscribe,                       // "call me when the store changes"
+      () => selector(api.getState()),      // "here's the current value I care about"
+    );
+  }
+
+  return useBoundStore;   // <-- this is what "const useBearStore = create(...)" gives you
+}`}
+      </CodeBlock>
+
+      <p>
+        <code>useSyncExternalStore</code> is a built-in React hook whose entire job is bridging a
+        data source that lives <em>outside</em> React (a store, a browser API, a WebSocket) into
+        React&apos;s render cycle. You hand it two functions — <em>how to subscribe</em> and{' '}
+        <em>how to read the current value</em> — and React calls <code>subscribe</code> once per
+        component instance, then re-renders that component every time the subscribed callback
+        fires, reading <code>getSnapshot</code> again to get the new value. That&apos;s the
+        entire contract. It doesn&apos;t care where the store came from or how it&apos;s shaped.
+      </p>
+
+      <FlowChart
+        title="Why Every Component Shares the Same Store — Without a Provider"
+        chart={
+          'graph TD\n' +
+          '  Module["useBearStore.ts — a JS module"] -->|"runs ONCE, first time anything imports it"| Api["api = createStore(...) — one object, one listeners Set, held in closure"]\n' +
+          '  Api --> Hook["useBoundStore — the returned hook, closes over THIS api"]\n' +
+          '  Hook -->|"export default useBoundStore"| Cache[("Module cache — every import gets the SAME function reference")]\n' +
+          '  Cache -->|"import useBearStore"| CompA["Component A — anywhere in the tree"]\n' +
+          '  Cache -->|"import useBearStore"| CompB["Component B — anywhere else, no relation to A"]\n' +
+          '  CompA -->|"useSyncExternalStore(api.subscribe, ...)"| Api\n' +
+          '  CompB -->|"useSyncExternalStore(api.subscribe, ...)"| Api\n' +
+          '  style Module fill:#1a2744\n' +
+          '  style Cache fill:#3b1a1a\n' +
+          '  style Api fill:#1a3329'
+        }
+      />
+
+      <p>
+        That diagram is the actual answer to &quot;how does this work without a Provider.&quot;{' '}
+        <code>const useBearStore = create(...)</code> at the top of a module is code that runs{' '}
+        <strong>exactly once</strong> — the first time anything imports that file. JavaScript
+        module systems cache the result: a second, third, or hundredth <code>import</code> of the
+        same file does not re-run it, it just hands back the same values already computed the
+        first time. So <code>useBearStore</code> is one specific function object, created once,
+        permanently closing over one specific <code>api</code> object (one <code>state</code>{' '}
+        variable, one <code>listeners</code> set). Every component that imports it — no matter
+        where it sits in the component tree, or whether it&apos;s even rendered by the same root —
+        gets that exact same function, and therefore reaches the exact same store.
+      </p>
+
+      <InfoBox variant="info" title="Context vs. Zustand: Two Completely Different Lookup Strategies">
+        <p>
+          Context <em>has</em> to use a Provider because a context value is found by{' '}
+          <strong>walking the component tree</strong> — <code>useContext(MyContext)</code> asks
+          React &quot;climb up from here and find the nearest <code>&lt;MyContext.Provider&gt;</code>
+          above me,&quot; and if none exists, you get the default value. That lookup is inherently
+          tree-shaped, so something has to exist in the tree to be found.
+        </p>
+        <p>
+          Zustand&apos;s hook does no tree walking at all. It doesn&apos;t ask &quot;what&apos;s
+          above me?&quot; — it already has a direct reference to <code>api</code>, captured in a
+          closure when the module first loaded, completely independent of where in the tree the
+          component calling the hook happens to render. Two components in entirely unrelated
+          branches of the tree, even rendered by two different <code>createRoot()</code> calls on
+          the same page, still share the same store as long as they both imported the same module.
+          &quot;No Provider&quot; isn&apos;t Zustand doing something clever <em>instead of</em> tree
+          lookup — it&apos;s Zustand not needing tree lookup <em>at all</em>, because module
+          imports already give every caller the same reference for free.
+        </p>
+      </InfoBox>
+
       <h2>Using the Store in a Component</h2>
       <p>
         Call the hook like any other hook. Passed no arguments, it returns the{' '}
