@@ -143,6 +143,7 @@ import AntiState from './pages/react-antipatterns/State'
 import AntiEffects from './pages/react-antipatterns/Effects'
 import AntiPerformance from './pages/react-antipatterns/Performance'
 import AntiComponents from './pages/react-antipatterns/Components'
+import AntiExtractComponents from './pages/react-antipatterns/ExtractComponents'
 import AntiBestPractices from './pages/react-antipatterns/BestPractices'
 
 // Microservices
@@ -593,6 +594,7 @@ function App() {
         <Route path="react-antipatterns/effects" element={<AntiEffects />} />
         <Route path="react-antipatterns/performance" element={<AntiPerformance />} />
         <Route path="react-antipatterns/components" element={<AntiComponents />} />
+        <Route path="react-antipatterns/extract-components" element={<AntiExtractComponents />} />
         <Route path="react-antipatterns/bestpractices" element={<AntiBestPractices />} />
         {/* Microservices */}
         <Route path="microservices/intro" element={<MicroIntro />} />

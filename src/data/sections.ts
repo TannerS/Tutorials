@@ -247,6 +247,7 @@ export const sections: Section[] = [
       { id: 'effects', title: 'useEffect Anti-Patterns', path: '/react-antipatterns/effects' },
       { id: 'performance', title: 'Performance Mistakes', path: '/react-antipatterns/performance' },
       { id: 'components', title: 'Component Anti-Patterns', path: '/react-antipatterns/components' },
+      { id: 'extract-components', title: 'Extracting Components Instead of Conditionals', path: '/react-antipatterns/extract-components' },
       { id: 'bestpractices', title: 'Best Practices Checklist', path: '/react-antipatterns/bestpractices' },
     ],
   },

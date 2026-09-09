@@ -8,8 +8,8 @@ export default function BestPractices() {
     <LessonLayout
       title="Best Practices Checklist"
       sectionId="react-antipatterns"
-      lessonIndex={5}
-      prev={{ path: '/react-antipatterns/components', label: 'Component Anti-Patterns' }}
+      lessonIndex={6}
+      prev={{ path: '/react-antipatterns/extract-components', label: 'Extracting Components Instead of Conditionals' }}
       next={null}
     >
       <InfoBox variant="success" title="Congratulations!">

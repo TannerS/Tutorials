@@ -10,7 +10,7 @@ export default function Components() {
       sectionId="react-antipatterns"
       lessonIndex={4}
       prev={{ path: '/react-antipatterns/performance', label: 'Performance Mistakes' }}
-      next={{ path: '/react-antipatterns/bestpractices', label: 'Best Practices Checklist' }}
+      next={{ path: '/react-antipatterns/extract-components', label: 'Extracting Components Instead of Conditionals' }}
     >
       <InfoBox variant="info" title="Why Component Design Matters">
         Poor component design is the root cause of most React maintenance nightmares.
