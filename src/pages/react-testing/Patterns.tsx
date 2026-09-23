@@ -8,8 +8,8 @@ export default function Patterns() {
     <LessonLayout
       title="Testing Patterns & CI"
       sectionId="react-testing"
-      lessonIndex={7}
-      prev={{ path: '/react-testing/third-party-layered', label: 'Testing Layered & Third-Party Components' }}
+      lessonIndex={6}
+      prev={{ path: '/react-testing/forms', label: 'Testing Forms & Routing' }}
       next={{ path: '/react-testing/best-practices', label: 'Best Practices & Anti-Patterns' }}
     >
       <h2>Custom Render Utility</h2>

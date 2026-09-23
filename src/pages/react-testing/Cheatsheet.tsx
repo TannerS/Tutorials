@@ -11,7 +11,7 @@ export default function ReactTestingCheatsheet() {
       meta={['Jest 30.5 · RTL 16.3 · MSW 2.15', 'React 19.3 · user-event 14.6', '19 panels']}
       page="1 / 1"
       footer="The nine lessons in this section carry the reasoning and the worked examples; this page is the recall sheet."
-      prev={{ path: '/react-testing/best-practices', label: 'Best Practices & Anti-Patterns' }}
+      prev={{ path: '/react-testing/third-party-layered', label: 'Testing Layered & Third-Party Components' }}
       next={null}
     >
       <GuidePanel n={1} title="Setup & Config" accent="blue" glyph="📦" span={2}>
@@ -364,9 +364,9 @@ await user.click(within(header).getByText('Name'));   // this works`}</GuideCode
 3. Testing Async & APIs              MSW, fetch, loading/error states
 4. Waiting, act(), Async Failures    waitFor internals, fake timers, flakes
 5. Testing Forms & Routing           validation, submission, router
-6. Layered & Third-Party             AG Grid, Zustand, handler passing
-7. Testing Patterns & CI             custom render, factories, coverage
-8. Best Practices & Anti-Patterns    query ladder, what not to test
+6. Testing Patterns & CI             custom render, factories, coverage
+7. Best Practices & Anti-Patterns    query ladder, what not to test
+8. Layered & Third-Party             AG Grid, Zustand, handler passing
 9. This field guide`}</GuideCode>
         <GuideRules items={[
           'Printing: hit Ctrl/Cmd-P straight from the page — print styles force the light palette regardless of the on-screen toggle, and keep each panel whole across page breaks.',

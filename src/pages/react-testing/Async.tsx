@@ -463,16 +463,26 @@ describe('SearchInput with debounce', () => {
 
 Tests:       1 failed, 1 passed, 2 total`}
         </CodeBlock>
-        <p style={{ marginBottom: 0 }}>
+        <p>
           Passing <code>advanceTimers</code> costs you nothing in determinism. It lets{' '}
           <code>user-event</code> tick the clock forward by its own tiny delays only; your
           300&nbsp;ms debounce still will not fire until you call{' '}
-          <code>jest.advanceTimersByTime(300)</code> yourself. And note that it does not
-          help with a timeout you have <em>not</em> caused —{' '}
-          <code>findBy*</code>, <code>waitFor</code> and{' '}
-          <code>waitForElementToBeRemoved</code> poll on timers too, so any{' '}
-          <code>await</code> in a fake-timer test needs either this option or an explicit{' '}
-          <code>act(() =&gt; jest.advanceTimersByTime(...))</code> to make progress.
+          <code>jest.advanceTimersByTime(300)</code> yourself.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Note carefully <em>what</em> needs this wiring: <code>user-event</code>, and not
+          RTL&apos;s waiting helpers. You will often read that <code>waitFor</code>,{' '}
+          <code>findBy*</code> and <code>waitForElementToBeRemoved</code> also deadlock under a
+          frozen clock. On Jest they do not. Testing Library detects Jest&apos;s fake timers and{' '}
+          <strong>advances the clock itself</strong>, 50&nbsp;ms per attempt, so those awaits make
+          progress with no help from you — a <code>findAllBy*</code> against data on a 40&nbsp;ms
+          fake timer resolves unassisted, in a few milliseconds of real time, having pushed the
+          fake clock forward a single 50&nbsp;ms interval. (The advice is not invented; it
+          describes runners that lack a <code>jest</code> global.) That detection has a sharp edge
+          of its own — a <em>failing</em> <code>waitFor</code> burns its whole 1000&nbsp;ms budget
+          in fake time, which can fire the very debounce you were holding back. The mechanism, the
+          detection check and that footgun are covered in{' '}
+          <a href="/react-testing/async-deep-dive">Waiting, act(), and Async Failure Modes</a>.
         </p>
       </InfoBox>
 
@@ -516,7 +526,7 @@ export const server = setupServer(...handlers);`}
       <h2>Testing Optimistic Updates</h2>
 
       <CodeBlock language="jsx" title="Optimistic UI Test">
-{`import { render, screen, waitFor } from '@testing-library/react';
+{`import { render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { server } from '../mocks/server';
 import { http, HttpResponse } from 'msw';
@@ -539,20 +549,29 @@ test('optimistically adds todo then confirms', async () => {
   await user.type(screen.getByLabelText(/new todo/i), 'Test optimistic');
   await user.click(screen.getByRole('button', { name: /add/i }));
 
-  // Immediately visible (optimistic)
+  // Immediately visible (optimistic), and flagged as not yet saved
   expect(screen.getByText('Test optimistic')).toBeInTheDocument();
+  const savingIndicator = screen.getByText(/saving/i);
 
-  // After server confirms, still there and no error
-  await waitFor(() => {
-    expect(screen.queryByText(/saving/i)).not.toBeInTheDocument();
-  });
+  // Grab the indicator FIRST, then wait for that node to detach.
+  // waitForElementToBeRemoved proves it was there to begin with;
+  // waitFor(() => expect(queryByText(/saving/i)).not.toBeInTheDocument())
+  // would pass on its first check and prove nothing. See the note below.
+  await waitForElementToBeRemoved(savingIndicator);
+
+  // Survived the swap: the row is still there once the server confirms
   expect(screen.getByText('Test optimistic')).toBeInTheDocument();
 });
 
 test('reverts optimistic update on server error', async () => {
   const user = userEvent.setup();
   server.use(
-    http.post('/api/todos', () => {
+    http.post('/api/todos', async () => {
+      // Delay the FAILURE too, not just the success. An instant 500 is created
+      // and reverted inside the same 'await user.click(...)', so the optimistic
+      // row is already gone when the click returns and the test can never see
+      // the state it is meant to be testing.
+      await new Promise(r => setTimeout(r, 200));
       return HttpResponse.json({ error: 'fail' }, { status: 500 });
     })
   );
@@ -563,13 +582,40 @@ test('reverts optimistic update on server error', async () => {
   await user.type(screen.getByLabelText(/new todo/i), 'Will fail');
   await user.click(screen.getByRole('button', { name: /add/i }));
 
-  // Reverted after server error
-  await waitFor(() => {
-    expect(screen.queryByText('Will fail')).not.toBeInTheDocument();
-  });
+  // The row really is on screen first — that getByText is half the assertion,
+  // because it fails if the optimistic insert never happened
+  const optimisticRow = screen.getByText('Will fail');
+
+  // ...and then it really goes away again
+  await waitForElementToBeRemoved(optimisticRow);
+
   expect(screen.getByRole('alert')).toHaveTextContent(/failed/i);
 });`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="Why Neither Test Waits On not.toBeInTheDocument()">
+        <p style={{ marginBottom: 0 }}>
+          The obvious-looking version of both waits —{' '}
+          <code>
+            await waitFor(() =&gt; expect(screen.queryByText(/saving/i)).not.toBeInTheDocument())
+          </code>{' '}
+          — asserts nothing. <code>waitFor</code> resolves the first time its callback does not
+          throw, and &ldquo;not in the document&rdquo; is already true at <code>t=0</code>, before
+          the optimistic row has had any chance to render. Pointed at a <code>TodoApp</code> whose
+          optimistic path had been deleted outright, that assertion still passed in 2&nbsp;ms. The
+          two tests above cannot: each grabs its element with <code>getBy*</code>{' '}
+          <em>before</em> it starts waiting, so a missing optimistic update fails the test on that
+          line instead. The callback form,{' '}
+          <code>waitForElementToBeRemoved(() =&gt; screen.queryByText(/saving/i))</code>, carries
+          the same guard internally — it throws{' '}
+          <em>
+            &ldquo;The element(s) given to waitForElementToBeRemoved are already removed&rdquo;
+          </em>{' '}
+          rather than passing.{' '}
+          <a href="/react-testing/async-deep-dive">Waiting, act(), and Async Failure Modes</a> has
+          the full set of outcomes.
+        </p>
+      </InfoBox>
 
       <InfoBox variant="note" title="Async Test Timeout">
         By default, <code>findBy</code> and <code>waitFor</code> time out after

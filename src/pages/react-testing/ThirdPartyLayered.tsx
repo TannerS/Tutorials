@@ -8,9 +8,9 @@ export default function ThirdPartyLayered() {
     <LessonLayout
       title="Testing Layered & Third-Party Components"
       sectionId="react-testing"
-      lessonIndex={6}
-      prev={{ path: '/react-testing/forms', label: 'Testing Forms & Routing' }}
-      next={{ path: '/react-testing/patterns', label: 'Testing Patterns & CI' }}
+      lessonIndex={8}
+      prev={{ path: '/react-testing/best-practices', label: 'Best Practices & Anti-Patterns' }}
+      next={{ path: '/react-testing/cheatsheet', label: '📋 React Testing Field Guide' }}
     >
       <p>
         Everything so far has tested components you wrote, two or three layers deep, made
@@ -51,17 +51,11 @@ ag-grid-community           36.2.0
 ag-grid-react               36.2.0`}
         </CodeBlock>
         <p style={{ marginBottom: 0 }}>
-          One incidental finding while assembling it: <code>typescript</code> is now at{' '}
-          <strong>7.0.2</strong>, and <code>ts-jest@29.4.12</code> declares a peer range of{' '}
-          <code>{'typescript ">=4.3 <7"'}</code>. The two failure shapes are different and
-          both were reproduced: on an <em>existing</em> TypeScript 7 project{' '}
-          <code>npm i -D ts-jest</code> aborts with <code>ERESOLVE</code>, while on a{' '}
-          <em>fresh</em> one <code>npm i -D ts-jest typescript</code> appears to succeed and
-          quietly installs <code>typescript@6.0.3</code> — the highest version under the
-          ceiling. The lab used <code>babel-jest</code> with{' '}
-          <code>@babel/preset-react</code> instead, which has no such constraint. See the{' '}
-          <a href="/react-testing/intro">RTL Fundamentals</a> setup lesson for the full
-          comparison.
+          The transform is <code>babel-jest</code> rather than <code>ts-jest</code>, because{' '}
+          <code>ts-jest@29.4.12</code> still declares a peer ceiling of{' '}
+          <code>{'typescript ">=4.3 <7"'}</code> while TypeScript is now at 7.0.2 — the{' '}
+          <a href="/react-testing/intro">RTL Fundamentals</a> setup lesson has the two
+          failure shapes and what to do about them.
         </p>
       </InfoBox>
 
@@ -77,7 +71,7 @@ ag-grid-react               36.2.0`}
 
       <FlowChart
         title="Mock it, or render it for real?"
-        chart={"graph TD\n  A[\"You need a third-party component<br/>inside the tree under test\"] --> B{\"What is this test<br/>actually about?\"}\n  B -->|\"The library's own behaviour<br/>sorting, filtering, editing\"| X[\"Do not write this test.<br/>It is their suite, not yours.\"]\n  B -->|\"YOUR integration with it\"| C{\"Does it render DOM<br/>you can query?\"}\n  B -->|\"YOUR logic around it\"| M1[\"Mock it.<br/>Keep the props wiring live.\"]\n  C -->|\"No: canvas, WebGL,<br/>or a measured viewport\"| M2[\"Mock it.<br/>jsdom cannot produce the output.\"]\n  C -->|\"Yes, accessible roles\"| D{\"Does it work in jsdom<br/>once you await it?\"}\n  D -->|\"Yes\"| R[\"Render it for real.<br/>Assert on roles.\"]\n  D -->|\"Only with shims and<br/>fake timers everywhere\"| M3[\"Mock it.<br/>The shims are the untested part.\"]\n  style R fill:#1a3329,stroke:#4ade80\n  style X fill:#3b1a1a,stroke:#f87171\n  style M1 fill:#1a2744,stroke:#5b9cf6\n  style M2 fill:#1a2744,stroke:#5b9cf6\n  style M3 fill:#1a2744,stroke:#5b9cf6"}
+        chart={"graph TD\n  A[\"You need a third-party component<br/>inside the tree under test\"] --> B{\"What is this test<br/>actually about?\"}\n  B -->|\"The library's own behaviour<br/>sorting, filtering, editing\"| X[\"Do not write this test.<br/>It is their suite, not yours.\"]\n  B -->|\"YOUR integration with it\"| C{\"Does it render DOM<br/>you can query?\"}\n  B -->|\"YOUR logic around it\"| M1[\"Mock it.<br/>Keep the props wiring live.\"]\n  C -->|\"No: canvas, WebGL,<br/>or a measured viewport\"| M2[\"Mock it.<br/>jsdom cannot produce the output.\"]\n  C -->|\"Yes, accessible roles\"| D{\"Does it work in jsdom<br/>once you await it?\"}\n  D -->|\"Yes\"| R[\"Render it for real.<br/>Assert on roles.\"]\n  D -->|\"Only with global shims<br/>(fake ResizeObserver, matchMedia)<br/>and fake timers everywhere\"| M3[\"Mock it.<br/>The shims are the untested part.\"]\n  style R fill:#1a3329,stroke:#4ade80\n  style X fill:#3b1a1a,stroke:#f87171\n  style M1 fill:#1a2744,stroke:#5b9cf6\n  style M2 fill:#1a2744,stroke:#5b9cf6\n  style M3 fill:#1a2744,stroke:#5b9cf6"}
       />
 
       <table>
@@ -106,7 +100,7 @@ ag-grid-react               36.2.0`}
           </tr>
           <tr>
             <td>It is the component the user is actually operating in this journey</td>
-            <td>It is genuinely, measurably slow — <strong>measure this, do not assume it</strong> (see the AG Grid timings below, which came out backwards from the folklore)</td>
+            <td>It is genuinely, measurably slow — <strong>measure this, do not assume it</strong> (the AG Grid timings below hold up, but only to about 600 rows, and the thing that decides it is not the one people expect)</td>
           </tr>
         </tbody>
       </table>
@@ -150,6 +144,8 @@ export default function RowActions({ row, onArchive }) {
 }
 
 // Row.jsx — the intermediate layer
+import RowActions from './RowActions';
+
 export default function Row({ row, onArchive }) {
   return (
     <li>
@@ -160,6 +156,9 @@ export default function Row({ row, onArchive }) {
 }
 
 // RowList.jsx — the layer that owns the state
+import { useState } from 'react';
+import Row from './Row';
+
 export default function RowList({ rows }) {
   const [archivedIds, setArchivedIds] = useState([]);
   const visible = rows.filter((r) => !archivedIds.includes(r.id));
@@ -177,7 +176,11 @@ export default function RowList({ rows }) {
       </CodeBlock>
 
       <CodeBlock language="jsx" title="The over-mocked version — the test body is identical in both files">
-{`import RowList from './RowList';
+{`import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import RowList from './RowList';
+
+const rows = [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }];
 
 // "Just stubbing the middle layer so the test stays focused."
 jest.mock('./Row', () => ({
@@ -312,7 +315,7 @@ test('calls onArchive with the row id', async () => {
           </tr>
           <tr>
             <td>A journey crossing several features and routes</td>
-            <td>One or two of these total, at the page. Treat them as smoke tests, not the suite.</td>
+            <td>One or two of these total, at the page. Treat them as smoke tests — broad checks that the wiring holds together at all — not as the suite.</td>
           </tr>
         </tbody>
       </table>
@@ -345,7 +348,7 @@ test('calls onArchive with the row id', async () => {
 
       <FlowChart
         title="Six routes from a click to your state — and what each one lets you assert"
-        chart={"graph LR\n  CLICK([\"user.click\"]) --> P1[\"1. prop drilled<br/>through N layers\"]\n  CLICK --> P2[\"2. inline arrow<br/>in JSX\"]\n  CLICK --> P3[\"3. from context\"]\n  CLICK --> P4[\"4. Zustand action<br/>in a deep child\"]\n  CLICK --> P5[\"5. render prop /<br/>children-as-function\"]\n  CLICK --> P6[\"6. library callback<br/>onCellClicked\"]\n  P1 --> UI[\"Assert the UI change<br/>render from the state owner\"]\n  P2 --> UI\n  P3 --> UI\n  P4 --> UI\n  P5 --> UI\n  P6 --> UI\n  P1 -.->|\"leaf test only\"| SPY[\"Assert the spy<br/>real mocked boundary\"]\n  P5 -.->|\"argument shape\"| SPY\n  P6 -.->|\"when the grid is mocked\"| SPY\n  style UI fill:#1a3329,stroke:#4ade80\n  style SPY fill:#1a2744,stroke:#5b9cf6"}
+        chart={"graph LR\n  CLICK([\"user.click\"]) --> P1[\"1. prop drilled<br/>through N layers\"]\n  CLICK --> P2[\"2. inline arrow<br/>in JSX\"]\n  CLICK --> P3[\"3. from context\"]\n  CLICK --> P4[\"4. Zustand action<br/>in a deep child\"]\n  CLICK --> P5[\"5. render prop:<br/>you pass a FUNCTION as children<br/>and it hands you the handler\"]\n  CLICK --> P6[\"6. library callback<br/>onCellClicked\"]\n  P1 --> UI[\"Assert the UI change<br/>render from the state owner\"]\n  P2 --> UI\n  P3 --> UI\n  P4 --> UI\n  P5 --> UI\n  P6 --> UI\n  P1 -.->|\"leaf test only\"| SPY[\"Assert the spy<br/>real mocked boundary\"]\n  P5 -.->|\"argument shape\"| SPY\n  P6 -.->|\"when the grid is mocked\"| SPY\n  style UI fill:#1a3329,stroke:#4ade80\n  style SPY fill:#1a2744,stroke:#5b9cf6"}
       />
 
       <h3>1 &amp; 2 &mdash; Drilled Through N Layers, and Inline in JSX</h3>
@@ -668,6 +671,39 @@ render survived. Now click the checkbox:
         registers a reset function as it is created, and runs them all in a global{' '}
         <code>afterEach</code>. You write it once and never think about resets again.
       </p>
+      <p>
+        It is the densest thing on this page, and it is meant to be copied rather than
+        understood line by line — but copy-paste you cannot audit is how a silent auto-reset
+        happens, so here is what each part is doing:
+      </p>
+      <ul>
+        <li>
+          <code>export * from &apos;zustand&apos;</code> re-exports everything unchanged, then
+          the explicit <code>export const create</code> below <em>shadows</em> just that one
+          name. Middleware, <code>useStore</code> and the rest pass straight through.
+        </li>
+        <li>
+          <code>jest.requireActual</code> reaches past the mock to the real module, so the
+          wrapper wraps Zustand&apos;s genuine <code>create</code> and not the shadowed one it
+          is in the middle of defining.
+        </li>
+        <li>
+          Each wrapper calls the real <code>create</code>, grabs{' '}
+          <code>getInitialState()</code> while it is still pristine, and pushes a closure that
+          restores it into <code>storeResetFns</code>. The <code>afterEach</code> at the bottom
+          runs the whole set.
+        </li>
+      </ul>
+      <p>
+        The <code>typeof stateCreator === &apos;function&apos;</code> branch handles Zustand&apos;s
+        two call shapes. <code>create(fn)</code> passes the state creator directly;{' '}
+        <strong>curried</strong> <code>create&lt;T&gt;()(fn)</code> — the form TypeScript users
+        need, where the first call takes no argument purely so the generic can be supplied and
+        the second call takes the creator — passes <code>undefined</code> first, so the wrapper
+        hands back <code>createUncurried</code> for the second call to invoke. The two{' '}
+        <code>as typeof</code> casts exist only because that union is not expressible in a
+        single signature; they do nothing at runtime.
+      </p>
 
       <CodeBlock language="typescript" title="__mocks__/zustand.ts — Zustand's documented Jest version">
 {`// __mocks__/zustand.ts
@@ -722,7 +758,7 @@ Tests:       4 passed, 4 total`}
         <p style={{ marginBottom: 0 }}>
           Stronger proof: the leaking file from earlier was re-run{' '}
           <em>with not one character changed</em>, purely because{' '}
-          <code>__mocks__/zustand.js</code> now existed — <code>2 passed, 2 total</code>. Jest
+          <code>__mocks__/zustand.ts</code> now existed — <code>2 passed, 2 total</code>. Jest
           picks up a <code>__mocks__</code> folder adjacent to <code>node_modules</code>{' '}
           automatically for node&nbsp;modules, which is why no <code>jest.mock()</code> call is
           needed. Note the two consequences of that: the mock is{' '}
@@ -858,9 +894,11 @@ Tests: 1 failed, 1 passed, 2 total`}
 
       <h2>AG Grid: The Worked Heavy-Third-Party Example</h2>
       <p>
-        AG Grid is the hardest realistic case in a React codebase: hundreds of exports, a
-        virtualised renderer, absolutely-positioned rows, and a layout engine that measures
-        the viewport. jsdom has no layout engine. Received wisdom says mock it and move on.
+        AG Grid is the hardest realistic case in a React codebase: hundreds of exports, a{' '}
+        <strong>virtualised</strong> renderer — only the handful of rows near the viewport
+        ever exist as DOM elements, however many rows you handed it — absolutely-positioned
+        rows, and a layout engine that measures the viewport. jsdom has no layout engine.
+        Received wisdom says mock it and move on.
         Received wisdom is roughly half right, and the half that is wrong is not the half
         people expect. Here is what actually happens.
       </p>
@@ -990,12 +1028,20 @@ ORDER: row-index of each DOM row:
    ["Alice","0","translateY(0px)"],
    ["Bob",  "1","translateY(42px)"]]`}
       </CodeBlock>
+
+      <FlowChart
+        title="The same three rows, in two different orders at once"
+        chart={"graph LR\n  A[\"<b>DOM order</b><br/>what getAllByRole('row') hands you<br/>―――――――――――<br/>rows[0] = Carla<br/>rows[1] = Alice<br/>rows[2] = Bob\"]\n  B[\"<b>Painted order</b><br/>what the user sees<br/>―――――――――――<br/>top: Alice<br/>middle: Bob<br/>bottom: Carla\"]\n  A -->|\"the SAME three elements.<br/>AG Grid never reordered the DOM;<br/>it moved them with translateY()<br/>and put the position in row-index\"| B\n  A --> X[\"rows[0] is Carla,<br/>and Carla is the BOTTOM row.<br/><br/>expect(rows[0]).toHaveTextContent('Carla')<br/>PASSES — and records the opposite<br/>of the sort you meant to assert.\"]\n  style A fill:#1a2744,stroke:#5b9cf6\n  style B fill:#1a3329,stroke:#4ade80\n  style X fill:#3b1a1a,stroke:#f87171"}
+      />
+
       <p>
-        So <code>getAllByRole(&apos;row&apos;)[0]</code> is <strong>not</strong> the top row,
-        and a page object built on <code>rows[0]</code> — including the{' '}
-        <code>DataGridPage</code> example in <em>Testing Patterns &amp; CI</em>, which is
-        written for a plain <code>&lt;table&gt;</code> and is correct there — is wrong for AG
-        Grid. Read the position from the attribute AG Grid maintains for it:
+        So <code>getAllByRole(&apos;row&apos;)[0]</code> is <strong>not</strong> the top row.
+        That breaks any <em>page object</em> — the helper class from{' '}
+        <em>Testing Patterns &amp; CI</em> that wraps a screen&apos;s queries behind named
+        methods so tests never touch <code>screen</code> directly — that indexes into{' '}
+        <code>rows[0]</code>. The <code>DataGridPage</code> example in that lesson does exactly
+        this; it is written for a plain <code>&lt;table&gt;</code> and is correct there, and is
+        wrong for AG Grid. Read the position from the attribute AG Grid maintains for it:
       </p>
 
       <CodeBlock language="jsx" title="Visual order helper for an AG Grid page object">
@@ -1060,25 +1106,19 @@ test('survives a missing data object', () => {
 });`}
       </CodeBlock>
 
-      <h3>Finding 6: Module Registration — Not What I Expected</h3>
+      <h3>Finding 6: Module Registration Is Not Mandatory — Register Anyway</h3>
       <p>
         AG Grid v33 made module registration mandatory, and the common advice is that a test
-        will not render without <code>ModuleRegistry.registerModules([AllCommunityModule])</code>.
-        On <strong>36.2.0 that is false</strong>. A file with no registration at all:
-      </p>
-
-      <CodeBlock language="text" title="Actual output — no ModuleRegistry call anywhere in the file">
-{`NO-MODULES: rows render?                    true
-NO-MODULES: rows = 4  gridcells = 6
-NO-MODULES: console output during render:    NONE
-NO-MODULES: sorted?  true | aria-sort = ascending
-NO-MODULES: console output on click:         NONE
-NO-MODULES: onCellClicked calls =            1`}
-      </CodeBlock>
-      <p>
-        Rendering, sorting and <code>onCellClicked</code> all work unregistered, silently.
-        Features that <em>do</em> live in a separate module fail loudly but unhelpfully —{' '}
-        <code>pagination</code>, for instance:
+        will not render without{' '}
+        <code>ModuleRegistry.registerModules([AllCommunityModule])</code>. On{' '}
+        <strong>36.2.0 that is false</strong>: with no registration anywhere in the file the
+        grid still rendered (<code>4 rows / 6 gridcells</code>), still sorted, still fired{' '}
+        <code>onCellClicked</code>, and logged nothing at either point a test would look
+        (Finding 8 is about what turns up if you keep looking). Features that{' '}
+        <em>do</em> live in a separate module — <code>pagination</code> is the one you will
+        hit first — fail as a <code>console.error</code> rather than a throw, so the test
+        carries on and dies later on a missing panel, with a URL-encoded error code as the
+        only clue:
       </p>
 
       <CodeBlock language="text" title="Actual output — console.error from an unregistered feature">
@@ -1088,25 +1128,21 @@ NO-MODULES: onCellClicked calls =            1`}
 Alternatively register the ValidationModule to see the full message in the console.`}
       </CodeBlock>
       <p>
-        Note that this is a <code>console.error</code>, not a throw — the test carries on and
-        fails later on a missing pagination panel. So register anyway, in your setup file, and
-        stop thinking about it:
+        So the conclusion is the boring one, for a reason that is not the usual one: register
+        in your setup file, not because the grid needs it to render but because{' '}
+        <em>which</em> features need a module changes between releases and the failure mode is
+        a silent log line. It also changes two other things measured on this page — the DOM
+        gets about a third bigger (Anti-Pattern 3), and the idle <code>act()</code> warnings in
+        Finding 8 go away.
       </p>
 
-      <CodeBlock language="javascript" title="jest.setup.js — verified: pagination then works">
+      <CodeBlock language="javascript" title="jest.setup.js — verified: a 30-row grid at paginationPageSize 20 then reports '1 to 20 of 30', console.error count 0">
 {`require('@testing-library/jest-dom');
 
 // Registered once per test file, because setupFilesAfterEnv shares each file's
-// module registry. Cheap insurance: the set of features needing a module changes
-// between releases, and the failure mode is a URL-encoded error code, not a throw.
+// module registry.
 const { AllCommunityModule, ModuleRegistry } = require('ag-grid-community');
 ModuleRegistry.registerModules([AllCommunityModule]);`}
-      </CodeBlock>
-
-      <CodeBlock language="text" title="Actual output — 30 rows, paginationPageSize 20, registered in setupFilesAfterEnv">
-{`SETUP-REG: console.error count     = 0
-SETUP-REG: pagination panel text   = 1 to 20 of 30
-SETUP-REG: Next Page button?       = true`}
       </CodeBlock>
 
       <InfoBox variant="info" title="Also Verified: No Global Shims Were Needed">
@@ -1114,8 +1150,10 @@ SETUP-REG: Next Page button?       = true`}
           jsdom 26.1.0 under <code>jest-environment-jsdom</code> 30.5.2 provides{' '}
           <code>requestAnimationFrame</code> but has <strong>no</strong>{' '}
           <code>ResizeObserver</code>, <code>IntersectionObserver</code>,{' '}
-          <code>matchMedia</code> or <code>Element.prototype.scrollIntoView</code>. AG Grid
-          36.2.0 rendered anyway, with zero shims. If you are carrying a{' '}
+          <code>matchMedia</code> or <code>Element.prototype.scrollIntoView</code> — the{' '}
+          <em>shims</em> the decision tree at the top of this page warns about, fake globals
+          you install in a setup file so a library stops crashing. AG Grid 36.2.0 rendered
+          anyway, with zero of them. If you are carrying a{' '}
           <code>ResizeObserver</code> polyfill in your setup file for the grid&apos;s benefit,
           try deleting it and see whether anything notices — and if something does need a
           shim, remember that the shim is now an untested assumption living in every test.
@@ -1136,11 +1174,11 @@ SETUP-REG: Next Page button?       = true`}
 +0ms    -> getDisplayedRowCount()=2   DOM = ["Carla","Eng","Alice","Sales","Bob","Eng"]
 +20ms   -> getDisplayedRowCount()=2   DOM = ["Carla","Eng","Alice","Sales","Bob","Eng"]
 +100ms  -> getDisplayedRowCount()=2   DOM = ["Carla","Eng","Alice","Sales","Bob","Eng"]
-+300ms  -> getDisplayedRowCount()=2   DOM = ["Carla","Eng","Bob","Eng"]
++300ms  -> getDisplayedRowCount()=2   DOM = ["Carla","Eng","Alice","Sales","Bob","Eng"]
 +600ms  -> getDisplayedRowCount()=2   DOM = ["Carla","Eng","Bob","Eng"]
 
-# and with waitFor instead of fixed sleeps:
-U: DOM caught up after ~409 ms`}
+# and with waitFor instead of fixed sleeps, same grid, separate run:
+U: DOM caught up after ~416 ms`}
       </CodeBlock>
       <p>
         Two lessons. First, a hand-rolled <code>await sleep(100)</code> would have
@@ -1152,12 +1190,61 @@ U: DOM caught up after ~409 ms`}
         what the user gets.
       </p>
 
-      <h3>When to Mock It Instead — and the Timing Surprise</h3>
+      <h3>Finding 8: Yes, It Does Emit act() Warnings — Just Not Where You Look</h3>
       <p>
-        &ldquo;Mock AG Grid because it is slow in jsdom&rdquo; is the standard reason, and
-        when measured it came out <strong>backwards</strong>. Ten
-        render + <code>findBy</code> + <code>cleanup</code> cycles of the same component, real
-        grid versus a table-shaped mock:
+        The obvious thing to check after Finding 7 is whether a grid that commits rows 400ms
+        late trips React&apos;s <code>act()</code> warning. Sample it at the two moments a test
+        would naturally sample it — straight after the <code>findBy</code>, and straight after
+        a click — and the answer is a clean no. Keep the process alive a little longer and the
+        answer changes:
+      </p>
+
+      <CodeBlock language="text" title="Actual output — console.error count, same 3-row grid, three runs each">
+{`UNREGISTERED, plain render + sort:
+  at findByText('Alice')     : 0
+  after clicking the header  : 0
+  after idling 1000ms        : 2   <- "An update to GridBodyComp inside a test
+                                       was not wrapped in act(...)"  @ ~585ms
+
+REGISTERED (AllCommunityModule in setupFilesAfterEnv), same test:
+  after idling 1000ms        : 0
+
+REGISTERED, driven through the API:
+  api.setGridOption('quickFilterText', 'Eng')
+  by the time waitFor resolved : 3   <- "An update to RowComp ..."  @ ~60ms`}
+      </CodeBlock>
+      <p>
+        Three things follow. First, the earlier findings that report{' '}
+        <code>console.error count = 0</code> are accurate <em>at the point they sample</em>,
+        and that is exactly the shape of the problem: a grid whose work outlives your
+        assertions produces warnings your assertions cannot see. Second, registering the
+        modules removes the idle ones — one more reason for the setup file in Finding 6.
+        Third, and least convenient: <code>setGridOption</code>, the very API Finding 7
+        recommends for driving a filter, warns immediately and every time, because that update
+        originates inside AG Grid rather than inside anything RTL wraps.
+      </p>
+
+      <InfoBox variant="warning" title="Do Not Reach for act() to Silence These">
+        <p style={{ marginBottom: 0 }}>
+          The reflex — wrap <code>setGridOption</code> in <code>act()</code> — is the wrong
+          fix here for the same reason it is usually the wrong fix, and{' '}
+          <a href="/react-testing/async-deep-dive">Waiting, act(), and Async Failure Modes</a>{' '}
+          works through why in detail; that treatment is not repeated here. The short version
+          for this page: these warnings are <code>console.error</code> calls, not failures, so
+          a normal suite goes green with noise in the log. They only bite if your setup makes{' '}
+          <code>console.error</code> fatal — a common CI hardening — in which case scope the
+          allowance to the grid rather than deleting the rule, and budget for the fact that a
+          third-party widget with its own scheduler will keep producing them.
+        </p>
+      </InfoBox>
+
+      <h3>When to Mock It Instead — and What Actually Costs the Time</h3>
+      <p>
+        &ldquo;Mock AG Grid because it is slow in jsdom&rdquo; is the standard reason, and it
+        is true up to a point that is further away than you would guess. Ten
+        render + <code>await findByText(&apos;User 0&apos;)</code> + <code>cleanup</code>{' '}
+        cycles of the same three-column component, real grid versus a table-shaped mock, each
+        row measured in its own Jest process:
       </p>
 
       <table>
@@ -1172,28 +1259,106 @@ U: DOM caught up after ~409 ms`}
         <tbody>
           <tr>
             <td>5</td>
-            <td>474&nbsp;ms</td>
-            <td><strong>86&nbsp;ms</strong></td>
-            <td>mock ~5&times; faster</td>
+            <td>313&nbsp;ms</td>
+            <td><strong>37&nbsp;ms</strong></td>
+            <td>mock ~8&times; faster</td>
           </tr>
           <tr>
             <td>200</td>
-            <td><strong>547&nbsp;ms</strong></td>
-            <td>930&nbsp;ms</td>
+            <td>340&nbsp;ms</td>
+            <td><strong>172&nbsp;ms</strong></td>
+            <td>mock ~2&times; faster</td>
+          </tr>
+          <tr>
+            <td>400</td>
+            <td>362&nbsp;ms</td>
+            <td><strong>279&nbsp;ms</strong></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>600</td>
+            <td><strong>338&nbsp;ms</strong></td>
+            <td>377&nbsp;ms</td>
+            <td>they cross about here</td>
+          </tr>
+          <tr>
+            <td>800</td>
+            <td><strong>343&nbsp;ms</strong></td>
+            <td>499&nbsp;ms</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>1000</td>
+            <td><strong>342&nbsp;ms</strong></td>
+            <td>585&nbsp;ms</td>
             <td>mock ~1.7&times; <em>slower</em></td>
           </tr>
         </tbody>
       </table>
       <p>
-        The mechanism is obvious once you see the numbers. The real grid virtualises, so its
-        cost is near-constant in row count — 5 rows and 200 rows both cost about 50ms a
-        render. The mock renders <em>every</em> row, so it is linear: 15 cells at 5 rows, 600
-        cells at 200. The honest conclusion:{' '}
-        <strong>mock it because jsdom cannot show you what you need, or because your data set
-        is small enough that the fixed ~50ms per render dominates — not because of a
-        performance belief you have not measured.</strong> And if you do mock it, keep the
-        fixture small; a 1000-row mock is the slowest option on the board.
+        Two shapes, and both are exactly what virtualisation predicts. The real grid is{' '}
+        <strong>flat</strong> — 313ms at 5 rows and 342ms at 1000, because it only ever builds
+        the dozen rows near the viewport. The mock is <strong>linear</strong>, because it
+        renders every row you give it. They cross somewhere around 600 rows on this machine,
+        and the exact crossover will move on yours; the shapes will not. At the fixture sizes
+        a test has any business using — tens of rows, not hundreds — the mock is several times
+        faster, which is the received wisdom, arrived at honestly.
       </p>
+
+      <InfoBox variant="danger" title="The Real Trap Is the Query, Not the Render">
+        <p>
+          Re-run the identical matrix changing only the first line of each test — from{' '}
+          <code>findByText(&apos;User 0&apos;)</code> to{' '}
+          <code>findByRole(&apos;cell&apos;, {'{ name: \'User 0\' }'})</code>, the query this
+          very page has been recommending — and the 200-row row flips over:
+        </p>
+        <CodeBlock language="text" title="Actual output — same fixtures, same renders, only the query differs">
+{`10 render + await + cleanup cycles, 3 columns
+
+rows   REAL findByText   MOCK findByText   REAL findByRole+name   MOCK findByRole+name
+   5        313 ms             37 ms              324 ms                  81 ms
+ 200        340 ms            172 ms              400 ms                 666 ms`}
+        </CodeBlock>
+        <p>
+          Nothing about React changed. Split one of those cycles into its two halves and the
+          cause is unambiguous:
+        </p>
+        <CodeBlock language="text" title="Actual output — mocked 200-row fixture, render time vs query time">
+{`                    render    query    total
+findByText            96 ms    49 ms    145 ms
+findByRole + name     60 ms   522 ms    582 ms`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          <code>getByRole</code> with a <code>name</code> option computes the{' '}
+          <strong>accessible name of every element that matched the role</strong> before it can
+          filter. The real grid has virtualised its 200 rows down to 33{' '}
+          <code>gridcell</code>s, so that is 33 name computations. The mock renders all 200
+          rows, so it is 600. Per single warm query on this machine: 1.93ms against the real
+          grid, 24.58ms against the mock, 124.56ms against a 1000-row mock with 3000 cells.
+        </p>
+      </InfoBox>
+
+      <p>
+        So there are two conclusions, and the second is the one that transfers beyond AG Grid:
+      </p>
+      <ul>
+        <li>
+          <strong>Mock it for speed only up to a point, and measure where your point is.</strong>{' '}
+          Below the crossover the mock wins by a lot; above it the real grid&apos;s
+          virtualisation wins and a big mocked fixture is the slowest thing on the board. If
+          you mock, keep the fixture small — you were never asserting on row 700 anyway.
+        </li>
+        <li>
+          <strong>In a large mocked DOM, prefer <code>findByText</code> or{' '}
+          <code>findByTestId</code> over <code>getByRole({'{ name }'})</code>.</strong> The
+          role-plus-name query is the right default everywhere else on this page and in{' '}
+          <em>Best Practices</em>, and it stays the right default for the real grid, where the
+          candidate set is small by construction. The cost is linear in the number of
+          candidates, so it is specifically the combination{' '}
+          <em>mock that renders everything</em> + <em>name-filtered role query</em> that hurts
+          — and it was the only reason the mock ever looked slow.
+        </li>
+      </ul>
 
       <h3>How to Mock It Well</h3>
       <p>
@@ -1246,7 +1411,8 @@ U: DOM caught up after ~409 ms`}
         What that buys you, verified: <code>columnheader</code> queries still work (so a
         typo&apos;d <code>headerName</code> still fails the test), your real{' '}
         <code>StatusCell</code> still runs and still produced{' '}
-        <code>[&apos;Active&apos;, &apos;Suspended (overdue)&apos;]</code>, clicking a cell
+        <code>[&apos;Active&apos;, &apos;Suspended (overdue)&apos;, &apos;Active&apos;]</code> —
+        the same three entries the real grid gave in Finding 5 — clicking a cell
         still opens your detail panel, and it is all synchronous — no{' '}
         <code>findBy</code>, no 400ms DOM lag. Plus every row is present:{' '}
         <code>1001 role=&quot;row&quot;</code> for 1000 rows, with{' '}
@@ -1330,7 +1496,10 @@ await waitFor(() => expect(screen.queryByText('Alice')).not.toBeInTheDocument())
       </CodeBlock>
       <p>
         <strong>Why:</strong> the 3&times;2 grid in the lab contained{' '}
-        <strong>136 distinct <code>ag-*</code> class tokens</strong>. None of them is in AG
+        <strong>136 distinct <code>ag-*</code> class tokens</strong> with{' '}
+        <code>AllCommunityModule</code> registered, and 96 without it — the count is a
+        function of which modules you loaded, which is itself a detail you do not control.
+        None of them is in AG
         Grid&apos;s public API, and a minor upgrade can rename any of them without a changelog
         entry, because from their side nothing observable changed. The roles —{' '}
         <code>grid</code>, <code>row</code>, <code>gridcell</code>,{' '}
@@ -1366,14 +1535,20 @@ await waitFor(() => expect(screen.queryByText('Alice')).not.toBeInTheDocument())
 {`const { container } = render(<UserGrid users={users} />);
 expect(container).toMatchSnapshot();`}
       </CodeBlock>
-      <CodeBlock language="text" title="Actual output — what you just committed, for THREE rows">
-{`chars of HTML in the grid subtree : 15,939
-DOM elements                      : 138
-distinct ag-* class tokens        : 136`}
+      <CodeBlock language="text" title="Actual output — what you just committed, for a THREE-row, two-column grid">
+{`                                    no modules   AllCommunityModule registered
+chars of HTML in the subtree      :     11,961         ~15,940
+DOM elements                      :         99             138
+distinct ag-* class tokens        :         96             136`}
       </CodeBlock>
       <p>
         <strong>Why:</strong> 16KB of someone else&apos;s markup, per snapshot, that no
-        reviewer will ever read. It churns on every AG Grid upgrade and on inline styles like{' '}
+        reviewer will ever read — and note it is 16KB only because the setup file from Finding
+        6 registered the modules; the same grid is 12KB without them, so <em>adding a module
+        you do not use rewrites every grid snapshot in the repo</em>. (The character count is
+        the one figure that drifts run to run by a few dozen, because the grid&apos;s instance
+        id is embedded in the markup. Element and token counts are stable.) It churns on every
+        AG Grid upgrade and on inline styles like{' '}
         <code>translateY(84px)</code> that shift when a default row height changes — so the
         only reviewable response is <code>-u</code>, which means the snapshot never fails for
         a real reason. Worse, it is <em>order-sensitive</em> and DOM order is not visual order
@@ -1395,7 +1570,11 @@ test('renders the user grid screen', () => {
 });`}
       </CodeBlock>
       <p>
-        <strong>Why:</strong> that asserts your <code>&lt;h2&gt;</code> exists. Every
+        <strong>Why:</strong> that asserts your <code>&lt;h2&gt;</code> exists. Note the first
+        line especially: <code>jest.mock(spec)</code> with <em>no factory</em> is an{' '}
+        <strong>automock</strong> — Jest replaces every export with a <code>jest.fn()</code>{' '}
+        returning <code>undefined</code>, so <code>AgGridReact</code> becomes a component that
+        renders nothing, silently and with no import error to notice. Every
         interesting thing on the screen has been replaced by a stub, and the test will stay
         green through a deleted grid, a broken store and an empty detail panel. It also{' '}
         <em>looks</em> like coverage in a report, which is the real danger — see
@@ -1444,6 +1623,8 @@ STORE
 THIRD-PARTY WIDGET
   [ ] the first query is an await (findBy / waitFor) — it does not render synchronously
   [ ] queries use roles, never .library-class-names
+  [ ] ...except inside a big MOCKED fixture, where getByRole({ name }) is the
+      slow path — findByText / findByTestId there instead
   [ ] no assertion on total row count when the widget virtualises
   [ ] row order read from the attribute, not from getAllByRole order
   [ ] clicks target the element that carries the listener, not its aria container

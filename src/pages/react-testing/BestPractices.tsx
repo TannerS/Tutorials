@@ -8,9 +8,9 @@ export default function BestPractices() {
     <LessonLayout
       title="Best Practices & Anti-Patterns"
       sectionId="react-testing"
-      lessonIndex={8}
+      lessonIndex={7}
       prev={{ path: '/react-testing/patterns', label: 'Testing Patterns & CI' }}
-      next={{ path: '/react-testing/cheatsheet', label: '📋 React Testing Field Guide' }}
+      next={{ path: '/react-testing/third-party-layered', label: 'Testing Layered & Third-Party Components' }}
     >
       <p>
         Every lesson up to here has shown you <em>how</em> to write a test. This one is

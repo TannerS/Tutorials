@@ -79,8 +79,24 @@ Ignored nodes: comments, script, style
 
       <FlowChart
         title="Where your assertion lands relative to the re-render"
-        chart={"graph TD\n  A[\"Test calls render()\"] --> B[\"React mounts the tree and runs effects<br/>synchronously, inside act()\"]\n  B --> C[\"render() RETURNS<br/>DOM = 'Loading...'\"]\n  C --> D[\"getByText('Hello, Alice') runs HERE<br/>and throws\"]\n  C --> E[\"the MICROTASK queue drains\"]\n  E --> F[\".then(setName) runs<br/>setState is called\"]\n  F --> G[\"React SCHEDULES a re-render.<br/>It does NOT commit one yet.\"]\n  G --> H[\"a later TASK runs the scheduled work\"]\n  H --> I[\"component re-renders and commits<br/>DOM = 'Hello, Alice'\"]\n  style D fill:#3b1a1a,stroke:#f87171\n  style I fill:#1a3329,stroke:#4ade80"}
+        chart={"graph TD\n  A[\"Test calls render()\"] --> B[\"React mounts the tree and runs effects<br/>synchronously, inside an act window\"]\n  B --> C[\"render() RETURNS<br/>DOM = 'Loading...'\"]\n  C -->|\"step 1 — the very next line of the test\"| D[\"getByText('Hello, Alice') runs HERE<br/>and throws\"]\n  D -->|\"if the test yields instead of asserting\"| E[\"step 2 — the MICROTASK queue drains\"]\n  E --> F[\".then(setName) runs<br/>setState is called\"]\n  F -->|\"step 3\"| G[\"React SCHEDULES a re-render.<br/>It does NOT commit one yet.\"]\n  G -->|\"step 4 — a later TASK runs that work\"| H[\"component re-renders and commits<br/>DOM = 'Hello, Alice'\"]\n  H --> I[\"await screen.findByText('Hello, Alice')<br/>resolves HERE — this is the fix\"]\n  style D fill:#3b1a1a,stroke:#f87171\n  style H fill:#1a3329,stroke:#4ade80\n  style I fill:#1a3329,stroke:#4ade80"}
       />
+
+      <p>
+        Two words in that diagram get thrown around without definition in most of what you
+        will read on this topic, so here they are once. An <strong>act window</strong> is{' '}
+        <code>act(fn)</code>: it means <em>&ldquo;run <code>fn</code>, then flush every
+        re-render and effect it caused before returning.&rdquo;</em> React keeps a flag for
+        whether it is currently inside one, and a <code>setState</code> that lands{' '}
+        <em>outside</em> one during a test produces the{' '}
+        <code>An update to ... was not wrapped in act(...)</code> warning that shows up in the
+        traces below — ignore it for now; it gets a section of its own later, and the{' '}
+        <em>Best Practices &amp; Anti-Patterns</em> lesson takes the warning itself apart. A{' '}
+        <strong>task</strong> is the unit the event loop runs one of at a time — a{' '}
+        <code>setTimeout</code> or <code>setInterval</code> callback. Older writing calls it a{' '}
+        <em>macrotask</em>; it is the same thing, and this lesson says &ldquo;task&rdquo;
+        throughout.
+      </p>
 
       <p>
         <strong>Deferral one: the promise.</strong> <code>render()</code> is synchronous. It
@@ -91,8 +107,19 @@ Ignored nodes: comments, script, style
         stack empties out. Your test function is still on that stack.
       </p>
       <p>
-        <strong>Deferral two: the commit.</strong> This is the part that surprises people, so
-        it is worth instrumenting. The component and the test below log at every boundary;{' '}
+        <strong>Deferral two: the commit.</strong> The <code>setState</code> does not repaint
+        the DOM; it puts React&apos;s commit work in the <em>task</em> queue, which is a
+        different queue with a different admission rule:
+      </p>
+
+      <FlowChart
+        title="The two queues, and the rule that separates them"
+        chart={"graph TD\n  A[\"the JS CALL STACK<br/>your test function is running here\"] -->|\"the stack empties\"| B[\"the MICROTASK queue<br/>drains COMPLETELY<br/>.then callbacks, await resumptions\"]\n  B -->|\"only once it is empty\"| C[\"control returns to the EVENT LOOP\"]\n  C -->|\"exactly ONE task runs\"| D[\"the TASK queue<br/>setTimeout / setInterval callbacks\"]\n  D --> A\n  E[\"your .then(setName)<br/>is queued here\"] -.-> B\n  F[\"React's scheduled commit<br/>is queued here\"] -.-> D\n  style B fill:#3d2f14,stroke:#fb923c\n  style D fill:#1a2744,stroke:#5b9cf6\n  style E fill:#3d2f14,stroke:#fb923c\n  style F fill:#1a2744,stroke:#5b9cf6"}
+      />
+
+      <p>
+        That is the whole thesis of this lesson in one picture, and it is worth instrumenting
+        rather than taking on trust. The component and the test below log at every boundary;{' '}
         <code>console.error</code> is captured into the same stream so the ordering is
         unambiguous.
       </p>
@@ -121,8 +148,8 @@ test('exact tick-by-tick sequence', async () => {
     log(\`3.\${i} after microtask #\${i}. DOM = \${JSON.stringify(document.body.textContent)}\`);
   }
 
-  await new Promise((r) => setTimeout(r, 0));      // yield one task
-  log(\`4. after setTimeout(0) macrotask. DOM = \${JSON.stringify(document.body.textContent)}\`);
+  await new Promise((r) => setTimeout(r, 0));      // yield one TASK
+  log(\`4. after one setTimeout(0) TASK. DOM = \${JSON.stringify(document.body.textContent)}\`);
 });`}
       </CodeBlock>
 
@@ -140,7 +167,7 @@ test('exact tick-by-tick sequence', async () => {
 3.5 after microtask #5. DOM = "Loading..."
 3.6 after microtask #6. DOM = "Loading..."
     render() body runs, name = "Alice"
-4. after setTimeout(0) macrotask. DOM = "Hello, Alice"`}
+4. after one setTimeout(0) TASK. DOM = "Hello, Alice"`}
       </CodeBlock>
 
       <p>
@@ -166,6 +193,20 @@ test('exact tick-by-tick sequence', async () => {
         </li>
       </ul>
 
+      <p>
+        The third bullet is the mechanism, and it is worth stating explicitly because
+        everything else in this lesson follows from it. A task can only run when{' '}
+        <strong>two</strong> conditions hold: the microtask queue has drained{' '}
+        <em>completely</em>, <strong>and</strong> control has returned to the event loop. A
+        test body that only ever awaits promises satisfies the first and never the second —
+        every <code>await Promise.resolve()</code> resumes in another microtask, and that
+        microtask is still your test, so the loop never gets its turn. React&apos;s commit is
+        sitting in the task queue the whole time, correctly scheduled and unable to run.
+        Awaiting a <code>setTimeout</code> is different in exactly one way: it is the test
+        asking to be resumed from the <em>task</em> queue, so the loop has to run tasks — and
+        once it is running tasks at all, React&apos;s commit gets its turn.
+      </p>
+
       <InfoBox variant="danger" title="&ldquo;Just await a tick&rdquo; Is the Wrong Mental Model">
         <p>
           The folk fix for this bug is to sprinkle in <code>await Promise.resolve()</code> or{' '}
@@ -188,6 +229,33 @@ test('exact tick-by-tick sequence', async () => {
           exist so you never have to reason about tick counts at all.
         </p>
       </InfoBox>
+
+      <h3>The fixed test, before anything else</h3>
+      <p>
+        If you arrived here from exactly the failure at the top of this page, this is the
+        whole answer. Two changes: the test function becomes <code>async</code>, and{' '}
+        <code>getByText</code> becomes an awaited <code>findByText</code>.
+      </p>
+
+      <CodeBlock language="jsx" title="The same test, fixed — nothing else about Profile changes">
+{`test('shows the name', async () => {
+  render(<Profile />);
+  expect(await screen.findByText('Hello, Alice')).toBeInTheDocument();
+});`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Actual output — that file, run on its own">
+{`Tests:       1 passed, 1 total
+act warnings during the run: 0`}
+      </CodeBlock>
+
+      <p>
+        <code>findByText</code> re-runs the query until it matches, and it waits in a way that
+        returns control to the event loop, so React&apos;s scheduled commit actually gets its
+        turn. No tick counting, and — for reasons the <code>asyncWrapper</code> section below
+        makes concrete — no <code>act()</code> warning either. Everything from here is about
+        knowing which primitive that is, and what to do when the one-liner is not enough.
+      </p>
 
       <h2>The Three Waiting Primitives</h2>
       <p>
@@ -308,16 +376,28 @@ D: ...and 60ms later the spinner IS in the document: true`}
         or deleted the component. Use the tool built for the job:
       </p>
 
-      <CodeBlock language="jsx" title="waitForElementToBeRemoved — presence is proved first">
-{`render(<UserList />);
-
-// Element form: grab it while it is there, then wait for that node to detach.
-const spinner = screen.getByRole('status');
-await waitForElementToBeRemoved(spinner);
+      <CodeBlock language="jsx" title="waitForElementToBeRemoved — two forms, two tests">
+{`// Element form: grab the node while it is there, then wait for THAT node to detach.
+test('element form', async () => {
+  render(<UserList />);
+  const spinner = screen.getByRole('status');
+  await waitForElementToBeRemoved(spinner);
+});
 
 // Callback form: re-queried on every poll. Use queryBy, not getBy.
-await waitForElementToBeRemoved(() => screen.queryByRole('status'));`}
+test('callback form', async () => {
+  render(<UserList />);
+  await waitForElementToBeRemoved(() => screen.queryByRole('status'));
+});`}
       </CodeBlock>
+
+      <p>
+        They have to be two tests, or at least two renders. Run back to back against one
+        render, the element form resolves, the spinner is gone, and the callback form then
+        throws <code>The element(s) given to waitForElementToBeRemoved are already
+        removed.</code> — which is the presence check doing its job, but on the wrong
+        subject.
+      </p>
 
       <CodeBlock language="text" title="Actual output — the four outcomes, all real">
 {`# it was there and then went away (data lands at 40ms)
@@ -338,7 +418,8 @@ I: timed out after 1001ms: Timed out in waitForElementToBeRemoved.`}
 
       <InfoBox variant="tip" title="Why the &ldquo;already removed&rdquo; Error Is a Feature">
         <p>
-          That immediate throw in <strong>G</strong> is the entire reason to prefer this
+          That immediate throw — the <em>it was never there</em> case in the output above — is
+          the entire reason to prefer this
           function. It performs a presence check <em>before</em> it starts waiting, so a test
           that never had a spinner fails loudly in 0ms instead of passing silently in 2ms. It
           converts the vacuous-assertion bug into a real failure.
@@ -374,8 +455,7 @@ A: call timestamps (ms): 1, 52, 103, 154, 206, 258, 311, 363, 415, 467,
                          518, 570, 621, 673, 725, 777, 829, 881, 933, 985
 
 B: interval 200 -> callback ran 5 times over 1004ms
-C: passing callback -> ran 1 time(s) in 3ms
-D: resolved after 2 call(s) in 80ms; stamps: 0, 48   (data arrived at 40ms)`}
+C: passing callback -> ran 1 time(s) in 3ms`}
       </CodeBlock>
 
       <p>
@@ -387,28 +467,42 @@ D: resolved after 2 call(s) in 80ms; stamps: 0, 48   (data arrived at 40ms)`}
         <li>
           The timeout is a global you can change: <code>getConfig().asyncUtilTimeout</code> is{' '}
           <code>1000</code>, and <code>configure(...)</code> moves it. The{' '}
-          <strong>interval is not</strong> — there is no <code>asyncUtilInterval</code> key in
-          the config object (verified: the full key list is{' '}
-          <code>asyncUtilTimeout, asyncWrapper, computedStyleSupportsPseudoElements,
-          defaultHidden, defaultIgnore, eventWrapper, getElementError, reactStrictMode,
-          showOriginalStackTrace, testIdAttribute, throwSuggestions,
-          unstable_advanceTimersWrapper</code>). <code>interval</code> is a per-call option
-          only.
+          <strong>interval is not</strong> — <code>getConfig()</code> returns thirteen keys and{' '}
+          <code>asyncUtilInterval</code> is verifiably not one of them.{' '}
+          <code>interval</code> is a per-call option only.
         </li>
         <li>
           Polling is the <em>fallback</em>, not the primary trigger. <code>waitFor</code> also
-          attaches a <code>MutationObserver</code> to the container watching{' '}
+          attaches a <code>MutationObserver</code> — the browser API that calls you back
+          whenever a DOM subtree changes — to the container, watching{' '}
           <code>childList</code>, <code>attributes</code>, <code>characterData</code> and{' '}
-          <code>subtree</code>. Case <strong>D</strong> proves it: data landed at 40ms and the
-          second check ran at 48ms, ahead of the 50ms tick. In practice your waits resolve as
-          soon as the DOM changes, which is why a well-written async test costs single-digit
-          milliseconds rather than a polling interval.
+          <code>subtree</code>.
         </li>
       </ul>
 
+      <p>
+        That second point is measurable, and worth measuring deliberately rather than
+        coincidentally. Give the fixture a <strong>70ms</strong> delay — off the 50/100ms
+        polling grid on purpose — and watch where the check that finally succeeds lands:
+      </p>
+
+      <CodeBlock language="text" title="Actual output — a waitFor whose data arrives at 70ms">
+{`mutation-observer: resolved after 3 call(s) in 77ms; checks at: 0, 52, 75`}
+      </CodeBlock>
+
+      <p>
+        The checks at 0 and 52ms are the immediate first run and the 50ms interval tick, and
+        both failed. The check at <strong>75ms</strong> is not on that grid at all — that is
+        the <code>MutationObserver</code> firing a few milliseconds after the data landed,
+        twenty-five milliseconds before the next tick would have come round. In practice your
+        waits resolve as soon as the DOM changes, so a well-written async test costs about as
+        long as its slowest mock rather than a multiple of the polling interval.
+      </p>
+
       <h3>The consequence: a waitFor callback must be an assertion that can fail</h3>
       <p>
-        Look again at the decision in the middle of that diagram. <code>waitFor</code> has
+        Look again at the decision in the middle of the retry-loop diagram.{' '}
+        <code>waitFor</code> has
         exactly one way to know whether it is done: <strong>did the callback throw?</strong> It
         has no other channel. Everything that follows is a corollary.
       </p>
@@ -419,7 +513,8 @@ G: waitFor(() => screen.queryByText('not here')) resolved in 1ms with: null`}
       </CodeBlock>
 
       <p>
-        An empty callback never throws, so it is a 1ms no-op. A bare <code>queryBy*</code>{' '}
+        An empty callback never throws, so it is a no-op that resolves in a millisecond or
+        two. A bare <code>queryBy*</code>{' '}
         never throws either — it returns <code>null</code>, <code>waitFor</code> treats that as
         success, and resolves <em>with</em> <code>null</code>. Both of these appear in real
         codebases as &ldquo;let React settle&rdquo; incantations, and both assert precisely
@@ -461,7 +556,7 @@ B: the side effect ran 20 time(s)`}
 
       <CodeBlock language="jsx" title="RIGHT — the side effect goes on the line above">
 {`await user.click(screen.getByRole('button', { name: /retry/i }));
-await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2));
+await waitFor(() => expect(onRetry).toHaveBeenCalledTimes(1));   // the same spy as above
 
 // or, better still, when you are waiting for an element:
 await user.click(screen.getByRole('button', { name: /retry/i }));
@@ -471,28 +566,46 @@ expect(await screen.findByText('Done')).toBeInTheDocument();`}
       <InfoBox variant="info" title="An Async waitFor Callback Does Not Poll Faster — It Polls Slower">
         <p>
           <code>waitFor</code> detects a returned thenable and will not start a second attempt
-          while the first is pending. A callback that awaits something for 120ms therefore runs
-          on a ~170ms cadence, not a 50ms one:
+          while the first is pending. But the 50ms interval behind it never stops ticking, and
+          those two facts together produce a cadence that is not the one you would guess. A
+          callback that awaits something for 120ms runs on a <strong>~150ms</strong> cadence:
         </p>
-        <CodeBlock language="text" title="Actual output — a callback that awaits 120ms internally">
+        <CodeBlock language="text" title="Actual output — the same callback awaiting 120ms, then 60ms, then 30ms">
 {`C: slow async callback ran 7 time(s) in 1001ms
-C: stamps: 0, 152, 306, 459, 611, 763, 917`}
+C: stamps: 0, 152, 306, 459, 611, 763, 917
+
+cadence(60): ran 10 time(s) in 1002ms; stamps: 0, 103, 206, 308, 410, 515, 619, 722, 824, 928
+cadence(30): ran 20 time(s) in 1004ms; stamps: 0, 52, 103, 155, 206, 258, 310, 362, ...`}
         </CodeBlock>
+        <p>
+          Read those as ticks, not as sums. It is <em>not</em> 120 + 50 = 170: the interval
+          ticks at 50ms and 100ms both arrive while the callback is still pending and are
+          dropped on the floor, and the tick at <strong>150ms</strong> is the first one that
+          finds it idle again. So an awaited callback rounds <em>up</em> to the next multiple
+          of 50 after it settles — 120ms costs 150, 60ms costs 100, 30ms costs 50 and is
+          therefore free. The attempt counts corroborate it: 1000 / 152 ≈ 6.6, so seven
+          attempts. A 170ms cadence would have given six.
+        </p>
         <p style={{ marginBottom: 0 }}>
           Seven attempts instead of twenty inside the same 1000ms budget. This is another
           reason to keep the callback to one cheap synchronous assertion: an expensive one eats
           your retry budget, and the test starts failing on slow CI machines with an error that
-          looks like a product bug.
+          looks like a product bug. It is also worth knowing when you set a custom{' '}
+          <code>{'{ timeout }'}</code> — your real retry budget is the timeout divided by that
+          rounded-up cadence, not by 50.
         </p>
       </InfoBox>
 
       <h2>act(), and How It Interacts With Waiting</h2>
       <p>
-        The <em>Best Practices &amp; Anti-Patterns</em> lesson explains what the{' '}
-        <code>act()</code> warning means and why the fix is almost never to write{' '}
-        <code>act()</code> — read that first if the message itself is what is confusing you.
-        What is left, and what belongs here, is the mechanical relationship between{' '}
-        <code>act</code> and the waiting primitives.
+        The one-sentence definition from earlier, because everything below turns on it:{' '}
+        <code>act(fn)</code> runs <code>fn</code> and then flushes every re-render and effect
+        it caused before returning, and React warns when a <code>setState</code> lands outside
+        such a window during a test. The <em>Best Practices &amp; Anti-Patterns</em> lesson
+        takes the <em>warning</em> apart — where each occurrence comes from, and why wrapping
+        things in <code>act()</code> is usually the wrong response to seeing it. What belongs
+        here is the mechanical relationship between <code>act</code> and the waiting
+        primitives.
       </p>
       <p>
         <strong>Why you rarely write it: RTL installs it for you, in two places.</strong> Both
@@ -506,17 +619,15 @@ console.log(String(getConfig().eventWrapper));
 console.log(String(getConfig().asyncWrapper));`}
       </CodeBlock>
 
-      <CodeBlock language="text" title="Actual output — RTL's own wrappers, truncated as printed">
-{`# eventWrapper, with whitespace collapsed and cut at 160 chars:
-cb => { if (inEventWrapper) { return cb(); } inEventWrapper = true; try { let result; (0, _actCompat.default)(() => { result = cb(); }); return result; } finall
+      <CodeBlock language="text" title="Actual output — the load-bearing lines, verbatim from those two dumps">
+{`# eventWrapper, with its re-entrancy guard trimmed away:
+(0, _actCompat.default)(() => { result = cb(); });
 
-# asyncWrapper, first 200 chars:
-async cb => {
-    const previousActEnvironment = (0, _actCompat.getIsReactActEnvironment)();
-    (0, _actCompat.setReactActEnvironment)(false);
-    try {
-      const result = await cb();
-      // Drai`}
+# asyncWrapper, its first statements:
+const previousActEnvironment = (0, _actCompat.getIsReactActEnvironment)();
+(0, _actCompat.setReactActEnvironment)(false);
+...
+const result = await cb();`}
       </CodeBlock>
 
       <p>
@@ -528,13 +639,15 @@ async cb => {
         <strong>zero</strong> act warnings.
       </p>
       <p>
-        <code>asyncWrapper</code> is the interesting one. It deliberately turns the act
-        environment <em>off</em> for the duration of the wait, then drains the queue afterwards
-        — which is what lets <code>await waitFor(...)</code> and{' '}
-        <code>await screen.findBy...</code> sit through a real promise resolution without
-        tripping the warning. Verified: <strong>0 act warnings</strong> for the failing{' '}
-        <code>Profile</code> test from the top of this lesson, once the assertion is{' '}
-        <code>await screen.findByText(&apos;Hello, Alice&apos;)</code>.
+        <code>asyncWrapper</code> is the interesting one. The <em>act environment</em> it
+        switches off is that flag React keeps: <code>setReactActEnvironment(false)</code> means
+        &ldquo;stop warning about unwrapped updates for now&rdquo;. It stays off for the
+        duration of the wait, the queue is drained, and the previous value is restored — which
+        is what lets <code>await waitFor(...)</code> and <code>await screen.findBy...</code>{' '}
+        sit through a real promise resolution without tripping the warning. That is the reason
+        the fixed <code>Profile</code> test near the top of this lesson reported{' '}
+        <strong>0 act warnings</strong> despite doing exactly the thing the broken version
+        warned about.
       </p>
 
       <h3>Where the auto-wrapping stops: timers</h3>
@@ -566,7 +679,8 @@ C: items = 3, console.error calls = 0`}
       </CodeBlock>
 
       <p>
-        Case <strong>A</strong> is the whole lesson in three lines: the timer fired, your state
+        The unwrapped variant — <code>advanceTimersByTime</code> with nothing around it — is
+        the whole lesson in three lines: the timer fired, your state
         updated, and <code>screen</code> still shows zero items. The warning is not noise — it
         is telling you the DOM you are about to assert against is stale. And this is not fixed
         by using the async timer APIs; they are still Jest APIs:
@@ -712,13 +826,25 @@ C: onSearch was called with [ [ 'react' ] ]`}
       </CodeBlock>
 
       <p>
-        The debounce fired inside the <code>waitFor</code>. If the next line had been{' '}
+        The debounce fired inside the <code>waitFor</code>. Four things are moving at once
+        here, so it is worth laying them on one axis — the fake clock, measured in fake
+        milliseconds:
+      </p>
+
+      <FlowChart
+        title="The fast-forward footgun, on the fake clock"
+        chart={"graph TD\n  A[\"FAKE 0ms — typing done.<br/>YOUR debounce timer is armed for 300.<br/>onSearch calls: 0\"] --> B[\"FAKE 0ms — await waitFor(...)<br/>on an assertion that happens to be WRONG\"]\n  B --> C[\"waitFor sweeps the clock forward itself:<br/>jest.advanceTimersByTime(50), check, repeat\"]\n  C --> D[\"FAKE 50, 100, 150, 200, 250 — check fails each time\"]\n  D --> E[\"FAKE 300ms — YOUR debounce timer comes due<br/>and fires. onSearch('react') is called.\"]\n  E --> F[\"FAKE 350 ... 1000 — waitFor keeps checking,<br/>keeps failing\"]\n  F --> G[\"waitFor rejects at 1000 FAKE ms<br/>having cost ~10 REAL ms\"]\n  G --> H[\"your next line:<br/>expect(onSearch).not.toHaveBeenCalled()<br/>FAILS, in a component that behaved perfectly\"]\n  style E fill:#3d2f14,stroke:#fb923c\n  style H fill:#3b1a1a,stroke:#f87171"}
+      />
+
+      <p>
+        If the next line had been{' '}
         <code>expect(onSearch).not.toHaveBeenCalled()</code>, you would be staring at a failure
         in a component that is behaving perfectly. The symptom is almost impossible to reason
         about backwards — a timer fired &ldquo;on its own&rdquo; during an assertion — which is
-        why it is worth knowing the mechanism. The corollary: a <code>waitFor</code> that{' '}
-        <em>passes</em> on its first check advances the clock 0ms and is entirely safe, so this
-        only bites you on a test that is already failing for another reason.
+        why it is worth knowing the mechanism. The corollary is the consolation: a{' '}
+        <code>waitFor</code> that <em>passes</em> on its first check never enters that sweep at
+        all, advances the clock 0ms and is entirely safe. This only bites you on a test that is
+        already failing for another reason.
       </p>
 
       <h3>The same mechanism, used deliberately</h3>
@@ -727,13 +853,19 @@ C: onSearch was called with [ [ 'react' ] ]`}
         makes it a legitimate tool. A toast that dismisses itself after 5 seconds:
       </p>
 
-      <CodeBlock language="jsx" title="Waiting past a 5s timer without waiting 5 seconds">
-{`jest.useFakeTimers();
-render(<Toast ms={5000} />);
-const alert = screen.getByRole('alert');
+      <CodeBlock language="jsx" title="Waiting past a 5s timer without waiting 5 seconds — two separate tests">
+{`beforeEach(() => jest.useFakeTimers());
+afterEach(() => jest.useRealTimers());
 
-await waitForElementToBeRemoved(alert);                    // default 1000ms budget
-await waitForElementToBeRemoved(alert, { timeout: 6000 }); // enough fake room`}
+test('E4: the default 1000ms budget is not enough', async () => {
+  render(<Toast ms={5000} />);
+  await waitForElementToBeRemoved(screen.getByRole('alert'));   // rejects
+});
+
+test('E5: a 6000ms budget is — and costs no real time', async () => {
+  render(<Toast ms={5000} />);
+  await waitForElementToBeRemoved(screen.getByRole('alert'), { timeout: 6000 });
+});`}
       </CodeBlock>
 
       <CodeBlock language="text" title="Actual output">
@@ -741,6 +873,14 @@ await waitForElementToBeRemoved(alert, { timeout: 6000 }); // enough fake room`}
 E5: resolved. fake clock advanced 5000 ms`}
       </CodeBlock>
 
+      <p>
+        They have to be two tests, and the reason is the number on the second line. E4{' '}
+        <em>rejects</em>, so writing the two waits one after the other in a single test would
+        make the second line unreachable — and even with the rejection caught, E4 has already
+        pushed the shared fake clock 1000ms towards the toast&apos;s 5000ms dismissal, so the
+        second wait would report 4000, not 5000. A fresh <code>render</code> and a fresh fake
+        clock per test is what makes 5000 mean &ldquo;the toast&apos;s own timer&rdquo;.
+      </p>
       <p>
         A <code>{'{ timeout: 6000 }'}</code> that would be a six-second penalty on real timers
         is free here. Which is worth remembering the next time a fake-timer test times out: the
@@ -792,18 +932,26 @@ await user.type(screen.getByLabelText('Search'), 'react');   // never resolves`}
         so you pass the function itself, uncalled.
       </p>
 
-      <CodeBlock language="jsx" title="Both wirings, both verified">
-{`// (1) Let user-event drive the fake clock for its own delays.
-const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      <p>
+        They are alternatives — pick one. Each of the two blocks below is a whole test on its
+        own; they are not two halves of one.
+      </p>
 
-// (2) Or switch its delays off entirely — there is then nothing to advance.
-const user = userEvent.setup({ delay: null });
+      <CodeBlock language="jsx" title="Wiring (1) — let user-event drive the fake clock for its own delays">
+{`const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+render(<SearchInput onSearch={onSearch} debounceMs={300} />);
 
-// Either way, YOUR timers are still yours to control:
 await user.type(screen.getByLabelText('Search'), 'react');
-expect(onSearch).not.toHaveBeenCalled();          // debounce intact
+expect(onSearch).not.toHaveBeenCalled();          // YOUR debounce is intact
 act(() => { jest.advanceTimersByTime(300); });
 expect(onSearch).toHaveBeenCalledWith('react');`}
+      </CodeBlock>
+
+      <CodeBlock language="jsx" title="Wiring (2) — switch its delays off entirely, so there is nothing to advance">
+{`const user = userEvent.setup({ delay: null });
+render(<SearchInput onSearch={onSearch} debounceMs={300} />);
+
+await user.type(screen.getByLabelText('Search'), 'react');   // returns immediately`}
       </CodeBlock>
 
       <CodeBlock language="text" title="Actual output">
@@ -959,7 +1107,7 @@ Ignored nodes: comments, script, style
         <code>waitFor</code> wrapping it. That is expected, not a bug in your setup.
       </p>
 
-      <CodeBlock language="text" title="Actual output — a findBy timeout, in full">
+      <CodeBlock language="text" title="Actual output — a findBy timeout">
 {`# rejected after 1007ms, error name = TestingLibraryElementError
 
 Unable to find role="button" and name \`/save/i\`
@@ -973,14 +1121,7 @@ Ignored nodes: comments, script, style
   </div>
 </body>
 
-Ignored nodes: comments, script, style
-<body>
-  <div>
-    <p>
-      Nothing here ever changes
-    </p>
-  </div>
-</body>`}
+[...the identical dump, repeated verbatim...]`}
       </CodeBlock>
 
       <InfoBox variant="note" title="And When You See &ldquo;Timed out in waitFor.&rdquo; With No Assertion Above It">
@@ -992,7 +1133,7 @@ Ignored nodes: comments, script, style
           the timeout:
         </p>
         <CodeBlock language="text" title="Actual output — four callbacks, four outcomes">
-{`A: RESOLVED in 3ms (never times out)          # await waitFor(() => {})
+{`A: RESOLVED in 2ms (never times out)          # await waitFor(() => {})
 E: RESOLVED in 6ms with null (never times out) # waitFor(() => screen.queryByText('nope'))
 
 C: rejected after 1002ms: my own error         # an async callback that throws
@@ -1012,12 +1153,23 @@ Ignored nodes: comments, script, style
   </body>
 <=== end`}
         </CodeBlock>
+        <p>
+          (<strong>A</strong> and <strong>E</strong> are the same two measurements as the{' '}
+          <em>callbacks that cannot fail</em> block much earlier, re-run here in a file full of
+          one-second timeouts. The millisecond or two of difference is scheduling noise; what
+          is load-bearing is that both <em>resolve</em> rather than time out.)
+        </p>
         <p style={{ marginBottom: 0 }}>
-          So <code>Timed out in waitFor.</code> means something quite specific: your callback
+          So <code>Timed out in waitFor.</code> almost always means one thing: your callback
           returned a <strong>promise that has not settled</strong>. Recall that{' '}
           <code>waitFor</code> will not start a new attempt while one is pending, so a single
           hung promise inside the callback burns the entire budget without any assertion ever
-          being evaluated. When you see this message, look for an <code>await</code> inside the
+          being evaluated. (Strictly, the source substitutes the generic message whenever the
+          stashed <code>lastError</code> is <em>falsy</em> at the deadline, so a callback doing{' '}
+          <code>throw undefined</code> or <code>throw &apos;&apos;</code> lands on the same
+          branch — both verified. Matchers always throw an <code>Error</code>, so in a real
+          test the pending-promise reading is the one to act on.) When you see this message,
+          look for an <code>await</code> inside the
           callback — of a request with no handler, a mock that was never given a resolved value,
           or a fake timer nothing advanced.
         </p>
@@ -1025,9 +1177,10 @@ Ignored nodes: comments, script, style
 
       <InfoBox variant="warning" title="Raising a Timeout Is Almost Never the Fix">
         <p style={{ marginBottom: 0 }}>
-          A correctly mocked async test resolves on a DOM mutation, in single-digit
-          milliseconds — case <strong>D</strong> earlier finished in 80ms only because the
-          fixture deliberately waited 40ms. If you need 5000ms, the wait is not slow; it is
+          A correctly mocked async test resolves on a DOM mutation, within a few milliseconds
+          of the data landing — the <code>MutationObserver</code> run earlier took 77ms only
+          because the fixture deliberately sat on the data for 70 of them. If you need 5000ms,
+          the wait is not slow; it is
           waiting for something that is never going to happen. Reach for{' '}
           <code>screen.debug()</code> and the dump before reaching for{' '}
           <code>{'{ timeout }'}</code>. The honest exceptions are real network calls (which
@@ -1191,36 +1344,51 @@ Tests:       1 failed, 1 passed, 2 total`}
         something the runner reports non-deterministically.
       </p>
 
-      <InfoBox variant="tip" title="Four Lint Rules That Cover Most of This Lesson">
+      <InfoBox variant="tip" title="What the Linter Catches — and the One It Does Not">
         <p>
-          <code>eslint-plugin-testing-library</code> (verified against 7.16.2) ships rules that
-          map one-to-one onto the failure modes above. Adding them is cheaper than remembering
-          any of this:
+          <code>eslint-plugin-testing-library</code> ships rules that cover part of this
+          lesson. The list below was produced by enabling every rule in the plugin (7.16.2)
+          against a file containing each pattern, rather than from the rule names:
         </p>
         <ul>
           <li>
             <code>await-async-queries</code> and <code>await-async-utils</code> — the missing{' '}
             <code>await</code> on a <code>findBy</code> or a <code>waitFor</code>{' '}
-            <em>(flake 2)</em>
+            <em>(flake 2)</em>. Both fire. <code>await-async-events</code> covers the same
+            mistake on an un-awaited <code>user.click(...)</code>.
           </li>
           <li>
-            <code>no-wait-for-side-effects</code> — a click or a fetch inside a retried callback{' '}
-            <em>(flake 4)</em>
+            <code>no-wait-for-side-effects</code> — <em>(flake 4)</em>, but only for some
+            spellings. It fires on <code>fireEvent.*</code>, on{' '}
+            <code>userEvent.click(...)</code> called straight off the import, and on a{' '}
+            <code>render()</code> inside the callback. It does <strong>not</strong> fire on{' '}
+            <code>await user.click(...)</code> where <code>user</code> came from{' '}
+            <code>userEvent.setup()</code> — which is the modern spelling, and the one in the
+            WRONG example above.
           </li>
           <li>
-            <code>prefer-query-by-disappearance</code> — pushes you off{' '}
-            <code>waitFor(() =&gt; expect(queryBy...).not.toBeInTheDocument())</code>{' '}
-            <em>(flake 3)</em>
+            <code>no-wait-for-multiple-assertions</code> — narrower than the name suggests in
+            7.16.2: it reports repeated <code>expect</code> calls on the{' '}
+            <em>same subject</em> only. Two assertions in one callback about two different
+            elements pass it cleanly.
           </li>
           <li>
-            <code>no-wait-for-multiple-assertions</code> and <code>no-unnecessary-act</code> —
-            the two habits that make a wait hard to reason about
+            <code>no-unnecessary-act</code> (fires on <code>await act(async () =&gt; {'{}'})</code>)
+            and <code>prefer-find-by</code> (autofixes <code>waitFor</code> +{' '}
+            <code>getBy</code> into <code>findBy</code>, and is also mentioned in the{' '}
+            <em>Best Practices</em> lesson).
           </li>
         </ul>
         <p style={{ marginBottom: 0 }}>
-          <code>prefer-find-by</code>, mentioned in the <em>Best Practices</em> lesson, comes
-          from the same plugin and autofixes <code>waitFor</code> + <code>getBy</code> into{' '}
-          <code>findBy</code>.
+          The gap worth knowing about is <strong>flake 3</strong>. Nothing in the plugin flags{' '}
+          <code>waitFor(() =&gt; expect(queryBy...).not.toBeInTheDocument())</code>: with all
+          rules turned on, the vacuous-absence snippet from earlier produces{' '}
+          <strong>zero</strong> errors. <code>prefer-query-by-disappearance</code> sounds like
+          the rule for it and is not — it only fires on a <code>getBy</code> or{' '}
+          <code>findBy</code> used <em>inside</em>{' '}
+          <code>waitForElementToBeRemoved</code>. The always-passing absence assertion has to
+          be caught by knowing why it is vacuous, which is the reason it gets a section of its
+          own in this lesson rather than a one-line mention.
         </p>
       </InfoBox>
 
