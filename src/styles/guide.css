@@ -242,11 +242,20 @@
  * 2. Nothing stopped a panel splitting across a page boundary, which on a dense
  *    reference sheet routinely orphaned a heading from its table. `break-inside`
  *    keeps each panel whole.
+ *
+ * The `:root:not([data-pdf-mode='dark'])` guard is load-bearing and not
+ * decorative. scripts/build-pdf.mjs renders every page under
+ * `emulateMedia({ media: 'print' })`, so this block is live during PDF export
+ * too — including the DARK export, which marks the document with
+ * `data-pdf-mode="dark"` and expects the dark palette to survive. Without the
+ * guard, the flatten below fired there as well and dropped white field-guide
+ * pages into an otherwise-dark PDF. The break-inside and hide-chrome rules are
+ * palette-agnostic, so they stay unguarded and apply to both exports.
  */
 @media print {
-  .guide-sheet,
-  .guide-sheet[data-mode='dark'],
-  .guide-sheet[data-mode='light'] {
+  :root:not([data-pdf-mode='dark']) .guide-sheet,
+  :root:not([data-pdf-mode='dark']) .guide-sheet[data-mode='dark'],
+  :root:not([data-pdf-mode='dark']) .guide-sheet[data-mode='light'] {
     --g-bg:     #ffffff;
     --g-panel:  #ffffff;
     --g-code:   #f4f5f9;
