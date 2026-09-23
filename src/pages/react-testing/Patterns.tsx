@@ -8,8 +8,8 @@ export default function Patterns() {
     <LessonLayout
       title="Testing Patterns & CI"
       sectionId="react-testing"
-      lessonIndex={5}
-      prev={{ path: '/react-testing/forms', label: 'Testing Forms & Routing' }}
+      lessonIndex={7}
+      prev={{ path: '/react-testing/third-party-layered', label: 'Testing Layered & Third-Party Components' }}
       next={{ path: '/react-testing/best-practices', label: 'Best Practices & Anti-Patterns' }}
     >
       <h2>Custom Render Utility</h2>
@@ -375,55 +375,71 @@ test('Navigation has no accessibility violations', async () => {
 
       <h2>Code Coverage Configuration</h2>
 
-      <CodeBlock language="javascript" title="vitest.config.ts — Coverage Settings">
-{`// Requires: npm i -D @vitest/coverage-v8
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
+      <p>
+        Jest ships its own coverage instrumentation — there is nothing extra to install.
+        Two keys do the work: <code>collectCoverageFrom</code> decides which files count
+        (including the ones no test ever touches, which is the whole point), and{' '}
+        <code>coverageThreshold</code> turns the number into a build gate.
+      </p>
 
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: './src/setupTests.ts',
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'lcov'],
-      include: ['src/**/*.{js,jsx,ts,tsx}'],
-      exclude: ['src/**/*.d.ts', 'src/main.tsx', 'src/mocks/**', 'src/**/*.stories.*'],
-      thresholds: { branches: 80, functions: 80, lines: 80, statements: 80 },
-    },
-  },
-});
-
-// Run: npx vitest run --coverage`}
-      </CodeBlock>
-
-      <CodeBlock language="javascript" title="jest.config.js — The Same Thing on Jest">
+      <CodeBlock language="javascript" title="jest.config.js — Coverage Settings">
 {`export default {
+  // ...testEnvironment / transform / moduleNameMapper from the setup lesson
+
+  // Glob the whole source tree, not just what the tests imported. Without this,
+  // a component with zero tests is simply absent from the report at 100%.
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
-    '!src/index.{js,tsx}',
+    '!src/main.{jsx,tsx}',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
     '!src/mocks/**',
   ],
-  // coverageThreshold — SINGULAR. "coverageThresholds" is not a real option;
-  // Jest ignores unknown keys, so the plural spelling silently enforces nothing.
+
+  // coverageThreshold — SINGULAR. Spell it "coverageThresholds" and Jest prints
+  // 'Unknown option "coverageThresholds" ... Did you mean "coverageThreshold"?'
+  // but still exits 0 with coverage at 33%. The warning is easy to scroll past in
+  // CI logs, and the gate you thought you had enforces nothing.
   coverageThreshold: {
     global: { branches: 80, functions: 80, lines: 80, statements: 80 },
   },
+
   coverageReporters: ['text', 'lcov', 'clover'],
 };
 
 // Run: npx jest --coverage`}
       </CodeBlock>
 
+      <p>
+        Add one untested component to a passing suite and that config gives you both
+        halves of the feedback — the per-file table, and a non-zero exit:
+      </p>
+
+      <CodeBlock language="text" title="Actual output — npx jest --coverage (Jest 30.5.2)">
+{`--------------|---------|----------|---------|---------|-------------------
+File          | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+--------------|---------|----------|---------|---------|-------------------
+All files     |      80 |    33.33 |      75 |   77.77 |
+ Counter.tsx  |     100 |      100 |     100 |     100 |
+ Untested.tsx |       0 |        0 |       0 |       0 | 1-2
+--------------|---------|----------|---------|---------|-------------------
+Jest: Coverage for branches (33.33%) does not meet "global" threshold (80%)
+Jest: Coverage for lines (77.77%) does not meet "global" threshold (80%)
+Jest: Coverage for functions (75%) does not meet "global" threshold (80%)
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+
+# exit code 1  — and with the plural typo, the identical table exits 0.`}
+      </CodeBlock>
+
       <InfoBox variant="warning" title="Verify Your Threshold Actually Fails">
         A coverage threshold nobody has ever seen fail is usually a threshold that{' '}
         <em>can&apos;t</em> fail — a typo&apos;d key, a config file the runner never loads,
-        or a CI step that swallows the exit code. Once, deliberately set the threshold
-        to <code>100</code> and confirm the build goes red. Then set it back.
+        or a CI step that swallows the exit code. Note above that{' '}
+        <strong>every test still passed</strong>: the suite is green and only the exit code
+        is red, which is exactly the signal a <code>|| true</code> or a stray{' '}
+        <code>continue-on-error</code> eats. Once, deliberately set the threshold to{' '}
+        <code>100</code> and confirm the build goes red. Then set it back.
       </InfoBox>
 
       <h2>CI Pipeline for Tests</h2>
@@ -449,10 +465,11 @@ jobs:
 
       - run: npm ci
 
-      # Thresholds live in vitest.config.ts, so this one command both runs the
+      # Thresholds live in jest.config.js, so this one command both runs the
       # tests and fails the job if coverage regresses — no second pass needed.
+      # --ci makes a missing snapshot an error instead of writing a new one.
       - name: Run Tests with Coverage
-        run: npx vitest run --coverage
+        run: npx jest --ci --coverage
 
       - name: Upload Coverage
         if: always()

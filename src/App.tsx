@@ -398,7 +398,9 @@ import RTIntro from './pages/react-testing/Intro'
 import RTComponents from './pages/react-testing/Components'
 import RTHooks from './pages/react-testing/Hooks'
 import RTAsync from './pages/react-testing/Async'
+import RTAsyncDeepDive from './pages/react-testing/AsyncDeepDive'
 import RTForms from './pages/react-testing/Forms'
+import RTThirdPartyLayered from './pages/react-testing/ThirdPartyLayered'
 import RTPatterns from './pages/react-testing/Patterns'
 import RTBestPractices from './pages/react-testing/BestPractices'
 import RTCheatsheet from './pages/react-testing/Cheatsheet'
@@ -821,7 +823,9 @@ function App() {
         <Route path="react-testing/components" element={<RTComponents />} />
         <Route path="react-testing/hooks" element={<RTHooks />} />
         <Route path="react-testing/async" element={<RTAsync />} />
+        <Route path="react-testing/async-deep-dive" element={<RTAsyncDeepDive />} />
         <Route path="react-testing/forms" element={<RTForms />} />
+        <Route path="react-testing/third-party-layered" element={<RTThirdPartyLayered />} />
         <Route path="react-testing/patterns" element={<RTPatterns />} />
         <Route path="react-testing/best-practices" element={<RTBestPractices />} />
         <Route path="react-testing/cheatsheet" element={<RTCheatsheet />} />

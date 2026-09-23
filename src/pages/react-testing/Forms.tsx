@@ -8,9 +8,9 @@ export default function Forms() {
     <LessonLayout
       title="Testing Forms & Routing"
       sectionId="react-testing"
-      lessonIndex={4}
-      prev={{ path: '/react-testing/async', label: 'Testing Async & APIs' }}
-      next={{ path: '/react-testing/patterns', label: 'Testing Patterns & CI' }}
+      lessonIndex={5}
+      prev={{ path: '/react-testing/async-deep-dive', label: 'Waiting, act(), and Async Failure Modes' }}
+      next={{ path: '/react-testing/third-party-layered', label: 'Testing Layered & Third-Party Components' }}
     >
       <h2>Testing Form Inputs</h2>
       <p>

@@ -222,3 +222,78 @@
   padding: 0;
   color: inherit;
 }
+
+/* ---- print ----
+ *
+ * A field guide is a printed-cheat-sheet imitation, so printing one is a first-
+ * class use, not an afterthought. Two things had to be fixed here.
+ *
+ * 1. The sheet owns its own `--g-*` colour tokens (see the top of this file),
+ *    and the light values are applied by a React state toggle writing
+ *    `data-mode="light"`. global.css's own @media print block flattens the
+ *    SITE's `--bg-*` / `--text-*` tokens to ink-on-paper values, but it has no
+ *    knowledge of the `--g-*` namespace — so a reader who hit Ctrl+P without
+ *    first clicking the toggle printed the dark sheet: near-black panels across
+ *    every page. Redefining the tokens here fixes every consumer at once and
+ *    makes the toggle irrelevant to the printed result, which is the right
+ *    default — you should not have to remember a UI step to get readable paper.
+ *    Both selectors are listed so this wins whichever mode the toggle is in.
+ *
+ * 2. Nothing stopped a panel splitting across a page boundary, which on a dense
+ *    reference sheet routinely orphaned a heading from its table. `break-inside`
+ *    keeps each panel whole.
+ */
+@media print {
+  .guide-sheet,
+  .guide-sheet[data-mode='dark'],
+  .guide-sheet[data-mode='light'] {
+    --g-bg:     #ffffff;
+    --g-panel:  #ffffff;
+    --g-code:   #f4f5f9;
+    --g-border: #c9cede;
+    --g-ink:    #101218;
+    --g-dim:    #474d60;
+    --g-mast-a: rgba(91, 156, 246, 0.10);
+    --g-mast-b: rgba(167, 139, 250, 0.10);
+
+    /* Darkened accents — the dark-mode values are pastels chosen for contrast
+     * against #0b0d14 and are close to illegible on white. */
+    --g-purple: #6d28d9;
+    --g-blue:   #1d4ed8;
+    --g-green:  #15803d;
+    --g-amber:  #92400e;
+    --g-pink:   #be185d;
+    --g-cyan:   #0e7490;
+    --g-red:    #b91c1c;
+
+    /* Give the sheet the whole page: the on-screen card framing wastes margin
+     * that @page has already allowed for. */
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: #ffffff;
+  }
+
+  /* Keep each panel intact, and let the accent headers/number badges actually
+   * print — browsers drop background paint by default, which would flatten the
+   * colour-coding this layout relies on for scanning. */
+  .guide-panel {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .guide-panel > header,
+  .guide-num,
+  .guide-mast {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Screen-only chrome. The nav is a pair of in-app links; on paper it is two
+   * dead lines of text at the bottom of the last page. */
+  .guide-toggle,
+  .guide-nav {
+    display: none !important;
+  }
+}

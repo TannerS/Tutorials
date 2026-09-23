@@ -33,76 +33,220 @@ export default function Intro() {
 
       <h2>Project Setup</h2>
       <p>
-        Vite's React template does <em>not</em> ship a test runner — you add one yourself, and
-        on a Vite project that runner is <strong>Vitest</strong>. It reuses your existing
-        <code> vite.config.ts</code>, so your aliases, plugins, and TS transform apply to tests
-        for free, with no second Babel/transform config to keep in sync.
+        Vite's React template does <em>not</em> ship a test runner — you add one yourself,
+        and this section uses <strong>Jest</strong>. Internalise one thing before you
+        start: <strong>Jest never reads your <code>vite.config.ts</code></strong>. It is a
+        second, independent pipeline with its own module resolution and its own transform,
+        so every job Vite was quietly doing for you — compiling TSX, turning a CSS import
+        into an object, turning an SVG import into a URL string — has to be declared again
+        in <code>jest.config.js</code>. Nearly every first-run failure in a Vite project is
+        one of those three.
+      </p>
+
+      <FlowChart
+        title="What Jest Does With One Test File"
+        chart={"graph TD\n  T[npx jest] --> E[\"testEnvironment: jsdom<br/>window and document exist\"]\n  E --> S[\"setupFilesAfterEnv<br/>src/setupTests.ts\"]\n  S --> F[Load Counter.test.tsx]\n  F --> I{Import matched by moduleNameMapper?}\n  I -->|Yes| M[Swap in the stub module]\n  I -->|No| P{Inside node_modules?}\n  P -->|Yes| G[\"transformIgnorePatterns<br/>skipped, used as-is\"]\n  P -->|No| X[\"transform: babel-jest<br/>TSX to CommonJS\"]\n  M --> R[Run the test body]\n  G --> R\n  X --> R\n  style R fill:#1a3329,stroke:#4ade80"}
+      />
+
+      <p>
+        Four packages, four jobs. The runner, a DOM for it to render into, a TypeScript
+        transform, and Testing Library itself.
       </p>
 
       <CodeBlock language="bash" title="Install Dependencies">
-{`# The runner + a DOM implementation for it to render into
-npm install -D vitest jsdom
+{`# The runner. Since Jest 28 the jsdom environment is a SEPARATE package —
+# 'npm i -D jest' alone leaves testEnvironment: 'jsdom' unresolvable.
+npm install -D jest jest-environment-jsdom
+
+# TypeScript transform (Jest does not read vite.config.ts, so it needs its own).
+# babel-jest, NOT ts-jest — see the version warning below before you pick.
+npm install -D babel-jest @babel/core @babel/preset-env \\
+               @babel/preset-react @babel/preset-typescript @types/jest
 
 # Testing Library: renderer, custom matchers, interaction simulation
 npm install -D @testing-library/react \\
                @testing-library/jest-dom \\
-               @testing-library/user-event`}
+               @testing-library/user-event
+
+# Stubs CSS / CSS-Module imports with a self-referencing object
+npm install -D identity-obj-proxy`}
       </CodeBlock>
 
-      <CodeBlock language="javascript" title="vite.config.ts">
-{`// NOTE the import: 'vitest/config', NOT 'vite'.
-// Vite's own defineConfig has no 'test' key, so importing from 'vite' gives you
-// "Object literal may only specify known properties — 'test' does not exist".
-// vitest/config re-exports defineConfig with the test options merged in.
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
+      <CodeBlock language="javascript" title="jest.config.js">
+{`// A Vite project's package.json has "type": "module", so THIS FILE IS ESM —
+// 'export default', not 'module.exports'. Naming it jest.config.ts instead
+// fails with "'ts-node' is required for the TypeScript configuration files"
+// unless you add ts-node; jest.config.cjs is the escape hatch if you want CJS.
+export default {
+  // Needs the jest-environment-jsdom package installed above.
+  testEnvironment: 'jsdom',
 
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom',       // give tests a DOM (default is 'node')
-    globals: true,              // describe/test/expect without importing them
-    setupFiles: './src/setupTests.ts',
-    css: true,                  // process CSS imports instead of erroring
+  // setupFilesAfterEnv — AfterEnv, not AfterEach. Jest prints
+  // "Unknown option ... probably a typing mistake" and ignores the key,
+  // so the symptom is a missing matcher, not a config error.
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+
+  // babel-jest is Jest's built-in default transform, so this entry is only
+  // needed if you override it elsewhere. It picks up babel.config.cjs.
+  transform: {
+    '^.+\\\\.[jt]sx?$': 'babel-jest',
   },
-});
 
-// The alternative, if you must keep the config importing from 'vite':
-//   /// <reference types="vitest/config" />
-// as the first line of the file.`}
+  // Vite resolves these natively; Jest hands them to the JS parser and dies
+  // on the first '{'. Map them to stubs instead.
+  moduleNameMapper: {
+    '\\\\.(css|less|sass|scss)$': 'identity-obj-proxy',
+    '\\\\.(svg|png|jpe?g|gif|webp|avif|woff2?)$': '<rootDir>/src/fileMock.ts',
+  },
+};`}
       </CodeBlock>
 
-      <CodeBlock language="javascript" title="src/setupTests.ts">
-{`// Runs once before every test file.
+      <CodeBlock language="javascript" title="babel.config.cjs">
+{`// .cjs, because package.json says "type": "module" and Babel's config loader
+// expects CommonJS here. preset-typescript STRIPS types rather than checking
+// them — that is the real trade below.
+module.exports = {
+  presets: [
+    ['@babel/preset-env', { targets: { node: 'current' } }],
+    ['@babel/preset-react', { runtime: 'automatic' }],  // no 'import React' needed
+    '@babel/preset-typescript',
+  ],
+};`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Why babel-jest and not ts-jest — a real version wall">
+        <p>
+          Most Jest+TypeScript guides reach for <code>ts-jest</code>. Today that will
+          either fail outright or silently downgrade your compiler, because{' '}
+          <code>ts-jest@29.4.12</code> declares its TypeScript peer as{' '}
+          <code>&gt;=4.3 &lt;7</code>, and TypeScript is now <strong>7.0.2</strong>.
+          Both outcomes were reproduced against the live registry:
+        </p>
+        <p>
+          On an <strong>existing</strong> project already on TypeScript 7,{' '}
+          <code>npm install -D ts-jest</code> hard-fails with{' '}
+          <code>npm error code ERESOLVE</code> —{' '}
+          <em>&quot;Could not resolve dependency: peer typescript@&quot;&gt;=4.3 &lt;7&quot;
+          from ts-jest@29.4.12&quot;</em>. On a <strong>fresh</strong> project,{' '}
+          <code>npm install -D ts-jest typescript</code> appears to succeed but quietly
+          installs <code>typescript@6.0.3</code> — the newest version still under the
+          ceiling — so you end up a major version behind without being told.
+        </p>
+        <p>
+          <code>babel-jest</code> has no such constraint: the exact stack above installed
+          and ran green against <code>typescript@7.0.2</code>. The trade is that
+          preset-typescript only strips types, so Jest will not typecheck your tests —
+          run <code>tsc --noEmit</code> in CI for that, which is the better split anyway
+          since it keeps the test run fast.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="javascript" title="src/fileMock.ts and src/setupTests.ts">
+{`// src/fileMock.ts — stands in for every image and font import
+export default 'test-file-stub';
+
+
+// src/setupTests.ts — runs once per test file, after the environment is up.
 // Registers toBeInTheDocument(), toHaveValue(), toBeDisabled(), etc.
-import '@testing-library/jest-dom/vitest';
+import '@testing-library/jest-dom';
 
-// RTL auto-cleans between tests when globals: true.
-// Without globals, do it manually:
-// import { cleanup } from '@testing-library/react';
-// afterEach(cleanup);`}
+// The bare path is the current one. '@testing-library/jest-dom/extend-expect'
+// was removed — jest-dom 7 has no such export, and tsc reports
+// "TS2882: Cannot find module or type declarations for side-effect import".
+//
+// The bare import needs a global 'expect' to attach to, which Jest provides by
+// default. If you set injectGlobals: false it throws
+// "ReferenceError: expect is not defined" — use the subpath instead:
+//   import '@testing-library/jest-dom/jest-globals';`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="Reading the jest.* Calls in This Section">
-        The examples throughout these lessons use <code>jest.fn()</code>,
-        <code> jest.mock()</code>, and <code>jest.useFakeTimers()</code> — Jest is still what
-        you'll meet in most existing codebases, and it's what the majority of RTL documentation
-        and Stack Overflow answers are written against. <strong>On Vitest, the API is the same
-        shape with a different namespace</strong>, so every example translates mechanically:
-        <br /><br />
-        <code>jest.fn</code> → <code>vi.fn</code> &nbsp;·&nbsp;
-        <code>jest.mock</code> → <code>vi.mock</code> &nbsp;·&nbsp;
-        <code>jest.spyOn</code> → <code>vi.spyOn</code> &nbsp;·&nbsp;
-        <code>jest.useFakeTimers</code> → <code>vi.useFakeTimers</code> &nbsp;·&nbsp;
-        <code>jest.clearAllMocks</code> → <code>vi.clearAllMocks</code>
-        <br /><br />
-        Import it with <code>{'import { vi } from \'vitest\''}</code> (or enable
-        <code> globals: true</code> as above). The three real differences worth knowing:
-        Vitest's <code>vi.mock</code> factory is hoisted the same way but must use
-        <code> vi.hoisted()</code> for shared variables; ES module mocking is native rather than
-        transform-based; and jest-dom is imported from
-        <code> @testing-library/jest-dom/vitest</code>. Everything else in these lessons —
-        which is nearly all of it, since RTL itself is runner-agnostic — is identical either way.
+      <p>
+        With a <code>Counter.tsx</code> that imports both a CSS Module and an SVG, and a
+        two-test <code>Counter.test.tsx</code> beside it, that config gives:
+      </p>
+
+      <CodeBlock language="text" title="Actual output — npx jest (Jest 30.5.2, babel-jest 30.5.2, RTL 16.3.3)">
+{`Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        4.817 s
+Ran all test suites.
+
+# Re-run, with Jest's cache warm:
+Time:        0.401 s, estimated 3 s`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="The Four Failures You Will Hit First — and Their Exact Error Strings">
+        <p>
+          Each of these was produced by deleting one piece of the config above and
+          rerunning. Learn the strings; they are the fastest route from symptom to cause.
+        </p>
+        <ul>
+          <li>
+            <strong>No <code>jest-environment-jsdom</code>:</strong>{' '}
+            <em>&ldquo;Test environment jest-environment-jsdom cannot be found&rdquo;</em>,
+            followed by Jest's own hint — <em>&ldquo;As of Jest 28
+            &lsquo;jest-environment-jsdom&rsquo; is no longer shipped by default, make sure
+            to install it separately.&rdquo;</em>
+          </li>
+          <li>
+            <strong>No <code>moduleNameMapper</code>:</strong>{' '}
+            <em>&ldquo;Jest encountered an unexpected token&rdquo;</em> pointing at your
+            stylesheet, with <code>SyntaxError: Unexpected token &apos;.&apos;</code> under
+            a caret on the first CSS selector. Jest tried to run the CSS as JavaScript.
+          </li>
+          <li>
+            <strong><code>setupFilesAfterEach</code> instead of{' '}
+            <code>setupFilesAfterEnv</code>:</strong> a{' '}
+            <em>Validation Warning: Unknown option</em>, then{' '}
+            <code>TypeError: expect(...).toBeInTheDocument is not a function</code>. The
+            setup file simply never ran.
+          </li>
+          <li>
+            <strong>An ESM-only dependency:</strong>{' '}
+            <em>&ldquo;Must use import to load ES Module&rdquo;</em>. Jest's test
+            environment requires CommonJS, and <code>transformIgnorePatterns</code> defaults
+            to skipping all of <code>node_modules</code>. Opt the one offender back in with
+            a negative lookahead —{' '}
+            <code>transformIgnorePatterns: ['/node_modules/(?!(nanoid)/)']</code> — and give
+            it a transform that matches <code>.js</code>, since the{' '}
+            <code>^.+\.tsx?$</code> pattern above will not touch it.
+          </li>
+        </ul>
+        <p style={{ marginBottom: 0 }}>
+          One more, specific to type-checking: because <code>tsc</code> really checks types, a
+          CSS-Module or SVG import fails with{' '}
+          <code>TS2307: Cannot find module &apos;./Counter.module.css&apos;</code> even
+          once <code>moduleNameMapper</code> has fixed the <em>runtime</em>. The mapper
+          satisfies the loader, not the compiler. The ambient declarations you need already
+          ship with Vite — keep the generated{' '}
+          <code>src/vite-env.d.ts</code> containing{' '}
+          <code>{'/// <reference types="vite/client" />'}</code> inside your{' '}
+          <code>tsconfig.json</code>'s <code>include</code>.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="note" title="ts-jest or babel-jest? Both Work — They Fail Differently">
+        <p>
+          Jest supports two TypeScript transforms and the choice is a real one.{' '}
+          <code>ts-jest</code> runs the compiler, so type errors fail the test run — a test
+          that passes proves the types line up too. <code>babel-jest</code> with{' '}
+          <code>@babel/preset-typescript</code> only <em>strips</em> the annotations. It is
+          measurably faster and never argues with your tsconfig, but it will happily run a
+          file <code>tsc</code> would reject, so you need{' '}
+          <code>tsc --noEmit</code> wired into CI separately.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          This section standardises on <code>babel-jest</code>, and the deciding factor is
+          availability rather than preference: <code>ts-jest</code> is pinned to the
+          compiler&apos;s internal API and lags new TypeScript majors, so on TypeScript 7 it
+          cannot be installed at all (see the version wall above). Babel never loads the
+          compiler, so it is indifferent to which major you are on. If you are pinned to
+          TypeScript 6 or earlier and want type-checked test runs, <code>ts-jest</code> is a
+          reasonable choice — swap the transform to{' '}
+          <code>{"{ '^.+\\\\.tsx?$': 'ts-jest' }"}</code> and drop the Babel packages.
+          Everything else in this config stays identical.
+        </p>
       </InfoBox>
 
       <h2>The render Function</h2>
@@ -309,7 +453,7 @@ test('submits form with user credentials', async () => {
           </li>
         </ul>
         <p style={{ marginBottom: 0 }}>
-          In practice <code>jest.fn()</code> / <code>vi.fn()</code> is all four at
+          In practice <code>jest.fn()</code> is all four at
           once — it records calls <em>and</em> can be given a return value — which is
           why nobody is careful about the terms. Interviewers do ask for the spy/mock
           distinction, though, and the short answer is: <strong>a spy observes, a mock
@@ -352,9 +496,12 @@ test('sidebar has navigation links', () => {
 
       <h2>Cleanup</h2>
       <p>
-        RTL automatically cleans up after each test when using Jest or Vitest with
-        the standard setup file. If you're using a custom framework, call
-        <code> cleanup()</code> in <code>afterEach</code>.
+        RTL unmounts everything it rendered after each test automatically — it registers
+        its own <code>afterEach</code> on import, so under Jest's default{' '}
+        <code>injectGlobals: true</code> there is nothing for you to wire up. Two tests
+        that each call <code>render()</code> see only their own DOM. The one case that
+        needs the manual call is <code>injectGlobals: false</code>, where there is no
+        global <code>afterEach</code> for RTL to find.
       </p>
 
       <CodeBlock language="jsx" title="Manual Cleanup (rarely needed)">

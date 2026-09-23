@@ -8,7 +8,7 @@ export default function BestPractices() {
     <LessonLayout
       title="Best Practices & Anti-Patterns"
       sectionId="react-testing"
-      lessonIndex={6}
+      lessonIndex={8}
       prev={{ path: '/react-testing/patterns', label: 'Testing Patterns & CI' }}
       next={{ path: '/react-testing/cheatsheet', label: '📋 React Testing Field Guide' }}
     >
@@ -391,7 +391,7 @@ Name "Logo":
         <CodeBlock language="jsx">
 {`screen.debug(screen.getByRole('table'));   // just that subtree — usually the real fix
 screen.debug(undefined, 40000);            // whole body, bigger limit
-// or from the shell:  DEBUG_PRINT_LIMIT=40000 npx vitest run`}
+// or from the shell:  DEBUG_PRINT_LIMIT=40000 npx jest`}
         </CodeBlock>
         <p style={{ marginBottom: 0 }}>
           The limit is a good deal stranger than the docs suggest, which is worth knowing
@@ -524,24 +524,29 @@ screen.getByRole("button", { name: "Sav" }) threw:
         <code>class=&quot;toolbar toolbar--sticky&quot;</code> — a purely cosmetic edit,
         zero behaviour change — and:
       </p>
-      <CodeBlock language="text" title="Actual output — Vitest 4.1.11">
-{`FAIL  snap/toolbar.test.tsx > renders correctly
-Error: Snapshot \`renders correctly 1\` mismatched
+      <CodeBlock language="text" title="Actual output — npx jest (Jest 30.5.2)">
+{`FAIL snap/toolbar.test.tsx
+  ● renders correctly
 
-- Expected
-+ Received
+    expect(received).toMatchSnapshot()
 
-@@ -1,7 +1,7 @@
-  <div
--   class="toolbar"
-+   class="toolbar toolbar--sticky"
-  >
-    <button
-      class="btn"
-    >
-      Save
+    Snapshot name: \`renders correctly 1\`
 
- Snapshots  1 failed`}
+    - Snapshot  - 1
+    + Received  + 1
+
+    @@ -1,7 +1,7 @@
+      <div
+    -   class="toolbar"
+    +   class="toolbar toolbar--sticky"
+      >
+        <button
+          class="btn"
+        >
+          Save
+
+ › 1 snapshot failed.
+Snapshots:   1 failed, 1 total`}
       </CodeBlock>
       <CodeBlock language="jsx" title="RIGHT — say what you actually mean">
 {`test('offers save and cancel', () => {
@@ -771,14 +776,21 @@ test('adds a second item',  () => { cart.items.push('banana'); expect(cart.items
         All three pass. They pass because they run in file order, and for no other reason.
         Turn on randomised ordering:
       </p>
-      <CodeBlock language="text" title="Actual output — npx vitest run --sequence.shuffle --sequence.seed=2">
-{`× starts empty  2ms
+      <CodeBlock language="text" title="Actual output — npx jest --randomize --seed=3 (Jest 30.5.2)">
+{`FAIL order/cart.test.ts
+  ● starts empty
 
-AssertionError: expected [ 'apple' ] to have a length of +0 but got 1
+    expect(received).toHaveLength(expected)
 
- Tests  1 failed | 2 passed (3)
+    Expected length: 0
+    Received length: 1
+    Received array:  ["apple"]
 
-# and with --sequence.seed=3, all three fail.`}
+Seed:        3
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 2 passed, 3 total
+
+# --seed=2 fails all three. --seed=1 passes all three. Same code, same command.`}
       </CodeBlock>
       <CodeBlock language="jsx" title="RIGHT — rebuild the fixture per test">
 {`let cart;
@@ -796,9 +808,11 @@ test('adds an item', () => {
         <strong>Why:</strong> order-dependent tests are the classic &ldquo;passes locally,
         fails in CI&rdquo;. They also break <code>.only</code>, retries, and sharding
         across workers. The same trap catches <code>jest.fn()</code> instances declared at
-        module scope — configure <code>restoreMocks: true</code> (Vitest) or{' '}
-        <code>restoreMocks</code> in your Jest config so call history cannot leak between
-        tests. Running the suite shuffled once a week in CI is cheap insurance.
+        module scope — set <code>restoreMocks: true</code> in <code>jest.config.js</code> so
+        call history cannot leak between tests. Adding{' '}
+        <code>--randomize</code> to the CI run once a week is cheap insurance; Jest prints
+        the <code>Seed</code> it used, so a failure is reproducible with{' '}
+        <code>--seed</code>.
       </p>
 
       <h3>10. Testing a Library&apos;s Behaviour Instead of Your Own</h3>
@@ -940,7 +954,7 @@ test('shows the loaded name', async () => {
           </tr>
           <tr>
             <td>A timer fired outside a flush window</td>
-            <td><code>await act(async () =&gt; {'{'} vi.advanceTimersByTime(500); {'}'})</code></td>
+            <td><code>await act(async () =&gt; {'{'} jest.advanceTimersByTime(500); {'}'})</code></td>
           </tr>
           <tr>
             <td>You called a hook&apos;s returned setter directly</td>

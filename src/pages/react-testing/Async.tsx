@@ -10,7 +10,7 @@ export default function Async() {
       sectionId="react-testing"
       lessonIndex={3}
       prev={{ path: '/react-testing/hooks', label: 'Testing Custom Hooks' }}
-      next={{ path: '/react-testing/forms', label: 'Testing Forms & Routing' }}
+      next={{ path: '/react-testing/async-deep-dive', label: 'Waiting, act(), and Async Failure Modes' }}
     >
       <h2>Async Testing Fundamentals</h2>
       <p>
@@ -104,7 +104,7 @@ describe('UserProfile async states', () => {
       <InfoBox variant="note" title="Despite the Name, There's No Service Worker in Your Tests">
         MSW has two setups, and mixing them up is the most common first-run confusion.
         In the browser, <code>setupWorker()</code> registers an actual Service Worker
-        (hence the name). In Node — which is where Vitest and Jest run —{' '}
+        (hence the name). In Node — which is where Jest runs —{' '}
         <code>setupServer()</code> from <code>msw/node</code> is used instead, and it
         patches Node&apos;s own <code>http</code>/<code>https</code>/<code>fetch</code>{' '}
         internals. Same handlers, same syntax, no worker and no{' '}
@@ -438,34 +438,41 @@ describe('SearchInput with debounce', () => {
 });`}
       </CodeBlock>
 
-      <InfoBox variant="warning" title="user-event and Fake Timers — and Why the Jest Fix Is Not Enough on Vitest">
+      <InfoBox variant="warning" title="user-event and Fake Timers: the advanceTimers Option Is Not Optional">
         <p>
-          When combining <code>userEvent.setup()</code> with{' '}
-          <code>jest.useFakeTimers()</code>, pass{' '}
-          <code>{"{ advanceTimers: jest.advanceTimersByTime }"}</code> to the setup
-          options. Otherwise user-event&apos;s internal delays hang, because the fake
-          timer never advances.
+          That <code>{"{ advanceTimers: jest.advanceTimersByTime }"}</code> in{' '}
+          <code>userEvent.setup()</code> is the single most important line in the test
+          above, and it is the one everybody leaves out. <code>userEvent</code> v14 puts a
+          small real delay between the keystrokes it synthesises, and it schedules that
+          delay with <code>setTimeout</code>. Once <code>jest.useFakeTimers()</code> has
+          replaced the clock, nothing advances it, so <code>await user.type(...)</code>{' '}
+          never resolves.
         </p>
         <p>
-          <strong>On Vitest — which is what this section uses — that is not
-          sufficient.</strong> Testing Library decides whether fake timers are active
-          with a <code>typeof jest !== &apos;undefined&apos;</code> check in{' '}
-          <code>@testing-library/dom</code>&apos;s helpers. Under Vitest there is no{' '}
-          <code>jest</code> global, so that check returns <code>false</code> even
-          though the clock <em>is</em> faked. Testing Library then polls{' '}
-          <code>waitFor</code> against a clock nothing is advancing, and it hangs to
-          timeout <em>even when its condition is already true</em> — taking{' '}
-          <code>findBy*</code>, <code>waitForElementToBeRemoved</code> and every
-          awaited user-event call with it.
+          The failure does not look like a timer problem. It looks like the runner giving
+          up — the same two identical tests, differing only in that option:
         </p>
-        <p>
-          The fix is to let the clock tick on its own:{' '}
-          <code>vi.useFakeTimers({"{ shouldAdvanceTime: true }"})</code>. That costs
-          you nothing in determinism — a debounce still will not fire until you call{' '}
-          <code>vi.advanceTimersByTime(300)</code> explicitly — it only stops the
-          poller from deadlocking. This is one of the most confusing failures in the
-          whole RTL surface, because the symptom (a timeout) looks like your
-          assertion is wrong rather than like the clock is stopped.
+        <CodeBlock language="text" title="Actual output — npx jest (Jest 30.5.2, user-event 14.6.7)">
+{`  ● fake timers + user-event › naive setup() with fake timers
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a
+    long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+          11 |     const user = userEvent.setup();
+
+Tests:       1 failed, 1 passed, 2 total`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          Passing <code>advanceTimers</code> costs you nothing in determinism. It lets{' '}
+          <code>user-event</code> tick the clock forward by its own tiny delays only; your
+          300&nbsp;ms debounce still will not fire until you call{' '}
+          <code>jest.advanceTimersByTime(300)</code> yourself. And note that it does not
+          help with a timeout you have <em>not</em> caused —{' '}
+          <code>findBy*</code>, <code>waitFor</code> and{' '}
+          <code>waitForElementToBeRemoved</code> poll on timers too, so any{' '}
+          <code>await</code> in a fake-timer test needs either this option or an explicit{' '}
+          <code>act(() =&gt; jest.advanceTimersByTime(...))</code> to make progress.
         </p>
       </InfoBox>
 
