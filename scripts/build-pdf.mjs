@@ -310,6 +310,16 @@ async function main() {
     process.exit(1);
   }
 
+  // The site builds with a `base` (currently '/Tutorials/', for GitHub Pages
+  // project-page hosting), and `vite preview` honours it — so routes live under
+  // that prefix, not at the server root. Rather than hardcode it here and have
+  // the two drift, read it back off the built index.html: every emitted asset
+  // href carries the prefix, so one is proof of what this dist was built with.
+  // Falls back to '/' for a root-based build.
+  const indexHtml = await readFile(join(APP_ROOT, 'dist', 'index.html'), 'utf8');
+  const SITE_BASE = indexHtml.match(/(?:src|href)="(\/[^"]*\/)assets\//)?.[1] ?? '/';
+  if (SITE_BASE !== '/') console.log(`[pdf] Site base detected: ${SITE_BASE}`);
+
   const port = await findFreePort(PORT);
   const url = `http://${HOST}:${port}`;
 
@@ -389,7 +399,7 @@ async function main() {
           ...(DARK ? { colorScheme: 'dark' } : {}),
         });
         try {
-          const target = url + lesson.path;
+          const target = url + SITE_BASE + lesson.path.replace(/^\//, '');
           // 'load' rather than 'networkidle': pages embedding a live widget
           // (e.g. Sandpack's bundler iframe) hold connections open for
           // hot-reload and never go network-idle, which would hang this

@@ -1,0 +1,61 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Lets you re-deploy from the Actions tab without pushing a commit.
+  workflow_dispatch:
+
+# GITHUB_TOKEN needs these to publish to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race. `cancel-in-progress: false` so a run that is
+# already uploading finishes rather than leaving Pages half-updated.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` over `npm install`: honours the lockfile exactly, so a
+      # transitive bump can't silently change what gets deployed.
+      - run: npm ci
+
+      # `npm run build` is `tsc && vite build` — the typecheck is the gate.
+      # It takes a few minutes on this repo; that is deliberate, a type error
+      # should fail the deploy rather than ship.
+      - run: npm run build
+
+      # Guard against the SPA fallback silently not being emitted: without
+      # 404.html every deep link would 404 in production while the homepage
+      # looked fine, which is exactly the failure that is easy to miss.
+      - name: Verify SPA fallback exists
+        run: test -f dist/404.html || (echo "dist/404.html missing — the emit-spa-404 plugin did not run" && exit 1)
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
