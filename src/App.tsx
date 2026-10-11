@@ -58,6 +58,27 @@ import SB2Observability from './pages/springboot2/Observability'
 import SB2Actuator from './pages/springboot2/Actuator'
 import SB2Migration from './pages/springboot2/Migration'
 import SB2Cheatsheet from './pages/springboot2/Cheatsheet'
+// Go
+import GoIntro from './pages/go/Intro'
+import GoSetup from './pages/go/Setup'
+import GoSyntax from './pages/go/Syntax'
+import GoStructs from './pages/go/Structs'
+import GoInterfaces from './pages/go/Interfaces'
+import GoErrors from './pages/go/Errors'
+import GoSlices from './pages/go/Slices'
+import GoPointers from './pages/go/Pointers'
+import GoGoroutines from './pages/go/Goroutines'
+import GoChannels from './pages/go/Channels'
+import GoSync from './pages/go/Sync'
+import GoContext from './pages/go/Context'
+import GoConcurrencyPatterns from './pages/go/ConcurrencyPatterns'
+import GoGenerics from './pages/go/Generics'
+import GoTesting from './pages/go/Testing'
+import GoHttp from './pages/go/Http'
+import GoDatabase from './pages/go/Database'
+import GoDeploy from './pages/go/Deploy'
+import GoCheatsheet from './pages/go/Cheatsheet'
+
 import FSIntro from './pages/from-scratch/Intro'
 import FSScheduler from './pages/from-scratch/Scheduler'
 import FSStorage from './pages/from-scratch/Storage'
@@ -522,6 +543,26 @@ function App() {
         <Route path="springboot2/actuator" element={<SB2Actuator />} />
         <Route path="springboot2/migration" element={<SB2Migration />} />
         <Route path="springboot2/cheatsheet" element={<SB2Cheatsheet />} />
+        <Route path="go/intro" element={<GoIntro />} />
+        <Route path="go/setup" element={<GoSetup />} />
+        <Route path="go/syntax" element={<GoSyntax />} />
+        <Route path="go/structs" element={<GoStructs />} />
+        <Route path="go/interfaces" element={<GoInterfaces />} />
+        <Route path="go/errors" element={<GoErrors />} />
+        <Route path="go/slices" element={<GoSlices />} />
+        <Route path="go/pointers" element={<GoPointers />} />
+        <Route path="go/goroutines" element={<GoGoroutines />} />
+        <Route path="go/channels" element={<GoChannels />} />
+        <Route path="go/sync" element={<GoSync />} />
+        <Route path="go/context" element={<GoContext />} />
+        <Route path="go/concurrency-patterns" element={<GoConcurrencyPatterns />} />
+        <Route path="go/generics" element={<GoGenerics />} />
+        <Route path="go/testing" element={<GoTesting />} />
+        <Route path="go/http" element={<GoHttp />} />
+        <Route path="go/database" element={<GoDatabase />} />
+        <Route path="go/deploy" element={<GoDeploy />} />
+        <Route path="go/cheatsheet" element={<GoCheatsheet />} />
+
         <Route path="from-scratch/intro" element={<FSIntro />} />
         <Route path="from-scratch/scheduler" element={<FSScheduler />} />
         <Route path="from-scratch/storage" element={<FSStorage />} />
