@@ -743,46 +743,81 @@ export const sections: Section[] = [
 ];
 
 export const groups: Group[] = [
+  // Organised by WHAT A THING IS, not where it happens to run.
+  //
+  // The previous Frontend/Backend split filed languages by their most common
+  // application domain, which breaks down immediately: JavaScript sat under
+  // "Frontend" even though Node is a backend runtime, and Go would sit under
+  // "Backend" even though its most visible output is CLI and infrastructure
+  // tooling. Both labels were describing deployment targets, not categories.
+  //
+  // The rule now: a language group owns its own sections, plus a child group
+  // per major framework built on it. Java -> Spring Boot reads the same way
+  // as JavaScript/TypeScript -> React.
   {
-    id: 'backend',
-    label: 'Backend',
-    icon: '🖥️',
+    id: 'languages',
+    label: 'Languages',
+    icon: '📚',
     color: '#fb923c',
-    sectionIds: ['java', 'springboot', 'springboot2', 'go'],
-  },
-  {
-    id: 'frontend',
-    label: 'Frontend',
-    icon: '⚛️',
-    color: '#22d3ee',
-    // 'typescript' and 'javascript' are listed directly in sectionIds below
-    // rather than each wrapped in its own single-section child group — a
-    // 'TypeScript' group containing only a 'TypeScript' section produced a
-    // redundant "TypeScript > TypeScript" label in the sidebar.
-    sectionIds: ['typescript', 'javascript'],
+    // Go sits directly here rather than in a "Go" subgroup. A group whose only
+    // section shares its name renders as a redundant "Go > Go" in the sidebar —
+    // the same defect that got the old single-section "TypeScript" and
+    // "JavaScript" groups flattened. Only wrap a language in a group when it
+    // has a framework subtree to hold, and name that group so it differs from
+    // the section inside it.
+    sectionIds: ['go'],
     children: [
       {
-        id: 'frontend-css',
-        label: 'CSS / Sass',
-        icon: '🎨',
-        color: '#e879f9',
-        sectionIds: ['css-mastery', 'mui', 'mui9'],
+        id: 'lang-java',
+        label: 'Java & Spring',
+        icon: '☕',
+        color: '#fb923c',
+        sectionIds: ['java'],
+        children: [
+          {
+            id: 'lang-java-spring',
+            label: 'Spring Boot',
+            icon: '🍃',
+            color: '#4ade80',
+            sectionIds: ['springboot', 'springboot2'],
+          },
+        ],
       },
       {
-        id: 'frontend-react',
-        label: 'React',
-        icon: '⚛️',
-        color: '#22d3ee',
-        sectionIds: ['react18', 'ag-grid', 'react19-whats-new', 'react-antipatterns', 'state-basics', 'state-context', 'state-zustand', 'react-query', 'react-testing', 'react-router-v5', 'react-router', 'react-router-v8'],
-      },
-      {
-        id: 'frontend-tooling-group',
-        label: 'Tooling',
-        icon: '🛠️',
-        color: '#f59e0b',
-        sectionIds: ['frontend-tooling', 'npm-deep-dive', 'npm-packages'],
+        // JS and TS share a group because React spans both — modern React is
+        // more often TypeScript than JavaScript, so filing React under
+        // "JavaScript" alone would reintroduce exactly the miscategorisation
+        // this restructure exists to remove.
+        id: 'lang-js',
+        label: 'JavaScript & TypeScript',
+        icon: '🟨',
+        color: '#f7df1e',
+        sectionIds: ['javascript', 'typescript'],
+        children: [
+          {
+            id: 'lang-js-react',
+            label: 'React',
+            icon: '⚛️',
+            color: '#22d3ee',
+            sectionIds: ['react18', 'ag-grid', 'react19-whats-new', 'react-antipatterns', 'state-basics', 'state-context', 'state-zustand', 'react-query', 'react-testing', 'react-router-v5', 'react-router', 'react-router-v8'],
+          },
+        ],
       },
     ],
+  },
+  {
+    id: 'web-platform',
+    label: 'Web Platform',
+    icon: '🎨',
+    color: '#e879f9',
+    sectionIds: ['css-mastery', 'mui', 'mui9'],
+  },
+  {
+    id: 'tooling',
+    label: 'Tooling',
+    icon: '🛠️',
+    color: '#f59e0b',
+    sectionIds: ['frontend-tooling', 'npm-deep-dive', 'npm-packages'],
   },
   {
     id: 'database',

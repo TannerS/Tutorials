@@ -264,8 +264,13 @@ export default function Sidebar() {
 
         {isGroupOpen && (
           <>
-            {group.children && group.children.map((child) => renderGroup(child, depth + 1))}
+            {/* A group's OWN sections render before its child groups. With a
+                language group like "Java & Spring", the language itself is the
+                primary entry and the framework subgroup is the elaboration —
+                rendering children first put "Spring Boot" above "Java", which
+                reads backwards. */}
             {groupSections.map((section) => renderSection(section, depth))}
+            {group.children && group.children.map((child) => renderGroup(child, depth + 1))}
           </>
         )}
       </div>
