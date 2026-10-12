@@ -3,7 +3,7 @@ import type { Section, Group } from './types';
 export const sections: Section[] = [
   {
     id: 'java',
-    label: 'Java',
+    label: 'Core Java',
     icon: '☕',
     color: '#fb923c',
     lessons: [
@@ -498,7 +498,7 @@ export const sections: Section[] = [
   },
   {
     id: 'javascript',
-    label: 'JavaScript',
+    label: 'Core JavaScript',
     icon: '🟨',
     color: '#f7df1e',
     lessons: [
@@ -760,16 +760,18 @@ export const groups: Group[] = [
     icon: '📚',
     color: '#fb923c',
     // Go sits directly here rather than in a "Go" subgroup. A group whose only
-    // section shares its name renders as a redundant "Go > Go" in the sidebar —
-    // the same defect that got the old single-section "TypeScript" and
-    // "JavaScript" groups flattened. Only wrap a language in a group when it
-    // has a framework subtree to hold, and name that group so it differs from
-    // the section inside it.
+    // section shares its name renders as a redundant "Go > Go" row — the same
+    // defect that got the old single-section "TypeScript" and "JavaScript"
+    // groups flattened. Wrap a language in a group only when it has an
+    // ecosystem subtree to hold, and make sure the group's name differs from
+    // every section inside it. That is why the language sections themselves
+    // are labelled "Core Java" / "Core JavaScript": the group is the whole
+    // ecosystem, the section is the language proper.
     sectionIds: ['go'],
     children: [
       {
         id: 'lang-java',
-        label: 'Java & Spring',
+        label: 'Java',
         icon: '☕',
         color: '#fb923c',
         sectionIds: ['java'],
@@ -784,40 +786,37 @@ export const groups: Group[] = [
         ],
       },
       {
-        // JS and TS share a group because React spans both — modern React is
-        // more often TypeScript than JavaScript, so filing React under
-        // "JavaScript" alone would reintroduce exactly the miscategorisation
-        // this restructure exists to remove.
         id: 'lang-js',
-        label: 'JavaScript & TypeScript',
+        label: 'JavaScript',
         icon: '🟨',
         color: '#f7df1e',
+        // TypeScript sits here as part of the JavaScript ecosystem rather than
+        // as a peer language. Arguable either way — it has its own compiler —
+        // but in practice it is inseparable from the JS toolchain, and keeping
+        // it beside React matches how the code in this repo is actually written.
         sectionIds: ['javascript', 'typescript'],
         children: [
           {
+            // MUI lives here rather than with CSS: it is a React component
+            // library, so it belongs to React's ecosystem, not the web platform.
             id: 'lang-js-react',
             label: 'React',
             icon: '⚛️',
             color: '#22d3ee',
-            sectionIds: ['react18', 'ag-grid', 'react19-whats-new', 'react-antipatterns', 'state-basics', 'state-context', 'state-zustand', 'react-query', 'react-testing', 'react-router-v5', 'react-router', 'react-router-v8'],
+            sectionIds: ['react18', 'ag-grid', 'react19-whats-new', 'react-antipatterns', 'state-basics', 'state-context', 'state-zustand', 'react-query', 'react-testing', 'react-router-v5', 'react-router', 'react-router-v8', 'mui', 'mui9'],
+          },
+          {
+            // Vite, Webpack and npm are JavaScript tooling specifically, not
+            // general-purpose tooling — they only make sense inside this subtree.
+            id: 'lang-js-tooling',
+            label: 'Build Tooling',
+            icon: '🛠️',
+            color: '#f59e0b',
+            sectionIds: ['frontend-tooling', 'npm-deep-dive', 'npm-packages'],
           },
         ],
       },
     ],
-  },
-  {
-    id: 'web-platform',
-    label: 'Web Platform',
-    icon: '🎨',
-    color: '#e879f9',
-    sectionIds: ['css-mastery', 'mui', 'mui9'],
-  },
-  {
-    id: 'tooling',
-    label: 'Tooling',
-    icon: '🛠️',
-    color: '#f59e0b',
-    sectionIds: ['frontend-tooling', 'npm-deep-dive', 'npm-packages'],
   },
   {
     id: 'database',
@@ -882,4 +881,4 @@ export const groups: Group[] = [
 // scripts/build-pdf.mjs's sidebarSectionOrder() must also be kept in sync —
 // it appends these ids after walking `groups` so combined-PDF ordering and
 // the table of contents match what the sidebar shows.
-export const rootSectionIds: string[] = ['playground'];
+export const rootSectionIds: string[] = ['css-mastery', 'playground'];
