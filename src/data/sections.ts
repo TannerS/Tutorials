@@ -107,6 +107,21 @@ export const sections: Section[] = [
     ],
   },
   {
+    id: 'cpp',
+    label: 'C++',
+    icon: '⚙️',
+    color: '#9c7cf4',
+    // Being built in phases. Only lessons that actually exist are listed here,
+    // so the build stays green and every phase is independently shippable.
+    lessons: [
+      { id: 'intro', title: "C++ in 2026: Which C++ You're Actually Writing", path: '/cpp/intro' },
+      { id: 'compiling', title: 'Compiling, Linking & the One-Definition Rule', path: '/cpp/compiling' },
+      { id: 'types', title: 'Types, auto & Control Flow', path: '/cpp/types' },
+      { id: 'functions', title: 'Functions, Overloading & Lambdas', path: '/cpp/functions' },
+      { id: 'references', title: 'Values, References & Pointers', path: '/cpp/references' },
+    ],
+  },
+  {
     id: 'from-scratch',
     label: 'Build From Scratch',
     icon: '🔩',
@@ -767,7 +782,7 @@ export const groups: Group[] = [
     // every section inside it. That is why the language sections themselves
     // are labelled "Core Java" / "Core JavaScript": the group is the whole
     // ecosystem, the section is the language proper.
-    sectionIds: ['go'],
+    sectionIds: ['go', 'cpp'],
     children: [
       {
         id: 'lang-java',

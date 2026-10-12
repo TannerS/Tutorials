@@ -79,6 +79,13 @@ import GoDatabase from './pages/go/Database'
 import GoDeploy from './pages/go/Deploy'
 import GoCheatsheet from './pages/go/Cheatsheet'
 
+// C++
+import CppIntro from './pages/cpp/Intro'
+import CppCompiling from './pages/cpp/Compiling'
+import CppTypes from './pages/cpp/Types'
+import CppFunctions from './pages/cpp/Functions'
+import CppReferences from './pages/cpp/References'
+
 import FSIntro from './pages/from-scratch/Intro'
 import FSScheduler from './pages/from-scratch/Scheduler'
 import FSStorage from './pages/from-scratch/Storage'
@@ -562,6 +569,12 @@ function App() {
         <Route path="go/database" element={<GoDatabase />} />
         <Route path="go/deploy" element={<GoDeploy />} />
         <Route path="go/cheatsheet" element={<GoCheatsheet />} />
+
+        <Route path="cpp/intro" element={<CppIntro />} />
+        <Route path="cpp/compiling" element={<CppCompiling />} />
+        <Route path="cpp/types" element={<CppTypes />} />
+        <Route path="cpp/functions" element={<CppFunctions />} />
+        <Route path="cpp/references" element={<CppReferences />} />
 
         <Route path="from-scratch/intro" element={<FSIntro />} />
         <Route path="from-scratch/scheduler" element={<FSScheduler />} />
