@@ -85,6 +85,11 @@ import CppCompiling from './pages/cpp/Compiling'
 import CppTypes from './pages/cpp/Types'
 import CppFunctions from './pages/cpp/Functions'
 import CppReferences from './pages/cpp/References'
+import CppMemoryModel from './pages/cpp/MemoryModel'
+import CppRaii from './pages/cpp/Raii'
+import CppSmartPointers from './pages/cpp/SmartPointers'
+import CppMoveSemantics from './pages/cpp/MoveSemantics'
+import CppMemoryBugs from './pages/cpp/MemoryBugs'
 
 import FSIntro from './pages/from-scratch/Intro'
 import FSScheduler from './pages/from-scratch/Scheduler'
@@ -575,6 +580,11 @@ function App() {
         <Route path="cpp/types" element={<CppTypes />} />
         <Route path="cpp/functions" element={<CppFunctions />} />
         <Route path="cpp/references" element={<CppReferences />} />
+        <Route path="cpp/memory-model" element={<CppMemoryModel />} />
+        <Route path="cpp/raii" element={<CppRaii />} />
+        <Route path="cpp/smart-pointers" element={<CppSmartPointers />} />
+        <Route path="cpp/move-semantics" element={<CppMoveSemantics />} />
+        <Route path="cpp/memory-bugs" element={<CppMemoryBugs />} />
 
         <Route path="from-scratch/intro" element={<FSIntro />} />
         <Route path="from-scratch/scheduler" element={<FSScheduler />} />

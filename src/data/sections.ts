@@ -119,6 +119,11 @@ export const sections: Section[] = [
       { id: 'types', title: 'Types, auto & Control Flow', path: '/cpp/types' },
       { id: 'functions', title: 'Functions, Overloading & Lambdas', path: '/cpp/functions' },
       { id: 'references', title: 'Values, References & Pointers', path: '/cpp/references' },
+      { id: 'memory-model', title: 'The Memory Model: Stack, Heap & Object Lifetime', path: '/cpp/memory-model' },
+      { id: 'raii', title: 'RAII: The Idea That Defines C++', path: '/cpp/raii' },
+      { id: 'smart-pointers', title: 'Smart Pointers: unique_ptr, shared_ptr & weak_ptr', path: '/cpp/smart-pointers' },
+      { id: 'move-semantics', title: 'Move Semantics & Perfect Forwarding', path: '/cpp/move-semantics' },
+      { id: 'memory-bugs', title: 'Memory Bugs & the Sanitizers That Catch Them', path: '/cpp/memory-bugs' },
     ],
   },
   {
