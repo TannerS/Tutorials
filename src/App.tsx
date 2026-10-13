@@ -90,6 +90,10 @@ import CppRaii from './pages/cpp/Raii'
 import CppSmartPointers from './pages/cpp/SmartPointers'
 import CppMoveSemantics from './pages/cpp/MoveSemantics'
 import CppMemoryBugs from './pages/cpp/MemoryBugs'
+import CppClasses from './pages/cpp/Classes'
+import CppInheritance from './pages/cpp/Inheritance'
+import CppTemplates from './pages/cpp/Templates'
+import CppConcepts from './pages/cpp/Concepts'
 
 import FSIntro from './pages/from-scratch/Intro'
 import FSScheduler from './pages/from-scratch/Scheduler'
@@ -585,6 +589,10 @@ function App() {
         <Route path="cpp/smart-pointers" element={<CppSmartPointers />} />
         <Route path="cpp/move-semantics" element={<CppMoveSemantics />} />
         <Route path="cpp/memory-bugs" element={<CppMemoryBugs />} />
+        <Route path="cpp/classes" element={<CppClasses />} />
+        <Route path="cpp/inheritance" element={<CppInheritance />} />
+        <Route path="cpp/templates" element={<CppTemplates />} />
+        <Route path="cpp/concepts" element={<CppConcepts />} />
 
         <Route path="from-scratch/intro" element={<FSIntro />} />
         <Route path="from-scratch/scheduler" element={<FSScheduler />} />

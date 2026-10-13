@@ -124,6 +124,10 @@ export const sections: Section[] = [
       { id: 'smart-pointers', title: 'Smart Pointers: unique_ptr, shared_ptr & weak_ptr', path: '/cpp/smart-pointers' },
       { id: 'move-semantics', title: 'Move Semantics & Perfect Forwarding', path: '/cpp/move-semantics' },
       { id: 'memory-bugs', title: 'Memory Bugs & the Sanitizers That Catch Them', path: '/cpp/memory-bugs' },
+      { id: 'classes', title: 'Classes, Constructors & the Rule of Zero/Three/Five', path: '/cpp/classes' },
+      { id: 'inheritance', title: 'Inheritance, Virtual Functions & vtables', path: '/cpp/inheritance' },
+      { id: 'templates', title: 'Templates & Generic Programming', path: '/cpp/templates' },
+      { id: 'concepts', title: 'Concepts & Compile-Time Constraints', path: '/cpp/concepts' },
     ],
   },
   {
