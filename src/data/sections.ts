@@ -128,6 +128,10 @@ export const sections: Section[] = [
       { id: 'inheritance', title: 'Inheritance, Virtual Functions & vtables', path: '/cpp/inheritance' },
       { id: 'templates', title: 'Templates & Generic Programming', path: '/cpp/templates' },
       { id: 'concepts', title: 'Concepts & Compile-Time Constraints', path: '/cpp/concepts' },
+      { id: 'containers', title: 'STL Containers & Iterator Invalidation', path: '/cpp/containers' },
+      { id: 'algorithms', title: 'Algorithms, Iterators & Ranges', path: '/cpp/algorithms' },
+      { id: 'errors', title: 'Error Handling: Exceptions, noexcept & expected', path: '/cpp/errors' },
+      { id: 'concurrency', title: 'Concurrency: Threads, Atomics & the Memory Model', path: '/cpp/concurrency' },
     ],
   },
   {

@@ -94,6 +94,10 @@ import CppClasses from './pages/cpp/Classes'
 import CppInheritance from './pages/cpp/Inheritance'
 import CppTemplates from './pages/cpp/Templates'
 import CppConcepts from './pages/cpp/Concepts'
+import CppContainers from './pages/cpp/Containers'
+import CppAlgorithms from './pages/cpp/Algorithms'
+import CppErrors from './pages/cpp/Errors'
+import CppConcurrency from './pages/cpp/Concurrency'
 
 import FSIntro from './pages/from-scratch/Intro'
 import FSScheduler from './pages/from-scratch/Scheduler'
@@ -593,6 +597,10 @@ function App() {
         <Route path="cpp/inheritance" element={<CppInheritance />} />
         <Route path="cpp/templates" element={<CppTemplates />} />
         <Route path="cpp/concepts" element={<CppConcepts />} />
+        <Route path="cpp/containers" element={<CppContainers />} />
+        <Route path="cpp/algorithms" element={<CppAlgorithms />} />
+        <Route path="cpp/errors" element={<CppErrors />} />
+        <Route path="cpp/concurrency" element={<CppConcurrency />} />
 
         <Route path="from-scratch/intro" element={<FSIntro />} />
         <Route path="from-scratch/scheduler" element={<FSScheduler />} />
