@@ -98,6 +98,9 @@ import CppContainers from './pages/cpp/Containers'
 import CppAlgorithms from './pages/cpp/Algorithms'
 import CppErrors from './pages/cpp/Errors'
 import CppConcurrency from './pages/cpp/Concurrency'
+import CppPerformance from './pages/cpp/Performance'
+import CppTooling from './pages/cpp/Tooling'
+import CppCheatsheet from './pages/cpp/Cheatsheet'
 
 import FSIntro from './pages/from-scratch/Intro'
 import FSScheduler from './pages/from-scratch/Scheduler'
@@ -601,6 +604,9 @@ function App() {
         <Route path="cpp/algorithms" element={<CppAlgorithms />} />
         <Route path="cpp/errors" element={<CppErrors />} />
         <Route path="cpp/concurrency" element={<CppConcurrency />} />
+        <Route path="cpp/performance" element={<CppPerformance />} />
+        <Route path="cpp/tooling" element={<CppTooling />} />
+        <Route path="cpp/cheatsheet" element={<CppCheatsheet />} />
 
         <Route path="from-scratch/intro" element={<FSIntro />} />
         <Route path="from-scratch/scheduler" element={<FSScheduler />} />

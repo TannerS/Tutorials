@@ -132,6 +132,9 @@ export const sections: Section[] = [
       { id: 'algorithms', title: 'Algorithms, Iterators & Ranges', path: '/cpp/algorithms' },
       { id: 'errors', title: 'Error Handling: Exceptions, noexcept & expected', path: '/cpp/errors' },
       { id: 'concurrency', title: 'Concurrency: Threads, Atomics & the Memory Model', path: '/cpp/concurrency' },
+      { id: 'performance', title: 'Performance: Cache, Copies & Undefined Behaviour', path: '/cpp/performance' },
+      { id: 'tooling', title: 'Build Systems, Debugging & Sanitizers', path: '/cpp/tooling' },
+      { id: 'cheatsheet', title: '📋 C++ Field Guide', path: '/cpp/cheatsheet' },
     ],
   },
   {
