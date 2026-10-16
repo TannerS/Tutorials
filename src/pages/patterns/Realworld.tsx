@@ -91,6 +91,40 @@ public class CustomerService {
       </CodeBlock>
 
       <h2>DTO Pattern &amp; Service Layer</h2>
+      <p>
+        The repository above solved persistence. This solves the opposite end: what the
+        outside world is allowed to see. The block below is one request travelling through
+        four types, and each one exists to stop a different kind of coupling.
+      </p>
+      <ul>
+        <li>
+          <strong>DTO</strong> — the wire shape. Returning the <code>@Entity</code> instead
+          would publish your schema as your API, so a column rename becomes a breaking
+          change, and lazy JPA associations serialize themselves into surprise queries (or
+          throw) during response writing.
+        </li>
+        <li>
+          <strong>Mapper</strong> — the one place entity and DTO know about each other. Keep
+          it here and the translation is testable in isolation; spread it across controllers
+          and every endpoint grows its own slightly-different version.
+        </li>
+        <li>
+          <strong>Service</strong> — a <strong>Facade</strong>. The caller says
+          &quot;place this order&quot;, not &quot;reserve stock, then charge, then save, in
+          that order&quot;. This is also where <code>@Transactional</code> belongs, because
+          the transaction boundary should be the business operation.
+        </li>
+        <li>
+          <strong>Controller</strong> — deliberately thin: bind, validate, delegate, map a
+          status code. Logic that drifts in here becomes unreachable from any other entry
+          point, which is what makes a codebase hard to add a queue consumer or a CLI to
+          later.
+        </li>
+      </ul>
+      <p>
+        Read it as one vertical slice rather than four classes — the point is the direction
+        of the dependencies, which all run inward toward the service.
+      </p>
 
       <CodeBlock language="java" title="DTO + Service + Controller - Full Stack" showLineNumbers={true}>
 {`// DTO - what the API exposes (never expose entities directly!)
@@ -191,6 +225,29 @@ public class OrderController {
       </InfoBox>
 
       <h2>Event-Driven Architecture</h2>
+      <p>
+        The service above worked because it knew every step of placing an order. That stops
+        scaling the moment the fifth team wants to react to a new order — each one needs a
+        line inside <code>placeOrder</code>, so an unrelated feature keeps editing the same
+        method and inherits its transaction and its failure modes.
+      </p>
+      <p>
+        Inverting it fixes the direction of the dependency: the service announces{' '}
+        <em>what happened</em> and knows nothing about who cares. Adding a consumer becomes
+        adding a class. This is <strong>Observer</strong>, with Spring owning the registry
+        and the events as immutable <code>record</code>s — past tense on purpose
+        (<code>OrderPlacedEvent</code>, not <code>PlaceOrder</code>), because a listener
+        reacting to a fact cannot veto it.
+      </p>
+      <p>
+        The thing actually worth studying in the code is the{' '}
+        <code>@TransactionalEventListener(phase = AFTER_COMMIT)</code> choice and the
+        comments around it. Both the timing trap (a plain <code>@EventListener</code> plus{' '}
+        <code>@Async</code> races the commit, so a listener can read a row that does not
+        exist yet — or act on an order that is about to roll back) and the
+        double-registration trap (stacking both annotations fires the listener twice) are
+        the kind of bug that only shows up under load, in production.
+      </p>
 
       <FlowChart
         title="Event-Driven Order Processing"
