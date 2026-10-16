@@ -88,6 +88,13 @@ expect(screen.getByRole('status')).toHaveAttribute('data-variant', 'danger');`}
       </InfoBox>
 
       <h2>Conditional Rendering</h2>
+      <p>
+        Conditional branches are where the <code>getBy</code> / <code>queryBy</code>
+        distinction stops being trivia and starts deciding whether your test is real. A
+        branch has two halves — rendered and not rendered — and the second half needs a
+        query that can return <code>null</code> instead of throwing. Each test below pins
+        exactly one branch, which is what makes a failure point at a cause.
+      </p>
 
       <CodeBlock language="jsx" title="Testing Conditional Display">
 {`import { render, screen } from '@testing-library/react';
@@ -118,6 +125,17 @@ describe('Alert', () => {
       </InfoBox>
 
       <h2>Testing Lists</h2>
+      <p>
+        Three things break on lists, and they are the three tests below: the wrong{' '}
+        <em>count</em>, the wrong <em>state</em> on an individual row, and the empty case
+        nobody renders by hand. Note <code>getAllByRole(&apos;listitem&apos;)</code> rather
+        than counting a CSS class — it asserts the markup is a real list, so the count and
+        the semantics are checked by the same line.
+      </p>
+      <p>
+        The empty-state test earns its place: it is the branch a developer never sees while
+        building, because local data is never empty.
+      </p>
 
       <CodeBlock language="jsx" title="Testing Rendered Lists">
 {`import { render, screen } from '@testing-library/react';
@@ -149,6 +167,21 @@ test('renders empty state when no items', () => {
       </CodeBlock>
 
       <h2>Testing Event Handlers</h2>
+      <p>
+        Two habits in the block below are the whole lesson. First,{' '}
+        <code>userEvent.setup()</code> is called per test and the result is awaited —{' '}
+        <code>user-event</code> dispatches the full event sequence a real browser would
+        (pointer down, focus, keydown, input, up, click), which is why it catches a disabled
+        button or an intercepting overlay that <code>fireEvent.click</code> would sail
+        straight through.
+      </p>
+      <p>
+        Second, asserting <code>toHaveBeenCalledWith(&apos;New task&apos;)</code> and not
+        just <code>toHaveBeenCalled()</code>. &quot;It fired&quot; passes even when you hand
+        the handler the raw event, or stale state, or <code>undefined</code> — the argument
+        is usually the actual bug. The third test then checks the part people forget: that
+        the component cleaned up after itself.
+      </p>
 
       <FlowChart
         title="Event Testing Flow"
@@ -200,6 +233,19 @@ describe('TaskForm events', () => {
       </CodeBlock>
 
       <h2>Testing State Changes</h2>
+      <p>
+        State is only interesting as a <em>transition</em>, so this test asserts at three
+        points — closed, open, closed again — in one test rather than three. That is
+        deliberate, and it is the exception to &quot;one assertion per test&quot;: the thing
+        under test is the sequence, and a toggle that opens but never closes is a real bug
+        that two independent tests would both pass.
+      </p>
+      <p>
+        Notice it never reads state directly. It finds the button by its accessible name,
+        which changes from &quot;show details&quot; to &quot;hide details&quot; — so the
+        test is also quietly asserting the control stays correctly labelled for a screen
+        reader at each step.
+      </p>
 
       <CodeBlock language="jsx" title="Testing Component State Transitions">
 {`import { render, screen } from '@testing-library/react';
@@ -224,6 +270,18 @@ test('toggles content visibility on button click', async () => {
       </CodeBlock>
 
       <h2>Testing Error and Loading States</h2>
+      <p>
+        Loading and error are the states users actually hit on a bad connection and the
+        states least likely to be tested, because the happy path is what you have in front
+        of you while building. Driving them by prop here — rather than by mocking a fetch —
+        keeps these tests about <em>rendering</em>; the asynchronous machinery gets its own
+        treatment in <a href="/react-testing/async">Async &amp; waitFor</a>.
+      </p>
+      <p>
+        Each test asserts both what <em>is</em> there and what <em>is not</em>. A spinner
+        test that only checks the spinner will keep passing on the day the spinner and the
+        loaded content render at the same time.
+      </p>
 
       <CodeBlock language="jsx" title="Error and Loading States">
 {`import { render, screen } from '@testing-library/react';
@@ -299,6 +357,18 @@ test('shows user initial from auth context', () => {
       </CodeBlock>
 
       <h2>Testing Components with Children</h2>
+      <p>
+        A wrapper like <code>Card</code> has almost no behaviour of its own, so the thing
+        worth asserting is that it does not <em>interfere</em>: children arrive, and named
+        slots land where they should. The trap is testing the wrapper&apos;s own markup —
+        its class names or div nesting — which locks the test to an implementation you will
+        want to restyle later.
+      </p>
+      <p>
+        So these queries deliberately reach for the children by role and text, exactly as a
+        consumer would. If <code>Card</code> is later rebuilt with different internals, the
+        tests should not notice.
+      </p>
 
       <CodeBlock language="jsx" title="Testing Composition and Children">
 {`import { render, screen } from '@testing-library/react';
@@ -332,6 +402,23 @@ test('renders header and footer slots', () => {
       </CodeBlock>
 
       <h2>Complete Example: UserCard</h2>
+      <p>
+        Everything above in one realistic suite. Two structural habits are worth copying
+        more than any individual assertion.
+      </p>
+      <p>
+        <strong>A shared <code>defaultUser</code> fixture, spread and overridden per test.</strong>{' '}
+        Each test then shows only the field it cares about, so the <em>reason</em> a test
+        exists is visible at a glance instead of buried in forty lines of identical setup.
+        Build the object fresh (or spread it) rather than mutating the shared one — a test
+        that edits a shared fixture leaks into whichever test runs next, and you get a suite
+        that passes alone and fails in CI.
+      </p>
+      <p>
+        <strong>Grouped under one <code>describe</code> with the component&apos;s name.</strong>{' '}
+        That name is prefixed onto every failure message, so a red CI log tells you which
+        component broke before you open anything.
+      </p>
 
       <CodeBlock language="jsx" title="UserCard.test.jsx — Full Test Suite">
 {`import { render, screen } from '@testing-library/react';
@@ -388,6 +475,24 @@ describe('UserCard', () => {
       </CodeBlock>
 
       <h2>Complete Example: SearchBar</h2>
+      <p>
+        A search bar looks like one behaviour and is really four, which is why it makes a
+        good closing example: it has <em>two</em> ways to submit and one way to refuse.
+      </p>
+      <p>
+        The <code>&apos;hooks&#123;enter&#125;&apos;</code> string is{' '}
+        <code>user-event</code> keyboard syntax — text plus a named key in braces, typed in
+        one call. Keyboard submit is a separate code path from the button (a form&apos;s
+        implicit submission, not your click handler), so a component can easily support one
+        and silently drop the other; that is exactly the bug a keyboard user reports and a
+        mouse-driven test never sees.
+      </p>
+      <p>
+        The last test asserts a <em>negative</em>: an empty query must not fire. Guard
+        clauses are the first thing lost in a refactor precisely because nothing visibly
+        breaks when they go — the only thing that notices is a test like this one, or your
+        backend receiving a flood of unfiltered queries.
+      </p>
 
       <CodeBlock language="jsx" title="SearchBar.test.jsx — Full Test Suite">
 {`import { render, screen } from '@testing-library/react';

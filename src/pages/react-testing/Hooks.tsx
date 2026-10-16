@@ -92,6 +92,24 @@ expect(result.current.count).toBe(1);`}
       </InfoBox>
 
       <h2>Testing useState-Based Hooks</h2>
+      <p>
+        The two imports are the whole API. <code>renderHook</code> mounts a throwaway
+        component whose only job is to call your hook, and hands you{' '}
+        <code>result.current</code> — a live view of the latest return value.
+      </p>
+      <p>
+        <code>result.current</code> is a <strong>snapshot, not a binding</strong>, and this
+        is the mistake everyone makes once: destructuring{' '}
+        <code>const &#123; toggle &#125; = result.current</code> and reusing it after an
+        update leaves you holding a function closed over stale state. Always go through{' '}
+        <code>result.current</code> at the moment you need it.
+      </p>
+      <p>
+        Every state update goes inside <code>act()</code>. That is not ceremony: it tells
+        React the update is finished so effects flush and a re-render happens before your
+        next assertion. Skip it and you assert against the value from before the update —
+        and React warns, loudly, which is the one warning never worth suppressing.
+      </p>
 
       <CodeBlock language="jsx" title="useToggle — Full Test Suite">
 {`// useToggle.js
@@ -142,6 +160,17 @@ describe('useToggle', () => {
       </CodeBlock>
 
       <h2>Testing useReducer Hooks</h2>
+      <p>
+        A reducer hook is the easiest kind to test well, because the interesting logic is a
+        pure function of state and action. Note what is asserted below: not the action that
+        was dispatched, but the state that resulted — <code>items</code> <em>and</em>{' '}
+        <code>total</code> together.
+      </p>
+      <p>
+        That pairing is the point. <code>total</code> is derived, so it is exactly where
+        bugs live — a quantity change that updates the line item and forgets the sum. Assert
+        the derived value on every mutation and that class of bug cannot survive.
+      </p>
 
       <CodeBlock language="jsx" title="useCart — Reducer-Based Hook">
 {`import { renderHook, act } from '@testing-library/react';
@@ -203,6 +232,20 @@ describe('useCart', () => {
       </CodeBlock>
 
       <h2>Testing Hooks with Side Effects</h2>
+      <p>
+        Now the hook touches something outside React. <code>localStorage</code> is real in
+        jsdom — it genuinely stores and returns values — which is convenient and also the
+        trap: <strong>it persists between tests in the same file</strong>. One test writing{' '}
+        <code>&apos;dark&apos;</code> would leave it there for the next, producing a suite
+        that passes in order and fails when a single test is run alone. That is what the{' '}
+        <code>localStorage.clear()</code> in <code>beforeEach</code> below is for — it is
+        the most load-bearing line in the block, and the easiest one to leave out.
+      </p>
+      <p>
+        These tests also seed storage directly before rendering rather than driving the hook
+        to write it first. That keeps each test independent and makes the arrangement
+        obvious — the alternative chains tests together so one failure cascades into five.
+      </p>
 
       <CodeBlock language="jsx" title="useLocalStorage — Side Effect Hook">
 {`import { renderHook, act } from '@testing-library/react';
@@ -264,6 +307,27 @@ describe('useLocalStorage', () => {
       </InfoBox>
 
       <h2>Testing useDebounce</h2>
+      <p>
+        A debounce hook is defined by <em>time</em>, so testing it for real would mean
+        waiting half a second per assertion. <code>jest.useFakeTimers()</code> replaces the
+        clock with one you advance by hand: the test runs instantly and, more importantly,
+        becomes deterministic — a real 500 ms wait is a race that passes on your laptop and
+        flakes on a loaded CI box.
+      </p>
+      <p>
+        The paired <code>jest.useRealTimers()</code> in <code>afterEach</code> is not
+        optional. Fake timers are global, so leaving them installed breaks every later test
+        in the file that expects a real clock — including anything using{' '}
+        <code>waitFor</code>, which would then hang against a clock nobody is advancing.
+      </p>
+      <p>
+        One sharp edge worth knowing before you hit it: <code>user-event</code> schedules
+        its own delays, so it needs to be told about the fake clock via{' '}
+        <code>userEvent.setup(&#123; advanceTimers: jest.advanceTimersByTime &#125;)</code>.
+        RTL&apos;s own <code>waitFor</code> detects Jest&apos;s fake timers and drives them
+        itself — the distinction is unpacked in{' '}
+        <a href="/react-testing/async-deep-dive">Waiting, act(), and Async Failure Modes</a>.
+      </p>
 
       <CodeBlock language="jsx" title="useDebounce — Timer-Based Hook">
 {`import { renderHook, act } from '@testing-library/react';
@@ -330,6 +394,19 @@ describe('useDebounce', () => {
       </CodeBlock>
 
       <h2>Testing usePagination</h2>
+      <p>
+        Pagination is arithmetic, and arithmetic is where off-by-one lives. This is the
+        ideal hook to test exhaustively precisely because it is cheap to do so: no DOM, no
+        network, no timers — just input numbers and derived output.
+      </p>
+      <p>
+        The <code>setup()</code> helper is the pattern to copy. Rather than repeating{' '}
+        <code>renderHook(() =&gt; usePagination(&#123;...&#125;))</code> in every test, one
+        function takes the varying bits and returns <code>result</code>. Tests then read as
+        a table of cases, which is what you want when the real goal is covering the
+        <em> boundaries</em>: page 1, the last page, a <code>totalItems</code> that divides
+        evenly versus one that leaves a short final page, and zero items.
+      </p>
 
       <CodeBlock language="jsx" title="usePagination — Complex Logic Hook">
 {`import { renderHook, act } from '@testing-library/react';
@@ -396,6 +473,24 @@ describe('usePagination', () => {
       </CodeBlock>
 
       <h2>Testing Hooks with Context</h2>
+      <p>
+        A hook calling <code>useContext</code> cannot be rendered bare — without a provider
+        it reads the context&apos;s <em>default</em> value, which is usually{' '}
+        <code>undefined</code> and gives you a crash with a confusing stack rather than a
+        useful failure.
+      </p>
+      <p>
+        That is what <code>renderHook</code>&apos;s second argument is for: a{' '}
+        <code>wrapper</code> component rendered around the hook. Because the wrapper is
+        per-call, each test can supply a different provider value, which is how you cover
+        logged-in and logged-out from the same hook without touching global state.
+      </p>
+      <p>
+        Worth testing the no-provider case deliberately, too. A hook that throws a clear{' '}
+        <em>&quot;useAuth must be used inside AuthProvider&quot;</em> saves far more time
+        than one that reads <code>undefined</code> and fails three components away from the
+        actual mistake.
+      </p>
 
       <CodeBlock language="jsx" title="Testing Hook That Reads Context">
 {`import { renderHook } from '@testing-library/react';
@@ -434,6 +529,45 @@ describe('useAuth', () => {
       </CodeBlock>
 
       <h2>Testing Hook Cleanup</h2>
+      <p>
+        This is the section most hook suites skip, and the one that catches real leaks. A
+        hook that subscribes on mount and never unsubscribes works perfectly in every test
+        that only mounts — the damage shows up in a long-lived app as duplicate handlers
+        firing, or a setState on an unmounted component.
+      </p>
+      <p>
+        So the pair below asserts both halves: <code>addEventListener</code> on mount, and{' '}
+        <code>removeEventListener</code> after <code>unmount()</code>. The{' '}
+        <code>jest.spyOn</code>/<code>mockRestore</code> bracket matters because these are
+        spies on a global — leave one installed and it follows you into the next test file.
+      </p>
+      <InfoBox variant="tip" title="What this test still cannot catch — and how to close the gap">
+        <p>
+          Both assertions use <code>expect.any(Function)</code>, which proves cleanup
+          happened <em>at all</em>. It cannot prove cleanup removed the{' '}
+          <strong>right</strong> listener, because <code>removeEventListener</code> matches
+          on <em>identity</em>: hand it a fresh arrow that looks identical and it removes
+          nothing, silently. Verified in a real browser:
+        </p>
+        <CodeBlock language="javascript" title="Real result — Chromium via Playwright">
+{`window.addEventListener('ping', handler);
+window.removeEventListener('ping', () => {});   // different fn, same shape
+window.dispatchEvent(new Event('ping'));        // handler STILL fires -> 1
+
+window.removeEventListener('ping', handler);    // same reference
+window.dispatchEvent(new Event('ping'));        // silent -> still 1`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          So a hook that wraps the handler in a new function on every render passes the test
+          above and leaks anyway. To close it, capture what was registered and require the
+          same value back:{' '}
+          <code>
+            expect(removeSpy).toHaveBeenCalledWith(&apos;resize&apos;,
+            addSpy.mock.calls[0][1])
+          </code>
+          .
+        </p>
+      </InfoBox>
 
       <CodeBlock language="jsx" title="Testing Effect Cleanup">
 {`import { renderHook } from '@testing-library/react';
@@ -464,6 +598,24 @@ describe('useEventListener', () => {
       </CodeBlock>
 
       <h2>Rerender with New Props</h2>
+      <p>
+        Mounting a hook tests its first render. Plenty of bugs only appear on the{' '}
+        <em>second</em> one — a <code>useEffect</code> with a missing dependency that never
+        re-runs, or a value memoised against the wrong input.
+      </p>
+      <p>
+        <code>renderHook</code>&apos;s <code>rerender</code> is how you reach that: call it
+        with new arguments and the same hook instance re-renders, keeping its state. That
+        last part is what makes it a different test from simply mounting again with
+        different props — this is the update path, state and all.
+      </p>
+      <p>
+        <code>useDocumentTitle</code> is a good subject because the effect writes to
+        something global, so the second assertion would still read{' '}
+        <code>&apos;New Title&apos;</code> if the effect never re-ran. Which is also the
+        reminder: <code>document.title</code> persists across tests in a file, so reset it
+        in <code>afterEach</code> if later tests depend on it.
+      </p>
 
       <CodeBlock language="jsx" title="Testing Hook Rerender Behavior">
 {`import { renderHook } from '@testing-library/react';
