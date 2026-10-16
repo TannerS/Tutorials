@@ -382,9 +382,6 @@ console.log(sab.byteLength);             // 4`}
         <li><code>SharedArrayBuffer</code> and <code>Atomics</code> — shared memory, gated post-Spectre</li>
       </ul>
 
-      {/* ── 8. Test Your Knowledge ── */}
-      <h2>Test Your Knowledge</h2>
-
     </LessonLayout>
   );
 }

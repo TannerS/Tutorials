@@ -424,7 +424,6 @@ System.out.println(users.get("alan").name().toUpperCase());
         </p>
       </InfoBox>
 
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

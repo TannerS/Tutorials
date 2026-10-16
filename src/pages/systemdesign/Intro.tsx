@@ -645,15 +645,6 @@ Media bandwidth (reads):          Dominated by CDN`}
         different parts of your system.
       </InfoBox>
 
-      {/* ====== Section 8: Estimation Challenge ====== */}
-      <h2>Test Your Knowledge</h2>
-
-      <p>
-        Now that you have learned the fundamentals of system design, let&apos;s test
-        your understanding of requirements gathering and estimation with a practical
-        challenge.
-      </p>
-
     </LessonLayout>
   );
 }

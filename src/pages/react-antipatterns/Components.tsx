@@ -542,8 +542,7 @@ function SearchBar() {
         chart={"graph TD\nStart[New Component]-->Q1{More than one responsibility?}\nQ1-->|Yes|Split[Split into smaller components]\nQ1-->|No|Q2{Duplicated stateful logic?}\nQ2-->|Yes|Hook[Extract a custom hook]\nQ2-->|No|Q3{Many config props?}\nQ3-->|Yes|Compose[Use children + composition]\nQ3-->|No|Q4{Needs shared state?}\nQ4-->|Yes|Q5{Changes frequently?}\nQ5-->|Yes|Local[Keep state local or use a store]\nQ5-->|No|Ctx[Context is fine]\nQ4-->|No|Done[Ship it]"}
       />
 
-      {/* ─── Challenges ─── */}
-      <h2>Test Your Knowledge</h2>
+      <h2>Key Takeaways</h2>
 
       <InfoBox variant="success" title="Key Takeaways">
         Keep components small and focused. Prefer composition over configuration.

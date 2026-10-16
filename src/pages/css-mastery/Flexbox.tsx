@@ -488,7 +488,6 @@ export default function Flexbox() {
         chart={"graph TD\n  A[What do you need?] --> B[Distribute items along main axis]\n  A --> C[Align items along cross axis]\n  A --> D[Control item sizing]\n  A --> E[Reorder items]\n  B --> F[justify-content]\n  C --> G{All items or one?}\n  G --> H[All: align-items]\n  G --> I[One: align-self]\n  D --> J{Grow into space?}\n  J --> K[flex-grow]\n  J --> L{Shrink when tight?}\n  L --> M[flex-shrink]\n  L --> N[Set base size: flex-basis]\n  E --> O[order property]"}
       />
 
-      <h2>Knowledge Check</h2>
 
     </LessonLayout>
   );

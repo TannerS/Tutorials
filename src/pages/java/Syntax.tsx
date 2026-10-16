@@ -638,7 +638,6 @@ public class ArrayExamples {
         </p>
       </InfoBox>
 
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

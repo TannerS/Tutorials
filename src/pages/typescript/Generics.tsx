@@ -1178,8 +1178,7 @@ if (!form.ok) {
         </p>
       </InfoBox>
 
-      {/* ── Section 14: Interactive Challenges ── */}
-      <h2>Test Your Knowledge</h2>
+      <h2>Wrapping Up</h2>
 
       <InfoBox variant="success" title="Generics Mastery">
         You now understand the core building blocks of TypeScript generics — from basic type

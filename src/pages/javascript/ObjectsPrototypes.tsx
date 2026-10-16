@@ -631,7 +631,6 @@ console.log(Object.keys(derived));
       </InfoBox>
 
       {/* ── Section 7: Interactive Challenges ── */}
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

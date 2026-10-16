@@ -588,7 +588,6 @@ List<String> contents = paths.stream().map(unchecked(Files::readString)).toList(
         </p>
       </InfoBox>
 
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

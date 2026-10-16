@@ -859,8 +859,7 @@ if (res.ok && res.data) {
         </p>
       </InfoBox>
 
-      {/* ── Section 14: Interactive Challenges ───────────────────── */}
-      <h2>14. Test Your Knowledge</h2>
+      <h2>14. Ship-Ready Checklist</h2>
 
       <InfoBox variant="success" title="Checklist: Ship-Ready TypeScript">
         <ul>

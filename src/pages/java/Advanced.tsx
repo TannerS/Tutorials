@@ -728,7 +728,6 @@ now wrong: Gatherers (see the Streams lesson) and the end of synchronized
 pinning (see the Concurrency lesson).`}
       </CodeBlock>
 
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

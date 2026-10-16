@@ -949,7 +949,6 @@ const permissions: RolePermissions = {
       </InfoBox>
 
       {/* ── Section 15: Interactive Challenges ── */}
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

@@ -384,7 +384,6 @@ line two\`);
       </InfoBox>
 
       {/* ── Challenges ── */}
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

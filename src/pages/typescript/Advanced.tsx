@@ -1295,7 +1295,6 @@ type Good<T> = HandleA<T> | HandleB<T>;`}
       </InfoBox>
 
       {/* ── 15. Interactive Challenges ── */}
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

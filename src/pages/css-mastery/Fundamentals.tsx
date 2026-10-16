@@ -656,7 +656,6 @@ html { font-size: 100%; }     /* = 16px by default, RESPECTS user settings */
 }`}
       </CodeBlock>
 
-      <h2>Knowledge Check</h2>
 
     </LessonLayout>
   );

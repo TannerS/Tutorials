@@ -616,7 +616,6 @@ function SearchResults({ query }) {
       />
 
       {/* ---- Interactive Challenges ---- */}
-      <h2>Test Your Knowledge</h2>
 
       {/* ---- Summary ---- */}
       <h2>Summary</h2>

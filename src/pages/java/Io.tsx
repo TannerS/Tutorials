@@ -512,7 +512,6 @@ try (var in = new ObjectInputStream(source)) {
         </p>
       </InfoBox>
 
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

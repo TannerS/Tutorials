@@ -549,7 +549,6 @@ console.log('script end');
       </InfoBox>
 
       {/* ── Interactive Challenges ── */}
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

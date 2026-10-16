@@ -317,7 +317,7 @@ function ParentComponent() {
         test your understanding.
       </InfoBox>
 
-      <h2>Test Your Knowledge</h2>
+      <h2>What&apos;s Next</h2>
 
       <InfoBox variant="success" title="Ready to Dive In?">
         Now that you understand what anti-patterns are, why they matter, and

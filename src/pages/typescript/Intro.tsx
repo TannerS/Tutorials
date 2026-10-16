@@ -255,7 +255,6 @@ export default function Intro() {
       </p>
 
       {/* 7. Interactive Challenges */}
-      <h2>Knowledge Check</h2>
 
     </LessonLayout>
   );

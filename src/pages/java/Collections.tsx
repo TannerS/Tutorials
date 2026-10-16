@@ -663,7 +663,6 @@ ConcurrentHashMap    Thread-safe, lock-striped. Use computeIfAbsent/merge for at
         </p>
       </InfoBox>
 
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

@@ -585,7 +585,6 @@ copy(dest, src);        // T = Integer; Object is a supertype. Compiles.`}
         </p>
       </InfoBox>
 
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

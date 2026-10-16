@@ -646,7 +646,6 @@ public class CountingSet<E> implements Set<E> {
         </p>
       </InfoBox>
 
-      <h2>Test Your Knowledge</h2>
 
     </LessonLayout>
   );

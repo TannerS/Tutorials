@@ -406,8 +406,7 @@ EXIT CODE: 1`}
         </p>
       </InfoBox>
 
-      {/* ── Section 7: Interactive Challenges ─────────────────── */}
-      <h2>7. Test Your Knowledge</h2>
+      <h2>7. Checklist: Solid Error Handling</h2>
 
       <InfoBox variant="success" title="Checklist: Solid Error Handling">
         <ul>

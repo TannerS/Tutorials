@@ -527,8 +527,7 @@ for (let j = 0; j < 3; j++) {
         correct answer from a memorized one.
       </InfoBox>
 
-      {/* ── Section 9: Interactive Challenges ── */}
-      <h2>Test Your Knowledge</h2>
+      <h2>Recap</h2>
 
       <InfoBox variant="success" title="What You Now Know">
         You've seen — with real, run output — how the three function syntaxes differ in
