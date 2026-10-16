@@ -400,8 +400,21 @@ export default function Sidebar() {
           </div>
         ) : (
           <>
-            {groups.map(group => renderGroup(group, 0))}
+            {/* Ungrouped sections render FIRST, with a divider under them.
+                Rendered last they sat at a group section's indentation right
+                below the final group's header and read as belonging to it —
+                that is how CSS Mastery ended up looking like part of
+                Security. */}
             {rootSections.map(section => renderSection(section, 0))}
+            {rootSections.length > 0 && (
+              <div
+                style={{
+                  margin: '0.5rem 1rem',
+                  borderTop: '1px solid var(--border-color)',
+                }}
+              />
+            )}
+            {groups.map(group => renderGroup(group, 0))}
           </>
         )}
       </div>

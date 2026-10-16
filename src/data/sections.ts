@@ -892,7 +892,10 @@ export const groups: Group[] = [
         label: 'APIs & Quality',
         icon: '📡',
         color: '#34d399',
-        sectionIds: ['apidesign', 'api-testing', 'testing', 'accessibility'],
+        // Accessibility used to sit here. It is not an API or testing concern:
+        // its lessons are WCAG, semantic HTML, ARIA and keyboard focus, which
+        // are web-platform topics. Moved to the Web Platform group beside CSS.
+        sectionIds: ['apidesign', 'api-testing', 'testing'],
       },
     ],
   },
@@ -902,6 +905,25 @@ export const groups: Group[] = [
     icon: '🛡️',
     color: '#ef4444',
     sectionIds: ['auth', 'cryptography'],
+  },
+  // CSS is the web platform itself, not a language ecosystem and not a
+  // framework, so it gets its own top-level group.
+  //
+  // It used to live in rootSectionIds instead. That was a real bug rather than
+  // a style choice: the sidebar renders root sections AFTER every group, at
+  // the same indentation a group's own sections use, so "CSS Mastery" appeared
+  // directly under the "Security" header and read as part of it. Anything
+  // ungrouped silently adopts whichever group happens to render last.
+  //
+  // The group label has to differ from the section label too, or it renders a
+  // redundant "CSS Mastery > CSS Mastery" row — same defect that flattened the
+  // old single-section TypeScript and JavaScript groups.
+  {
+    id: 'web-platform',
+    label: 'Web Platform',
+    icon: '🎨',
+    color: '#ec4899',
+    sectionIds: ['css-mastery', 'accessibility'],
   },
 ];
 
@@ -916,4 +938,8 @@ export const groups: Group[] = [
 // scripts/build-pdf.mjs's sidebarSectionOrder() must also be kept in sync —
 // it appends these ids after walking `groups` so combined-PDF ordering and
 // the table of contents match what the sidebar shows.
-export const rootSectionIds: string[] = ['css-mastery', 'playground'];
+// Sections deliberately shown with NO group header. Keep this list tiny and
+// only for things that are not lesson content — the sidebar renders these
+// before any group, with a divider, because an ungrouped section rendered
+// after the groups visually attaches itself to the last one.
+export const rootSectionIds: string[] = ['playground'];
