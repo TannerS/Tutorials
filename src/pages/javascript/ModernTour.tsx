@@ -427,22 +427,33 @@ JSON.stringify({ n: 12345678901234567890 });
       <InfoBox variant="warning" title="Ratified is not the same as shipped — and neither implies the other">
         <p>
           This is the single most useful thing to internalize about the yearly cadence. Both
-          directions of the mismatch are real, measured on Node 25.2.1 today:
+          directions of the mismatch are real, and measuring the same three features on two
+          Node versions shows the gap closing in real time:
         </p>
+        <CodeBlock language="text" title="The same three ES2026 features, measured on two runtimes">
+{`                              Node 25.2.1        Node 26.0.0
+Math.sumPrecise               TypeError          TypeError      <- still missing
+Iterator.concat               TypeError          [1, 2, 3]      <- shipped since
+Map.prototype.getOrInsert     TypeError          []             <- shipped since`}
+        </CodeBlock>
         <p>
-          <strong>Ratified but not yet in V8:</strong> <code>Math.sumPrecise</code>,{' '}
-          <code>Iterator.concat</code> and <code>Map.prototype.getOrInsert</code> all threw{' '}
-          <code>TypeError: … is not a function</code>. They are in the ES2026 spec; the engine
-          hasn&apos;t caught up. Everything else in the ES2026 block above ran.
+          <strong>Ratified but not yet in V8:</strong> all three were in the ES2026 spec and all
+          three threw <code>TypeError: … is not a function</code> on Node 25. One major version
+          later, two of them work and <code>Math.sumPrecise</code> still does not. Everything
+          else in the ES2026 block above ran on both. That is the whole lesson in one table:
+          the spec is a fixed document, engine support is a moving target, and the only way to
+          know which side of the line a feature is on <em>for you</em> is to check your runtime.
         </p>
         <p>
           <strong>Shipped but not yet ratified:</strong> <code>using</code> declarations run
-          unflagged on Node 25 right now, and they are <em>not</em> in ES2026 — Explicit Resource
-          Management is Stage 4 and slated for <strong>ES2027</strong>, alongside{' '}
+          unflagged on Node 25 and 26 right now, and they are <em>not</em> in ES2026 — Explicit
+          Resource Management is Stage 4 and slated for <strong>ES2027</strong>, alongside{' '}
           <strong>Temporal</strong> (the <code>Date</code> replacement, which missed the June 2026
-          cutoff), <code>Atomics.pause</code>, and joint iteration (<code>Iterator.zip</code>).
-          Temporal is the reverse case again: ratified for 2027 and still absent from Node 25 —{' '}
-          <code>typeof Temporal</code> is <code>&apos;undefined&apos;</code>.
+          cutoff), <code>Atomics.pause</code>, and joint iteration (<code>Iterator.zip</code>).{' '}
+          <code>Atomics.pause</code> is already a function on Node 26, two editions ahead of its
+          own ratification. Temporal is the reverse case again: ratified for 2027 and still absent
+          from both — <code>typeof Temporal</code> is <code>&apos;undefined&apos;</code>, and{' '}
+          <code>Iterator.zip</code> is likewise still missing.
         </p>
         <p>
           The practical rule: an edition number tells you what TC39 agreed on, never what your
