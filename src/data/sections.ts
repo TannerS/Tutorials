@@ -168,6 +168,11 @@ export const sections: Section[] = [
       { id: 'server', title: 'Server Components & Actions', path: '/react18/server' },
       { id: 'ssr-hydration', title: 'SSR & Hydration', path: '/react18/ssr-hydration' },
       { id: 'patterns', title: 'Advanced Patterns', path: '/react18/patterns' },
+      // Error boundaries sit here, with the core-React lessons, rather than down
+      // in the architecture group: SSR & Hydration, Module Federation and
+      // Bulletproof React all lean on the concept, so teaching it after them
+      // left three lessons using a term the reader had not met yet.
+      { id: 'error-boundaries', title: 'Error Boundaries', path: '/react18/error-boundaries' },
       { id: 'typescript', title: 'React + TypeScript', path: '/react18/typescript' },
       { id: 'build-toolchain', title: '🔧 Build Toolchain', path: '/react18/build-toolchain' },
       { id: 'adapters', title: 'API Adapters & Envelopes', path: '/react18/adapters' },
@@ -175,7 +180,6 @@ export const sections: Section[] = [
       { id: 'module-federation', title: 'Module Federation & MFEs', path: '/react18/module-federation' },
       { id: 'feature-folder', title: 'Feature-Based Architecture', path: '/react18/feature-folder' },
       { id: 'bulletproof-react', title: 'Bulletproof React — A Concrete File Structure', path: '/react18/bulletproof-react' },
-      { id: 'error-boundaries', title: 'Error Boundaries', path: '/react18/error-boundaries' },
       { id: 'animations', title: 'Animation Libraries (Framer Motion & Beyond)', path: '/react18/animations' },
       { id: 'portals', title: 'Portals, In Depth', path: '/react18/portals' },
       { id: 'cheat-sheet', title: '📋 React 18 Field Guide', path: '/react18/cheat-sheet' },

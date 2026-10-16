@@ -7,9 +7,9 @@ export default function ErrorBoundaries() {
     <LessonLayout
       title="Error Boundaries"
       sectionId="react18"
-      lessonIndex={19}
-      prev={{ path: '/react18/bulletproof-react', label: 'Bulletproof React — A Concrete File Structure' }}
-      next={{ path: '/react18/animations', label: 'Animation Libraries (Framer Motion & Beyond)' }}
+      lessonIndex={12}
+      prev={{ path: '/react18/patterns', label: 'Advanced Patterns' }}
+      next={{ path: '/react18/typescript', label: 'React + TypeScript' }}
     >
       <p>
         Before React 16, one component throwing during render blanked the entire app — React

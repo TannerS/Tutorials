@@ -20,19 +20,37 @@ export default function PackageJson() {
       </p>
 
       <h3>Required Fields</h3>
+      <p>
+        &quot;Only two fields are required&quot; gets repeated a lot, so it is worth
+        checking. A <code>package.json</code> containing nothing but{' '}
+        <code>name</code> and <code>version</code> packs fine; drop either one and npm
+        refuses with a specific error:
+      </p>
+      <CodeBlock language="text" title="Real output — npm 11.12.1, a package.json with neither field">
+{`$ npm pack --dry-run
+npm error Invalid package, must have name and version`}
+      </CodeBlock>
       <CodeBlock language="json" title="name and version (the only truly required fields)">
 {`{
   "name": "@myorg/string-utils",
   "version": "2.1.0"
 }
 
-// Name rules:
-// - Must be lowercase
-// - Can contain hyphens and dots
-// - Max 214 characters
-// - Can't start with . or _
-// - Scoped: @scope/name (scope = org or username)
-// - Must be unique on the registry (or unique within scope)
+// Name rules, with the exact message each one produces. These come from
+// validate-npm-package-name (v8.0.0), which is the library npm and the
+// registry both use -- not from the docs:
+// - lowercase only          "name can no longer contain capital letters"
+// - max 214 characters      "name can no longer contain more than 214 characters"
+// - can't start with .      "name cannot start with a period"
+// - can't start with _      "name cannot start with an underscore"
+// - URL-safe characters     "name can only contain URL-friendly characters"
+// - hyphens and dots inside the name are fine: ok-name.v2 passes
+// - scoped: @scope/name (scope = org or username) passes
+// - must be unique on the registry (or unique within its scope)
+//
+// WHERE these are enforced matters: "npm pack" does NOT check length.
+// A 215-character name packs successfully, exit 0 -- it is rejected on
+// publish, by the validator above. Local success is not a green light.
 
 // Version rules:
 // - Must be valid semver: MAJOR.MINOR.PATCH
@@ -59,28 +77,161 @@ export default function PackageJson() {
       </CodeBlock>
 
       <h3>Entry Point Fields</h3>
-      <CodeBlock language="json" title="How consumers find your code">
+      <p>
+        This is the part of <code>package.json</code> that people copy from another project
+        without understanding, and it is the part most likely to break consumers. The
+        confusion is historical: there are <strong>three generations</strong> of
+        entry-point field layered on top of each other, and a published package usually
+        carries all three.
+      </p>
+      <ul>
+        <li>
+          <code>main</code> — the original, from CommonJS. One file, no conditions. Every
+          tool understands it.
+        </li>
+        <li>
+          <code>module</code> — <strong>never a Node.js feature at all.</strong> Bundlers
+          (webpack, Rollup) invented it to find an ESM build they could tree-shake. Node
+          ignores it completely.
+        </li>
+        <li>
+          <code>exports</code> — the modern one. A map, not a path: it can answer
+          differently depending on <em>who is asking</em>.
+        </li>
+      </ul>
+
+      <p>
+        The first thing to establish is which one actually wins, because that determines
+        whether the others are fallbacks or dead weight. Pointing{' '}
+        <code>main</code> and <code>exports</code> at different files answers it:
+      </p>
+
+      <CodeBlock language="json" title="dual/package.json — the two fields deliberately disagree">
 {`{
+  "name": "dual",
+  "version": "1.0.0",
+  "main": "./main-field.cjs",
+  "exports": {
+    ".": {
+      "require": "./exports-field.cjs",
+      "default": "./exports-field.cjs"
+    }
+  }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Real output — Node 26, each file exporting a string that names itself">
+{`$ node -e "console.log(require('dual'))"
+EXPORTS field won`}
+      </CodeBlock>
+
+      <p>
+        <strong>When <code>exports</code> exists, it wins and <code>main</code> is not
+        consulted.</strong> So <code>main</code> is not a co-equal setting — it is a
+        fallback for tooling too old to understand <code>exports</code>. Keep it pointing
+        at your CommonJS build for those consumers; modern Node will never read it.
+      </p>
+
+      <InfoBox variant="warning" title="exports also LOCKS DOWN your package — this is the part that surprises people">
+        <p>
+          <code>exports</code> is not just a lookup table, it is an{' '}
+          <strong>encapsulation boundary</strong>. Adding it makes every path you did{' '}
+          <em>not</em> list unreachable, even though the file is sitting right there in the
+          published tarball. Against the same package above:
+        </p>
+        <CodeBlock language="text" title="Real output — reaching for a real file that is not listed in exports">
+{`$ node -e "require('dual/main-field.cjs')"
+ERR_PACKAGE_PATH_NOT_EXPORTED`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          That is a feature — it is how you stop consumers depending on your internals, so
+          you can restructure <code>dist/</code> later without a breaking change. But it is
+          also the single most common way adding <code>exports</code> breaks people:{' '}
+          <code>import &quot;pkg/dist/thing.js&quot;</code> worked yesterday and is a hard
+          error today. If you want a subpath reachable, it must be in the map. That is also
+          why <code>&quot;./package.json&quot;: &quot;./package.json&quot;</code> is worth
+          listing — plenty of tools read it, and <code>exports</code> hides it otherwise.
+        </p>
+      </InfoBox>
+
+      <p>
+        Inside each subpath, the keys are <strong>conditions</strong>, and the rule is{' '}
+        <strong>first match wins, reading top to bottom</strong> — not most-specific wins.
+        Order is therefore load-bearing, which is easy to prove by listing two conditions
+        that both match a plain <code>require()</code> and swapping them:
+      </p>
+
+      <CodeBlock language="text" title="Real output — same two conditions, order swapped, different file resolved">
+{`exports: { ".": { "default": "./a.cjs", "require": "./b.cjs" } }
+$ node -e "console.log(require('ord'))"
+default (listed FIRST) won
+
+exports: { ".": { "require": "./b.cjs", "default": "./a.cjs" } }
+$ node -e "console.log(require('ord'))"
+require (listed LATER) won`}
+      </CodeBlock>
+
+      <p>
+        Both orderings are valid JSON and neither warns. The only difference is which file
+        a consumer ends up running. This is the mechanism behind the rule in the box below,
+        and the reason <code>&quot;default&quot;</code> must always be listed{' '}
+        <strong>last</strong>: it matches everything, so anything after it is dead.
+      </p>
+
+      <InfoBox variant="danger" title="The annotated block below will NOT parse — strip the comments">
+        <p style={{ marginBottom: 0 }}>
+          <code>package.json</code> is strict JSON, and strict JSON has no comments. The
+          next block is annotated for reading only; paste it verbatim and every npm command
+          fails on the first line it reaches. Verified:{' '}
+          <code>
+            JSON.parse → Expected property name or &apos;&#125;&apos; in JSON at position 4
+          </code>
+          . If you want commentary that survives, put it in your README — or use a{' '}
+          <code>&quot;//&quot;</code> key, which is legal JSON and which npm ignores.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="json" title="The shape to actually ship — ANNOTATED, not copy-pasteable (see the warning above)">
+{`{
+  // Fallback for tooling that predates "exports". Node ignores it when
+  // "exports" is present, but older bundlers and tools still read it.
   "main": "./dist/index.cjs",
 
+  // Bundler-only hint for a tree-shakeable ESM build. Not a Node field.
   "module": "./dist/index.mjs",
 
+  // Fallback types for TypeScript's old "node" moduleResolution.
   "types": "./dist/index.d.ts",
 
   "exports": {
     ".": {
+      // "types" FIRST: see the ordering proof above. If a runtime
+      // condition matched first, TypeScript would resolve to the .js
+      // and your consumers would silently get 'any'.
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.mjs",   // reached by import / ESM
+      "require": "./dist/index.cjs"   // reached by require / CJS
+      // no "default" here: every real consumer is import or require,
+      // and omitting it means an unexpected condition fails loudly
+      // instead of being handed the wrong build.
     },
+
+    // Each extra subpath is opt-in. Consumers can import "pkg/utils"
+    // ONLY because this entry exists.
     "./utils": {
       "types": "./dist/utils.d.ts",
       "import": "./dist/utils.mjs",
       "require": "./dist/utils.cjs"
     },
+
+    // Re-exposed deliberately: "exports" would otherwise hide it from
+    // the many tools that read a dependency's package.json.
     "./package.json": "./package.json"
   },
 
+  // Only for consumers still on TypeScript's pre-"exports" resolution
+  // ("moduleResolution": "node"), which cannot see the map above. New
+  // projects on "bundler"/"node16"/"nodenext" do not need this.
   "typesVersions": {
     "*": {
       "utils": ["./dist/utils.d.ts"]
@@ -89,11 +240,6 @@ export default function PackageJson() {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="info" title="exports Order Matters">
-        Within each exports condition, put <code>types</code> FIRST. TypeScript resolution
-        reads conditions top-to-bottom and uses the first match. If <code>import</code>
-        comes before <code>types</code>, TypeScript may not find your declarations.
-      </InfoBox>
 
       <h3>CLI Executable Field</h3>
       <CodeBlock language="json" title="bin — making CLI tools">

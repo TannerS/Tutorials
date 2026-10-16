@@ -10,7 +10,7 @@ export default function Patterns() {
       sectionId="react18"
       lessonIndex={11}
       prev={{ path: '/react18/ssr-hydration', label: 'SSR & Hydration' }}
-      next={{ path: '/react18/typescript', label: 'React + TypeScript' }}
+      next={{ path: '/react18/error-boundaries', label: 'Error Boundaries' }}
     >
       <p>These patterns solve recurring composition and flexibility challenges. Knowing when to apply each pattern—and when simpler approaches suffice—distinguishes senior React developers.</p>
 

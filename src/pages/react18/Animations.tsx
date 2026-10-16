@@ -8,7 +8,7 @@ export default function Animations() {
       title="Animation Libraries (Framer Motion & Beyond)"
       sectionId="react18"
       lessonIndex={20}
-      prev={{ path: '/react18/error-boundaries', label: 'Error Boundaries' }}
+      prev={{ path: '/react18/bulletproof-react', label: 'Bulletproof React — A Concrete File Structure' }}
       next={{ path: '/react18/portals', label: 'Portals, In Depth' }}
     >
       <p>
