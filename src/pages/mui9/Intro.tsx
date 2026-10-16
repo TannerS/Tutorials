@@ -14,9 +14,12 @@ function Mui9Intro() {
     >
       <InfoBox variant="tip" title="✅ Version notice — this section is the current release">
         <p>
-          This section teaches <strong><code>@mui/material@9.4.0</code></strong>, which is the
-          current stable release. Every version number, API shape and CSS string on these pages was
-          read out of a real install of 9.4.0 rather than from documentation.
+          This section teaches <strong><code>@mui/material@9.4.0</code></strong>. Every version
+          number, API shape and CSS string on these pages was read out of a real install of 9.4.0
+          rather than from documentation, so 9.4.0 is quoted throughout as the provenance of those
+          readings. The <code>latest</code> tag has since moved to{' '}
+          <strong><code>9.5.0</code></strong> (published 2026-10-09) — a patch release on the same
+          v9 line, so everything here still applies.
         </p>
         <p style={{ marginTop: '0.5rem' }}>
           If you are working in the v4 codebase, that material lives in its own section:{' '}
@@ -39,16 +42,17 @@ function Mui9Intro() {
 
       <CodeBlock language="bash" title="Read from the npm registry, not from memory">
 {`$ npm view @mui/material dist-tags
-latest     = 9.4.0
+latest     = 9.5.0
 latest-v7  = 7.3.11
 latest-v6  = 6.5.0
 latest-v5  = 5.18.0
+next       = 10.0.0-alpha.0
 
 $ npm view @mui/material version
-9.4.0
+9.5.0
 
-# published majors:  5, 6, 7, 9
-# there is NO 8.x. The version list goes 7.3.11 -> 9.0.0-alpha.0`}
+# published stable majors:  5, 6, 7, 9   (v10 exists only as an alpha on \`next\`)
+# there is NO 8.x. The stable list goes 7.3.11 -> 9.0.0`}
       </CodeBlock>
 
       <InfoBox variant="note" title="The missing 8">

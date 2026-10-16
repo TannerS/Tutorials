@@ -44,7 +44,10 @@ a real, simplified, self-consistent implementation ..... FAKE — write it by ha
       <p>
         Everything in this lesson was compiled and run on <strong>JDK 26.0.1</strong> with{' '}
         <strong>Mockito 5.23.0</strong> and <strong>JUnit Jupiter 6.1.3</strong>, under Maven
-        3.9.16 and Surefire 3.5.6. Every console block below is pasted from those runs.
+        3.9.16 and Surefire 3.5.6. Every console block below is pasted from those runs, so
+        those are the versions quoted throughout rather than whatever is newest at the moment
+        you read this — Mockito has since released <strong>5.24.0</strong> on the same 5.x
+        line, and nothing in this lesson changes because of it.
       </p>
 
       <CodeBlock language="xml" title="pom.xml — pinned to what Maven Central serves today">

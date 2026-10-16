@@ -33,17 +33,17 @@ function MuiStyledV5() {
         assumes v5 is the finish line. It is not. Read straight off the npm registry:
       </p>
 
-      <CodeBlock language="bash" title="Verified against the registry, August 2026">
+      <CodeBlock language="bash" title="Verified against the registry, October 2026">
 {`$ npm view @mui/material version
-9.4.0
+9.5.0
 
 $ npm view @mui/material dist-tags
 {
-  latest:     '9.4.0',
+  latest:     '9.5.0',
   'latest-v7': '7.3.11',
   'latest-v6': '6.5.0',
   'latest-v5': '5.18.0',
-  next:       '9.0.0-beta.1'
+  next:       '10.0.0-alpha.0'
 }
 
 $ npm view @material-ui/core dist-tags
@@ -92,7 +92,7 @@ $ npm view @material-ui/core dist-tags
           <tr>
             <td style={td}><strong>v9</strong></td>
             <td style={td}><code>@mui/material</code></td>
-            <td style={td}><strong>9.4.0</strong></td>
+            <td style={td}><strong>9.5.0</strong></td>
             <td style={td}>emotion</td>
             <td style={td}>Current. Stable since 7 Apr 2026.</td>
           </tr>

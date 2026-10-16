@@ -118,7 +118,7 @@ module.exports = {
         <p>
           Most Jest+TypeScript guides reach for <code>ts-jest</code>. Today that will
           either fail outright or silently downgrade your compiler, because{' '}
-          <code>ts-jest@29.4.12</code> declares its TypeScript peer as{' '}
+          <code>ts-jest@29.4.15</code> declares its TypeScript peer as{' '}
           <code>&gt;=4.3 &lt;7</code>, and TypeScript is now <strong>7.0.2</strong>.
           Both outcomes were reproduced against the live registry:
         </p>
@@ -127,7 +127,7 @@ module.exports = {
           <code>npm install -D ts-jest</code> hard-fails with{' '}
           <code>npm error code ERESOLVE</code> —{' '}
           <em>&quot;Could not resolve dependency: peer typescript@&quot;&gt;=4.3 &lt;7&quot;
-          from ts-jest@29.4.12&quot;</em>. On a <strong>fresh</strong> project,{' '}
+          from ts-jest@29.4.15&quot;</em>. On a <strong>fresh</strong> project,{' '}
           <code>npm install -D ts-jest typescript</code> appears to succeed but quietly
           installs <code>typescript@6.0.3</code> — the newest version still under the
           ceiling — so you end up a major version behind without being told.

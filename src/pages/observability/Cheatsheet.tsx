@@ -1,5 +1,5 @@
 import GuideLayout from '../../components/GuideLayout';
-import GuidePanel, { GuideCode, GuideDefs, GuideRules, GuideTable } from '../../components/GuidePanel';
+import GuidePanel, { GuideCode, GuideDefs, GuideRules } from '../../components/GuidePanel';
 
 export default function ObservabilityCheatsheet() {
   return (

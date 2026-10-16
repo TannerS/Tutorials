@@ -52,7 +52,7 @@ ag-grid-react               36.2.0`}
         </CodeBlock>
         <p style={{ marginBottom: 0 }}>
           The transform is <code>babel-jest</code> rather than <code>ts-jest</code>, because{' '}
-          <code>ts-jest@29.4.12</code> still declares a peer ceiling of{' '}
+          <code>ts-jest@29.4.15</code> still declares a peer ceiling of{' '}
           <code>{'typescript ">=4.3 <7"'}</code> while TypeScript is now at 7.0.2 — the{' '}
           <a href="/react-testing/intro">RTL Fundamentals</a> setup lesson has the two
           failure shapes and what to do about them.

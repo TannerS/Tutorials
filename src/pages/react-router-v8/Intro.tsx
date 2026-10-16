@@ -15,8 +15,8 @@ export default function Intro() {
       <p>
         React Router v8 shipped on June 17, 2026 — the first release under the
         project&apos;s new Open Governance model, which commits to a yearly major
-        release cadence timed to Node&apos;s LTS schedule. The latest patch as of
-        this writing is 8.3.1. If you already know v7, the headline is reassuring:
+        release cadence timed to Node&apos;s LTS schedule. The latest release as of
+        this writing is 8.4.0. If you already know v7, the headline is reassuring:
         v8&apos;s stated design goal is to make major releases &ldquo;boring&rdquo;
         by shipping breaking changes ahead of time behind future flags, so upgrading
         is mostly a matter of deleting flags you had already turned on. Everything
@@ -32,7 +32,8 @@ export default function Intro() {
             v7 kept it around as a three-line re-export shim so v6 imports kept
             working. v8 deletes the package outright: there is no{' '}
             <code>react-router-dom@8</code> on npm at all — its <code>latest</code>{' '}
-            dist-tag is still <code>7.18.3</code>, frozen where v7 left it.
+            dist-tag still points at the v7 line (<code>7.18.4</code>), frozen
+            where v7 left it.
           </li>
           <li>
             <strong>Baseline floors were raised.</strong> v8 requires Node{' '}

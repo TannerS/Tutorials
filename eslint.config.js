@@ -6,7 +6,10 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'dist-pdf', 'node_modules']),
+  // `.audit-scratch` is gitignored throwaway code used to verify lesson claims
+  // against real toolchains; it is not part of the site and is not held to the
+  // site's lint rules.
+  globalIgnores(['dist', 'dist-pdf', 'node_modules', '.audit-scratch']),
 
   // Plain JS/JSX (currently just the build tooling under scripts/).
   {

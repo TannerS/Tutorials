@@ -305,7 +305,7 @@ ORDER BY rank DESC;
 
       <FlowChart
         title="One Query, Two GIN Indexes"
-        chart={"graph TD\n  D[\"documents\"] --> M[\"idx_documents_metadata (GIN)\\nWHERE metadata @> '{\\\"tags\\\": [\\\"postgres\\\"]}'\"]\n  D --> S[\"idx_documents_search (GIN)\\nWHERE search_vector @@ query\"]\n  M --> C{\"AND — rows matching\\nBOTH conditions\"}\n  S --> C\n  C --> R[\"ORDER BY ts_rank(...) DESC\"]\n  style D fill:#1a2744,stroke:#5b9cf6\n  style M fill:#2a1f44,stroke:#a78bfa\n  style S fill:#2a1f44,stroke:#a78bfa\n  style C fill:#3d2f14,stroke:#d97706\n  style R fill:#1a3329,stroke:#4ade80"}
+        chart={"graph TD\n  D[\"documents\"] --> M[\"idx_documents_metadata (GIN)\\nWHERE metadata @> '{&quot;tags&quot;: [&quot;postgres&quot;]}'\"]\n  D --> S[\"idx_documents_search (GIN)\\nWHERE search_vector @@ query\"]\n  M --> C{\"AND — rows matching\\nBOTH conditions\"}\n  S --> C\n  C --> R[\"ORDER BY ts_rank(...) DESC\"]\n  style D fill:#1a2744,stroke:#5b9cf6\n  style M fill:#2a1f44,stroke:#a78bfa\n  style S fill:#2a1f44,stroke:#a78bfa\n  style C fill:#3d2f14,stroke:#d97706\n  style R fill:#1a3329,stroke:#4ade80"}
       />
 
       <CodeBlock language="sql" title="Metadata filter + ranked full-text search together — verified output" showLineNumbers={true}>

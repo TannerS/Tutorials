@@ -352,7 +352,7 @@ output "web_instance_public_ip" {
         </p>
         <p>
           What it did change is the ecosystem. The community forked the last MPL-licensed code as{' '}
-          <strong>OpenTofu</strong>, now a Linux Foundation project, currently on the 1.12 line. It is
+          <strong>OpenTofu</strong>, now a Linux Foundation project, currently on the 1.13 line. It is
           a drop-in replacement — same HCL, same provider protocol, same registry providers, and{' '}
           <code>tofu</code> in place of <code>terraform</code> on the command line. It has since
           shipped features Terraform does not have, such as client-side state encryption.

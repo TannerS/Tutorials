@@ -437,7 +437,7 @@ done`}
 
       <FlowChart
         title="Same URL, two versions, two outcomes"
-        chart={"graph TD\nA[\"@GetMapping(\\\"/api/orders\\\")\"] --> B[\"Client requests GET /api/orders/ (trailing slash)\"]\nB --> C{\"Which Framework version?\"}\nC -->|\"5.3.x — Boot 2.7\"| D[\"Matches. 200 OK, same handler.\"]\nC -->|\"6.0.x+ — Boot 3/4\"| E[\"Does NOT match. 404.\"]\nstyle D fill:#1a3329,stroke:#4ade80\nstyle E fill:#3a1f1f,stroke:#f87171"}
+        chart={"graph TD\nA[\"@GetMapping(&quot;/api/orders&quot;)\"] --> B[\"Client requests GET /api/orders/ (trailing slash)\"]\nB --> C{\"Which Framework version?\"}\nC -->|\"5.3.x — Boot 2.7\"| D[\"Matches. 200 OK, same handler.\"]\nC -->|\"6.0.x+ — Boot 3/4\"| E[\"Does NOT match. 404.\"]\nstyle D fill:#1a3329,stroke:#4ade80\nstyle E fill:#3a1f1f,stroke:#f87171"}
       />
 
       <InfoBox variant="danger" title="Where this actually bites">

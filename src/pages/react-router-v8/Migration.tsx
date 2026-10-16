@@ -25,13 +25,13 @@ export default function Migration() {
       <InfoBox variant="note" title="Every Claim Here Is Sourced">
         This lesson is verified against the official{' '}
         <code>CHANGELOG.md</code> and the <em>Upgrading from v7</em> guide on{' '}
-        reactrouter.com, plus the live npm registry, as of the v8.3.1 release
-        (2026-08-28). Confirmed dist-tags: <code>react-router</code>{' '}
-        <code>latest</code> = <strong>8.3.1</strong>, <code>version-7</code> ={' '}
-        <strong>7.18.3</strong>. <code>react-router-dom</code>&apos;s{' '}
-        <code>latest</code> tag is frozen at <strong>7.18.3</strong> — no v8 build
-        was ever published for it, which is the whole story of that package's
-        removal below.
+        reactrouter.com, plus the live npm registry, as of the v8.4.0 release
+        (2026-09-15). Confirmed dist-tags: <code>react-router</code>{' '}
+        <code>latest</code> = <strong>8.4.0</strong>, <code>version-7</code> ={' '}
+        <strong>7.18.4</strong>. <code>react-router-dom</code>&apos;s{' '}
+        <code>latest</code> tag is frozen on the v7 line at{' '}
+        <strong>7.18.4</strong> — no 8.x was ever published for it at all, which
+        is the whole story of that package&apos;s removal below.
       </InfoBox>
 
       <FlowChart
@@ -208,8 +208,8 @@ import { RouterProvider } from 'react-router/dom';`}
         just a thin re-export of <code>react-router</code> in v7 — kept around purely
         so old v6 imports kept working — and v8 drops it outright. If it lingers in{' '}
         <code>package.json</code>, a transitive dependency or an old import you
-        missed will silently resolve to the last-ever version,{' '}
-        <strong>7.18.3</strong>, side by side with <code>react-router@8</code>. Two
+        missed will silently resolve to the last-ever v7 version,{' '}
+        <strong>7.18.4</strong>, side by side with <code>react-router@8</code>. Two
         copies of the router in one bundle is a strictly worse failure mode than a
         missing import, because it usually doesn't throw — it just produces
         inconsistent <code>context</code> depending on which copy a given component

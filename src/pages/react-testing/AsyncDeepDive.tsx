@@ -23,8 +23,11 @@ export default function AsyncDeepDive() {
       <p>
         Everything below was run against a real toolchain rather than recalled:{' '}
         <strong>Jest 30.5.2</strong>, <strong>jest-environment-jsdom 30.5.2</strong>,{' '}
-        <strong>@testing-library/react 16.3.3</strong> (which brings{' '}
-        <strong>@testing-library/dom 10.4.2</strong>),{' '}
+        <strong>@testing-library/react 16.3.3</strong> (whose{' '}
+        <code>@testing-library/dom</code> <em>peer</em> resolved to{' '}
+        <strong>10.4.2</strong> — RTL 16 declares it as a peer dependency rather than
+        bundling it, so npm 7+ installs it for you but pnpm, yarn and{' '}
+        <code>--legacy-peer-deps</code> will not),{' '}
         <strong>@testing-library/user-event 14.6.7</strong>,{' '}
         <strong>@testing-library/jest-dom 7.0.1</strong>,{' '}
         <strong>React 19.3.0</strong>, <strong>ts-jest 29.4.12</strong>, on Node 25.2.1. Two

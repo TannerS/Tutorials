@@ -1,5 +1,4 @@
 import LessonLayout from '../../components/LessonLayout';
-import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import FlowChart from '../../components/FlowChart';
 

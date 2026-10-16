@@ -16,11 +16,11 @@ export default function MuiCheatsheet() {
     >
       <GuidePanel n={1} title="Version Reality & the Migration Route" accent="blue" glyph="🧭" span={2}>
         <GuideCode>{`@material-ui/core   latest = 4.12.4        <- final v4; your codebase
-@mui/material       latest = 9.4.0         <- CURRENT (v9 stable)
+@mui/material       latest = 9.5.0         <- CURRENT (v9 stable)
                     latest-v7 = 7.3.11, latest-v6 = 6.5.0, latest-v5 = 5.18.0
 @mui/styles         6.5.0 highest stable   <- JSS bridge; ENDS HERE
 
-# There is no 8.x. The version list goes 7.3.11 -> 9.0.0-alpha.0.
+# There is no 8.x. The stable list goes 7.3.11 -> 9.0.0.
 # Migration route: v4 -> v5 (the real work) -> v6 -> v7 -> v9.
 # Do not attempt v4 -> v9 directly.`}</GuideCode>
         <GuideRules items={[
@@ -267,7 +267,7 @@ const Fancy = styled(Button, {
 
       <GuidePanel n={16} title="Going Past v5" accent="purple" glyph="🚀">
         <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--g-dim)' }}>
-          This sheet stops at v5 — the jump out of v4. The current release is 9.4.0, and things
+          This sheet stops at v5 — the jump out of v4. The current release is 9.5.0, and things
           keep moving: Grid grew a <code>size</code> prop, <code>breakpoints.down()</code> changed
           meaning, <code>spacing()</code> returns a string, not a number. Covered, verified against
           a real <code>@mui/material@9.4.0</code> install, in{' '}

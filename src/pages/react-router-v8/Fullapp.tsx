@@ -491,8 +491,8 @@ createRoot(document.getElementById('root')).render(
         <code>createContext</code> — comes from the bare <code>react-router</code>{' '}
         package. If you still have a <code>react-router-dom</code> import anywhere,
         it will fail to resolve on v8: that package&apos;s <code>latest</code>{' '}
-        dist-tag is frozen at <code>7.18.3</code> and no v8 release was ever
-        published for it. Full details in the next lesson.
+        dist-tag is frozen on the v7 line (<code>7.18.4</code>) and no v8 release
+        was ever published for it. Full details in the next lesson.
       </InfoBox>
 
       <CodeBlock language="jsx" title="router.jsx — HydrateFallback (unchanged from v7)">

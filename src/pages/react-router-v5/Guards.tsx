@@ -392,7 +392,7 @@ export default function App() {
 
       <FlowChart
         title="Complete Auth Flow with Redirect-Back"
-        chart={"graph TD\nA[User visits /dashboard, not logged in] --> B[PrivateRoute renders Redirect]\nB --> C[/login, state.from = /dashboard]\nC --> D[Login page renders, reads location.state.from]\nD --> E[User submits credentials]\nE --> F{login succeeds?}\nF -->|No| G[Show error, stay on /login]\nF -->|Yes| H[AuthProvider sets user]\nH --> I[history.replace(from)]\nI --> J[PrivateRoute re-evaluates - user now set]\nJ --> K[Dashboard renders]\nstyle B fill:#3b1a1a\nstyle G fill:#3d2f14\nstyle K fill:#1a3329"}
+        chart={"graph TD\nA[\"User visits /dashboard, not logged in\"] --> B[PrivateRoute renders Redirect]\nB --> C[\"/login, state.from = /dashboard\"]\nC --> D[Login page renders, reads location.state.from]\nD --> E[User submits credentials]\nE --> F{login succeeds?}\nF -->|No| G[\"Show error, stay on /login\"]\nF -->|Yes| H[AuthProvider sets user]\nH --> I[\"history.replace(from)\"]\nI --> J[PrivateRoute re-evaluates - user now set]\nJ --> K[Dashboard renders]\nstyle B fill:#3b1a1a\nstyle G fill:#3d2f14\nstyle K fill:#1a3329"}
       />
     </LessonLayout>
   );

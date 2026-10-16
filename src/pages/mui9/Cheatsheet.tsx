@@ -15,12 +15,13 @@ function Mui9Cheatsheet() {
       next={null}
     >
       <GuidePanel n={1} title="Where the Library Actually Is" accent="blue" glyph="📦" span={2}>
-        <GuideCode>{`latest     = 9.4.0        <- current
+        <GuideCode>{`latest     = 9.5.0        <- current (this guide was read off 9.4.0)
 latest-v7  = 7.3.11
 latest-v6  = 6.5.0
 latest-v5  = 5.18.0
+next       = 10.0.0-alpha.0
 
-published majors: 5, 6, 7, 9     THERE IS NO 8.x
+published stable majors: 5, 6, 7, 9     THERE IS NO 8.x
 peer react:        ^17 || ^18 || ^19`}</GuideCode>
         <GuideDefs
           items={[
