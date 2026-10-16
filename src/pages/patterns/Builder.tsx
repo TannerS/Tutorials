@@ -18,6 +18,24 @@ export default function Builder() {
         the same construction process to create different representations. Ideal when an object
         has many optional parameters or requires step-by-step construction.
       </p>
+      <p>
+        The reason it exists at all is a Java limitation: there are{' '}
+        <strong>no named arguments and no default parameter values</strong>. An object with
+        eight mostly-optional fields therefore has no good constructor. Your options are a{' '}
+        <em>telescoping</em> chain — <code>Pizza(int size)</code> calling{' '}
+        <code>Pizza(int, boolean)</code> calling <code>Pizza(int, boolean, boolean)</code> —
+        which grows combinatorially and leaves call sites like{' '}
+        <code>new Pizza(12, true, false, true)</code> that nobody can review without opening
+        the constructor; or setters, which cost you immutability and any guarantee the object
+        was finished before someone used it.
+      </p>
+      <p>
+        Builder escapes both: optional fields become named methods, so the call site
+        documents itself, and validation happens once in <code>build()</code>, so a
+        half-configured object never escapes and the result can be <code>final</code>. The
+        cost is a second class to keep in sync with the first — which is why it earns its
+        place at roughly four-or-more fields, and is overkill below that.
+      </p>
 
       <FlowChart
         title="Builder Pattern Structure"
@@ -167,6 +185,38 @@ UserDto deactivated = admin.toBuilder()
         Creates new objects by cloning an existing instance (prototype) rather than
         constructing from scratch. Useful when object creation is expensive or when you
         need copies with slight variations.
+      </p>
+      <p>
+        In Java this pattern comes with a trap, because the language&apos;s built-in support
+        for it is actively bad. <code>Cloneable</code> looks like the interface you
+        implement, but it declares <strong>no methods at all</strong> — it is a marker that
+        merely stops <code>Object.clone()</code> from throwing. And{' '}
+        <code>Object.clone()</code> is <code>protected native</code>, so you cannot call it
+        on someone else&apos;s object, and you must write a public override to expose it:
+      </p>
+      <CodeBlock language="text" title="Real output — JDK 26.0.1, reflecting on what Cloneable actually gives you">
+{`Cloneable declares methods: []
+Object.clone() modifiers:   protected native`}
+      </CodeBlock>
+      <p>
+        Worse, the inherited behaviour is a <strong>shallow</strong> copy: reference fields
+        are copied as references, so the clone and the original share them. The same run,
+        cloning a document whose <code>tags</code> is an <code>ArrayList</code>, then adding
+        a tag to the <em>copy</em>:
+      </p>
+      <CodeBlock language="text" title="Real output — the copy and the original share one list">
+{`orig.title = original
+copy.title = copy
+orig.tags  = [shared, added-to-copy-only?]   <-- mutated via the COPY
+same list object? true`}
+      </CodeBlock>
+      <p>
+        Only <code>title</code>, a <code>String</code> field assigned directly, behaved
+        independently. The list did not: one mutation through the clone silently corrupted
+        the prototype every later copy is made from. That is the bug this pattern is
+        remembered for, and it is why the implementation below copies its mutable fields
+        explicitly instead of trusting <code>super.clone()</code> — and why a copy
+        constructor or a static factory is usually the better answer in modern Java.
       </p>
 
       <FlowChart
