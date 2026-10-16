@@ -1,477 +1,478 @@
 import { Routes, Route, Link } from 'react-router'
+import { lazy } from 'react'
 import Layout from './components/Layout'
 
 // Java
-import JavaIntro from './pages/java/Intro'
-import JavaSyntax from './pages/java/Syntax'
-import JavaOop from './pages/java/Oop'
-import JavaCollections from './pages/java/Collections'
-import JavaGenerics from './pages/java/Generics'
-import JavaExceptions from './pages/java/Exceptions'
-import JavaStreams from './pages/java/Streams'
-import JavaConcurrency from './pages/java/Concurrency'
-import JavaIo from './pages/java/Io'
-import JavaAdvanced from './pages/java/Advanced'
-import JavaOptional from './pages/java/Optional'
-import JavaJvmInternals from './pages/java/JvmInternals'
-import JavaReflection from './pages/java/Reflection'
-import JavaBuildTools from './pages/java/BuildTools'
-import JavaTestingBasics from './pages/java/TestingBasics'
-import JavaMockito from './pages/java/Mockito'
-import JavaCheatsheet from './pages/java/Cheatsheet'
+const JavaIntro = lazy(() => import('./pages/java/Intro'))
+const JavaSyntax = lazy(() => import('./pages/java/Syntax'))
+const JavaOop = lazy(() => import('./pages/java/Oop'))
+const JavaCollections = lazy(() => import('./pages/java/Collections'))
+const JavaGenerics = lazy(() => import('./pages/java/Generics'))
+const JavaExceptions = lazy(() => import('./pages/java/Exceptions'))
+const JavaStreams = lazy(() => import('./pages/java/Streams'))
+const JavaConcurrency = lazy(() => import('./pages/java/Concurrency'))
+const JavaIo = lazy(() => import('./pages/java/Io'))
+const JavaAdvanced = lazy(() => import('./pages/java/Advanced'))
+const JavaOptional = lazy(() => import('./pages/java/Optional'))
+const JavaJvmInternals = lazy(() => import('./pages/java/JvmInternals'))
+const JavaReflection = lazy(() => import('./pages/java/Reflection'))
+const JavaBuildTools = lazy(() => import('./pages/java/BuildTools'))
+const JavaTestingBasics = lazy(() => import('./pages/java/TestingBasics'))
+const JavaMockito = lazy(() => import('./pages/java/Mockito'))
+const JavaCheatsheet = lazy(() => import('./pages/java/Cheatsheet'))
 
 // Spring Boot
-import SpringIntro from './pages/springboot/Intro'
-import SpringSetup from './pages/springboot/Setup'
-import SpringDi from './pages/springboot/Di'
-import SpringRest from './pages/springboot/Rest'
-import SpringData from './pages/springboot/Data'
-import SpringSecurity from './pages/springboot/Security'
-import SpringSecurityMigration from './pages/springboot/SecurityMigration'
-import SpringTesting from './pages/springboot/Testing'
-import SpringConfig from './pages/springboot/Config'
-import SpringError from './pages/springboot/Error'
-import SpringAdvanced from './pages/springboot/Advanced'
-import SpringTransactions from './pages/springboot/Transactions'
-import SpringKafka from './pages/springboot/Kafka'
-import SpringAop from './pages/springboot/Aop'
-import SpringBoot4 from './pages/springboot/Boot4'
-import SpringObservability from './pages/springboot/Observability'
-import SpringWebflux from './pages/springboot/Webflux'
-import SpringResilience from './pages/springboot/Resilience'
-import SpringCheatsheet from './pages/springboot/Cheatsheet'
-import SB2Intro from './pages/springboot2/Intro'
-import SB2Javax from './pages/springboot2/Javax'
-import SB2Di from './pages/springboot2/Di'
-import SB2Rest from './pages/springboot2/Rest'
-import SB2Security from './pages/springboot2/Security'
-import SB2Data from './pages/springboot2/Data'
-import SB2Config from './pages/springboot2/Config'
-import SB2Error from './pages/springboot2/Error'
-import SB2Testing from './pages/springboot2/Testing'
-import SB2Transactions from './pages/springboot2/Transactions'
-import SB2Kafka from './pages/springboot2/Kafka'
-import SB2Aop from './pages/springboot2/Aop'
-import SB2Webflux from './pages/springboot2/Webflux'
-import SB2Resilience from './pages/springboot2/Resilience'
-import SB2Observability from './pages/springboot2/Observability'
-import SB2Actuator from './pages/springboot2/Actuator'
-import SB2Migration from './pages/springboot2/Migration'
-import SB2Cheatsheet from './pages/springboot2/Cheatsheet'
+const SpringIntro = lazy(() => import('./pages/springboot/Intro'))
+const SpringSetup = lazy(() => import('./pages/springboot/Setup'))
+const SpringDi = lazy(() => import('./pages/springboot/Di'))
+const SpringRest = lazy(() => import('./pages/springboot/Rest'))
+const SpringData = lazy(() => import('./pages/springboot/Data'))
+const SpringSecurity = lazy(() => import('./pages/springboot/Security'))
+const SpringSecurityMigration = lazy(() => import('./pages/springboot/SecurityMigration'))
+const SpringTesting = lazy(() => import('./pages/springboot/Testing'))
+const SpringConfig = lazy(() => import('./pages/springboot/Config'))
+const SpringError = lazy(() => import('./pages/springboot/Error'))
+const SpringAdvanced = lazy(() => import('./pages/springboot/Advanced'))
+const SpringTransactions = lazy(() => import('./pages/springboot/Transactions'))
+const SpringKafka = lazy(() => import('./pages/springboot/Kafka'))
+const SpringAop = lazy(() => import('./pages/springboot/Aop'))
+const SpringBoot4 = lazy(() => import('./pages/springboot/Boot4'))
+const SpringObservability = lazy(() => import('./pages/springboot/Observability'))
+const SpringWebflux = lazy(() => import('./pages/springboot/Webflux'))
+const SpringResilience = lazy(() => import('./pages/springboot/Resilience'))
+const SpringCheatsheet = lazy(() => import('./pages/springboot/Cheatsheet'))
+const SB2Intro = lazy(() => import('./pages/springboot2/Intro'))
+const SB2Javax = lazy(() => import('./pages/springboot2/Javax'))
+const SB2Di = lazy(() => import('./pages/springboot2/Di'))
+const SB2Rest = lazy(() => import('./pages/springboot2/Rest'))
+const SB2Security = lazy(() => import('./pages/springboot2/Security'))
+const SB2Data = lazy(() => import('./pages/springboot2/Data'))
+const SB2Config = lazy(() => import('./pages/springboot2/Config'))
+const SB2Error = lazy(() => import('./pages/springboot2/Error'))
+const SB2Testing = lazy(() => import('./pages/springboot2/Testing'))
+const SB2Transactions = lazy(() => import('./pages/springboot2/Transactions'))
+const SB2Kafka = lazy(() => import('./pages/springboot2/Kafka'))
+const SB2Aop = lazy(() => import('./pages/springboot2/Aop'))
+const SB2Webflux = lazy(() => import('./pages/springboot2/Webflux'))
+const SB2Resilience = lazy(() => import('./pages/springboot2/Resilience'))
+const SB2Observability = lazy(() => import('./pages/springboot2/Observability'))
+const SB2Actuator = lazy(() => import('./pages/springboot2/Actuator'))
+const SB2Migration = lazy(() => import('./pages/springboot2/Migration'))
+const SB2Cheatsheet = lazy(() => import('./pages/springboot2/Cheatsheet'))
 // Go
-import GoIntro from './pages/go/Intro'
-import GoSetup from './pages/go/Setup'
-import GoSyntax from './pages/go/Syntax'
-import GoStructs from './pages/go/Structs'
-import GoInterfaces from './pages/go/Interfaces'
-import GoErrors from './pages/go/Errors'
-import GoSlices from './pages/go/Slices'
-import GoPointers from './pages/go/Pointers'
-import GoGoroutines from './pages/go/Goroutines'
-import GoChannels from './pages/go/Channels'
-import GoSync from './pages/go/Sync'
-import GoContext from './pages/go/Context'
-import GoConcurrencyPatterns from './pages/go/ConcurrencyPatterns'
-import GoGenerics from './pages/go/Generics'
-import GoTesting from './pages/go/Testing'
-import GoHttp from './pages/go/Http'
-import GoDatabase from './pages/go/Database'
-import GoDeploy from './pages/go/Deploy'
-import GoCheatsheet from './pages/go/Cheatsheet'
+const GoIntro = lazy(() => import('./pages/go/Intro'))
+const GoSetup = lazy(() => import('./pages/go/Setup'))
+const GoSyntax = lazy(() => import('./pages/go/Syntax'))
+const GoStructs = lazy(() => import('./pages/go/Structs'))
+const GoInterfaces = lazy(() => import('./pages/go/Interfaces'))
+const GoErrors = lazy(() => import('./pages/go/Errors'))
+const GoSlices = lazy(() => import('./pages/go/Slices'))
+const GoPointers = lazy(() => import('./pages/go/Pointers'))
+const GoGoroutines = lazy(() => import('./pages/go/Goroutines'))
+const GoChannels = lazy(() => import('./pages/go/Channels'))
+const GoSync = lazy(() => import('./pages/go/Sync'))
+const GoContext = lazy(() => import('./pages/go/Context'))
+const GoConcurrencyPatterns = lazy(() => import('./pages/go/ConcurrencyPatterns'))
+const GoGenerics = lazy(() => import('./pages/go/Generics'))
+const GoTesting = lazy(() => import('./pages/go/Testing'))
+const GoHttp = lazy(() => import('./pages/go/Http'))
+const GoDatabase = lazy(() => import('./pages/go/Database'))
+const GoDeploy = lazy(() => import('./pages/go/Deploy'))
+const GoCheatsheet = lazy(() => import('./pages/go/Cheatsheet'))
 
 // C++
-import CppIntro from './pages/cpp/Intro'
-import CppCompiling from './pages/cpp/Compiling'
-import CppTypes from './pages/cpp/Types'
-import CppFunctions from './pages/cpp/Functions'
-import CppReferences from './pages/cpp/References'
-import CppMemoryModel from './pages/cpp/MemoryModel'
-import CppRaii from './pages/cpp/Raii'
-import CppSmartPointers from './pages/cpp/SmartPointers'
-import CppMoveSemantics from './pages/cpp/MoveSemantics'
-import CppMemoryBugs from './pages/cpp/MemoryBugs'
-import CppClasses from './pages/cpp/Classes'
-import CppInheritance from './pages/cpp/Inheritance'
-import CppTemplates from './pages/cpp/Templates'
-import CppConcepts from './pages/cpp/Concepts'
-import CppContainers from './pages/cpp/Containers'
-import CppAlgorithms from './pages/cpp/Algorithms'
-import CppErrors from './pages/cpp/Errors'
-import CppConcurrency from './pages/cpp/Concurrency'
-import CppPerformance from './pages/cpp/Performance'
-import CppTooling from './pages/cpp/Tooling'
-import CppCheatsheet from './pages/cpp/Cheatsheet'
+const CppIntro = lazy(() => import('./pages/cpp/Intro'))
+const CppCompiling = lazy(() => import('./pages/cpp/Compiling'))
+const CppTypes = lazy(() => import('./pages/cpp/Types'))
+const CppFunctions = lazy(() => import('./pages/cpp/Functions'))
+const CppReferences = lazy(() => import('./pages/cpp/References'))
+const CppMemoryModel = lazy(() => import('./pages/cpp/MemoryModel'))
+const CppRaii = lazy(() => import('./pages/cpp/Raii'))
+const CppSmartPointers = lazy(() => import('./pages/cpp/SmartPointers'))
+const CppMoveSemantics = lazy(() => import('./pages/cpp/MoveSemantics'))
+const CppMemoryBugs = lazy(() => import('./pages/cpp/MemoryBugs'))
+const CppClasses = lazy(() => import('./pages/cpp/Classes'))
+const CppInheritance = lazy(() => import('./pages/cpp/Inheritance'))
+const CppTemplates = lazy(() => import('./pages/cpp/Templates'))
+const CppConcepts = lazy(() => import('./pages/cpp/Concepts'))
+const CppContainers = lazy(() => import('./pages/cpp/Containers'))
+const CppAlgorithms = lazy(() => import('./pages/cpp/Algorithms'))
+const CppErrors = lazy(() => import('./pages/cpp/Errors'))
+const CppConcurrency = lazy(() => import('./pages/cpp/Concurrency'))
+const CppPerformance = lazy(() => import('./pages/cpp/Performance'))
+const CppTooling = lazy(() => import('./pages/cpp/Tooling'))
+const CppCheatsheet = lazy(() => import('./pages/cpp/Cheatsheet'))
 
-import FSIntro from './pages/from-scratch/Intro'
-import FSScheduler from './pages/from-scratch/Scheduler'
-import FSStorage from './pages/from-scratch/Storage'
-import FSHttpServer from './pages/from-scratch/HttpServer'
-import FSConsensus from './pages/from-scratch/Consensus'
+const FSIntro = lazy(() => import('./pages/from-scratch/Intro'))
+const FSScheduler = lazy(() => import('./pages/from-scratch/Scheduler'))
+const FSStorage = lazy(() => import('./pages/from-scratch/Storage'))
+const FSHttpServer = lazy(() => import('./pages/from-scratch/HttpServer'))
+const FSConsensus = lazy(() => import('./pages/from-scratch/Consensus'))
 
 // React 19
-import ReactLifecycle from './pages/react18/Lifecycle'
-import ReactLifecycleSim from './pages/react18/LifecycleSim'
-import ReactHooks from './pages/react18/Hooks'
-import ReactRefs from './pages/react18/Refs'
-import ReactState from './pages/react18/State'
-import ReactEffects from './pages/react18/Effects'
-import ReactContext from './pages/react18/Context'
-import ReactPerformance from './pages/react18/Performance'
-import ReactProfiling from './pages/react18/Profiling'
-import ReactNew from './pages/react19-whats-new/React19'
-import ReactServer from './pages/react18/Server'
-import ReactSsrHydration from './pages/react18/SsrHydration'
-import ReactPatterns from './pages/react18/Patterns'
-import ReactTypescript from './pages/react18/Typescript'
-import ReactBuildToolchain from './pages/react18/BuildToolchain'
-import ReactCheatSheet from './pages/react18/CheatSheet'
-import ReactAdapters from './pages/react18/Adapters'
-import ReactImperativeBridge from './pages/react18/ImperativeBridge'
-import ReactModuleFederation from './pages/react18/ModuleFederation'
-import ReactFeatureFolder from './pages/react18/FeatureFolder'
-import ReactBulletproofReact from './pages/react18/BulletproofReact'
-import ReactErrorBoundaries from './pages/react18/ErrorBoundaries'
-import ReactAnimations from './pages/react18/Animations'
-import ReactPortals from './pages/react18/Portals'
+const ReactLifecycle = lazy(() => import('./pages/react18/Lifecycle'))
+const ReactLifecycleSim = lazy(() => import('./pages/react18/LifecycleSim'))
+const ReactHooks = lazy(() => import('./pages/react18/Hooks'))
+const ReactRefs = lazy(() => import('./pages/react18/Refs'))
+const ReactState = lazy(() => import('./pages/react18/State'))
+const ReactEffects = lazy(() => import('./pages/react18/Effects'))
+const ReactContext = lazy(() => import('./pages/react18/Context'))
+const ReactPerformance = lazy(() => import('./pages/react18/Performance'))
+const ReactProfiling = lazy(() => import('./pages/react18/Profiling'))
+const ReactNew = lazy(() => import('./pages/react19-whats-new/React19'))
+const ReactServer = lazy(() => import('./pages/react18/Server'))
+const ReactSsrHydration = lazy(() => import('./pages/react18/SsrHydration'))
+const ReactPatterns = lazy(() => import('./pages/react18/Patterns'))
+const ReactTypescript = lazy(() => import('./pages/react18/Typescript'))
+const ReactBuildToolchain = lazy(() => import('./pages/react18/BuildToolchain'))
+const ReactCheatSheet = lazy(() => import('./pages/react18/CheatSheet'))
+const ReactAdapters = lazy(() => import('./pages/react18/Adapters'))
+const ReactImperativeBridge = lazy(() => import('./pages/react18/ImperativeBridge'))
+const ReactModuleFederation = lazy(() => import('./pages/react18/ModuleFederation'))
+const ReactFeatureFolder = lazy(() => import('./pages/react18/FeatureFolder'))
+const ReactBulletproofReact = lazy(() => import('./pages/react18/BulletproofReact'))
+const ReactErrorBoundaries = lazy(() => import('./pages/react18/ErrorBoundaries'))
+const ReactAnimations = lazy(() => import('./pages/react18/Animations'))
+const ReactPortals = lazy(() => import('./pages/react18/Portals'))
 
 // AG Grid
-import AgGrid from './pages/ag-grid/AgGrid'
+const AgGrid = lazy(() => import('./pages/ag-grid/AgGrid'))
 
 // SQL Fundamentals
-import SqlQuickstart from './pages/sql-fundamentals/Quickstart'
-import SqlJoins from './pages/sql-fundamentals/Joins'
-import SqlAggregation from './pages/sql-fundamentals/Aggregation'
+const SqlQuickstart = lazy(() => import('./pages/sql-fundamentals/Quickstart'))
+const SqlJoins = lazy(() => import('./pages/sql-fundamentals/Joins'))
+const SqlAggregation = lazy(() => import('./pages/sql-fundamentals/Aggregation'))
 
 // SQL Design Patterns
-import SqlDesign from './pages/sql-design-patterns/Design'
-import SqlIndexing from './pages/sql-design-patterns/Indexing'
-import SqlSchemaPatterns from './pages/sql-design-patterns/SchemaPatterns'
-import SqlMultiTenancy from './pages/sql-design-patterns/MultiTenancy'
-import SqlJson from './pages/sql-design-patterns/Json'
-import SqlViews from './pages/sql-design-patterns/Views'
+const SqlDesign = lazy(() => import('./pages/sql-design-patterns/Design'))
+const SqlIndexing = lazy(() => import('./pages/sql-design-patterns/Indexing'))
+const SqlSchemaPatterns = lazy(() => import('./pages/sql-design-patterns/SchemaPatterns'))
+const SqlMultiTenancy = lazy(() => import('./pages/sql-design-patterns/MultiTenancy'))
+const SqlJson = lazy(() => import('./pages/sql-design-patterns/Json'))
+const SqlViews = lazy(() => import('./pages/sql-design-patterns/Views'))
 
 // SQL Advanced
-import SqlTransactions from './pages/sql-advanced/Transactions'
-import SqlCte from './pages/sql-advanced/Cte'
-import SqlStoredProcedures from './pages/sql-advanced/StoredProcedures'
-import SqlAdvanced from './pages/sql-advanced/Advanced'
-import SqlAdvancedFieldGuide from './pages/sql-advanced/FieldGuide'
+const SqlTransactions = lazy(() => import('./pages/sql-advanced/Transactions'))
+const SqlCte = lazy(() => import('./pages/sql-advanced/Cte'))
+const SqlStoredProcedures = lazy(() => import('./pages/sql-advanced/StoredProcedures'))
+const SqlAdvanced = lazy(() => import('./pages/sql-advanced/Advanced'))
+const SqlAdvancedFieldGuide = lazy(() => import('./pages/sql-advanced/FieldGuide'))
 
 // SOLID
-import SolidIntro from './pages/solid/Intro'
-import SolidSrp from './pages/solid/Srp'
-import SolidOcp from './pages/solid/Ocp'
-import SolidLsp from './pages/solid/Lsp'
-import SolidIsp from './pages/solid/Isp'
-import SolidDip from './pages/solid/Dip'
+const SolidIntro = lazy(() => import('./pages/solid/Intro'))
+const SolidSrp = lazy(() => import('./pages/solid/Srp'))
+const SolidOcp = lazy(() => import('./pages/solid/Ocp'))
+const SolidLsp = lazy(() => import('./pages/solid/Lsp'))
+const SolidIsp = lazy(() => import('./pages/solid/Isp'))
+const SolidDip = lazy(() => import('./pages/solid/Dip'))
 
 // Design Patterns
-import PatternsIntro from './pages/patterns/Intro'
-import PatternsSingleton from './pages/patterns/Singleton'
-import PatternsAbstractFactory from './pages/patterns/AbstractFactory'
-import PatternsStrategy from './pages/patterns/Strategy'
-import PatternsDecorator from './pages/patterns/Decorator'
-import PatternsBuilder from './pages/patterns/Builder'
-import PatternsComposite from './pages/patterns/Composite'
-import PatternsProxy from './pages/patterns/Proxy'
-import PatternsCommand from './pages/patterns/Command'
-import PatternsState from './pages/patterns/State'
-import PatternsBridge from './pages/patterns/Bridge'
-import PatternsMemento from './pages/patterns/Memento'
-import PatternsFlyweight from './pages/patterns/Flyweight'
-import PatternsRealworld from './pages/patterns/Realworld'
+const PatternsIntro = lazy(() => import('./pages/patterns/Intro'))
+const PatternsSingleton = lazy(() => import('./pages/patterns/Singleton'))
+const PatternsAbstractFactory = lazy(() => import('./pages/patterns/AbstractFactory'))
+const PatternsStrategy = lazy(() => import('./pages/patterns/Strategy'))
+const PatternsDecorator = lazy(() => import('./pages/patterns/Decorator'))
+const PatternsBuilder = lazy(() => import('./pages/patterns/Builder'))
+const PatternsComposite = lazy(() => import('./pages/patterns/Composite'))
+const PatternsProxy = lazy(() => import('./pages/patterns/Proxy'))
+const PatternsCommand = lazy(() => import('./pages/patterns/Command'))
+const PatternsState = lazy(() => import('./pages/patterns/State'))
+const PatternsBridge = lazy(() => import('./pages/patterns/Bridge'))
+const PatternsMemento = lazy(() => import('./pages/patterns/Memento'))
+const PatternsFlyweight = lazy(() => import('./pages/patterns/Flyweight'))
+const PatternsRealworld = lazy(() => import('./pages/patterns/Realworld'))
 
 // React Anti-Patterns
-import AntiIntro from './pages/react-antipatterns/Intro'
-import AntiState from './pages/react-antipatterns/State'
-import AntiEffects from './pages/react-antipatterns/Effects'
-import AntiPerformance from './pages/react-antipatterns/Performance'
-import AntiComponents from './pages/react-antipatterns/Components'
-import AntiExtractComponents from './pages/react-antipatterns/ExtractComponents'
-import AntiBestPractices from './pages/react-antipatterns/BestPractices'
+const AntiIntro = lazy(() => import('./pages/react-antipatterns/Intro'))
+const AntiState = lazy(() => import('./pages/react-antipatterns/State'))
+const AntiEffects = lazy(() => import('./pages/react-antipatterns/Effects'))
+const AntiPerformance = lazy(() => import('./pages/react-antipatterns/Performance'))
+const AntiComponents = lazy(() => import('./pages/react-antipatterns/Components'))
+const AntiExtractComponents = lazy(() => import('./pages/react-antipatterns/ExtractComponents'))
+const AntiBestPractices = lazy(() => import('./pages/react-antipatterns/BestPractices'))
 
 // Microservices
-import MicroIntro from './pages/microservices/Intro'
-import MicroPatterns from './pages/microservices/Patterns'
-import MicroCommunication from './pages/microservices/Communication'
-import MicroData from './pages/microservices/Data'
-import MicroScaling from './pages/microservices/Scaling'
-import MicroEvents from './pages/microservices/Events'
-import MicroContainers from './pages/microservices/Containers'
-import MicroOpenshift from './pages/microservices/Openshift'
-import MicroMigration from './pages/microservices/Migration'
+const MicroIntro = lazy(() => import('./pages/microservices/Intro'))
+const MicroPatterns = lazy(() => import('./pages/microservices/Patterns'))
+const MicroCommunication = lazy(() => import('./pages/microservices/Communication'))
+const MicroData = lazy(() => import('./pages/microservices/Data'))
+const MicroScaling = lazy(() => import('./pages/microservices/Scaling'))
+const MicroEvents = lazy(() => import('./pages/microservices/Events'))
+const MicroContainers = lazy(() => import('./pages/microservices/Containers'))
+const MicroOpenshift = lazy(() => import('./pages/microservices/Openshift'))
+const MicroMigration = lazy(() => import('./pages/microservices/Migration'))
 
 // Domain-Driven Design
-import DddIntro from './pages/ddd/Intro'
-import DddStrategic from './pages/ddd/Strategic'
-import DddTactical from './pages/ddd/Tactical'
-import DddDomainEvents from './pages/ddd/DomainEvents'
-import DddEventStorming from './pages/ddd/EventStorming'
-import DddSpringBoot from './pages/ddd/SpringBoot'
-import DddCheatsheet from './pages/ddd/Cheatsheet'
+const DddIntro = lazy(() => import('./pages/ddd/Intro'))
+const DddStrategic = lazy(() => import('./pages/ddd/Strategic'))
+const DddTactical = lazy(() => import('./pages/ddd/Tactical'))
+const DddDomainEvents = lazy(() => import('./pages/ddd/DomainEvents'))
+const DddEventStorming = lazy(() => import('./pages/ddd/EventStorming'))
+const DddSpringBoot = lazy(() => import('./pages/ddd/SpringBoot'))
+const DddCheatsheet = lazy(() => import('./pages/ddd/Cheatsheet'))
 
 // Cloud & Infrastructure
-import CloudWellArchitected from './pages/cloud-architecture/WellArchitected'
-import CloudIac from './pages/cloud-architecture/Iac'
-import CloudMultiRegion from './pages/cloud-architecture/MultiRegion'
-import CloudCapacityPlanning from './pages/cloud-architecture/CapacityPlanning'
-import CloudCicd from './pages/cloud-architecture/Cicd'
-import CloudCheatsheet from './pages/cloud-architecture/Cheatsheet'
+const CloudWellArchitected = lazy(() => import('./pages/cloud-architecture/WellArchitected'))
+const CloudIac = lazy(() => import('./pages/cloud-architecture/Iac'))
+const CloudMultiRegion = lazy(() => import('./pages/cloud-architecture/MultiRegion'))
+const CloudCapacityPlanning = lazy(() => import('./pages/cloud-architecture/CapacityPlanning'))
+const CloudCicd = lazy(() => import('./pages/cloud-architecture/Cicd'))
+const CloudCheatsheet = lazy(() => import('./pages/cloud-architecture/Cheatsheet'))
 
 // Observability & SRE
-import ObsThreePillars from './pages/observability/ThreePillars'
-import ObsSlos from './pages/observability/Slos'
-import ObsTracing from './pages/observability/Tracing'
-import ObsIncidents from './pages/observability/Incidents'
-import ObsCheatsheet from './pages/observability/Cheatsheet'
+const ObsThreePillars = lazy(() => import('./pages/observability/ThreePillars'))
+const ObsSlos = lazy(() => import('./pages/observability/Slos'))
+const ObsTracing = lazy(() => import('./pages/observability/Tracing'))
+const ObsIncidents = lazy(() => import('./pages/observability/Incidents'))
+const ObsCheatsheet = lazy(() => import('./pages/observability/Cheatsheet'))
 
 // Data Structures & Algorithms
-import DsaComplexity from './pages/dsa/Complexity'
-import DsaArraysSorting from './pages/dsa/ArraysSorting'
-import DsaLinkedLists from './pages/dsa/LinkedLists'
-import DsaStacksQueues from './pages/dsa/StacksQueues'
-import DsaRecursion from './pages/dsa/Recursion'
-import DsaTrees from './pages/dsa/Trees'
-import DsaHeaps from './pages/dsa/Heaps'
-import DsaTries from './pages/dsa/Tries'
-import DsaGraphs from './pages/dsa/Graphs'
-import DsaUnionFind from './pages/dsa/UnionFind'
-import DsaHashing from './pages/dsa/Hashing'
-import DsaDynamicProgramming from './pages/dsa/DynamicProgramming'
-import DsaPatterns from './pages/dsa/Patterns'
-import DsaCheatsheet from './pages/dsa/Cheatsheet'
+const DsaComplexity = lazy(() => import('./pages/dsa/Complexity'))
+const DsaArraysSorting = lazy(() => import('./pages/dsa/ArraysSorting'))
+const DsaLinkedLists = lazy(() => import('./pages/dsa/LinkedLists'))
+const DsaStacksQueues = lazy(() => import('./pages/dsa/StacksQueues'))
+const DsaRecursion = lazy(() => import('./pages/dsa/Recursion'))
+const DsaTrees = lazy(() => import('./pages/dsa/Trees'))
+const DsaHeaps = lazy(() => import('./pages/dsa/Heaps'))
+const DsaTries = lazy(() => import('./pages/dsa/Tries'))
+const DsaGraphs = lazy(() => import('./pages/dsa/Graphs'))
+const DsaUnionFind = lazy(() => import('./pages/dsa/UnionFind'))
+const DsaHashing = lazy(() => import('./pages/dsa/Hashing'))
+const DsaDynamicProgramming = lazy(() => import('./pages/dsa/DynamicProgramming'))
+const DsaPatterns = lazy(() => import('./pages/dsa/Patterns'))
+const DsaCheatsheet = lazy(() => import('./pages/dsa/Cheatsheet'))
 
 // Git & Version Control
-import VcInternals from './pages/version-control/Internals'
-import VcBranching from './pages/version-control/Branching'
-import VcCollaboration from './pages/version-control/Collaboration'
-import VcCheatsheet from './pages/version-control/Cheatsheet'
+const VcInternals = lazy(() => import('./pages/version-control/Internals'))
+const VcBranching = lazy(() => import('./pages/version-control/Branching'))
+const VcCollaboration = lazy(() => import('./pages/version-control/Collaboration'))
+const VcCheatsheet = lazy(() => import('./pages/version-control/Cheatsheet'))
 
 // API Design
-import ApiIntro from './pages/apidesign/Intro'
-import ApiMethods from './pages/apidesign/Methods'
-import ApiResources from './pages/apidesign/Resources'
-import ApiErrors from './pages/apidesign/Errors'
-import ApiVersioning from './pages/apidesign/Versioning'
-import ApiAdvanced from './pages/apidesign/Advanced'
-import ApiGraphql from './pages/apidesign/Graphql'
-import ApiWebsockets from './pages/apidesign/Websockets'
+const ApiIntro = lazy(() => import('./pages/apidesign/Intro'))
+const ApiMethods = lazy(() => import('./pages/apidesign/Methods'))
+const ApiResources = lazy(() => import('./pages/apidesign/Resources'))
+const ApiErrors = lazy(() => import('./pages/apidesign/Errors'))
+const ApiVersioning = lazy(() => import('./pages/apidesign/Versioning'))
+const ApiAdvanced = lazy(() => import('./pages/apidesign/Advanced'))
+const ApiGraphql = lazy(() => import('./pages/apidesign/Graphql'))
+const ApiWebsockets = lazy(() => import('./pages/apidesign/Websockets'))
 
 // Auth & Security
-import CryptoEncodingVsEncryption from './pages/cryptography/EncodingVsEncryption'
-import CryptoEncryption from './pages/cryptography/Encryption'
-import CryptoHashing from './pages/cryptography/Hashing'
-import CryptoAead from './pages/cryptography/Aead'
-import CryptoSignatures from './pages/cryptography/Signatures'
-import CryptoSigningFiles from './pages/cryptography/SigningFiles'
-import CryptoCertificateIssuance from './pages/cryptography/CertificateIssuance'
-import CryptoTls from './pages/cryptography/Tls'
-import CryptoTrustStores from './pages/cryptography/TrustStores'
-import CryptoKeyWrapping from './pages/cryptography/KeyWrapping'
-import CryptoSecureRandom from './pages/cryptography/SecureRandom'
-import CryptoSecureLoginFlow from './pages/cryptography/SecureLoginFlow'
-import CryptoAppliedJava from './pages/cryptography/AppliedJava'
-import CryptoAppliedNode from './pages/cryptography/AppliedNode'
-import CryptoMistakes from './pages/cryptography/Mistakes'
-import CryptoCheatsheet from './pages/cryptography/Cheatsheet'
-import AuthCookies from './pages/auth/Cookies'
-import AuthJwt from './pages/auth/Jwt'
-import AuthOauth from './pages/auth/Oauth'
-import AuthAuthz from './pages/auth/Authz'
-import AuthGateway from './pages/auth/Gateway'
-import AuthSecurity from './pages/auth/Security'
-import AuthSso from './pages/auth/Sso'
+const CryptoEncodingVsEncryption = lazy(() => import('./pages/cryptography/EncodingVsEncryption'))
+const CryptoEncryption = lazy(() => import('./pages/cryptography/Encryption'))
+const CryptoHashing = lazy(() => import('./pages/cryptography/Hashing'))
+const CryptoAead = lazy(() => import('./pages/cryptography/Aead'))
+const CryptoSignatures = lazy(() => import('./pages/cryptography/Signatures'))
+const CryptoSigningFiles = lazy(() => import('./pages/cryptography/SigningFiles'))
+const CryptoCertificateIssuance = lazy(() => import('./pages/cryptography/CertificateIssuance'))
+const CryptoTls = lazy(() => import('./pages/cryptography/Tls'))
+const CryptoTrustStores = lazy(() => import('./pages/cryptography/TrustStores'))
+const CryptoKeyWrapping = lazy(() => import('./pages/cryptography/KeyWrapping'))
+const CryptoSecureRandom = lazy(() => import('./pages/cryptography/SecureRandom'))
+const CryptoSecureLoginFlow = lazy(() => import('./pages/cryptography/SecureLoginFlow'))
+const CryptoAppliedJava = lazy(() => import('./pages/cryptography/AppliedJava'))
+const CryptoAppliedNode = lazy(() => import('./pages/cryptography/AppliedNode'))
+const CryptoMistakes = lazy(() => import('./pages/cryptography/Mistakes'))
+const CryptoCheatsheet = lazy(() => import('./pages/cryptography/Cheatsheet'))
+const AuthCookies = lazy(() => import('./pages/auth/Cookies'))
+const AuthJwt = lazy(() => import('./pages/auth/Jwt'))
+const AuthOauth = lazy(() => import('./pages/auth/Oauth'))
+const AuthAuthz = lazy(() => import('./pages/auth/Authz'))
+const AuthGateway = lazy(() => import('./pages/auth/Gateway'))
+const AuthSecurity = lazy(() => import('./pages/auth/Security'))
+const AuthSso = lazy(() => import('./pages/auth/Sso'))
 
 // Testing Strategies
-import TestIntro from './pages/testing/Intro'
-import TestWhatToTest from './pages/testing/WhatToTest'
-import TestPerformance from './pages/testing/Performance'
-import TestUnit from './pages/testing/Unit'
-import TestMocking from './pages/testing/Mocking'
-import TestIntegration from './pages/testing/Integration'
-import TestTestcontainers from './pages/testing/Testcontainers'
-import TestContract from './pages/testing/Contract'
-import TestE2e from './pages/testing/E2e'
-import TestBestPractices from './pages/testing/BestPractices'
+const TestIntro = lazy(() => import('./pages/testing/Intro'))
+const TestWhatToTest = lazy(() => import('./pages/testing/WhatToTest'))
+const TestPerformance = lazy(() => import('./pages/testing/Performance'))
+const TestUnit = lazy(() => import('./pages/testing/Unit'))
+const TestMocking = lazy(() => import('./pages/testing/Mocking'))
+const TestIntegration = lazy(() => import('./pages/testing/Integration'))
+const TestTestcontainers = lazy(() => import('./pages/testing/Testcontainers'))
+const TestContract = lazy(() => import('./pages/testing/Contract'))
+const TestE2e = lazy(() => import('./pages/testing/E2e'))
+const TestBestPractices = lazy(() => import('./pages/testing/BestPractices'))
 
 // API Testing
-import ApiTestIntro from './pages/api-testing/Intro'
-import ApiTestControllers from './pages/api-testing/Controllers'
-import ApiTestValidation from './pages/api-testing/Validation'
-import ApiTestSecurity from './pages/api-testing/Security'
-import ApiTestPatterns from './pages/api-testing/Patterns'
+const ApiTestIntro = lazy(() => import('./pages/api-testing/Intro'))
+const ApiTestControllers = lazy(() => import('./pages/api-testing/Controllers'))
+const ApiTestValidation = lazy(() => import('./pages/api-testing/Validation'))
+const ApiTestSecurity = lazy(() => import('./pages/api-testing/Security'))
+const ApiTestPatterns = lazy(() => import('./pages/api-testing/Patterns'))
 
 // System Design
-import SysIntro from './pages/systemdesign/Intro'
-import SysScaling from './pages/systemdesign/Scaling'
-import SysCaching from './pages/systemdesign/Caching'
-import SysDatabases from './pages/systemdesign/Databases'
-import SysDistributed from './pages/systemdesign/Distributed'
-import SysMessaging from './pages/systemdesign/Messaging'
-import SysInterview from './pages/systemdesign/Interview'
+const SysIntro = lazy(() => import('./pages/systemdesign/Intro'))
+const SysScaling = lazy(() => import('./pages/systemdesign/Scaling'))
+const SysCaching = lazy(() => import('./pages/systemdesign/Caching'))
+const SysDatabases = lazy(() => import('./pages/systemdesign/Databases'))
+const SysDistributed = lazy(() => import('./pages/systemdesign/Distributed'))
+const SysMessaging = lazy(() => import('./pages/systemdesign/Messaging'))
+const SysInterview = lazy(() => import('./pages/systemdesign/Interview'))
 
 // TypeScript
-import TsIntro from './pages/typescript/Intro'
-import TsTypes from './pages/typescript/Types'
-import TsInterfaces from './pages/typescript/Interfaces'
-import TsGenerics from './pages/typescript/Generics'
-import TsAdvanced from './pages/typescript/Advanced'
-import TsReact from './pages/typescript/React'
-import TsMigration from './pages/typescript/Migration'
-import TsBestPractices from './pages/typescript/BestPractices'
-import TsNewProject from './pages/typescript/NewProject'
-import TsTsconfig from './pages/typescript/Tsconfig'
-import TsInteractive from './pages/typescript/Playground'
-import TsEnterprise from './pages/typescript/EnterprisePatterns'
-import TsCheatsheet from './pages/typescript/Cheatsheet'
-import TsNativeCompiler from './pages/typescript/NativeCompiler'
-import TsRuntimeValidation from './pages/typescript/RuntimeValidation'
-import TsNodeTypescript from './pages/typescript/NodeTypescript'
+const TsIntro = lazy(() => import('./pages/typescript/Intro'))
+const TsTypes = lazy(() => import('./pages/typescript/Types'))
+const TsInterfaces = lazy(() => import('./pages/typescript/Interfaces'))
+const TsGenerics = lazy(() => import('./pages/typescript/Generics'))
+const TsAdvanced = lazy(() => import('./pages/typescript/Advanced'))
+const TsReact = lazy(() => import('./pages/typescript/React'))
+const TsMigration = lazy(() => import('./pages/typescript/Migration'))
+const TsBestPractices = lazy(() => import('./pages/typescript/BestPractices'))
+const TsNewProject = lazy(() => import('./pages/typescript/NewProject'))
+const TsTsconfig = lazy(() => import('./pages/typescript/Tsconfig'))
+const TsInteractive = lazy(() => import('./pages/typescript/Playground'))
+const TsEnterprise = lazy(() => import('./pages/typescript/EnterprisePatterns'))
+const TsCheatsheet = lazy(() => import('./pages/typescript/Cheatsheet'))
+const TsNativeCompiler = lazy(() => import('./pages/typescript/NativeCompiler'))
+const TsRuntimeValidation = lazy(() => import('./pages/typescript/RuntimeValidation'))
+const TsNodeTypescript = lazy(() => import('./pages/typescript/NodeTypescript'))
 
 // JavaScript
-import JsFundamentals from './pages/javascript/Fundamentals'
-import JsFunctionsClosures from './pages/javascript/FunctionsClosures'
-import JsObjectsPrototypes from './pages/javascript/ObjectsPrototypes'
-import JsArraysIterables from './pages/javascript/ArraysIterables'
-import JsAsync from './pages/javascript/Async'
-import JsModules from './pages/javascript/Modules'
-import JsErrorHandling from './pages/javascript/ErrorHandling'
-import JsModernTour from './pages/javascript/ModernTour'
-import JsEs2017 from './pages/javascript/Es2017'
-import JsCheatsheet from './pages/javascript/Cheatsheet'
+const JsFundamentals = lazy(() => import('./pages/javascript/Fundamentals'))
+const JsFunctionsClosures = lazy(() => import('./pages/javascript/FunctionsClosures'))
+const JsObjectsPrototypes = lazy(() => import('./pages/javascript/ObjectsPrototypes'))
+const JsArraysIterables = lazy(() => import('./pages/javascript/ArraysIterables'))
+const JsAsync = lazy(() => import('./pages/javascript/Async'))
+const JsModules = lazy(() => import('./pages/javascript/Modules'))
+const JsErrorHandling = lazy(() => import('./pages/javascript/ErrorHandling'))
+const JsModernTour = lazy(() => import('./pages/javascript/ModernTour'))
+const JsEs2017 = lazy(() => import('./pages/javascript/Es2017'))
+const JsCheatsheet = lazy(() => import('./pages/javascript/Cheatsheet'))
 
 // React Router v7
-import RRv5Intro from './pages/react-router-v5/Intro'
-import RRv5Nested from './pages/react-router-v5/Nested'
-import RRv5Data from './pages/react-router-v5/Data'
-import RRv5Guards from './pages/react-router-v5/Guards'
-import RRv5Advanced from './pages/react-router-v5/Advanced'
-import RRv5Testing from './pages/react-router-v5/Testing'
-import RRv5Fullapp from './pages/react-router-v5/Fullapp'
-import RRv5Legacy from './pages/react-router-v5/Legacy'
-import RRv5Cheatsheet from './pages/react-router-v5/Cheatsheet'
-import RRIntro from './pages/react-router/Intro'
-import RRNested from './pages/react-router/Nested'
-import RRData from './pages/react-router/Data'
-import RRGuards from './pages/react-router/Guards'
-import RRAdvanced from './pages/react-router/Advanced'
-import RRTesting from './pages/react-router/Testing'
-import RRFullapp from './pages/react-router/Fullapp'
-import RRMigration from './pages/react-router/Migration'
-import RRCheatSheet from './pages/react-router/CheatSheet'
-import RRv8Intro from './pages/react-router-v8/Intro'
-import RRv8Nested from './pages/react-router-v8/Nested'
-import RRv8Data from './pages/react-router-v8/Data'
-import RRv8Guards from './pages/react-router-v8/Guards'
-import RRv8Advanced from './pages/react-router-v8/Advanced'
-import RRv8Testing from './pages/react-router-v8/Testing'
-import RRv8Fullapp from './pages/react-router-v8/Fullapp'
-import RRv8Migration from './pages/react-router-v8/Migration'
-import RRv8Cheatsheet from './pages/react-router-v8/Cheatsheet'
+const RRv5Intro = lazy(() => import('./pages/react-router-v5/Intro'))
+const RRv5Nested = lazy(() => import('./pages/react-router-v5/Nested'))
+const RRv5Data = lazy(() => import('./pages/react-router-v5/Data'))
+const RRv5Guards = lazy(() => import('./pages/react-router-v5/Guards'))
+const RRv5Advanced = lazy(() => import('./pages/react-router-v5/Advanced'))
+const RRv5Testing = lazy(() => import('./pages/react-router-v5/Testing'))
+const RRv5Fullapp = lazy(() => import('./pages/react-router-v5/Fullapp'))
+const RRv5Legacy = lazy(() => import('./pages/react-router-v5/Legacy'))
+const RRv5Cheatsheet = lazy(() => import('./pages/react-router-v5/Cheatsheet'))
+const RRIntro = lazy(() => import('./pages/react-router/Intro'))
+const RRNested = lazy(() => import('./pages/react-router/Nested'))
+const RRData = lazy(() => import('./pages/react-router/Data'))
+const RRGuards = lazy(() => import('./pages/react-router/Guards'))
+const RRAdvanced = lazy(() => import('./pages/react-router/Advanced'))
+const RRTesting = lazy(() => import('./pages/react-router/Testing'))
+const RRFullapp = lazy(() => import('./pages/react-router/Fullapp'))
+const RRMigration = lazy(() => import('./pages/react-router/Migration'))
+const RRCheatSheet = lazy(() => import('./pages/react-router/CheatSheet'))
+const RRv8Intro = lazy(() => import('./pages/react-router-v8/Intro'))
+const RRv8Nested = lazy(() => import('./pages/react-router-v8/Nested'))
+const RRv8Data = lazy(() => import('./pages/react-router-v8/Data'))
+const RRv8Guards = lazy(() => import('./pages/react-router-v8/Guards'))
+const RRv8Advanced = lazy(() => import('./pages/react-router-v8/Advanced'))
+const RRv8Testing = lazy(() => import('./pages/react-router-v8/Testing'))
+const RRv8Fullapp = lazy(() => import('./pages/react-router-v8/Fullapp'))
+const RRv8Migration = lazy(() => import('./pages/react-router-v8/Migration'))
+const RRv8Cheatsheet = lazy(() => import('./pages/react-router-v8/Cheatsheet'))
 
 // State Management
-import SMIntro from './pages/state-mgmt/Intro'
-import SMComparison from './pages/state-mgmt/Comparison'
-import SMZustandFundamentals from './pages/state-mgmt/ZustandFundamentals'
-import SMZustandAdvanced from './pages/state-mgmt/ZustandAdvanced'
-import SMZustandCheatsheet from './pages/state-mgmt/ZustandCheatsheet'
-import SMPatterns from './pages/state-mgmt/Patterns'
+const SMIntro = lazy(() => import('./pages/state-mgmt/Intro'))
+const SMComparison = lazy(() => import('./pages/state-mgmt/Comparison'))
+const SMZustandFundamentals = lazy(() => import('./pages/state-mgmt/ZustandFundamentals'))
+const SMZustandAdvanced = lazy(() => import('./pages/state-mgmt/ZustandAdvanced'))
+const SMZustandCheatsheet = lazy(() => import('./pages/state-mgmt/ZustandCheatsheet'))
+const SMPatterns = lazy(() => import('./pages/state-mgmt/Patterns'))
 
 // React Query
-import RQFundamentals from './pages/react-query/Fundamentals'
-import RQAdvanced from './pages/react-query/Advanced'
-import RQCheatsheet from './pages/react-query/Cheatsheet'
+const RQFundamentals = lazy(() => import('./pages/react-query/Fundamentals'))
+const RQAdvanced = lazy(() => import('./pages/react-query/Advanced'))
+const RQCheatsheet = lazy(() => import('./pages/react-query/Cheatsheet'))
 
 // What's New in React 19
-import WNFeatures from './pages/react19-whats-new/Features'
-import WNMigration from './pages/react19-whats-new/Migration'
-import WNCheatsheet from './pages/react19-whats-new/Cheatsheet'
+const WNFeatures = lazy(() => import('./pages/react19-whats-new/Features'))
+const WNMigration = lazy(() => import('./pages/react19-whats-new/Migration'))
+const WNCheatsheet = lazy(() => import('./pages/react19-whats-new/Cheatsheet'))
 
 // Accessibility
-import A11yIntro from './pages/accessibility/Intro'
-import A11ySemantic from './pages/accessibility/Semantic'
-import A11yAria from './pages/accessibility/Aria'
-import A11yKeyboard from './pages/accessibility/Keyboard'
-import A11yTesting from './pages/accessibility/Testing'
+const A11yIntro = lazy(() => import('./pages/accessibility/Intro'))
+const A11ySemantic = lazy(() => import('./pages/accessibility/Semantic'))
+const A11yAria = lazy(() => import('./pages/accessibility/Aria'))
+const A11yKeyboard = lazy(() => import('./pages/accessibility/Keyboard'))
+const A11yTesting = lazy(() => import('./pages/accessibility/Testing'))
 
 // CSS Mastery
-import CSSFundamentals from './pages/css-mastery/Fundamentals'
-import CSSFlexbox from './pages/css-mastery/Flexbox'
-import CSSGrid from './pages/css-mastery/Grid'
-import CSSResponsive from './pages/css-mastery/Responsive'
-import CSSAnimations from './pages/css-mastery/Animations'
-import CSSVariables from './pages/css-mastery/Variables'
-import CSSSass from './pages/css-mastery/Sass'
-import CSSTokens from './pages/css-mastery/Tokens'
-import CSSDesignSystemTokens from './pages/css-mastery/DesignSystemTokens'
-import CSSStyleInclusion from './pages/css-mastery/StyleInclusion'
-import CSSPatterns from './pages/css-mastery/Patterns'
+const CSSFundamentals = lazy(() => import('./pages/css-mastery/Fundamentals'))
+const CSSFlexbox = lazy(() => import('./pages/css-mastery/Flexbox'))
+const CSSGrid = lazy(() => import('./pages/css-mastery/Grid'))
+const CSSResponsive = lazy(() => import('./pages/css-mastery/Responsive'))
+const CSSAnimations = lazy(() => import('./pages/css-mastery/Animations'))
+const CSSVariables = lazy(() => import('./pages/css-mastery/Variables'))
+const CSSSass = lazy(() => import('./pages/css-mastery/Sass'))
+const CSSTokens = lazy(() => import('./pages/css-mastery/Tokens'))
+const CSSDesignSystemTokens = lazy(() => import('./pages/css-mastery/DesignSystemTokens'))
+const CSSStyleInclusion = lazy(() => import('./pages/css-mastery/StyleInclusion'))
+const CSSPatterns = lazy(() => import('./pages/css-mastery/Patterns'))
 
 // Playground
-import PlaygroundCompiler from './pages/playground/Compiler'
-import PlaygroundTypeChecker from './pages/playground/TypeChecker'
-import PlaygroundJsxCompiler from './pages/playground/JsxCompiler'
-import PlaygroundCssPlayground from './pages/playground/CssPlayground'
-import PlaygroundSassPlayground from './pages/playground/SassPlayground'
-import PlaygroundSqlPlayground from './pages/playground/SqlPlayground'
-import CssMasteryFieldGuide from './pages/css-mastery/FieldGuide'
-import MuiIntro from './pages/mui/Intro'
-import MuiStylingV4 from './pages/mui/StylingV4'
-import MuiTheming from './pages/mui/Theming'
-import MuiOverrides from './pages/mui/Overrides'
-import MuiStyledV5 from './pages/mui/StyledV5'
-import MuiCheatsheet from './pages/mui/Cheatsheet'
-import Mui9Intro from './pages/mui9/Intro'
-import Mui9SilentBreaks from './pages/mui9/SilentBreaks'
-import Mui9Styling from './pages/mui9/Styling'
-import Mui9Theming from './pages/mui9/Theming'
-import Mui9Cheatsheet from './pages/mui9/Cheatsheet'
-import TsqlIntro from './pages/tsql/Intro'
-import TsqlCoreQueries from './pages/tsql/CoreQueries'
-import TsqlJoins from './pages/tsql/Joins'
-import TsqlAggregation from './pages/tsql/Aggregation'
-import TsqlModifyingData from './pages/tsql/ModifyingData'
-import TsqlViews from './pages/tsql/Views'
-import TsqlProgrammability from './pages/tsql/Programmability'
-import TsqlTransactions from './pages/tsql/Transactions'
-import TsqlIndexing from './pages/tsql/Indexing'
-import TsqlCheatsheet from './pages/tsql/Cheatsheet'
+const PlaygroundCompiler = lazy(() => import('./pages/playground/Compiler'))
+const PlaygroundTypeChecker = lazy(() => import('./pages/playground/TypeChecker'))
+const PlaygroundJsxCompiler = lazy(() => import('./pages/playground/JsxCompiler'))
+const PlaygroundCssPlayground = lazy(() => import('./pages/playground/CssPlayground'))
+const PlaygroundSassPlayground = lazy(() => import('./pages/playground/SassPlayground'))
+const PlaygroundSqlPlayground = lazy(() => import('./pages/playground/SqlPlayground'))
+const CssMasteryFieldGuide = lazy(() => import('./pages/css-mastery/FieldGuide'))
+const MuiIntro = lazy(() => import('./pages/mui/Intro'))
+const MuiStylingV4 = lazy(() => import('./pages/mui/StylingV4'))
+const MuiTheming = lazy(() => import('./pages/mui/Theming'))
+const MuiOverrides = lazy(() => import('./pages/mui/Overrides'))
+const MuiStyledV5 = lazy(() => import('./pages/mui/StyledV5'))
+const MuiCheatsheet = lazy(() => import('./pages/mui/Cheatsheet'))
+const Mui9Intro = lazy(() => import('./pages/mui9/Intro'))
+const Mui9SilentBreaks = lazy(() => import('./pages/mui9/SilentBreaks'))
+const Mui9Styling = lazy(() => import('./pages/mui9/Styling'))
+const Mui9Theming = lazy(() => import('./pages/mui9/Theming'))
+const Mui9Cheatsheet = lazy(() => import('./pages/mui9/Cheatsheet'))
+const TsqlIntro = lazy(() => import('./pages/tsql/Intro'))
+const TsqlCoreQueries = lazy(() => import('./pages/tsql/CoreQueries'))
+const TsqlJoins = lazy(() => import('./pages/tsql/Joins'))
+const TsqlAggregation = lazy(() => import('./pages/tsql/Aggregation'))
+const TsqlModifyingData = lazy(() => import('./pages/tsql/ModifyingData'))
+const TsqlViews = lazy(() => import('./pages/tsql/Views'))
+const TsqlProgrammability = lazy(() => import('./pages/tsql/Programmability'))
+const TsqlTransactions = lazy(() => import('./pages/tsql/Transactions'))
+const TsqlIndexing = lazy(() => import('./pages/tsql/Indexing'))
+const TsqlCheatsheet = lazy(() => import('./pages/tsql/Cheatsheet'))
 
 // React Testing
-import RTIntro from './pages/react-testing/Intro'
-import RTComponents from './pages/react-testing/Components'
-import RTHooks from './pages/react-testing/Hooks'
-import RTAsync from './pages/react-testing/Async'
-import RTAsyncDeepDive from './pages/react-testing/AsyncDeepDive'
-import RTForms from './pages/react-testing/Forms'
-import RTThirdPartyLayered from './pages/react-testing/ThirdPartyLayered'
-import RTPatterns from './pages/react-testing/Patterns'
-import RTBestPractices from './pages/react-testing/BestPractices'
-import RTCheatsheet from './pages/react-testing/Cheatsheet'
+const RTIntro = lazy(() => import('./pages/react-testing/Intro'))
+const RTComponents = lazy(() => import('./pages/react-testing/Components'))
+const RTHooks = lazy(() => import('./pages/react-testing/Hooks'))
+const RTAsync = lazy(() => import('./pages/react-testing/Async'))
+const RTAsyncDeepDive = lazy(() => import('./pages/react-testing/AsyncDeepDive'))
+const RTForms = lazy(() => import('./pages/react-testing/Forms'))
+const RTThirdPartyLayered = lazy(() => import('./pages/react-testing/ThirdPartyLayered'))
+const RTPatterns = lazy(() => import('./pages/react-testing/Patterns'))
+const RTBestPractices = lazy(() => import('./pages/react-testing/BestPractices'))
+const RTCheatsheet = lazy(() => import('./pages/react-testing/Cheatsheet'))
 
 // Frontend Tooling
-import FTVite from './pages/frontend-tooling/Vite'
-import FTWebpack from './pages/frontend-tooling/Webpack'
-import FTLinting from './pages/frontend-tooling/Linting'
-import FTPackages from './pages/frontend-tooling/Packages'
-import FTMonorepos from './pages/frontend-tooling/Monorepos'
-import FTPerformance from './pages/frontend-tooling/Performance'
+const FTVite = lazy(() => import('./pages/frontend-tooling/Vite'))
+const FTWebpack = lazy(() => import('./pages/frontend-tooling/Webpack'))
+const FTLinting = lazy(() => import('./pages/frontend-tooling/Linting'))
+const FTPackages = lazy(() => import('./pages/frontend-tooling/Packages'))
+const FTMonorepos = lazy(() => import('./pages/frontend-tooling/Monorepos'))
+const FTPerformance = lazy(() => import('./pages/frontend-tooling/Performance'))
 
 
 // npm Deep Dive
-import NpmIntro from './pages/npm-deep-dive/Intro'
-import NpmResolution from './pages/npm-deep-dive/Resolution'
-import NpmNodeModules from './pages/npm-deep-dive/NodeModules'
-import NpmLockfile from './pages/npm-deep-dive/Lockfile'
-import NpmScripts from './pages/npm-deep-dive/Scripts'
-import NpmSecurity from './pages/npm-deep-dive/Security'
+const NpmIntro = lazy(() => import('./pages/npm-deep-dive/Intro'))
+const NpmResolution = lazy(() => import('./pages/npm-deep-dive/Resolution'))
+const NpmNodeModules = lazy(() => import('./pages/npm-deep-dive/NodeModules'))
+const NpmLockfile = lazy(() => import('./pages/npm-deep-dive/Lockfile'))
+const NpmScripts = lazy(() => import('./pages/npm-deep-dive/Scripts'))
+const NpmSecurity = lazy(() => import('./pages/npm-deep-dive/Security'))
 
 // Building npm Packages
-import NpkgAnatomy from './pages/npm-packages/Anatomy'
-import NpkgPackageJson from './pages/npm-packages/PackageJson'
-import NpkgModules from './pages/npm-packages/Modules'
-import NpkgPublishing from './pages/npm-packages/Publishing'
-import NpkgAdvanced from './pages/npm-packages/Advanced'
+const NpkgAnatomy = lazy(() => import('./pages/npm-packages/Anatomy'))
+const NpkgPackageJson = lazy(() => import('./pages/npm-packages/PackageJson'))
+const NpkgModules = lazy(() => import('./pages/npm-packages/Modules'))
+const NpkgPublishing = lazy(() => import('./pages/npm-packages/Publishing'))
+const NpkgAdvanced = lazy(() => import('./pages/npm-packages/Advanced'))
 
 function NotFound() {
   return (

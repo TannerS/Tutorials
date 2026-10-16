@@ -1,5 +1,5 @@
 import { Outlet, useLocation, Link, useNavigate } from 'react-router';
-import { useRef, useEffect, useState, useCallback, useMemo, useSyncExternalStore } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo, useSyncExternalStore, Suspense } from 'react';
 import Sidebar from './Sidebar';
 import { sections } from '../data/sections';
 import { CommandPalette, type CommandItem } from './CommandPalette';
@@ -101,6 +101,24 @@ function HomePage() {
           </Link>
         ))}
       </div>
+    </div>
+  );
+}
+
+/// Shown while a lazy-loaded lesson chunk is in flight.
+///
+/// Deliberately plain text rather than a spinner or skeleton: on a warm cache
+/// the chunk arrives in a few milliseconds, and anything animated reads as a
+/// flicker at that duration. `aria-live` means a screen reader announces the
+/// wait instead of landing in a silently empty main region.
+function PageLoading() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{ padding: '2rem 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}
+    >
+      Loading lesson…
     </div>
   );
 }
@@ -229,7 +247,16 @@ export default function Layout() {
         overflow: 'auto',
         padding: '2rem 3rem',
       }}>
-        {isHome ? <HomePage /> : <Outlet />}
+        {/* Lesson pages are lazy()-loaded in App.tsx, one chunk each, so the
+            404 KB shell no longer carries all 399 of them. The Suspense
+            boundary sits HERE rather than around <Routes> on purpose: the
+            sidebar, header and scroll container stay mounted while the next
+            page's chunk arrives, so navigation doesn't blank the whole frame. */}
+        {isHome ? <HomePage /> : (
+          <Suspense fallback={<PageLoading />}>
+            <Outlet />
+          </Suspense>
+        )}
       </main>
 
       {/* Mounted only while open so its query/selection reset for free on each

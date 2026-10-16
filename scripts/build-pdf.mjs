@@ -414,6 +414,32 @@ async function main() {
           // one run, captured in 2 pages on the retry.
           await page.goto(target, { waitUntil: 'load', timeout: 60_000 });
 
+          // Lesson pages are lazy()-loaded (App.tsx), so at 'load' the shell is
+          // up but the lesson's own chunk may still be in flight — all that is
+          // on screen is Layout's "Loading lesson…" fallback.
+          //
+          // This wait is LOAD-BEARING, and silently so: the chart check further
+          // down calls .every() over the .flow-chart nodes, and .every() on an
+          // EMPTY list returns true. Without this, a page captured before its
+          // chunk resolved would sail through every subsequent check and emit a
+          // PDF page containing the words "Loading lesson…" instead of the
+          // lesson. Wait for the real content (an <h1> from LessonLayout or
+          // GuideLayout) to exist and the fallback to be gone.
+          await page
+            .waitForFunction(
+              () => {
+                const t = document.body?.innerText ?? '';
+                if (t.includes('Loading lesson…')) return false;
+                return document.querySelector('main h1') !== null;
+              },
+              { timeout: 30_000 },
+            )
+            .catch(() => {
+              // Fall through rather than skipping the lesson outright: a page
+              // with genuinely no <h1> should still be captured, and the
+              // existing per-lesson logging covers a true failure.
+            });
+
           // Remove site chrome that shouldn't appear in the print, and force
           // <main> out of its scroll-container state so the whole content
           // participates in the print layout.
