@@ -655,6 +655,21 @@ export const sections: Section[] = [
     ],
   },
   {
+    id: 'html',
+    label: 'HTML',
+    icon: '📄',
+    color: '#f97316',
+    lessons: [
+      { id: 'document', title: 'The Document, head & Metadata', path: '/html/document' },
+      { id: 'semantics', title: 'Semantic Structure & Text Elements', path: '/html/semantics' },
+      { id: 'forms', title: 'Forms, Inputs & Native Validation', path: '/html/forms' },
+      { id: 'interactive', title: 'Native Interactive Elements', path: '/html/interactive' },
+      { id: 'media', title: 'Images, Media & Responsive Assets', path: '/html/media' },
+      { id: 'parser', title: 'How the Browser Parses & Repairs HTML', path: '/html/parser' },
+      { id: 'field-guide', title: '📋 HTML Field Guide', path: '/html/field-guide' },
+    ],
+  },
+  {
     id: 'css-mastery',
     label: 'CSS Mastery',
     icon: '🎨',
@@ -923,7 +938,9 @@ export const groups: Group[] = [
     label: 'Web Platform',
     icon: '🎨',
     color: '#ec4899',
-    sectionIds: ['css-mastery', 'accessibility'],
+    // HTML first: CSS styles a document tree and accessibility describes one,
+    // so both read better once you know how that tree is actually built.
+    sectionIds: ['html', 'css-mastery', 'accessibility'],
   },
 ];
 

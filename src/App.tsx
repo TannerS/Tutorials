@@ -395,6 +395,15 @@ const A11yAria = lazy(() => import('./pages/accessibility/Aria'))
 const A11yKeyboard = lazy(() => import('./pages/accessibility/Keyboard'))
 const A11yTesting = lazy(() => import('./pages/accessibility/Testing'))
 
+// HTML
+const HtmlDocument = lazy(() => import('./pages/html/Document'))
+const HtmlSemantics = lazy(() => import('./pages/html/Semantics'))
+const HtmlForms = lazy(() => import('./pages/html/Forms'))
+const HtmlInteractive = lazy(() => import('./pages/html/Interactive'))
+const HtmlMedia = lazy(() => import('./pages/html/Media'))
+const HtmlParser = lazy(() => import('./pages/html/Parser'))
+const HtmlFieldGuide = lazy(() => import('./pages/html/FieldGuide'))
+
 // CSS Mastery
 const CSSFundamentals = lazy(() => import('./pages/css-mastery/Fundamentals'))
 const CSSFlexbox = lazy(() => import('./pages/css-mastery/Flexbox'))
@@ -865,6 +874,14 @@ function App() {
         <Route path="accessibility/aria" element={<A11yAria />} />
         <Route path="accessibility/keyboard" element={<A11yKeyboard />} />
         <Route path="accessibility/testing" element={<A11yTesting />} />
+        {/* HTML */}
+        <Route path="html/document" element={<HtmlDocument />} />
+        <Route path="html/semantics" element={<HtmlSemantics />} />
+        <Route path="html/forms" element={<HtmlForms />} />
+        <Route path="html/interactive" element={<HtmlInteractive />} />
+        <Route path="html/media" element={<HtmlMedia />} />
+        <Route path="html/parser" element={<HtmlParser />} />
+        <Route path="html/field-guide" element={<HtmlFieldGuide />} />
         {/* CSS Mastery */}
         <Route path="css-mastery/fundamentals" element={<CSSFundamentals />} />
         <Route path="css-mastery/flexbox" element={<CSSFlexbox />} />
