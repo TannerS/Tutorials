@@ -655,6 +655,36 @@ export const sections: Section[] = [
     ],
   },
   {
+    id: 'devtools',
+    label: 'Browser DevTools',
+    icon: '🔧',
+    color: '#38bdf8',
+    lessons: [
+      { id: 'elements', title: 'Elements: Inspecting the Live DOM', path: '/devtools/elements' },
+      { id: 'console', title: 'Console: Beyond console.log', path: '/devtools/console' },
+      { id: 'breakpoints', title: 'Breakpoints & the Sources Panel', path: '/devtools/breakpoints' },
+      { id: 'network', title: 'Network: Reading the Waterfall', path: '/devtools/network' },
+      { id: 'performance', title: 'Performance: Flame Charts & Long Tasks', path: '/devtools/performance' },
+      { id: 'react', title: 'React DevTools & Profiling', path: '/devtools/react' },
+      { id: 'field-guide', title: '📋 DevTools Field Guide', path: '/devtools/field-guide' },
+    ],
+  },
+  {
+    id: 'browser-runtime',
+    label: 'Browser Runtime & the DOM',
+    icon: '🌐',
+    color: '#2dd4bf',
+    lessons: [
+      { id: 'dom', title: 'The DOM API', path: '/browser-runtime/dom' },
+      { id: 'events', title: 'Events, Phases & Delegation', path: '/browser-runtime/events' },
+      { id: 'event-loop', title: 'The Event Loop & Rendering Pipeline', path: '/browser-runtime/event-loop' },
+      { id: 'observers', title: 'Intersection, Resize & Mutation Observers', path: '/browser-runtime/observers' },
+      { id: 'storage', title: 'Storage: localStorage, Cookies & IndexedDB', path: '/browser-runtime/storage' },
+      { id: 'fetch', title: 'fetch, CORS & the Request Lifecycle', path: '/browser-runtime/fetch' },
+      { id: 'field-guide', title: '📋 Browser Runtime Field Guide', path: '/browser-runtime/field-guide' },
+    ],
+  },
+  {
     id: 'html',
     label: 'HTML',
     icon: '📄',
@@ -880,7 +910,7 @@ export const groups: Group[] = [
     label: 'Developer Fundamentals',
     icon: '🎓',
     color: '#f97316',
-    sectionIds: ['dsa', 'version-control', 'from-scratch'],
+    sectionIds: ['dsa', 'version-control', 'devtools', 'from-scratch'],
   },
   {
     id: 'architecture',
@@ -940,7 +970,7 @@ export const groups: Group[] = [
     color: '#ec4899',
     // HTML first: CSS styles a document tree and accessibility describes one,
     // so both read better once you know how that tree is actually built.
-    sectionIds: ['html', 'css-mastery', 'accessibility'],
+    sectionIds: ['html', 'css-mastery', 'browser-runtime', 'accessibility'],
   },
 ];
 

@@ -395,6 +395,24 @@ const A11yAria = lazy(() => import('./pages/accessibility/Aria'))
 const A11yKeyboard = lazy(() => import('./pages/accessibility/Keyboard'))
 const A11yTesting = lazy(() => import('./pages/accessibility/Testing'))
 
+// Browser DevTools
+const DtElements = lazy(() => import('./pages/devtools/Elements'))
+const DtConsole = lazy(() => import('./pages/devtools/Console'))
+const DtBreakpoints = lazy(() => import('./pages/devtools/Breakpoints'))
+const DtNetwork = lazy(() => import('./pages/devtools/Network'))
+const DtPerformance = lazy(() => import('./pages/devtools/Performance'))
+const DtReact = lazy(() => import('./pages/devtools/React'))
+const DtFieldGuide = lazy(() => import('./pages/devtools/FieldGuide'))
+
+// Browser Runtime & the DOM
+const BrDom = lazy(() => import('./pages/browser-runtime/Dom'))
+const BrEvents = lazy(() => import('./pages/browser-runtime/Events'))
+const BrEventLoop = lazy(() => import('./pages/browser-runtime/EventLoop'))
+const BrObservers = lazy(() => import('./pages/browser-runtime/Observers'))
+const BrStorage = lazy(() => import('./pages/browser-runtime/Storage'))
+const BrFetch = lazy(() => import('./pages/browser-runtime/Fetch'))
+const BrFieldGuide = lazy(() => import('./pages/browser-runtime/FieldGuide'))
+
 // HTML
 const HtmlDocument = lazy(() => import('./pages/html/Document'))
 const HtmlSemantics = lazy(() => import('./pages/html/Semantics'))
@@ -874,6 +892,22 @@ function App() {
         <Route path="accessibility/aria" element={<A11yAria />} />
         <Route path="accessibility/keyboard" element={<A11yKeyboard />} />
         <Route path="accessibility/testing" element={<A11yTesting />} />
+        {/* Browser DevTools */}
+        <Route path="devtools/elements" element={<DtElements />} />
+        <Route path="devtools/console" element={<DtConsole />} />
+        <Route path="devtools/breakpoints" element={<DtBreakpoints />} />
+        <Route path="devtools/network" element={<DtNetwork />} />
+        <Route path="devtools/performance" element={<DtPerformance />} />
+        <Route path="devtools/react" element={<DtReact />} />
+        <Route path="devtools/field-guide" element={<DtFieldGuide />} />
+        {/* Browser Runtime & the DOM */}
+        <Route path="browser-runtime/dom" element={<BrDom />} />
+        <Route path="browser-runtime/events" element={<BrEvents />} />
+        <Route path="browser-runtime/event-loop" element={<BrEventLoop />} />
+        <Route path="browser-runtime/observers" element={<BrObservers />} />
+        <Route path="browser-runtime/storage" element={<BrStorage />} />
+        <Route path="browser-runtime/fetch" element={<BrFetch />} />
+        <Route path="browser-runtime/field-guide" element={<BrFieldGuide />} />
         {/* HTML */}
         <Route path="html/document" element={<HtmlDocument />} />
         <Route path="html/semantics" element={<HtmlSemantics />} />
