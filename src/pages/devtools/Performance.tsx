@@ -7,7 +7,7 @@ export default function DevtoolsPerformance() {
     <LessonLayout
       title="Performance: Flame Charts & Long Tasks"
       sectionId="devtools"
-      lessonIndex={4}
+      lessonIndex={5}
       prev={{ path: '/devtools/network', label: 'Network: Reading the Waterfall' }}
       next={{ path: '/devtools/react', label: 'React DevTools & Profiling' }}
     >

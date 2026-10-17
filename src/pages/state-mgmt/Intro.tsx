@@ -9,7 +9,7 @@ export default function Intro() {
       title="When Context Isn't Enough"
       sectionId="state-context"
       lessonIndex={0}
-      prev={{ path: '/state-mgmt/comparison', label: 'The State Escalation Ladder' }}
+      prev={{ path: '/state-mgmt/choosing', label: 'Zustand vs Redux vs Context — Choosing' }}
       next={{ path: '/state-mgmt/patterns', label: 'Context Patterns in the Real World' }}
     >
       <h2>React Context Recap</h2>

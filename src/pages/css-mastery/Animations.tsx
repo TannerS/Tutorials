@@ -8,7 +8,7 @@ export default function Animations() {
     <LessonLayout
       title="Animations & Transitions"
       sectionId="css-mastery"
-      lessonIndex={4}
+      lessonIndex={6}
       prev={{ path: '/css-mastery/responsive', label: 'Responsive Design' }}
       next={{ path: '/css-mastery/variables', label: 'Custom Properties & Modern CSS' }}
     >

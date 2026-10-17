@@ -10,7 +10,7 @@ export default function Tsconfig() {
       sectionId="typescript"
       lessonIndex={9}
       prev={{ path: '/typescript/newproject', label: 'New Project from Scratch' }}
-      next={{ path: '/typescript/interactive', label: 'Interactive Challenges' }}
+      next={{ path: '/typescript/interactive', label: '🧪 Interactive Challenges' }}
     >
       <p>
         The <code>tsconfig.json</code> file controls everything about how TypeScript

@@ -8,7 +8,7 @@ export default function DevtoolsBreakpoints() {
     <LessonLayout
       title="Breakpoints & the Sources Panel"
       sectionId="devtools"
-      lessonIndex={2}
+      lessonIndex={3}
       prev={{ path: '/devtools/console', label: 'Console: Beyond console.log' }}
       next={{ path: '/devtools/network', label: 'Network: Reading the Waterfall' }}
     >

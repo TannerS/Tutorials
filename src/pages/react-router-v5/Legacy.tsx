@@ -10,7 +10,7 @@ export default function Legacy() {
       sectionId="react-router-v5"
       lessonIndex={7}
       prev={{ path: '/react-router-v5/fullapp', label: 'Complete App Routing' }}
-      next={{ path: '/react-router-v5/cheatsheet', label: '📋 React Router v5 Field Guide' }}
+      next={{ path: '/react-router-v5/cheatsheet', label: 'React Router v5 Field Guide' }}
     >
       <p>
         A job hands you a codebase built on React Router v5 — no config-based

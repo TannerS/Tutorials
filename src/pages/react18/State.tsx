@@ -8,7 +8,7 @@ export default function State() {
     <LessonLayout
       title="State Management Patterns"
       sectionId="react18"
-      lessonIndex={4}
+      lessonIndex={5}
       prev={{ path: '/react18/refs', label: 'Refs In Depth — From Basics to Imperative APIs' }}
       next={{ path: '/react18/effects', label: 'Effects & Data Fetching' }}
     >
@@ -23,6 +23,24 @@ export default function State() {
 
       <InfoBox variant="info" title="Prop Drilling Is Not Always Bad">
         <p>Passing props through 2-3 levels is normal React. It makes data flow explicit and components easy to test. Start worrying at 4+ levels or when intermediate components don't use the props at all.</p>
+      </InfoBox>
+
+      <InfoBox variant="tip" title="&quot;Two siblings need this value&quot; — almost never needs a store">
+        <p>
+          The most common over-engineering in React is treating &quot;shared between two
+          components&quot; as &quot;global&quot;. If the siblings have a reasonable common
+          parent, <strong>lift the state to that parent</strong> and pass the value and a
+          setter down. You get a data flow visible in one file, state that dies with the
+          page instead of going stale, and a component you can test without a provider.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Reach past lifting only when the consumers have <em>no</em> reasonable common
+          parent — a toast fired from a deeply nested form but rendered at the root, a
+          command palette, the authenticated user. The full comparison, including when
+          Zustand&apos;s selector model genuinely beats Context and when Redux
+          Toolkit&apos;s conventions are worth the boilerplate, is in{' '}
+          <a href="/state-mgmt/choosing">Zustand vs Redux vs Context — Choosing</a>.
+        </p>
       </InfoBox>
 
       <CodeBlock language="jsx" title="Prop Drilling Solutions" showLineNumbers>

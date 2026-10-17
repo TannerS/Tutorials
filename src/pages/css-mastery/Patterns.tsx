@@ -8,9 +8,9 @@ export default function Patterns() {
     <LessonLayout
       title="Layout Patterns & Recipes"
       sectionId="css-mastery"
-      lessonIndex={10}
+      lessonIndex={12}
       prev={{ path: '/css-mastery/style-inclusion', label: 'Style-Inclusion Methods' }}
-      next={{ path: '/css-mastery/field-guide', label: '📋 CSS Field Guide' }}
+      next={{ path: '/css-mastery/field-guide', label: 'CSS Field Guide' }}
     >
       <p>
         Battle-tested layout patterns you can drop into any project. Each recipe includes

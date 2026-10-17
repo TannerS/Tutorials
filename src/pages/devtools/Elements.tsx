@@ -9,7 +9,7 @@ export default function DevtoolsElements() {
       sectionId="devtools"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/devtools/console', label: 'Console: Beyond console.log' }}
+      next={{ path: '/devtools/css', label: 'Debugging CSS: Tracing a Computed Value' }}
     >
       <p>
         Most developers use maybe a fifth of the Elements panel — inspect, read a colour,

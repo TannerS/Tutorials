@@ -8,7 +8,7 @@ function ReactRefs() {
     <LessonLayout
       title="Refs In Depth — From Basics to Imperative APIs"
       sectionId="react18"
-      lessonIndex={3}
+      lessonIndex={4}
       prev={{ path: '/react18/hooks', label: 'Hooks Deep Dive' }}
       next={{ path: '/react18/state', label: 'State Management Patterns' }}
     >

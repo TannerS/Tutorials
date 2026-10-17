@@ -8,7 +8,7 @@ export default function CssMasteryFieldGuide() {
       kicker="FIELD GUIDE"
       glyph="🎨"
       tagline="Box model through anchor positioning, Sass, and design tokens — condensed from the CSS Mastery lessons into one fast-lookup sheet."
-      meta={['CSS3 + Sass', '27 panels']}
+      meta={['CSS3 + Sass', '29 panels']}
       page="1 / 1"
       footer="This page is for recall. The CSS Mastery lessons carry the walkthroughs and the reasoning behind each rule — this page is the fast-lookup sheet."
       prev={{ path: '/css-mastery/patterns', label: 'Layout Patterns & Recipes' }}
@@ -429,6 +429,68 @@ document.documentElement.dataset.theme = theme;  // "light" | "dark"
           ]}
         />
         <GuideRules items={["This Field Guide's own components (InfoBox, LessonLayout, CodeBlock) make this choice: inline style + CSS custom properties — SSR-safe with no build step, at the cost of the cascade/pseudo-class ergonomics they don't need for a single-owner site. The site as a whole still leans on real stylesheets (App.css, global.css) with className for everything else, including the guide/poster chrome this very page renders inside."]} />
+      </GuidePanel>
+
+      <GuidePanel n={28} title="Why Is This Element That Size?" accent="amber" glyph="📐" span={2}>
+        <GuideTable
+          head={['child with width/height:auto', 'inside a 300px / 200px parent']}
+          rows={[
+            ['display:block', 'width 300 — FILLS'],
+            ['display:inline-block', 'width 8 — shrink-wraps'],
+            ['flex child (no flex:1)', 'width 8 — shrink-wraps'],
+            ['flex child, flex:1', 'width 300'],
+            ['height:auto', 'height 18 — content only'],
+            ['height:100%, parent 200px', 'height 200'],
+            ['height:100%, parent height AUTO', 'height 18 — SILENTLY DROPPED'],
+            ['flex child, align-items default', 'height 200 — stretch, for free'],
+          ]}
+        />
+        <GuideRules items={[
+          'Measured in Chromium 149, standards mode. A block child fills the width; inline-block and flex children shrink-wrap. "My div stopped filling the width" almost always means a parent became display:flex.',
+          'height:100% needs a parent with a DEFINITE height. With height:auto the percentage is dropped with no warning. Use flex (stretch is free), or 100dvh, or give the parent a height.',
+          'THE STRETCHING BUG: flex and grid items have min-width:auto, which resolves to their CONTENT size — and a minimum beats a maximum. A 300px flex container with one long word rendered its item at 471px.',
+          'Fixes: min-width:0 on the flex item, or overflow:hidden (which also zeroes the automatic minimum), or minmax(0,1fr) instead of a bare 1fr in grid.',
+          'Ellipsis inside flex needs ALL of: flex:1, min-width:0, overflow:hidden, text-overflow:ellipsis, white-space:nowrap. The min-width:0 is the one everyone forgets.',
+          'Block containers OVERFLOW instead of stretching (box 300, scrollWidth 452). Container got wider = minimum-size bug. Container stayed put = use overflow-wrap:anywhere.',
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={29} title="Gotchas, Measured" accent="red" glyph="⚠️" span={3}>
+        <GuideCode>{`margin collapse    20px + 30px siblings  ->  30px gap (the MAX, not 50)
+                   a first child's margin-top pushes the PARENT down;
+                   any padding/border on the parent stops it;
+                   flex/grid NEVER collapse -> the same pair gave 50px
+
+% padding/margin   resolves against the CONTAINING BLOCK'S WIDTH, never
+                   height. padding-top:50% on a 584px-wide block = 292px.
+                   (That was the old aspect-ratio hack. Use aspect-ratio.)
+
+z-index            IGNORED on position:static. computed "999" and the
+                   other element still won; position:relative fixed it.
+
+transform          creates a CONTAINING BLOCK: a position:fixed child
+                   rendered at top 50 instead of escaping to top 0.
+                   Same for filter, perspective, will-change:transform,
+                   contain, backdrop-filter.
+
+position:sticky    sticks to the nearest SCROLLING ancestor, and only
+                   WITHIN its own parent's box. Measured failures:
+                     an intermediate overflow:hidden ancestor  -> top -250
+                     a parent shorter than the scroll range    -> top -188
+                   NOTE: overflow:hidden does NOT break sticky when that
+                   element IS the scroller — the usual folklore is wrong.
+
+inline-block gap   4px between two inline-blocks separated by a NEWLINE,
+                   0px with no whitespace. The newline is a space.`}</GuideCode>
+        <GuideRules items={[
+          'Shorthands reset every longhand they cover: background:red wipes background-image. flex:1 means flex-grow:1 + flex-shrink:1 + flex-basis:0%, and that 0% basis is the surprising part.',
+          'line-height: use the UNITLESS form. 1.5 inherits as a ratio; 150% inherits as a computed px value, so differently-sized children get the wrong leading.',
+          'em compounds through nesting, rem does not. rem for sizing, em for things that scale with their own text.',
+          '100vh includes mobile browser chrome — use 100dvh or 100svh.',
+          'overflow:hidden does four things at once: clips, creates a scroll container, zeroes a flex item automatic minimum, and changes sticky behaviour for descendants.',
+          'Guard :hover with @media (hover: hover) — it sticks after a tap on touch devices.',
+          'Use gap instead of margins between children: it cannot collapse and leaves no trailing margin.',
+        ]} />
       </GuidePanel>
     </GuideLayout>
   );

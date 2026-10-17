@@ -8,7 +8,7 @@ export default function Variables() {
     <LessonLayout
       title="Custom Properties & Modern CSS"
       sectionId="css-mastery"
-      lessonIndex={5}
+      lessonIndex={7}
       prev={{ path: '/css-mastery/animations', label: 'Animations & Transitions' }}
       next={{ path: '/css-mastery/sass', label: 'Sass & SCSS Fundamentals' }}
     >

@@ -10,7 +10,7 @@ export default function ThirdPartyLayered() {
       sectionId="react-testing"
       lessonIndex={8}
       prev={{ path: '/react-testing/best-practices', label: 'Best Practices & Anti-Patterns' }}
-      next={{ path: '/react-testing/cheatsheet', label: '📋 React Testing Field Guide' }}
+      next={{ path: '/react-testing/cheatsheet', label: 'React Testing Field Guide' }}
     >
       <p>
         Everything so far has tested components you wrote, two or three layers deep, made

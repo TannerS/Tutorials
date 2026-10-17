@@ -9,7 +9,7 @@ export default function LifecycleSim() {
     <LessonLayout
       title="🧪 Lifecycle Simulator"
       sectionId="react18"
-      lessonIndex={1}
+      lessonIndex={2}
       prev={{ path: '/react18/lifecycle', label: 'Component Lifecycle' }}
       next={{ path: '/react18/hooks', label: 'Hooks Deep Dive' }}
     >

@@ -10,7 +10,7 @@ export default function Deploy() {
       sectionId="go"
       lessonIndex={17}
       prev={{ path: '/go/database', label: 'Database Access Without an ORM' }}
-      next={{ path: '/go/cheatsheet', label: '📋 Go Field Guide' }}
+      next={{ path: '/go/cheatsheet', label: 'Go Field Guide' }}
     >
       <p>
         This is where Go's deployment story diverges most sharply from Node, and it is probably

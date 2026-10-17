@@ -7,7 +7,7 @@ export default function ErrorBoundaries() {
     <LessonLayout
       title="Error Boundaries"
       sectionId="react18"
-      lessonIndex={12}
+      lessonIndex={13}
       prev={{ path: '/react18/patterns', label: 'Advanced Patterns' }}
       next={{ path: '/react18/typescript', label: 'React + TypeScript' }}
     >

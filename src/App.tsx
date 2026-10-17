@@ -395,8 +395,14 @@ const A11yAria = lazy(() => import('./pages/accessibility/Aria'))
 const A11yKeyboard = lazy(() => import('./pages/accessibility/Keyboard'))
 const A11yTesting = lazy(() => import('./pages/accessibility/Testing'))
 
+const CSSSizing = lazy(() => import('./pages/css-mastery/Sizing'))
+const CSSGotchas = lazy(() => import('./pages/css-mastery/Gotchas'))
+const ReactJsx = lazy(() => import('./pages/react18/Jsx'))
+const StateChoosing = lazy(() => import('./pages/state-mgmt/Choosing'))
+
 // Browser DevTools
 const DtElements = lazy(() => import('./pages/devtools/Elements'))
+const DtCss = lazy(() => import('./pages/devtools/Css'))
 const DtConsole = lazy(() => import('./pages/devtools/Console'))
 const DtBreakpoints = lazy(() => import('./pages/devtools/Breakpoints'))
 const DtNetwork = lazy(() => import('./pages/devtools/Network'))
@@ -642,6 +648,7 @@ function App() {
         <Route path="from-scratch/httpserver" element={<FSHttpServer />} />
         <Route path="from-scratch/consensus" element={<FSConsensus />} />
         {/* React 19 */}
+        <Route path="react18/jsx" element={<ReactJsx />} />
         <Route path="react18/lifecycle" element={<ReactLifecycle />} />
         <Route path="react18/lifecycle-sim" element={<ReactLifecycleSim />} />
         <Route path="react18/hooks" element={<ReactHooks />} />
@@ -872,6 +879,7 @@ function App() {
         <Route path="react-router-v8/migration" element={<RRv8Migration />} />
         <Route path="react-router-v8/cheatsheet" element={<RRv8Cheatsheet />} />
         {/* State Management */}
+        <Route path="state-mgmt/choosing" element={<StateChoosing />} />
         <Route path="state-mgmt/intro" element={<SMIntro />} />
         <Route path="state-mgmt/comparison" element={<SMComparison />} />
         <Route path="state-mgmt/zustand-fundamentals" element={<SMZustandFundamentals />} />
@@ -894,6 +902,7 @@ function App() {
         <Route path="accessibility/testing" element={<A11yTesting />} />
         {/* Browser DevTools */}
         <Route path="devtools/elements" element={<DtElements />} />
+        <Route path="devtools/css" element={<DtCss />} />
         <Route path="devtools/console" element={<DtConsole />} />
         <Route path="devtools/breakpoints" element={<DtBreakpoints />} />
         <Route path="devtools/network" element={<DtNetwork />} />
@@ -920,6 +929,8 @@ function App() {
         <Route path="css-mastery/fundamentals" element={<CSSFundamentals />} />
         <Route path="css-mastery/flexbox" element={<CSSFlexbox />} />
         <Route path="css-mastery/grid" element={<CSSGrid />} />
+        <Route path="css-mastery/sizing" element={<CSSSizing />} />
+        <Route path="css-mastery/gotchas" element={<CSSGotchas />} />
         <Route path="css-mastery/responsive" element={<CSSResponsive />} />
         <Route path="css-mastery/animations" element={<CSSAnimations />} />
         <Route path="css-mastery/variables" element={<CSSVariables />} />

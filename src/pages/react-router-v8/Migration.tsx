@@ -10,7 +10,7 @@ export default function Migration() {
       sectionId="react-router-v8"
       lessonIndex={7}
       prev={{ path: '/react-router-v8/fullapp', label: 'Complete App Routing' }}
-      next={{ path: '/react-router-v8/cheatsheet', label: '📋 React Router v8 Field Guide' }}
+      next={{ path: '/react-router-v8/cheatsheet', label: 'React Router v8 Field Guide' }}
     >
       <p>
         React Router v8.0.0 shipped June 17, 2026, and this repo currently pins{' '}

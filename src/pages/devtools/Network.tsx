@@ -7,7 +7,7 @@ export default function DevtoolsNetwork() {
     <LessonLayout
       title="Network: Reading the Waterfall"
       sectionId="devtools"
-      lessonIndex={3}
+      lessonIndex={4}
       prev={{ path: '/devtools/breakpoints', label: 'Breakpoints & the Sources Panel' }}
       next={{ path: '/devtools/performance', label: 'Performance: Flame Charts & Long Tasks' }}
     >

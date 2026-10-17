@@ -156,6 +156,7 @@ export const sections: Section[] = [
     icon: '⚛️',
     color: '#22d3ee',
     lessons: [
+      { id: 'jsx', title: 'What JSX Really Is', path: '/react18/jsx' },
       { id: 'lifecycle', title: 'Component Lifecycle', path: '/react18/lifecycle' },
       { id: 'lifecycle-sim', title: '🧪 Lifecycle Simulator', path: '/react18/lifecycle-sim' },
       { id: 'hooks', title: 'Hooks Deep Dive', path: '/react18/hooks' },
@@ -607,6 +608,7 @@ export const sections: Section[] = [
     color: '#764abc',
     lessons: [
       { id: 'comparison', title: 'The State Escalation Ladder', path: '/state-mgmt/comparison' },
+      { id: 'choosing', title: 'Zustand vs Redux vs Context — Choosing', path: '/state-mgmt/choosing' },
     ],
   },
   {
@@ -661,6 +663,7 @@ export const sections: Section[] = [
     color: '#38bdf8',
     lessons: [
       { id: 'elements', title: 'Elements: Inspecting the Live DOM', path: '/devtools/elements' },
+      { id: 'css', title: 'Debugging CSS: Tracing a Computed Value', path: '/devtools/css' },
       { id: 'console', title: 'Console: Beyond console.log', path: '/devtools/console' },
       { id: 'breakpoints', title: 'Breakpoints & the Sources Panel', path: '/devtools/breakpoints' },
       { id: 'network', title: 'Network: Reading the Waterfall', path: '/devtools/network' },
@@ -708,6 +711,8 @@ export const sections: Section[] = [
       { id: 'fundamentals', title: 'CSS Fundamentals from Scratch', path: '/css-mastery/fundamentals' },
       { id: 'flexbox', title: 'Flexbox Complete Guide', path: '/css-mastery/flexbox' },
       { id: 'grid', title: 'CSS Grid Complete Guide', path: '/css-mastery/grid' },
+      { id: 'sizing', title: 'Why Is This Element That Size?', path: '/css-mastery/sizing' },
+      { id: 'gotchas', title: 'CSS Gotchas: Collapse, Stacking & Containing Blocks', path: '/css-mastery/gotchas' },
       { id: 'responsive', title: 'Responsive Design', path: '/css-mastery/responsive' },
       { id: 'animations', title: 'Animations & Transitions', path: '/css-mastery/animations' },
       { id: 'variables', title: 'Custom Properties & Modern CSS', path: '/css-mastery/variables' },

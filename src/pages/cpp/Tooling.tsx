@@ -10,7 +10,7 @@ export default function Tooling() {
       sectionId="cpp"
       lessonIndex={19}
       prev={{ path: '/cpp/performance', label: 'Performance: Cache, Copies & Undefined Behaviour' }}
-      next={{ path: '/cpp/cheatsheet', label: '📋 C++ Field Guide' }}
+      next={{ path: '/cpp/cheatsheet', label: 'C++ Field Guide' }}
     >
       <p>
         The last lesson before the field guide, and the one that decides whether everything else in

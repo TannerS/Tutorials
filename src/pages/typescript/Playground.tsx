@@ -9,7 +9,7 @@ export default function TsPlayground() {
       sectionId="typescript"
       lessonIndex={10}
       prev={{ path: '/typescript/tsconfig', label: 'tsconfig Mastery' }}
-      next={{ path: '/typescript/enterprise', label: 'Enterprise Patterns' }}
+      next={{ path: '/typescript/enterprise', label: 'Enterprise TypeScript Patterns' }}
     >
       <p>
         Eight hands-on challenges covering the TypeScript concepts that come up most in real codebases.

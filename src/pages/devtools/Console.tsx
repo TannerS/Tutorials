@@ -7,8 +7,8 @@ export default function DevtoolsConsole() {
     <LessonLayout
       title="Console: Beyond console.log"
       sectionId="devtools"
-      lessonIndex={1}
-      prev={{ path: '/devtools/elements', label: 'Elements: Inspecting the Live DOM' }}
+      lessonIndex={2}
+      prev={{ path: '/devtools/css', label: 'Debugging CSS: Tracing a Computed Value' }}
       next={{ path: '/devtools/breakpoints', label: 'Breakpoints & the Sources Panel' }}
     >
       <p>

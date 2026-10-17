@@ -17,7 +17,7 @@ function Compiling() {
       title="Compiling, Linking & the One-Definition Rule"
       sectionId="cpp"
       lessonIndex={1}
-      prev={{ path: '/cpp/intro', label: "C++ in 2026: Which C++ You're Actually Writing" }}
+      prev={{ path: '/cpp/intro', label: 'C++ in 2026: Which C++ You\'re Actually Writing' }}
       next={{ path: '/cpp/types', label: 'Types, auto & Control Flow' }}
     >
       <p>

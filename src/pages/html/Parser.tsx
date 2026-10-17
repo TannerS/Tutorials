@@ -10,7 +10,7 @@ export default function HtmlParser() {
       sectionId="html"
       lessonIndex={5}
       prev={{ path: '/html/media', label: 'Images, Media & Responsive Assets' }}
-      next={{ path: '/html/field-guide', label: '📋 HTML Field Guide' }}
+      next={{ path: '/html/field-guide', label: 'HTML Field Guide' }}
     >
       <p>
         HTML has no syntax errors. Hand a browser the worst markup you can write and it

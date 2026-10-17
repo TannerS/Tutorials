@@ -8,8 +8,8 @@ export default function Responsive() {
     <LessonLayout
       title="Responsive Design"
       sectionId="css-mastery"
-      lessonIndex={3}
-      prev={{ path: '/css-mastery/grid', label: 'CSS Grid Complete Guide' }}
+      lessonIndex={5}
+      prev={{ path: '/css-mastery/gotchas', label: 'CSS Gotchas: Collapse, Stacking & Containing Blocks' }}
       next={{ path: '/css-mastery/animations', label: 'Animations & Transitions' }}
     >
       <p>Modern responsive design goes far beyond media queries. Container queries, fluid typography, dynamic viewport units, and logical properties have fundamentally changed how we build adaptive layouts. This is the modern toolkit every senior engineer should have internalized.</p>

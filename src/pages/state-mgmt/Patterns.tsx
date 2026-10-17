@@ -9,7 +9,7 @@ export default function Patterns() {
       title="Context Patterns in the Real World"
       sectionId="state-context"
       lessonIndex={1}
-      prev={{ path: '/state-mgmt/intro', label: "When Context Isn't Enough" }}
+      prev={{ path: '/state-mgmt/intro', label: 'When Context Isn\'t Enough' }}
       next={{ path: '/state-mgmt/zustand-fundamentals', label: 'Zustand: Fundamentals' }}
     >
       <p>

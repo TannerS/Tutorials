@@ -8,8 +8,8 @@ export default function Lifecycle() {
     <LessonLayout
       title="Component Lifecycle In Depth"
       sectionId="react18"
-      lessonIndex={0}
-      prev={null}
+      lessonIndex={1}
+      prev={{ path: '/react18/jsx', label: 'What JSX Really Is' }}
       next={{ path: '/react18/lifecycle-sim', label: '🧪 Lifecycle Simulator' }}
     >
       <p>React components go through predictable phases. Understanding these phases—and the distinction between the <strong>render phase</strong> and <strong>commit phase</strong>—is critical for writing correct, performant code.</p>

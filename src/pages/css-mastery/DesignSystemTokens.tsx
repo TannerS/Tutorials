@@ -8,7 +8,7 @@ export default function DesignSystemTokens() {
     <LessonLayout
       title="Design System Tokens: A Carbon Deep Dive"
       sectionId="css-mastery"
-      lessonIndex={8}
+      lessonIndex={10}
       prev={{ path: '/css-mastery/tokens', label: 'Design Tokens & Theming Architecture' }}
       next={{ path: '/css-mastery/style-inclusion', label: 'Style-Inclusion Methods' }}
     >

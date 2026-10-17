@@ -10,7 +10,7 @@ export default function Grid() {
       sectionId="css-mastery"
       lessonIndex={2}
       prev={{ path: '/css-mastery/flexbox', label: 'Flexbox Complete Guide' }}
-      next={{ path: '/css-mastery/responsive', label: 'Responsive Design' }}
+      next={{ path: '/css-mastery/sizing', label: 'Why Is This Element That Size?' }}
     >
       <p>CSS Grid is the first layout system designed for two dimensions. Unlike Flexbox (one axis at a time), Grid gives you simultaneous control over rows and columns. This guide covers everything from container basics to subgrid and production patterns.</p>
 

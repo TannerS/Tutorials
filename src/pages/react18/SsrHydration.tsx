@@ -8,7 +8,7 @@ export default function SsrHydration() {
     <LessonLayout
       title="SSR & Hydration"
       sectionId="react18"
-      lessonIndex={10}
+      lessonIndex={11}
       prev={{ path: '/react18/server', label: 'Server Components & Actions' }}
       next={{ path: '/react18/patterns', label: 'Advanced Patterns' }}
     >

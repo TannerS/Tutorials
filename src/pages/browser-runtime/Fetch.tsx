@@ -10,7 +10,7 @@ export default function BrowserFetch() {
       sectionId="browser-runtime"
       lessonIndex={5}
       prev={{ path: '/browser-runtime/storage', label: 'Storage: localStorage, Cookies & IndexedDB' }}
-      next={{ path: '/browser-runtime/field-guide', label: '📋 Browser Runtime Field Guide' }}
+      next={{ path: '/browser-runtime/field-guide', label: 'Browser Runtime Field Guide' }}
     >
       <p>
         Two things about <code>fetch</code> cause most of the confusion: it does{' '}

@@ -8,9 +8,9 @@ export default function Portals() {
     <LessonLayout
       title="Portals, In Depth"
       sectionId="react18"
-      lessonIndex={21}
+      lessonIndex={22}
       prev={{ path: '/react18/animations', label: 'Animation Libraries (Framer Motion & Beyond)' }}
-      next={{ path: '/react18/cheat-sheet', label: '📋 React 18 Field Guide' }}
+      next={{ path: '/react18/cheat-sheet', label: 'React 18 Field Guide' }}
     >
       <p>
         <code>createPortal(children, domNode)</code> renders <code>children</code> into{' '}

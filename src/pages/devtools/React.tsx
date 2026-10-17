@@ -7,9 +7,9 @@ export default function DevtoolsReact() {
     <LessonLayout
       title="React DevTools & Profiling"
       sectionId="devtools"
-      lessonIndex={5}
+      lessonIndex={6}
       prev={{ path: '/devtools/performance', label: 'Performance: Flame Charts & Long Tasks' }}
-      next={{ path: '/devtools/field-guide', label: '📋 DevTools Field Guide' }}
+      next={{ path: '/devtools/field-guide', label: 'DevTools Field Guide' }}
     >
       <p>
         The browser&apos;s own panels show you the DOM and the main thread. Neither knows
