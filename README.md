@@ -1,8 +1,8 @@
 # Tutorials
 
-A personal study site: React 19 + TypeScript, covering Java, Spring Boot 4, React 19, TypeScript, SQL/Postgres, SOLID, design patterns, microservices, API design, auth & security, testing, frontend tooling & npm, CSS, accessibility, and more — 31 sections, five with dedicated printable "field guide" cheat sheets. Cmd-K command palette, sticky table of contents, dark/light theme, live Sandpack editor.
+A personal study site: React 19 + TypeScript, covering HTML, CSS/SCSS, the browser runtime, browser DevTools, core JavaScript, TypeScript, React 19 (plus state management, routing, React Query, MUI and testing), Java and Spring Boot, Go, C++, SQL/Postgres/T-SQL, data structures & algorithms, SOLID, design patterns, DDD, system design, microservices, cloud & observability, API design, auth & security, testing, frontend tooling & npm, and accessibility — **49 sections, 428 lessons**, 29 of them printable "field guide" cheat sheets. Cmd-K command palette, sticky table of contents, dark/light theme, live Sandpack editor.
 
-The authoritative list of sections is `src/data/sections.ts`.
+The authoritative list of sections is `src/data/sections.ts` — treat the counts above as a snapshot and that file as the source of truth.
 
 ---
 
@@ -30,11 +30,24 @@ npm run dev        # http://localhost:5173
 ## Useful commands
 
 ```bash
-npm run typecheck   # tsc --noEmit
-npm run build       # tsc && vite build
-npm run lint        # eslint . — covers .ts/.tsx via typescript-eslint
-npm run preview     # serve the production build locally
+npm run verify           # typecheck + lint + every diagram renders — run this before committing
+npm run typecheck        # tsc --noEmit
+npm run lint             # eslint . — covers .ts/.tsx via typescript-eslint
+npm run verify:diagrams  # renders every <FlowChart> in headless Chromium
+npm run check:versions   # flags "the latest X is N" claims that npm/Maven now disagree with
+npm run build            # tsc && vite build
+npm run preview          # serve the production build locally
 ```
+
+`verify:diagrams` exists because `FlowChart` catches mermaid errors and leaves
+the box **empty** — a diagram with a syntax error fails silently, and neither
+`tsc` nor `eslint` nor the build will tell you. It extracts every `chart={...}`
+in `src/pages`, renders each with the repo's own mermaid build, and exits
+non-zero on the first failure.
+
+`check:versions` only flags *currency* claims ("the latest is 25", "currently
+ships as"), never bare version numbers — a measured `"Real output on Node 24"`
+is provenance and must not be bumped, or the output stops matching the claim.
 
 ---
 
@@ -88,7 +101,9 @@ theme flattened to ink-on-paper regardless of the theme you were reading in.
 │   ├── pages/           # One folder per section, one file per lesson
 │   └── styles/            # Global theme tokens + poster/field-guide print styles
 ├── scripts/
-│   └── build-pdf.mjs        # Per-section PDF export (Playwright + pdf-lib)
+│   ├── build-pdf.mjs        # Per-section PDF export (Playwright + pdf-lib)
+│   ├── verify-mermaid.mjs   # Renders every <FlowChart>; catches silent diagram errors
+│   └── check-versions.mjs   # Checks "latest version is N" claims against npm / Maven
 ├── public/
 ├── index.html
 ├── vite.config.ts
@@ -105,7 +120,7 @@ theme flattened to ink-on-paper regardless of the theme you were reading in.
 | Layer | Choice |
 | --- | --- |
 | Framework | React 19.2 + Vite 8 + TypeScript 6 |
-| Routing | react-router-dom v7 |
+| Routing | `react-router` v7 (v7 merged `react-router-dom` into it; routes are lazy-loaded via `React.lazy`) |
 | Live editor | @codesandbox/sandpack-react |
 | Diagrams | Mermaid |
 | Syntax highlighting | react-syntax-highlighter (Prism) |

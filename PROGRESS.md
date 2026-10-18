@@ -736,3 +736,134 @@ User said "do the fixes" and then, as work ran, added four more: React Testing n
 **Design tokens** got a new `css-mastery` lesson written against Carbon's actual source, aimed at a reader who said they are "bad with CSS and UI". The load-bearing idea: a Sass variable is compile-time substitution and is gone at runtime, whereas a custom property is a real inherited property resolved at computed-value time — which is why `.cds--layer-two { --cds-layer: var(--cds-layer-02); }` makes a Tile inside a Tile step to the next background level without either component knowing about the other, and why a theme swap is just a style recalculation.
 
 **Verified**: `tsc --noEmit` and `vite build` clean; the SQL claims re-run against live Postgres 18.6/17.11/16.15 containers (including reproducing the `SECURITY DEFINER` escalation and its fix, and PG18 skip scan appearing on 18 but not 17); the Java preview status re-run against the installed JDK 26.0.1; CSS cascade and custom-property claims measured in real Chromium; the React batching claims measured with a render counter in a real browser; routing exercised end-to-end after the `react-router` migration; and a full sweep of every lesson with zero console errors and zero broken diagrams.
+
+## Round 27 — full-repo accuracy audit, code splitting, and the frontend gaps
+
+One long session, driven by four stated goals: the content should flow in order,
+nothing should be broken, nothing should be wrong, and there should be enough
+detail to actually explain things. Work was committed incrementally rather than
+batched; the entries below group ~20 commits by what they were for.
+
+**Three silently-broken diagrams, and a guard so it cannot recur.** `FlowChart`
+catches mermaid errors and leaves the box *empty*, so a syntax error ships as a
+blank gap that no build, typecheck or lint will mention. Two root causes, both
+mermaid 11 lexing: `[/` opens the parallelogram shape form, and backslash-escaped
+quotes inside a `"`-quoted label terminate it early. Fixed, then added
+`scripts/verify-mermaid.mjs` — it extracts every `chart={...}` in `src/pages`
+(both the template-literal and the quoted form, resolving JS escapes), renders
+each with the repo's own mermaid build in headless Chromium, and exits non-zero
+on the first failure. Wired into `npm run verify` alongside typecheck and lint.
+The previously tracked `.verify-mermaid.tmp.mjs` could not run at all and was
+replaced.
+
+**Version drift, with the distinction that matters.** Added
+`scripts/check-versions.mjs`, tracking 25 packages against npm dist-tags and
+Maven `maven-metadata.xml`. The important design choice: it matches only
+*currency* assertions ("the latest is", "currently ships as", "now at"), never
+bare version numbers — because most version strings in this repo are
+**provenance** ("Real output on Node 24"), and bumping those attributes a real
+measurement to a version that never produced it. Its own output documents that
+all three first-run candidates were false positives, and says to open each line
+before changing anything. Re-run at the end of the round: the same three
+candidates, re-confirmed false positives (a dist-tag line that was more precise
+than the tool, an introduced-in-19.2 historical fact, and a comparison against
+the wrong Maven artifact).
+
+**Code splitting.** All 399 page imports converted to `React.lazy`, with a
+`Suspense` boundary around `<Outlet />` in `Layout`. Entry chunk 11.7 MB → 374 kB.
+This broke the PDF pipeline in a way that was easy to miss: `build-pdf.mjs`
+waited only for `'load'`, and the lesson-presence check used `[].every()`, which
+returns `true` on an empty array — so it captured the Suspense fallback and
+reported success. Proved load-bearing by diffing a captured page before and
+after the fix: 4,954 chars versus 25,347. Now waits for `main h1` and the
+absence of "Loading lesson…".
+
+**A navigation bug found by the user, not by me.** CSS Mastery rendered as part
+of Security. The cause was `Sidebar.tsx` rendering ungrouped sections *after*
+the groups at depth 0, so a loose section appeared to belong to the last group.
+I had verified the section was reachable in the data and never looked at the
+rendered tree — a real gap in method, now closed by checking rendered row
+offsets in a browser. Ungrouped sections now render first with a divider, and
+the web-platform topics were given their own group.
+
+**Section-by-section verification by execution.** Roughly 90 claims re-checked
+by running them, not by reasoning about them: SQL against a real PostgreSQL 18.6
+container, Java against the installed JDK, Maven/Mockito against a real build,
+CSS and DOM claims in Chromium. Four near-miss false reports were caught and
+discarded before they became edits — a Java constructor error that only appears
+under source-launch (the lesson compiles first), an `:is()` specificity case
+where my own test selector never matched, an `npm_package_*` count whose fixture
+was missing `bin`, and a "SQL Server 2018" that the lesson explicitly says does
+not exist. Also 30 lessons with an empty or mislabelled "Test Your Knowledge"
+heading, and Error Boundaries moved into the core-React run because three later
+lessons leaned on the term before it was taught.
+
+**A measurement-methodology bug worth recording.** Playwright's
+`page.setContent('<div>…')` renders in **quirks mode** — `document.compatMode`
+is `"BackCompat"`. My sizing probes reported `height: 100%` as 400px (resolved
+against the viewport) where the standards-mode answer is 18px. Every affected
+claim was re-measured with an explicit doctype and an asserted `compatMode`;
+11 published claims re-checked, zero mismatches. Cascade, specificity and DOM
+behaviour came back identical in both modes, so only geometry was at risk — but
+assert the mode rather than guessing which category a claim is in.
+
+**Three new sections for the frontend gaps** — HTML (7 lessons), Browser
+DevTools (8), and Browser Runtime & the DOM (7, now 8) — plus CSS sizing and
+gotchas lessons, a JSX-internals lesson, and a Zustand-vs-Redux-vs-Context
+decision lesson. The DevTools and CSS material targets a specific real-work
+problem the user described: finding *where* a computed size or colour came from,
+and why a child stretches its container.
+
+**The mobile layout.** The 220px table of contents sat beside the lesson on a
+390px phone and squeezed the content to 106px — the nav was twice as wide as the
+thing it indexed. The width is an inline style, so no media query could reach
+it; added a `lesson-toc` class and hid the aside below 1280px. My first attempt
+used a 1024px breakpoint and made 1025–1200px *worse* (content 397px with 648px
+of hidden TOC space), which only showed up because the fix was measured at five
+widths rather than assumed.
+
+**Events, across all three layers.** Node's `events` module appeared nowhere in
+the repo despite being the substrate for streams, HTTP servers and child
+processes; React's synthetic event system had one passing mention. Added
+`javascript/events` and `react18/events`, both measured — synchronous listeners,
+`'error'` with no listener *throwing* rather than warning, identity-based
+removal, the verbatim `MaxListenersExceededWarning`, the module-caching
+singleton, and the async-listener trap where a rejection becomes
+`unhandledRejection` instead of the `'error'` event unless the emitter is
+constructed with `captureRejections`. Then `browser-runtime/lifecycle` for the
+non-input half of the event surface: the measured teardown order, why
+`beforeunload`/`unload` are not save hooks and why an `unload` listener alone
+disqualifies bfcache, and the four cross-context channels — including that a
+`BroadcastChannel` sender does not receive its own message, and that
+`postMessage` with a mismatched `targetOrigin` is dropped *silently*.
+
+**A correction to the repo, and to something I had said.** `browser-runtime/Events`
+asserted that a `document` listener may run before a React `onClick` and that
+React's `stopPropagation` cannot stop native listeners. Both are false on
+React 17+, and measured false: React moved its attachment from `document` to the
+**root container**, so `document` now sits *above* React in the real tree — it
+runs last, and `stopPropagation` does suppress it. Rewritten around the fact
+that decides both, which is where a listener sits relative to the root. The old
+text is the pre-17 advice that is still repeated everywhere.
+
+**Also**: added the RabbitMQ↔Kafka vocabulary translation to
+`systemdesign/Messaging` — not another comparison table but a dictionary whose
+third column is where each analogy breaks (a queue is storage, a consumer group
+is only a cursor; an ack removes one message, a commit asserts a position).
+
+**Verified at the end of the round**: `npm run verify` clean (typecheck, lint,
+575 diagrams rendering); 49 sections / 428 lessons / 428 routes / 428 page files
+aligned with zero orphans or duplicates; the full group tree walked recursively
+to confirm every section is reachable in the sidebar; all internal links
+resolving apart from four `/x`-style placeholders inside teaching code samples;
+prev/next chains walked in both directions with the four deliberate
+cross-section chains intact; and every touched page rendered in a built preview
+with zero console errors.
+
+**Left open**: the PDFs are stale (the user said not to worry about them for
+now); section depth is uneven, though four separate metric heuristics were
+tried and each overcounted badly — the conclusion was that there is no systemic
+depth problem, so only lessons thin by *every* measure were expanded; GitHub
+Pages' Source setting still needs a human; three old stashes remain, one
+labelled "UNAUTHORIZED agent changes — review before applying"; and the sibling
+`CppGameEngine` repo has 12 local commits and no remote.
