@@ -74,6 +74,107 @@ function Aria() {
         <strong> Live region roles</strong> announce dynamic content changes.
       </p>
 
+      {/* ── Implicit roles ───────────────────────────────── */}
+      <h2>The Role Your HTML Already Has</h2>
+
+      <p>
+        Almost nothing above needs to be written by hand, because <strong>every element
+        you already use has an implicit role</strong>. This is the table you actually reach
+        for — not to add ARIA, but to know what is there. It is also why{' '}
+        <code>getByRole()</code> in React Testing Library, Playwright and Cypress works on
+        plain HTML with no ARIA attributes anywhere: those queries walk the accessibility
+        tree, and the roles below are what they find.
+      </p>
+
+      <CodeBlock language="text" title="Real output — roles reported by @testing-library/dom 10.4.2 (jsdom 30.1.3)">
+{`<button>                  button          <ul> <ol>              list
+<input type="submit">     button          <li>                   listitem
+<a href="...">            link            <select>               combobox
+<a>  (no href)            generic   <--   <select multiple>      listbox
+<input type="text">       textbox         <option>               option
+<input type="email">      textbox
+<input type="tel">        textbox         <table>                table
+<input type="url">        textbox         <tr>                   row
+<textarea>                textbox         <td>                   cell
+<input type="search">     searchbox       <th>                   columnheader
+<input type="number">     spinbutton      <thead> <tbody>        rowgroup
+<input type="checkbox">   checkbox        <caption>              caption
+<input type="radio">      radio
+<input type="range">      slider          <h1> ... <h6>          heading
+                                          <p>                    paragraph
+<nav>                     navigation      <img alt="text">       img
+<main>                    main            <img alt="">           presentation
+<header>                  banner          <hr>                   separator
+<footer>                  contentinfo     <dialog>               dialog
+<aside>                   complementary   <details>              group
+<article>                 article         <fieldset>             group
+<section aria-label>      region          <progress>             progressbar
+<section>  (unnamed)      generic   <--   <meter>                meter
+<form aria-label>         form            <output>               status
+<div> <span>              generic
+
+NO ROLE AT ALL:
+  <input type="password">   <input type="file">   <input type="date">
+  <form>  (unnamed)         <dl>   <legend>   <summary>`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="The four rows marked above are where tests and screen readers quietly disagree with you">
+        <ul style={{ marginBottom: 0 }}>
+          <li>
+            <strong><code>&lt;a&gt;</code> without <code>href</code> is not a link.</strong>{' '}
+            It is <code>generic</code>. An anchor used as a click target has no role, no
+            keyboard activation and no name — and{' '}
+            <code>getByRole(&apos;link&apos;)</code> will not find it. Use a{' '}
+            <code>&lt;button&gt;</code>.
+          </li>
+          <li>
+            <strong><code>&lt;section&gt;</code> and <code>&lt;form&gt;</code> only get
+            their role once they have an accessible name.</strong> An unnamed{' '}
+            <code>&lt;section&gt;</code> is a <code>div</code> as far as assistive tech is
+            concerned. Give it <code>aria-labelledby</code> pointing at its own heading and
+            it becomes a navigable <code>region</code>.
+          </li>
+          <li>
+            <strong><code>&lt;input type=&quot;password&quot;&gt;</code> has no role.</strong>{' '}
+            Deliberately — so assistive tech does not read the value aloud. So{' '}
+            <code>getByRole(&apos;textbox&apos;, {'{ name: /password/i }'})</code> can never
+            pass. Use <code>getByLabelText(/password/i)</code>. Same for{' '}
+            <code>type=&quot;file&quot;</code> and <code>type=&quot;date&quot;</code>.
+          </li>
+          <li>
+            <strong><code>alt=&quot;&quot;</code> is not a missing <code>alt</code>.</strong>{' '}
+            It changes the role from <code>img</code> to <code>presentation</code>, which
+            is the correct, deliberate way to hide a decorative image. Omitting{' '}
+            <code>alt</code> entirely does not.
+          </li>
+        </ul>
+      </InfoBox>
+
+      <CodeBlock language="jsx" title="Stop guessing — print the tree">
+{`// React Testing Library / @testing-library/dom:
+import { logRoles } from '@testing-library/dom';
+logRoles(container);        // every role present, and what matched it
+
+// Playwright:
+await expect(page.locator('body')).toMatchAriaSnapshot(\`...\`);
+console.log(await page.locator('body').ariaSnapshot());
+
+// Chrome DevTools: Elements -> Accessibility pane shows the computed
+// role and name for the selected node, and the full a11y tree.`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Why this makes tests better, not just more accessible">
+        <p style={{ marginBottom: 0 }}>
+          A <code>getByRole(&apos;button&apos;, {'{ name: \'Save\' }'})</code> asserts two
+          things in one line: the element exists, <em>and</em> it is exposed to users
+          correctly. A <code>getByTestId(&apos;save-btn&apos;)</code> asserts neither — it
+          passes just as happily on a <code>&lt;div&gt;</code> nobody can reach by
+          keyboard. That is the whole argument for the query ladder in{' '}
+          <a href="/react-testing/best-practices">Testing Best Practices &amp; Anti-Patterns</a>,
+          which also measures how the <code>name</code> option is computed.
+        </p>
+      </InfoBox>
+
       {/* ── Naming: label vs labelledby vs describedby ───── */}
       <h2>aria-label vs aria-labelledby vs aria-describedby</h2>
 

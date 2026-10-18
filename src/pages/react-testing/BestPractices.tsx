@@ -187,6 +187,14 @@ OK   getByRole('button', { name: 'Hidden action', hidden: true })`}
         </p>
       </InfoBox>
 
+      <p>
+        If you are unsure which role a given element even has — and the surprises there are
+        real, starting with <code>&lt;a&gt;</code> without an <code>href</code> being{' '}
+        <code>generic</code> rather than <code>link</code> — the measured
+        element-to-role table is in{' '}
+        <a href="/accessibility/aria">ARIA Roles &amp; Attributes</a>.
+      </p>
+
       <h2>How an Accessible Name Actually Resolves</h2>
       <p>
         <code>getByRole(&apos;button&apos;, {'{ name: ... }'})</code> does not read{' '}
