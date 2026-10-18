@@ -221,9 +221,26 @@ export default function Sidebar() {
       .map((id) => sections.find((s) => s.id === id))
       .filter((s): s is Section => s !== undefined);
     const indent = depth * 0.75;
+    // Only a TOP-LEVEL group gets the full-bleed rule. A nested group used to
+    // carry the identical border, so the line above "Java" (a child of
+    // Languages) was indistinguishable from the one above "Database" (a
+    // sibling of it) — three nesting levels sharing one divider, which read as
+    // "a new top-level group starts here". Nested groups get an inset rule
+    // instead, starting at their own indent so its length encodes its depth.
+    const isTopLevel = depth === 0;
 
     return (
       <div key={group.id}>
+        {!isTopLevel && (
+          <div
+            aria-hidden="true"
+            style={{
+              height: '1px',
+              background: 'var(--border-color)',
+              marginLeft: `${1 + indent}rem`,
+            }}
+          />
+        )}
         <button
           type="button"
           onClick={() => toggleGroup(group.id)}
@@ -238,7 +255,7 @@ export default function Sidebar() {
             justifyContent: 'space-between',
             cursor: 'pointer',
             color: group.color,
-            borderTop: '1px solid var(--border-color)',
+            borderTop: isTopLevel ? '1px solid var(--border-color)' : 'none',
           }}
           onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
           onMouseLeave={e => e.currentTarget.style.background = 'none'}
