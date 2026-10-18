@@ -519,6 +519,138 @@ async function startConsumer() {
         </tbody>
       </table>
 
+      <h3>The Vocabulary Translation</h3>
+
+      <p>
+        Most of the confusion between the two is vocabulary, not architecture. If you know
+        one, this is the dictionary for the other &mdash; and the last column is the part
+        that matters, because none of these mappings are exact:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>RabbitMQ</th>
+            <th>Kafka</th>
+            <th>Where the analogy breaks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Exchange + routing key</td>
+            <td>Topic + partition key</td>
+            <td>
+              An exchange <em>routes</em> &mdash; the broker decides which queues a message
+              lands in. A partition key only decides <em>which partition</em> inside one
+              topic, so it controls ordering and parallelism, not destinations. Routing
+              logic that lives in a RabbitMQ binding has to move into the producer (pick a
+              topic) or the consumer (filter) on Kafka.
+            </td>
+          </tr>
+          <tr>
+            <td>Queue</td>
+            <td>Consumer group</td>
+            <td>
+              A queue is <strong>storage</strong>; a consumer group is only a{' '}
+              <strong>cursor</strong>. The messages live in the topic either way. Deleting
+              a consumer group loses your position, not your data &mdash; deleting a queue
+              loses the messages.
+            </td>
+          </tr>
+          <tr>
+            <td>Fanout exchange &rarr; N queues</td>
+            <td>One topic &rarr; N consumer groups</td>
+            <td>
+              This one is close. On Kafka you do not declare anything to add a second
+              reader: a new group id starts reading, optionally from the beginning of
+              retention.
+            </td>
+          </tr>
+          <tr>
+            <td><code>basic.ack</code> (per message)</td>
+            <td>Offset commit (a position)</td>
+            <td>
+              The big one. An ack removes <em>that</em> message; a commit says
+              &quot;everything up to here is done&quot;. So you cannot ack message 7 and
+              leave 5 outstanding &mdash; committing 7 implicitly covers 5. Out-of-order
+              completion needs its own bookkeeping.
+            </td>
+          </tr>
+          <tr>
+            <td><code>basic.nack</code> / requeue</td>
+            <td>Don&apos;t commit, or <code>seek()</code></td>
+            <td>
+              Requeue puts one message back for anyone to retry. Not committing replays{' '}
+              <em>everything</em> after the last commit, to the same consumer, in order
+              &mdash; which is why a single poison message blocks a Kafka partition but
+              only one message on RabbitMQ.
+            </td>
+          </tr>
+          <tr>
+            <td><code>prefetch</code> / <code>basic.qos</code></td>
+            <td><code>max.poll.records</code></td>
+            <td>
+              Both cap in-flight work, but for opposite reasons: prefetch stops the broker
+              pushing too much at you, <code>max.poll.records</code> stops{' '}
+              <em>you</em> fetching more than you can process before{' '}
+              <code>max.poll.interval.ms</code> expires and you get kicked out of the
+              group.
+            </td>
+          </tr>
+          <tr>
+            <td>Dead-letter exchange &rarr; DLQ</td>
+            <td>Dead-letter topic</td>
+            <td>
+              RabbitMQ dead-letters for you on nack/expiry/length-limit. Kafka has no
+              built-in concept &mdash; your consumer (or Spring&apos;s{' '}
+              <code>DeadLetterPublishingRecoverer</code>) must produce to the DLT itself,
+              then commit.
+            </td>
+          </tr>
+          <tr>
+            <td>TTL + DLX retry queues</td>
+            <td>Retry topics with a delay</td>
+            <td>
+              Same trick, both bolted on. Neither broker has a native &quot;redeliver this
+              in 30 seconds&quot;, so a backoff ladder means a chain of queues/topics, one
+              per delay tier.
+            </td>
+          </tr>
+          <tr>
+            <td>Competing consumers on a queue</td>
+            <td>Consumers in a group, one per partition</td>
+            <td>
+              RabbitMQ parallelism is unbounded &mdash; add a consumer, it gets work.
+              Kafka parallelism is <strong>capped by partition count</strong>. The 7th
+              consumer on a 6-partition topic sits idle, which is the most common Kafka
+              scaling surprise.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <InfoBox variant="tip" title="The one-sentence version">
+        <p style={{ marginBottom: 0 }}>
+          RabbitMQ is a <strong>router with buffers</strong>: smart broker, dumb consumers,
+          messages leave when handled. Kafka is a <strong>durable log with cursors</strong>:
+          dumb broker, smart consumers, messages stay and readers remember where they
+          were. Almost every difference in the tables above falls out of that one
+          distinction &mdash; including why replay is free on one and impossible on the
+          other, and why ordering is per-queue versus per-partition.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="info" title="Where this pattern started">
+        <p style={{ marginBottom: 0 }}>
+          Both are the same publish/subscribe shape as an in-process event bus, with the
+          emitter replaced by a broker so that the publisher and subscriber no longer have
+          to share a heap. If the broker concepts feel abstract, the one-process version in{' '}
+          <a href="/javascript/events">Events &amp; EventEmitter in Node</a> maps{' '}
+          <code>emit</code>/<code>on</code> onto publish/bind line by line, and shows the
+          four things you lose by not having a broker.
+        </p>
+      </InfoBox>
+
       {/* ───────────────────────────────────────────────
           Section 6 – Event Sourcing
       ─────────────────────────────────────────────── */}
