@@ -8,8 +8,8 @@ export default function BrowserFetch() {
     <LessonLayout
       title="fetch, CORS & the Request Lifecycle"
       sectionId="browser-runtime"
-      lessonIndex={5}
-      prev={{ path: '/browser-runtime/storage', label: 'Storage: localStorage, Cookies & IndexedDB' }}
+      lessonIndex={6}
+      prev={{ path: '/browser-runtime/lifecycle', label: 'Page Lifecycle & Cross-Context Events' }}
       next={{ path: '/browser-runtime/field-guide', label: 'Browser Runtime Field Guide' }}
     >
       <p>

@@ -144,6 +144,88 @@ for await (const [msg] of on(emitter, 'message')) {
 // With an AbortSignal, so it can be cancelled:
 await once(emitter, 'ready', { signal: AbortSignal.timeout(5000) });`}
       </CodeBlock>
+      <CodeBlock language="text" title="Real output — aborting a pending once()">
+{`const ac = new AbortController();
+const p  = once(emitter, 'never', { signal: ac.signal });
+ac.abort();
+await p;
+  -> rejected with  name: "AbortError"   code: "ABORT_ERR"`}
+      </CodeBlock>
+      <p>
+        That is the shape to reach for whenever you are waiting on an event that might
+        never arrive. Without a signal or a timeout, <code>await once(...)</code> hangs
+        forever and the process looks alive while doing nothing.
+      </p>
+
+      <h2>Async Listeners Are a Trap</h2>
+      <p>
+        <code>emit()</code> calls each listener and ignores the return value. If your
+        listener is <code>async</code>, the promise it returns is dropped on the floor — so
+        a rejection does <strong>not</strong> become an <code>'error'</code> event, it
+        becomes an unhandled rejection:
+      </p>
+      <CodeBlock language="text" title="Real output — Node 26, an async listener that throws">
+{`const plain = new EventEmitter();
+plain.on('go', async () => { throw new Error('async boom'); });
+plain.emit('go');
+  -> [unhandledRejection] async boom        <- NOT the 'error' event
+
+const captured = new EventEmitter({ captureRejections: true });
+captured.on('go',    async () => { throw new Error('async boom 2'); });
+captured.on('error', (e) => console.log('[error event]', e.message));
+captured.emit('go');
+  -> [error event] async boom 2             <- routed properly`}
+      </CodeBlock>
+      <InfoBox variant="warning" title="Two rules for async listeners">
+        <ul style={{ marginBottom: 0 }}>
+          <li>
+            Construct the emitter with{' '}
+            <code>new EventEmitter(&#123; captureRejections: true &#125;)</code> so a
+            rejected listener reaches your <code>'error'</code> handler instead of the
+            process-wide <code>unhandledRejection</code> hook.
+          </li>
+          <li>
+            Do not expect <code>emit()</code> to wait. It returns as soon as the last
+            listener has been <em>called</em>, not when the async work finishes — so{' '}
+            <code>emit()</code> is never a way to run a pipeline in order. If you need
+            sequencing, you need a return value, which means a function call, not an event.
+          </li>
+        </ul>
+      </InfoBox>
+
+      <h2>Ordering and Introspection</h2>
+      <CodeBlock language="text" title="Real output — the bits you reach for while debugging">
+{`// Listeners run in REGISTRATION order; prependListener jumps the queue.
+pre.on('t', ...)              // "registered-first"
+pre.prependListener('t', ...) // "prepended"
+pre.emit('t')
+  -> ["prepended", "registered-first"]
+
+// Who is listening to what — useful when hunting a leak.
+i.listenerCount('x')        ->  2
+i.eventNames()              ->  [ 'x' ]
+getEventListeners(i, 'x')   ->  2 entries   (from node:events)`}
+      </CodeBlock>
+      <InfoBox variant="note" title="EventEmitter vs the standard EventTarget">
+        <p>
+          Node also ships the browser&apos;s <code>EventTarget</code>, and they are not
+          interchangeable. <code>addEventListener</code> handlers take a single{' '}
+          <code>Event</code> object rather than spread arguments, there is no{' '}
+          <code>'error'</code> convention, and a throwing listener behaves differently:
+        </p>
+        <CodeBlock language="text" title="Real output — a listener that throws">
+{`EventEmitter.emit()        -> throws SYNCHRONOUSLY, at the call site
+EventTarget.dispatchEvent() -> does NOT throw; the error is re-raised on
+                               process.nextTick as an uncaught exception`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          Use <code>EventEmitter</code> for Node-internal code — it is what streams and
+          servers speak. Use <code>EventTarget</code> when the same code has to run in a
+          browser, or when you want <code>AbortSignal</code>-based removal.{' '}
+          <code>setMaxListeners(n, target)</code> from <code>node:events</code> accepts
+          either kind.
+        </p>
+      </InfoBox>
 
       <h2>One Instance, One Set of Listeners</h2>
       <p>

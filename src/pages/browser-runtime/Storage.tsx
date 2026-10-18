@@ -9,7 +9,7 @@ export default function BrowserStorage() {
       sectionId="browser-runtime"
       lessonIndex={4}
       prev={{ path: '/browser-runtime/observers', label: 'Intersection, Resize & Mutation Observers' }}
-      next={{ path: '/browser-runtime/fetch', label: 'fetch, CORS & the Request Lifecycle' }}
+      next={{ path: '/browser-runtime/lifecycle', label: 'Page Lifecycle & Cross-Context Events' }}
     >
       <p>
         Four places to put data in a browser, and they are not interchangeable. Picking
@@ -110,6 +110,13 @@ localStorage.getItem('nope')        -> null   (not undefined)
   if (e.key === 'auth' && e.newValue === null) redirectToLogin();
 });`}
         </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          If you want cross-tab messages without persisting anything, use{' '}
+          <code>BroadcastChannel</code> instead — it has the same &quot;the sender never
+          hears itself&quot; behaviour and no storage quota. Both, plus the{' '}
+          <code>postMessage</code> origin contract, are in{' '}
+          <a href="/browser-runtime/lifecycle">Page Lifecycle &amp; Cross-Context Events</a>.
+        </p>
       </InfoBox>
 
       <h2><code>sessionStorage</code> — Same API, Narrower Scope</h2>

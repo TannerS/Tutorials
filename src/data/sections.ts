@@ -685,6 +685,7 @@ export const sections: Section[] = [
       { id: 'event-loop', title: 'The Event Loop & Rendering Pipeline', path: '/browser-runtime/event-loop' },
       { id: 'observers', title: 'Intersection, Resize & Mutation Observers', path: '/browser-runtime/observers' },
       { id: 'storage', title: 'Storage: localStorage, Cookies & IndexedDB', path: '/browser-runtime/storage' },
+      { id: 'lifecycle', title: 'Page Lifecycle & Cross-Context Events', path: '/browser-runtime/lifecycle' },
       { id: 'fetch', title: 'fetch, CORS & the Request Lifecycle', path: '/browser-runtime/fetch' },
       { id: 'field-guide', title: '📋 Browser Runtime Field Guide', path: '/browser-runtime/field-guide' },
     ],

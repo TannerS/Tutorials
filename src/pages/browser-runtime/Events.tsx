@@ -213,31 +213,54 @@ el.dispatchEvent(new CustomEvent('cart:add', {
 // Listen
 document.addEventListener('cart:add', (e) => {
   console.log(e.detail.sku);
-});`}
+});
+
+// You do not need an element. EventTarget is a constructible base class,
+// so you can have a standalone bus with no DOM involved:
+class Bus extends EventTarget {}
+const bus = new Bus();
+bus.addEventListener('tick', (e) => console.log(e.detail));
+bus.dispatchEvent(new CustomEvent('tick', { detail: 1 }));`}
       </CodeBlock>
+      <p>
+        That last form is the browser&apos;s answer to Node&apos;s{' '}
+        <code>EventEmitter</code> — same decoupling, different API. The comparison, and the
+        traps on the Node side, are in{' '}
+        <a href="/javascript/events">Events &amp; EventEmitter in Node</a>. For events that
+        cross a tab, iframe or worker boundary rather than travelling up a DOM tree, see{' '}
+        <a href="/browser-runtime/lifecycle">Page Lifecycle &amp; Cross-Context Events</a>.
+      </p>
 
       <InfoBox variant="note" title="Where React differs from all of this">
         <p>
           React attaches most listeners at the <strong>root container</strong>, not your
-          element, and synthesises the event. Three consequences worth holding onto:
+          element, and synthesises the event. Where a native listener sits relative to that
+          root decides everything — measured on React 19.2.6:
         </p>
         <ul style={{ marginBottom: 0 }}>
           <li>
-            A native listener on <code>document</code> may run <em>before</em> your React{' '}
-            <code>onClick</code>, because React&apos;s own listener is on the root — this
-            is why &quot;click outside to close&quot; built with a document listener often
-            fires immediately on the click that opened the thing.
+            A native listener <strong>below</strong> the root (on the element itself) runs{' '}
+            <em>before</em> your React handler, because the real event reaches it on the way
+            up to the root. A native listener on <code>document</code> runs{' '}
+            <em>after</em> all your React handlers, because <code>document</code> is above
+            the root.
           </li>
           <li>
-            <code>e.stopPropagation()</code> in a React handler does not stop native
-            listeners attached outside the React tree. Use{' '}
-            <code>e.nativeEvent.stopImmediatePropagation()</code> only as a last resort.
+            <code>e.stopPropagation()</code> in a React handler therefore{' '}
+            <strong>does</strong> stop a <code>document</code> or <code>window</code>{' '}
+            listener, and <strong>cannot</strong> stop one below the root — that one already
+            ran. (Pre-17 React listened on <code>document</code> itself, which is where the
+            widespread &quot;it never works&quot; advice comes from.)
           </li>
           <li>
             React 17+ no longer pools events, so <code>e.persist()</code> is gone and
             reading <code>e</code> asynchronously is safe.
           </li>
         </ul>
+        <p style={{ marginTop: '0.75rem', marginBottom: 0 }}>
+          The firing order and the click-outside bug it causes are worked through in{' '}
+          <a href="/react18/events">React&apos;s Event System</a>.
+        </p>
       </InfoBox>
     </LessonLayout>
   );

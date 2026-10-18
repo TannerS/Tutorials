@@ -418,6 +418,7 @@ const BrEvents = lazy(() => import('./pages/browser-runtime/Events'))
 const BrEventLoop = lazy(() => import('./pages/browser-runtime/EventLoop'))
 const BrObservers = lazy(() => import('./pages/browser-runtime/Observers'))
 const BrStorage = lazy(() => import('./pages/browser-runtime/Storage'))
+const BrLifecycle = lazy(() => import('./pages/browser-runtime/Lifecycle'))
 const BrFetch = lazy(() => import('./pages/browser-runtime/Fetch'))
 const BrFieldGuide = lazy(() => import('./pages/browser-runtime/FieldGuide'))
 
@@ -919,6 +920,7 @@ function App() {
         <Route path="browser-runtime/event-loop" element={<BrEventLoop />} />
         <Route path="browser-runtime/observers" element={<BrObservers />} />
         <Route path="browser-runtime/storage" element={<BrStorage />} />
+        <Route path="browser-runtime/lifecycle" element={<BrLifecycle />} />
         <Route path="browser-runtime/fetch" element={<BrFetch />} />
         <Route path="browser-runtime/field-guide" element={<BrFieldGuide />} />
         {/* HTML */}
