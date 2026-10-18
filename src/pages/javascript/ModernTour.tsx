@@ -7,7 +7,7 @@ export default function JsModernTour() {
     <LessonLayout
       title="Modern JavaScript: ES2015-2026 Feature Tour"
       sectionId="javascript"
-      lessonIndex={7}
+      lessonIndex={8}
       prev={{ path: '/javascript/error-handling', label: 'Error Handling' }}
       next={{ path: '/javascript/es2017', label: 'ECMAScript 2017 (ES8): The Complete Deep Dive' }}
     >

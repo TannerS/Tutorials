@@ -157,6 +157,7 @@ export const sections: Section[] = [
     color: '#22d3ee',
     lessons: [
       { id: 'jsx', title: 'What JSX Really Is', path: '/react18/jsx' },
+      { id: 'events', title: "React's Event System", path: '/react18/events' },
       { id: 'lifecycle', title: 'Component Lifecycle', path: '/react18/lifecycle' },
       { id: 'lifecycle-sim', title: '🧪 Lifecycle Simulator', path: '/react18/lifecycle-sim' },
       { id: 'hooks', title: 'Hooks Deep Dive', path: '/react18/hooks' },
@@ -544,6 +545,7 @@ export const sections: Section[] = [
       { id: 'arrays-iterables', title: 'Arrays, Destructuring & Iterables', path: '/javascript/arrays-iterables' },
       { id: 'async', title: 'Asynchronous JavaScript', path: '/javascript/async' },
       { id: 'modules', title: 'Modules & Tooling', path: '/javascript/modules' },
+      { id: 'events', title: 'Events & EventEmitter in Node', path: '/javascript/events' },
       { id: 'error-handling', title: 'Error Handling', path: '/javascript/error-handling' },
       { id: 'modern-tour', title: 'Modern JavaScript: ES2015-2026 Feature Tour', path: '/javascript/modern-tour' },
       { id: 'es2017', title: 'ECMAScript 2017 (ES8): The Complete Deep Dive', path: '/javascript/es2017' },

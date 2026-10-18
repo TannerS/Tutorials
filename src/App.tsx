@@ -336,6 +336,7 @@ const JsObjectsPrototypes = lazy(() => import('./pages/javascript/ObjectsPrototy
 const JsArraysIterables = lazy(() => import('./pages/javascript/ArraysIterables'))
 const JsAsync = lazy(() => import('./pages/javascript/Async'))
 const JsModules = lazy(() => import('./pages/javascript/Modules'))
+const JsEvents = lazy(() => import('./pages/javascript/Events'))
 const JsErrorHandling = lazy(() => import('./pages/javascript/ErrorHandling'))
 const JsModernTour = lazy(() => import('./pages/javascript/ModernTour'))
 const JsEs2017 = lazy(() => import('./pages/javascript/Es2017'))
@@ -398,6 +399,7 @@ const A11yTesting = lazy(() => import('./pages/accessibility/Testing'))
 const CSSSizing = lazy(() => import('./pages/css-mastery/Sizing'))
 const CSSGotchas = lazy(() => import('./pages/css-mastery/Gotchas'))
 const ReactJsx = lazy(() => import('./pages/react18/Jsx'))
+const ReactEvents = lazy(() => import('./pages/react18/Events'))
 const StateChoosing = lazy(() => import('./pages/state-mgmt/Choosing'))
 
 // Browser DevTools
@@ -649,6 +651,7 @@ function App() {
         <Route path="from-scratch/consensus" element={<FSConsensus />} />
         {/* React 19 */}
         <Route path="react18/jsx" element={<ReactJsx />} />
+        <Route path="react18/events" element={<ReactEvents />} />
         <Route path="react18/lifecycle" element={<ReactLifecycle />} />
         <Route path="react18/lifecycle-sim" element={<ReactLifecycleSim />} />
         <Route path="react18/hooks" element={<ReactHooks />} />
@@ -846,6 +849,7 @@ function App() {
         <Route path="javascript/arrays-iterables" element={<JsArraysIterables />} />
         <Route path="javascript/async" element={<JsAsync />} />
         <Route path="javascript/modules" element={<JsModules />} />
+        <Route path="javascript/events" element={<JsEvents />} />
         <Route path="javascript/error-handling" element={<JsErrorHandling />} />
         <Route path="javascript/modern-tour" element={<JsModernTour />} />
         <Route path="javascript/es2017" element={<JsEs2017 />} />

@@ -8,8 +8,8 @@ export default function JsErrorHandling() {
     <LessonLayout
       title="Error Handling"
       sectionId="javascript"
-      lessonIndex={6}
-      prev={{ path: '/javascript/modules', label: 'Modules & Tooling' }}
+      lessonIndex={7}
+      prev={{ path: '/javascript/events', label: 'Events & EventEmitter in Node' }}
       next={{ path: '/javascript/modern-tour', label: 'Modern JavaScript: ES2015-2026 Feature Tour' }}
     >
       <p>

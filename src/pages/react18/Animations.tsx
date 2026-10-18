@@ -7,7 +7,7 @@ export default function Animations() {
     <LessonLayout
       title="Animation Libraries (Framer Motion & Beyond)"
       sectionId="react18"
-      lessonIndex={21}
+      lessonIndex={22}
       prev={{ path: '/react18/bulletproof-react', label: 'Bulletproof React — A Concrete File Structure' }}
       next={{ path: '/react18/portals', label: 'Portals, In Depth' }}
     >

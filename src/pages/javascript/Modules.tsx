@@ -10,7 +10,7 @@ export default function JsModules() {
       sectionId="javascript"
       lessonIndex={5}
       prev={{ path: '/javascript/async', label: 'Asynchronous JavaScript' }}
-      next={{ path: '/javascript/error-handling', label: 'Error Handling' }}
+      next={{ path: '/javascript/events', label: 'Events & EventEmitter in Node' }}
     >
       <p>
         JavaScript has two module systems in active use: <strong>ES Modules</strong> (ESM

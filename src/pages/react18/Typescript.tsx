@@ -8,7 +8,7 @@ export default function Typescript() {
     <LessonLayout
       title="TypeScript Crash Course"
       sectionId="react18"
-      lessonIndex={14}
+      lessonIndex={15}
       prev={{ path: '/react18/error-boundaries', label: 'Error Boundaries' }}
       next={{ path: '/react18/build-toolchain', label: '🔧 Build Toolchain' }}
     >

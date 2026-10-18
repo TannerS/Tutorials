@@ -10,7 +10,7 @@ export default function ReactJsx() {
       sectionId="react18"
       lessonIndex={0}
       prev={null}
-      next={{ path: '/react18/lifecycle', label: 'Component Lifecycle' }}
+      next={{ path: '/react18/events', label: 'React\'s Event System' }}
     >
       <p>
         JSX is not HTML, it is not a template language, and the browser never sees it.

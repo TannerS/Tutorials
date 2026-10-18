@@ -7,7 +7,7 @@ export default function JsEs2017() {
     <LessonLayout
       title="ECMAScript 2017 (ES8): The Complete Deep Dive"
       sectionId="javascript"
-      lessonIndex={8}
+      lessonIndex={9}
       prev={{ path: '/javascript/modern-tour', label: 'Modern JavaScript: ES2015-2026 Feature Tour' }}
       next={{ path: '/javascript/cheatsheet', label: 'JavaScript Field Guide' }}
     >

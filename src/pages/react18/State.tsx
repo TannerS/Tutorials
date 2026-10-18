@@ -8,7 +8,7 @@ export default function State() {
     <LessonLayout
       title="State Management Patterns"
       sectionId="react18"
-      lessonIndex={5}
+      lessonIndex={6}
       prev={{ path: '/react18/refs', label: 'Refs In Depth — From Basics to Imperative APIs' }}
       next={{ path: '/react18/effects', label: 'Effects & Data Fetching' }}
     >
