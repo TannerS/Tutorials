@@ -779,8 +779,52 @@ li {
     transform: translateX(0);
   }
 
+  /* The menu button is position:fixed at top:1rem and is ~56px tall, so a
+     2rem top padding let the page <h1> slide underneath it. Clear it. */
   main {
-    padding: 2rem 1rem !important;
+    padding: 4.75rem 1rem 2rem !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Table of contents — hide it before it starts squeezing the lesson.
+
+   The TOC is a 220px sticky aside beside .lesson-content in a flex row, and
+   its width is an INLINE style, so it can only be hidden by targeting the
+   element itself. Measured on /react18/jsx before this rule existed:
+
+       viewport 1400px  ->  content 772px, TOC 220px   fine
+       viewport  768px  ->  content 484px, TOC 220px   tight
+       viewport  390px  ->  content 106px, TOC 220px   TOC WIDER THAN CONTENT
+       viewport  360px  ->  content  76px, TOC 220px   unusable
+
+   1280px is the cut-off, chosen by measuring rather than by habit. The left
+   sidebar is 280px and the TOC is 220px, so both together take 500px before
+   any content. With the TOC shown:
+
+       1025px -> content 397px   squeezed (WORSE than hiding it, which
+       1100px -> content 472px   squeezed  gives 648px at the same width)
+       1200px -> content 572px   ok
+       1280px -> content 652px   comfortable  <- the TOC earns its space here
+
+   Below 1280px the content column is worth more than the shortcut. The
+   headings are still reachable by scrolling, and they remain in the DOM for
+   screen-reader rotor navigation.
+--------------------------------------------------------------------------- */
+@media (max-width: 1279px) {
+  .lesson-toc {
+    display: none !important;
+  }
+
+  /* With the TOC gone the shell no longer needs to be a row. */
+  .lesson-shell {
+    display: block !important;
+    gap: 0 !important;
+  }
+  .lesson-content {
+    max-width: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
   }
 }
 

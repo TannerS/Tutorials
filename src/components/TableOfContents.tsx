@@ -81,6 +81,12 @@ export function TableOfContents({ containerRef, resetKey }: TableOfContentsProps
   return (
     <aside
       aria-label="Table of contents"
+      // The width below is an inline style, so no media query can reach it.
+      // That is why this class exists: global.css hides the whole aside on
+      // narrow viewports. Without it the 220px TOC sat beside the content and
+      // squeezed it to 106px on a 390px phone — the TOC was twice as wide as
+      // the lesson.
+      className="lesson-toc"
       style={{
         position: 'sticky',
         top: '2rem',
