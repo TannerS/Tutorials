@@ -16,7 +16,7 @@ function Concepts() {
     <LessonLayout
       title="Concepts & Compile-Time Constraints"
       sectionId="cpp"
-      lessonIndex={13}
+      lessonIndex={14}
       prev={{ path: '/cpp/templates', label: 'Templates & Generic Programming' }}
       next={{ path: '/cpp/containers', label: 'STL Containers & Iterator Invalidation' }}
     >

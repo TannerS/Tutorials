@@ -16,7 +16,7 @@ function Setup() {
     <LessonLayout
       title="Setup, Modules & the Toolchain"
       sectionId="go"
-      lessonIndex={1}
+      lessonIndex={2}
       prev={{ path: '/go/intro', label: 'Go From a Node Backend: What Changes' }}
       next={{ path: '/go/syntax', label: 'Syntax, Types & Zero Values' }}
     >

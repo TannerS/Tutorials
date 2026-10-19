@@ -16,7 +16,7 @@ export default function Generics() {
     <LessonLayout
       title="Generics"
       sectionId="go"
-      lessonIndex={13}
+      lessonIndex={14}
       prev={{ path: '/go/concurrency-patterns', label: 'Concurrency Patterns & Failure Modes' }}
       next={{ path: '/go/testing', label: 'Testing Without a Framework' }}
     >

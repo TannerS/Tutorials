@@ -16,7 +16,7 @@ function MemoryModel() {
     <LessonLayout
       title="The Memory Model: Stack, Heap & Object Lifetime"
       sectionId="cpp"
-      lessonIndex={5}
+      lessonIndex={6}
       prev={{ path: '/cpp/references', label: 'Values, References & Pointers' }}
       next={{ path: '/cpp/raii', label: 'RAII: The Idea That Defines C++' }}
     >

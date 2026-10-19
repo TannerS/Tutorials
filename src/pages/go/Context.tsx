@@ -8,7 +8,7 @@ export default function Context() {
     <LessonLayout
       title="Context: Cancellation & Deadlines"
       sectionId="go"
-      lessonIndex={11}
+      lessonIndex={12}
       prev={{ path: '/go/sync', label: 'The sync Package — and When Not to Use Channels' }}
       next={{ path: '/go/concurrency-patterns', label: 'Concurrency Patterns & Failure Modes' }}
     >

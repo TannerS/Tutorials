@@ -8,7 +8,7 @@ export default function Channels() {
     <LessonLayout
       title="Channels & select"
       sectionId="go"
-      lessonIndex={9}
+      lessonIndex={10}
       prev={{ path: '/go/goroutines', label: 'Goroutines: Beyond the Event Loop' }}
       next={{ path: '/go/sync', label: 'The sync Package — and When Not to Use Channels' }}
     >

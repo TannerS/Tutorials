@@ -16,8 +16,8 @@ function Intro() {
     <LessonLayout
       title="C++ in 2026: Which C++ You're Actually Writing"
       sectionId="cpp"
-      lessonIndex={0}
-      prev={null}
+      lessonIndex={1}
+      prev={{ path: '/cpp/quick-start', label: '⚡ C++ Quick Start' }}
       next={{ path: '/cpp/compiling', label: 'Compiling, Linking & the One-Definition Rule' }}
     >
       <p>

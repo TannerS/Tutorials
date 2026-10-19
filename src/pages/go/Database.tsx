@@ -7,7 +7,7 @@ export default function Database() {
     <LessonLayout
       title="Database Access Without an ORM"
       sectionId="go"
-      lessonIndex={16}
+      lessonIndex={17}
       prev={{ path: '/go/http', label: 'HTTP Services with net/http' }}
       next={{ path: '/go/deploy', label: 'Project Layout, Build & Deploy' }}
     >

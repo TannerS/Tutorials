@@ -16,7 +16,7 @@ function Types() {
     <LessonLayout
       title="Types, auto & Control Flow"
       sectionId="cpp"
-      lessonIndex={2}
+      lessonIndex={3}
       prev={{ path: '/cpp/compiling', label: 'Compiling, Linking & the One-Definition Rule' }}
       next={{ path: '/cpp/functions', label: 'Functions, Overloading & Lambdas' }}
     >

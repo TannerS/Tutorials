@@ -60,6 +60,7 @@ const SB2Actuator = lazy(() => import('./pages/springboot2/Actuator'))
 const SB2Migration = lazy(() => import('./pages/springboot2/Migration'))
 const SB2Cheatsheet = lazy(() => import('./pages/springboot2/Cheatsheet'))
 // Go
+const GoQuickStart = lazy(() => import('./pages/go/QuickStart'))
 const GoIntro = lazy(() => import('./pages/go/Intro'))
 const GoSetup = lazy(() => import('./pages/go/Setup'))
 const GoSyntax = lazy(() => import('./pages/go/Syntax'))
@@ -81,6 +82,7 @@ const GoDeploy = lazy(() => import('./pages/go/Deploy'))
 const GoCheatsheet = lazy(() => import('./pages/go/Cheatsheet'))
 
 // C++
+const CppQuickStart = lazy(() => import('./pages/cpp/QuickStart'))
 const CppIntro = lazy(() => import('./pages/cpp/Intro'))
 const CppCompiling = lazy(() => import('./pages/cpp/Compiling'))
 const CppTypes = lazy(() => import('./pages/cpp/Types'))
@@ -604,6 +606,7 @@ function App() {
         <Route path="springboot2/actuator" element={<SB2Actuator />} />
         <Route path="springboot2/migration" element={<SB2Migration />} />
         <Route path="springboot2/cheatsheet" element={<SB2Cheatsheet />} />
+        <Route path="go/quick-start" element={<GoQuickStart />} />
         <Route path="go/intro" element={<GoIntro />} />
         <Route path="go/setup" element={<GoSetup />} />
         <Route path="go/syntax" element={<GoSyntax />} />
@@ -624,6 +627,7 @@ function App() {
         <Route path="go/deploy" element={<GoDeploy />} />
         <Route path="go/cheatsheet" element={<GoCheatsheet />} />
 
+        <Route path="cpp/quick-start" element={<CppQuickStart />} />
         <Route path="cpp/intro" element={<CppIntro />} />
         <Route path="cpp/compiling" element={<CppCompiling />} />
         <Route path="cpp/types" element={<CppTypes />} />

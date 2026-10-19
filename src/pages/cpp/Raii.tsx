@@ -16,7 +16,7 @@ function Raii() {
     <LessonLayout
       title="RAII: The Idea That Defines C++"
       sectionId="cpp"
-      lessonIndex={6}
+      lessonIndex={7}
       prev={{ path: '/cpp/memory-model', label: 'The Memory Model: Stack, Heap & Object Lifetime' }}
       next={{ path: '/cpp/smart-pointers', label: 'Smart Pointers: unique_ptr, shared_ptr & weak_ptr' }}
     >

@@ -8,7 +8,7 @@ export default function Concurrency() {
     <LessonLayout
       title="Concurrency: Threads, Atomics & the Memory Model"
       sectionId="cpp"
-      lessonIndex={17}
+      lessonIndex={18}
       prev={{ path: '/cpp/errors', label: 'Error Handling: Exceptions, noexcept & expected' }}
       next={{ path: '/cpp/performance', label: 'Performance: Cache, Copies & Undefined Behaviour' }}
     >

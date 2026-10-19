@@ -16,8 +16,8 @@ function Intro() {
     <LessonLayout
       title="Go From a Node Backend: What Changes"
       sectionId="go"
-      lessonIndex={0}
-      prev={null}
+      lessonIndex={1}
+      prev={{ path: '/go/quick-start', label: '⚡ Go Quick Start' }}
       next={{ path: '/go/setup', label: 'Setup, Modules & the Toolchain' }}
     >
       <p>

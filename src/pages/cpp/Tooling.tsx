@@ -8,7 +8,7 @@ export default function Tooling() {
     <LessonLayout
       title="Build Systems, Debugging & Sanitizers"
       sectionId="cpp"
-      lessonIndex={19}
+      lessonIndex={20}
       prev={{ path: '/cpp/performance', label: 'Performance: Cache, Copies & Undefined Behaviour' }}
       next={{ path: '/cpp/cheatsheet', label: 'C++ Field Guide' }}
     >

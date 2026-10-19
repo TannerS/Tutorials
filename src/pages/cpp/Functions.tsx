@@ -16,7 +16,7 @@ function Functions() {
     <LessonLayout
       title="Functions, Overloading & Lambdas"
       sectionId="cpp"
-      lessonIndex={3}
+      lessonIndex={4}
       prev={{ path: '/cpp/types', label: 'Types, auto & Control Flow' }}
       next={{ path: '/cpp/references', label: 'Values, References & Pointers' }}
     >

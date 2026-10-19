@@ -8,7 +8,7 @@ export default function Http() {
     <LessonLayout
       title="HTTP Services with net/http"
       sectionId="go"
-      lessonIndex={15}
+      lessonIndex={16}
       prev={{ path: '/go/testing', label: 'Testing Without a Framework' }}
       next={{ path: '/go/database', label: 'Database Access Without an ORM' }}
     >

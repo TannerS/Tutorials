@@ -8,7 +8,7 @@ export default function Goroutines() {
     <LessonLayout
       title="Goroutines: Beyond the Event Loop"
       sectionId="go"
-      lessonIndex={8}
+      lessonIndex={9}
       prev={{ path: '/go/pointers', label: 'Pointers & Value Semantics' }}
       next={{ path: '/go/channels', label: 'Channels & select' }}
     >
