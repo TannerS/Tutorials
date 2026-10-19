@@ -753,6 +753,7 @@ export const sections: Section[] = [
     lessons: [
       { id: 'vite', title: 'Vite Deep Dive', path: '/frontend-tooling/vite' },
       { id: 'webpack', title: 'Webpack: Getting Started', path: '/frontend-tooling/webpack' },
+      { id: 'chunks', title: 'What the Bundler Actually Emits', path: '/frontend-tooling/chunks' },
       { id: 'linting', title: 'ESLint & Prettier', path: '/frontend-tooling/linting' },
       { id: 'packages', title: 'Package Managers', path: '/frontend-tooling/packages' },
       { id: 'monorepos', title: 'Monorepo Strategies', path: '/frontend-tooling/monorepos' },

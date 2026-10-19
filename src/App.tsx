@@ -489,6 +489,7 @@ const RTCheatsheet = lazy(() => import('./pages/react-testing/Cheatsheet'))
 // Frontend Tooling
 const FTVite = lazy(() => import('./pages/frontend-tooling/Vite'))
 const FTWebpack = lazy(() => import('./pages/frontend-tooling/Webpack'))
+const FTChunks = lazy(() => import('./pages/frontend-tooling/Chunks'))
 const FTLinting = lazy(() => import('./pages/frontend-tooling/Linting'))
 const FTPackages = lazy(() => import('./pages/frontend-tooling/Packages'))
 const FTMonorepos = lazy(() => import('./pages/frontend-tooling/Monorepos'))
@@ -987,6 +988,7 @@ function App() {
         {/* Frontend Tooling */}
         <Route path="frontend-tooling/vite" element={<FTVite />} />
         <Route path="frontend-tooling/webpack" element={<FTWebpack />} />
+        <Route path="frontend-tooling/chunks" element={<FTChunks />} />
         <Route path="frontend-tooling/linting" element={<FTLinting />} />
         <Route path="frontend-tooling/packages" element={<FTPackages />} />
         <Route path="frontend-tooling/monorepos" element={<FTMonorepos />} />

@@ -1,6 +1,6 @@
 # Tutorials
 
-A personal study site: React 19 + TypeScript, covering HTML, CSS/SCSS, the browser runtime, browser DevTools, core JavaScript, TypeScript, React 19 (plus state management, routing, React Query, MUI and testing), Java and Spring Boot, Go, C++, SQL/Postgres/T-SQL, data structures & algorithms, SOLID, design patterns, DDD, system design, microservices, cloud & observability, API design, auth & security, testing, frontend tooling & npm, and accessibility — **49 sections, 428 lessons**, 29 of them printable "field guide" cheat sheets. Cmd-K command palette, sticky table of contents, dark/light theme, live Sandpack editor.
+A personal study site: React 19 + TypeScript, covering HTML, CSS/SCSS, the browser runtime, browser DevTools, core JavaScript, TypeScript, React 19 (plus state management, routing, React Query, MUI and testing), Java and Spring Boot, Go, C++, SQL/Postgres/T-SQL, data structures & algorithms, SOLID, design patterns, DDD, system design, microservices, cloud & observability, API design, auth & security, testing, frontend tooling & npm, and accessibility — **49 sections, 429 lessons**, 29 of them printable "field guide" cheat sheets. Cmd-K command palette, sticky table of contents, dark/light theme, live Sandpack editor.
 
 The authoritative list of sections is `src/data/sections.ts` — treat the counts above as a snapshot and that file as the source of truth.
 
@@ -48,6 +48,63 @@ non-zero on the first failure.
 `check:versions` only flags *currency* claims ("the latest is 25", "currently
 ships as"), never bare version numbers — a measured `"Real output on Node 24"`
 is provenance and must not be bumped, or the output stops matching the claim.
+
+---
+
+## Suggested reading order — frontend
+
+The sidebar is organised by topic, not by what to read first. If the goal is
+getting better at frontend specifically, this is the order that builds on
+itself. Counts are lessons.
+
+**1. The platform (42)** — everything else sits on this.
+
+1. `html/` (7) — semantics, forms, native interactive elements, how the parser repairs your markup
+2. `accessibility/` (5) — mostly "use the right element"; also where `getByRole` starts making sense
+3. `css-mastery/` (14) — `sizing` and `gotchas` first if you are debugging layout
+4. `devtools/` (8) — read `devtools/css` *during* CSS Mastery, not after
+5. `browser-runtime/` (8) — DOM, events, event loop, observers, storage, page lifecycle, fetch
+
+**2. The language (27)**
+
+6. `javascript/` (11) — skim fundamentals; do not skip closures, async, modules, events
+7. `typescript/` (16)
+
+**3. React (36)**
+
+8. `react18/jsx` then `react18/events` — the two "what is actually happening" lessons
+9. The core run: `lifecycle` → `hooks` → `refs` → `state` → `effects` → `context` → `performance` → `error-boundaries` → `patterns` → `portals`
+10. `react19-whats-new/` (4)
+11. `react-antipatterns/` (7) — lands better after the core run
+
+The architecture lessons (`module-federation`, `feature-folder`,
+`bulletproof-react`, `adapters`, `imperative-bridge`) are reference. Read them
+when you hit the problem, not in sequence.
+
+**4. The working stack (24)**
+
+12. State, **in this order** — the three sections are wired as one chain:
+    `state-mgmt/comparison` → `choosing` → `intro` → `patterns` →
+    `zustand-fundamentals` → `zustand-advanced`
+13. `react-query/` (3)
+14. Router — **pick the version you use**: `react-router-v8/` (current),
+    `react-router/` (v6/v7 data router), `react-router-v5/` (classic)
+15. MUI — `mui9/` (v5+) or `mui/` (v4)
+16. `ag-grid/` (1) — only if you use it
+
+**5. Quality and build (17)**
+
+17. `react-testing/` (10)
+18. `frontend-tooling/` (7)
+
+`npm-deep-dive/` and `npm-packages/` are reference unless you are publishing.
+
+**Short path (~30 lessons)** if time is tight: CSS Mastery → `devtools/css` →
+`browser-runtime/events` → `accessibility/aria` → `react18/jsx` →
+`react18/events` → the state chain → React Query.
+
+The `playground/` tools are companions, not a stop on the path — the CSS and
+Sass playgrounds during CSS Mastery, the JSX compiler alongside `react18/jsx`.
 
 ---
 

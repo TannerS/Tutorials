@@ -8,7 +8,7 @@ export default function Monorepos() {
     <LessonLayout
       title="Monorepo Strategies"
       sectionId="frontend-tooling"
-      lessonIndex={4}
+      lessonIndex={5}
       prev={{ path: '/frontend-tooling/packages', label: 'Package Managers' }}
       next={{ path: '/frontend-tooling/performance', label: 'Bundle Analysis & Performance' }}
     >

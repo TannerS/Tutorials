@@ -751,6 +751,77 @@ const LazyNamed = lazy(() =>
 );`}
       </CodeBlock>
 
+      <h3>When the Chunk Is Actually Fetched</h3>
+
+      <p>
+        This is the part that reliably confuses people, because the{' '}
+        <code>lazy()</code> line clearly <em>runs</em> when the module is evaluated — so
+        surely the import runs too? No. Look at what is being passed:
+      </p>
+
+      <CodeBlock language="jsx" title="Two different things happen on this line">
+{`const AdminPanel = lazy(() => import('./AdminPanel'));
+//                 ^^^^^ called NOW   ^^^^^^^^^^^^^^ NOT called now`}
+      </CodeBlock>
+
+      <p>
+        <code>lazy()</code> executes immediately and just <strong>stores</strong> the arrow
+        function. The <code>import()</code> lives inside that function body, and nothing has
+        invoked it. Exactly like <code>setTimeout(() =&gt; doThing(), 1000)</code> — the{' '}
+        <code>setTimeout</code> call runs now; <code>doThing</code> does not.
+      </p>
+
+      <CodeBlock language="text" title="The three stages — only the last one hits the network">
+{`1. lazy(fn)                 stores fn.                        no fetch
+2. <AdminPanel />           creates a React ELEMENT — a plain
+                            object like {type: AdminPanel}.
+                            Describing a render is not a render.  no fetch
+3. the router MATCHES the
+   URL and renders it       React calls fn -> import()         FETCH`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Measured on a site with 428 lazy routes">
+        <p style={{ marginBottom: 0 }}>
+          Cold-loading the home page fetched <strong>2</strong> JavaScript files — the
+          runtime and the entry chunk. All 428 <code>lazy()</code> calls had executed and
+          all 428 route elements had been created; <strong>zero</strong> lesson chunks were
+          requested. Navigating to one route then pulled 30 files: that lesson&apos;s chunk
+          plus the shared chunks it statically imports.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="warning" title="Lazy routes break the load event for anything headless">
+        <p>
+          Once routes are lazy, <code>'load'</code> no longer means the content exists — it
+          means the shell arrived and the real component is still being fetched. Anything
+          driving your site headlessly (a PDF exporter, Playwright, Puppeteer, a crawler,
+          a screenshot service) has to wait for something real instead.
+        </p>
+        <CodeBlock language="javascript" title="What to wait for instead">
+{`// WRONG after code splitting — captures the Suspense fallback
+await page.goto(url, { waitUntil: 'load' });
+
+// RIGHT — wait for content that only the real component renders
+await page.goto(url, { waitUntil: 'networkidle' });
+await page.waitForSelector('main h1');
+await page.waitForFunction(() => !document.body.innerText.includes('Loading'));`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          This is not hypothetical: this site&apos;s own PDF exporter waited only for{' '}
+          <code>'load'</code> and silently captured <strong>4,954 characters</strong> of
+          loading shell where the real page is <strong>25,347</strong>. Nothing errored —
+          the PDFs just came out nearly empty.
+        </p>
+      </InfoBox>
+
+      <p>
+        What the bundler actually emits on the other side of these{' '}
+        <code>import()</code> calls — entry, async and shared chunks, how it decides the
+        grouping, and why content hashes do not give you the cache granularity you expect —
+        is in{' '}
+        <a href="/frontend-tooling/chunks">What the Bundler Actually Emits</a>.
+      </p>
+
       <h2>Virtualization for Large Lists</h2>
 
       <CodeBlock language="jsx" title="TanStack Virtual Example" showLineNumbers>

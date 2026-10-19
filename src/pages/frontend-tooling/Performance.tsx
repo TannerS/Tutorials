@@ -8,7 +8,7 @@ export default function Performance() {
     <LessonLayout
       title="Bundle Analysis & Performance"
       sectionId="frontend-tooling"
-      lessonIndex={5}
+      lessonIndex={6}
       prev={{ path: '/frontend-tooling/monorepos', label: 'Monorepo Strategies' }}
       next={null}
     >

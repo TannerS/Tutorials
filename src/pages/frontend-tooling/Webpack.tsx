@@ -10,7 +10,7 @@ export default function Webpack() {
       sectionId="frontend-tooling"
       lessonIndex={1}
       prev={{ path: '/frontend-tooling/vite', label: 'Vite Deep Dive' }}
-      next={{ path: '/frontend-tooling/linting', label: 'ESLint & Prettier' }}
+      next={{ path: '/frontend-tooling/chunks', label: 'What the Bundler Actually Emits' }}
     >
       <InfoBox variant="info" title="Practical, Not Exhaustive">
         This lesson is a getting-started tour: enough to read an existing{' '}
