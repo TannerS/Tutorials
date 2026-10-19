@@ -1,6 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useEffect, useRef, type ReactNode } from 'react';
-import LessonAudio from './LessonAudio';
 import ProgressTracker from './ProgressTracker';
 import { TableOfContents } from './TableOfContents';
 import { hasModifier, isTypingTarget } from './keyboardNav';
@@ -66,8 +65,6 @@ export default function LessonLayout({
           borderRadius: '2px',
           marginBottom: '2rem',
         }} />
-
-        <LessonAudio sectionId={sectionId} title={title} nextPath={next?.path ?? null} />
 
         {children}
 
