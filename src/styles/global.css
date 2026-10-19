@@ -756,12 +756,52 @@ li {
   :root[data-pdf-mode="dark"] [style*="var(--bg-hover)"] { background: var(--bg-hover) !important; }
 }
 
-/* Mobile responsive */
-@media (max-width: 768px) {
-  .mobile-menu-btn {
-    display: block !important;
-  }
+/* Sidebar collapse handle — a tab riding the sidebar's right edge at widths
+   where the sidebar is a permanent column. Below the drawer breakpoint the
+   hamburger already does this job, so the handle is hidden there. */
+.sidebar-handle {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1003;
+  width: 1.6rem;
+  height: 3.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: left 0.25s ease, opacity 0.15s ease, color 0.15s ease;
+}
 
+.sidebar-handle:hover,
+.sidebar-handle:focus-visible {
+  opacity: 1;
+  color: var(--accent-blue);
+}
+
+/* Collapsed: the column goes to zero width so `main` (flex: 1) takes the
+   whole viewport. min-width matters — a flex item's default `min-width: auto`
+   floors it at its content size, so `width: 0` alone would not shrink it. */
+@media (min-width: 1024px) {
+  .sidebar-container.sidebar-collapsed {
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+    border-right: none;
+  }
+}
+
+/* Mobile responsive — every phone orientation and small tablets. The sidebar
+   is an overlay drawer here, so the lesson always gets the full viewport. */
+@media (max-width: 1023px) {
   .mobile-backdrop {
     display: block !important;
   }
@@ -779,10 +819,13 @@ li {
     transform: translateX(0);
   }
 
-  /* The menu button is position:fixed at top:1rem and is ~56px tall, so a
-     2rem top padding let the page <h1> slide underneath it. Clear it. */
+  /* The handle is vertically centred on the left EDGE rather than fixed over
+     the top of the page, so the 4.75rem top padding that used to clear a
+     hamburger is dead weight -- the lesson starts at the top again. */
   main {
-    padding: 4.75rem 1rem 2rem !important;
+    /* Left padding clears the handle. It is fixed at the viewport edge and
+       1.6rem wide, so a plain 1rem let paragraph text run underneath it. */
+    padding: 1.5rem 1rem 2rem 2.6rem !important;
   }
 }
 

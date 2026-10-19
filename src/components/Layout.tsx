@@ -5,9 +5,24 @@ import { sections } from '../data/sections';
 import { CommandPalette, type CommandItem } from './CommandPalette';
 import { useCommandPaletteShortcut } from './useCommandPaletteShortcut';
 
-// Mirrors the `@media (max-width: 768px)` breakpoint in global.css, which is
+// Mirrors the `@media (max-width: 1023px)` breakpoint in global.css, which is
 // what actually turns the sidebar into an overlay drawer.
-const MOBILE_QUERY = '(max-width: 768px)';
+//
+// WHY 1023 AND NOT 768: at 768px the sidebar is a drawer and the lesson gets
+// the full 736px. One pixel wider it became a permanent 280px column and the
+// lesson dropped to 393px — measured. Every phone in landscape (844px, 926px)
+// landed in that band, carrying an unclosable sidebar that ate a third of the
+// screen with no hamburger to dismiss it.
+const MOBILE_QUERY = '(max-width: 1023px)';
+
+// Above the drawer breakpoint the sidebar is a permanent column, so it needs
+// its own collapse toggle. Remembered per browser; a stored value is the only
+// state here worth surviving a reload.
+const COLLAPSE_KEY = 'sidebar-collapsed';
+
+function readCollapsed(): boolean {
+  try { return localStorage.getItem(COLLAPSE_KEY) === '1'; } catch { return false; }
+}
 
 function useIsMobile(): boolean {
   return useSyncExternalStore(
@@ -143,6 +158,25 @@ export default function Layout() {
     [location.pathname],
   );
 
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((c) => {
+      const next = !c;
+      try { localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0'); } catch { /* private mode */ }
+      return next;
+    });
+  }, []);
+
+  // ONE control at every width. Below the drawer breakpoint the sidebar is an
+  // overlay and "collapsed" means the drawer is shut; above it the sidebar is
+  // a column and collapsing takes it to zero width. Same button, same meaning
+  // to the reader -- the mechanism underneath is the only thing that differs.
+  const sidebarShown = isMobile ? mobileOpen : !collapsed;
+  const toggleSidebar = useCallback(() => {
+    if (isMobile) setMobileOpen(!mobileOpen);
+    else toggleCollapsed();
+  }, [isMobile, mobileOpen, setMobileOpen, toggleCollapsed]);
+
   // Scroll to top on route change.
   useEffect(() => {
     if (mainRef.current) {
@@ -186,34 +220,6 @@ export default function Layout() {
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
-      {/* Mobile hamburger */}
-      <button
-        ref={menuBtnRef}
-        type="button"
-        className="mobile-menu-btn"
-        onClick={() => setMobileOpen(!mobileOpen)}
-        aria-expanded={mobileOpen}
-        aria-controls="site-sidebar"
-        style={{
-          display: 'none',
-          position: 'fixed',
-          top: '1rem',
-          left: '1rem',
-          zIndex: 1000,
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '8px',
-          color: 'var(--text-primary)',
-          fontSize: '1.5rem',
-          padding: '0.4rem 0.6rem',
-          cursor: 'pointer',
-          lineHeight: 1,
-        }}
-        aria-label="Open menu"
-      >
-        ☰
-      </button>
-
       {/* Backdrop for mobile */}
       {mobileOpen && (
         <div
@@ -237,11 +243,30 @@ export default function Layout() {
           driven by a media query read rather than by mobileOpen alone. */}
       <div
         id="site-sidebar"
-        className={`sidebar-container ${mobileOpen ? 'sidebar-open' : ''}`}
-        inert={isMobile && !mobileOpen}
+        className={`sidebar-container ${mobileOpen ? 'sidebar-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''}`}
+        inert={isMobile ? !mobileOpen : collapsed}
       >
         <Sidebar />
       </div>
+
+      {/* The single sidebar control, at every width. It rides the sidebar's
+          right edge so it never sits over lesson text, and slides to the screen
+          edge when the sidebar is away. This replaced a top-left hamburger that
+          existed only below 768px -- which meant no way at all to reclaim the
+          280px column between 769px and desktop. */}
+      <button
+        ref={menuBtnRef}
+        type="button"
+        className="sidebar-handle"
+        onClick={toggleSidebar}
+        aria-expanded={sidebarShown}
+        aria-controls="site-sidebar"
+        aria-label={sidebarShown ? 'Hide navigation' : 'Show navigation'}
+        title={sidebarShown ? 'Hide navigation' : 'Show navigation'}
+        style={{ left: sidebarShown ? 'calc(var(--sidebar-width) - 0.8rem)' : '0.35rem' }}
+      >
+        {sidebarShown ? '‹' : '›'}
+      </button>
       <main ref={mainRef} style={{
         flex: 1,
         overflow: 'auto',
