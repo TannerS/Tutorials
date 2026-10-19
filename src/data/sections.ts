@@ -85,10 +85,6 @@ export const sections: Section[] = [
     icon: '🐹',
     color: '#00add8',
     lessons: [
-      // TEMPORARY: a one-page fast path so small projects can start before the
-      // full section is read. Delete this lesson (and its page file) once it is
-      // no longer needed.
-      { id: 'quick-start', title: '⚡ Go Quick Start', path: '/go/quick-start' },
       { id: 'intro', title: 'Go From a Node Backend: What Changes', path: '/go/intro' },
       { id: 'setup', title: 'Setup, Modules & the Toolchain', path: '/go/setup' },
       { id: 'syntax', title: 'Syntax, Types & Zero Values', path: '/go/syntax' },
@@ -107,6 +103,11 @@ export const sections: Section[] = [
       { id: 'http', title: 'HTTP Services with net/http', path: '/go/http' },
       { id: 'database', title: 'Database Access Without an ORM', path: '/go/database' },
       { id: 'deploy', title: 'Project Layout, Build & Deploy', path: '/go/deploy' },
+      // TEMPORARY. The middle tier: shorter than the section above it, fuller
+      // than the field guide below it — enough to start a small project without
+      // reading all 19 lessons. Delete the entry, the route, the lazy import and
+      // the page file when it has served its purpose.
+      { id: 'mini-guide', title: '🧩 Go Mini Guide', path: '/go/mini-guide' },
       { id: 'cheatsheet', title: '📋 Go Field Guide', path: '/go/cheatsheet' },
     ],
   },
@@ -118,8 +119,6 @@ export const sections: Section[] = [
     // Being built in phases. Only lessons that actually exist are listed here,
     // so the build stays green and every phase is independently shippable.
     lessons: [
-      // TEMPORARY: see the note on go/quick-start. Delete when no longer needed.
-      { id: 'quick-start', title: '⚡ C++ Quick Start', path: '/cpp/quick-start' },
       { id: 'intro', title: "C++ in 2026: Which C++ You're Actually Writing", path: '/cpp/intro' },
       { id: 'compiling', title: 'Compiling, Linking & the One-Definition Rule', path: '/cpp/compiling' },
       { id: 'types', title: 'Types, auto & Control Flow', path: '/cpp/types' },
@@ -140,6 +139,8 @@ export const sections: Section[] = [
       { id: 'concurrency', title: 'Concurrency: Threads, Atomics & the Memory Model', path: '/cpp/concurrency' },
       { id: 'performance', title: 'Performance: Cache, Copies & Undefined Behaviour', path: '/cpp/performance' },
       { id: 'tooling', title: 'Build Systems, Debugging & Sanitizers', path: '/cpp/tooling' },
+      // TEMPORARY: see the note on go/mini-guide. Delete when no longer needed.
+      { id: 'mini-guide', title: '🧩 C++ Mini Guide', path: '/cpp/mini-guide' },
       { id: 'cheatsheet', title: '📋 C++ Field Guide', path: '/cpp/cheatsheet' },
     ],
   },

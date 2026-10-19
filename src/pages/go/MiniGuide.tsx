@@ -2,23 +2,28 @@ import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function GoQuickStart() {
+export default function GoMiniGuide() {
   return (
     <LessonLayout
-      title="⚡ Go Quick Start — Enough to Build Something"
+      title="🧩 Go Mini Guide — The Short Version"
       sectionId="go"
-      lessonIndex={0}
-      prev={null}
-      next={{ path: '/go/intro', label: 'Go From a Node Backend: What Changes' }}
+      lessonIndex={18}
+      prev={{ path: '/go/deploy', label: 'Project Layout, Build & Deploy' }}
+      next={{ path: '/go/cheatsheet', label: 'Go Field Guide' }}
     >
-      <InfoBox variant="warning" title="This is the shortcut, not the course">
+      <InfoBox variant="warning" title="The middle tier — shorter than the section, fuller than the field guide">
+        <p>
+          Three ways to read this section, and this is the one in between. The{' '}
+          <strong>eighteen lessons above</strong> are the real course. The{' '}
+          <a href="/go/cheatsheet">field guide</a> below is a lookup table for when you
+          already know what you are after. <strong>This page is neither</strong> — it is
+          one linear read that gets you writing small Go programs today.
+        </p>
         <p style={{ marginBottom: 0 }}>
-          One page to get you writing small Go programs today, instead of reading
-          eighteen. It is deliberately incomplete: no concurrency beyond the basics, no
-          generics, no deep dives. Everything here was run on{' '}
-          <strong>go1.25.5 darwin/arm64</strong>. When something bites, the full lesson
-          is linked beside it. <strong>Temporary page — delete it once the real
-          sections have been read.</strong>
+          Deliberately incomplete: no generics, no deep concurrency, no deep dives. When
+          something bites, the full lesson is linked beside it. Everything here was run
+          on <strong>go1.25.5 darwin/arm64</strong>.{' '}
+          <strong>Temporary page — delete it once the section above has been read.</strong>
         </p>
       </InfoBox>
 

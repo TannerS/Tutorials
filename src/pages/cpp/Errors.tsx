@@ -16,7 +16,7 @@ function Errors() {
     <LessonLayout
       title="Error Handling: Exceptions, noexcept & expected"
       sectionId="cpp"
-      lessonIndex={17}
+      lessonIndex={16}
       prev={{ path: '/cpp/algorithms', label: 'Algorithms, Iterators & Ranges' }}
       next={{ path: '/cpp/concurrency', label: 'Concurrency: Threads, Atomics & the Memory Model' }}
     >

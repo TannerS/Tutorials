@@ -16,7 +16,7 @@ function MoveSemantics() {
     <LessonLayout
       title="Move Semantics & Perfect Forwarding"
       sectionId="cpp"
-      lessonIndex={9}
+      lessonIndex={8}
       prev={{ path: '/cpp/smart-pointers', label: 'Smart Pointers: unique_ptr, shared_ptr & weak_ptr' }}
       next={{ path: '/cpp/memory-bugs', label: 'Memory Bugs & the Sanitizers That Catch Them' }}
     >

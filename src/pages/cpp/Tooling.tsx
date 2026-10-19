@@ -8,9 +8,9 @@ export default function Tooling() {
     <LessonLayout
       title="Build Systems, Debugging & Sanitizers"
       sectionId="cpp"
-      lessonIndex={20}
+      lessonIndex={19}
       prev={{ path: '/cpp/performance', label: 'Performance: Cache, Copies & Undefined Behaviour' }}
-      next={{ path: '/cpp/cheatsheet', label: 'C++ Field Guide' }}
+      next={{ path: '/cpp/mini-guide', label: '🧩 C++ Mini Guide' }}
     >
       <p>
         The last lesson before the field guide, and the one that decides whether everything else in

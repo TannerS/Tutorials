@@ -2,23 +2,28 @@ import CodeBlock from '../../components/CodeBlock';
 import InfoBox from '../../components/InfoBox';
 import LessonLayout from '../../components/LessonLayout';
 
-export default function CppQuickStart() {
+export default function CppMiniGuide() {
   return (
     <LessonLayout
-      title="⚡ C++ Quick Start — Enough to Build Something"
+      title="🧩 C++ Mini Guide — The Short Version"
       sectionId="cpp"
-      lessonIndex={0}
-      prev={null}
-      next={{ path: '/cpp/intro', label: 'C++ in 2026: Which C++ You\'re Actually Writing' }}
+      lessonIndex={20}
+      prev={{ path: '/cpp/tooling', label: 'Build Systems, Debugging & Sanitizers' }}
+      next={{ path: '/cpp/cheatsheet', label: 'C++ Field Guide' }}
     >
-      <InfoBox variant="warning" title="This is the shortcut, not the course">
+      <InfoBox variant="warning" title="The middle tier — shorter than the section, fuller than the field guide">
+        <p>
+          Three ways to read this section, and this is the one in between. The{' '}
+          <strong>twenty lessons above</strong> are the real course. The{' '}
+          <a href="/cpp/cheatsheet">field guide</a> below is a lookup table for when you
+          already know what you are after. <strong>This page is neither</strong> — it is
+          one linear read that gets you writing small C++ programs today.
+        </p>
         <p style={{ marginBottom: 0 }}>
-          One page to get you writing small C++ programs today, instead of reading
-          twenty. Deliberately incomplete: no templates, no move semantics, no vtables.
-          Everything here was run on <strong>Apple clang 21.0.0, arm64</strong>, with{' '}
-          <strong>CMake 4.4.4</strong>. When something bites, the full lesson is linked
-          beside it. <strong>Temporary page — delete it once the real sections have been
-          read.</strong>
+          Deliberately incomplete: no templates, no move semantics, no vtables. When
+          something bites, the full lesson is linked beside it. Everything here was run on{' '}
+          <strong>Apple clang 21.0.0, arm64</strong> with <strong>CMake 4.4.4</strong>.{' '}
+          <strong>Temporary page — delete it once the section above has been read.</strong>
         </p>
       </InfoBox>
 

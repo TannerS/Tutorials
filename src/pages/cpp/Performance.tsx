@@ -8,7 +8,7 @@ export default function Performance() {
     <LessonLayout
       title="Performance: Cache, Copies & Undefined Behaviour"
       sectionId="cpp"
-      lessonIndex={19}
+      lessonIndex={18}
       prev={{ path: '/cpp/concurrency', label: 'Concurrency: Threads, Atomics & the Memory Model' }}
       next={{ path: '/cpp/tooling', label: 'Build Systems, Debugging & Sanitizers' }}
     >

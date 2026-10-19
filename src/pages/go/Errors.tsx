@@ -16,7 +16,7 @@ function Errors() {
     <LessonLayout
       title="Errors Are Values, Not Exceptions"
       sectionId="go"
-      lessonIndex={6}
+      lessonIndex={5}
       prev={{ path: '/go/interfaces', label: 'Interfaces Without implements' }}
       next={{ path: '/go/slices', label: 'Slices, Maps & the Aliasing Trap' }}
     >

@@ -8,7 +8,7 @@ function Structs() {
     <LessonLayout
       title="Structs, Methods & Composition"
       sectionId="go"
-      lessonIndex={4}
+      lessonIndex={3}
       prev={{ path: '/go/syntax', label: 'Syntax, Types & Zero Values' }}
       next={{ path: '/go/interfaces', label: 'Interfaces Without implements' }}
     >

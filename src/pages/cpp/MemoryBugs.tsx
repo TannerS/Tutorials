@@ -16,7 +16,7 @@ function MemoryBugs() {
     <LessonLayout
       title="Memory Bugs & the Sanitizers That Catch Them"
       sectionId="cpp"
-      lessonIndex={10}
+      lessonIndex={9}
       prev={{ path: '/cpp/move-semantics', label: 'Move Semantics & Perfect Forwarding' }}
       next={{ path: '/cpp/classes', label: 'Classes, Constructors & the Rule of Zero/Three/Five' }}
     >

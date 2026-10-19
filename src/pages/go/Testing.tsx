@@ -16,7 +16,7 @@ export default function Testing() {
     <LessonLayout
       title="Testing Without a Framework"
       sectionId="go"
-      lessonIndex={15}
+      lessonIndex={14}
       prev={{ path: '/go/generics', label: 'Generics' }}
       next={{ path: '/go/http', label: 'HTTP Services with net/http' }}
     >

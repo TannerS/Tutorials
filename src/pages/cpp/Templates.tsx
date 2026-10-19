@@ -16,7 +16,7 @@ function Templates() {
     <LessonLayout
       title="Templates & Generic Programming"
       sectionId="cpp"
-      lessonIndex={13}
+      lessonIndex={12}
       prev={{ path: '/cpp/inheritance', label: 'Inheritance, Virtual Functions & vtables' }}
       next={{ path: '/cpp/concepts', label: 'Concepts & Compile-Time Constraints' }}
     >

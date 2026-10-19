@@ -16,7 +16,7 @@ function Classes() {
     <LessonLayout
       title="Classes, Constructors & the Rule of Zero/Three/Five"
       sectionId="cpp"
-      lessonIndex={11}
+      lessonIndex={10}
       prev={{ path: '/cpp/memory-bugs', label: 'Memory Bugs & the Sanitizers That Catch Them' }}
       next={{ path: '/cpp/inheritance', label: 'Inheritance, Virtual Functions & vtables' }}
     >

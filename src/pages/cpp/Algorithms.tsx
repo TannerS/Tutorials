@@ -8,7 +8,7 @@ export default function Algorithms() {
     <LessonLayout
       title="Algorithms, Iterators & Ranges"
       sectionId="cpp"
-      lessonIndex={16}
+      lessonIndex={15}
       prev={{ path: '/cpp/containers', label: 'STL Containers & Iterator Invalidation' }}
       next={{ path: '/cpp/errors', label: 'Error Handling: Exceptions, noexcept & expected' }}
     >

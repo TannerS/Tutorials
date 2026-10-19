@@ -11,7 +11,7 @@ export default function CppCheatsheet() {
       meta={['C++23 · clang 21 · arm64', 'measured, not assumed', '20 panels']}
       page="1 / 1"
       footer="The twenty lessons in this section carry the reasoning and the worked examples; this page is the recall sheet."
-      prev={{ path: '/cpp/tooling', label: 'Build Systems, Debugging & Sanitizers' }}
+      prev={{ path: '/cpp/mini-guide', label: 'C++ Mini Guide' }}
       next={null}
     >
       <GuidePanel n={1} title="What Inverts Coming From Java / Node" accent="red" glyph="🔄" span={2}>

@@ -16,7 +16,7 @@ function Inheritance() {
     <LessonLayout
       title="Inheritance, Virtual Functions & vtables"
       sectionId="cpp"
-      lessonIndex={12}
+      lessonIndex={11}
       prev={{ path: '/cpp/classes', label: 'Classes, Constructors & the Rule of Zero/Three/Five' }}
       next={{ path: '/cpp/templates', label: 'Templates & Generic Programming' }}
     >

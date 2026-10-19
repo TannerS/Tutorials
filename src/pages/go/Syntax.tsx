@@ -16,7 +16,7 @@ function Syntax() {
     <LessonLayout
       title="Syntax, Types & Zero Values"
       sectionId="go"
-      lessonIndex={3}
+      lessonIndex={2}
       prev={{ path: '/go/setup', label: 'Setup, Modules & the Toolchain' }}
       next={{ path: '/go/structs', label: 'Structs, Methods & Composition' }}
     >

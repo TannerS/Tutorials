@@ -11,7 +11,7 @@ export default function GoCheatsheet() {
       meta={['Go 1.27.2 current · verified on 1.25.5', 'stdlib-first', '18 panels']}
       page="1 / 1"
       footer="The eighteen lessons in this section carry the reasoning and the worked examples; this page is the recall sheet."
-      prev={{ path: '/go/deploy', label: 'Project Layout, Build & Deploy' }}
+      prev={{ path: '/go/mini-guide', label: 'Go Mini Guide' }}
       next={null}
     >
       <GuidePanel n={1} title="Coming From Node — What Inverts" accent="red" glyph="🔄" span={2}>

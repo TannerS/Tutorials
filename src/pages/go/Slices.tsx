@@ -8,7 +8,7 @@ function Slices() {
     <LessonLayout
       title="Slices, Maps & the Aliasing Trap"
       sectionId="go"
-      lessonIndex={7}
+      lessonIndex={6}
       prev={{ path: '/go/errors', label: 'Errors Are Values, Not Exceptions' }}
       next={{ path: '/go/pointers', label: 'Pointers & Value Semantics' }}
     >

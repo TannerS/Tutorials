@@ -16,7 +16,7 @@ function References() {
     <LessonLayout
       title="Values, References & Pointers"
       sectionId="cpp"
-      lessonIndex={5}
+      lessonIndex={4}
       prev={{ path: '/cpp/functions', label: 'Functions, Overloading & Lambdas' }}
       next={{ path: '/cpp/memory-model', label: 'The Memory Model: Stack, Heap & Object Lifetime' }}
     >

@@ -8,7 +8,7 @@ export default function ConcurrencyPatterns() {
     <LessonLayout
       title="Concurrency Patterns & Failure Modes"
       sectionId="go"
-      lessonIndex={13}
+      lessonIndex={12}
       prev={{ path: '/go/context', label: 'Context: Cancellation & Deadlines' }}
       next={{ path: '/go/generics', label: 'Generics' }}
     >

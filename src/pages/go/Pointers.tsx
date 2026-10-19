@@ -8,7 +8,7 @@ export default function Pointers() {
     <LessonLayout
       title="Pointers & Value Semantics"
       sectionId="go"
-      lessonIndex={8}
+      lessonIndex={7}
       prev={{ path: '/go/slices', label: 'Slices, Maps & the Aliasing Trap' }}
       next={{ path: '/go/goroutines', label: 'Goroutines: Beyond the Event Loop' }}
     >
