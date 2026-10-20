@@ -259,6 +259,165 @@ err != nil               // TRUE. Classic bug: return a concrete nil pointer
                          // as an error and every caller sees a failure.`}
       </CodeBlock>
 
+      <h2>Laying Out a Real Project</h2>
+      <p>
+        One file stops being enough fast. This is the layout almost every Go repo uses,
+        and it was built and run to confirm it works as written:
+      </p>
+      <CodeBlock language="text" title="The conventional shape">
+{`proj/
+├── go.mod                  module example.com/proj
+├── cmd/
+│   └── app/main.go         package main — one folder per binary
+└── internal/
+    └── task/task.go        package task — importable ONLY inside this module
+
+go run   ./cmd/app
+go build -o bin/app ./cmd/app`}
+      </CodeBlock>
+      <CodeBlock language="go" title="internal/task/task.go">
+{`package task                  // package name = folder name
+
+type Task struct {
+	Title string
+	Done  bool
+}
+
+func New(title string) Task { return Task{Title: title} }
+
+func (t *Task) Finish() { t.Done = true }   // pointer receiver: mutates
+
+func hidden() {}              // lowercase: invisible outside this package`}
+      </CodeBlock>
+      <CodeBlock language="go" title="cmd/app/main.go">
+{`package main
+
+import (
+	"fmt"
+
+	"example.com/proj/internal/task"    // module path + folder path
+)
+
+func main() {
+	t := task.New("ship")
+	t.Finish()
+	fmt.Printf("%+v\\n", t)              // measured: {Title:ship Done:true}
+}`}
+      </CodeBlock>
+      <InfoBox variant="tip" title="Three rules this encodes">
+        <ul style={{ marginBottom: 0 }}>
+          <li>
+            <strong>Import paths are module path + folder path.</strong> There is no
+            path config and no aliasing — the folder is the truth.
+          </li>
+          <li>
+            <strong><code>internal/</code> is enforced by the compiler.</strong> Code
+            outside your module literally cannot import it. Free encapsulation at the
+            package level, no tooling required.
+          </li>
+          <li>
+            <strong>Capitalisation is the access modifier.</strong>{' '}
+            <code>New</code> and <code>Task</code> are exported;{' '}
+            <code>hidden</code> is not. There is no <code>public</code> keyword.
+          </li>
+        </ul>
+      </InfoBox>
+
+      <h2>Dependencies</h2>
+      <CodeBlock language="bash" title="There is no package.json and no install step">
+{`go get github.com/google/uuid       # adds it to go.mod and go.sum
+go mod tidy                         # add what is imported, drop what is not
+go mod download                     # fetch into the module cache (CI)
+
+# go.sum pins cryptographic hashes. Commit BOTH go.mod and go.sum.
+# There is no node_modules — the cache lives in $GOPATH/pkg/mod, shared
+# across every project on the machine.`}
+      </CodeBlock>
+      <p>
+        The standard library is unusually large, so check it before reaching outward:
+        HTTP client and server, JSON, SQL, crypto, templating, compression and testing
+        are all built in.
+      </p>
+
+      <h2>JSON — You Will Need This on Day One</h2>
+      <CodeBlock language="go" title="Struct tags control the wire format">
+{`type Config struct {
+	Name    string   \`json:"name"\`
+	Port    int      \`json:"port"\`
+	Tags    []string \`json:"tags,omitempty"\`   // omit when empty
+	secret  string                              // unexported: NEVER marshalled
+	Missing *int     \`json:"missing,omitempty"\`
+}
+
+b, err := json.Marshal(cfg)              // struct -> []byte
+err = json.Unmarshal(data, &cfg)         // []byte -> struct  (note the &)`}
+      </CodeBlock>
+      <CodeBlock language="text" title="Real output — Go 1.25.5">
+{`marshal: {"name":"api","port":8080,"tags":["a"]}
+  -> 'secret' is absent: unexported fields are invisible to encoding/json.
+  -> 'missing' is absent: omitempty + nil pointer.
+
+unmarshal type error: json: cannot unmarshal string into Go struct
+                      field Config.port of type int
+
+back: {Name:web Port:90 Tags:[] secret: Missing:<nil>}`}
+      </CodeBlock>
+      <InfoBox variant="danger" title="The silent one">
+        <p style={{ marginBottom: 0 }}>
+          A <strong>lowercase field is skipped without any error</strong>. Marshal a
+          struct whose fields you forgot to capitalise and you get <code>{'{}'}</code>{' '}
+          back, cheerfully. If JSON is coming out empty, check the capitalisation
+          first — it is almost always this.
+        </p>
+      </InfoBox>
+
+      <h2>The Standard Library Bits You Will Reach For</h2>
+      <CodeBlock language="go" title="slices, maps, strings, strconv, os">
+{`import ("slices"; "maps"; "strings"; "strconv"; "os")
+
+// slices / maps — generic helpers, Go 1.21+. Stop writing these by hand.
+slices.Sort(s)              slices.Contains(s, 2)      slices.Index(s, 3)
+slices.Reverse(s)           slices.Max(s)              slices.Clone(s)
+keys := slices.Sorted(maps.Keys(m))     // deterministic map iteration
+
+// strings
+strings.Join(parts, ",")    strings.Split(s, ",")      strings.Fields(s)
+strings.Contains(s, "b")    strings.HasPrefix(s, "a")  strings.TrimSpace(s)
+strings.ToUpper(s)          strings.ReplaceAll(s, "a", "b")
+var sb strings.Builder; sb.WriteString("x"); sb.String()   // efficient concat
+
+// strconv — conversion that can FAIL, so it returns an error
+n, err := strconv.Atoi("42")        strconv.Itoa(42)
+f, err := strconv.ParseFloat("1.5", 64)
+
+// os
+os.Getenv("PORT")           os.Args          // [0] is the program path
+data, err := os.ReadFile("f.txt")            // whole file, as []byte
+err = os.WriteFile("f.txt", data, 0o644)`}
+      </CodeBlock>
+      <CodeBlock language="text" title="Real output — the ones with surprises">
+{`slices.Sorted(maps.Keys(m))  ->  [a b]     (map order is RANDOM without this)
+strconv.Atoi("42x")          ->  0, strconv.Atoi: parsing "42x": invalid syntax
+                                 ^ returns ZERO plus an error, not a panic`}
+      </CodeBlock>
+
+      <h2>Printf Verbs, Since You Will Debug With Them</h2>
+      <CodeBlock language="text" title="Real output — one struct, six verbs">
+{`type P struct{ X int };  p := P{1}
+
+%v    {1}              the value
+%+v   {X:1}            with field names   <- the one you want 90% of the time
+%#v   main.P{X:1}      Go syntax
+%T    main.P           the TYPE
+%q    "str"            quoted
+%d %s %f %t            int, string, float, bool
+
+fmt.Println(a, b)                 // spaces + newline, no format string
+fmt.Printf("x=%d\\n", x)           // needs the \\n
+fmt.Errorf("ctx: %w", err)        // %w wraps; %v would flatten it to text
+fmt.Fprintf(os.Stderr, ...)       // write to stderr`}
+      </CodeBlock>
+
       <h2>A Tiny HTTP Server</h2>
       <CodeBlock language="go" title="The standard library is the framework">
 {`package main
@@ -311,6 +470,81 @@ func TestNewTask(t *testing.T) {
 // go test ./...          run them
 // go test -race ./...    run them while watching for data races
 // go test -cover ./...   coverage, built in`}
+      </CodeBlock>
+
+      <h2>Structs, Interfaces and Embedding, Practically</h2>
+      <CodeBlock language="go" title="The composition model, in one block">
+{`// EMBEDDING — the closest Go gets to inheritance. It is composition:
+// the outer type gets the inner type's methods promoted onto it.
+type Base struct{ ID int }
+func (b Base) Describe() string { return fmt.Sprint("id=", b.ID) }
+
+type User struct {
+	Base              // embedded — no field name
+	Name string
+}
+u := User{Base{1}, "ann"}
+u.Describe()          // promoted from Base. u.ID works too.
+
+// INTERFACES — satisfied implicitly. Define them where they are USED,
+// not next to the implementation, and keep them small.
+type Store interface {
+	Get(id int) (User, error)
+}
+
+// The rule of thumb that keeps Go code testable:
+//   ACCEPT interfaces, RETURN structs.
+func NewService(s Store) *Service { ... }      // accepts: any Store, incl. a fake
+func NewPostgres(db *sql.DB) *Postgres { ... } // returns: the concrete type
+
+// io.Reader / io.Writer are the two interfaces worth knowing by heart.
+// Files, HTTP bodies, buffers and network connections all satisfy them,
+// so anything taking an io.Reader works with all of them.
+func count(r io.Reader) (int, error)`}
+      </CodeBlock>
+
+      <h2>A 40-Line CLI, Which Covers Most Small Projects</h2>
+      <CodeBlock language="go" title="flags, file I/O, exit codes">
+{`package main
+
+import (
+	"bufio"
+	"flag"
+	"fmt"
+	"os"
+	"strings"
+)
+
+func main() {
+	upper := flag.Bool("upper", false, "shout the output")
+	name := flag.String("file", "", "file to read")
+	flag.Parse()                       // ./app -upper -file=x.txt
+
+	if *name == "" {
+		fmt.Fprintln(os.Stderr, "missing -file")
+		os.Exit(2)                     // non-zero = failure, for the shell
+	}
+
+	f, err := os.Open(*name)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "open: %v\\n", err)
+		os.Exit(1)
+	}
+	defer f.Close()
+
+	sc := bufio.NewScanner(f)          // line by line, no loading the whole file
+	for sc.Scan() {
+		line := sc.Text()
+		if *upper {
+			line = strings.ToUpper(line)
+		}
+		fmt.Println(line)
+	}
+	if err := sc.Err(); err != nil {   // Scan() returning false is not proof of EOF
+		fmt.Fprintf(os.Stderr, "read: %v\\n", err)
+		os.Exit(1)
+	}
+}`}
       </CodeBlock>
 
       <h2>Where to Go When This Runs Out</h2>

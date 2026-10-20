@@ -202,6 +202,207 @@ void Task::finish() { done = true; }
         the lesson to read the first time a linker error makes no sense.
       </p>
 
+      <h2>Stop Using <code>cout</code> — <code>std::println</code> Exists Now</h2>
+      <p>
+        <code>iostream</code> is what every old tutorial teaches and it is genuinely
+        unpleasant: <code>&lt;&lt;</code> chains, manual <code>&apos;\n&apos;</code>,
+        and no way to control width without <code>iomanip</code>. C++23 has{' '}
+        <code>std::println</code>, and it is available right here — verified on this
+        toolchain, <code>__cpp_lib_print</code> defined.
+      </p>
+      <CodeBlock language="cpp" title="Same output, far less noise">
+{`#include <print>
+
+std::println("argc={} first={}", argc, argv[0]);
+std::print("no newline ");
+
+// It formats containers directly:
+std::vector<int> v{1,2,3,4,5};
+std::println("sorted: {}", v);
+
+// And has real formatting:
+std::println("{:>8}|{:<8}|{:^8}|", "right", "left", "mid");
+std::println("{:.3f}  {:#x}  {:b}", 3.14159, 255, 5);
+
+// std::format does the same thing but returns a string:
+std::string s = std::format("{} items", v.size());`}
+      </CodeBlock>
+      <CodeBlock language="text" title="Real output — Apple clang 21, -std=c++23">
+{`argc=2 first=hello
+sorted: [1, 2, 3, 4, 5]
+   right|left    |  mid   |
+3.142  0xff  101`}
+      </CodeBlock>
+      <InfoBox variant="note" title="What this toolchain actually supports">
+        <CodeBlock language="text" title="Measured with feature-test macros">
+{`__cplusplus     202302     (C++23, with -std=c++23)
+std::format     YES        __cpp_lib_format   202110
+std::expected   YES        __cpp_lib_expected 202211
+ranges          YES        __cpp_lib_ranges   202406
+std::println    YES        __cpp_lib_print`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          Worth knowing how to check, because library support lags the standard and
+          varies by compiler. <code>#ifdef __cpp_lib_format</code> tells you the truth
+          for the toolchain you are actually on, which a blog post cannot.
+        </p>
+      </InfoBox>
+
+      <h2>Parameter Passing — the Table to Memorise</h2>
+      <p>
+        This is the single decision C++ makes you take that other languages do not, and
+        getting it wrong is most accidental-copy and dangling-reference bugs.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Write</th>
+            <th>Meaning</th>
+            <th>Use when</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>const T&amp;</code></td>
+            <td>Borrow, read-only. No copy.</td>
+            <td><strong>The default</strong> for anything bigger than a pointer.</td>
+          </tr>
+          <tr>
+            <td><code>T&amp;</code></td>
+            <td>Borrow, may modify the caller&apos;s object.</td>
+            <td>You genuinely need to mutate the argument.</td>
+          </tr>
+          <tr>
+            <td><code>T</code></td>
+            <td>By value — a copy, or a move if the caller passed a temporary.</td>
+            <td>You need your own copy anyway (then <code>std::move</code> it in).</td>
+          </tr>
+          <tr>
+            <td><code>T*</code></td>
+            <td>A pointer, which may be null.</td>
+            <td>&quot;Optional&quot; without ownership. Prefer <code>optional</code>.</td>
+          </tr>
+          <tr>
+            <td><code>std::string_view</code></td>
+            <td>A non-owning view of characters.</td>
+            <td>Read-only string params — avoids a copy even from a literal.</td>
+          </tr>
+          <tr>
+            <td><code>unique_ptr&lt;T&gt;</code></td>
+            <td>Transfers ownership to the callee.</td>
+            <td>&quot;You own this now.&quot; Must be moved in.</td>
+          </tr>
+        </tbody>
+      </table>
+      <CodeBlock language="cpp" title="string_view, measured">
+{`std::string s = "hello world";
+std::string_view sv{s};
+sv.substr(6)        // "world" — no allocation, just a new pointer+length
+
+// THE CATCH: a view does not own anything. This dangles:
+std::string_view bad() { std::string t = "x"; return t; }   // t dies, view rots`}
+      </CodeBlock>
+
+      <h2>A Class You Would Actually Write</h2>
+      <CodeBlock language="cpp" title="The Rule of Zero in practice">
+{`class Counter {
+public:
+    explicit Counter(int start) : n_{start} {}   // explicit: no silent conversion
+                                                 // member init list, not assignment
+    void inc() { ++n_; }
+    int value() const { return n_; }             // const: promises not to mutate
+    bool operator==(const Counter&) const = default;   // C++20: free equality
+
+private:
+    int n_ = 0;          // default member initialiser
+};
+
+// THE RULE OF ZERO: if every member cleans up after itself (vector, string,
+// unique_ptr), write NO destructor, NO copy constructor, NO assignment
+// operator. The compiler generates correct ones. Writing any of them by hand
+// obliges you to write all five -- and silently disables move generation,
+// so the class quietly starts copying instead.
+
+struct Doc {
+    std::string title;             // cleans itself up
+    std::vector<Task> tasks;       // cleans itself up
+};                                 // nothing to write. This is correct C++.`}
+      </CodeBlock>
+
+      <h2>Algorithms Instead of Loops</h2>
+      <CodeBlock language="cpp" title="The dozen you will actually use">
+{`#include <algorithm>
+#include <numeric>
+#include <ranges>
+
+std::ranges::sort(v);                               // no .begin()/.end() noise
+std::ranges::sort(v, std::greater{});               // descending
+auto it = std::ranges::find(v, 3);
+bool any = std::ranges::any_of(v, [](int x){ return x > 2; });
+auto n   = std::ranges::count_if(v, [](int x){ return x % 2 == 0; });
+int sum  = std::accumulate(v.begin(), v.end(), 0);   // note: NOT in ranges
+std::ranges::reverse(v);
+auto mx  = std::ranges::max_element(v);
+
+// Views compose lazily — nothing is computed until you iterate.
+auto evens = v | std::views::filter([](int x){ return x % 2 == 0; })
+               | std::views::transform([](int x){ return x * 10; });
+for (int x : evens) std::print("{} ", x);`}
+      </CodeBlock>
+      <CodeBlock language="text" title="Real output — v = {5,3,1,4,2}">
+{`filter even | transform x10  ->  40 20
+ranges::sort                 ->  [1, 2, 3, 4, 5]
+accumulate                   ->  13   (on the sorted {1,3,4,5})`}
+      </CodeBlock>
+
+      <h2>Files and Strings</h2>
+      <CodeBlock language="cpp" title="Reading a file line by line">
+{`#include <fstream>
+#include <string>
+
+std::ofstream("out.txt") << "line one\\nline two\\n";   // write
+
+std::ifstream in("out.txt");
+if (!in) { /* open failed — ALWAYS check */ }
+std::string line;
+while (std::getline(in, line))
+    std::println("read: {}", line);
+// The stream closes itself at the end of scope. RAII again.
+
+// Common string operations:
+s.substr(0, 5)   s.find("x")   s.starts_with("a")   s.contains("b")   // C++23
+s + t            s.append(t)   s.size()             s.empty()
+std::stoi("42")  std::to_string(42)`}
+      </CodeBlock>
+
+      <h2>Adding a Library</h2>
+      <CodeBlock language="cmake" title="FetchContent — no package manager needed for small projects">
+{`cmake_minimum_required(VERSION 3.20)
+project(app CXX)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+include(FetchContent)
+FetchContent_Declare(fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG        11.0.2)        # PIN THE TAG. Never track a branch.
+FetchContent_MakeAvailable(fmt)
+
+add_executable(app main.cpp)
+target_link_libraries(app PRIVATE fmt::fmt)`}
+      </CodeBlock>
+      <InfoBox variant="tip" title="Two things worth knowing before you reach for a dependency">
+        <p style={{ marginBottom: 0 }}>
+          C++ has no single blessed package manager — vcpkg and Conan both exist and
+          both are more setup than a small project needs. <strong>FetchContent is built
+          into CMake</strong> and clones the dependency at configure time, which is
+          enough for anything small. And check the standard library first: a lot of what
+          people pull <code>fmt</code> or <code>Boost</code> in for is now{' '}
+          <code>std::format</code>, <code>std::optional</code>,{' '}
+          <code>std::filesystem</code> or <code>std::ranges</code>.
+        </p>
+      </InfoBox>
+
       <h2>The Five Things That Will Bite You</h2>
       <CodeBlock language="cpp" title="In rough order of how soon you will hit them">
 {`// 1. ITERATOR / POINTER INVALIDATION — the classic.
