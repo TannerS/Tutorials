@@ -55,6 +55,13 @@ const TRACKED = [
   { kind: 'maven', name: 'org/junit/jupiter/junit-jupiter' },
   { kind: 'maven', name: 'io/github/resilience4j/resilience4j-core' },
   { kind: 'maven', name: 'au/com/dius/pact/consumer/junit5' },
+  // Not a package registry, but the Go section asserts the current toolchain
+  // release in six places. That claim went stale (1.27.2 -> 1.27.3) with
+  // nothing to catch it, because `wordsFor('go')` drops a two-letter name and
+  // every one of those lines also contains PROVENANCE versions that must not
+  // move. Hence the explicit subject and the scope: only prose in the Go
+  // section, only lines where Go itself is what is being called current.
+  { kind: 'go', name: 'go', subject: /\bgo(?:lang)?\b/i, scope: 'go/' },
 ];
 
 const isStable = (v) => v && !/-(?:alpha|beta|rc|pre|M\d|dev|nightly|canary|experimental)/i.test(v);
@@ -77,6 +84,17 @@ async function mavenRelease(p) {
   return stable.length ? stable[stable.length - 1] : (xml.match(/<release>([^<]+)/)?.[1] ?? null);
 }
 
+// go.dev/dl returns the two supported stable lines, newest first. Strip the
+// `go` prefix so the comparison below sees the same shape as a registry
+// version ("1.27.3", not "go1.27.3").
+async function goStable() {
+  const res = await fetch('https://go.dev/dl/?mode=json');
+  if (!res.ok) return null;
+  const j = await res.json();
+  const v = j.find((r) => r.stable)?.version ?? null;
+  return v ? v.replace(/^go/, '') : null;
+}
+
 // Find CURRENCY ASSERTIONS only: a version number sitting next to language
 // that claims it is the newest ("latest is X", "the current release is X",
 // "as of ... X", "now at X").
@@ -92,19 +110,41 @@ async function mavenRelease(p) {
 // So: match the claim, not the number.
 const CURRENCY = /(latest|current(?:ly)?|newest|as of|now at|now sits at|ships? as)/i;
 
-function currencyClaims(pkgWords) {
+// A number on a currency line is still not a currency CLAIM if it is
+// attributed to something else, and this has to be judged per number rather
+// than per line, because one line routinely carries both kinds:
+//
+//   'Go 1.27.3 current · verified on 1.25.5'
+//
+// 1.27.3 is the claim; 1.25.5 is provenance and must never be bumped. The two
+// attributions that show up constantly here are PROVENANCE (what actually ran)
+// and HISTORICAL (which version a feature ARRIVED in -- "as of Go 1.22 it
+// handles method-based routing" is a fact about 1.22, not about what is
+// newest). Matched against the text immediately before the number, tags
+// stripped, so only a directly attached attribution counts.
+const ATTRIBUTED =
+  /(?:verified(?:\s+on)?|real output(?:\s+on)?|measured(?:\s+on)?|ran on|tested on|output from|as of|since|added in|introduced in|arrived in|new in)\s+(?:go|java|node|v)?\s*$/i;
+
+function currencyClaims(pkgWords, { subject, scope } = {}) {
   const hits = [];
   const walk = (d) => {
     for (const e of readdirSync(d, { withFileTypes: true })) {
       const p = path.join(d, e.name);
       if (e.isDirectory()) { walk(p); continue; }
       if (!e.name.endsWith('.tsx')) continue;
+      const rel = path.relative(PAGES, p);
+      // `scope` narrows a tracked entry to one section, for subjects whose
+      // name is too common to match safely across the whole repo.
+      if (scope && !rel.startsWith(scope)) continue;
       const src = readFileSync(p, 'utf8');
       src.split('\n').forEach((line, i) => {
         if (!CURRENCY.test(line)) return;
         // the package has to actually be the subject of the line
-        if (!pkgWords.some((w) => line.toLowerCase().includes(w))) return;
+        const isSubject = subject ? subject.test(line) : pkgWords.some((w) => line.toLowerCase().includes(w));
+        if (!isSubject) return;
         for (const m of line.matchAll(/\b(\d+\.\d+(?:\.\d+)?)\b/g)) {
+          const before = line.slice(0, m.index).replace(/<[^>]*>/g, ' ');
+          if (ATTRIBUTED.test(before)) continue;
           hits.push({ file: path.relative(PAGES, p), line: i + 1, version: m[1] });
         }
       });
@@ -128,7 +168,10 @@ const rows = [];
 for (const t of TRACKED) {
   let actual = null;
   try {
-    actual = t.kind === 'npm' ? await npmTag(t.name, t.tag) : await mavenRelease(t.name);
+    actual =
+      t.kind === 'npm' ? await npmTag(t.name, t.tag)
+      : t.kind === 'go' ? await goStable()
+      : await mavenRelease(t.name);
   } catch {
     actual = null;
   }
@@ -139,7 +182,7 @@ for (const t of TRACKED) {
   }
   // Only lines that ASSERT currency count. A version that merely appears
   // somewhere is almost always provenance, and provenance is not drift.
-  const claims = currencyClaims(wordsFor(t.name));
+  const claims = currencyClaims(wordsFor(t.name), { subject: t.subject, scope: t.scope });
   const major = actual.split('.')[0];
   // Compare against claims on the same major line, so "latest-v7 = 7.3.11"
   // is not judged against a v9 release.
