@@ -8,9 +8,9 @@ export default function Pointers() {
     <LessonLayout
       title="Pointers & Value Semantics"
       sectionId="go"
-      lessonIndex={7}
-      prev={{ path: '/go/slices', label: 'Slices, Maps & the Aliasing Trap' }}
-      next={{ path: '/go/goroutines', label: 'Goroutines: Beyond the Event Loop' }}
+      lessonIndex={3}
+      prev={{ path: '/go/syntax', label: 'Syntax, Types & Zero Values' }}
+      next={{ path: '/go/structs', label: 'Structs, Methods & Composition' }}
     >
       <p>
         This lesson sits awkwardly between your three backgrounds. Coming from{' '}
@@ -277,12 +277,13 @@ b.n = 99
       </CodeBlock>
 
       <p>
-        The exceptions — the types that still alias even though they are "copied" — are slices,
-        maps and channels, because each is a small header containing a pointer. Copying the
-        header copies the pointer, so both copies see the same backing data. That is precisely
-        the aliasing trap from{' '}
-        <a href="/go/slices">Slices, Maps &amp; the Aliasing Trap</a>, and now you can see why it
-        happens: nothing special is going on, you simply copied a struct that had a pointer in it.
+        The exceptions — the types that still alias even though they are &quot;copied&quot; — are
+        slices, maps and channels, because each is a small header containing a pointer. Copying the
+        header copies the pointer, so both copies see the same backing data. Hold on to that
+        sentence: it is the entire explanation for{' '}
+        <a href="/go/slices">the aliasing trap</a> four lessons from here, which is the largest
+        source of wrong answers in production Go. Nothing special is going on there either — you
+        will simply have copied a struct that had a pointer in it.
       </p>
 
       <h2>Key Takeaways</h2>
@@ -298,6 +299,16 @@ b.n = 99
         the dominant one being that a method needs to mutate its receiver. And{' '}
         <strong>be consistent per type</strong>: mixing receiver kinds creates interface
         satisfaction traps that the compiler reports somewhere far from the cause.
+      </p>
+
+      <p>
+        Next: <strong><a href="/go/structs">Structs, Methods &amp; Composition</a></strong>, which
+        is where that last point stops being abstract. Every method you write picks a receiver, and
+        the choice is the one this lesson just equipped you to make —{' '}
+        <code>func (c Counter)</code> gets a copy and cannot mutate the original,{' '}
+        <code>func (c *Counter)</code> gets the address and can. You will also see{' '}
+        <code>&amp;User{'{'}...{'}'}</code> constantly from here on; it is Go&apos;s{' '}
+        <code>new User(...)</code>, and it is a pointer for exactly the reasons above.
       </p>
     </LessonLayout>
   );

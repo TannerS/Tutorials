@@ -16,7 +16,7 @@ function Containers() {
     <LessonLayout
       title="STL Containers & Iterator Invalidation"
       sectionId="cpp"
-      lessonIndex={14}
+      lessonIndex={15}
       prev={{ path: '/cpp/concepts', label: 'Concepts & Compile-Time Constraints' }}
       next={{ path: '/cpp/algorithms', label: 'Algorithms, Iterators & Ranges' }}
     >

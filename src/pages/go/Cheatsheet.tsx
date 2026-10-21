@@ -8,7 +8,7 @@ export default function GoCheatsheet() {
       kicker="FIELD GUIDE"
       glyph="🐹"
       tagline="Written for a Node backend who also knows Java and C++ — every version, default and output here was run against a real toolchain, not recalled."
-      meta={['Go 1.27.2 current · verified on 1.25.5', 'stdlib-first', '18 panels']}
+      meta={['Go 1.27.3 current · verified on 1.25.5', 'stdlib-first', '18 panels']}
       page="1 / 1"
       footer="The eighteen lessons in this section carry the reasoning and the worked examples; this page is the recall sheet."
       prev={{ path: '/go/mini-guide', label: 'Go Mini Guide' }}

@@ -8,7 +8,7 @@ export default function Sync() {
     <LessonLayout
       title="The sync Package — and When Not to Use Channels"
       sectionId="go"
-      lessonIndex={10}
+      lessonIndex={11}
       prev={{ path: '/go/channels', label: 'Channels & select' }}
       next={{ path: '/go/context', label: 'Context: Cancellation & Deadlines' }}
     >

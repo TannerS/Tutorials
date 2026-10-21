@@ -89,6 +89,7 @@ const CppTypes = lazy(() => import('./pages/cpp/Types'))
 const CppFunctions = lazy(() => import('./pages/cpp/Functions'))
 const CppReferences = lazy(() => import('./pages/cpp/References'))
 const CppMemoryModel = lazy(() => import('./pages/cpp/MemoryModel'))
+const CppClassPrimer = lazy(() => import('./pages/cpp/ClassPrimer'))
 const CppRaii = lazy(() => import('./pages/cpp/Raii'))
 const CppSmartPointers = lazy(() => import('./pages/cpp/SmartPointers'))
 const CppMoveSemantics = lazy(() => import('./pages/cpp/MoveSemantics'))
@@ -634,6 +635,7 @@ function App() {
         <Route path="cpp/functions" element={<CppFunctions />} />
         <Route path="cpp/references" element={<CppReferences />} />
         <Route path="cpp/memory-model" element={<CppMemoryModel />} />
+        <Route path="cpp/class-primer" element={<CppClassPrimer />} />
         <Route path="cpp/raii" element={<CppRaii />} />
         <Route path="cpp/smart-pointers" element={<CppSmartPointers />} />
         <Route path="cpp/move-semantics" element={<CppMoveSemantics />} />

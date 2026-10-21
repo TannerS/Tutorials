@@ -16,10 +16,19 @@ export default function Generics() {
     <LessonLayout
       title="Generics"
       sectionId="go"
-      lessonIndex={13}
-      prev={{ path: '/go/concurrency-patterns', label: 'Concurrency Patterns & Failure Modes' }}
-      next={{ path: '/go/testing', label: 'Testing Without a Framework' }}
+      lessonIndex={8}
+      prev={{ path: '/go/slices', label: 'Slices, Maps & the Aliasing Trap' }}
+      next={{ path: '/go/goroutines', label: 'Goroutines: Beyond the Event Loop' }}
     >
+      <p>
+        <a href="/go/slices">The previous lesson</a> ended on a frustration it had been building all
+        the way through: a helper that works on <code>[]int</code> has to be written again for{' '}
+        <code>[]string</code>, and the escape hatch — <code>[]any</code> plus a type assertion —
+        throws away the one thing you came to a static language for. This lesson is the fix, and it
+        is also how the <code>slices</code> and <code>maps</code> packages you have been calling are
+        themselves written.
+      </p>
+
       <p>
         You already know generics. You have written <code>List&lt;T&gt;</code> and{' '}
         <code>Map&lt;K, V&gt;</code> in Java, and in TypeScript you have probably written a
@@ -49,7 +58,7 @@ export default function Generics() {
 
       <InfoBox variant="note" title="What was run for this lesson">
         <p>
-          Go <strong>1.27.2</strong> is the current stable release. Every output block below came
+          Go <strong>1.27.3</strong> is the current stable release. Every output block below came
           from the locally installed <strong>go1.25.5 darwin/arm64</strong> toolchain on an Apple M4
           Pro (14 logical CPUs), plus <strong>java 26.0.1</strong> for the erasure comparison.
           Nothing here is quoted from memory. Generics have not changed in a
@@ -980,10 +989,20 @@ List<Integer> boxes every element      []int does not box. Measured above: 0 all
       </InfoBox>
 
       <p>
-        Next: <a href="/go/testing">Testing Without a Framework</a> — where the thing to unlearn is
-        not a type system but your entire Jest and JUnit setup, because the runner, the assertions,
-        the coverage tool, the benchmark harness, and the fuzzer are all already installed. A
-        condensed reference for everything in this lesson lives in the{' '}
+        That closes the type system. <a href="/go/syntax">Syntax</a>,{' '}
+        <a href="/go/pointers">value semantics</a>, <a href="/go/structs">structs</a>,{' '}
+        <a href="/go/interfaces">interfaces</a>, <a href="/go/errors">errors</a>,{' '}
+        <a href="/go/slices">slices and maps</a>, and now type parameters — you can write and
+        structure ordinary Go programs, and everything from here is about what else the language
+        gives you.
+      </p>
+      <p>
+        Next: <strong><a href="/go/goroutines">Goroutines: Beyond the Event Loop</a></strong>, and it
+        is the hardest turn in this section. Five lessons in a row are about concurrency, because Go
+        is built around it and because this is where a Node background actively misleads you —{' '}
+        <code>go f()</code> returns nothing at all, there is no promise to await, and two goroutines
+        touching one variable is a real data race rather than a theoretical one. A condensed
+        reference for everything in this lesson lives in the{' '}
         <a href="/go/cheatsheet">Go Field Guide</a>.
       </p>
     </LessonLayout>

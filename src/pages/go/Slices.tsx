@@ -8,9 +8,9 @@ function Slices() {
     <LessonLayout
       title="Slices, Maps & the Aliasing Trap"
       sectionId="go"
-      lessonIndex={6}
+      lessonIndex={7}
       prev={{ path: '/go/errors', label: 'Errors Are Values, Not Exceptions' }}
-      next={{ path: '/go/pointers', label: 'Pointers & Value Semantics' }}
+      next={{ path: '/go/generics', label: 'Generics' }}
     >
       <p>
         Slices and maps are the two data structures you will use in every Go file you ever write, and
@@ -24,6 +24,15 @@ function Slices() {
         same array without either one knowing. If you are coming from JavaScript, you have never had
         to think about this, because a JS array is one object with one identity and{' '}
         <code>arr.slice(2, 5)</code> always copies. Go&apos;s <code>arr[2:5]</code> never copies.
+      </p>
+      <p>
+        If that sounds like it contradicts{' '}
+        <a href="/go/pointers">the value-semantics rule from four lessons back</a>, it does not —
+        it is that rule being precise. Passing a slice <em>does</em> copy the slice, because
+        everything in Go is passed by value. What gets copied is the three-word header: a pointer,
+        a length and a capacity. The pointer in that copy still aims at the same array, so you have
+        a genuine copy of a value that describes somebody else&apos;s data. Every surprise on this
+        page comes from that one sentence.
       </p>
       <p>Where each of your languages will mislead you:</p>
       <ul>
@@ -1049,11 +1058,14 @@ closures captured: c c c`}
       </InfoBox>
 
       <p>
-        Next: <a href="/go/pointers">Pointers &amp; Value Semantics</a>. Slices and maps are the two
-        places where Go hands you reference behaviour without an explicit pointer, so you have
-        already met the hard part. That lesson covers the explicit kind — why there is no pointer
-        arithmetic, why you do not have to think about lifetimes, and how the compiler decides
-        between the stack and the heap without telling you.
+        Next: <a href="/go/generics">Generics</a>. Notice what you had to do on this page every time
+        a helper needed to work on more than one element type — write it again, or give up and take{' '}
+        <code>[]any</code>. The <code>slices</code> and <code>maps</code> packages this lesson leaned
+        on are not magic; they are ordinary Go code that became possible in 1.18, and reading them is
+        the clearest argument for the feature. That lesson is also where the{' '}
+        <a href="/go/pointers">value-semantics rule</a> from three lessons back gets its last
+        wrinkle: a type parameter can be instantiated with a value type or a pointer type, and the
+        two behave differently in ways the compiler will not warn you about.
       </p>
     </LessonLayout>
   );

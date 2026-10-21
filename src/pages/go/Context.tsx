@@ -8,7 +8,7 @@ export default function Context() {
     <LessonLayout
       title="Context: Cancellation & Deadlines"
       sectionId="go"
-      lessonIndex={11}
+      lessonIndex={12}
       prev={{ path: '/go/sync', label: 'The sync Package — and When Not to Use Channels' }}
       next={{ path: '/go/concurrency-patterns', label: 'Concurrency Patterns & Failure Modes' }}
     >
@@ -296,6 +296,15 @@ if id, ok := ctx.Value(requestIDKey).(string); ok {
         <code>WithValue</code> for cross-cutting request metadata rather than real arguments.
         And remember what it is all for: without it, every abandoned request leaves work running
         that nobody will ever read.
+      </p>
+
+      <p>
+        Next: <strong><a href="/go/concurrency-patterns">Concurrency Patterns &amp; Failure
+        Modes</a></strong>. You now have the four pieces — <a href="/go/goroutines">start</a>,{' '}
+        <a href="/go/channels">communicate</a>, <a href="/go/sync">guard</a>, and cancel — and that
+        lesson is about assembling them without creating the failures each one makes possible: the
+        worker pool, the fan-out/fan-in, the pipeline that shuts down cleanly, and the goroutine
+        leak that is the default outcome when you get any of it slightly wrong.
       </p>
     </LessonLayout>
   );

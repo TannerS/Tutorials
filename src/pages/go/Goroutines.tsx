@@ -8,14 +8,16 @@ export default function Goroutines() {
     <LessonLayout
       title="Goroutines: Beyond the Event Loop"
       sectionId="go"
-      lessonIndex={8}
-      prev={{ path: '/go/pointers', label: 'Pointers & Value Semantics' }}
+      lessonIndex={9}
+      prev={{ path: '/go/generics', label: 'Generics' }}
       next={{ path: '/go/channels', label: 'Channels & select' }}
     >
       <p>
         This is the lesson where your existing instincts stop helping and start hurting. Everything
-        up to here — syntax, structs, interfaces, pointers — transfers reasonably well from
-        TypeScript or Java. Concurrency does not. If you have spent years in Node, three
+        up to here — <a href="/go/syntax">syntax</a>, <a href="/go/pointers">value semantics</a>,{' '}
+        <a href="/go/structs">structs</a>, <a href="/go/interfaces">interfaces</a>,{' '}
+        <a href="/go/slices">slices</a>, <a href="/go/generics">generics</a> — transfers reasonably
+        well from TypeScript or Java. Concurrency does not. If you have spent years in Node, three
         assumptions are so deeply wired that you no longer notice you are making them:
       </p>
       <ol>

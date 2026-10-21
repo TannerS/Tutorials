@@ -56,6 +56,18 @@ long long  at least 64 bits`}
         <code>arm64-apple-darwin25.6.0</code>:
       </p>
 
+      <InfoBox variant="note" title="If you have not seen template <class T> before">
+        <p style={{ marginBottom: 0 }}>
+          The helper below starts with <code>template &lt;class T&gt;</code>, and{' '}
+          <code>row&lt;bool&gt;(...)</code> calls it. Read it as Java&apos;s{' '}
+          <code>&lt;T&gt; void row(...)</code> — one function written once, usable with any type, with
+          the type named in angle brackets at the call. That is all you need here, and it will turn up
+          a few more times before it gets its own lesson. The differences from Java generics are real
+          and large (no erasure; a separate copy of the function is compiled per type), and they are
+          the subject of <a href="/cpp/templates">Templates &amp; Generic Programming</a>.
+        </p>
+      </InfoBox>
+
       <CodeBlock language="cpp" title="sizes.cpp">
 {`#include <print>
 #include <cstdint>

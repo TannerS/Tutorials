@@ -10,7 +10,7 @@ export default function CppCheatsheet() {
       tagline="Written for a Node backend who knows Java and has rusty C++ — every size, flag and output here was compiled and run, not recalled."
       meta={['C++23 · clang 21 · arm64', 'measured, not assumed', '20 panels']}
       page="1 / 1"
-      footer="The twenty lessons in this section carry the reasoning and the worked examples; this page is the recall sheet."
+      footer="The 21 lessons in this section carry the reasoning and the worked examples; this page is the recall sheet."
       prev={{ path: '/cpp/mini-guide', label: 'C++ Mini Guide' }}
       next={null}
     >

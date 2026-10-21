@@ -38,10 +38,10 @@ function Intro() {
 
       <InfoBox variant="note" title="Versions, and what was actually run">
         <p>
-          Go <strong>1.27.2</strong> is the current stable release. Every command and output block
+          Go <strong>1.27.3</strong> is the current stable release. Every command and output block
           in this section was executed on this machine against the locally installed toolchain,
           which is <strong>go1.25.5 darwin/arm64</strong> (Apple M4 Pro, 14 logical CPUs) — so when
-          you see an output block, that is genuinely what 1.25.5 printed, not what 1.27.2 would be
+          you see an output block, that is genuinely what 1.25.5 printed, not what 1.27.3 would be
           expected to print. Where the two differ in a way that matters, it is called out. The{' '}
           <a href="/go/setup">setup lesson</a> covers how Go&apos;s toolchain-switching mechanism
           makes the gap between &quot;what I installed&quot; and &quot;what the build uses&quot;

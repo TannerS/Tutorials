@@ -8,7 +8,7 @@ export default function Tooling() {
     <LessonLayout
       title="Build Systems, Debugging & Sanitizers"
       sectionId="cpp"
-      lessonIndex={19}
+      lessonIndex={20}
       prev={{ path: '/cpp/performance', label: 'Performance: Cache, Copies & Undefined Behaviour' }}
       next={{ path: '/cpp/mini-guide', label: '🧩 C++ Mini Guide' }}
     >
@@ -16,6 +16,14 @@ export default function Tooling() {
         The last lesson before the field guide, and the one that decides whether everything else in
         this section actually protects you. The language gives you undefined behaviour in a dozen
         forms; the tooling is what turns that from a production incident into a failing CI job.
+      </p>
+
+      <p>
+        <a href="/cpp/performance">The previous lesson</a> closed on the tally: the leak, the
+        use-after-free, the dangling view, the data race and the <code>-O2</code> loop that returned{' '}
+        <code>0</code> — every one of them compiled without a warning and exited <code>0</code>. A
+        sanitizer found each of them. This lesson is how that stops being a thing you remembered to
+        do and becomes a thing your build does whether you remember or not.
       </p>
 
       <p>
@@ -358,6 +366,36 @@ IF YOU ALSO BUILD ON LINUX
         <strong>LeakSanitizer does not exist on macOS</strong> — if that matters, you need a Linux
         runner. And <strong>profile the optimised build</strong>, since the debug build is not the
         program you ship.
+      </p>
+
+      <h2>That Is the Section</h2>
+      <p>
+        Twenty-one lessons, and they were built in one arc. The{' '}
+        <a href="/cpp/intro">first five</a> established that a C++ variable <em>is</em> an object
+        rather than a handle to one. <a href="/cpp/memory-model">The memory phase</a> turned that
+        into lifetime, <a href="/cpp/raii">RAII</a> and ownership. Phase 3 built types with{' '}
+        <a href="/cpp/classes">classes</a>, <a href="/cpp/inheritance">inheritance</a> and{' '}
+        <a href="/cpp/templates">templates</a>. Phase 4 put data in{' '}
+        <a href="/cpp/containers">containers</a> and acted on it with{' '}
+        <a href="/cpp/algorithms">algorithms</a>. And this last phase —{' '}
+        <a href="/cpp/errors">errors</a>, <a href="/cpp/concurrency">concurrency</a>,{' '}
+        <a href="/cpp/performance">performance</a>, tooling — was about the gap between code that
+        compiles and code you would put in front of users.
+      </p>
+      <p>
+        Two pages remain, and neither is a lesson. The{' '}
+        <strong><a href="/cpp/mini-guide">Mini Guide</a></strong> is the whole section compressed
+        into one linear read — useful now as revision, and the page to send someone who wants to
+        write a little C++ this afternoon without doing all of this first. The{' '}
+        <strong><a href="/cpp/cheatsheet">Field Guide</a></strong> is a lookup table for when you
+        already know what you are after and just want the syntax or the flag.
+      </p>
+      <p>
+        If you want one habit out of all of this: <strong>build with the sanitizers on, from the
+        first day of a project.</strong> Nearly every wrong answer in this section — the leak, the
+        use-after-free, the dangling view, the race, the <code>-O2</code> loop that returned{' '}
+        <code>0</code> — compiled cleanly, exited <code>0</code>, and was caught by a sanitizer or
+        by nothing at all.
       </p>
     </LessonLayout>
   );

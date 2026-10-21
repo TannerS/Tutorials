@@ -7,14 +7,14 @@ export default function CppMiniGuide() {
     <LessonLayout
       title="🧩 C++ Mini Guide — The Short Version"
       sectionId="cpp"
-      lessonIndex={20}
+      lessonIndex={21}
       prev={{ path: '/cpp/tooling', label: 'Build Systems, Debugging & Sanitizers' }}
       next={{ path: '/cpp/cheatsheet', label: 'C++ Field Guide' }}
     >
       <InfoBox variant="warning" title="The middle tier — shorter than the section, fuller than the field guide">
         <p>
           Three ways to read this section, and this is the one in between. The{' '}
-          <strong>twenty lessons above</strong> are the real course. The{' '}
+          <strong>21 lessons above</strong> are the real course. The{' '}
           <a href="/cpp/cheatsheet">field guide</a> below is a lookup table for when you
           already know what you are after. <strong>This page is neither</strong> — it is
           one linear read that gets you writing small C++ programs today.

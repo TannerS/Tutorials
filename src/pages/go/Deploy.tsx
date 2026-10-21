@@ -285,6 +285,33 @@ curl http://localhost:6060/debug/pprof/goroutine?debug=1    # goroutine leaks`}
         profiling is excellent and free, but the blank import publishes it wherever{' '}
         <code>DefaultServeMux</code> is served.
       </p>
+
+      <h2>That Is the Section</h2>
+      <p>
+        Eighteen lessons in one arc. <a href="/go/setup">Setup</a> and{' '}
+        <a href="/go/syntax">syntax</a> got you compiling;{' '}
+        <a href="/go/pointers">value semantics</a> gave you the rule that{' '}
+        <a href="/go/structs">structs</a> and <a href="/go/interfaces">interfaces</a> both rest on;{' '}
+        <a href="/go/errors">errors</a>, <a href="/go/slices">slices and maps</a> and{' '}
+        <a href="/go/generics">generics</a> finished the type system. Then five lessons on{' '}
+        <a href="/go/goroutines">concurrency</a>, which is the part that does not transfer from
+        Node. Then <a href="/go/testing">testing</a>, <a href="/go/http">HTTP</a>,{' '}
+        <a href="/go/database">databases</a> and this — a real service, with no framework in it.
+      </p>
+      <p>
+        Two pages left, neither a lesson. The{' '}
+        <strong><a href="/go/mini-guide">Mini Guide</a></strong> is the whole section compressed
+        into one linear read: useful as revision, and the page to hand someone who wants to write a
+        little Go this afternoon. The <strong><a href="/go/cheatsheet">Field Guide</a></strong> is
+        the lookup table for when you know what you want and need the syntax or the flag.
+      </p>
+      <p>
+        One habit to carry out of all of it: <strong>put <code>go vet ./...</code> and{' '}
+        <code>go test -race ./...</code> in CI on day one.</strong> Between them they catch the
+        loop-variable bug, the lost <code>cancel()</code>, the unguarded map and the timing
+        decorator that silently measures nothing — four failures from four different lessons, none
+        of which the compiler will mention.
+      </p>
     </LessonLayout>
   );
 }

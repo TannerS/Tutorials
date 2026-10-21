@@ -16,7 +16,7 @@ function SmartPointers() {
     <LessonLayout
       title="Smart Pointers: unique_ptr, shared_ptr & weak_ptr"
       sectionId="cpp"
-      lessonIndex={7}
+      lessonIndex={8}
       prev={{ path: '/cpp/raii', label: 'RAII: The Idea That Defines C++' }}
       next={{ path: '/cpp/move-semantics', label: 'Move Semantics & Perfect Forwarding' }}
     >

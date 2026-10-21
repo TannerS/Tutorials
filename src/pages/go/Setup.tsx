@@ -38,7 +38,7 @@ function Setup() {
 
       <InfoBox variant="note" title="Versions, and what was actually run">
         <p>
-          Go <strong>1.27.2</strong> is the current stable release. The locally installed toolchain
+          Go <strong>1.27.3</strong> is the current stable release. The locally installed toolchain
           on this machine is <strong>go1.25.5 darwin/arm64</strong>, and unless an output block says
           otherwise, that is what produced it. Two blocks in this lesson genuinely were produced by{' '}
           <strong>go1.27.2</strong> and <strong>go1.26.9</strong> — not because a second compiler was

@@ -307,6 +307,14 @@ GORM            A full ORM. Associations, migrations, hooks. Popular,
         <code>BeginTx</code></strong>. And <strong>configure the pool</strong> — the default of
         unlimited connections turns a spike into an outage.
       </p>
+
+      <p>
+        Next: <strong><a href="/go/deploy">Project Layout, Build &amp; Deploy</a></strong> — the
+        last lesson, and the one that ships what you have built across these three. It is also
+        where the claim <a href="/go/intro">the intro</a> opened this whole section with finally
+        gets cashed out: the service you now have, handlers and SQL and pool configuration
+        included, deploys as a single file with no runtime to install.
+      </p>
     </LessonLayout>
   );
 }

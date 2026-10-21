@@ -18,7 +18,7 @@ function MemoryModel() {
       sectionId="cpp"
       lessonIndex={5}
       prev={{ path: '/cpp/references', label: 'Values, References & Pointers' }}
-      next={{ path: '/cpp/raii', label: 'RAII: The Idea That Defines C++' }}
+      next={{ path: '/cpp/class-primer', label: 'Class Syntax Primer: Just Enough to Read What Follows' }}
     >
       <p>
         <a href="/cpp/references">The last lesson</a> ended on an unanswered question:{' '}

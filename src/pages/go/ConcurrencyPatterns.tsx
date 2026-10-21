@@ -8,9 +8,9 @@ export default function ConcurrencyPatterns() {
     <LessonLayout
       title="Concurrency Patterns & Failure Modes"
       sectionId="go"
-      lessonIndex={12}
+      lessonIndex={13}
       prev={{ path: '/go/context', label: 'Context: Cancellation & Deadlines' }}
-      next={{ path: '/go/generics', label: 'Generics' }}
+      next={{ path: '/go/testing', label: 'Testing Without a Framework' }}
     >
       <p>
         You now have all four primitives: <a href="/go/goroutines">goroutines</a> to start work,{' '}
@@ -399,6 +399,24 @@ CANCELLATION
         will not save a real server. <strong>Loop-variable shadowing is obsolete</strong> on
         modern Go. And <strong>run <code>-race</code> and <code>go vet</code> in CI</strong> —
         between them they catch most of what is on that checklist before review does.
+      </p>
+
+      <p>
+        That closes the concurrency block — <a href="/go/goroutines">goroutines</a>,{' '}
+        <a href="/go/channels">channels</a>, <a href="/go/sync">sync</a>,{' '}
+        <a href="/go/context">context</a>, and the patterns and failures above. Read that last
+        takeaway again, though, because it is the hinge: the two tools that catch goroutine leaks
+        and data races are flags you have to actually run.
+      </p>
+      <p>
+        Next: <strong><a href="/go/testing">Testing Without a Framework</a></strong>, which is where{' '}
+        <code>-race</code> stops being advice and becomes part of the build. It is also the shortest
+        distance between this section and your day job — the runner, assertions, coverage,
+        benchmarks and the fuzzer are already installed, and the conventional Go project has zero
+        testing dependencies. The three lessons after it (
+        <a href="/go/http">HTTP</a>, <a href="/go/database">databases</a>,{' '}
+        <a href="/go/deploy">build and deploy</a>) are a small real service, built with everything
+        up to this point.
       </p>
     </LessonLayout>
   );

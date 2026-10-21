@@ -8,7 +8,7 @@ export default function Algorithms() {
     <LessonLayout
       title="Algorithms, Iterators & Ranges"
       sectionId="cpp"
-      lessonIndex={15}
+      lessonIndex={16}
       prev={{ path: '/cpp/containers', label: 'STL Containers & Iterator Invalidation' }}
       next={{ path: '/cpp/errors', label: 'Error Handling: Exceptions, noexcept & expected' }}
     >
@@ -92,16 +92,33 @@ std::binary_search(v.begin(), v.end(), x);            // requires it to be SORTE
         the container is exactly as long as it was.
       </p>
 
-      <CodeBlock language="cpp" title="What actually happens">
-{`std::vector<int> v{1,2,3,2,4,2,5};
-auto it = std::remove(v.begin(), v.end(), 2);
-// then print v.size(), v's contents, and where 'it' landed`}
+      <CodeBlock language="cpp" title="remove_demo.cpp — complete, run it yourself">
+{`#include <algorithm>
+#include <print>
+#include <vector>
+
+void dump(const char* label, const std::vector<int>& v) {
+    std::print("{:<14} size={} contents=", label, v.size());
+    for (int x : v) std::print("{} ", x);
+    std::println("");
+}
+
+int main() {
+    std::vector<int> v{1, 2, 3, 2, 4, 2, 5};
+
+    auto it = std::remove(v.begin(), v.end(), 2);   // shuffles; size unchanged
+    dump("after remove:", v);
+    std::println("  returned iterator at index {}", it - v.begin());
+
+    v.erase(it, v.end());                           // the container does the shrinking
+    dump("after erase:", v);
+}`}
       </CodeBlock>
 
-      <CodeBlock language="text" title="Real output — clang 21, C++23">
-{`after remove:   size=7 contents=1 3 4 5 4 2 5
+      <CodeBlock language="text" title="Real output — clang++ -std=c++23 -Wall -Wextra remove_demo.cpp && ./remove_demo">
+{`after remove:  size=7 contents=1 3 4 5 4 2 5
   returned iterator at index 4
-after erase:    size=4 contents=1 3 4 5`}
+after erase:   size=4 contents=1 3 4 5`}
       </CodeBlock>
 
       <p>
@@ -159,19 +176,33 @@ auto result = v | std::views::filter(is_even)
         Streams are lazy like C++ ranges. Here is the laziness, instrumented and measured:
       </p>
 
-      <CodeBlock language="cpp" title="Counting how many times the callbacks actually run">
-{`int preds = 0, xforms = 0;
-auto pipeline = v
-    | std::views::filter([&](int x){ ++preds;  return x % 2 == 0; })
-    | std::views::transform([&](int x){ ++xforms; return x * 10; })
-    | std::views::take(2);
+      <CodeBlock language="cpp" title="lazy.cpp — complete, run it yourself">
+{`#include <print>
+#include <ranges>
+#include <vector>
 
-// nothing has run yet — print the counters
-for (int x : pipeline) std::print("{} ", x);
-// now print them again`}
+int main() {
+    std::vector<int> v{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    int preds = 0, xforms = 0;
+
+    auto pipeline = v
+        | std::views::filter([&](int x) { ++preds;  return x % 2 == 0; })
+        | std::views::transform([&](int x) { ++xforms; return x * 10; })
+        | std::views::take(2);
+
+    std::println("after building pipeline: predicate ran {} times, transform {} times",
+                 preds, xforms);
+
+    std::print("consuming: ");
+    for (int x : pipeline) std::print("{} ", x);
+    std::println("");
+
+    std::println("after consuming: predicate ran {} times, transform {} times",
+                 preds, xforms);
+}`}
       </CodeBlock>
 
-      <CodeBlock language="text" title="Real output — a 10-element input">
+      <CodeBlock language="text" title="Real output — clang++ -std=c++23 -Wall -Wextra lazy.cpp && ./lazy">
 {`after building pipeline: predicate ran 0 times, transform 0 times
 consuming: 20 40
 after consuming: predicate ran 6 times, transform 2 times`}
@@ -184,6 +215,26 @@ after consuming: predicate ran 6 times, transform 2 times`}
         soon as it had what it needed. And the transform ran exactly <strong>twice</strong> — only
         on the elements that survived the filter and were actually demanded.
       </p>
+
+      <InfoBox variant="note" title="Why 6 and not 4?">
+        <p>
+          Reasonable first count: check 1 and 2 to get the first even, 3 and 4 to get the second,
+          stop — four calls. The extra two are worth understanding, because they are the shape of
+          every lazy pipeline. Printing each call as it happens gives:
+        </p>
+        <CodeBlock language="text" title="Real output — the same pipeline, tracing every call">
+{`trace: p1 p2 [t2] =>20  p3 p4 [t4] =>40  p5 p6`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          Read it left to right. <code>p1 p2</code> finds the first even and the transform turns it
+          into 20. <code>p3 p4</code> finds the second, giving 40. Then the loop increments one last
+          time to ask &quot;is there a third element?&quot; — the filter dutifully goes looking and
+          burns <code>p5 p6</code> finding the 6 — and only then does <code>take</code>&apos;s
+          counter hit zero and end the loop. So the 6 was found but never transformed, which is why
+          the transform count stays at 2. <strong>A lazy pipeline always looks one step further than
+          it consumes.</strong>
+        </p>
+      </InfoBox>
 
       <FlowChart
         title="A Lazy Pipeline Pulls, It Does Not Push"
@@ -296,6 +347,24 @@ LIBRARY GAPS       Not everything from range-v3 made it into the standard.
         intermediate allocation. <strong>Views do not own their data</strong>, so materialise with{' '}
         <code>ranges::to</code> before letting one escape its scope. And <strong>take the compile
         time, error messages and debugging cost seriously</strong> when deciding where to use them.
+      </p>
+
+      <h2>Where This Leads</h2>
+      <p>
+        Phase 4 is now complete: <a href="/cpp/containers">containers</a> hold the data and
+        algorithms act on it. Every example on this page, though, quietly assumed the work
+        succeeds. <code>std::find</code> returning <code>end()</code> is a miss rather than a
+        failure, and a predicate that cannot answer has nowhere to say so — a lambda passed to{' '}
+        <code>filter</code> returns <code>bool</code>, not &quot;bool, or an explanation&quot;.
+      </p>
+      <p>
+        That gap is the next lesson.{' '}
+        <strong><a href="/cpp/errors">Error Handling: Exceptions, noexcept &amp;{' '}
+        expected</a></strong> covers the two answers C++ gives — throwing, and returning a type that
+        carries either a value or an error — and which one to reach for. It also bears directly on
+        the deeply nested adaptor types this page just built: an exception thrown inside a pipeline
+        unwinds back out through every layer, and that lesson measures the cost of unwinding through
+        one frame against fifty.
       </p>
     </LessonLayout>
   );

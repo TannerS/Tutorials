@@ -17,7 +17,7 @@ export default function Testing() {
       title="Testing Without a Framework"
       sectionId="go"
       lessonIndex={14}
-      prev={{ path: '/go/generics', label: 'Generics' }}
+      prev={{ path: '/go/concurrency-patterns', label: 'Concurrency Patterns & Failure Modes' }}
       next={{ path: '/go/http', label: 'HTTP Services with net/http' }}
     >
       <p>
@@ -45,7 +45,7 @@ export default function Testing() {
 
       <InfoBox variant="note" title="What was run for this lesson">
         <p>
-          Go <strong>1.27.2</strong> is the current stable release. Every output block below is real
+          Go <strong>1.27.3</strong> is the current stable release. Every output block below is real
           output from the locally installed <strong>go1.25.5 darwin/arm64</strong> toolchain on an
           Apple M4 Pro (14 logical CPUs). Third-party comparisons used{' '}
           <strong>testify v1.12.1</strong> and <strong>go-cmp v0.7.0</strong>, resolved today. Two

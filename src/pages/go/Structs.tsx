@@ -8,8 +8,8 @@ function Structs() {
     <LessonLayout
       title="Structs, Methods & Composition"
       sectionId="go"
-      lessonIndex={3}
-      prev={{ path: '/go/syntax', label: 'Syntax, Types & Zero Values' }}
+      lessonIndex={4}
+      prev={{ path: '/go/pointers', label: 'Pointers & Value Semantics' }}
       next={{ path: '/go/interfaces', label: 'Interfaces Without implements' }}
     >
       <p>
@@ -24,6 +24,14 @@ function Structs() {
         you a second name for the same object. In Java, <code>User b = a</code> gives you a second
         reference to the same instance. In Go, <code>b := a</code> on a struct copies every field.
         Almost everything surprising in this lesson falls out of that one difference.
+      </p>
+
+      <p>
+        One thing to carry in from <a href="/go/pointers">the previous lesson</a>, because it
+        decides half of this one: <strong>everything is passed by value, the method receiver
+        included.</strong> Every type below has to answer whether its methods take a copy or an
+        address, and that is not a style question — it determines whether a method can change the
+        thing it was called on.
       </p>
 
       <h2>Declaring and Building One</h2>
@@ -179,8 +187,8 @@ unmarshal: {ID:9 Email:alan@example.com Nickname:al Balance:7.25 password: Inter
           <code>omitempty</code> drops zero values. This is the Go analogue of the{' '}
           <code>JSON.stringify</code> behaviour where <code>undefined</code> properties vanish —
           except Go cannot tell &quot;absent&quot; from &quot;explicitly empty string&quot;. If that
-          distinction matters in your API, you need <code>*string</code> (nil vs pointer-to-empty)
-          and the <a href="/go/pointers">pointers lesson</a> explains the cost.
+          distinction matters in your API, you need <code>*string</code> (nil vs pointer-to-empty) —
+          with the trade-off <a href="/go/pointers">the previous lesson</a> laid out.
         </li>
         <li>
           <code>Balance</code> round-trips through a JSON <em>string</em>{' '}
@@ -326,8 +334,8 @@ Counter{}.Inc()       // line 11`}
       <InfoBox variant="note" title="Don't reach for &quot;value receivers are faster&quot;">
         <p>
           The copy is real, but so is the pointer indirection, and a pointer receiver can force the
-          value onto the heap. Which wins depends on size and on escape analysis, which the{' '}
-          <a href="/go/pointers">pointers lesson</a> measures directly. Decide on{' '}
+          value onto the heap. Which wins depends on size and on escape analysis, which{' '}
+          <a href="/go/pointers">the previous lesson</a> measured directly. Decide on{' '}
           <strong>semantics</strong> — does this method need to mutate? — and treat performance as a
           thing you measure later, if ever. The one hard rule: a type containing a{' '}
           <code>sync.Mutex</code> must use pointer receivers, because copying a mutex copies its

@@ -16,8 +16,8 @@ function Raii() {
     <LessonLayout
       title="RAII: The Idea That Defines C++"
       sectionId="cpp"
-      lessonIndex={6}
-      prev={{ path: '/cpp/memory-model', label: 'The Memory Model: Stack, Heap & Object Lifetime' }}
+      lessonIndex={7}
+      prev={{ path: '/cpp/class-primer', label: 'Class Syntax Primer: Just Enough to Read What Follows' }}
       next={{ path: '/cpp/smart-pointers', label: 'Smart Pointers: unique_ptr, shared_ptr & weak_ptr' }}
     >
       <p>
@@ -1572,8 +1572,8 @@ exit=134`}
           wrapper, the copy is exactly what you must forbid, which is why the two{' '}
           <code>= delete</code> lines are mandatory rather than stylistic — and why, if the handle
           should be transferable, you have to write the move operations yourself. That is the{' '}
-          <strong>rule of five</strong>, and it is the subject of the move-semantics lesson later in
-          this phase; <code>Fd</code> as written above is deliberately non-transferable, which is a
+          <strong>rule of five</strong>, and it is covered fully in the
+          <a href="/cpp/classes">classes lesson</a>; <code>Fd</code> as written above is deliberately non-transferable, which is a
           legitimate design and the simplest correct one.
         </p>
         <p>

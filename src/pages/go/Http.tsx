@@ -303,6 +303,15 @@ if err := srv.Shutdown(ctx); err != nil {
         success case. And <strong>test handlers with <code>httptest.NewRecorder</code></strong> —
         they are ordinary functions, so testing them needs no server at all.
       </p>
+
+      <p>
+        Next: <strong><a href="/go/database">Database Access Without an ORM</a></strong>. The
+        handlers above all returned data from nowhere; this is where it comes from. Expect the same
+        pattern as this lesson — the standard library does more than you assume, the culture
+        prefers explicit SQL to an ORM, and the <code>ctx</code> you have been threading through
+        every handler turns out to be exactly what a query needs so an abandoned request does not
+        hold a connection open.
+      </p>
     </LessonLayout>
   );
 }

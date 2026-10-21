@@ -88,24 +88,24 @@ export const sections: Section[] = [
       { id: 'intro', title: 'Go From a Node Backend: What Changes', path: '/go/intro' },
       { id: 'setup', title: 'Setup, Modules & the Toolchain', path: '/go/setup' },
       { id: 'syntax', title: 'Syntax, Types & Zero Values', path: '/go/syntax' },
+      { id: 'pointers', title: 'Pointers & Value Semantics', path: '/go/pointers' },
       { id: 'structs', title: 'Structs, Methods & Composition', path: '/go/structs' },
       { id: 'interfaces', title: 'Interfaces Without implements', path: '/go/interfaces' },
       { id: 'errors', title: 'Errors Are Values, Not Exceptions', path: '/go/errors' },
       { id: 'slices', title: 'Slices, Maps & the Aliasing Trap', path: '/go/slices' },
-      { id: 'pointers', title: 'Pointers & Value Semantics', path: '/go/pointers' },
+      { id: 'generics', title: 'Generics', path: '/go/generics' },
       { id: 'goroutines', title: 'Goroutines: Beyond the Event Loop', path: '/go/goroutines' },
       { id: 'channels', title: 'Channels & select', path: '/go/channels' },
       { id: 'sync', title: 'The sync Package — and When Not to Use Channels', path: '/go/sync' },
       { id: 'context', title: 'Context: Cancellation & Deadlines', path: '/go/context' },
       { id: 'concurrency-patterns', title: 'Concurrency Patterns & Failure Modes', path: '/go/concurrency-patterns' },
-      { id: 'generics', title: 'Generics', path: '/go/generics' },
       { id: 'testing', title: 'Testing Without a Framework', path: '/go/testing' },
       { id: 'http', title: 'HTTP Services with net/http', path: '/go/http' },
       { id: 'database', title: 'Database Access Without an ORM', path: '/go/database' },
       { id: 'deploy', title: 'Project Layout, Build & Deploy', path: '/go/deploy' },
       // TEMPORARY. The middle tier: shorter than the section above it, fuller
       // than the field guide below it — enough to start a small project without
-      // reading all 19 lessons. Delete the entry, the route, the lazy import and
+      // reading all 18 lessons. Delete the entry, the route, the lazy import and
       // the page file when it has served its purpose.
       { id: 'mini-guide', title: '🧩 Go Mini Guide', path: '/go/mini-guide' },
       { id: 'cheatsheet', title: '📋 Go Field Guide', path: '/go/cheatsheet' },
@@ -125,6 +125,7 @@ export const sections: Section[] = [
       { id: 'functions', title: 'Functions, Overloading & Lambdas', path: '/cpp/functions' },
       { id: 'references', title: 'Values, References & Pointers', path: '/cpp/references' },
       { id: 'memory-model', title: 'The Memory Model: Stack, Heap & Object Lifetime', path: '/cpp/memory-model' },
+      { id: 'class-primer', title: 'Class Syntax Primer: Just Enough to Read What Follows', path: '/cpp/class-primer' },
       { id: 'raii', title: 'RAII: The Idea That Defines C++', path: '/cpp/raii' },
       { id: 'smart-pointers', title: 'Smart Pointers: unique_ptr, shared_ptr & weak_ptr', path: '/cpp/smart-pointers' },
       { id: 'move-semantics', title: 'Move Semantics & Perfect Forwarding', path: '/cpp/move-semantics' },

@@ -18,7 +18,7 @@ function Syntax() {
       sectionId="go"
       lessonIndex={2}
       prev={{ path: '/go/setup', label: 'Setup, Modules & the Toolchain' }}
-      next={{ path: '/go/structs', label: 'Structs, Methods & Composition' }}
+      next={{ path: '/go/pointers', label: 'Pointers & Value Semantics' }}
     >
       <p>
         Go&apos;s syntax is small enough that you can read it on day one and be wrong about it for
@@ -36,7 +36,7 @@ function Syntax() {
 
       <InfoBox variant="note" title="Versions, and what was actually run">
         <p>
-          Go <strong>1.27.2</strong> is the current stable release. Every program, compile error and
+          Go <strong>1.27.3</strong> is the current stable release. Every program, compile error and
           output block below was executed on this machine against the locally installed{' '}
           <strong>go1.25.5 darwin/arm64</strong> — so the outputs are what 1.25.5 actually printed.
           One section deliberately runs the <em>same</em> source under two different language
@@ -1764,9 +1764,9 @@ func receiverCopy() {
         site —&nbsp;<code>(&amp;c).byValue(...)</code>&nbsp;— changes nothing, because the method
         signature still takes a <code>counter</code> by value, so Go dereferences and copies it at
         defer time. The rule is about the <em>method&apos;s</em> receiver, not the expression you
-        wrote. <a href="/go/pointers">Pointers &amp; Value Semantics</a> and{' '}
-        <a href="/go/structs">Structs, Methods &amp; Composition</a> go deeper on the receiver
-        decision.
+        wrote. The next two lessons — <a href="/go/pointers">Pointers &amp; Value Semantics</a> and
+        then <a href="/go/structs">Structs, Methods &amp; Composition</a> — go deeper on the
+        receiver decision, in that order and for that reason.
       </p>
 
       <h3>Scope is the function, not the block</h3>
@@ -1975,6 +1975,15 @@ onPanic: this deferred line still ran`}
           <code>go vet ./...</code> will find every instance of it in seconds.
         </p>
       </InfoBox>
+
+      <p>
+        Next: <strong><a href="/go/pointers">Pointers &amp; Value Semantics</a></strong>. It comes
+        before structs and interfaces on purpose, because one rule underneath it decides how both of
+        those behave — <strong>everything in Go is passed by value</strong>, including pointers and
+        including the receiver of a method. Get that rule first and the{' '}
+        <code>&amp;</code> and <code>*</code> you are about to see everywhere stop being syntax to
+        memorise and become a choice you are making.
+      </p>
     </LessonLayout>
   );
 }

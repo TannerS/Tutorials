@@ -8,7 +8,7 @@ export default function Performance() {
     <LessonLayout
       title="Performance: Cache, Copies & Undefined Behaviour"
       sectionId="cpp"
-      lessonIndex={18}
+      lessonIndex={19}
       prev={{ path: '/cpp/concurrency', label: 'Concurrency: Threads, Atomics & the Memory Model' }}
       next={{ path: '/cpp/tooling', label: 'Build Systems, Debugging & Sanitizers' }}
     >
@@ -954,6 +954,22 @@ hash set               0.09 ms`}
         <code>reserve</code> saved nothing there and 2.2&times; on a type whose move was not{' '}
         <code>noexcept</code>. And <strong>the algorithm dominates everything above</strong>: a hash
         set at <code>-O0</code> was 100&times; faster than a linear scan at <code>-O2</code>.
+      </p>
+
+      <h2>Where This Leads</h2>
+      <p>
+        Every number on this page came from measuring rather than guessing, and three times now a
+        sanitizer has been the only thing standing between a confident wrong answer and a shipped
+        bug — <a href="/cpp/memory-bugs">the leak and the use-after-free</a>, the race in{' '}
+        <a href="/cpp/concurrency">the previous lesson</a>, and the <code>-O2</code> loop on this
+        one that returned <code>0</code> without a warning.
+      </p>
+      <p>
+        <strong><a href="/cpp/tooling">Build Systems, Debugging &amp; Sanitizers</a></strong> is the
+        last lesson, and it is the one that makes all of that routine instead of lucky: the warning
+        flags worth turning on, the sanitizer builds worth keeping as separate CI jobs, enough CMake
+        to structure a real project, and the debugger. It is the difference between knowing these
+        bugs exist and having something that catches them for you.
       </p>
     </LessonLayout>
   );

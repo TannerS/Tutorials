@@ -8,7 +8,7 @@ function Interfaces() {
     <LessonLayout
       title="Interfaces Without implements"
       sectionId="go"
-      lessonIndex={4}
+      lessonIndex={5}
       prev={{ path: '/go/structs', label: 'Structs, Methods & Composition' }}
       next={{ path: '/go/errors', label: 'Errors Are Values, Not Exceptions' }}
     >

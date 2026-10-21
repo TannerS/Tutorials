@@ -8,12 +8,20 @@ export default function Concurrency() {
     <LessonLayout
       title="Concurrency: Threads, Atomics & the Memory Model"
       sectionId="cpp"
-      lessonIndex={17}
+      lessonIndex={18}
       prev={{ path: '/cpp/errors', label: 'Error Handling: Exceptions, noexcept & expected' }}
       next={{ path: '/cpp/performance', label: 'Performance: Cache, Copies & Undefined Behaviour' }}
     >
       <p>
-        One sentence carries this entire lesson, and it is the sharpest difference between C++ and
+        <a href="/cpp/errors">The previous lesson</a> ended by pointing here, with a specific
+        warning: an exception that escapes the function a <code>std::thread</code> is running calls{' '}
+        <code>std::terminate</code>, and the launching thread never gets to see it. Hold on to that,
+        because it is an instance of the general rule this lesson is about — in a threaded C++
+        program, the failure mode is usually not a wrong answer. It is no program at all.
+      </p>
+
+      <p>
+        One sentence carries the rest, and it is the sharpest difference between C++ and
         both languages you know well: <strong>a data race in C++ is undefined behaviour, not a
         wrong answer.</strong>
       </p>
@@ -108,18 +116,25 @@ SUMMARY: ThreadSanitizer: data race race.cpp:4 in bump()`}
         correct, and in Java with a <code>volatile</code> flag it would be:
       </p>
 
-      <CodeBlock language="cpp" title="spin.cpp — the flag is not atomic">
-{`bool ready = false;        // <- the bug
+      <CodeBlock language="cpp" title="spin.cpp — complete; the flag is not atomic">
+{`#include <chrono>
+#include <cstdio>
+#include <thread>
+
+bool ready = false;        // <- the bug
 int  payload = 0;
 
-std::thread w([]{
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    payload = 42;
-    ready = true;
-});
+int main() {
+    std::thread w([]{
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        payload = 42;
+        ready = true;
+    });
 
-while (!ready) { }         // spin
-std::printf("saw payload = %d\\n", payload);`}
+    while (!ready) { }         // spin
+    std::printf("saw payload = %d\\n", payload);
+    w.join();
+}`}
       </CodeBlock>
 
       <CodeBlock language="text" title="Real output — identical source, two optimisation levels">
@@ -149,11 +164,19 @@ saw payload = 0           <- WRONG ANSWER. No crash. No warning.`}
         fix is one word:
       </p>
 
-      <CodeBlock language="text" title="Real output — the atomic fix, both levels">
-{`std::atomic<bool> ready{false};   // the only change
+      <CodeBlock language="cpp" title="spinfix.cpp — one word changed from spin.cpp">
+{`#include <atomic>
+// ... the rest of spin.cpp is unchanged ...
 
--O0 -> saw payload = 42
--O2 -> saw payload = 42`}
+std::atomic<bool> ready{false};   // was: bool ready = false;`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Real output — the same binary built at both levels">
+{`$ clang++ -std=c++23 -O0 spinfix.cpp -o sf && ./sf
+saw payload = 42
+
+$ clang++ -std=c++23 -O2 spinfix.cpp -o sf && ./sf
+saw payload = 42`}
       </CodeBlock>
 
       <p>
@@ -326,6 +349,24 @@ slots.acquire();  /* work */  slots.release();`}
         optimisation, remembering that ARM and x86 differ exactly where you are least likely to
         test. And <strong>use the predicate form of <code>cv.wait</code></strong>, because spurious
         wakeups are real.
+      </p>
+
+      <h2>Where This Leads</h2>
+      <p>
+        Notice what actually caught the bug on this page. Not a test, not a code review — a
+        sanitizer. And notice what the headline demonstration really showed: the{' '}
+        <code>-O0</code> build and the <code>-O2</code> build disagreed about what the program
+        means. That is not a threading fact, it is an optimiser fact, and it generalises well beyond
+        races.
+      </p>
+      <p>
+        <strong><a href="/cpp/performance">Performance: Cache, Copies &amp; Undefined
+        Behaviour</a></strong> picks up exactly there. It takes the same &quot;identical source, two
+        answers&quot; result and shows it happening without a second thread in sight — then gets to
+        the reason you are paying C++&apos;s costs at all, which is what the machine does with cache
+        lines, copies and the optimisations undefined behaviour licenses. After that,{' '}
+        <a href="/cpp/tooling">the final lesson</a> puts the sanitizers that saved you here into a
+        build you can actually run in CI.
       </p>
     </LessonLayout>
   );
