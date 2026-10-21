@@ -36,6 +36,22 @@ function Setup() {
         the big one.
       </p>
 
+      <InfoBox variant="tip" title="This is the longest lesson in the section — read it in two passes">
+        <p>
+          It is a reference as much as a lesson, and reading it end to end before you have written
+          any Go is the wrong order. On the first pass read <strong>Installing It</strong>,{' '}
+          <strong>go.mod and go.sum</strong>, <strong>go build vs go run vs go install</strong> and{' '}
+          <strong>The Commands You Will Actually Type</strong>. That is everything needed to build
+          and run something — then go on to <a href="/go/syntax">Syntax</a>.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Come back for the rest when it bites. The <code>/v2</code> import-path suffix,
+          cross-compilation and <code>go.work</code> are each the answer to one specific confusing
+          afternoon and are much easier to absorb once you have had it — and{' '}
+          <strong>GOPATH</strong> you can skip outright, which that section says itself.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="note" title="Versions, and what was actually run">
         <p>
           Go <strong>1.27.3</strong> is the current stable release. The locally installed toolchain

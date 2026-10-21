@@ -61,6 +61,21 @@ function Intro() {
         versus references, which is the bridge into the memory work.
       </p>
 
+      <InfoBox variant="tip" title="If you have never written any C++ at all">
+        <p>
+          This section opens by assuming you once knew some C++ and need the 2026 version of it. If
+          that is not you — you are a working developer in another language and C++ is genuinely new
+          — nothing here is beyond you, but the order is worth changing.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Read <strong><a href="/cpp/mini-guide">the Mini Guide</a></strong> first. It is one linear
+          page that gets a small program compiling and running, deliberately skipping templates,
+          move semantics and vtables. Then come back here and read in order. The twenty-one lessons
+          explain <em>why</em> everything on that page is the way it is, and they land much better
+          once you have compiled something.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="note" title="Versions, and what was actually run">
         <p>
           Every command, output block, binary size and assembly listing in this section was executed

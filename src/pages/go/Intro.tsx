@@ -36,6 +36,17 @@ function Intro() {
         3am.
       </p>
 
+      <InfoBox variant="tip" title="Want to write some Go before reading eighteen lessons?">
+        <p style={{ marginBottom: 0 }}>
+          <strong><a href="/go/mini-guide">The Mini Guide</a></strong> is one linear page that gets
+          a small project built and running — modules, a few types, a goroutine, the test command.
+          Read it first if you would rather have something compiling today, then come back and work
+          through the section in order for the reasoning behind it. The{' '}
+          <a href="/go/cheatsheet">Field Guide</a> is the lookup table for later, once you know what
+          you are reaching for.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="note" title="Versions, and what was actually run">
         <p>
           Go <strong>1.27.3</strong> is the current stable release. Every command and output block
