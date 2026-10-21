@@ -125,7 +125,33 @@ const CURRENCY = /(latest|current(?:ly)?|newest|as of|now at|now sits at|ships? 
 const ATTRIBUTED =
   /(?:verified(?:\s+on)?|real output(?:\s+on)?|measured(?:\s+on)?|ran on|tested on|output from|as of|since|added in|introduced in|arrived in|new in)\s+(?:go|java|node|v)?\s*$/i;
 
-function currencyClaims(pkgWords, { subject, scope } = {}) {
+// A number written as `<label>=1.2.3` belongs to that label. Lessons that
+// print a dist-tag listing carry several at once:
+//
+//   'latest=6.4.8 (behind), latest-v6=6.5.0 (highest stable), next=7.0.0-beta.4'
+//
+// Only the tag actually being tracked is a claim about that tag; the line is
+// more precise than this tool, not wrong.
+const LABELLED = /([\w.-]+)\s*=\s*$/;
+
+// Mermaid source, not prose. FlowChart diagrams are passed as a string
+// containing arrows and node ids, and any version inside one is a label on a
+// decision box rather than an assertion about what is current.
+const DIAGRAM = /graph\s+(?:TD|LR|RL|BT)|--?>|\bsubgraph\b/;
+
+// A family name like `resilience4j` matches every artifact in that family, so
+// a line about `resilience4j-spring-boot2` looks like a line about the tracked
+// `resilience4j-core`. If the line names a sibling and never names the tracked
+// artifact itself, it is about the sibling.
+function namesASibling(line, trackedBase) {
+  const family = trackedBase.replace(/-(core|jupiter|material|styles)$/, '');
+  if (family === trackedBase) return false;
+  if (line.toLowerCase().includes(trackedBase.toLowerCase())) return false;
+  const sibling = new RegExp(`\\b${family}-[\\w-]+`, 'i');
+  return sibling.test(line);
+}
+
+function currencyClaims(pkgWords, { subject, scope, tag, base } = {}) {
   const hits = [];
   const walk = (d) => {
     for (const e of readdirSync(d, { withFileTypes: true })) {
@@ -139,12 +165,16 @@ function currencyClaims(pkgWords, { subject, scope } = {}) {
       const src = readFileSync(p, 'utf8');
       src.split('\n').forEach((line, i) => {
         if (!CURRENCY.test(line)) return;
+        if (DIAGRAM.test(line)) return;
         // the package has to actually be the subject of the line
         const isSubject = subject ? subject.test(line) : pkgWords.some((w) => line.toLowerCase().includes(w));
         if (!isSubject) return;
+        if (base && namesASibling(line, base)) return;
         for (const m of line.matchAll(/\b(\d+\.\d+(?:\.\d+)?)\b/g)) {
           const before = line.slice(0, m.index).replace(/<[^>]*>/g, ' ');
           if (ATTRIBUTED.test(before)) continue;
+          const labelled = before.match(LABELLED);
+          if (labelled && tag && labelled[1].toLowerCase() !== tag.toLowerCase()) continue;
           hits.push({ file: path.relative(PAGES, p), line: i + 1, version: m[1] });
         }
       });
@@ -182,7 +212,12 @@ for (const t of TRACKED) {
   }
   // Only lines that ASSERT currency count. A version that merely appears
   // somewhere is almost always provenance, and provenance is not drift.
-  const claims = currencyClaims(wordsFor(t.name), { subject: t.subject, scope: t.scope });
+  const claims = currencyClaims(wordsFor(t.name), {
+    subject: t.subject,
+    scope: t.scope,
+    tag: t.tag,
+    base: t.name.split('/').pop(),
+  });
   const major = actual.split('.')[0];
   // Compare against claims on the same major line, so "latest-v7 = 7.3.11"
   // is not judged against a v9 release.
