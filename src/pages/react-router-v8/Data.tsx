@@ -13,7 +13,7 @@ export default function Data() {
       next={{ path: '/react-router-v8/guards', label: 'Auth Guards & Protected Routes' }}
     >
       <p>
-        React Router v8 (current — <code>latest</code> is <code>8.4.0</code>,
+        React Router v8 (current — <code>latest</code> is <code>8.5.0</code>,
         with <code>8.0.0</code> shipping June 2026 as the first release under
         the project&apos;s new yearly-major-version cadence) keeps the exact
         same data-loading model v7 introduced: a <strong>loader</strong> for

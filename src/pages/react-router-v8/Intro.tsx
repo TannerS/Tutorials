@@ -16,7 +16,7 @@ export default function Intro() {
         React Router v8 shipped on June 17, 2026 — the first release under the
         project&apos;s new Open Governance model, which commits to a yearly major
         release cadence timed to Node&apos;s LTS schedule. The latest release as of
-        this writing is 8.4.0. If you already know v7, the headline is reassuring:
+        this writing is 8.5.0. If you already know v7, the headline is reassuring:
         v8&apos;s stated design goal is to make major releases &ldquo;boring&rdquo;
         by shipping breaking changes ahead of time behind future flags, so upgrading
         is mostly a matter of deleting flags you had already turned on. Everything
