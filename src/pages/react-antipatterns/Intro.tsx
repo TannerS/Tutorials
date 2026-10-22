@@ -39,10 +39,20 @@ export default function Intro() {
 
       <h3>1. Copy-Paste from Tutorials</h3>
       <p>
-        Tutorials often simplify for the sake of teaching a single concept.
-        When developers copy tutorial code into production without adapting it,
-        shortcuts that were fine for a demo become liabilities at scale.
+        Tutorials simplify in order to teach one concept at a time, and that is
+        the right call — an example that handled every edge case would bury the
+        idea it exists to show. The problem is that the simplification is
+        invisible. Nothing in the snippet marks which parts were the lesson and
+        which parts were omitted, so it reads as finished code.
       </p>
+
+      <InfoBox variant="note" title="Including this one">
+        That applies to this site. Examples here are cut down to make a point,
+        and several of them would need more work before they belonged in a
+        production codebase. Where that gap matters, the lessons try to say so
+        explicitly rather than leave you to discover it — the note under the
+        next example is an instance of exactly that.
+      </InfoBox>
 
       <CodeBlock language="jsx" title="Tutorial-Style Code (Problematic at Scale)">
         {`// Fetching data directly inside the component body
@@ -71,14 +81,142 @@ function UserProfile({ userId }) {
 }`}
       </CodeBlock>
 
-      <CodeBlock language="jsx" title="Production-Ready Alternative">
+      <p>
+        That compiles, runs, and demos perfectly. Three specific things are
+        wrong with it, and none of them show up until it is under real
+        conditions:
+      </p>
+      <ul>
+        <li>
+          <strong>The responses can arrive out of order.</strong> Change{' '}
+          <code>userId</code> from 1 to 2 quickly and two requests are in
+          flight. If the slower request for user 1 lands second, it calls{' '}
+          <code>setUser</code> last and the screen shows user 1 while the prop
+          says 2. The effect has no cleanup, so nothing cancels or ignores the
+          stale response. This is the bug that is hardest to reproduce and
+          easiest to ship.
+        </li>
+        <li>
+          <strong>It updates state after unmount.</strong> Navigate away while
+          the request is in flight and <code>setUser</code> runs on a component
+          that no longer exists.
+        </li>
+        <li>
+          <strong>
+            <code>fetch</code> does not reject on 404 or 500.
+          </strong>{' '}
+          It only rejects on network failure. A 500 resolves normally, so{' '}
+          <code>res.json()</code> parses the error body, <code>setUser</code>{' '}
+          stores it, and <code>error</code> stays <code>null</code>. The branch
+          that looks like error handling never runs.
+        </li>
+      </ul>
+      <p>
+        There is also a structural cost. The fetching is welded to this
+        component, so the next component that needs a user copies all of it —
+        including all three bugs — and two of them mounted together fire two
+        identical requests.
+      </p>
+
+      <p>
+        None of that requires a library to fix. The cheapest correct version is
+        the same code with a flag that ignores a response you no longer want,
+        and a status check:
+      </p>
+
+      <CodeBlock language="jsx" title="Fix 1 — Same Shape, No Dependencies">
+        {`function UserProfile({ userId }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Flipped by the cleanup function below when userId changes or the
+    // component unmounts. A response that arrives after that is ignored,
+    // which is what kills both the ordering bug and the unmount warning.
+    let ignore = false;
+    setLoading(true);
+
+    fetch(\`/api/users/\${userId}\`)
+      .then(res => {
+        // fetch only rejects on network failure, so a 404 or 500 has to
+        // be turned into an error by hand.
+        if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+        return res.json();
+      })
+      .then(data => { if (!ignore) { setUser(data); setLoading(false); } })
+      .catch(err => { if (!ignore) { setError(err); setLoading(false); } });
+
+    return () => { ignore = true; };
+  }, [userId]);
+
+  if (loading) return <Spinner />;
+  if (error) return <ErrorMsg error={error} />;
+  return <div>{user.name}</div>;
+}`}
+      </CodeBlock>
+
+      <p>
+        That is now correct. Six added lines, no new dependency, and it is the
+        version to reach for when one or two components fetch something. What it
+        still does not do is <em>share</em> anything: move it into a{' '}
+        <code>useUser(userId)</code> custom hook and the logic becomes reusable,
+        but two components calling that hook still fire two requests, because
+        nothing holds a result that both can see.
+      </p>
+
+      <p>
+        That gap — a cache that outlives any one component — is what a
+        data-fetching library exists to fill.{' '}
+        <strong>TanStack Query</strong> (still widely called React Query) keeps
+        responses in a cache keyed by a value you choose, so repeated requests
+        for the same key are served once and shared. On top of that it tracks
+        loading and error state for you, retries failures, and refetches in the
+        background when data goes stale. It is covered properly in{' '}
+        <a href="/react-query/fundamentals">React Query: Fundamentals</a>.
+      </p>
+
+      <p>It is one option, not the only one:</p>
+      <ul>
+        <li>
+          <strong>The effect above.</strong> No dependency, correct, fine for a
+          handful of call sites. The default.
+        </li>
+        <li>
+          <strong>Your framework&apos;s data layer.</strong> If you already use
+          React Router, its{' '}
+          <a href="/react-router/data">loaders</a> fetch before the route
+          renders and avoid the whole fetch-in-effect shape. A
+          server-rendering framework does the same at a different layer.
+          Reaching for a second system when you already have one is its own
+          anti-pattern.
+        </li>
+        <li>
+          <strong>A caching library</strong> — TanStack Query, SWR, or RTK Query
+          if you already run Redux. Worth it when many components read the same
+          server data, or when you want caching and background refetching and
+          would otherwise build them.
+        </li>
+      </ul>
+
+      <p>
+        The library version of the same component, for comparison:
+      </p>
+
+      <CodeBlock language="jsx" title="Fix 2 — With a Caching Library">
         {`// Extract data-fetching into a reusable hook
 function useUser(userId) {
   // TanStack Query v5 takes a single options object. The older positional
   // form — useQuery(['user', id], fn) — was removed in v5.
   return useQuery({
     queryKey: ['user', userId],
-    queryFn: () => fetch(\`/api/users/\${userId}\`).then(res => res.json()),
+    // fetch resolves on 404/500, so a non-OK response has to be turned
+    // into a thrown error explicitly or it is treated as success.
+    queryFn: async () => {
+      const res = await fetch(\`/api/users/\${userId}\`);
+      if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+      return res.json();
+    },
   });
 }
 
@@ -90,6 +228,32 @@ function UserProfile({ userId }) {
   return <div>{user.name}</div>;
 }`}
       </CodeBlock>
+
+      <p>
+        Measured against Fix 1 rather than against the broken original, the win
+        is narrower than it first looks. Both are correct; both handle ordering
+        and unmounting. What the library adds is the <code>queryKey</code> —
+        because results live in a cache under that key instead of in one
+        component&apos;s state, ten components asking for{' '}
+        <code>['user', 7]</code> share one request and one copy, and retries and
+        background refetching come with it. Note what it does{' '}
+        <em>not</em> do: the <code>res.ok</code> check is still yours, because{' '}
+        <code>fetch</code> treats a 500 as a successful response no matter who
+        calls it.
+      </p>
+      <p>
+        So the honest summary is not &ldquo;use a library.&rdquo; It is that the
+        original snippet had three bugs, six lines fixed them, and a library is
+        worth its weight once the same data is read in many places. Picking it up
+        before that point is itself a tutorial habit — the one this section is
+        about.
+      </p>
+      <p>
+        The useful habit is not &ldquo;reach for a library&rdquo;. It is to ask
+        of any snippet you are about to adopt: <strong>what did this leave out
+        in order to stay readable?</strong> Error paths, cancellation, and what
+        happens on the second render are the usual answers.
+      </p>
 
       <h3>2. Deadline Pressure</h3>
       <p>
@@ -296,6 +460,28 @@ function ParentComponent() {
   return <span>Total: \${total}</span>;
 }`}
       </CodeBlock>
+
+      <p>
+        The second version is shorter, but the reason to prefer it is
+        correctness rather than length. In the first, <code>total</code> is a
+        copy of something already known, and a copy can disagree with its
+        source. On the very first render it is <code>0</code> while{' '}
+        <code>items</code> already has prices in it — the effect has not run
+        yet — so the user sees <code>Total: $0</code> flash before the real
+        number. Every later change to <code>items</code> renders the stale total
+        once, then renders again after <code>setTotal</code>. Two render passes
+        to show one number.
+      </p>
+      <p>
+        Computing during render cannot go out of sync, because there is nothing
+        to sync: <code>total</code> is derived fresh from the current{' '}
+        <code>items</code> every time. The general rule — <strong>if a value can
+        be calculated from props or state you already have, calculate it; do not
+        store it</strong> — is the subject of{' '}
+        <a href="/react-antipatterns/state">State Anti-Patterns</a>. If the
+        calculation is genuinely expensive, <code>useMemo</code> is the answer,
+        not <code>useState</code> plus <code>useEffect</code>.
+      </p>
 
       <h2>Categories of Anti-Patterns</h2>
       <p>
