@@ -17,7 +17,8 @@
     "build:pdf:cheatsheets": "npm run build && node scripts/build-pdf.mjs --cheatsheets",
     "build:pdf:cheatsheets:dark": "npm run build && node scripts/build-pdf.mjs --cheatsheets --dark",
     "pdf:section": "node scripts/build-pdf.mjs",
-    "check:versions": "node scripts/check-versions.mjs"
+    "check:versions": "node scripts/check-versions.mjs",
+    "check:explanations": "node scripts/check-explanations.mjs"
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",

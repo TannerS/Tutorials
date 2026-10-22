@@ -2107,12 +2107,13 @@ const name = 'Tanner';                                    // ✓`}
       </CodeBlock>
 
       <CodeBlock language="typescript" title="✅ The replacement — literal union, plus as const when you need the values">
-{`// If you only need the TYPE:
+{`// If you only need the TYPE — pick ONE of these two forms per scope;
+// declaring 'Status' twice in one file is TS2300, duplicate identifier.
 type Status = 'in_stock' | 'low_stock' | 'out_of_stock';
 
 // If you also need the values at runtime (to map over, validate against, render):
 const STATUSES = ['in_stock', 'low_stock', 'out_of_stock'] as const;
-type Status = (typeof STATUSES)[number];   // 'in_stock' | 'low_stock' | 'out_of_stock'
+type StatusFromArray = (typeof STATUSES)[number];   // same union, derived
 
 STATUSES.map(s => <option key={s} value={s}>{s}</option>);  // real array at runtime ✅
 
@@ -2126,6 +2127,27 @@ STATUSES.map(s => <option key={s} value={s}>{s}</option>);  // real array at run
 // can be type-only — typeof X is fully erased and needs no runtime value:
 import { type STATUSES } from './constants';`}
       </CodeBlock>
+
+      <p>
+        The thing to take from this is not that <code>enum</code> was banned by
+        a compiler flag. It is <em>why</em> it could be banned at all:{' '}
+        <code>enum</code> is the rare TypeScript construct that{' '}
+        <strong>emits JavaScript</strong>. Everything else you write — types,
+        interfaces, generics, <code>as const</code> — is deleted on the way out,
+        which is what lets a tool strip types without understanding them. An{' '}
+        <code>enum</code> has to be <em>compiled</em> into an object, so any
+        tool that only strips is stuck, and that now includes Node running{' '}
+        <code>.ts</code> files directly and Vite&apos;s dev server.
+      </p>
+      <p>
+        So this is less a migration chore than a direction of travel. The union
+        is not a lesser substitute accepted to satisfy a flag: it costs nothing
+        at runtime, it is a plain string when it gets there — so it compares
+        and serialises the way you expect, with none of the assignability
+        friction a string enum brings — and the array stays the single source
+        of truth with the type derived from it. The flag is mostly making a
+        choice for you that was already the better one.
+      </p>
 
       {/* ══════════════════════════════════════════════════
           SMALL SLIPS
