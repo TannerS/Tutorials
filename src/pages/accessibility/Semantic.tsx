@@ -519,6 +519,32 @@ function Semantic() {
      ✅ Inert attribute applied to background content -->`}
       </CodeBlock>
 
+      <p>
+        That list is the lesson in miniature. Every item on it is behaviour
+        someone used to hand-build for a <code>&lt;div&gt;</code> modal —
+        trapping focus, closing on Escape, marking the background inert,
+        restoring focus to whatever opened it — and each was its own chance to
+        get it wrong. Using the element that already means &ldquo;dialog&rdquo;
+        is not a style preference; it is declining to reimplement six things.
+      </p>
+      <p>
+        <strong>That is the whole argument of this page.</strong> Semantic
+        elements are not annotations describing what a thing is for the benefit
+        of assistive technology. They are where the keyboard behaviour, the
+        focus management, the roles and the announcements come from. A{' '}
+        <code>&lt;div&gt;</code> with the right ARIA role looks correct to an
+        automated checker and still cannot be focused or activated — because
+        the role was the label, never the behaviour.
+      </p>
+      <p>
+        Next: <strong><a href="/accessibility/aria">ARIA Roles &amp;
+        Attributes</a></strong>, which covers the cases this page has been
+        avoiding — when no native element fits, and you genuinely do have to
+        supply the role, state and keyboard handling yourself. The first rule
+        of ARIA is to not use ARIA, and it only makes sense once you know what
+        the native elements were giving you.
+      </p>
+
     </LessonLayout>
   );
 }

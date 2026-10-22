@@ -301,6 +301,32 @@ function Intro() {
 // 5. Test with keyboard only — unplug your mouse for 10 minutes
 // Can you reach every interactive element? Can you see where focus is?`}
       </CodeBlock>
+
+      <p>
+        Those five are first because of how much they cover for how little they
+        cost. Most of what gets filed as an accessibility bug is not an exotic
+        screen-reader interaction — it is an image with no{' '}
+        <code>alt</code>, an input with no label, a <code>div</code> someone
+        attached a click handler to, or a focus outline removed because it
+        looked untidy. None of them need special knowledge to avoid; they need
+        someone to have looked.
+      </p>
+      <p>
+        It is worth being clear about why this matters beyond compliance.
+        Captions get used in noisy rooms, keyboard navigation is what power
+        users and anyone with a broken trackpad rely on, and good contrast is
+        what makes a screen readable in sunlight. The constraints that make a
+        site usable for someone with a permanent impairment are the same ones
+        that make it usable for everyone else in bad conditions.
+      </p>
+      <p>
+        Next: <strong><a href="/accessibility/semantic">Semantic HTML &amp;
+        Landmarks</a></strong>, which is where most of that quick list comes
+        from. The recurring theme is that the correct element already does the
+        work — the keyboard handling, the roles, the announcements — and that
+        reaching for a <code>div</code> means signing up to rebuild all of it
+        by hand.
+      </p>
     </LessonLayout>
   );
 }

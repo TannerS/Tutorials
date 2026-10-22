@@ -476,6 +476,33 @@ test.describe('Accessibility', () => {
 //   verify modal focus trapping, add aria-live for dynamic content`}
       </CodeBlock>
 
+      <p>
+        Note the order of that list, because it is the opposite of how most
+        teams approach this. The automated tools go in first — not because they
+        find the most, but because they are the only part that keeps working
+        without anyone remembering to do it. <code>jest-axe</code> in CI stops
+        the regressions you would otherwise re-find every quarter.
+      </p>
+      <p>
+        But keep the ceiling in mind:{' '}
+        <strong>automated checks catch roughly a third of issues</strong>, and
+        they are biased toward the mechanical ones — a missing <code>alt</code>,
+        a contrast ratio, an unlabelled input. They cannot tell you that the{' '}
+        <code>alt</code> text is wrong, that focus jumps somewhere baffling
+        after a delete, or that the error message is announced before the field
+        it refers to. A page can pass every automated check and still be
+        unusable, which is why the keyboard pass and the screen-reader pass are
+        on the list and not optional.
+      </p>
+      <p>
+        If you do only one thing from this section:{' '}
+        <strong>unplug your mouse and complete your app&apos;s main flow.</strong>{' '}
+        It takes a few minutes, needs no tooling, and reliably finds the
+        unreachable control, the invisible focus ring and the trap you cannot
+        tab out of — the failures that matter most and that no linter will
+        report.
+      </p>
+
     </LessonLayout>
   );
 }

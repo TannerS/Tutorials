@@ -549,6 +549,38 @@ function App() {
 }`}
       </CodeBlock>
 
+      <p>
+        Count what that dropdown had to implement: arrow keys to move through
+        options, Home and End to jump, Escape to close, Enter and Space to
+        choose, focus returned to the trigger on close, and{' '}
+        <code>aria-expanded</code> and <code>aria-activedescendant</code> kept
+        in step with all of it. A native <code>&lt;select&gt;</code> does every
+        one of those, correctly, on every platform, for free.
+      </p>
+      <p>
+        That is the trade to be honest about.{' '}
+        <strong>A custom widget is a commitment to reimplement a keyboard
+        interface</strong>, and the reason to make it is that you need
+        something the native control cannot do — rich option markup,
+        multi-select with tags, async search. &ldquo;It did not match the
+        design&rdquo; is a weaker reason than it looks, because the cost is
+        paid forever and is mostly invisible to the people reviewing it.
+      </p>
+      <p>
+        When you do build one, the shortcut is not to invent the key bindings.
+        The <strong>WAI-ARIA Authoring Practices</strong> specify, for each
+        widget, exactly which keys must do what — people already know these
+        conventions from their operating system, so matching them is what makes
+        the component feel unsurprising rather than merely accessible.
+      </p>
+      <p>
+        Next: <strong><a href="/accessibility/testing">Testing
+        Accessibility</a></strong>, which is how you find out whether any of
+        this actually works — including why automated tools catch only a
+        fraction of it, and what the keyboard-only pass you just read about is
+        for.
+      </p>
+
     </LessonLayout>
   );
 }
