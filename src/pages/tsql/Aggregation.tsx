@@ -208,6 +208,34 @@ GREATEST / LEAST                           2022+  (NOT on 2019)
 Before STRING_AGG, aggregate string concatenation was the FOR XML PATH
 trick — see the core-queries lesson for why to replace it.`}
       </CodeBlock>
+
+      <p>
+        The availability table is the thing to take away, because nearly every
+        confusing error in this area comes from the same cause:{' '}
+        <strong>SQL does not run in the order you wrote it.</strong>{' '}
+        <code>FROM</code> and <code>JOIN</code> resolve first, then{' '}
+        <code>WHERE</code>, then <code>GROUP BY</code>, then{' '}
+        <code>HAVING</code>, then <code>SELECT</code>, and{' '}
+        <code>ORDER BY</code> last.
+      </p>
+      <p>
+        That single sequence explains the usual complaints. A column alias
+        defined in <code>SELECT</code> is unavailable in{' '}
+        <code>WHERE</code> because <code>WHERE</code> already ran — but it
+        works in <code>ORDER BY</code>, which runs after.{' '}
+        <code>WHERE</code> cannot filter on an aggregate because the grouping
+        has not happened yet, which is exactly the job{' '}
+        <code>HAVING</code> exists to do. And a window function cannot appear
+        in <code>WHERE</code> because windows are computed at{' '}
+        <code>SELECT</code> time, which is why filtering on one means wrapping
+        the query in a CTE.
+      </p>
+      <p>
+        Next: <strong><a href="/tsql/modifying-data">Modifying Data — OUTPUT,
+        MERGE, Upserts</a></strong>, which moves from reading to writing —
+        including <code>OUTPUT</code>, which returns the rows a statement
+        changed and saves the re-query that most code does instead.
+      </p>
     </LessonLayout>
   );
 }

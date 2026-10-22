@@ -494,6 +494,32 @@ X-RateLimit-Remaining: 0
 X-RateLimit-Reset: 1699900000`}
       </CodeBlock>
 
+      <p>
+        Two properties decide most of what is on this page, and they are worth
+        separating because they are routinely confused.{' '}
+        <strong>Safe</strong> means the request does not change anything, so it
+        can be prefetched, cached or repeated freely —{' '}
+        <code>GET</code> and <code>HEAD</code>.{' '}
+        <strong>Idempotent</strong> means doing it twice leaves the same state
+        as doing it once; it may well change things. <code>PUT</code> and{' '}
+        <code>DELETE</code> qualify, <code>POST</code> does not.
+      </p>
+      <p>
+        That distinction is not academic, because it decides what everything
+        between your client and your server is permitted to do. A proxy may
+        retry an idempotent request after a timeout and a browser may prefetch
+        a safe one — which is why a <code>GET</code> that deletes something
+        eventually gets called by a link prefetcher, and why a retried{' '}
+        <code>POST</code> can charge a card twice. Choosing the verb is
+        choosing those behaviours.
+      </p>
+      <p>
+        Next: <strong><a href="/apidesign/resources">Resource Naming &amp;
+        URLs</a></strong>. Once the verb carries the action, the URL only has
+        to identify the thing being acted on — which is what makes{' '}
+        <code>/api/getUserById</code> redundant rather than merely unfashionable.
+      </p>
+
     </LessonLayout>
   );
 }

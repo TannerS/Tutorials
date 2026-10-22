@@ -221,6 +221,31 @@ BEGIN
     IF @@ROWCOUNT = 0 BREAK;
 END`}
       </CodeBlock>
+
+      <p>
+        That batching loop is the practically important part of this page. A
+        single <code>DELETE</code> covering millions of rows is one
+        transaction: it holds its locks until it finishes, grows the log by the
+        full size of the change, and if it is cancelled halfway it rolls all of
+        that back — so you wait roughly as long again to end up where you
+        started. Deleting in batches turns it into many short transactions that
+        each commit, which is what keeps the table usable by everyone else
+        while it runs.
+      </p>
+      <p>
+        <code>TRUNCATE</code> is the other end of the trade: near-instant,
+        because it deallocates pages rather than logging rows, at the cost of
+        being all-or-nothing, firing no triggers, and refusing to run with a{' '}
+        <code>WHERE</code> clause or an inbound foreign key.{' '}
+        <strong>All rows, no conditions, no triggers — truncate. Otherwise
+        batch.</strong>
+      </p>
+      <p>
+        Next: <strong><a href="/tsql/views">Views, Reusable SQL &amp; Numbers
+        Tables</a></strong>, on not writing the same query twice — and where
+        the difference between a view the optimiser folds into your query and
+        one that materialises first begins to matter.
+      </p>
     </LessonLayout>
   );
 }

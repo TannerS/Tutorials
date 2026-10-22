@@ -433,6 +433,35 @@ router.post('/users/:userId/addresses', async (req, res, next) => {
 module.exports = router;`}
       </CodeBlock>
 
+      <p>
+        Read either router top to bottom and the URLs are predictable without
+        documentation: plural nouns, an identifier to address one of them, and
+        sub-resources hanging off the thing that owns them. That predictability
+        is the actual deliverable here —{' '}
+        <strong>a caller who has seen <code>/users/42/orders</code> can guess{' '}
+        <code>/orders/7/items</code> and be right.</strong>
+      </p>
+      <p>
+        Two judgement calls are worth naming because the examples make them
+        silently. <strong>Nest only to express ownership, and only one
+        level.</strong> <code>/users/42/orders</code> works because an order
+        belongs to a user; <code>/users/42/orders/7/items/3</code> is a URL
+        nobody can hold in their head, and since item 3 has its own identity it
+        is reachable at <code>/items/3</code>. And{' '}
+        <strong>a filter is not a path segment</strong> — a subset of a
+        collection is that collection with a query string, which is why{' '}
+        <code>/users?status=active</code> beats{' '}
+        <code>/activeUsers</code>, a separate resource that will need its own
+        sorting and pagination.
+      </p>
+      <p>
+        Next: <strong><a href="/apidesign/errors">Error Handling &amp;
+        Responses</a></strong>. Every route here assumed it found what it was
+        asked for; the next lesson covers the other path — status codes that
+        carry the outcome, and a response body shape consistent enough that
+        clients can handle failures generically.
+      </p>
+
     </LessonLayout>
   );
 }

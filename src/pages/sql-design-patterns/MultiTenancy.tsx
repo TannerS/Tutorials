@@ -312,6 +312,32 @@ CREATE TABLE orders_current (
 SELECT * FROM orders_current WHERE status = 'shipped';`}
       </CodeBlock>
 
+      <p>
+        That last line carries the point of the whole section. An event log is
+        an excellent way to <em>record</em> what happened and a poor way to{' '}
+        <em>ask questions</em> — &ldquo;which orders are shipped&rdquo; against
+        raw events means replaying history every time. The read model is what
+        makes it answerable, and keeping it behind a view means callers never
+        learn that events exist.
+      </p>
+      <p>
+        That separation is the same idea the tenancy models earlier on the page
+        were trading off. <strong>Shared schema with a tenant column,
+        schema-per-tenant and database-per-tenant are one decision about how
+        much isolation you are buying and what it costs you to operate</strong>{' '}
+        — a shared column is cheapest to run and relies on every query being
+        filtered correctly, while a database each is the strongest boundary and
+        the most migrations to apply. There is no default answer; there is only
+        whether a leak between tenants is an embarrassment or an incident.
+      </p>
+      <p>
+        Next: <strong><a href="/sql-design-patterns/json">JSON, JSONB &amp;
+        Full-Text Search</a></strong>, which covers the pressure every schema
+        here eventually faces — per-tenant custom fields that do not fit the
+        table, and where putting them in a JSON column is reasonable rather
+        than giving up on having a schema.
+      </p>
+
     </LessonLayout>
   );
 }
