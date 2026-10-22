@@ -324,6 +324,47 @@ public class CheckoutService {
 }`}
       </CodeBlock>
 
+      <p>
+        Both resolve the same ambiguity — two beans implementing one interface,
+        which without either annotation fails at startup with{' '}
+        <code>NoUniqueBeanDefinitionException</code>. The difference is{' '}
+        <strong>which end of the wire decides</strong>, and that is a design
+        choice rather than a style one.
+      </p>
+      <ul>
+        <li>
+          <strong><code>@Qualifier</code> decides at the injection point.</strong>{' '}
+          The consumer names what it wants. The choice is visible exactly where
+          the dependency is used, and two consumers can choose differently — but
+          the name is a string, so renaming the bean breaks the injection at
+          startup rather than at compile time.
+        </li>
+        <li>
+          <strong><code>@Primary</code> decides at the bean.</strong> One
+          implementation declares itself the default and every unqualified
+          injection point gets it. That keeps constructors clean when ten
+          classes want the same gateway, at the cost that no constructor tells
+          you which one it got — you have to go and find the{' '}
+          <code>@Primary</code>.
+        </li>
+      </ul>
+      <p>
+        The practical rule is to combine them:{' '}
+        <strong><code>@Primary</code> for the answer that is right almost
+        everywhere, <code>@Qualifier</code> at the few sites that need the other
+        one.</strong> A qualifier always wins over a primary, so the pair reads
+        as &ldquo;Stripe unless stated otherwise&rdquo; — and the exceptions are
+        self-documenting because they are the only places with an annotation.
+      </p>
+      <p>
+        Reaching for <code>@Qualifier</code> everywhere turns every constructor
+        into string-matching; reaching for <code>@Primary</code> alone leaves
+        you no way to express the exception. If which implementation you want
+        depends on the environment rather than on the call site, neither is the
+        tool — that is <code>@Profile</code> or{' '}
+        <code>@ConditionalOnProperty</code>, which is the next section.
+      </p>
+
       <h2>Conditional Beans</h2>
       <p>
         <code>@ConditionalOnProperty</code>, <code>@ConditionalOnClass</code>,{' '}

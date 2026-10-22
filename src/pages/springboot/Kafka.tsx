@@ -235,6 +235,41 @@ Fixes, best first:
       concurrency: 3`}
       </CodeBlock>
 
+      <p>
+        Those are not values to copy — they are values to derive, and there is
+        one inequality behind all of them:
+      </p>
+      <CodeBlock language="text" title="The only sum that matters">
+{`max.poll.records  ×  worst-case time per record  <  max.poll.interval.ms
+
+Worked, with the defaults:
+  500 records × 2s each = 1000s needed, but only 300s allowed  -> EVICTED
+  100 records × 2s each =  200s needed,     300s allowed       -> survives
+
+So max-poll-records: 100 is not a magic number. It is 500 lowered until
+the batch fits in the interval, using the SLOWEST record you have seen,
+not the average — the eviction is caused by the bad batch, not the
+typical one.`}
+      </CodeBlock>
+      <p>
+        That is why the fix list is ordered the way it is. Lowering{' '}
+        <code>max-poll-records</code> shrinks the left-hand side and is safe;
+        raising <code>max.poll.interval.ms</code> grows the right-hand side and
+        buys time at a cost — it is also how long the group now waits before
+        noticing a genuinely dead consumer, so a crashed pod&apos;s partitions
+        stay unserved for that long.
+      </p>
+      <p>
+        The other two are a separate mechanism and should usually be left alone.{' '}
+        <code>session.timeout.ms</code> and <code>heartbeat.interval.ms</code>{' '}
+        govern the background heartbeat thread, not your handler, and the
+        convention is for the heartbeat to be about a third of the session
+        timeout — the 3s and 45s above — so a consumer gets a few missed
+        heartbeats of grace before eviction. Tuning these in response to a slow
+        handler is the most common wrong turn here, because they are not what a
+        slow handler blocks.
+      </p>
+
       <h2>Idempotent Consumers</h2>
       <p>
         Kafka delivers at least once. Under retries, network hiccups, and rebalances,
