@@ -80,6 +80,37 @@ function Semantic() {
      Users can jump between landmarks instantly -->`}
       </CodeBlock>
 
+      <p>
+        There is a worse problem in the first version than the missing
+        structure, and it is easy to read past:{' '}
+        <code>&lt;div class=&quot;nav-link&quot; onclick=...&gt;</code>{' '}
+        <strong>cannot be reached or activated by a keyboard at all.</strong>{' '}
+        A <code>div</code> is not focusable, so <kbd>Tab</kbd> skips straight
+        over it, and <code>onclick</code> does not respond to <kbd>Enter</kbd>{' '}
+        or <kbd>Space</kbd> on an unfocusable element. Anyone not using a mouse
+        — keyboard, switch device, voice control — simply cannot navigate this
+        site. It is not degraded; the links do not exist for them.
+      </p>
+      <p>
+        The <code>&lt;a href&gt;</code> in the second version is focusable,
+        activates on <kbd>Enter</kbd>, appears in the browser&apos;s list of
+        links, offers a context menu, can be opened in a new tab, and shows a
+        focus ring — none of which anyone implemented. That is the pattern worth
+        internalising here: <strong>the semantic element is not a label for the
+        behaviour, it is where the behaviour comes from.</strong> Rebuilding it
+        on a <code>div</code> means reimplementing <code>tabindex</code>, key
+        handlers, focus styling and the role, and getting every one of them
+        right.
+      </p>
+      <p>
+        Everything else follows the same shape. <code>&lt;header&gt;</code>,{' '}
+        <code>&lt;nav&gt;</code>, <code>&lt;main&gt;</code> and{' '}
+        <code>&lt;footer&gt;</code> create the landmarks listed above purely by
+        being used, while <code>class=&quot;header&quot;</code> is a styling
+        hook that means nothing to anything but your CSS. The two versions look
+        identical on screen, which is exactly why this survives review.
+      </p>
+
       {/* ── Landmark Roles ────────────────────────────────── */}
       <h2>Landmark Roles</h2>
       <p>
@@ -273,6 +304,46 @@ function Semantic() {
      to remember the header from several rows back. -->`}
       </CodeBlock>
 
+      <p>
+        A table is a two-dimensional structure, and that is precisely what the{' '}
+        <code>div</code> version destroys. Sighted readers recover the second
+        dimension for free — glance up a column and the header is there. A
+        screen reader reads in one dimension, so without the markup the grid
+        arrives as a flat run of words: &ldquo;Name Role Jane Engineer&rdquo;.
+        The data is all present and the relationships are all gone.
+      </p>
+      <p>
+        <code>&lt;table&gt;</code> restores them, and each part does a specific
+        job. <code>&lt;caption&gt;</code> names the table so it can be found and
+        skipped; the announced row and column counts tell the user how big it is
+        before they commit to reading it; and <code>scope</code> is what lets
+        the reader say <em>&ldquo;Role: Senior Engineer&rdquo;</em> while moving
+        through a row. Crucially, this also unlocks table navigation — the
+        reader can move cell by cell in any direction and hear the relevant
+        headers each time, which is the behaviour that makes a table usable at
+        all rather than merely readable.
+      </p>
+
+      <InfoBox variant="warning" title="This is the one people rebuild in JavaScript">
+        Data grids with sticky headers, sortable columns and virtualised rows
+        are frequently built from <code>div</code>s because a real{' '}
+        <code>&lt;table&gt;</code> is awkward to style. Modern CSS has made that
+        trade mostly unnecessary — <code>position: sticky</code> works on{' '}
+        <code>&lt;th&gt;</code>, and <code>display: grid</code> can be applied
+        to table elements.
+        <br />
+        <br />
+        If you genuinely must use <code>div</code>s, the structure has to be
+        replaced by hand with{' '}
+        <code>role=&quot;table&quot;</code>, <code>role=&quot;row&quot;</code>,{' '}
+        <code>role=&quot;columnheader&quot;</code> and{' '}
+        <code>role=&quot;cell&quot;</code>, plus{' '}
+        <code>aria-rowcount</code> and <code>aria-colindex</code> once rows are
+        virtualised and the DOM no longer contains them all.{' '}
+        <strong>That is a large amount of work to re-earn what one element
+        provided.</strong>
+      </InfoBox>
+
       {/* ── Forms ─────────────────────────────────────────── */}
       <h2>Forms: label, fieldset, legend</h2>
 
@@ -309,6 +380,49 @@ function Semantic() {
 <input type="email" id="email" aria-describedby="email-error" aria-invalid="true" />
 <span id="email-error" role="alert">Please enter a valid email address</span>`}
       </CodeBlock>
+
+      <p>
+        The first version is not missing decoration — it is missing the
+        connection between each control and the words describing it. A{' '}
+        <code>&lt;div&gt;Name&lt;/div&gt;</code> sitting above an input is
+        related to it only by visual proximity, which is information the
+        browser does not have. Focus that field with a screen reader and it
+        announces &ldquo;edit text, blank&rdquo;: the user is in a box with no
+        idea what belongs in it.
+      </p>
+      <ul>
+        <li>
+          <strong><code>&lt;label for&gt;</code> creates the association
+          explicitly</strong>, so the field announces as &ldquo;Full Name, edit
+          text&rdquo;. It also enlarges the click target — clicking the word
+          focuses the input — which helps everyone, particularly on a phone or
+          with a motor impairment.
+        </li>
+        <li>
+          <strong><code>&lt;fieldset&gt;</code> and <code>&lt;legend&gt;</code>{' '}
+          supply the question.</strong> Without them the options announce as
+          &ldquo;Free&rdquo; and &ldquo;Pro&rdquo; with no indication of what is
+          being chosen — the words &ldquo;Choose a plan&rdquo; are on screen but
+          attached to nothing. The legend is read with each option, so the user
+          hears &ldquo;Choose a plan, Free, radio button, 1 of 2&rdquo;.
+        </li>
+        <li>
+          <strong><code>aria-describedby</code> attaches the error to the
+          field</strong> rather than leaving it as nearby red text, and{' '}
+          <code>aria-invalid</code> marks the control itself as failing.{' '}
+          <code>role=&quot;alert&quot;</code> makes the message announce as soon
+          as it appears, instead of only when the user happens to arrive at it.
+        </li>
+      </ul>
+      <p>
+        Note also <code>type=&quot;email&quot;</code> and{' '}
+        <code>autocomplete=&quot;name&quot;</code> in the good version. Those
+        are not validation niceties: the correct type summons the right
+        on-screen keyboard on a phone, and <code>autocomplete</code> lets the
+        browser fill the field, which for someone using voice control or
+        switch access can be the difference between a form that takes seconds
+        and one that takes minutes.
+      </p>
 
       {/* ── Link vs Button ────────────────────────────────── */}
       <h2>Link vs Button</h2>
