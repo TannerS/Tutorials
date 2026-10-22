@@ -469,6 +469,32 @@ export default function Contacts() {
 }`}
       </CodeBlock>
 
+      <p>
+        Look at what that CRUD example does <em>not</em> contain. No{' '}
+        <code>useState</code> for the list, no <code>useEffect</code> to fetch
+        it, no loading flag, no manual refetch after a delete, and no state
+        synchronising the server with the screen. The loader supplies the data,
+        the action changes it, and the router revalidates afterwards — so the
+        list is never something you keep in sync, only something you read.
+      </p>
+      <p>
+        That is the whole argument for this model.{' '}
+        <strong>The component stops owning a copy of server state</strong>, and
+        with the copy goes the category of bug where the copy and the server
+        disagree: the stale list after a delete, the double fetch on mount, the
+        spinner that outlives its request. It also explains why{' '}
+        <code>&lt;Form&gt;</code> is worth using over an{' '}
+        <code>onSubmit</code> handler — it routes the submission through the
+        action so revalidation happens for free.
+      </p>
+      <p>
+        Next: <strong><a href="/react-router-v8/guards">Auth Guards &amp;
+        Protected Routes</a></strong>. Loaders run before a route renders,
+        which makes them the natural place to decide whether it should render
+        at all — a redirect thrown from a loader never shows the protected
+        page for a frame, which a guard inside a component cannot promise.
+      </p>
+
     </LessonLayout>
   );
 }

@@ -640,6 +640,30 @@ Seed loader data, skip fetching  → createRoutesStub + hydrationData
 Isolated component test          → createRoutesStub  (jest.mock only in legacy code)
 Reusable across test files       → Custom renderWithRouter utility`}
       </CodeBlock>
+
+      <p>
+        The choice in that table is really one question:{' '}
+        <strong>how much of the router does this test actually need?</strong>{' '}
+        A component that only reads <code>useParams</code> needs a route
+        matched and nothing else. A test of a redirect needs real navigation.
+        Mounting the whole app for either is the usual mistake — it passes, but
+        it fails later for reasons unrelated to what you were testing, which is
+        how a suite becomes something people stop trusting.
+      </p>
+      <p>
+        The other thing worth carrying: because loaders are plain functions
+        that take a request and return data, they are testable without
+        rendering anything at all. A loader&apos;s redirect-when-logged-out
+        logic is a function call and an assertion, not a mounted tree — and
+        that is a direct consequence of the router owning data loading rather
+        than the component.
+      </p>
+      <p>
+        Next: <strong><a href="/react-router-v8/fullapp">Complete App
+        Routing</a></strong>, which assembles the whole section into one
+        application — nesting, loaders, actions, guards and error boundaries in
+        a single route tree.
+      </p>
     </LessonLayout>
   );
 }

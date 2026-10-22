@@ -468,6 +468,26 @@ import { RouterProvider } from 'react-router/dom';  // NOT react-router-dom (rem
 { middleware: [authMiddleware], ... }     // runs before/after loader, inherits down children
 context.get(someContext) / context.set(someContext, value)  // inside loader/action/middleware`}
       </CodeBlock>
+
+      <p>
+        One idea underpins that list, and it is worth stating before the
+        details arrive. React Router stopped being a way to{' '}
+        <em>show a component for a URL</em> and became a way to{' '}
+        <strong>describe what a URL needs</strong> — its data, its mutations,
+        and now its middleware — so the router can fetch before it renders.
+        That is why <code>loader</code> exists rather than a{' '}
+        <code>useEffect</code> in the component: the fetch starts when
+        navigation starts, not after the component mounts, which removes the
+        spinner-then-content shuffle and the request waterfall that nested
+        components create.
+      </p>
+      <p>
+        Next: <strong><a href="/react-router-v8/nested">Nested Routes &amp;
+        Outlets</a></strong>, which is the structure everything else hangs off.
+        Once routes nest, a URL maps to several routes at once — and that is
+        what lets their loaders run in parallel rather than one component at a
+        time.
+      </p>
     </LessonLayout>
   );
 }

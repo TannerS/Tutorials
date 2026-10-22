@@ -574,6 +574,30 @@ describe('Counter', () => {
   });
 });`}
       </CodeBlock>
+
+      <p>
+        Notice what that test never mentions: no component internals, no state
+        variable, no hook, no class name. It finds a button by the name a user
+        would read, clicks it, and checks the text that appears. Rewrite{' '}
+        <code>Counter</code> from <code>useState</code> to{' '}
+        <code>useReducer</code>, or restructure its markup entirely, and the
+        test keeps passing — because nothing it asserts on changed.
+      </p>
+      <p>
+        That is the principle the rest of the section builds on:{' '}
+        <strong>test what the user experiences, not how the component achieves
+        it.</strong> A test coupled to implementation fails on every refactor
+        while catching no bugs, which teaches a team to distrust the suite.{' '}
+        <code>getByRole</code> is the practical expression of it — it is also
+        roughly what a screen reader sees, so a component that is hard to query
+        by role is usually one that is hard to use with assistive technology.
+      </p>
+      <p>
+        Next: <strong><a href="/react-testing/components">Testing
+        Components</a></strong>, which takes this from a counter to the things
+        that actually make testing awkward — props, conditional rendering,
+        context and async updates.
+      </p>
     </LessonLayout>
   );
 }
