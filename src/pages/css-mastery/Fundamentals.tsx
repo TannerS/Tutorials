@@ -656,6 +656,30 @@ html { font-size: 100%; }     /* = 16px by default, RESPECTS user settings */
 }`}
       </CodeBlock>
 
+      <p>
+        Nothing in that component is a trick, and that is the point of ending
+        on it. It is the cascade, specificity, the box model and inheritance
+        doing ordinary work — the same four ideas the page opened with. Most
+        CSS that feels unpredictable is one of them acting exactly as
+        specified somewhere you were not looking.
+      </p>
+      <p>
+        That is the debugging habit worth taking from this page. When a style
+        does not apply, the question is almost never &ldquo;is CSS
+        broken&rdquo; — it is <strong>which rule won, and why</strong>. The
+        answer is in DevTools: the winning declaration is listed first and the
+        overridden ones are struck through, so you can read the cascade rather
+        than guess at it. Reaching for <code>!important</code> is what it looks
+        like to stop asking that question, which is why it tends to multiply.
+      </p>
+      <p>
+        Next: <strong><a href="/css-mastery/flexbox">Flexbox Complete
+        Guide</a></strong>. Everything so far has laid out one box at a time;
+        flexbox is the first tool here for arranging boxes <em>in relation to
+        each other</em>, and it changes how sizing works for the children
+        inside it.
+      </p>
+
 
     </LessonLayout>
   );

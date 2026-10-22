@@ -369,6 +369,34 @@ process.on('SIGTERM', fn);             // graceful shutdown
 // is full. That is the part a plain emitter has no answer for — an
 // emitter will happily fire faster than listeners can keep up.`}
       </CodeBlock>
+
+      <p>
+        That last point is the one worth leaving with, because it is where
+        emitters stop being the right tool.{' '}
+        <strong>An event emitter has no way to say &ldquo;slow down&rdquo;.</strong>{' '}
+        <code>emit()</code> runs its listeners synchronously and returns; if a
+        listener is slower than the thing emitting, the work piles up in memory
+        and nothing in the API notices. Promises have the same gap from the
+        other side — a promise is one value that already happened, so there is
+        no mechanism for the consumer to influence the producer.
+      </p>
+      <p>
+        Streams exist for exactly that gap, which is why so much of Node&apos;s
+        I/O is streams rather than emitters: <code>.write()</code> returning{' '}
+        <code>false</code> is the destination saying it has had enough, and{' '}
+        <code>.pipe()</code> is the part that listens to that answer. If you
+        ever find yourself buffering emitter output into an array to deal with
+        later, that is the signal you wanted a stream.
+      </p>
+      <p>
+        Next: <strong><a href="/javascript/error-handling">Error
+        Handling</a></strong>, which is the other half of this. An exception
+        thrown inside a listener does not propagate to whatever called{' '}
+        <code>emit()</code>, and an <code>&apos;error&apos;</code> event with
+        no listener terminates the process — so the error rules for emitters
+        are genuinely different from the ones around <code>try</code>/
+        <code>catch</code>.
+      </p>
     </LessonLayout>
   );
 }

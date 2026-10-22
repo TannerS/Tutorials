@@ -453,6 +453,33 @@ justify-self | align-self: start | end | center | stretch;
 grid-column: 1 / -1;         /* full width */`}
       </CodeBlock>
 
+      <p>
+        If the cheat sheet looks like a lot, almost all of it reduces to one
+        decision: <strong>grid is for two dimensions, flexbox is for
+        one.</strong> If you are arranging things along a single line and
+        letting them wrap, that is flexbox. If rows and columns have to line up
+        with each other — a page shell, a dashboard, a form where labels align
+        down the left — that is grid, and doing it in flexbox means fixing
+        widths by hand until it looks right.
+      </p>
+      <p>
+        The two entries worth memorising from that list are{' '}
+        <code>grid-column: 1 / -1</code> for &ldquo;span the whole row whatever
+        the column count is&rdquo;, and{' '}
+        <code>repeat(auto-fit, minmax(200px, 1fr))</code>, which gives you a
+        responsive card grid with no media queries at all — the browser works
+        out how many fit. That second one replaces the majority of the
+        breakpoint maths people used to write.
+      </p>
+      <p>
+        Next: <strong><a href="/css-mastery/sizing">Why Is This Element That
+        Size?</a></strong>, which answers the question grid and flexbox both
+        raise — once a layout decides sizes for you,{' '}
+        <code>width</code> stops being the final word, and knowing what{' '}
+        <code>fr</code>, <code>auto</code>, <code>min-content</code> and{' '}
+        <code>flex-basis</code> actually resolve to is how you stop fighting it.
+      </p>
+
     </LessonLayout>
   );
 }

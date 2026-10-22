@@ -372,6 +372,36 @@ public class OrderService {
 }`}
       </CodeBlock>
 
+      <p>
+        Notice that the example never announces itself as a pattern. It is an
+        ordinary class holding a list of things to notify, and the only reason
+        to call it Observer is that enough people wrote that same class
+        independently for the shape to be worth a name.
+      </p>
+      <p>
+        That is the right way to hold this whole section.{' '}
+        <strong>Patterns are names for structures that keep reappearing, not a
+        catalogue to build from.</strong> Used as vocabulary they are
+        excellent — &ldquo;make it a factory&rdquo; lands in seconds where
+        describing the structure takes a paragraph. Used as a shopping list
+        they produce the thing that gives patterns a bad reputation: a class
+        hierarchy built to deserve a name, solving flexibility nobody asked
+        for.
+      </p>
+      <p>
+        So the question to ask of each lesson ahead is not &ldquo;how do I
+        implement this&rdquo; but <strong>&ldquo;what problem made someone
+        reach for it?&rdquo;</strong> — because that is the part that tells you
+        whether you have the problem. It is also worth noticing which patterns
+        have quietly been absorbed by the language: a Strategy in Java is
+        usually now a lambda, and Iterator is a <code>for-each</code> loop.
+      </p>
+      <p>
+        Next: <strong><a href="/patterns/singleton">Singleton &amp;
+        Factory</a></strong> — starting, fittingly, with the pattern most often
+        cited as a mistake, and why it still turns up everywhere.
+      </p>
+
     </LessonLayout>
   );
 }

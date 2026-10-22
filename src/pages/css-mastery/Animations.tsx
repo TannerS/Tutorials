@@ -768,6 +768,32 @@ dialog:not([open])::backdrop { background: rgb(0 0 0 / 0); }
 }
 /* Set --i in HTML: style="--i: 0", style="--i: 1", etc. */`}</CodeBlock>
 
+      <p>
+        The one thing to carry off this page is which properties you animate.{' '}
+        <strong><code>transform</code> and <code>opacity</code> are handled by
+        the compositor</strong> and cost almost nothing; animating{' '}
+        <code>width</code>, <code>top</code>, <code>margin</code> or{' '}
+        <code>height</code> forces the browser to recalculate layout on every
+        frame, for every affected element. That is the difference between an
+        animation that holds 60fps on a phone and one that visibly stutters —
+        and it is why the staggered fade above moves with{' '}
+        <code>transform</code> rather than adjusting positions.
+      </p>
+      <p>
+        The second thing is <code>prefers-reduced-motion</code>. Large or
+        parallax movement genuinely causes nausea for people with vestibular
+        disorders, and the media query is how they tell you. Honouring it is a
+        few lines, and the usual approach — keep the opacity fade, drop the
+        movement — loses nothing for everyone else.
+      </p>
+      <p>
+        Next: <strong><a href="/css-mastery/variables">Custom Properties &amp;
+        Modern CSS</a></strong>, which is the feature the stagger above already
+        leaned on. Once a custom property can be set per element, read in{' '}
+        <code>calc()</code> and changed at runtime, it stops being a variable
+        in the Sass sense and becomes something the cascade itself can carry.
+      </p>
+
     </LessonLayout>
   );
 }
