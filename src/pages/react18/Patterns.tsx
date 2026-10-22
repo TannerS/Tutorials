@@ -349,6 +349,50 @@ function MyCombobox() {
 }`}
       </CodeBlock>
 
+      <h2>Picking One</h2>
+      <p>
+        All four patterns on this page solve one problem —{' '}
+        <strong>sharing behaviour without hard-wiring what it looks
+        like</strong> — and they differ in how much of the markup the consumer
+        gets to own:
+      </p>
+      <ul>
+        <li>
+          <strong>Custom hook</strong> — shares logic and no markup at all. The
+          default, and the right answer whenever the thing being shared is
+          state and effects rather than structure.
+        </li>
+        <li>
+          <strong>Compound components</strong> — you own the structure, the
+          parent owns the state. Right when the pieces only make sense together,
+          like tabs or a select.
+        </li>
+        <li>
+          <strong>Render props</strong> — you own the rendering, the component
+          owns the behaviour. Largely superseded by hooks, but still the clear
+          choice when behaviour must wrap the markup rather than sit beside it.
+        </li>
+        <li>
+          <strong>Headless components</strong> — the component owns behaviour
+          and accessibility and hands you prop getters. Worth the ceremony when
+          correct keyboard and ARIA behaviour is the hard part, which is why
+          most serious component libraries landed here.
+        </li>
+      </ul>
+      <p>
+        The failure mode is reaching for one of the last three when a hook would
+        have done. Each adds a layer of indirection that a reader has to
+        unpick, and that cost is only repaid when the <em>markup</em> genuinely
+        needs to vary between call sites. If every consumer renders the same
+        thing, you want a plain component with props.
+      </p>
+      <p>
+        Next: <strong><a href="/react18/error-boundaries">Error
+        Boundaries</a></strong> — because every pattern here passes behaviour
+        into code it does not control, and a throw from a consumer&apos;s render
+        function is the one thing none of them handle.
+      </p>
+
     </LessonLayout>
   );
 }

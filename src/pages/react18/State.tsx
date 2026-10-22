@@ -335,6 +335,32 @@ function reducer(state, event) {
 // Now it's IMPOSSIBLE to be in loading + error simultaneously`}
       </CodeBlock>
 
+      <p>
+        That last comment is the thread running through the whole lesson. Each
+        step traded a thing you have to remember for a thing the code cannot get
+        wrong: lifting state removed two copies that could disagree,{' '}
+        <code>useReducer</code> put every transition in one place instead of
+        scattered <code>setState</code> calls, and the state machine made the
+        contradictory combinations unrepresentable rather than merely avoided.
+      </p>
+      <p>
+        None of it says reach for the biggest tool first. Local{' '}
+        <code>useState</code> is right until two components genuinely need the
+        same value; lifting is right until the prop is threaded through
+        components that do not care about it; context is right until a
+        fast-changing value starts re-rendering consumers that only read a
+        different part of it. <strong>Each step is a response to a problem you
+        can point at</strong> — and taking a step before you have the problem
+        buys indirection and nothing else.
+      </p>
+      <p>
+        Next: <strong><a href="/react18/effects">Effects &amp; Data
+        Fetching</a></strong>. Every example here held state that already
+        existed in the browser. The hard part starts when the state lives on a
+        server — it arrives late, it can arrive out of order, and the component
+        may be gone by the time it does.
+      </p>
+
     </LessonLayout>
   );
 }

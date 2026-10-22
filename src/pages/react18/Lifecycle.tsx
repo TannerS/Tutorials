@@ -619,6 +619,31 @@ function CorrectComponent() {
 }`}
       </CodeBlock>
 
+      <p>
+        Strict Mode&apos;s double-invocation is worth ending on, because people
+        usually meet it as an annoyance and reach for a flag to suppress it.
+        It is a test. Mounting, unmounting and remounting a component is
+        something React genuinely does — it is what happens on every navigation
+        back to a screen, and what React&apos;s own future features assume it
+        may do freely. Running it twice in development is simply doing it early,
+        where you can see it.
+      </p>
+      <p>
+        So the double fetch is not the bug being reported; it is the symptom
+        that <strong>the effect had no cleanup</strong>. Fix that and the
+        warning disappears on its own, as the <code>AbortController</code>{' '}
+        above shows. The general form:{' '}
+        <strong>an effect should leave nothing behind when it is undone</strong>{' '}
+        — a subscription needs an unsubscribe, a timer needs a clear, a request
+        needs an abort or an ignore flag. If you cannot write the cleanup, that
+        usually means the effect is doing something that is not an effect.
+      </p>
+      <p>
+        Next: the <strong><a href="/react18/lifecycle-sim">Lifecycle
+        Simulator</a></strong>, which runs the sequence described on this page
+        step by step so you can watch the order rather than take it on trust.
+      </p>
+
     </LessonLayout>
   );
 }

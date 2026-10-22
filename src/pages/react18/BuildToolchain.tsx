@@ -672,6 +672,29 @@ npm install --save-dev tsup typescript react @types/react
 npx tsup`}
       </CodeBlock>
 
+      <p>
+        If you take one thing from this page, make it the split described
+        above: <strong>the tool that builds your code and the tool that checks
+        your types are not the same tool, and that is deliberate.</strong> esbuild
+        and SWC are fast precisely because they strip types without
+        understanding them — they never ask whether your code type-checks, so a
+        file with type errors still builds and still runs.
+      </p>
+      <p>
+        That is the detail that bites in CI. A green dev server and a successful{' '}
+        <code>vite build</code> say nothing about type correctness, so{' '}
+        <code>tsc --noEmit</code> has to run as its own step or the types are
+        decorative. It is also why the error you get at runtime sometimes
+        contradicts what the editor told you: the editor is running the type
+        checker, the bundle is not.
+      </p>
+      <p>
+        Next: <strong><a href="/react18/adapters">API Adapters &amp;
+        Envelopes</a></strong>, which moves from how the code is built to how
+        it meets data coming off the network — and where the types you just
+        arranged to have checked either hold up or turn out to be wishes.
+      </p>
+
     </LessonLayout>
   );
 }

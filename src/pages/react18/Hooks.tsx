@@ -1596,6 +1596,60 @@ function SearchPage() {
 //   It is also interruptible — new input cancels stale renders`}
       </CodeBlock>
 
+      <h2>Choosing Between Them</h2>
+      <p>
+        That is a long list, and most React code leans on four of them. Rather
+        than memorising all eleven, it helps to know which question each one
+        answers:
+      </p>
+      <ul>
+        <li>
+          <strong>A value that changes and should render:</strong>{' '}
+          <code>useState</code> — or <code>useReducer</code> once the next value
+          depends on the old one in several ways. The moment{' '}
+          <code>useReducer</code> starts paying is when you notice yourself
+          passing a group of setters around together.
+        </li>
+        <li>
+          <strong>A value that changes and should <em>not</em> render:</strong>{' '}
+          <code>useRef</code>. A DOM node, a timer id, the previous value of
+          something.
+        </li>
+        <li>
+          <strong>Reaching outside React:</strong> <code>useEffect</code> for
+          subscriptions, timers, anything needing cleanup.{' '}
+          <code>useLayoutEffect</code> only when you must measure or change the
+          DOM before the browser paints, since it blocks that paint.
+        </li>
+        <li>
+          <strong>Keeping an identity stable:</strong> <code>useMemo</code> for
+          a value, <code>useCallback</code> for a function — and only where
+          something downstream actually compares that identity, which is the
+          caveat the memoisation section above measured.
+        </li>
+        <li>
+          <strong>Staying responsive under load:</strong>{' '}
+          <code>useTransition</code> when you own the slow update,{' '}
+          <code>useDeferredValue</code> when you only have the value it
+          produced.
+        </li>
+      </ul>
+      <p>
+        Two rules make all of them work.{' '}
+        <strong>Call hooks unconditionally, at the top level</strong>, because
+        React matches a hook to its state by call order — a hook inside an{' '}
+        <code>if</code> shifts every hook after it onto the wrong slot. And{' '}
+        <strong>list every reactive value a hook reads</strong> in its
+        dependency array, because a missing entry is precisely how a hook ends
+        up working from the previous render&apos;s variables.
+      </p>
+      <p>
+        Next: <strong><a href="/react18/refs">Refs In Depth</a></strong>, which
+        takes the one hook here whose whole purpose is to opt <em>out</em> of
+        rendering — from holding a DOM node to deliberately exposing an
+        imperative API from a component.
+      </p>
+
     </LessonLayout>
   );
 }
