@@ -557,6 +557,30 @@ building a real service         -> /go/http, /go/database
 laying out a repo / shipping it -> /go/deploy
 want the one-page reference     -> /go/cheatsheet`}
       </CodeBlock>
+
+      <p>
+        If you read this page first — which is what{' '}
+        <a href="/go/intro">the intro</a> suggests for getting something
+        running today — the next step is to build something small and let it
+        surprise you. Go is unusually good at this: the language is small
+        enough that a page like this genuinely gets you productive, which is
+        exactly why the gaps are easy to miss.
+      </p>
+      <p>
+        Two of them account for most early confusion.{' '}
+        <strong>Everything is passed by value, including the method
+        receiver</strong> — which is why a method that does not mutate what you
+        expected is usually a value receiver, and why{' '}
+        <a href="/go/pointers">that lesson</a> comes before structs in the
+        section. And <strong>a slice is a value describing an array it does not
+        own</strong>, which is the source of nearly every &ldquo;why did that
+        change&rdquo; moment, covered in{' '}
+        <a href="/go/slices">Slices, Maps &amp; the Aliasing Trap</a>.
+      </p>
+      <p>
+        The table above is the index for when something bites — use it that
+        way rather than reading it through.
+      </p>
     </LessonLayout>
   );
 }

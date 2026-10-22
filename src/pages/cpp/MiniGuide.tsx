@@ -482,6 +482,29 @@ owning heap memory                -> /cpp/smart-pointers
 setting up a real build           -> /cpp/tooling
 want the one-page reference       -> /cpp/cheatsheet`}
       </CodeBlock>
+
+      <p>
+        If you read this page before the section — which is the recommendation
+        in <a href="/cpp/intro">the intro</a> for anyone new to C++ — the thing
+        to do now is write something small and let it break. This page is
+        deliberately missing the three ideas that make C++ what it is:{' '}
+        <strong>who owns a resource</strong>, <strong>when it is destroyed</strong>,
+        and <strong>what a copy actually copies</strong>. You will not get far
+        before one of them matters.
+      </p>
+      <p>
+        That is not a gap to be embarrassed about — it is the order the section
+        is built in. <a href="/cpp/intro">Lesson one</a> starts from the single
+        fact everything else follows from: a variable of class type{' '}
+        <em>is</em> the object, not a reference to one. Once that lands, the
+        destructor running at a closing brace, the copy that duplicates a heap
+        buffer and the existence of move semantics all stop being separate
+        rules to memorise.
+      </p>
+      <p>
+        The table above is the index for when something bites. Use it that way
+        rather than reading it through.
+      </p>
     </LessonLayout>
   );
 }

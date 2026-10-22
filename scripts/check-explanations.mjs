@@ -50,7 +50,8 @@ function parse(src) {
   const push = (type, start, end, title = '') => marks.push({ type, start, end, title });
 
   // CodeBlock spans (title + full element)
-  const titleOf = (attrs) => (attrs.match(/title=\"([^\"]*)\"/) || attrs.match(/title=\{\"([^\"]*)\"\}/) || [])[1] || '';
+  const titleOf = (attrs) =>
+    (attrs.match(/title="([^"]*)"/) || attrs.match(/title=\{"([^"]*)"\}/) || [])[1] || '';
   for (const m of src.matchAll(/<CodeBlock\b([^>]*)>/g)) {
     const close = src.indexOf('</CodeBlock>', m.index);
     push('code', m.index, close === -1 ? m.index + m[0].length : close + 12, titleOf(m[1]));
