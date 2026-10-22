@@ -656,6 +656,30 @@ Error handling       onCaughtError / onUncaughtError / onRecoverableError (creat
 React Compiler       separate opt-in build tool — NOT bundled in react@19`}
       </CodeBlock>
 
+      <p>
+        That last line is the one most worth remembering, because it is the
+        most commonly misreported thing about this release.{' '}
+        <strong>Upgrading to React 19 does not give you the compiler.</strong>{' '}
+        It is a separate Babel plugin you opt into, it can be adopted file by
+        file, and until you add it your <code>useMemo</code> and{' '}
+        <code>useCallback</code> calls are doing exactly what they always did —
+        so deleting them on upgrade will slow your app down.
+      </p>
+      <p>
+        The rest of the list has a shape to it. Actions, the <code>use</code>{' '}
+        hook and <code>ref</code> as a prop are all the same move: taking a
+        pattern everyone had already built by hand — pending state around a
+        submit, reading a promise, <code>forwardRef</code> wrappers — and
+        making it part of the library. That is why most of them are additive
+        and why the migration is usually small.
+      </p>
+      <p>
+        Next: <strong><a href="/react19-whats-new/react19">React 19 in
+        Depth</a></strong>, which takes these one at a time with the details
+        the summary leaves out — particularly where the new form and action
+        APIs change how you think about submitting data.
+      </p>
+
     </LessonLayout>
   );
 }

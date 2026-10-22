@@ -218,6 +218,30 @@ The big shift: in v4 you produced CLASS NAMES and applied them.
 In v9 you produce COMPONENTS and render them.`}
       </CodeBlock>
 
+      <p>
+        That sentence is the migration in one line, and it explains why the
+        change was not just a new API. The old model generated class names at
+        runtime and handed you strings to attach to elements, which means the
+        styling work happened in the browser, on every render, after React had
+        already decided what to draw.
+      </p>
+      <p>
+        Producing components instead lets the styles be extracted ahead of
+        time, which is what makes them compatible with server rendering and
+        React Server Components — a hook that needs a runtime context cannot
+        run in a component that never reaches the client. So the awkward part
+        of the migration, that there is no mechanical substitution for{' '}
+        <code>makeStyles</code>, is a consequence of the thing that made the
+        change worth doing.
+      </p>
+      <p>
+        Next: <strong><a href="/mui9/theming">Theming with CSS Variables &amp;
+        Color Schemes</a></strong>, which is the same idea one level up — the
+        theme stops being a JavaScript object consulted during render and
+        becomes CSS variables the browser can resolve on its own, which is what
+        allows a colour scheme to switch without re-rendering the tree.
+      </p>
+
     </LessonLayout>
   );
 }

@@ -234,6 +234,28 @@ shape.borderRadius        4
 components                {}               (was 'overrides' + 'props')`}
       </CodeBlock>
 
+      <p>
+        Those renames look like churn, but they follow from one change: the
+        theme is now emitted as CSS variables rather than consulted as a
+        JavaScript object during render. Once a value lives in a CSS custom
+        property, the browser resolves it — which is why switching colour
+        scheme no longer re-renders the component tree, and why a server can
+        send the correct colours in the first response instead of flashing the
+        wrong ones until hydration.
+      </p>
+      <p>
+        The practical consequence worth carrying: a theme value you read in
+        JavaScript and a theme value used in CSS are no longer the same
+        lookup. Reaching for the theme object inside a render to compute a
+        style still works, but it opts back out of the variable mechanism and
+        the re-render it was avoiding. Prefer referencing the variable.
+      </p>
+      <p>
+        Next: the <strong><a href="/mui9/cheatsheet">MUI v9 Field
+        Guide</a></strong>, which collapses this section into a lookup table
+        for when you know what you want and need the current spelling of it.
+      </p>
+
     </LessonLayout>
   );
 }
