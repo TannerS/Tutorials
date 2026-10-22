@@ -303,6 +303,66 @@ GET /api/users?page=1&size=20
 }`}
       </CodeBlock>
 
+      <p>
+        Four separate faults are in that first block, and each one costs
+        something specific:
+      </p>
+      <ul>
+        <li>
+          <strong><code>POST /api/getUserById</code> puts the verb in the
+          URL.</strong> The method already says what you are doing, so this
+          duplicates it and then contradicts it — a read, sent as{' '}
+          <code>POST</code>. Nothing downstream can cache it, no proxy or client
+          can safely retry it, and the browser will warn before re-sending it.{' '}
+          <code>GET /api/users/42</code> gets all of that back for free.
+        </li>
+        <li>
+          <strong>Three naming conventions in three lines.</strong>{' '}
+          <code>Users</code>, <code>fetch-orders</code> and{' '}
+          <code>product_list</code> mean every caller has to look up each
+          endpoint instead of guessing it correctly. Consistency here is not
+          tidiness; it is the difference between an API you can predict and one
+          you have to read end to end.
+        </li>
+        <li>
+          <strong><code>200 OK</code> with <code>success: false</code> is the
+          expensive one.</strong> It moves failure out of the protocol and into
+          your response body, so every client must parse and branch to discover
+          something the status line is designed to carry. Generic HTTP tooling —
+          retries, circuit breakers, monitoring, your load balancer&apos;s error
+          rate — all sees a success. An outage can look perfectly healthy on the
+          dashboard.
+        </li>
+        <li>
+          <strong>An unbounded collection is a latent outage.</strong>{' '}
+          <code>GET /api/users</code> returning 50,000 records works on a
+          development seed and takes the database down the day production grows
+          past it. Pagination is not an optimisation to add later, because
+          adding it afterwards is a breaking change to every caller.
+        </li>
+      </ul>
+      <p>
+        The thread running through all four: <strong>say it in the protocol, not
+        in your own conventions.</strong> HTTP already has verbs for intent,
+        status codes for outcome, and headers for metadata — and everything
+        between a client and your service already understands them. The good
+        version is mostly just declining to reinvent any of it.
+      </p>
+
+      <h2>Where This Goes Next</h2>
+      <p>
+        The next four lessons take one of these in turn.{' '}
+        <strong><a href="/apidesign/methods">HTTP Methods &amp; Status
+        Codes</a></strong> covers the safety and idempotency rules that make the
+        first and third points enforceable rather than stylistic;{' '}
+        <a href="/apidesign/resources">Resource Naming &amp; URLs</a> settles
+        the second; <a href="/apidesign/errors">Error Handling</a> develops the{' '}
+        <code>application/problem+json</code> body shown above; and{' '}
+        <a href="/apidesign/versioning">Versioning &amp; Pagination</a> covers
+        the fourth, including what to do when a collection is already public
+        without it.
+      </p>
+
     </LessonLayout>
   );
 }

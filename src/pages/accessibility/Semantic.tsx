@@ -146,6 +146,45 @@ function Semantic() {
      A proper hierarchy lets them understand page structure instantly. -->`}
       </CodeBlock>
 
+      <p>
+        To see why the first version is a real problem rather than a tidiness
+        one, it helps to know how the page is actually being read. A screen
+        reader can list every heading and jump between them — the same way a
+        sighted user scans a page in a second and a half before reading any of
+        it. That list <em>is</em> the table of contents, and the levels are what
+        give it shape.
+      </p>
+      <p>
+        Jumping from <code>h1</code> straight to <code>h4</code> breaks that
+        shape. &ldquo;Recent Activity&rdquo; is announced as a level-four
+        heading, which says it belongs to a level-three section that does not
+        exist, under a level-two section that also does not exist. The listener
+        is told there are two levels of context above this content and given no
+        way to find them. Nothing errors; the structure just describes a page
+        that was never built.
+      </p>
+      <p>
+        The second problem is quieter.{' '}
+        <code>&lt;h3&gt;This text should just be bold&lt;/h3&gt;</code> puts a
+        line into that table of contents that is not a section at all — so the
+        outline fills with entries that lead nowhere, and the navigation becomes
+        less useful the more it is used. <strong>Pick the heading level from
+        where the content sits in the document, then style it with CSS.</strong>{' '}
+        If you want big bold text that is not a section, that is{' '}
+        <code>&lt;p&gt;</code> or <code>&lt;strong&gt;</code> and a class.
+      </p>
+
+      <InfoBox variant="tip" title="Checking this in about ten seconds">
+        You do not need a screen reader to find these. In Chrome DevTools, open
+        the Elements panel&apos;s <strong>Accessibility</strong> tab, or run
+        Lighthouse, which flags skipped levels directly. Reading just the
+        headings of a page top to bottom is the manual version:{' '}
+        <strong>if they do not read as a sensible outline, the markup is
+        wrong</strong> — and that outline is also roughly what a search engine
+        extracts, which is why this tends to be the easiest accessibility fix to
+        get prioritised.
+      </InfoBox>
+
       {/* ── Lists ─────────────────────────────────────────── */}
       <h2>Lists</h2>
       <p>
