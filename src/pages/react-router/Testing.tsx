@@ -488,6 +488,28 @@ Isolated component test         → createRoutesStub  (jest.mock only in legacy 
 Reusable across test files      → Custom renderWithRouter utility
 */`}
       </CodeBlock>
+
+      <p>
+        Every row in that table answers the same question:{' '}
+        <strong>how much of the router does this test actually need?</strong>{' '}
+        A component that only reads <code>useParams</code> needs a matched
+        route and nothing more; a redirect needs real navigation. Reaching for
+        the whole app in either case is the common mistake — the test passes,
+        but it then breaks for reasons unrelated to its subject, and a suite
+        that fails for unrelated reasons is one people learn to ignore.
+      </p>
+      <p>
+        The other thing to carry forward: loaders are ordinary functions that
+        take a request and return data, so the interesting logic in them —
+        redirect when logged out, 404 when missing — can be tested by calling
+        the function. No render, no DOM. That falls straight out of the router
+        owning data loading instead of the component.
+      </p>
+      <p>
+        Next: <strong><a href="/react-router/fullapp">Complete App
+        Routing</a></strong>, which puts the whole section together in one
+        route tree — nesting, loaders, actions, guards and error boundaries.
+      </p>
     </LessonLayout>
   );
 }

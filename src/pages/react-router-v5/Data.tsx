@@ -399,6 +399,38 @@ function App() {
 }`}
       </CodeBlock>
 
+      <p>
+        Compare the amount of code here with what the same screen costs in the
+        data-router versions. Each component fetches for itself, so each one
+        carries its own <code>useState</code> for data, loading and error, its
+        own <code>useEffect</code>, and its own cleanup to avoid setting state
+        after unmount — and every one of those is a place to get it wrong in a
+        slightly different way.
+      </p>
+      <p>
+        There is a structural cost too, and it is the one that shows up as slow
+        pages. Because a child only begins fetching once its parent has
+        rendered, nested screens produce a{' '}
+        <strong>request waterfall</strong>: the list loads, then renders, then
+        the detail starts loading. The requests are independent but they run in
+        sequence, because the router has no way to know about the second one
+        until the first has finished.
+      </p>
+      <p>
+        None of this means v5 code is wrong — it is how everyone wrote React
+        routing for years, and plenty of production apps still do. It is worth
+        recognising as the specific problem that loaders were introduced to
+        solve, which is the thread to follow if you later move to{' '}
+        <a href="/react-router/data">the data-router model</a>.
+      </p>
+      <p>
+        Next: <strong><a href="/react-router-v5/guards">Auth Guards &amp;
+        Protected Routes</a></strong>, which in v5 means a component that
+        renders either its children or a <code>&lt;Redirect&gt;</code> — with
+        the catch that the check happens during render, so the guarded
+        component has already begun mounting.
+      </p>
+
     </LessonLayout>
   );
 }

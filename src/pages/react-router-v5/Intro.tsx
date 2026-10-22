@@ -346,6 +346,30 @@ useHistory()  useLocation()  useParams()  useRouteMatch()
 withRouter(MyClassComponent)                  // injects history, location, match`}
       </CodeBlock>
 
+      <p>
+        One thing to keep in view while reading this section: in v5 the router
+        does exactly one job — <strong>it decides which component to render for
+        the current URL</strong>. Everything else is the component&apos;s
+        problem. Fetching, loading state, error handling and knowing when to
+        refetch all live in <code>useEffect</code> and <code>useState</code>,
+        because there is nowhere else to put them.
+      </p>
+      <p>
+        That is the difference the later versions exist to address, and it
+        explains the API you see above. <code>useHistory</code> gives you an
+        object to push onto because navigation is something you perform
+        imperatively; <code>withRouter</code> exists because class components
+        cannot call hooks. Neither is a design mistake — they are what a
+        render-only router needs.
+      </p>
+      <p>
+        Next: <strong><a href="/react-router-v5/nested">Nested
+        Routes</a></strong>, where v5 differs most visibly from what came
+        after: nesting is achieved by rendering a <code>&lt;Route&gt;</code>{' '}
+        inside another route&apos;s component, so the parent has to render
+        before the child route is known to exist.
+      </p>
+
     </LessonLayout>
   );
 }

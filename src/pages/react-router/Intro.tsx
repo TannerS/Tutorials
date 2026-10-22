@@ -349,6 +349,32 @@ createBrowserRouter(routes)               // config-based (recommended)
 <BrowserRouter>                           // JSX-based (classic)
 <RouterProvider router={router} />        // mount config-based router`}
       </CodeBlock>
+
+      <p>
+        The two styles at the bottom of that list are not interchangeable, and
+        picking one is the first real decision in this section. With{' '}
+        <code>&lt;BrowserRouter&gt;</code> the routes are JSX, so they only
+        exist once React has rendered — the router cannot know what a URL needs
+        until the component tree reaches it. With{' '}
+        <code>createBrowserRouter</code> the routes are a plain object the
+        router can read <em>before</em> rendering anything.
+      </p>
+      <p>
+        That difference is the reason for the recommendation.{' '}
+        <strong>Every data feature in this section depends on the router being
+        able to inspect the route tree up front</strong> — loaders that fetch
+        while the next screen is still being prepared, actions, automatic
+        revalidation, route-level error boundaries. None of them are available
+        in the JSX form, because by the time it knows the route exists it is
+        already rendering it. The classic style still works and is fine for a
+        small app with no data loading.
+      </p>
+      <p>
+        Next: <strong><a href="/react-router/nested">Nested Routes &amp;
+        Outlets</a></strong>, which is the structure the rest of the section
+        hangs off — once routes nest, one URL matches several routes, and their
+        data can be fetched together instead of one component at a time.
+      </p>
     </LessonLayout>
   );
 }
