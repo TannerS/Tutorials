@@ -262,6 +262,42 @@ const MemoizedTodoItem = memo(function TodoItem({ todo, onDelete, onToggle }) {
 }`}
       </CodeBlock>
 
+      <p>
+        The obvious saving is the one in the heading: with{' '}
+        <code>transactions</code> unchanged, the sort and the reduce are skipped
+        and the previous results are handed back. On a ten-row array that is
+        worth almost nothing; on ten thousand it is a sort per keystroke
+        somewhere else on the page.
+      </p>
+      <p>
+        The less obvious saving is usually the bigger one.{' '}
+        <code>[...transactions].sort(...)</code> builds a <em>new array</em> and
+        the <code>reduce</code> builds a <em>new object</em>, so in the first
+        version <code>data</code> and <code>totals</code> are different values
+        every single render even when the contents are identical. If{' '}
+        <code>Report</code> is wrapped in <code>React.memo</code>, its props
+        comparison therefore fails every time and it re-renders anyway — the
+        first version silently cancels the memoization downstream of it.
+        Wrapping in <code>useMemo</code> keeps the identities stable, so the
+        comparison passes and the subtree is skipped.
+      </p>
+
+      <InfoBox variant="warning" title="Which means useMemo is not automatically a win">
+        If <code>Report</code> is a plain component, the second version saves
+        only the computation — a parent re-render re-renders its children
+        regardless of whether their props changed. And <code>useMemo</code> is
+        not free: React stores the previous value and compares the dependency
+        array on every render, so wrapping a cheap expression costs more than it
+        saves.
+        <br />
+        <br />
+        The test worth applying is: <strong>is the work actually expensive, or
+        is the result passed to something memoized?</strong> If neither, leave
+        it as a plain expression. &ldquo;Wrap everything in{' '}
+        <code>useMemo</code>&rdquo; is its own anti-pattern, and a later section
+        on this page covers it.
+      </InfoBox>
+
       {/* ------------------------------------------------------------------ */}
       {/* 5. Premature Optimization                                          */}
       {/* ------------------------------------------------------------------ */}
@@ -390,6 +426,39 @@ function MouseTracker() {
   );
 }`}
       </CodeBlock>
+
+      <p>
+        Put a number on the first version. A mouse moving across the screen
+        fires somewhere around 60 <code>mousemove</code> events a second, each
+        one calling <code>setMousePos</code> on <code>App</code>. Because a
+        component re-renders its children by default,{' '}
+        <code>Header</code>, <code>Sidebar</code>, <code>Dashboard</code> and{' '}
+        <code>Footer</code> all re-render 60 times a second to display exactly
+        what they displayed before. Only <code>MouseTracker</code> actually uses
+        the value.
+      </p>
+      <p>
+        Nothing changed in the second version except <em>where the state
+        lives</em>. The same listener runs at the same rate, but{' '}
+        <code>setMousePos</code> now belongs to <code>MouseTracker</code>, and a
+        state update re-renders the component that owns it and its children —
+        never its parent or its siblings. <code>App</code> has no state, so it
+        renders once; the other four are untouched.
+      </p>
+
+      <InfoBox variant="tip" title="Why this beats reaching for memo">
+        Wrapping the four siblings in <code>React.memo</code> would also stop
+        them re-rendering, and is the more common instinct. It is the worse fix:
+        four wrappers to maintain, four props comparisons running 60 times a
+        second, and a result that quietly breaks the first time someone passes
+        one of them an inline object.
+        <br />
+        <br />
+        <strong>Moving state down removes the render instead of filtering
+        it</strong>, and costs nothing to keep working. Reach for{' '}
+        <code>memo</code> when state genuinely has to live high up — when
+        several distant components need it — and not before.
+      </InfoBox>
 
       {/* ------------------------------------------------------------------ */}
       {/* 7. Not Using React.lazy for Code Splitting                         */}

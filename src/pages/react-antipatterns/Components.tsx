@@ -129,6 +129,32 @@ function OrderHistory() {
 }`}
       </CodeBlock>
 
+      <p>
+        Both render the same five outcomes. The difference is what it costs to
+        answer a question about them. In the pyramid, working out when{' '}
+        <code>EmptyState</code> appears means tracking four conditions that are
+        still open at that point, and the <code>) : (</code> that closes each one
+        is several lines below the test it belongs to. Add a sixth case and the
+        indentation moves for every branch, so the diff touches lines that did
+        not change in any meaningful sense.
+      </p>
+      <p>
+        Guard clauses invert that. Each <code>return</code> removes a case from
+        everything below it, so by the time you reach{' '}
+        <code>user.isAdmin</code> you already know the status is not loading or
+        error and the user exists — not because you traced it, but because those
+        branches exited. Each line reads as one complete rule, a new case is one
+        new line, and no branch is nested more than one level deep.
+      </p>
+      <p>
+        The underlying move is the general one:{' '}
+        <strong>handle the exits first and let the main path be the last thing
+        in the function.</strong> A ternary is still the right tool for the
+        genuine two-way choice that remains — note that the good version keeps
+        one for <code>AdminTable</code> versus <code>EmptyState</code>. The
+        anti-pattern is nesting them, not using them.
+      </p>
+
       {/* ─── 3. Index as Key in Dynamic Lists ─── */}
       <h2>3. Using Index as Key in Dynamic Lists</h2>
       <p>
@@ -329,6 +355,43 @@ function ProductPage({ productId }) {
   return <ProductDisplay name={product.name} price={price} description={product.description} />;
 }`}
       </CodeBlock>
+
+      <p>
+        The second version is longer, which is worth being upfront about. What
+        it buys is that each piece can now be used or checked on its own, and
+        the first version offered no way to do either.
+      </p>
+      <ul>
+        <li>
+          <strong>The discount maths is testable in one line.</strong>{' '}
+          <code>calculateDiscount(100, 20) === 80</code> is a plain function
+          call. Testing the same rule in the first version means rendering a
+          component, mocking <code>fetch</code>, waiting for a promise, then
+          reading a formatted string out of the DOM — to check a multiplication.
+        </li>
+        <li>
+          <strong><code>ProductDisplay</code> takes values, not a product.</strong>{' '}
+          It renders from three props with no fetching in it, so it works in a
+          test or a Storybook entry without a network at all, and the next
+          screen that needs the same layout can pass its own values.
+        </li>
+        <li>
+          <strong>The fetch bug gets fixed once.</strong> Note the{' '}
+          <code>ignore</code> flag in <code>useProduct</code> that the first
+          version lacks. Any component calling the hook inherits that fix;
+          anything that copied the original <code>useEffect</code> keeps the
+          race.
+        </li>
+      </ul>
+      <p>
+        The split to aim for is <strong>fetching, deciding, and
+        displaying</strong>. A component that does all three can only be
+        exercised all three at once, which is why that shape is slow to test and
+        awkward to reuse. Do not read this as a rule to split every component —
+        for a page this small, one component is defensible. It earns its keep
+        the moment a second screen needs the same product data or the same
+        layout.
+      </p>
 
       {/* ─── 6. Not Extracting Custom Hooks ─── */}
       <h2>6. Not Using Custom Hooks to Extract Logic</h2>

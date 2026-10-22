@@ -467,6 +467,50 @@ function ThemeToggle() {
 }`}
       </CodeBlock>
 
+      <p>
+        The two bad functions fail differently, and the second failure is the
+        one that costs an afternoon.
+      </p>
+      <p>
+        <code>addTodo</code> fails loudly and immediately.{' '}
+        <code>todos.push(...)</code> changes the array in place, so the value
+        handed to <code>setTodos</code> is the same array React is already
+        holding. React compares with <code>Object.is</code>, sees no change, and
+        skips the render. The todo <em>is</em> in state; the screen just never
+        updates. Classic symptom: it appears the next time something else
+        happens to re-render the component.
+      </p>
+      <p>
+        <code>toggleTodo</code> is worse because it mostly works.{' '}
+        <code>[...todos]</code> is a new array, so React does re-render — but
+        the copy is <strong>shallow</strong>: it holds the same todo objects,
+        and <code>todo.done = !todo.done</code> already edited one of them in
+        place. Anything still pointing at the old array — a{' '}
+        <code>useMemo</code> dependency, a memoized child, a previous value
+        captured for an undo stack — sees the new value through what should be
+        an old snapshot. The render is right, so nothing looks broken until
+        something compares against history.
+      </p>
+      <p>
+        The good version never edits anything that already exists.{' '}
+        <code>map</code> and <code>filter</code> return new arrays, and{' '}
+        <code>{'{ ...t, done: !t.done }'}</code> produces a new object for the
+        one todo that changed while leaving the others identical — which is
+        exactly what a memoized row component wants, since the untouched rows
+        keep their identity and skip re-rendering.
+      </p>
+
+      <InfoBox variant="tip" title="Why the updater function, not setTodos([...todos, x])">
+        Every update above takes <code>prev =&gt;</code> rather than reading{' '}
+        <code>todos</code> from the closure. Both work for a single call, but
+        the closure version reads the value from <em>the render it was created
+        in</em>. Two calls in the same tick — or a call from inside an async
+        callback that has been sitting around — both start from the same stale
+        array, and the second silently discards the first.{' '}
+        <strong>If the new state is computed from the old state, use the
+        updater form.</strong> It is handed the current value, whenever it runs.
+      </InfoBox>
+
       {/* ---- 6. Single Mega-State Object ---- */}
       <h2>6. Single Mega-State Object vs Granular States</h2>
 
