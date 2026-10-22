@@ -90,6 +90,51 @@ function Oop() {
 }`}
       </CodeBlock>
 
+      <CodeBlock language="text" title="Real output — javac Car.java Main.java && java Main, on java 26.0.1">
+{`Toyota Camry drove 150.5 miles.
+Toyota Camry drove 200.0 miles.
+2023 Toyota Camry (350.5 miles)
+2022 Honda Civic (15000.0 miles)`}
+      </CodeBlock>
+
+      <p>
+        Four lines, and each one shows a piece of the class doing its job:
+      </p>
+      <ul>
+        <li>
+          <strong>Two constructors, one source of truth.</strong>{' '}
+          <code>car1</code> used the three-argument constructor and started at{' '}
+          <code>0.0</code> miles; <code>car2</code> used the four-argument one.
+          The second does not repeat the assignments — <code>this(make, model,
+          year)</code> calls the first constructor and then adds the one field
+          it knows about. That is constructor chaining, and it is why adding a
+          field later means editing one constructor instead of every one.
+        </li>
+        <li>
+          <strong>The object remembers.</strong> Two calls to{' '}
+          <code>drive</code> left <code>mileage</code> at{' '}
+          <code>350.5</code>, because <code>this.mileage += miles</code> changed{' '}
+          <em>that car&apos;s</em> field. <code>car2</code> is untouched by
+          either call. Each <code>new Car(...)</code> produced its own
+          independent set of fields, which is the practical meaning of
+          &ldquo;an object has state&rdquo;.
+        </li>
+        <li>
+          <strong>The guard is part of the behaviour.</strong>{' '}
+          <code>drive</code> ignores a value that is not positive, so mileage
+          cannot run backwards. Because <code>mileage</code> is{' '}
+          <code>private</code>, that rule cannot be sidestepped from outside —
+          which is the point the next section builds on.
+        </li>
+        <li>
+          <strong>Why <code>15000.0</code> and not <code>15000</code>.</strong>{' '}
+          The field is a <code>double</code>, so the <code>int</code> literal
+          was widened on the way in and printed with its decimal point. A small
+          thing, but it is the kind of difference between what you typed and
+          what you see that is worth being able to explain.
+        </li>
+      </ul>
+
       <h2>Encapsulation</h2>
       <p>
         Encapsulation means bundling data (fields) and the methods that operate on that data

@@ -510,6 +510,64 @@ public class ReportService {
 ((ReportService) AopContext.currentProxy()).generateOne(req);`}
       </CodeBlock>
 
+      <p>
+        All three work by making the call <em>leave the object and come back
+        through the proxy</em>, because that is the only thing the proxy can
+        intercept. It is worth seeing why they are ranked the way they are, and
+        what the failure actually looks like in production.
+      </p>
+      <p>
+        The symptom is nasty precisely because nothing breaks. The code
+        compiles, the tests pass, and reports are generated. What is missing is
+        the isolation you asked for: with{' '}
+        <code>REQUIRES_NEW</code> ignored, one bad record on the four-hundredth
+        request rolls back all three hundred and ninety-nine that came before
+        it, because they were all in the one outer transaction.{' '}
+        <strong>The bug is invisible until the first failure, and then it is a
+        data-loss bug rather than an exception.</strong>
+      </p>
+      <ul>
+        <li>
+          <strong>Option 1 is the real fix</strong> because it removes the
+          condition rather than working around it. Once{' '}
+          <code>generateOne</code> lives on a different bean, the call is an
+          ordinary call between two objects and the proxy is in the middle of it
+          where it belongs. It also tends to be the honest design: batching and
+          generating one report are two responsibilities.
+        </li>
+        <li>
+          <strong>Option 2 works but asks for care.</strong> A bean holding a
+          reference to its own proxy needs <code>@Lazy</code>, since otherwise
+          Spring has to finish building the bean in order to inject it into
+          itself. Readers will trip on <code>self.generateOne(...)</code> and
+          deleting the apparently redundant <code>self.</code> silently
+          reintroduces the bug — worth a comment saying exactly that.
+        </li>
+        <li>
+          <strong>Option 3 is a last resort.</strong> It needs{' '}
+          <code>@EnableAspectJAutoProxy(exposeProxy = true)</code>, it throws at
+          runtime if that is missing, and it puts Spring&apos;s AOP internals
+          into your business logic. Reach for it when you cannot change the
+          structure.
+        </li>
+      </ul>
+
+      <InfoBox variant="tip" title="How to catch this one in review">
+        The rule is short: <strong>a call starting with <code>this.</code> — or
+        an unqualified call to another method on the same class — never triggers{' '}
+        <code>@Transactional</code>, <code>@Async</code>,{' '}
+        <code>@Cacheable</code>, <code>@Retryable</code> or{' '}
+        <code>@PreAuthorize</code>.</strong> Those annotations only do something
+        when the call arrives from outside the object.
+        <br />
+        <br />
+        So whenever an annotated method is called from the same class, the
+        annotation is decoration. The same reasoning explains two other
+        surprises: a <code>private</code> method cannot be proxied at all, and
+        neither can a <code>final</code> one when Spring is using CGLIB
+        subclassing, because neither can be overridden.
+      </InfoBox>
+
       <h2>Circular Dependencies</h2>
       <p>
         Bean A needs Bean B and Bean B needs Bean A. Spring Boot 2.6+ refuses this by default
