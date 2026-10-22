@@ -728,6 +728,33 @@ now wrong: Gatherers (see the Streams lesson) and the end of synchronized
 pinning (see the Concurrency lesson).`}
       </CodeBlock>
 
+      <p>
+        Reading that recap in order, most of what arrived since Java 8 points
+        the same way: <strong>letting you say what something is, so the
+        compiler can check what you do with it.</strong> Records say &ldquo;this
+        is data&rdquo; and generate the equality and accessors that follow.
+        Sealed types say &ldquo;these are all the cases&rdquo;, which is what
+        makes a pattern-matching <code>switch</code> able to insist you handled
+        them. Pattern matching replaces the test-then-cast dance with a single
+        construct the compiler understands.
+      </p>
+      <p>
+        That matters for how you read older code. An <code>instanceof</code>{' '}
+        followed by a cast, a class full of hand-written{' '}
+        <code>equals</code> and <code>hashCode</code>, a visitor built to
+        simulate exhaustive dispatch — these are not bad code. They are the
+        workarounds for features that did not exist yet, and recognising them
+        tells you both what the author meant and what it would collapse into
+        now.
+      </p>
+      <p>
+        Next: <strong><a href="/java/optional">Optional — Best &amp; Worst
+        Practices</a></strong>, which is the same theme applied to the single
+        most expensive gap in the old type system — a reference type that said
+        nothing about whether it could be null, and the ways{' '}
+        <code>Optional</code> does and does not fix that.
+      </p>
+
 
     </LessonLayout>
   );

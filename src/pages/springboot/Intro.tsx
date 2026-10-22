@@ -518,6 +518,31 @@ Read this as a decision log. Every bean Spring Boot created for you has a
 line here saying which condition let it in.`}
       </CodeBlock>
 
+      <p>
+        That report is the best answer to the complaint people have about
+        Spring Boot, which is that it feels like magic.{' '}
+        <strong>It is not magic, it is a long list of conditions</strong> — and
+        the list is printable. A bean exists because a class was on the
+        classpath, or a property was set, or nothing else had already defined
+        one. Once you have read a condition report, auto-configuration stops
+        being something that happens to you and becomes something you can
+        interrogate.
+      </p>
+      <p>
+        It is also the fastest route out of the two failures you will actually
+        hit. <em>Something I expected is missing</em> — find it under Negative
+        matches and the report names the condition that excluded it, usually a
+        starter you did not add. <em>Something I did not want is configured</em>{' '}
+        — find it under Positive matches and it names what let it in.
+      </p>
+      <p>
+        Next: <strong><a href="/springboot/setup">Project Setup &amp;
+        Structure</a></strong>, which turns this into the choices you make when
+        starting a project: which starters to add, what the layout actually
+        needs to be, and why where you put your main class quietly determines
+        what gets component-scanned.
+      </p>
+
     </LessonLayout>
   );
 }
