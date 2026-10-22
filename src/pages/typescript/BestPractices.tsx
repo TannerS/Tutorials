@@ -92,6 +92,32 @@ export default function BestPractices() {
 }`}
       </CodeBlock>
 
+      <p>
+        Both accept any value. The difference is where you find out it was the
+        wrong one. <code>parse(42)</code> compiles clean in the first version
+        and throws <code>input.trim is not a function</code> in production;{' '}
+        <code>any</code> did not describe the value, it switched the checker off
+        for it.
+      </p>
+      <p>
+        It also spreads. The result of <code>input.trim()</code> is{' '}
+        <code>any</code> too, so every value derived from it is unchecked, and
+        so is anything derived from those — one <code>any</code> at a boundary
+        quietly disables checking across a whole call path.{' '}
+        <code>unknown</code> is the opposite: it accepts anything and permits{' '}
+        <em>nothing</em> until you prove what it is. The <code>typeof</code>{' '}
+        guard is not ceremony, it is the step that turns an untrusted value into
+        a typed one, and after it the compiler knows the type for the rest of
+        the function.
+      </p>
+      <p>
+        Reach for <code>unknown</code> at every edge where data arrives from
+        outside the type system — <code>JSON.parse</code>, a{' '}
+        <code>fetch</code> response, a <code>catch</code> variable, a message
+        from another window. Reach for <code>any</code> when you are mid-migration
+        and have decided, deliberately, to defer the problem.
+      </p>
+
       {/* 2b. @ts-ignore vs @ts-expect-error */}
       <h3>b) @ts-ignore vs @ts-expect-error</h3>
       <CodeBlock language="typescript" title="❌ BAD — @ts-ignore silently suppresses forever">
@@ -119,17 +145,57 @@ const value = unstableApi();`}
 }`}
       </CodeBlock>
       <CodeBlock language="typescript" title="✅ GOOD — Union types are zero-cost and exhaustive">
-{`type Status = 'active' | 'inactive' | 'pending';
+{`// Option 1 — the union on its own. Usually all you need.
+type Status = 'active' | 'inactive' | 'pending';
 
-// Or use as const for an object with autocomplete:
+// Option 2 — when you also want named members to reference, like an enum.
+// Pick one of these; declaring both 'Status' types in one scope is a
+// duplicate-identifier error (TS2300).
 const STATUS = {
   Active: 'active',
   Inactive: 'inactive',
   Pending: 'pending',
 } as const;
 
-type Status = typeof STATUS[keyof typeof STATUS];`}
+type StatusValue = typeof STATUS[keyof typeof STATUS];
+// -> 'active' | 'inactive' | 'pending'  (same union, derived)`}
       </CodeBlock>
+
+      <p>
+        The union is a <em>type</em>, so it is erased at compile time and emits
+        no JavaScript at all. The <code>enum</code> is a value as well as a
+        type, so it compiles to a real object in your bundle — which is the
+        source of the practical problems:
+      </p>
+      <ul>
+        <li>
+          <strong>It does not erase</strong>, so it is rejected by TypeScript&apos;s{' '}
+          <code>erasableSyntaxOnly</code> and by runtimes that strip types
+          rather than compile them, Node&apos;s built-in TypeScript support
+          among them. That alone rules enums out of a growing number of setups.
+        </li>
+        <li>
+          <strong>String enum members are nominal.</strong>{' '}
+          <code>Status.Active</code> is not the same type as{' '}
+          <code>&apos;active&apos;</code>, so a plain string will not satisfy a{' '}
+          <code>Status</code> parameter even when the characters match. Data
+          coming back from an API therefore has to be cast or re-validated,
+          which is exactly where the type was supposed to help.
+        </li>
+        <li>
+          <strong>It is a value you can accidentally depend on</strong> — iterate
+          it, reverse-map it, pass it around — and that is a runtime coupling a
+          union cannot create.
+        </li>
+      </ul>
+      <p>
+        Both forms give exhaustiveness checking: a <code>switch</code> over a{' '}
+        <code>Status</code> with a <code>never</code> in the default arm still
+        fails to compile when a fourth state is added. The{' '}
+        <code>as const</code> variant above exists for when you want the
+        autocomplete and the grouping an enum gave you, without the runtime
+        object.
+      </p>
 
       {/* 2d. Function type */}
       <h3>d) Function vs Specific Signature</h3>
@@ -143,6 +209,24 @@ type Status = typeof STATUS[keyof typeof STATUS];`}
   callback(new MouseEvent('click'));
 }`}
       </CodeBlock>
+
+      <p>
+        <code>Function</code> is the <code>any</code> of callable types. It says
+        &ldquo;something you can call&rdquo; and nothing else: its parameters
+        are unchecked and its return type is <code>any</code>, so the first
+        version compiles whether the caller passes{' '}
+        <code>() =&gt; void</code>, <code>(a: string) =&gt; number</code>, or a
+        class constructor. The mistake surfaces at runtime as an undefined
+        argument.
+      </p>
+      <p>
+        The explicit signature is checked in both directions, which is the part
+        worth noticing. At the <em>call site</em>, passing a handler that takes
+        a <code>KeyboardEvent</code> is an error. <em>Inside</em> the function,
+        calling <code>callback()</code> with no argument is also an error — the
+        first version happily allowed it. You get argument types and arity on
+        both sides for the same number of keystrokes.
+      </p>
 
       {/* 2e. {} and Object */}
       <h3>e) {} and Object Types</h3>
@@ -213,6 +297,31 @@ function handle(data: UserPayload) { /* ... */ }`}
   return 0;
 }`}
       </CodeBlock>
+
+      <p>
+        <code>as</code> is not a conversion and it checks nothing. It is you
+        telling the compiler to stop disagreeing with you, and it emits no
+        JavaScript whatsoever — at runtime the first version is just{' '}
+        <code>value.length</code>. Hand it a number and you get{' '}
+        <code>undefined</code>; hand it <code>null</code> and it throws. The
+        annotation said <code>: number</code> and the function returned
+        something else, with the compiler&apos;s blessing.
+      </p>
+      <p>
+        <code>typeof</code> is a real check that exists in the emitted code, and
+        TypeScript follows it — inside the branch, <code>value</code> genuinely{' '}
+        <em>is</em> a string, so <code>.length</code> is safe for the same
+        reason the compiler believes it is. The type and the runtime agree
+        because one caused the other.
+      </p>
+      <p>
+        The honest use for <code>as</code> is narrow: you know something the
+        compiler cannot, such as the element type coming back from{' '}
+        <code>querySelector</code>. Treat each one as an assertion you are
+        making on your own authority — and where the value came from outside
+        your program, prefer a check or a schema validator, because that is
+        precisely the case where your authority is weakest.
+      </p>
 
       {/* 2g. Non-null assertion */}
       <h3>g) Non-null Assertion vs Proper Handling</h3>
@@ -420,6 +529,58 @@ function render(state: RequestState) {
   }
 }`}
       </CodeBlock>
+
+      <p>
+        Four booleans and two nullable fields describe{' '}
+        <strong>sixteen combinations</strong>, and only four of them mean
+        anything. The other twelve are states your code can reach and nobody
+        designed: loading and error at once, success with{' '}
+        <code>data: null</code>, an error with no error object. Every one of
+        them has to be defended against by hand, usually as a chain of{' '}
+        <code>if (isLoading) ... else if (isError) ...</code> whose order
+        silently decides which wins.
+      </p>
+      <p>
+        The union describes four states and nothing else, so the twelve broken
+        ones are not guarded against — they cannot be constructed. That is the
+        difference between validating a shape and choosing one that cannot be
+        wrong.
+      </p>
+      <p>
+        Two concrete wins fall out of it. The data is{' '}
+        <strong>attached to the state that owns it</strong>: inside{' '}
+        <code>case &apos;success&apos;</code> the compiler knows{' '}
+        <code>state.data</code> is a <code>User</code>, not{' '}
+        <code>User | null</code>, so there is no null check and no{' '}
+        <code>!</code>. And the <code>switch</code> can be made{' '}
+        <strong>exhaustive</strong>, so that adding a{' '}
+        <code>&apos;cancelled&apos;</code> state turns every switch that does
+        not handle it into a compile error — which is how you find the six
+        places needing an update instead of meeting them in QA.
+      </p>
+
+      <InfoBox variant="warning" title="Exhaustiveness is not automatic — you have to ask for it">
+        <p>
+          As written above, <code>render</code> has no declared return type. Add
+          a fifth state and TypeScript does not complain; the inferred return
+          type simply widens to include <code>undefined</code>, and the
+          component renders nothing for the case nobody handled.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Either annotate the return type (<code>): JSX.Element {'{'}</code>,
+          which makes the missing branch an error because the function can now
+          return <code>undefined</code>), or add the <code>never</code> arm that
+          states the intent directly:
+        </p>
+        <CodeBlock language="typescript" title="The default arm that makes it fail loudly">
+{`default: {
+  // Reachable only if a variant was added without updating this switch.
+  // 'state' is 'never' here, so a new variant makes this line an error.
+  const unhandled: never = state;
+  throw new Error(\`Unhandled state: \${JSON.stringify(unhandled)}\`);
+}`}
+        </CodeBlock>
+      </InfoBox>
 
       {/* ── Section 4: as const ──────────────────────────────────── */}
       <h2>4. DO: Use as const</h2>
