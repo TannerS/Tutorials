@@ -161,7 +161,7 @@ public class ApiExceptionHandler {
         />
         <GuideRules items={[
           'Self-invocation (this.method()) bypasses the proxy — the annotation is silently ignored. Same rule for @Async, @Cacheable, @Retryable, @Timed and custom @Aspects.',
-          'Non-public / final methods are ignored for the same reason — a subclass proxy cannot override them.',
+          'private and final methods (and final classes) are ignored for the same reason — a subclass proxy cannot override them. protected and package-private ARE advised under CGLIB since Framework 6.0; "public only" is a Spring 5 fact that outlived its accuracy.',
           'Checked exceptions do NOT roll back by default — only RuntimeException and Error do.',
           'Never do HTTP or Kafka calls inside a request-path transaction — it holds a DB connection for the length of the remote call.',
           'Inner REQUIRED method threw and you caught it? The shared tx is already marked rollback-only -> UnexpectedRollbackException at commit.',
