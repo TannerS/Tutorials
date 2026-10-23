@@ -240,6 +240,11 @@ logRoles(container);             // every role present — LOGS, returns undefin
             ['req.url.searchParams', 'new URL(request.url).searchParams'],
           ]}
         />
+        <GuideRules items={[
+          'MSW 3 is what npm "latest" resolves to now, and it does NOT rename any of this again — http, HttpResponse and setupServer from msw/node are all still exported, so every handler on this page is unchanged on 3.x.',
+          'What 3.x does change is packaging, not API: the Node floor moves from >=18 to >=22.12, and it adds peer dependencies on vite >=6 and graphql >=16 (2.15 only peer-depended on typescript). It also adds ./ws and ./sse entry points for WebSocket and server-sent events.',
+          'So treat "we are on MSW 2" as an install constraint to check rather than a reason to rewrite handlers.',
+        ]} />
       </GuidePanel>
 
       <GuidePanel n={13} title="MSW Handlers & Lifecycle" accent="cyan" glyph="🌐" span={2}>
