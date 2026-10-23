@@ -107,15 +107,31 @@ for (const file of walk(PAGES)) {
 
     if (next.type === 'code' && !OUTPUT.test(next.title) && !OUTPUT.test(m.title) && between.length < MIN_PROSE) {
       const contrast = BAD.test(m.title) && GOOD.test(next.title);
+      // Two titles that each name a FILE are consecutive steps in a scaffold,
+      // not a comparison -- "src/vite-env.d.ts" then "src/main.tsx" is the
+      // repo showing you a project one file at a time. Same for an install
+      // command followed by the config file it writes.
+      const named = (t) => /\.(tsx?|jsx?|json|ya?ml|xml|java|mjs|cjs|css|html|properties|gradle|toml|lock|env|sh)\b|^\s*(package|tsconfig|vite\.config)/i.test(t);
+      const sequential = !contrast && named(m.title) && named(next.title);
       const parallel = !contrast && (sharedStem(m.title, next.title) || (LANG.test(m.title) && LANG.test(next.title)));
-      if (parallel) continue;
+      if (parallel || sequential) continue;
       // Worst case: nothing between the two blocks AND nothing after the
       // second one either, so the comparison is never explained anywhere.
       const after = marks[i + 2];
       const tail = after ? prose(src.slice(next.end, after.start)) : '';
       const unresolved = !after || (after.type === 'head' && tail.length < MIN_PROSE);
+      // PAIR-UNRESOLVED is the CRITICAL bucket, so it has to mean what the
+      // header at the top of this file says: two blocks "titled like bad ->
+      // good". It used to mean only "no prose after the second block", with
+      // `contrast` affecting nothing but the score -- which made every pair of
+      // adjacent examples critical. Triaging typescript's 17 criticals by hand
+      // found 0 real ones: they were sequential steps ("Install Dependencies"
+      // -> "tsconfig.json") and parallel alternatives ("Higher-Order
+      // Component" -> "Render prop pattern"), both of which are correct
+      // structure. Without the contrast requirement this check cried wolf
+      // 1,570 times and so got ignored, which is worse than not having it.
       findings.push({
-        section, rel, line: lineOf(m.end), kind: unresolved ? 'PAIR-UNRESOLVED' : 'PAIR',
+        section, rel, line: lineOf(m.end), kind: unresolved && contrast ? 'PAIR-UNRESOLVED' : 'PAIR',
         score: (contrast ? 2 : 0) + (between.length < 20 ? 1 : 0) + (unresolved ? 2 : 0),
         detail: `"${m.title.slice(0, 44)}" -> "${next.title.slice(0, 44)}"`,
         gap: between.length,
