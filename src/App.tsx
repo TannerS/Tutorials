@@ -10,6 +10,8 @@ const JavaCollections = lazy(() => import('./pages/java/Collections'))
 const JavaGenerics = lazy(() => import('./pages/java/Generics'))
 const JavaExceptions = lazy(() => import('./pages/java/Exceptions'))
 const JavaStreams = lazy(() => import('./pages/java/Streams'))
+const JavaThreads = lazy(() => import('./pages/java/Threads'))
+const JavaExecutors = lazy(() => import('./pages/java/Executors'))
 const JavaConcurrency = lazy(() => import('./pages/java/Concurrency'))
 const JavaIo = lazy(() => import('./pages/java/Io'))
 const JavaAdvanced = lazy(() => import('./pages/java/Advanced'))
@@ -559,6 +561,8 @@ function App() {
         <Route path="java/generics" element={<JavaGenerics />} />
         <Route path="java/exceptions" element={<JavaExceptions />} />
         <Route path="java/streams" element={<JavaStreams />} />
+        <Route path="java/threads" element={<JavaThreads />} />
+        <Route path="java/executors" element={<JavaExecutors />} />
         <Route path="java/concurrency" element={<JavaConcurrency />} />
         <Route path="java/io" element={<JavaIo />} />
         <Route path="java/advanced" element={<JavaAdvanced />} />

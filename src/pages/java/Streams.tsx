@@ -10,7 +10,7 @@ function Streams() {
       sectionId="java"
       lessonIndex={6}
       prev={{ path: '/java/exceptions', label: 'Exception Handling' }}
-      next={{ path: '/java/concurrency', label: 'Concurrency & Threads' }}
+      next={{ path: '/java/optional', label: 'Optional — Best & Worst Practices' }}
     >
       <h2>Lambda Expressions</h2>
       <p>
@@ -722,9 +722,9 @@ static Gatherer<Integer, ?, Integer> takeUntilSumExceeds(int limit) {
         <p>
           What follows is the API tour you need to read stream results. The rules for{' '}
           <em>designing</em> with Optional — where it belongs in a signature, the six anti-patterns
-          that show up in real codebases, and how it interacts with records and JPA — are covered
-          in depth in the <strong>Optional — Best and Worst Practices</strong> lesson at the end
-          of this section.
+          that show up in real codebases, and how it interacts with records and JPA — are the
+          whole subject of the <strong>next</strong> lesson, which exists because this one hands
+          you Optionals before you have been told what to do with them.
         </p>
       </InfoBox>
 

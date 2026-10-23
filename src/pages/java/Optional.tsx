@@ -7,9 +7,9 @@ export default function OptionalDeepDive() {
     <LessonLayout
       title="Optional — Best and Worst Practices"
       sectionId="java"
-      lessonIndex={10}
-      prev={{ path: '/java/advanced', label: 'Advanced Java Features' }}
-      next={{ path: '/java/jvm-internals', label: 'JVM Internals & Garbage Collection' }}
+      lessonIndex={7}
+      prev={{ path: '/java/streams', label: 'Streams & Lambdas' }}
+      next={{ path: '/java/threads', label: 'Threads & Shared State' }}
     >
       <h2>What Optional Is For</h2>
       <p>
@@ -324,6 +324,23 @@ Optional<String> opt = Optional.ofNullable(maybeEmpty);
               <code>isPresent() + get()</code>.</li>
         </ul>
       </InfoBox>
+
+      <h2>Where This Leads</h2>
+      <p>
+        Optional closes out the single-threaded half of this section. Every lesson so far —
+        syntax, objects, collections, streams, this one — has assumed one thread running your
+        code, so the only thing that could change a value was a line you wrote. The next three
+        lessons drop that assumption.
+      </p>
+      <p>
+        <strong><a href="/java/threads">Threads &amp; Shared State</a></strong> starts with what
+        a thread is and the one bug that makes concurrency unlike anything else you debug: code
+        that produces a different wrong answer every run and never throws. Then{' '}
+        <strong><a href="/java/executors">Executors &amp; Thread Pools</a></strong> is the API
+        you will actually use for it, and{' '}
+        <strong><a href="/java/concurrency">Modern Concurrency</a></strong> covers what Java 21
+        and later changed.
+      </p>
 
     </LessonLayout>
   );

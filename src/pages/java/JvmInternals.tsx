@@ -8,8 +8,8 @@ export default function JvmInternals() {
     <LessonLayout
       title="JVM Internals & Garbage Collection"
       sectionId="java"
-      lessonIndex={11}
-      prev={{ path: '/java/optional', label: 'Optional — Best & Worst Practices' }}
+      lessonIndex={13}
+      prev={{ path: '/java/advanced', label: 'Advanced Java Features' }}
       next={{ path: '/java/reflection', label: 'Reflection & Annotations' }}
     >
       <p>

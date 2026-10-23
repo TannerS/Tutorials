@@ -8,9 +8,9 @@ function Advanced() {
     <LessonLayout
       title="Advanced Java Features"
       sectionId="java"
-      lessonIndex={9}
+      lessonIndex={12}
       prev={{ path: '/java/io', label: 'I/O & File Handling' }}
-      next={{ path: '/java/optional', label: 'Optional — Best & Worst Practices' }}
+      next={{ path: '/java/jvm-internals', label: 'JVM Internals & Garbage Collection' }}
     >
       <h2>Modern Java Features</h2>
       <p>
@@ -748,11 +748,13 @@ pinning (see the Concurrency lesson).`}
         now.
       </p>
       <p>
-        Next: <strong><a href="/java/optional">Optional — Best &amp; Worst
-        Practices</a></strong>, which is the same theme applied to the single
-        most expensive gap in the old type system — a reference type that said
-        nothing about whether it could be null, and the ways{' '}
-        <code>Optional</code> does and does not fix that.
+        That is the end of the language itself. Everything from here down is the
+        machinery underneath it and the tooling around it:{' '}
+        <strong><a href="/java/jvm-internals">JVM Internals &amp; Garbage
+        Collection</a></strong> next, which explains where the records and
+        objects you have been creating actually live and what reclaims them —
+        including why an immutable <code>record</code> is cheap to allocate and
+        cheap to collect, rather than merely tidy to read.
       </p>
 
 

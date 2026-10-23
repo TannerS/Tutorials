@@ -8,8 +8,8 @@ function Io() {
     <LessonLayout
       title="I/O & File Handling"
       sectionId="java"
-      lessonIndex={8}
-      prev={{ path: '/java/concurrency', label: 'Concurrency & Threads' }}
+      lessonIndex={11}
+      prev={{ path: '/java/concurrency', label: 'Modern Concurrency — Virtual Threads & the Memory Model' }}
       next={{ path: '/java/advanced', label: 'Advanced Java Features' }}
     >
       <h2>Java I/O Overview</h2>

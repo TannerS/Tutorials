@@ -6,12 +6,28 @@ import LessonLayout from '../../components/LessonLayout';
 export default function Concurrency() {
   return (
     <LessonLayout
-      title="Concurrency & Threads"
+      title="Modern Concurrency — Virtual Threads & the Memory Model"
       sectionId="java"
-      lessonIndex={7}
-      prev={{ path: '/java/streams', label: 'Streams & Lambdas' }}
+      lessonIndex={10}
+      prev={{ path: '/java/executors', label: 'Executors & Thread Pools' }}
       next={{ path: '/java/io', label: 'I/O & File Handling' }}
     >
+      <h2>What the Last Two Lessons Assumed</h2>
+      <p>
+        Everything in <a href="/java/threads">Threads &amp; Shared State</a> and{' '}
+        <a href="/java/executors">Executors &amp; Thread Pools</a> rested on one premise: a
+        thread is expensive. That is why threads have to be pooled, why pooling forces you to
+        choose a size, a queue bound and a rejection policy, and why{' '}
+        <code>cores &times; (1 + wait/compute)</code> was a calculation worth doing.
+      </p>
+      <p>
+        This lesson is what happens when that premise stops holding. It also finishes the
+        correctness story: the previous lesson showed shared state <em>losing</em> updates,
+        and the Java Memory Model section below explains the second, nastier failure — a
+        thread that never sees another thread's write at all. Those rules are unchanged by
+        everything new here, which is the reason this lesson comes third rather than first.
+      </p>
+
       <h2>The Landscape in 2026</h2>
       <p>
         Concurrency in Java looked broadly the same from 2004 (Java 5's
@@ -318,6 +334,12 @@ all.get();  // rethrows any single failure`}
       </CodeBlock>
 
       <h2>ExecutorService — When You Still Reach For It</h2>
+      <p>
+        The previous lesson covered this API in full — pool parameters, queue bounds, rejection
+        policies, the shutdown ladder. None of it is obsolete; it has just stopped being the
+        default. Virtual threads remove the reason to pool for <em>I/O</em> concurrency, which
+        leaves three cases where a real pool is still the right answer:
+      </p>
       <ul>
         <li>You need a <strong>bounded queue</strong> and rejection behavior
             (<code>ThreadPoolExecutor</code>).</li>
@@ -435,6 +457,16 @@ CyclicBarrier barrier = new CyclicBarrier(workerCount, () -> mergeResults());
       </CodeBlock>
 
       <h2>The Java Memory Model — Why Bugs Are Invisible</h2>
+      <p>
+        This section applies to every version of Java and to platform and virtual threads
+        alike. It is the other half of the bug you met in{' '}
+        <a href="/java/threads">Threads &amp; Shared State</a>. There, two threads both read{' '}
+        <code>count</code> before either wrote it back, and increments were lost — bad
+        interleaving of operations that each worked. Here the operations themselves are fine
+        and the <em>data</em> never arrives: one thread writes a field and another keeps
+        reading the old value indefinitely. Making an operation atomic does not help, because
+        atomicity is not the thing that is missing.
+      </p>
       <p>
         The hardest concurrency bugs are not deadlocks; they are threads reading{' '}
         <em>stale</em> values and the program appearing to run fine for months. This happens
@@ -696,6 +728,18 @@ Non-blocking composition ............................. CompletableFuture`}
               <code>-Djdk.tracePinnedThreads=full</code>).</li>
         </ul>
       </InfoBox>
+
+      <h2>Where This Leads</h2>
+      <p>
+        That closes the three-lesson concurrency arc: what a thread is, how to run tasks on
+        pools of them, and what the platform now gives you instead. The next lesson,{' '}
+        <strong><a href="/java/io">I/O &amp; File Handling</a></strong>, is the workload all of
+        this was built for — reading files and calling services is blocking work, and it is
+        exactly the blocking work virtual threads made cheap to do one-task-per-thread. Watch
+        for <code>try</code>-with-resources there: it is the same deterministic-close
+        discipline as <code>StructuredTaskScope</code> and an executor&apos;s{' '}
+        <code>close()</code>, applied to handles instead of tasks.
+      </p>
 
     </LessonLayout>
   );

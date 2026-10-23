@@ -7,7 +7,7 @@ export default function Reflection() {
     <LessonLayout
       title="Reflection & Annotations"
       sectionId="java"
-      lessonIndex={12}
+      lessonIndex={14}
       prev={{ path: '/java/jvm-internals', label: 'JVM Internals & Garbage Collection' }}
       next={{ path: '/java/build-tools', label: 'Build Tools: Maven & Gradle' }}
     >

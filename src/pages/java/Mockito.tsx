@@ -8,7 +8,7 @@ function JavaMockito() {
     <LessonLayout
       title="Mockito in Practice"
       sectionId="java"
-      lessonIndex={15}
+      lessonIndex={17}
       prev={{ path: '/java/testing-basics', label: 'Unit Testing Fundamentals — Dummies, Stubs, Spies, Mocks' }}
       next={{ path: '/java/cheatsheet', label: 'Java Field Guide' }}
     >

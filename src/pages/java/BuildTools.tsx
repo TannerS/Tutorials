@@ -8,7 +8,7 @@ export default function BuildTools() {
     <LessonLayout
       title="Build Tools: Maven & Gradle"
       sectionId="java"
-      lessonIndex={13}
+      lessonIndex={15}
       prev={{ path: '/java/reflection', label: 'Reflection & Annotations' }}
       next={{ path: '/java/testing-basics', label: 'Unit Testing Fundamentals — Dummies, Stubs, Spies, Mocks' }}
     >
