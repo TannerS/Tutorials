@@ -662,25 +662,43 @@ CompletableFuture.supplyAsync(() -> http.get(url), httpExecutor);`}
 @Async methods           A Spring TaskExecutor, configured under
                          spring.task.execution.pool.*  -- core-size, max-size,
                          queue-capacity: the same three parameters as above.
-                         The default queue capacity is Integer.MAX_VALUE, so the
-                         unbounded-queue warning applies to it directly.
 
 @Scheduled methods       A ScheduledExecutorService under
                          spring.task.scheduling.pool.size -- which defaults to 1.
                          One slow job therefore delays every other scheduled job
-                         in the application.
-
-@Transactional + @Async  A transaction is bound to a thread, so it does NOT
-                         follow the task onto the pool. Covered in the Spring
-                         transactions lesson.`}
+                         in the application.`}
       </CodeBlock>
 
       <p>
-        The point of reading this lesson before touching those properties is that{' '}
-        <code>spring.task.execution.pool.max-size</code> is the same{' '}
-        <code>maximumPoolSize</code> that does nothing until the queue fills. Raising it while
-        leaving <code>queue-capacity</code> at its default changes nothing at all, and that is
-        a real afternoon lost if you do not know the growth order.
+        The point of reading this lesson before touching those properties is the growth order.
+        Here are Spring Boot 4.0.6&apos;s actual <code>@Async</code> pool defaults, read out of
+        the bytecode of <code>TaskExecutionProperties$Pool</code> rather than from the
+        reference docs:
+      </p>
+
+      <CodeBlock language="text" title="Verified in spring-boot-autoconfigure 4.0.6">
+{`coreSize        8
+maxSize         2147483647   (Integer.MAX_VALUE)
+queueCapacity   2147483647   (Integer.MAX_VALUE)
+keepAlive       60s`}
+      </CodeBlock>
+
+      <p>
+        Read that against the growth rule and the consequence is immediate: the maximum is
+        already effectively unlimited, but <strong>the queue never fills, so the pool never
+        grows past 8 threads</strong>. Raising <code>max-size</code> to chase a throughput
+        problem therefore does nothing whatsoever — the only property that changes behaviour is{' '}
+        <code>queue-capacity</code>, and setting it to a real number is also what stops an{' '}
+        <code>@Async</code> backlog from consuming the heap. That is an afternoon saved for
+        anyone who knows the order and lost by anyone who does not.
+      </p>
+      <p>
+        One more thing worth flagging because it bites Spring developers specifically: a
+        transaction is bound to a thread. Moving work onto a pool moves it off the thread that
+        owns the transaction, so <code>@Transactional</code> does not follow an{' '}
+        <code>@Async</code> call. The{' '}
+        <a href="/springboot/transactions">Spring transactions lesson</a> covers what happens
+        instead.
       </p>
 
       <h2>Checklist</h2>
