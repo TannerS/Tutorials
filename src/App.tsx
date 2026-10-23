@@ -43,6 +43,7 @@ const SpringBoot4 = lazy(() => import('./pages/springboot/Boot4'))
 const SpringObservability = lazy(() => import('./pages/springboot/Observability'))
 const SpringWebflux = lazy(() => import('./pages/springboot/Webflux'))
 const SpringResilience = lazy(() => import('./pages/springboot/Resilience'))
+const SpringModularMonolith = lazy(() => import('./pages/springboot/ModularMonolith'))
 const SpringCheatsheet = lazy(() => import('./pages/springboot/Cheatsheet'))
 const SB2Intro = lazy(() => import('./pages/springboot2/Intro'))
 const SB2Javax = lazy(() => import('./pages/springboot2/Javax'))
@@ -594,6 +595,7 @@ function App() {
         <Route path="springboot/observability" element={<SpringObservability />} />
         <Route path="springboot/webflux" element={<SpringWebflux />} />
         <Route path="springboot/resilience" element={<SpringResilience />} />
+        <Route path="springboot/modular-monolith" element={<SpringModularMonolith />} />
         <Route path="springboot/cheatsheet" element={<SpringCheatsheet />} />
         <Route path="springboot2/intro" element={<SB2Intro />} />
         <Route path="springboot2/javax" element={<SB2Javax />} />

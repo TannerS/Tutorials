@@ -528,8 +528,9 @@ getResources() finds
         each other, two jars defining the same class — plus a set that are specific to the
         Spring container: two services naming a bean the same thing, two controllers mapping
         the same route, and configuration from eight sources landing in one environment. Those
-        are worked through, with the wrapper&apos;s code, in the{' '}
-        <strong>Many Services, One App</strong> lesson in the Spring Boot section.
+        are worked through, with the wrapper&apos;s code and the real error messages, in{' '}
+        <a href="/springboot/modular-monolith">Many Services, One App</a> in the Spring Boot
+        section.
       </p>
 
       <h2>The Error Table</h2>
