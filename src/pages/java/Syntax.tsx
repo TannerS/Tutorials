@@ -362,7 +362,7 @@ a.equals(c);                  // true  — ALWAYS use equals for strings
 // Everyday methods
 "  padded  ".trim();          // "padded"   — removes ASCII whitespace only
 "  padded  ".strip();         // "padded"   — Unicode-aware (Java 11+), prefer this
-"abc".isEmpty();              // length == 0
+"abc".isEmpty();              // false      — true only when length == 0
 "   ".isBlank();              // true (Java 11+) — empty or whitespace only
 "a,b,c".split(",");           // ["a","b","c"]
 String.join("-", "a", "b");   // "a-b"
@@ -410,8 +410,13 @@ String e = "ja" + "va";          // a == e  -> true   BOTH operands are compile-
                                  //                   constants, so javac folds this
                                  //                   into the literal "java"
 String part = "ja";
-String f = part + "va";          // a == f  -> false  computed at RUNTIME, so it is
-                                 //                   a brand-new heap object
+String f = part + "va";          // a == f  -> false  'part' is not final, so this is
+                                 //                   computed at RUNTIME: a new object
+
+static final String P = "ja";    // a FINAL variable holding a constant expression
+String g = P + "va";             // a == g  -> true   IS itself a constant, so javac
+                                 //                   folds this one back to "java"
+
 a.equals(f);                     //         -> true   the only question you meant to ask`}
       </CodeBlock>
 
