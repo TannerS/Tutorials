@@ -243,6 +243,38 @@ public void placeOrder(NewOrderRequest req) throws OrderException { /* ... */ }
 public void tryUpdate() { /* ... */ }`}
       </CodeBlock>
 
+      <InfoBox variant="note" title="Both rules, measured on a real Spring Boot 4.1.1 app">
+        <p>
+          These two rules — a checked exception commits, and self-invocation skips the
+          proxy entirely — are repeated everywhere, usually without evidence. Here they
+          are on a running app (Boot <strong>4.1.1</strong>, Hibernate{' '}
+          <strong>7.4.5</strong>, H2), counting rows before and after each call:
+        </p>
+        <CodeBlock language="text" title="Real output — row counts around each call">
+{`control: @Transactional commits      rows 0 -> 1   PERSISTED
+self-invocation + RuntimeException   rows 1 -> 2   PERSISTED (no rollback)
+direct call + RuntimeException       rows 2 -> 2   rolled back
+direct call + CHECKED Exception      rows 2 -> 3   PERSISTED (no rollback)
+
+proxy class of the service: lab.Svc$$SpringCGLIB$$0`}
+        </CodeBlock>
+        <p>
+          Read it as two controlled comparisons rather than four facts. Lines 2 and 3 throw{' '}
+          <em>the same</em> <code>RuntimeException</code> from <em>the same</em>{' '}
+          <code>@Transactional</code> method — the only difference is that line 2 reached it
+          via <code>this.method()</code> from an un-annotated method on the same bean. One
+          rolled back, one did not, so the call path alone decides whether the annotation
+          does anything. Lines 3 and 4 then both go through the proxy and differ only in
+          the exception type, which isolates the rollback rule.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          The last line is why: the bean is a CGLIB <em>subclass</em>, and an internal{' '}
+          <code>this</code> call never leaves the object to pass through it. Line 1 is the
+          control proving the transaction machinery was live throughout — without it, four
+          &ldquo;persisted&rdquo; results would prove nothing at all.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="tip" title="Domain exceptions extending RuntimeException are correct">
         <p>
           If your <code>DomainException</code> hierarchy extends
