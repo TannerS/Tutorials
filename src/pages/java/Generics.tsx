@@ -286,8 +286,8 @@ String s = a.get(0);   // ClassCastException: class java.lang.Integer cannot be
 
       <InfoBox variant="note" title="Why Java did it this way">
         <p>
-          Erasure exists for <strong>migration compatibility</strong>. Generics arrived in Java 5,
-          fifteen years into the language&apos;s life, and every existing{' '}
+          Erasure exists for <strong>migration compatibility</strong>. Generics arrived in Java 5
+          in September 2004, nearly nine years after JDK 1.0, and every existing{' '}
           <code>List</code> in every compiled library had to keep working. Erasing to the same
           bytecode a Java 1.4 compiler produced meant generic and non-generic code could
           interoperate freely, and old <code>.class</code> files kept running untouched.
