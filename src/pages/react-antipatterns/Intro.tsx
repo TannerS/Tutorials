@@ -112,10 +112,13 @@ function UserProfile({ userId }) {
         </li>
       </ul>
       <p>
-        There is also a structural cost. The fetching is welded to this
-        component, so the next component that needs a user copies all of it —
-        including all three bugs — and two of them mounted together fire two
-        identical requests.
+        Those three are <strong>bugs</strong> — the code does not do what it
+        looks like it does. Hold them apart from a second, quite different
+        complaint: the fetching is welded to this component, so the next
+        component that needs a user copies all of it, including all three bugs,
+        and two of them mounted together fire two identical requests. That one
+        is not a bug at all, and writing the effect more carefully will not
+        touch it. The distinction matters in a moment.
       </p>
 
       <p>
@@ -158,15 +161,64 @@ function UserProfile({ userId }) {
 
       <p>
         That is now correct. Six added lines, no new dependency, and it is the
-        version to reach for when one or two components fetch something. What it
-        still does not do is <em>share</em> anything: move it into a{' '}
-        <code>useUser(userId)</code> custom hook and the logic becomes reusable,
-        but two components calling that hook still fire two requests, because
-        nothing holds a result that both can see.
+        version to reach for when one or two components fetch something.
       </p>
 
       <p>
-        That gap — a cache that outlives any one component — is what a
+        <strong>So is calling an API from an effect the anti-pattern?</strong>{' '}
+        No — and it is worth being exact about that, because &ldquo;never fetch
+        in <code>useEffect</code>&rdquo; circulates as if it were a rule. An
+        effect exists to synchronise a component with an external system, and a
+        network request is the textbook case of one. React&apos;s own
+        documentation treats fetching in an effect as a fallback rather than a
+        mistake: use a framework&apos;s data layer or a client-side cache if one
+        suits you, and if neither does, you can carry on fetching in effects.
+      </p>
+      <p>
+        The reason the comparison above reads like a trick — the fix is the same
+        logic plus six lines — is that only the <em>bugs</em> were ever about
+        the logic. The objections that survive Fix 1 are about the{' '}
+        <strong>shape</strong>: when the request starts and who owns the result.
+        Fix 1 is fully correct and still pays all four of these.
+      </p>
+      <ul>
+        <li>
+          <strong>The request cannot start until the component renders.</strong>{' '}
+          Effects run after the browser has downloaded and parsed your
+          JavaScript, built the tree and painted. A route loader or a server
+          component can have the request in flight well before that point.
+        </li>
+        <li>
+          <strong>Nesting turns into a waterfall.</strong> The parent renders,
+          fetches, and only once its data arrives do the children mount and
+          start <em>their</em> requests. Three levels of fetch-in-effect is
+          three round trips in series that could have gone out in parallel.
+          This is the entry that catches people, because every component
+          involved looks perfectly reasonable on its own.
+        </li>
+        <li>
+          <strong>Nothing outlives the component.</strong> Unmount and remount
+          and it fetches again. Move the effect into a{' '}
+          <code>useUser(userId)</code> custom hook and the logic becomes
+          reusable, but two components calling that hook still fire two
+          requests, because nobody is holding a result that both can see.
+        </li>
+        <li>
+          <strong>It does not run on the server.</strong> Effects are
+          client-only, so server-rendered HTML arrives carrying a spinner and no
+          data, and the fetch begins only after the bundle has booted.
+        </li>
+      </ul>
+      <p>
+        That list is the real content of &ldquo;problematic at scale&rdquo;, and
+        notice what the four have in common: not one of them is fixed by writing
+        a better effect, and all four are fixed by moving where the request
+        starts. Which is why the options below are different <em>places</em> to
+        put the fetch rather than better versions of this one.
+      </p>
+
+      <p>
+        The third of those — a cache that outlives any one component — is what a
         data-fetching library exists to fill.{' '}
         <strong>TanStack Query</strong> (still widely called React Query) keeps
         responses in a cache keyed by a value you choose, so repeated requests

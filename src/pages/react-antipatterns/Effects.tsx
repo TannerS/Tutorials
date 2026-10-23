@@ -489,16 +489,26 @@ function Child({ value, onChange }) {
 }`}
       </CodeBlock>
 
-      <h2>Anti-Pattern 7: The Fetch-on-Mount Pattern</h2>
+      <h2>Not an Anti-Pattern: Fetch-on-Mount</h2>
 
       <p>
-        While <code>useEffect</code> for fetching on mount technically works, it forces you
-        to hand-roll loading states, error handling, caching, and cleanup. Modern libraries
-        solve all of these problems and avoid the pitfalls of manual effect-based fetching.
+        Fetching on mount belongs in this lesson, but not in the numbered list,
+        because it is not a mistake. &ldquo;Never fetch in{' '}
+        <code>useEffect</code>&rdquo; gets repeated as a rule and it is not one:
+        synchronising with an external system is precisely what effects are for,
+        and React&apos;s own documentation treats fetching in an effect as the
+        fallback you use when a framework data layer or a cache does not suit
+        you. Anti-Pattern 4 above already fixed the thing that <em>is</em> wrong
+        with the usual snippet — the missing cleanup.
+      </p>
+      <p>
+        So the comparison below is a trade, not a verdict. Both versions are
+        correct. Read it for what the library buys you, and be aware that the
+        two files look much more alike than the usual framing suggests.
       </p>
 
       <CodeBlock language="jsx" title="Fetch on Mount — Manual vs Library">
-{`// ❌ BAD — verbose, no caching, no deduplication
+{`// ✅ CORRECT — cleanup, status check, no dependencies. The default.
 function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -509,7 +519,12 @@ function Products() {
     setLoading(true);
 
     fetch('/api/products')
-      .then(r => r.json())
+      // fetch only rejects on network failure, so a 404 or 500 has to be
+      // turned into an error by hand or it is treated as success.
+      .then(r => {
+        if (!r.ok) throw new Error(\`HTTP \${r.status}\`);
+        return r.json();
+      })
       .then(data => { if (!ignore) setProducts(data); })
       .catch(err => { if (!ignore) setError(err); })
       .finally(() => { if (!ignore) setLoading(false); });
@@ -522,13 +537,19 @@ function Products() {
   return <ul>{products.map(p => <li key={p.id}>{p.name}</li>)}</ul>;
 }
 
-// ✅ GOOD — React Query handles caching, dedup, retries, and cleanup
+// ✅ ALSO CORRECT — the queryKey is the difference: results live in a cache,
+// so every component asking for ['products'] shares one request and one copy.
 import { useQuery } from '@tanstack/react-query';
 
 function Products() {
   const { data: products, isLoading, error } = useQuery({
     queryKey: ['products'],
-    queryFn: () => fetch('/api/products').then(r => r.json()),
+    // Still yours: the library does not make fetch reject on a 500 either.
+    queryFn: async () => {
+      const r = await fetch('/api/products');
+      if (!r.ok) throw new Error(\`HTTP \${r.status}\`);
+      return r.json();
+    },
   });
 
   if (isLoading) return <p>Loading...</p>;
@@ -537,10 +558,22 @@ function Products() {
 }`}
       </CodeBlock>
 
-      <InfoBox variant="success" title="Why Data-Fetching Libraries Win">
-        Libraries like React Query and SWR give you automatic caching, request
-        deduplication, stale-while-revalidate, background refetching, and retry
-        logic — none of which you get from a raw useEffect fetch.
+      <InfoBox variant="info" title="What the Library Actually Adds — and What It Does Not">
+        <p>
+          Caching under a key, request deduplication,
+          stale-while-revalidate, background refetching and retries. Those are
+          real and you would otherwise build them yourself, which is why many
+          components reading the same server data is the signal to adopt one.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          What it does not add is correctness. The manual version on the left
+          handles ordering, unmounting and HTTP status perfectly well, and the{' '}
+          <code>res.ok</code> check stays your job in both. Reaching for a cache
+          before many components share data is the tutorial habit that{' '}
+          <a href="/react-antipatterns/intro">the overview lesson</a> opens
+          with — and neither version escapes the request waterfall, because both
+          still start the fetch after the component has mounted.
+        </p>
       </InfoBox>
 
       <FlowChart
