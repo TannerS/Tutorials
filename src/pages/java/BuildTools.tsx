@@ -46,7 +46,7 @@ export default function BuildTools() {
       <CodeBlock language="bash" title="mvn --version / gradle --version — Real Output From This Machine">
 {`$ mvn --version
 Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5)
-Java version: 25.0.2, vendor: Homebrew
+Java version: 26.0.1, vendor: Oracle Corporation
 OS name: "mac os x", arch: "aarch64"
 
 $ gradle --version
@@ -55,7 +55,7 @@ Gradle 9.5.0
 ------------------------------------------------------------
 Kotlin:        2.3.20
 Groovy:        4.0.29
-Launcher JVM:  25.0.2 (Homebrew 25.0.2)`}
+Launcher JVM:  26.0.1 (Oracle Corporation 26.0.1+8-34)`}
       </CodeBlock>
 
       <h2>Dependency Resolution, in One Picture</h2>
