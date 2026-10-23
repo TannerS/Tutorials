@@ -92,7 +92,7 @@ const FACTS = [
     // module load with "does not provide an export named 'defer'", so the
     // TypeError line is never reached.
     fact: 'an ESM named import of a deleted export is a load-time SyntaxError; only require() yields undefined and defers the failure to the call',
-    fixedBy: 'PENDING',
+    fixedBy: '58a015a',
     wrong: /import[^\n]{0,70}\b(defer|json)\b[^\n]{0,90}(?:yields?|gives?|returns?|is|are)\s+undefined/i,
     allow: /SyntaxError|does not provide|module load|require\(/i,
   },
