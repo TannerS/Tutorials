@@ -7,8 +7,8 @@ export default function TypeScriptCheatsheet() {
       title="TypeScript"
       kicker="FIELD GUIDE"
       glyph="🔷"
-      tagline="The type system, generics, decorators, tsconfig, migration strategy, and the boundary where types are erased — TypeScript 5 through 6."
-      meta={['TypeScript 5 → 6', 'React 19 + Node', '26 panels']}
+      tagline="The type system, generics, decorators, tsconfig, migration strategy, and the boundary where types are erased — TypeScript 5 through 7."
+      meta={['TypeScript 5 → 7', 'React 19 + Node', '27 panels']}
       page="1 / 1"
       footer="This page is for recall. The lessons in this section carry the reasoning, the worked examples and the tsconfig walkthroughs."
       prev={{ path: '/typescript/node', label: 'TypeScript on Node' }}
@@ -699,6 +699,23 @@ const dataTyped: ApiResponse = await fetchData();        // stage 3 — real typ
           'Money is a typed value, not number. Dates are Date, not string.',
           'Prefer incremental migration over a rewrite: allowJs plus an explicit strict: false during the transition, then delete that line entirely — never flip it to true, TS 6 already defaults it there.',
           'readonly on a function parameter is free, compiler-enforced documentation that it will not mutate its input.',
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={27} title="TypeScript 7 — The Native Compiler" accent="cyan" glyph="⚙️" span={2}>
+        <GuideDefs
+          items={[
+            ['6.x', 'the last JavaScript-based compiler line — main: ./lib/typescript.js, no platform binaries'],
+            ['7.x', 'the native (Go) port, and what npm "latest" now resolves to'],
+            ['install shape', 'a thin JS wrapper plus a platform-specific executable picked via ~20 optionalDependencies — the esbuild/SWC trick'],
+            ['exports["."]', './lib/version.cjs — importing "typescript" no longer hands you the compiler API'],
+          ]}
+        />
+        <GuideRules items={[
+          'The two lines ship in parallel: 6.x is still published for anyone who imports the compiler API programmatically, while 7.x is the default install. Check which one a project actually pins before assuming either.',
+          'Because the package is now a native binary behind optional deps, an install on an unsupported platform/arch fails at install time rather than at first tsc run — and --ignore-optional will silently leave you with no compiler.',
+          'Programmatic API consumers (ts-morph, custom transformers, eslint rules reaching into ts.*) are the migration cost here, not your application code. Type-checking behaviour is meant to match; the packaging is what changed.',
+          'Full treatment, with the verified package.json shapes and the commands to re-check them, is in the TypeScript 6 → 7 lesson — these numbers move.',
         ]} />
       </GuidePanel>
     </GuideLayout>
