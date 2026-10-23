@@ -134,7 +134,7 @@ JUnit:  Boot 2 -> JUnit 5      Boot 4 -> JUnit 6 baseline
           ]}
         />
         <GuideRules items={[
-          'Only /health is exposed over JMX by default in 3.x.',
+          'JMX is OFF entirely by default on both lines — spring.jmx.enabled defaults to false since Boot 2.2, so stock Boot 2.7 and Boot 3 both expose nothing over JMX. The difference only appears once you set it true: 2.7 then exposes every endpoint (jmx.exposure.include = *), Boot 3 exposes only health.',
           '/env and /configprops sanitize far more aggressively in 3.x.',
           'Trailing-slash matching is OFF by default in 3.x — "/actuator/health/" no longer resolves.',
         ]} />
