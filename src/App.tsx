@@ -18,6 +18,7 @@ const JavaAdvanced = lazy(() => import('./pages/java/Advanced'))
 const JavaOptional = lazy(() => import('./pages/java/Optional'))
 const JavaJvmInternals = lazy(() => import('./pages/java/JvmInternals'))
 const JavaReflection = lazy(() => import('./pages/java/Reflection'))
+const JavaClasspath = lazy(() => import('./pages/java/Classpath'))
 const JavaBuildTools = lazy(() => import('./pages/java/BuildTools'))
 const JavaTestingBasics = lazy(() => import('./pages/java/TestingBasics'))
 const JavaMockito = lazy(() => import('./pages/java/Mockito'))
@@ -569,6 +570,7 @@ function App() {
         <Route path="java/optional" element={<JavaOptional />} />
         <Route path="java/jvm-internals" element={<JavaJvmInternals />} />
         <Route path="java/reflection" element={<JavaReflection />} />
+        <Route path="java/classpath" element={<JavaClasspath />} />
         <Route path="java/build-tools" element={<JavaBuildTools />} />
         <Route path="java/testing-basics" element={<JavaTestingBasics />} />
         <Route path="java/mockito" element={<JavaMockito />} />

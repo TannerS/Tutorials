@@ -9,7 +9,7 @@ export default function Reflection() {
       sectionId="java"
       lessonIndex={14}
       prev={{ path: '/java/jvm-internals', label: 'JVM Internals & Garbage Collection' }}
-      next={{ path: '/java/build-tools', label: 'Build Tools: Maven & Gradle' }}
+      next={{ path: '/java/classpath', label: 'Classes, Jars & the Classpath' }}
     >
       <p>
         Reflection is the API that lets running Java code inspect and manipulate classes, fields,

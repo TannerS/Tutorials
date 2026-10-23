@@ -22,6 +22,7 @@ export const sections: Section[] = [
       { id: 'advanced', title: 'Advanced Java Features', path: '/java/advanced' },
       { id: 'jvm-internals', title: 'JVM Internals & Garbage Collection', path: '/java/jvm-internals' },
       { id: 'reflection', title: 'Reflection & Annotations', path: '/java/reflection' },
+      { id: 'classpath', title: 'Classes, Jars & the Classpath', path: '/java/classpath' },
       { id: 'build-tools', title: 'Build Tools: Maven & Gradle', path: '/java/build-tools' },
       { id: 'testing-basics', title: 'Unit Testing Fundamentals — Dummies, Stubs, Spies, Mocks', path: '/java/testing-basics' },
       { id: 'mockito', title: 'Mockito in Practice', path: '/java/mockito' },
