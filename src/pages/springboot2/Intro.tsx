@@ -178,7 +178,7 @@ last-modified: Thu, 23 Nov 2023 08:05:27 GMT`}
       <CodeBlock language="text" title="The version chain (verified from the spring-boot-dependencies POMs)">
 {`Spring Boot 2.7.18  ->  Framework 5.3.x  ->  Security 5.8.x  ->  Hibernate 5.6.15   javax.*
 Spring Boot 3.0.x   ->  Framework 6.0.x  ->  Security 6.0.x  ->  Hibernate 6.1.7    jakarta.*
-Spring Boot 4.1.x   ->  Framework 7.x    ->  Security 7.x    ->  Hibernate 7.4.5    jakarta.*
+Spring Boot 4.1.1   ->  Framework 7.x    ->  Security 7.x    ->  Hibernate 7.4.5    jakarta.*
 
 Checked with:
   curl -s https://repo1.maven.org/maven2/org/springframework/boot/\\
@@ -187,7 +187,11 @@ Checked with:
   ->  <hibernate.version>5.6.15.Final
 
   ...same for 3.0.13  ->  <hibernate.version>6.1.7.Final
-  ...same for 4.1.1   ->  <hibernate.version>7.4.5.Final`}
+  ...same for 4.1.1   ->  <hibernate.version>7.4.5.Final
+
+Note the last row is pinned to a PATCH version, not a line. Boot moves
+Hibernate inside a minor line: 4.1.2 already ships 7.4.13.Final. Run the
+command against your own version rather than trusting any table.`}
       </CodeBlock>
 
       <h3>Why the first jump is the expensive one</h3>
