@@ -390,12 +390,18 @@ process.on('SIGTERM', fn);             // graceful shutdown
       </p>
       <p>
         Next: <strong><a href="/javascript/error-handling">Error
-        Handling</a></strong>, which is the other half of this. An exception
-        thrown inside a listener does not propagate to whatever called{' '}
-        <code>emit()</code>, and an <code>&apos;error&apos;</code> event with
-        no listener terminates the process — so the error rules for emitters
-        are genuinely different from the ones around <code>try</code>/
-        <code>catch</code>.
+        Handling</a></strong>, which is the other half of this. Two rules make
+        emitters genuinely different from ordinary <code>try</code>/
+        <code>catch</code>, and they pull in opposite directions. A{' '}
+        <em>synchronous</em> listener that throws propagates straight out of{' '}
+        <code>emit()</code> at the call site and skips every listener
+        registered after it — so one bad subscriber silently breaks the
+        others. An <code>async</code> listener that throws does the reverse:{' '}
+        <code>emit()</code> already returned, so the rejection never reaches
+        that call site at all and becomes an unhandled rejection instead,
+        unless you built the emitter with <code>captureRejections</code>. And
+        an <code>&apos;error&apos;</code> event with no listener terminates
+        the process outright.
       </p>
     </LessonLayout>
   );

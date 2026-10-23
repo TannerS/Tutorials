@@ -393,7 +393,9 @@ import config from './config.json' with { type: 'json' };
       <CodeBlock language="javascript" title="ES2026">
 {`// Math.sumPrecise — correctly-rounded summation. The naive reduce loses the 0.1
 // entirely because 1e20 + 0.1 rounds back to 1e20.
-Math.sumPrecise([1e20, 0.1, -1e20]);              // 0.1
+Math.sumPrecise([1e20, 0.1, -1e20]);              // 0.1 per spec — but see the
+                                                   //   box below: not in V8 yet,
+                                                   //   this line throws today
 [1e20, 0.1, -1e20].reduce((a, b) => a + b, 0);    // 0   (verified on Node 25)
 
 // Error.isError — works across realms/iframes, where instanceof Error does not,
@@ -450,8 +452,8 @@ Map.prototype.getOrInsert     TypeError          []             <- shipped since
           Resource Management is Stage 4 and slated for <strong>ES2027</strong>, alongside{' '}
           <strong>Temporal</strong> (the <code>Date</code> replacement, which missed the June 2026
           cutoff), <code>Atomics.pause</code>, and joint iteration (<code>Iterator.zip</code>).{' '}
-          <code>Atomics.pause</code> is already a function on Node 26, two editions ahead of its
-          own ratification. Temporal is the reverse case again: ratified for 2027 and still absent
+          <code>Atomics.pause</code> is already a function on Node 25 <em>and</em> 26, two
+          editions ahead of its own ratification. Temporal is the reverse case again: ratified for 2027 and still absent
           from both — <code>typeof Temporal</code> is <code>&apos;undefined&apos;</code>, and{' '}
           <code>Iterator.zip</code> is likewise still missing.
         </p>

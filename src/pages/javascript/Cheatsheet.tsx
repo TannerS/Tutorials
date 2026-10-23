@@ -168,7 +168,7 @@ class AppError extends Error {
             ['tree-shaking', 'yes', 'largely no'],
           ]}
         />
-        <GuideRules items={['Node picks the mode from "type" in package.json, or the .mjs / .cjs extension.', 'ESM can import CJS; CJS cannot require ESM — use dynamic import().']} />
+        <GuideRules items={['Node picks the mode from "type" in package.json, or the .mjs / .cjs extension (the extension wins).', 'ESM can always import CJS. Since Node 22.12 require() can also load ESM — but only a graph with NO top-level await, else ERR_REQUIRE_ASYNC_MODULE. Dynamic import() is the portable answer.', 'Named imports from CJS rely on static analysis: exports.a = 1 is visible, module.exports = { a: 1 } is NOT.']} />
       </GuidePanel>
 
       <GuidePanel n={10} title="Destructuring & Spread" accent="green" glyph="✂️">
@@ -205,6 +205,9 @@ Number(null)       // 0     Number(undefined) is NaN
             ['ES2022', 'at(), Object.hasOwn, class fields, top-level await'],
             ['ES2023', 'toSorted, toReversed, with(), findLast'],
             ['ES2024', 'Object.groupBy, Promise.withResolvers'],
+            ['ES2025', 'iterator helpers, Set algebra, Promise.try, RegExp.escape'],
+            ['ES2026', 'Error.isError, Uint8Array base64/hex, Math.sumPrecise'],
+            ['ES2027 (next)', 'using / Temporal / Iterator.zip — Stage 4, check your runtime'],
           ]}
         />
       </GuidePanel>

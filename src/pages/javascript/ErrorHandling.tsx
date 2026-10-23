@@ -278,11 +278,11 @@ err.cause.message: ENOENT: no such file config.json`}
 }`}
       </CodeBlock>
       <CodeBlock language="text" title="Real node output for both">
-{`[A] caught via try/catch: risky failed
-[A] continues after catch, in the same function
+{`caught via try/catch: risky failed
+continues after catch, in the same function
 ---
-[B] caught via .catch(): risky failed
-[B] value after .catch() fallback: fallback value`}
+caught via .catch(): risky failed
+value after .catch() fallback: fallback value`}
       </CodeBlock>
 
       <InfoBox variant="tip" title="When to reach for each">

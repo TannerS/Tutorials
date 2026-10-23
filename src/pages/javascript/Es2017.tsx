@@ -13,7 +13,8 @@ export default function JsEs2017() {
     >
 
       <p>
-        ES2016 (ES7) was famously small — a one-line release. ES2017 (ES8), which followed a
+        ES2016 (ES7) was famously small: two additions, <code>Array.prototype.includes</code>{' '}
+        and the exponentiation operator <code>**</code>. ES2017 (ES8), which followed a
         year later, was not: its headline feature, <code>async</code>/<code>await</code>, changed
         how most everyday JavaScript gets written. Alongside it, ES2017 shipped a handful of
         genuinely useful object and string utilities, a small syntax cleanup, and one advanced

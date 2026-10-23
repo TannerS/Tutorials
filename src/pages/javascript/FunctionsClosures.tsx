@@ -34,12 +34,21 @@ export default function JsFunctionsClosures() {
   return a + b;
 };
 
-// Named function expression — the name "sum" is only visible INSIDE
-// this function's own body. Useful for recursion and for readable
-// stack traces (an anonymous function shows as "<anonymous>").
-const sum = function sum(n) {
-  return n <= 1 ? 1 : n + sum(n - 1);
-};`}
+// Named function expression. Deliberately two DIFFERENT names here, so you
+// can see which one does what: 'factorial' is the outer binding, 'fact' is
+// visible ONLY inside the function's own body.
+const factorial = function fact(n) {
+  return n <= 1 ? 1 : n * fact(n - 1);   // recursion via the inner name
+};
+
+factorial(5);        // 120
+factorial.name;      // 'fact'  — the inner name is what the stack trace shows
+fact;                // ReferenceError: fact is not defined  (outside the body)
+
+// Leave it anonymous and the name is inferred from the variable instead,
+// which is why modern stack traces are rarely "<anonymous>" any more.
+const anon = function (n) { return n; };
+anon.name;           // 'anon'`}
       </CodeBlock>
 
       <CodeBlock language="javascript" title="Arrow Function">
