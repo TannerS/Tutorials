@@ -122,8 +122,12 @@ const CURRENCY = /(latest|current(?:ly)?|newest|as of|now at|now sits at|ships? 
 // handles method-based routing" is a fact about 1.22, not about what is
 // newest). Matched against the text immediately before the number, tags
 // stripped, so only a directly attached attribution counts.
+// The attribution phrase may be separated from the number by a package name
+// and/or a range operator -- "stable as of react-router@8.0.0", "this repo
+// pins react-router@^7.16.0". Both are historical or pin facts, not currency
+// claims, and both were reported as drift until this allowed for the gap.
 const ATTRIBUTED =
-  /(?:verified(?:\s+on)?|real output(?:\s+on)?|measured(?:\s+on)?|ran on|tested on|output from|as of|since|added in|introduced in|arrived in|new in)\s+(?:go|java|node|v)?\s*$/i;
+  /(?:verified(?:\s+on)?|real output(?:\s+on)?|measured(?:\s+on)?|ran on|tested on|output from|as of|since|added in|introduced in|arrived in|new in|shipped(?:\s+in)?|stable(?:\s+\w+){0,3}\s+as of|pins?|pinned(?:\s+to)?|opened with|teaches)\s+(?:go|java|node|v)?\s*(?:[@\w./-]*@)?\s*[\^~]?\s*$/i;
 
 // A number written as `<label>=1.2.3` belongs to that label. Lessons that
 // print a dist-tag listing carry several at once:
@@ -163,19 +167,43 @@ function currencyClaims(pkgWords, { subject, scope, tag, base } = {}) {
       // name is too common to match safely across the whole repo.
       if (scope && !rel.startsWith(scope)) continue;
       const src = readFileSync(p, 'utf8');
-      src.split('\n').forEach((line, i) => {
-        if (!CURRENCY.test(line)) return;
+      const all = src.split('\n');
+      all.forEach((line, i) => {
+        // JSX prose WRAPS, so a currency assertion and the version number it
+        // asserts are routinely on different source lines. Testing one line in
+        // isolation missed ag-grid's "Current released version ... are at
+        // 36.1.0" (keyword on one line, 36.1.0 on the next) while the registry
+        // had moved to 36.2.0 -- the script reported "0 currency claims, all
+        // agree". So judge the claim over a small window: the line itself plus
+        // the two before it, which is how far a wrapped sentence reaches here.
+        const ctx = all.slice(Math.max(0, i - 2), i + 1).join(' ');
+        if (!CURRENCY.test(ctx)) return;
         if (DIAGRAM.test(line)) return;
-        // the package has to actually be the subject of the line
-        const isSubject = subject ? subject.test(line) : pkgWords.some((w) => line.toLowerCase().includes(w));
+        // the package has to actually be the subject of the claim
+        const isSubject = subject ? subject.test(ctx) : pkgWords.some((w) => ctx.toLowerCase().includes(w));
         if (!isSubject) return;
-        if (base && namesASibling(line, base)) return;
+        if (base && namesASibling(ctx, base)) return;
         for (const m of line.matchAll(/\b(\d+\.\d+(?:\.\d+)?)\b/g)) {
-          const before = line.slice(0, m.index).replace(/<[^>]*>/g, ' ');
+          // The attribution phrase can be on an earlier line for the same
+          // reason the currency keyword can -- JSX prose wraps. Judge it over
+          // the same window, or "stable ... as of" on one line and the version
+          // on the next reads as a currency claim when it is a history fact.
+          const before = (all.slice(Math.max(0, i - 2), i).join(' ') + ' ' + line.slice(0, m.index))
+            .replace(/<[^>]*>/g, ' ');
           if (ATTRIBUTED.test(before)) continue;
           const labelled = before.match(LABELLED);
           if (labelled && tag && labelled[1].toLowerCase() !== tag.toLowerCase()) continue;
-          hits.push({ file: path.relative(PAGES, p), line: i + 1, version: m[1] });
+          // Record whether this hit stands up on its OWN line, or only once
+          // the two preceding lines are folded in. Per-line matching was a
+          // deliberate precision choice by the original author, who documented
+          // three false positives from a looser read. Widening it does find
+          // real drift that wrapping hid (ag-grid 36.1.0, react-router 8.4.0)
+          // but reintroduces those false positives -- so keep the two tiers
+          // apart instead of trading one for the other.
+          const strict = CURRENCY.test(line)
+            && (subject ? subject.test(line) : pkgWords.some((w) => line.toLowerCase().includes(w)))
+            && !ATTRIBUTED.test(line.slice(0, m.index).replace(/<[^>]*>/g, ' '));
+          hits.push({ file: path.relative(PAGES, p), line: i + 1, version: m[1], strict });
         }
       });
     }
@@ -219,11 +247,30 @@ for (const t of TRACKED) {
     base: t.name.split('/').pop(),
   });
   const major = actual.split('.')[0];
+  // If a claim's own context already states the CORRECT current version, the
+  // other versions beside it are history, not competing claims --
+  // "latest is 8.5.0, with 8.0.0 shipping June 2026" is right, and reporting
+  // 8.0.0 as drift is the tool being less precise than the prose.
+  //
+  // This has to be scoped to the SAME file and nearby lines. Filtering
+  // globally would let one correct sentence anywhere in the repo silence real
+  // drift in a different lesson.
+  const correctNear = (c) => claims.some(
+    (o) => o.version === actual && o.file === c.file && Math.abs(o.line - c.line) <= 2,
+  );
+  const scoped = claims.filter((c) => c.version === actual || !correctNear(c));
+
   // Compare against claims on the same major line, so "latest-v7 = 7.3.11"
   // is not judged against a v9 release.
-  const relevant = claims.filter((c) => c.version.split('.')[0] === major);
-  const wrong = relevant.filter((c) => !actual.startsWith(c.version) && c.version !== actual);
-  rows.push({ label, actual, claims: relevant.length, wrong });
+  const relevant = scoped.filter((c) => c.version.split('.')[0] === major);
+  const off = relevant.filter((c) => !actual.startsWith(c.version) && c.version !== actual);
+  // Two tiers. `wrong` is what the strict per-line read finds and is worth
+  // failing on; `wrapped` only shows up once neighbouring lines are folded in,
+  // which catches real drift that JSX wrapping hid but also re-raises the
+  // history-vs-currency false positives this tool was tuned to avoid.
+  const wrong = off.filter((c) => c.strict);
+  const wrapped = off.filter((c) => !c.strict);
+  rows.push({ label, actual, claims: relevant.length, wrong, wrapped });
 }
 
 if (asJson) {
@@ -262,6 +309,25 @@ on the first run all three candidates were false positives:
 And never sweep the repo for the old number. Most occurrences are provenance
 ("Real output on X", "Verified — X"), which records what actually ran; bumping
 those attributes real measurements to a version that never produced them.`);
+}
+const wrappedRows = rows.filter((r) => r.wrapped?.length);
+if (wrappedRows.length) {
+  console.log('\nWRAPPED-SENTENCE CANDIDATES (lower confidence, do not fail on these):');
+  wrappedRows.forEach((r) => {
+    console.log(`\n  ${r.label} — registry says ${r.actual}`);
+    r.wrapped.forEach((w) => console.log(`     ${w.file}:${w.line}  mentions ${w.version}`));
+  });
+  console.log(`
+JSX prose wraps, so a currency assertion and the number it asserts often land
+on different source lines. Folding in the two preceding lines catches drift the
+strict per-line read misses -- it is how ag-grid's "Current released version ...
+are at 36.1.0" and react-router's "Confirmed dist-tags: latest = 8.4.0" were
+found, both genuinely stale.
+
+But the same widening re-raises history-as-currency readings, which is why
+these are listed apart and do not fail the run. Expect most to be fine:
+"stable as of react-router@8.0.0" and "React 19.2 ships useEffectEvent" both
+name the version that INTRODUCED something.`);
 }
 if (unknown.length) {
   console.log('\nunreachable (network?):');

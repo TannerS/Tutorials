@@ -51,7 +51,7 @@ export default function AgGrid() {
 
       <p>
         The other common comparison is <a href="https://tanstack.com/table" rel="noreferrer" target="_blank">
-        TanStack Table</a> (<code>@tanstack/react-table</code>, confirmed at version <code>9.2.4</code> on
+        TanStack Table</a> (<code>@tanstack/react-table</code>, confirmed at version <code>9.3.1</code> on
         npm). It's the opposite design: headless — no DOM output, no virtualization, no styling of its own,
         just the sorting/filtering/pagination <em>state and logic</em>, handed back as data for you to render
         however you like (typically paired separately with something like TanStack Virtual for large lists).
@@ -64,12 +64,12 @@ export default function AgGrid() {
 
       <CodeBlock language="bash" title="Install (npm registry, checked directly)">{`npm install ag-grid-react
 # installs ag-grid-community as a dependency automatically — confirmed via
-# ag-grid-react's package.json: "dependencies": { "ag-grid-community": "36.1.0" }`}
+# ag-grid-react's package.json: "dependencies": { "ag-grid-community": "36.2.0" }`}
       </CodeBlock>
 
       <p>
         Current released version, checked directly against the npm registry rather than assumed: both{' '}
-        <code>ag-grid-community</code> and <code>ag-grid-react</code> are at <code>36.1.0</code>, and{' '}
+        <code>ag-grid-community</code> and <code>ag-grid-react</code> are at <code>36.2.0</code>, and{' '}
         <code>ag-grid-react</code>'s <code>peerDependencies</code> list{' '}
         <code>&quot;react&quot;: &quot;^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0&quot;</code> — React 19 is
         fully supported, not a version you'd need to double-check compatibility for.

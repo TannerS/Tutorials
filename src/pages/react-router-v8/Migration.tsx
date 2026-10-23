@@ -25,9 +25,9 @@ export default function Migration() {
       <InfoBox variant="note" title="Every Claim Here Is Sourced">
         This lesson is verified against the official{' '}
         <code>CHANGELOG.md</code> and the <em>Upgrading from v7</em> guide on{' '}
-        reactrouter.com, plus the live npm registry, as of the v8.4.0 release
-        (2026-09-15). Confirmed dist-tags: <code>react-router</code>{' '}
-        <code>latest</code> = <strong>8.4.0</strong>, <code>version-7</code> ={' '}
+        reactrouter.com, plus the live npm registry, as of the v8.5.0 release
+        (2026-10-19). Confirmed dist-tags: <code>react-router</code>{' '}
+        <code>latest</code> = <strong>8.5.0</strong>, <code>version-7</code> ={' '}
         <strong>7.18.4</strong>. <code>react-router-dom</code>&apos;s{' '}
         <code>latest</code> tag is frozen on the v7 line at{' '}
         <strong>7.18.4</strong> — no 8.x was ever published for it at all, which
