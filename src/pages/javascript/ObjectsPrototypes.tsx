@@ -242,10 +242,18 @@ try {
           object-literal <code>greet</code> is <code>enumerable: true</code>; calling{' '}
           <code>Foo(5)</code> without <code>new</code> threw{' '}
           <code>TypeError: Class constructor Foo cannot be invoked without &apos;new&apos;</code>.
-          A plain constructor function like <code>Dog</code> above would have silently run
-          with <code>this</code> as the global object (or <code>undefined</code> in strict
-          mode) instead of throwing — <code>class</code> adds a real runtime guard that
-          plain functions never had.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          A plain constructor function fails differently, and worse. Calling{' '}
+          <code>Dog(&quot;Rex&quot;)</code> without <code>new</code> in strict mode throws{' '}
+          <code>TypeError: Cannot set properties of undefined (setting &apos;name&apos;)</code>{' '}
+          &mdash; also an error, but one that names the symptom instead of the cause, and only
+          because the body happened to touch <code>this</code>. A constructor that merely
+          returned a value would not have thrown at all. In sloppy mode it is worse again:{' '}
+          <code>this</code> becomes the global object and the constructor quietly writes{' '}
+          <code>name</code> onto it. So <code>class</code> does not add a guard where there
+          was none; it moves the failure to the call itself and makes the message say what
+          you actually did wrong.
         </p>
       </InfoBox>
 
@@ -295,10 +303,15 @@ console.log(rex instanceof Dog, rex instanceof Animal);    // both true — real
         Object.create(Animal.prototype)</code> is the actual inheritance link (a plain{' '}
         <code>Dog.prototype = Animal.prototype</code> would make Dog and Animal share the{' '}
         <em>same</em> object, so adding <code>bark</code> would add it to Animal too — a real
-        and common mistake). And the <code>.constructor</code> repair line exists because{' '}
-        <code>Object.create</code> gives the new prototype object a fresh, useless{' '}
-        <code>constructor</code> — skip that line and the chain still works for method
-        lookup, but identity checks quietly break:
+        and common mistake). And the <code>.constructor</code> repair line is needed because
+        of what <code>Object.create</code> does <em>not</em> do: the object it returns has no
+        own properties whatsoever &mdash;{' '}
+        <code>Object.getOwnPropertyNames</code> on it returns <code>[]</code>. The normal{' '}
+        <code>constructor</code> property that a function&apos;s default{' '}
+        <code>.prototype</code> would have carried is simply gone, so the lookup falls through
+        to the parent&apos;s and reports the <em>parent</em> as the constructor. Skip the
+        repair line and the chain still works for method lookup, but identity checks quietly
+        break:
       </p>
 
       <CodeBlock language="javascript" title="Forgetting the .constructor repair — a real, easy-to-miss bug">
@@ -378,10 +391,10 @@ console.log(Object.getPrototypeOf(p1) === Product.prototype);    // true — cha
 };
 
 for (const key in [1, 2, 3]) console.log('for...in key:', key);
-// 0
-// 1
-// 2
-// flatten   <- leaked in, from code that never touched this array`}
+// for...in key: 0
+// for...in key: 1
+// for...in key: 2
+// for...in key: flatten   <- leaked in, from code that never touched this array`}
         </CodeBlock>
         <p style={{ marginBottom: 0 }}>
           That is the real version of the &quot;for...in trap&quot; the Arrays lesson warns

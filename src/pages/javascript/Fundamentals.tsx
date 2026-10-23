@@ -267,8 +267,20 @@ Boolean(null)        // false
 Boolean(undefined)   // false
 Boolean(NaN)         // false
 
-// That's all eight. There is no ninth.`}
+// That is all eight that the language itself defines.`}
       </CodeBlock>
+
+      <InfoBox variant="note" title="There is a ninth, and only in a browser">
+        <p>
+          Eight is the answer for the language proper, and the number you want in an
+          interview. The pedantic ninth is <code>document.all</code>, which MDN describes as
+          the only falsy object in JavaScript. It is falsy on purpose: the HTML spec gives it
+          an internal marker so that old feature-detection code written as{' '}
+          <code>if (document.all)</code> takes the modern branch instead of the
+          1999-Internet-Explorer one. It is a deliberate web-compatibility hack rather than a
+          language rule, it does not exist in Node, and no code you write should rely on it.
+        </p>
+      </InfoBox>
 
       <InfoBox variant="danger" title="These look falsy but are NOT — the ones that actually cause bugs">
         <p>
@@ -310,8 +322,10 @@ Boolean(-Infinity)         // true`}
 '0'  == 0        // true    — '0' converts to 0
 '0'  === 0       // false
 
-null == undefined  // true  — a special-cased pair: they equal EACH OTHER...
-null === undefined // false — ...but are never === to anything, including each other
+null == undefined  // true  — a special-cased pair: == treats these two as equal
+null === undefined // false — different types, so === refuses
+null === null       // true  — but each is still strictly equal to ITSELF
+undefined === undefined // true
 
 NaN == NaN        // false  — NaN is never equal to anything, even itself
 NaN === NaN       // false
@@ -331,11 +345,21 @@ undefined == 0    // false   — same rule, other direction`}
       <InfoBox variant="tip" title="The rule that actually predicts these results">
         <p>
           <code>==</code> converts <code>null</code> and <code>undefined</code> to equal{' '}
-          <em>only each other</em> and nothing else. For every other pairing, objects (arrays
-          included) convert to a primitive first via <code>toString</code>/<code>valueOf</code>,
-          then string/boolean operands convert toward <code>number</code>. Chase every{' '}
-          <code>==</code> surprise back to &quot;what does this become when coerced to a
-          number?&quot; and the result stops being surprising.
+          <em>only each other</em> and nothing else. For every other pairing, an object
+          converts to a primitive first, then string and boolean operands convert toward{' '}
+          <code>number</code>. Chase every <code>==</code> surprise back to &quot;what does
+          this become when coerced to a number?&quot; and the result stops being surprising.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          One detail in that conversion is worth getting the right way round, because it
+          explains the array cases above. With no type hint, the engine calls{' '}
+          <code>valueOf()</code> <strong>first</strong> and only falls back to{' '}
+          <code>toString()</code> if <code>valueOf</code> returned something that is still an
+          object. A plain object therefore coerces through <code>valueOf</code>. An array only
+          looks like it skips straight to <code>toString</code> because{' '}
+          <code>Array.prototype.valueOf</code> is inherited from <code>Object</code> and hands
+          back the array itself &mdash; not a primitive &mdash; so the fallback fires and{' '}
+          <code>[1, 2]</code> becomes <code>&apos;1,2&apos;</code>.
         </p>
       </InfoBox>
 
