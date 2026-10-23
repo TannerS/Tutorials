@@ -90,7 +90,7 @@ const FACTS = [
     // 19.2.6: one useId gives _R_0_, two in a component give _R_0_ and
     // _R_0H1_, the same component twice gives _R_1_ and _R_2_.
     fact: 'useId returns the _R_<n>_ shape on React 19; ":r1:" is the React 18 shape',
-    fixedBy: '4a82f00',
+    fixedBy: '4417148',
     // Span is [^\n], NOT [^.]: the stale line reads `useId(); // e.g., ":r1:"`
     // and an [^.] span cannot cross the periods in "e.g.", so the first
     // version of this rule passed over the very line it was written for.
