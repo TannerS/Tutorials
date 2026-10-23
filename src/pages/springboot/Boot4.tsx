@@ -11,13 +11,21 @@ export default function Boot4() {
       prev={{ path: '/springboot/aop', label: 'AOP & Interceptors' }}
       next={{ path: '/springboot/observability', label: 'Observability' }}
     >
-      <h2>Spring 6 and Boot 3/4 in a Sentence</h2>
+      <h2>Spring 6, Spring 7 and Boot 3/4 in a Sentence</h2>
       <p>
-        Spring 6 (bundled by Boot 3/4) is the biggest release since Spring 3: Jakarta EE 9+
-        (<code>javax</code> → <code>jakarta</code>), Java 17 minimum, RFC 9457
+        Get the pairing straight first, because almost every migration guide you will read
+        assumes you already have it: <strong>Boot 3 ships Spring Framework 6</strong>, and{' '}
+        <strong>Boot 4 ships Spring Framework 7</strong> (Boot 4.1 requires Framework 7.0.10 or
+        above). Both keep a <strong>Java 17 minimum</strong>.
+      </p>
+      <p>
+        Spring 6 was the biggest release since Spring 3: Jakarta EE 9+
+        (<code>javax</code> → <code>jakarta</code>), RFC 9457
         Problem Details as first-class, a new declarative HTTP client, an Observation API
         that unifies metrics + tracing, virtual thread support, and native compilation with
-        GraalVM AOT. This page is a tour of the pieces you'll actually use day-to-day.
+        GraalVM AOT. Spring 7 is a smaller step on top of that — Jakarta EE 11, JSpecify
+        null-safety, built-in API versioning — and the second half of this page covers it
+        separately. Everything in between applies to both.
       </p>
 
       <h2>RestClient — The Modern Synchronous HTTP Client</h2>
