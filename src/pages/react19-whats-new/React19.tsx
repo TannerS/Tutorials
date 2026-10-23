@@ -841,6 +841,37 @@ function Tabs({ active }) {
         </p>
       </InfoBox>
 
+      <InfoBox variant="warning" title="Testing the defaultProps removal in a REPL will tell you it didn't happen">
+        <p>
+          Worth knowing before you try to confirm the first item yourself, because the
+          obvious experiment gives the wrong answer. The removal lives in the{' '}
+          <strong>JSX runtime</strong>, not in <code>React.createElement</code>, which
+          still resolves <code>defaultProps</code> for back-compatibility. Measured on
+          React <strong>19.2.6</strong>, same component rendered three ways:
+        </p>
+        <CodeBlock language="text" title="Real output — react-dom/server on React 19.2.6">
+{`function Btn({ size }) { ... }
+Btn.defaultProps = { size: 'md' };
+
+React.createElement(Btn)   ->  size=md         <- legacy path, still applies it
+jsx(Btn, {})               ->  size=undefined  <- JSX, production transform
+jsxDEV(Btn, {})            ->  size=undefined  <- JSX, dev transform
+
+// and a CLASS component, through the same JSX runtime:
+jsx(ClassBtn, {})          ->  size=md         <- classes keep defaultProps`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          So the removal is real for every app, because your JSX compiles to{' '}
+          <code>jsx</code>/<code>jsxDEV</code> &mdash; but a quick{' '}
+          <code>createElement</code> check in Node will show the default still being
+          applied and make the docs look wrong. None of the four lines above emits a
+          warning, which is what &ldquo;silently ignored&rdquo; means: no error, no
+          console message, just an <code>undefined</code> prop where you expected a
+          default. Grep for <code>.defaultProps</code> before upgrading rather than
+          waiting for a symptom.
+        </p>
+      </InfoBox>
+
     </LessonLayout>
   );
 }
