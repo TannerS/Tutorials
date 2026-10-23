@@ -160,6 +160,28 @@ public void record(Req r) { ... }
 //   TransactionAspectSupport.currentTransactionStatus().isRollbackOnly()`}
       </CodeBlock>
 
+      <InfoBox variant="note" title="The problem and fix (a), measured side by side">
+        <p>
+          Same outer method, same inner method, same caught exception — the{' '}
+          <em>only</em> difference between these two runs is the inner method&apos;s
+          propagation. Boot <strong>4.1.1</strong>, counting rows and reporting what the
+          outer call did:
+        </p>
+        <CodeBlock language="text" title="Real output — outer catches the inner exception either way">
+{`inner REQUIRED      -> THREW UnexpectedRollbackException   rows 3 -> 3
+inner REQUIRES_NEW  -> returned normally                    rows 3 -> 4`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          The first line is the bug this section opened with: the{' '}
+          <code>catch</code> swallowed the exception, the method returned, and the commit
+          still failed — with nothing saved, not even the outer method&apos;s own row.
+          The second is fix (a) working: a separate physical transaction had somewhere to
+          roll back to, so the inner failure stayed contained and the outer work
+          committed. One row difference, and it is entirely down to which transaction the
+          inner method was in.
+        </p>
+      </InfoBox>
+
       <h2>Propagation — What Happens When You're Already in a Transaction</h2>
       <p>
         Every <code>@Transactional</code> method decides how to handle an <em>existing</em>
