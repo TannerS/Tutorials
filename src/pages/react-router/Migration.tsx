@@ -205,10 +205,34 @@ function DashboardLayout() {
 
       <InfoBox variant="danger" title="v7 Removed defer(), json(), and fallbackElement">
         <p>
-          These three shipped in the v6.4 data APIs and were <strong>deleted</strong>{' '}
-          in v7 — importing them now yields <code>undefined</code> and calling one
-          throws <code>TypeError: defer is not a function</code>. Any v6-era tutorial
-          you copy from will still use them.
+          These shipped in the v6.4 data APIs and were <strong>deleted</strong> in v7.
+          Any v6-era tutorial you copy from will still use them — and{' '}
+          <strong>which error you get depends on how you import</strong>, which is worth
+          knowing because the two fail at completely different moments. Measured on{' '}
+          <code>react-router@7.18.2</code>:
+        </p>
+        <CodeBlock language="text" title="Real output — react-router 7.18.2">
+{`// ESM named import — what a Vite/React app actually writes.
+// Fails at MODULE LOAD. The loader below never runs at all.
+import { defer } from 'react-router';
+  -> SyntaxError: The requested module 'react-router' does not
+     provide an export named 'defer'
+
+// CommonJS require() — the property is simply missing,
+// so it fails later, at the CALL.
+const { defer } = require('react-router');   // undefined
+defer({})
+  -> TypeError: defer is not a function`}
+        </CodeBlock>
+        <p>
+          So in the ESM app this section teaches, you will see a{' '}
+          <strong>SyntaxError before anything renders</strong>, not a{' '}
+          <code>TypeError</code> inside a loader. That is the better failure of the two:
+          it names the missing export and it happens at build time.{' '}
+          <code>fallbackElement</code> is a different case again — it was a{' '}
+          <em>prop</em>, never an import, so it has no import error. It is ignored at
+          runtime, but TypeScript rejects it outright with{' '}
+          <strong>TS2322</strong> on <code>&lt;RouterProvider&gt;</code>.
         </p>
         <p style={{ marginBottom: 0 }}>
           <code>defer()</code> → return a bare promise from the loader (still use{' '}
@@ -222,12 +246,14 @@ function DashboardLayout() {
       <CodeBlock language="jsx" title="v6 → v7: the removed APIs">
 {`// ❌ v6.4–v6.x — all three are GONE in v7
 import { defer, json } from 'react-router';
+// ^ in v7 THIS LINE is the error: SyntaxError, no export named 'defer'.
+//   Nothing below ever executes — see the box above.
 
 export async function loader() {
-  return defer({ reviews: fetchReviews() });     // TypeError in v7
+  return defer({ reviews: fetchReviews() });     // unreachable in v7
 }
 export async function action() {
-  return json({ ok: true }, { status: 201 });    // TypeError in v7
+  return json({ ok: true }, { status: 201 });    // unreachable in v7
 }
 <RouterProvider router={router} fallbackElement={<Spinner />} />  // prop ignored
 

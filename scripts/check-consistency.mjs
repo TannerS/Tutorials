@@ -84,6 +84,19 @@ const FACTS = [
     wrong: /@MockBean[^.\n]{0,50}(still (works|available|supported)|not removed)/i,
   },
   {
+    id: 'esm-named-import-of-removed-export-is-a-syntaxerror',
+    // A real defect: react-router/Migration said the removed v6 data APIs
+    // "yield undefined" when imported and throw TypeError when called. That
+    // is the CommonJS path. Measured on react-router 7.18.2, an ESM named
+    // import -- what the code sample directly below it used -- fails at
+    // module load with "does not provide an export named 'defer'", so the
+    // TypeError line is never reached.
+    fact: 'an ESM named import of a deleted export is a load-time SyntaxError; only require() yields undefined and defers the failure to the call',
+    fixedBy: 'PENDING',
+    wrong: /import[^\n]{0,70}\b(defer|json)\b[^\n]{0,90}(?:yields?|gives?|returns?|is|are)\s+undefined/i,
+    allow: /SyntaxError|does not provide|module load|require\(/i,
+  },
+  {
     id: 'useid-format-is-react-19',
     // A real defect: Hooks.tsx taught useId() returning ":r1:", which is the
     // React 18 shape. Measured by server-rendering against this repo's React
