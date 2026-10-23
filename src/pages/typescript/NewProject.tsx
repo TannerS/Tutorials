@@ -28,8 +28,7 @@ export default function NewProject() {
 
       <h3>Recommended: Vite + React + TypeScript</h3>
       <p>
-        Vite is the modern standard. It uses esbuild for dev (instant HMR) and
-        Rollup for production builds. One command:
+        Vite is the modern standard. One command:
       </p>
 
       <CodeBlock language="bash" title="Create a new Vite React+TS project">
@@ -38,6 +37,21 @@ cd my-app
 npm install
 npm run dev`}
       </CodeBlock>
+
+      <InfoBox variant="note" title="Vite 8 runs on Rolldown, not esbuild + Rollup">
+        <p style={{ marginBottom: 0 }}>
+          The &ldquo;esbuild for dev, Rollup for the production build&rdquo; description is the
+          Vite 4&ndash;6 architecture, and you will still read it almost everywhere.{' '}
+          <strong>Vite 8 replaced both with Rolldown</strong>, a Rust bundler that does the
+          dependency pre-bundling <em>and</em> the production bundle, which removes the old
+          dev/prod behaviour mismatch. Checked on this repo: <code>rolldown@1.2.1</code> is
+          installed and neither <code>esbuild</code> nor <code>rollup</code> is present at all.
+          A <code>rollupOptions</code> key in a config is kept for compatibility &mdash;
+          Rolldown is Rollup-API-compatible. The{' '}
+          <a href="/react18/build-toolchain">Build Toolchain</a> lesson covers the change in
+          full.
+        </p>
+      </InfoBox>
 
       <InfoBox variant="tip" title="What that command does">
         <code>npm create vite@latest</code> runs the <code>create-vite</code> package.
