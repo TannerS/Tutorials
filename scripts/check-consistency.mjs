@@ -84,6 +84,33 @@ const FACTS = [
     wrong: /@MockBean[^.\n]{0,50}(still (works|available|supported)|not removed)/i,
   },
   {
+    id: 'queryby-throws-on-multiple',
+    // Pre-emptive. The repo states this correctly today (react-testing's query
+    // table and BestPractices both do), but "queryBy returns null instead of
+    // throwing" is the single most common way to mis-summarise RTL, because
+    // the not-found half of the rule is the half people remember.
+    // Measured on @testing-library/dom 10.4.2: queryByRole with two matching
+    // buttons THREW "Found multiple elements"; it returns null only when
+    // nothing matches.
+    fact: 'queryBy returns null when nothing matches but THROWS on multiple matches; only the not-found case is null',
+    fixedBy: 'measured, no prior defect',
+    // No `allow` clause. An earlier attempt allowed any "throw ... multiple"
+    // nearby, which silently swallowed the exact sentence this guards --
+    // "queryBy returns null rather than THROWING when there are MULTIPLE
+    // matching elements" contains that phrase while asserting the opposite.
+    // So `wrong` instead requires null to be tied to the multiple case, either
+    // by an explicit negation of throwing or by a when/if/on clause.
+    wrong: new RegExp(
+      [
+        // "...returns null rather than throwing ... multiple"
+        /queryBy[^.]{0,70}(?:returns?|is|gives?)\s+null[^.]{0,40}(?:rather than|instead of|not)\s+throw\w*[^.]{0,40}(?:multiple|more than one|several)/.source,
+        // "...returns null when/if/on multiple matches"
+        /queryBy[^.]{0,70}(?:returns?|is|gives?)\s+null[^.]{0,30}\b(?:when|if|on|for)\b[^.]{0,25}(?:multiple|more than one|several)/.source,
+      ].join('|'),
+      'i',
+    ),
+  },
+  {
     id: 'typeless-js-esm-is-detected-not-fatal',
     // Pre-emptive rather than a past regression: no file asserts this today.
     // Kept because the opposite is the natural thing to write, and it stopped
