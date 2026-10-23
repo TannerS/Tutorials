@@ -84,6 +84,18 @@ const FACTS = [
     wrong: /@MockBean[^.\n]{0,50}(still (works|available|supported)|not removed)/i,
   },
   {
+    id: 'typeless-js-esm-is-detected-not-fatal',
+    // Pre-emptive rather than a past regression: no file asserts this today.
+    // Kept because the opposite is the natural thing to write, and it stopped
+    // being true in Node 22.7.0 / 20.19.0 when syntax detection was enabled by
+    // default. Measured on Node 25: `export const x = 1` in a typeless .js
+    // runs, warning MODULE_TYPELESS_PACKAGE_JSON, and is reparsed as ESM.
+    fact: 'ESM syntax in a typeless .js is reparsed as ESM with a MODULE_TYPELESS_PACKAGE_JSON warning, not a SyntaxError (Node >= 22.7)',
+    fixedBy: 'measured, no prior defect',
+    wrong: /(SyntaxError|throws?|fatal|fails? to (run|load|parse))[^.]{0,90}(no|missing|without)[^.]{0,30}"?type"?[^.]{0,20}(field|module)/i,
+    allow: /detect|reparse|MODULE_TYPELESS|22\.7|20\.19/i,
+  },
+  {
     id: 'proxy-advises-protected-since-6',
     fact: 'CGLIB proxies advise protected and package-private methods as of Framework 6.0; only private/final are skipped',
     fixedBy: '9125c5f',

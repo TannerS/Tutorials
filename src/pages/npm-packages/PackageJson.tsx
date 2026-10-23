@@ -542,6 +542,38 @@ require (listed LATER) won`}
 }`}
       </CodeBlock>
 
+      <InfoBox variant="warning" title="Mistake 6 no longer fails loudly — which makes it easier to ship">
+        <p>
+          &ldquo;Missing <code>type</code> means CommonJS&rdquo; is still the default, but on a
+          modern Node it is no longer the whole story, and the gap is the kind that lets a
+          broken package reach npm. Node now uses <strong>syntax detection</strong>: an
+          ambiguous <code>.js</code> file is tried as CommonJS first, and if that fails{' '}
+          <em>and</em> module syntax is present, it is silently reparsed as an ES module.
+          Enabled by default since Node <strong>22.7.0</strong> and <strong>20.19.0</strong>.
+        </p>
+        <p>
+          Measured on Node 25 — a <code>.js</code> file holding <code>export const x = 1</code>{' '}
+          with no <code>type</code> field does not throw. It runs, and warns:
+        </p>
+        <CodeBlock language="text" title="Real output — the warning you get instead of an error">
+{`(node:18978) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///…/esm.js
+is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a
+performance overhead.
+To eliminate this warning, add "type": "module" to /…/package.json.`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          So the advice above stands, for a sharper reason: it works on your machine while
+          costing a double parse on every load, and your consumers&apos; bundlers do not all
+          implement the same detection. Two details worth knowing — a bare dynamic{' '}
+          <code>import()</code> does <em>not</em> trigger detection, because it is valid
+          CommonJS; and what does trigger it is <code>import</code>/<code>export</code>{' '}
+          statements, <code>import.meta</code>, top-level <code>await</code>, or redeclaring{' '}
+          <code>require</code>/<code>module</code>/<code>exports</code>/<code>__dirname</code>/
+          <code>__filename</code>.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="tip" title="Validate Your package.json">
         Use <code>npx publint</code> to check your package.json for common publishing mistakes.
         It verifies entry points exist, exports are correct, and files are properly included.
