@@ -267,22 +267,23 @@ public class GarbageDemo {
       </CodeBlock>
 
       <CodeBlock language="text" title="Real output — java -Xmx64m -Xlog:gc GarbageDemo (trimmed)">
-{`[0.005s][info][gc] Using G1
-[0.020s][info][gc] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 5M->1M(10M) 0.298ms
-[0.020s][info][gc] GC(1) Pause Young (Normal) (G1 Evacuation Pause) 4M->1M(10M) 0.148ms
-[0.020s][info][gc] GC(2) Pause Young (Normal) (G1 Evacuation Pause) 4M->1M(30M) 0.172ms
-[0.022s][info][gc] GC(3) Pause Young (Normal) (G1 Evacuation Pause) 18M->1M(30M) 0.164ms
+{`[0.013s][info][gc] Using G1
+[0.028s][info][gc] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 5M->1M(10M) 0.305ms
+[0.029s][info][gc] GC(1) Pause Young (Normal) (G1 Evacuation Pause) 4M->1M(10M) 0.179ms
+[0.029s][info][gc] GC(2) Pause Young (Normal) (G1 Evacuation Pause) 4M->1M(10M) 0.160ms
+[0.029s][info][gc] GC(3) Pause Young (Normal) (G1 Evacuation Pause) 4M->1M(30M) 0.187ms
 ...
-[0.056s][info][gc] GC(33) Pause Young (Normal) (G1 Evacuation Pause) 38M->1M(64M) 0.092ms
-[0.057s][info][gc] GC(34) Pause Young (Normal) (G1 Evacuation Pause) 38M->1M(64M) 0.096ms
-...
+[0.056s][info][gc] GC(29) Pause Young (Normal) (G1 Evacuation Pause) 37M->1M(63M) 0.093ms
+[0.057s][info][gc] GC(30) Pause Young (Normal) (G1 Evacuation Pause) 37M->1M(63M) 0.086ms
+[0.057s][info][gc] GC(31) Pause Young (Normal) (G1 Evacuation Pause) 37M->1M(63M) 0.085ms
 done, total bytes allocated (approx): 16384000000`}
       </CodeBlock>
 
       <p>
-        47 young collections ran in about 60ms of wall time for a completely unremarkable loop.
+        32 young collections ran in about 57ms of wall time for a completely unremarkable loop,
+        and the count is deterministic — five consecutive runs produced exactly 32.
         Each line is one full stop-the-world pause: heap usage collapses from the number on the
-        left (e.g. <code>38M</code>) down to almost nothing (<code>1M</code>) as every live object
+        left (e.g. <code>37M</code>) down to almost nothing (<code>1M</code>) as every live object
         &mdash; here, essentially none &mdash; is copied out of the young regions and everything
         else is reclaimed in one shot.
       </p>
@@ -292,7 +293,7 @@ done, total bytes allocated (approx): 16384000000`}
         It is not an abstract phrase &mdash; the log above <em>is</em> the evidence. During each{' '}
         <code>Pause Young</code> line, every application thread in the JVM is suspended, not just
         the thread that happened to trigger the collection. No bytecode runs, no lock is acquired,
-        no request is served, for the duration printed at the end of the line (here, ~0.07&ndash;0.3ms
+        no request is served, for the duration printed at the end of the line (here, ~0.08&ndash;0.31ms
         each). The GC needs the object graph to hold still while it decides what&apos;s reachable
         and copies survivors, so it stops every thread rather than risk a thread mutating a
         reference mid-scan.
