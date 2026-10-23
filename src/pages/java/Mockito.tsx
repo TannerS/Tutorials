@@ -615,10 +615,20 @@ Hints:
 	at lab.mock.StrictStubsTest.stubForASkuTheCodeNeverAsksFor(StrictStubsTest.java:22)`}
         </CodeBlock>
         <p>
-          Run that class on its own and it passes. This is the practical lesson: when a Mockito
-          failure names a file that is not the failing test, or a test only fails as part of the
-          full suite, look for a matcher misuse or an unfinished <code>when()</code> earlier in
-          the run. Chasing the reported test is chasing the victim, not the cause.
+          Now run <code>StrictStubsTest</code> on its own. It still fails — it is the
+          strict-stubs demo, after all — but it fails <strong>differently</strong>:{' '}
+          <code>UnnecessaryStubbingException</code>, raised from{' '}
+          <code>MockitoExtension.afterEach</code> and pointing at its own unused stub, which is
+          the real problem with that test. Verified both ways on Mockito 5.23.0.
+        </p>
+        <p>
+          That is the part worth carrying: the contamination did not just add a failure, it{' '}
+          <em>replaced</em> one. Running the full suite hid this class&apos;s actual defect behind
+          an <code>UnfinishedStubbingException</code> sourced from a different file. So when a
+          Mockito failure names a file that is not the failing test, or a test changes its failure
+          mode depending on what ran before it, look for a matcher misuse or an unfinished{' '}
+          <code>when()</code> earlier in the run. Chasing the reported test is chasing the victim,
+          not the cause — and fixing the cause can reveal a second, previously masked failure.
         </p>
       </InfoBox>
 
