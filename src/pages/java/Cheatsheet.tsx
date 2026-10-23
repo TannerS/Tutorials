@@ -135,7 +135,7 @@ List<String> l = new ArrayList<>();
 l.getClass() == new ArrayList<Integer>().getClass();  // true — erased`}</GuideCode>
         <GuideRules items={[
           'Generics are erased at runtime: no new T[], no instanceof List<String>.',
-          'That erasure is what broke Mockito and serialization libraries on the Java 8 → 9 jump.',
+          'Erasure exists for migration compatibility — generics arrived in Java 5 (Sept 2004), nine years after JDK 1.0, and every already-compiled List had to keep working.',
           'Arrays are covariant and unsound: Object[] o = new String[3] compiles, then o[0]=42 throws ArrayStoreException at runtime. Generics are invariant instead — List<Object> l = new ArrayList<String>() fails to COMPILE, catching the same mistake earlier.',
           'Multiple bounds: <T extends Number & Comparable<T>> — at most one class bound, and it comes first.',
         ]} />
@@ -222,7 +222,7 @@ list.stream().mapToInt(Integer::intValue).average().orElse(0);`}</GuideCode>
           'A stream is consumed once — reusing one throws IllegalStateException.',
           'Nothing runs until a TERMINAL operation (collect, forEach, reduce, count).',
           'parallelStream() helps only for big, CPU-bound, side-effect-free work. It uses the common ForkJoinPool — never block inside it.',
-          'peek() is for debugging; the JIT may skip it entirely.',
+          'peek() is for debugging; the stream implementation itself is allowed to skip it entirely when it can compute the result without it (e.g. peek().count()) — not the JIT.',
           'flatMap turns a Stream<List<T>> into a flat Stream<T> — the fix for a nested for loop or a Stream<Optional<T>>.',
         ]} />
       </GuidePanel>
@@ -466,7 +466,8 @@ class OrderServiceTest {
           head={['Release', 'Brought']}
           rows={[
             ['8', 'lambdas, streams, Optional'],
-            ['11 LTS', 'var, HttpClient'],
+            ['10', 'var — a 10 feature, not an 11 one'],
+            ['11 LTS', 'HttpClient, String lines/strip/repeat'],
             ['17 LTS', 'records, sealed, switch expressions'],
             ['21 LTS', 'virtual threads, pattern matching for switch'],
             ['25 LTS', 'current LTS line'],
