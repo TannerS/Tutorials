@@ -117,6 +117,39 @@ console.log(byDept);
 // }`}
       </CodeBlock>
 
+      <InfoBox variant="success" title="Grouping specifically has its own method now — Object.groupBy">
+        <p>
+          Grouping was the standard example of a shape only <code>reduce</code> could build,
+          and as of ES2024 it is not. <code>Object.groupBy</code> does exactly this, and has
+          been Baseline widely available since March 2024.
+        </p>
+        <CodeBlock language="javascript" title="Verified — the same grouping, one call, node v25">
+{`const byDept2 = Object.groupBy(people, person => person.dept);
+
+console.log(byDept2);
+// [Object: null prototype] {
+//   Engineering: [ {...Ada}, {...Grace}, {...Linus} ],
+//   Research: [ {...Alan}, {...Margaret} ]
+// }`}
+        </CodeBlock>
+        <p>
+          Two differences from the hand-rolled version worth knowing. It groups the{' '}
+          <em>whole elements</em>, not a field you picked out, so the reduce above is still
+          what you want if you only need the names. And the object it returns has a{' '}
+          <strong>null prototype</strong> &mdash; which is deliberate, since a group keyed{' '}
+          <code>&quot;toString&quot;</code> would otherwise collide with an inherited method.
+          The practical consequence is that <code>byDept2.hasOwnProperty</code> does not exist;
+          use <code>Object.hasOwn(byDept2, key)</code> instead.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          There is a <code>Map.groupBy</code> too, for when the key is an object or any other
+          non-string value &mdash; <code>Object.groupBy</code> coerces every key to a string,
+          so objects would all collapse into <code>&quot;[object Object]&quot;</code>.
+          The <code>reduce</code> version above is still worth being able to write, because the
+          pattern generalises to accumulations these two do not cover.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="note" title="Every one of these leaves the original array alone">
         <p>
           <code>map</code>, <code>filter</code>, <code>reduce</code>, <code>find</code>,{' '}
@@ -125,6 +158,35 @@ console.log(byDept);
           <code>sort</code>, <code>splice</code>, and <code>reverse</code>, which mutate in
           place. Reaching for these six by default is a large part of what &quot;write
           functional-style JS&quot; actually means in practice.
+        </p>
+      </InfoBox>
+
+      <InfoBox variant="success" title="Four of the mutating methods now have copying twins">
+        <p>
+          The usual advice for &quot;sort without mutating&quot; was{' '}
+          <code>[...arr].sort()</code> &mdash; copy first, then mutate the copy. That workaround
+          is no longer necessary. ES2023 added copying versions that leave the receiver alone
+          and hand back a new array, and they have been Baseline widely available since July
+          2023.
+        </p>
+        <CodeBlock language="javascript" title="Verified — copying vs mutating, node v25">
+{`const orig = [3, 1, 2];
+
+console.log(orig.toSorted());   // [ 1, 2, 3 ]  — a new array
+console.log(orig);              // [ 3, 1, 2 ]  — untouched
+
+const mutated = [3, 1, 2];
+mutated.sort();
+console.log(mutated);           // [ 1, 2, 3 ]  — sort() rewrote it in place`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          The full set is <code>toSorted()</code>, <code>toReversed()</code>,{' '}
+          <code>toSpliced()</code> and <code>with(index, value)</code> &mdash; copying
+          counterparts to <code>sort</code>, <code>reverse</code>, <code>splice</code> and a
+          plain index assignment. <code>push</code> has no copying twin because spread already
+          covers it: <code>[...arr, item]</code>. Reach for these in React especially, where
+          mutating state in place is the bug and <code>arr.sort()</code> on a state array is a
+          classic way to cause it.
         </p>
       </InfoBox>
 
