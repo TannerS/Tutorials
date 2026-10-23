@@ -277,7 +277,8 @@ The usual correct shape:
           <code>Thread.interrupted()</code> and never calls a blocking method will keep running to
           completion. That is why <code>awaitTermination</code> can time out, and why swallowing{' '}
           <code>InterruptedException</code> without restoring the flag is a real bug rather than
-          a style nit — see <a href="/java/concurrency">Concurrency &amp; Threads</a>.
+          a style nit — see <a href="/java/executors">Executors &amp; Thread Pools</a> and{' '}
+          <a href="/java/threads">Threads &amp; Shared State</a>.
         </p>
       </InfoBox>
 

@@ -209,6 +209,17 @@ int n = counts.getOrDefault("missing", 0);`}
         Variables can be declared, initialized, and reassigned. Constants are declared with the{' '}
         <code>final</code> keyword and cannot be changed after initialization.
       </p>
+      <p>
+        The example also uses <code>var</code>, which asks the compiler to infer the type from
+        the initializer. It is worth being clear about what it is and is not:{' '}
+        <strong>Java stays statically typed</strong>. <code>var message = &quot;Hello&quot;</code>{' '}
+        declares a <code>String</code> permanently — assigning an <code>int</code> to it later
+        is still a compile error. This is inference, not the dynamic typing{' '}
+        <code>var</code> means in JavaScript. When to use it, and the cases where it hurts
+        readability, are covered in{' '}
+        <a href="/java/advanced">Advanced Java Features</a>; it appears here because you will
+        see it in almost every modern example, including later ones in this section.
+      </p>
 
       <CodeBlock language="java" title="VariablesAndConstants.java">
 {`public class VariablesAndConstants {

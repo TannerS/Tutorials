@@ -328,6 +328,38 @@ public class QueueAndDeque {
 }`}
       </CodeBlock>
 
+      <InfoBox variant="note" title="Three bits of syntax in that example you have not met yet">
+        <p>
+          The queue example leans on three features that get proper lessons later. Enough to
+          read the code now:
+        </p>
+        <ul>
+          <li>
+            <code>record Task(String name, int priority) &#123;&#125;</code> declares an
+            immutable data class in one line. The compiler writes the constructor, the
+            accessors — called <code>name()</code> and <code>priority()</code>, with no{' '}
+            <code>get</code> prefix — plus <code>equals</code>, <code>hashCode</code> and{' '}
+            <code>toString</code>. Full treatment in{' '}
+            <a href="/java/advanced">Advanced Java Features</a>.
+          </li>
+          <li>
+            <code>Task::priority</code> is a <em>method reference</em>: a shorthand for the
+            lambda <code>t -&gt; t.priority()</code>. It says &ldquo;call this method on
+            whatever you are given&rdquo;.
+          </li>
+          <li>
+            <code>item -&gt; System.out.println(item)</code> is a <em>lambda</em>: an
+            anonymous function passed as a value. Both it and method references are the
+            subject of <a href="/java/streams">Streams &amp; Lambdas</a>.
+          </li>
+        </ul>
+        <p>
+          You do not need to understand how any of them work to follow this lesson — they are
+          here because this is how collection code is actually written, and seeing it twice is
+          better than meeting it cold later.
+        </p>
+      </InfoBox>
+
       <InfoBox variant="warning" title="Stack and Vector are legacy">
         <p>
           <code>java.util.Stack</code> extends <code>Vector</code>, which synchronizes every

@@ -401,6 +401,23 @@ public static void main(String[] args) throws Exception {
         loaded.
       </p>
 
+      <h2>Where This Leads</h2>
+      <p>
+        Notice what that last paragraph kept coming back to: the <code>.class</code> file, and
+        what the JVM chose to load out of it. Reflection is reading metadata that something
+        else put there and something else found — which raises the question this lesson has
+        been quietly assuming an answer to.
+      </p>
+      <p>
+        <strong><a href="/java/classpath">Classes, Jars &amp; the Classpath</a></strong> is
+        that answer: how a <code>.java</code> file becomes a <code>.class</code> file, what a
+        jar actually is, and how the JVM finds a class by name — the same lookup{' '}
+        <code>Class.forName</code> performs here, which is also why{' '}
+        <code>ClassNotFoundException</code> is a <em>checked</em> exception on a reflective
+        call. It explains the whole family of errors that look like reflection failures and
+        are really packaging failures.
+      </p>
+
     </LessonLayout>
   );
 }

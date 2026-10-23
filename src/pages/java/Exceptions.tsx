@@ -492,6 +492,15 @@ Caused by: java.sql.SQLException: connection reset by peer
       </InfoBox>
 
       <h2>Checked Exceptions and Lambdas</h2>
+      <InfoBox variant="note" title="This section runs slightly ahead of the section order">
+        <p>
+          Lambdas and streams are the <a href="/java/streams">next lesson</a>. This section is
+          here anyway, because it is the place where checked exceptions and lambdas collide and
+          splitting the topic across two lessons would be worse than one forward reference. If{' '}
+          <code>paths.stream().map(p -&gt; ...)</code> is unfamiliar, read the next lesson first
+          and come back — nothing later in <em>this</em> lesson depends on this section.
+        </p>
+      </InfoBox>
       <p>
         This is the single most common friction point in modern Java, and you will hit it the
         moment you combine the Stream API with I/O. The built-in functional interfaces

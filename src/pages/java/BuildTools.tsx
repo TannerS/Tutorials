@@ -13,6 +13,13 @@ export default function BuildTools() {
       next={{ path: '/java/testing-basics', label: 'Unit Testing Fundamentals — Dummies, Stubs, Spies, Mocks' }}
     >
       <p>
+        The previous lesson left you setting <code>-cp</code> by hand for three jars. That does
+        not scale past a toy: a single Spring Boot dependency pulls in around forty jars, each
+        with dependencies of its own, and two of them will disagree about a version. This
+        lesson is about the tool that works that out and hands the finished classpath to{' '}
+        <code>javac</code> and <code>java</code>.
+      </p>
+      <p>
         A build tool does three jobs that used to be scripted by hand, badly: it resolves your{' '}
         <strong>dependencies</strong> (including the dependencies of your dependencies —{' '}
         <em>transitive</em> deps — recursively, picking one version when two libraries disagree),

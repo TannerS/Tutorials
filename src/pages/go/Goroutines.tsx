@@ -682,7 +682,7 @@ Node 25.2   100k pending promises   100,000        9 ms     121 MB    0.1 us / 1
         <p>
           <strong>Versus Java virtual threads it is a tie</strong> — 93 ms / 234 MB against 102 ms
           / 273 MB. Project Loom brought the JVM to essentially the same model. If you have read
-          the <a href="/java/concurrency">Java concurrency lesson</a>, a goroutine is very close to
+          the <a href="/java/concurrency">Java Modern Concurrency lesson</a>, a goroutine is very close to
           a virtual thread: userspace-scheduled, cheap, blocking-friendly, one per task. The
           difference is maturity of the surroundings. Go has had this model since 2009, so{' '}
           <em>every</em> standard library call, every database driver, and every HTTP client is

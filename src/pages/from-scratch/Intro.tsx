@@ -125,7 +125,7 @@ function FromScratchIntro() {
       </p>
       <p>
         <strong>What it explains:</strong>{' '}
-        <a href="/java/concurrency">Java &rarr; Concurrency &amp; Threads</a> and{' '}
+        <a href="/java/executors">Java &rarr; Executors &amp; Thread Pools</a> and{' '}
         <a href="/java/cheatsheet">Java Field Guide &rarr; Concurrency &amp; Virtual Threads</a>{' '}
         stop being an API tour. <a href="/springboot/advanced">Spring Boot &rarr; Advanced Topics</a>{' '}
         tells you the default <code>@Scheduled</code> pool size is 1 and that this is

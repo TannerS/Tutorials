@@ -7,8 +7,8 @@ export default function JavaCheatsheet() {
       title="JAVA"
       kicker="FIELD GUIDE"
       glyph="☕"
-      tagline="Modern Java — syntax, OOP, collections, streams, concurrency, and the traps that survive code review."
-      meta={['Java 17 / 21 / 25 LTS', '24 panels']}
+      tagline="Modern Java — syntax, OOP, collections, streams, concurrency, packaging, and the traps that survive code review."
+      meta={['Java 17 / 21 / 25 LTS', '26 panels']}
       page="1 / 1"
       footer="This page is for recall. The lessons in this section carry the reasoning, the benchmarks and the worked examples."
       prev={{ path: '/java/mockito', label: 'Mockito in Practice' }}
@@ -343,6 +343,9 @@ finally {
         <GuideRules items={[
           'shutdown() does not block — pair it with awaitTermination or your code moves on while tasks are still running.',
           'volatile guarantees every thread sees the latest write; it does NOT make a read-modify-write like count++ atomic — that still needs synchronized or an Atomic type.',
+          'submit() puts a thrown exception inside the Future and prints nothing. Discard the Future and the failure is silent — use execute() for fire-and-forget, or catch and log inside the task.',
+          'get() wraps your exception in an ExecutionException, so the real cause is one getCause() deeper. In request paths always use get(timeout, unit).',
+          'Pool threads are non-daemon: a pool you never shut down keeps the JVM alive after main returns.',
         ]} />
       </GuidePanel>
 
@@ -477,7 +480,57 @@ class OrderServiceTest {
         ]} />
       </GuidePanel>
 
-      <GuidePanel n={24} title="Modern JDK Gotcha" accent="green" glyph="⚠️">
+      <GuidePanel n={24} title="Thread Pool Sizing & Rejection" accent="amber" glyph="🎚️" span={2}>
+        <GuideCode>{`new ThreadPoolExecutor(core, max, keepAlive, unit, queue, factory, handler);
+// Growth order: new thread up to CORE -> QUEUE -> new thread up to MAX.
+// So max does NOTHING until the queue is full.
+
+Executors.newFixedThreadPool(n);   // bounds threads, queue is Integer.MAX_VALUE -> OOM risk
+Executors.newCachedThreadPool();   // bounds work, threads are Integer.MAX_VALUE -> OOM risk
+
+cores            // CPU-bound sizing
+cores * (1 + wait/compute)   // I/O-bound sizing`}</GuideCode>
+        <GuideTable
+          head={['Rejection policy', 'When full']}
+          rows={[
+            ['AbortPolicy', 'throws RejectedExecutionException — the default, usually right'],
+            ['CallerRunsPolicy', 'caller runs it — natural backpressure'],
+            ['DiscardPolicy', 'drops silently — only for losable data'],
+            ['DiscardOldestPolicy', 'drops the oldest queued task — latest-value-wins feeds'],
+          ]}
+        />
+        <GuideRules items={[
+          'core=2 max=50 with the default unbounded queue is a pool of 2, forever. A bounded queue is what makes max reachable and what lets a service shed load instead of dying of OOM.',
+          'A @Scheduled / scheduleAtFixedRate task that throws is cancelled silently and never runs again — wrap every recurring body in try/catch.',
+          'Never let a blocking call run on the common ForkJoinPool: parallelStream() and executor-less CompletableFuture.supplyAsync() share it process-wide. Always pass your own executor.',
+          'Spring: spring.task.execution.pool.* is this same executor (queue-capacity defaults to Integer.MAX_VALUE); spring.task.scheduling.pool.size defaults to 1.',
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={25} title="Classpath & Jar Errors" accent="cyan" glyph="📦" span={2}>
+        <GuideCode>{`javap -c Thing.class          # signatures and bytecode
+javap -v Thing.class | head   # major version: 70 = Java 26 (version + 44)
+jar tf app.jar                # a jar is a zip; unzip -l works too
+java -cp "out:lib/*" Main     # ordered list, FIRST match wins
+java -jar app.jar             # ignores -cp entirely`}</GuideCode>
+        <GuideTable
+          head={['Error', 'Means']}
+          rows={[
+            ['ClassNotFoundException', 'asked for by name, not on the classpath'],
+            ['NoClassDefFoundError', 'compiled against it, missing now — or its static init threw earlier'],
+            ['UnsupportedClassVersionError', 'built for a newer Java than the JVM running it'],
+            ['NoSuchMethodError', 'found the class, wrong version — two copies on the classpath'],
+            ['ClassCastException: X to X', 'two class loaders each defined X'],
+          ]}
+        />
+        <GuideRules items={[
+          'Compile-time and run-time classpaths are separate lists, which is why code can build and then fail to start.',
+          'Duplicate resources do not merge. getResourceAsStream returns the first copy silently; getResources() lists them all and names the jars — the diagnostic for "wrong config loaded".',
+          'A NoClassDefFoundError on a class that is obviously present usually means an earlier ExceptionInInitializerError; go find that in the log.',
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={26} title="Modern JDK Gotcha" accent="green" glyph="⚠️">
         <GuideRules items={[
           'On recent JDKs Mockito prints a self-attach warning plus JVM agent warnings on every run.',
           'Fix: maven-dependency-plugin (goal: properties) + surefire argLine -javaagent:${org.mockito:mockito-core:jar}',

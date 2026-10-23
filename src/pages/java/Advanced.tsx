@@ -531,46 +531,30 @@ module com.myapp.core {
 // java --module-path out -m com.myapp.core/com.myapp.core.Main`}
       </CodeBlock>
 
-      <CodeBlock language="java" title="VirtualThreads.java">
-{`// Virtual Threads (Java 21) — lightweight threads for high-throughput I/O
-import java.util.concurrent.*;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.stream.IntStream;
-
-public class VirtualThreads {
-    public static void main(String[] args) throws Exception {
-        Instant start = Instant.now();
-
-        // Create 100,000 virtual threads — impossible with platform threads
-        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            IntStream.range(0, 100_000).forEach(i -> {
-                executor.submit(() -> {
-                    Thread.sleep(Duration.ofSeconds(1));
-                    return i;
-                });
-            });
-        } // executor.close() waits for all tasks to complete
-
-        Instant end = Instant.now();
-        System.out.println("Completed 100K tasks in " +
-            Duration.between(start, end).toMillis() + "ms");
-
-        // Simple virtual thread creation
-        Thread vThread = Thread.ofVirtual().name("my-vthread").start(() -> {
-            System.out.println("Running on: " + Thread.currentThread());
-        });
-        vThread.join();
-
-        // Virtual thread builder
-        var factory = Thread.ofVirtual().name("worker-", 0).factory();
-        try (var exec = Executors.newThreadPerTaskExecutor(factory)) {
-            exec.submit(() -> System.out.println(Thread.currentThread().getName()));
-            exec.submit(() -> System.out.println(Thread.currentThread().getName()));
-        }
-    }
-}`}
-      </CodeBlock>
+      <h2>Virtual Threads — Covered Three Lessons Back</h2>
+      <p>
+        Java 21&apos;s other headline feature belongs on any list of modern Java, but it is not
+        a language feature and it does not belong here: it changes how you run code, not how
+        you write it. It already has its own place in this section, with worked examples and
+        measured output rather than a sketch.
+      </p>
+      <p>
+        If you arrived at this lesson first, the short version is that a virtual thread is a
+        thread the JVM schedules onto a small pool of real OS threads, cheap enough to create
+        one per task, which removes the thread-pool sizing problem for I/O-bound work. The
+        three lessons that build that up are{' '}
+        <strong><a href="/java/threads">Threads &amp; Shared State</a></strong>,{' '}
+        <strong><a href="/java/executors">Executors &amp; Thread Pools</a></strong> and{' '}
+        <strong><a href="/java/concurrency">Modern Concurrency</a></strong> — in that order,
+        because the third one is largely about what the first two stopped being necessary for.
+      </p>
+      <p>
+        The one connection worth drawing here is to <code>record</code>. Immutable objects can
+        be shared between threads with no synchronization at all, because there are no writes
+        after construction to order. That makes records the quietest concurrency feature in the
+        language, and it is the strongest practical argument for the data-carrier style this
+        lesson has been describing.
+      </p>
 
       <InfoBox variant="note" title="Choosing the Right Java Version">
         <p>
