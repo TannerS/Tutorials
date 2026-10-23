@@ -18,8 +18,8 @@ export default function Chunks() {
         of the confusion about lazy loading is really confusion about chunks.
       </p>
       <p>
-        The numbers throughout are from a real production build of this site: 458 source
-        files, 428 of them lazy-loaded routes.
+        The numbers throughout are from a real production build of this site: 470 source
+        files, 436 of them lazy-loaded routes.
       </p>
 
       <h2>There Is No <code>app.js</code></h2>
@@ -27,7 +27,7 @@ export default function Chunks() {
       <CodeBlock language="text" title="Real output — the built index.html references exactly one module">
 {`<script type="module" src="/assets/index-DUJ5Ntuj.js">
 
-...while the build emitted 522 .js files totalling 23 MB.`}
+...while the build emitted 530 .js files totalling 22 MB.`}
       </CodeBlock>
 
       <p>
@@ -74,12 +74,12 @@ export default function Chunks() {
 
       <InfoBox variant="note" title="Chunks are not 1:1 with your files">
         <p style={{ marginBottom: 0 }}>
-          458 source files in, 522 chunks out. And the output is not only your code — the
+          470 source files in, 530 chunks out. And the output is not only your code — the
           two largest chunks in this build are the <strong>TypeScript compiler</strong>{' '}
-          (3,386 kB) and <strong>Sass</strong> (3,243 kB), both pulled in by one interactive
+          (3,386 kB) and <strong>Sass</strong> (3,242 kB), both pulled in by one interactive
           playground page. All chunks together = your code <em>plus every library it
           actually reaches</em>, minus whatever tree shaking proved unreachable. That is how
-          11 MB of source becomes 23 MB of output.
+          11 MB of source becomes 22 MB of output.
         </p>
       </InfoBox>
 
@@ -90,7 +90,7 @@ export default function Chunks() {
       <p>
         <strong>Rule 1 — every <code>import()</code> is a forced split point.</strong> This
         is not a heuristic. A dynamic import <em>must</em> become its own file, or it could
-        not be deferred. 428 lazy routes guarantee at least 428 async chunks.
+        not be deferred. 436 lazy routes guarantee at least 436 async chunks.
       </p>
 
       <p>
@@ -134,7 +134,7 @@ One lesson chunk is 17.2 kB — it merely REFERENCES the shared ones.`}
 {`Ju = lazy(() => h(() => import(\`./Advanced-vLtJorqy.js\`), __vite__mapDeps(...)))
 
 The source path is GONE. The emitted filename is baked in as a literal
-string. There are 428 of these in the entry chunk — one per lazy route.`}
+string. There are 437 of these in the entry chunk — one per lazy route, plus one more.`}
       </CodeBlock>
 
       <p>
@@ -233,9 +233,9 @@ index.html:
       </p>
 
       <CodeBlock language="text" title="Real output — edit ONE line in ONE lesson, rebuild, diff the filenames">
-{`chunks whose filename changed:   495
+{`chunks whose filename changed:   503
 chunks whose filename survived:    27
-                          total:  522`}
+                          total:  530`}
       </CodeBlock>
 
       <InfoBox variant="danger" title="Why almost everything changed">
