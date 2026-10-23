@@ -24,6 +24,30 @@ export default function ReactJsx() {
         Every compiled snippet below is real <code>esbuild</code> output, and every
         runtime value was read off React 19.2.6.
       </p>
+      <InfoBox variant="note" title="Which tool produces this, and the dev-vs-production split">
+        <p>
+          The <em>shape</em> below is the automatic JSX runtime, which is a React contract
+          rather than an esbuild quirk — every modern transformer emits it. But do not expect
+          to see exactly these lines in your own devtools, for two reasons.
+        </p>
+        <p>
+          First, <strong>Vite 8 no longer uses esbuild for this</strong>; it transforms through{' '}
+          <strong>Rolldown</strong> (oxc). Checked on this repo: its Vite depends on{' '}
+          <code>rolldown</code> and there is no <code>esbuild</code> in{' '}
+          <code>node_modules</code> at all.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Second, the block below is the <strong>production</strong> shape. In{' '}
+          <strong>development</strong> you get the debug runtime instead — measured on this
+          repo&apos;s Vite 8.2.0, the same source compiles to{' '}
+          <code>jsxDEV(...)</code> imported from <code>react/jsx-dev-runtime</code>, with three
+          extra arguments carrying <code>fileName</code>, <code>lineNumber</code> and{' '}
+          <code>columnNumber</code>. That is what powers component stack traces. A production
+          build drops it entirely: the built bundle here referenced{' '}
+          <code>react/jsx-runtime</code> and contained zero occurrences of{' '}
+          <code>jsxDEV</code>.
+        </p>
+      </InfoBox>
 
       <h2>The Source, and What It Becomes</h2>
       <CodeBlock language="jsx" title="demo.jsx — the input">
@@ -37,7 +61,7 @@ export default function ReactJsx() {
 );`}
       </CodeBlock>
 
-      <CodeBlock language="javascript" title="Real output — esbuild --jsx=automatic (what Vite does)">
+      <CodeBlock language="javascript" title="Real output — esbuild --jsx=automatic (the production shape; see the note above)">
 {`import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 
 const App = ({ user, items }) => jsxs("div", { className: "card", "data-id": user.id, children: [
