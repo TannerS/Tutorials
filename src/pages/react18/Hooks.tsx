@@ -1274,7 +1274,7 @@ const filtered = useMemo(() => data.filter(predicate), [data, predicate]);
       <CodeBlock language="jsx" title="useId, useSyncExternalStore, useDebugValue" showLineNumbers>
 {`// useId — generates stable unique IDs for accessibility (SSR-safe)
 function FormField({ label }) {
-  const id = useId(); // e.g., ":r1:" — consistent between server/client
+  const id = useId(); // e.g. "_R_0_" on React 19 — same string on server and client
   return (
     <>
       <label htmlFor={id}>{label}</label>
@@ -1319,6 +1319,30 @@ function FancyInput({ ref, ...props }) {
 // future release". It emits no warning in 19; just don't write new ones:
 // const FancyInput = forwardRef((props, ref) => { ... });`}
       </CodeBlock>
+
+      <InfoBox variant="warning" title="useId changed shape in React 19 — never assert on it">
+        <p>
+          You will find plenty of material, this lesson included until it was
+          re-measured, showing <code>useId</code> returning something like{' '}
+          <code>:r1:</code>. That was React 18. React 19 generates a different shape,
+          measured here by server-rendering against this site&apos;s own React{' '}
+          <strong>19.2.6</strong>:
+        </p>
+        <CodeBlock language="text" title="Real output — renderToStaticMarkup on React 19.2.6">
+{`one useId in a component      ->  _R_0_
+two useIds in one component   ->  _R_0_  and  _R_0H1_
+the same component twice      ->  _R_1_  and  _R_2_`}
+        </CodeBlock>
+        <p style={{ marginBottom: 0 }}>
+          The practical point survives the change, and is the reason to care: the format
+          is an implementation detail React reserves the right to alter, and it just did.
+          Never hardcode one, parse one, or let it reach a snapshot test — a React upgrade
+          rewrites every such assertion at once. Use the value, do not inspect it. What
+          you <em>can</em> rely on is the contract the comment above states: the server
+          and the client produce the same string for the same position in the tree, which
+          is the whole reason the hook exists rather than a counter of your own.
+        </p>
+      </InfoBox>
 
       <h2>Custom Hooks — Composition Pattern</h2>
 

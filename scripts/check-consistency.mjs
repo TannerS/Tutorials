@@ -84,6 +84,23 @@ const FACTS = [
     wrong: /@MockBean[^.\n]{0,50}(still (works|available|supported)|not removed)/i,
   },
   {
+    id: 'useid-format-is-react-19',
+    // A real defect: Hooks.tsx taught useId() returning ":r1:", which is the
+    // React 18 shape. Measured by server-rendering against this repo's React
+    // 19.2.6: one useId gives _R_0_, two in a component give _R_0_ and
+    // _R_0H1_, the same component twice gives _R_1_ and _R_2_.
+    fact: 'useId returns the _R_<n>_ shape on React 19; ":r1:" is the React 18 shape',
+    fixedBy: '4a82f00',
+    // Span is [^\n], NOT [^.]: the stale line reads `useId(); // e.g., ":r1:"`
+    // and an [^.] span cannot cross the periods in "e.g.", so the first
+    // version of this rule passed over the very line it was written for.
+    wrong: /useId[^\n]{0,80}:r\d*:|:r\d*:[^\n]{0,60}useId/i,
+    // Quoting the old shape to correct it is fine, so long as the text says
+    // which version it belonged to. Deliberately narrow: a bare "e.g. :r1:"
+    // beside useId has no such framing and still trips.
+    allow: /React 18|no longer|used to|changed|\bwas\b/i,
+  },
+  {
     id: 'queryby-throws-on-multiple',
     // Pre-emptive. The repo states this correctly today (react-testing's query
     // table and BestPractices both do), but "queryBy returns null instead of
