@@ -420,6 +420,32 @@ HTTP concern? Filter or interceptor. Service concern? Aspect.`}
               patterns are cheap; annotation-based patterns are cheaper.
               <code>args(..)</code>-heavy matching hits every call in the app.</li>
         </ul>
+
+        <p style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>
+          The visibility half of the second bullet is the one most often got wrong, so it
+          is worth seeing rather than taking on trust. One bean, four{' '}
+          <code>@Transactional</code> methods differing only in visibility, each reporting
+          whether it is actually inside a transaction. Boot <strong>4.1.1</strong>,{' '}
+          <code>protected</code> and package-private invoked reflectively{' '}
+          <em>on the proxy</em> so the call genuinely crosses the boundary:
+        </p>
+        <CodeBlock language="text" title="Real output — TransactionSynchronizationManager.isActualTransactionActive()">
+{`proxy class: lab.Vis$$SpringCGLIB$$0
+
+public           ->  ADVISED (tx active)
+protected        ->  ADVISED (tx active)     <- Framework 6.0+
+package-private  ->  ADVISED (tx active)     <- Framework 6.0+
+final (public)   ->  not advised             <- subclass cannot override`}
+        </CodeBlock>
+        <p>
+          <code>final</code> is the only one of the four that silently does nothing, and
+          note what that looks like in practice: no error, no startup warning, a pointcut
+          that reads correctly. If you are told &ldquo;AOP is public-only&rdquo;, that was
+          true through Spring 5 and is the single most common stale fact in this area.{' '}
+          <code>private</code> is not in the table because a private method cannot be
+          called from outside the class at all, so there is no proxy boundary to cross —
+          it is excluded by Java, not by Spring.
+        </p>
       </InfoBox>
 
       <h2>Testing Aspects</h2>
