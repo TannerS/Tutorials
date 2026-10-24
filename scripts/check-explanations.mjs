@@ -15,7 +15,14 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PAGES = process.env.AUDIT_ROOT || path.join(ROOT, 'src/pages');
-const sectionFilter = process.argv[2] ? new RegExp(process.argv[2]) : null;
+// Take the first NON-FLAG argument as the section filter. Reading argv[2]
+// unconditionally meant `--orphans` on its own became the regex /--orphans/,
+// which matched no section and printed a confident "0 findings" -- the same
+// shape of silent-empty-result that this audit kept getting burned by.
+const sectionFilter = (() => {
+  const arg = process.argv.slice(2).find((a) => !a.startsWith('--'));
+  return arg ? new RegExp(arg) : null;
+})();
 const MIN_PROSE = 120; // chars of real sentence text that counts as an explanation
 
 const BAD = /(anti-?pattern|bad|wrong|problem|avoid|don'?t|never|broken|naive|before|buggy|slow|leak|smell|tutorial-style)/i;
@@ -34,6 +41,28 @@ const sharedStem = (a, b) => {
   return common.length >= 2 || (common.length === 1 && (LANG.test(a) && LANG.test(b)));
 };
 const OUTPUT = /(real output|^output|terminal|console|result|stdout|stderr|what .*prints?|^\s*\$|error message|compiler says|diagnostic)/i;
+// Titles do not always advertise that a block is output. "Same test class,
+// after adding the agent" holds a surefire run -- [INFO] lines and "Tests run:
+// 3" -- and was reported as an unexplained example because OUTPUT only ever
+// looked at the title. Judge the BODY too: a block that is plainly a console
+// or log capture is the output half of "here is the program, here is what it
+// printed", which the header says needs no prose around it.
+const OUTPUT_BODY = [
+  /^\s*\[(INFO|WARN|ERROR|DEBUG)\]/m,            // maven / slf4j / logback
+  /\bTests run:\s*\d+/,                          // surefire summary
+  /^\s*at [\w.$]+\([\w.]+:\d+\)/m,               // java stack frame
+  /^\s*\$ /m,                                    // shell transcript
+  /^[A-Za-z.$_]*(Exception|Error):\s/m,           // thrown-and-printed
+  /^\s*(BUILD SUCCESS|BUILD FAILURE|BUILD SUCCESSFUL)/m,
+  /^\s*(added|removed|changed) \d+ packages?/m,   // npm
+  /^\s*(PASS|FAIL|✓|✗|√|×)\s/m,                  // test runners
+  /^\s*\w+@[\w.-]+ /m,                           // package@version lines
+];
+const looksLikeOutput = (slice) => {
+  const body = slice.match(/\{`([\s\S]*?)`\}/);
+  if (!body) return false;
+  return OUTPUT_BODY.some((re) => re.test(body[1]));
+};
 
 function walk(dir, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -89,6 +118,39 @@ function prose(slice) {
     .trim();
 }
 
+// Explanatory text carried INSIDE a code block's comments.
+//
+// The header above says code comments do not count, "because they are not
+// visible as the argument a reader is following". For this repo that turned out
+// to be wrong, and it was the single biggest source of noise here: 128 of
+// react18's findings were orphans, and the ones sampled all explained
+// themselves in comments and then moved to the next heading, e.g.
+//
+//   // The evil version: if ANY unrelated state in this component changes
+//   // later, the component re-renders and suddenly displays 3. It looks like
+//   // a lag bug or a race condition. It is neither.
+//
+// That IS the argument, so a block carrying it is not unexplained. What still
+// should not count is labelling -- "// BAD", "// Fix:", "// step 1" -- so this
+// only counts comment lines that read like sentences: several words, and either
+// sentence punctuation or a lowercase-then-space shape rather than a bare tag.
+function commentProse(slice) {
+  const body = slice.match(/\{`([\s\S]*?)`\}/);
+  if (!body) return '';
+  const lines = body[1].split('\n');
+  const out = [];
+  for (const raw of lines) {
+    const m = raw.match(/^\s*(?:\/\/|\*|#)\s?(.*)$/);
+    if (!m) continue;
+    const text = m[1].trim();
+    if (text.length < 24) continue;                 // labels, markers, dividers
+    if (!/\s/.test(text)) continue;                 // single token
+    if ((text.match(/\s+/g) || []).length < 4) continue; // fewer than ~5 words
+    out.push(text);
+  }
+  return out.join(' ').trim();
+}
+
 const findings = [];
 for (const file of walk(PAGES)) {
   const rel = path.relative(PAGES, file);
@@ -105,7 +167,9 @@ for (const file of walk(PAGES)) {
     if (!next) continue;
     const between = prose(src.slice(m.end, next.start));
 
-    if (next.type === 'code' && !OUTPUT.test(next.title) && !OUTPUT.test(m.title) && between.length < MIN_PROSE) {
+    if (next.type === 'code' && !OUTPUT.test(next.title) && !OUTPUT.test(m.title)
+        && !looksLikeOutput(src.slice(next.start, next.end))
+        && !looksLikeOutput(src.slice(m.start, m.end)) && between.length < MIN_PROSE) {
       const contrast = BAD.test(m.title) && GOOD.test(next.title);
       // Two titles that each name a FILE are consecutive steps in a scaffold,
       // not a comparison -- "src/vite-env.d.ts" then "src/main.tsx" is the
@@ -136,12 +200,26 @@ for (const file of walk(PAGES)) {
         detail: `"${m.title.slice(0, 44)}" -> "${next.title.slice(0, 44)}"`,
         gap: between.length,
       });
-    } else if (next.type === 'head' && !OUTPUT.test(m.title) && between.length < MIN_PROSE) {
+    } else if (next.type === 'head' && !OUTPUT.test(m.title)
+               && !looksLikeOutput(src.slice(m.start, m.end)) && between.length < MIN_PROSE) {
+      // A block that explains itself in its own comments is not an orphan --
+      // see commentProse above for why that counts and what it excludes.
+      const inside = commentProse(src.slice(m.start, m.end));
+      if (inside.length >= MIN_PROSE) continue;
+      // Nor is a block that was INTRODUCED. This check only ever looked
+      // forward, for a trailing conclusion, but this repo's house style is to
+      // explain first and then show the code -- so "prose, block, next
+      // heading" was being reported as unexplained when it is the normal and
+      // correct shape. Look back to the previous marker for the lead-in.
+      const prev = marks[i - 1];
+      const leadIn = prose(src.slice(prev ? prev.end : 0, m.start));
+      if (leadIn.length >= MIN_PROSE) continue;
       findings.push({
         section, rel, line: lineOf(m.end), kind: 'ORPHAN',
         score: (BAD.test(m.title) || GOOD.test(m.title) ? 1 : 0) + (between.length < 20 ? 1 : 0),
         detail: `"${m.title.slice(0, 54)}" then straight to a heading`,
         gap: between.length,
+        inside: inside.length,
       });
     }
   }
@@ -162,4 +240,20 @@ if (process.argv.includes('--detail')) {
   findings.filter((f) => f.kind === 'PAIR-UNRESOLVED')
     .sort((a, b) => b.score - a.score || a.rel.localeCompare(b.rel))
     .forEach((f) => console.log(`  ${f.kind}  ${f.rel}:${f.line}  gap=${f.gap}\n        ${f.detail}`));
+}
+// --orphans prints the advisory tier, which --detail deliberately omits to keep
+// the critical list readable. Highest score first: score 2 means both "nothing
+// between" and a bad/good title, which is where a real missing conclusion is
+// most likely to be.
+if (process.argv.includes('--orphans')) {
+  const list = findings.filter((f) => f.kind === 'ORPHAN')
+    .sort((a, b) => b.score - a.score || a.rel.localeCompare(b.rel));
+  console.log(`\n--- ORPHAN: code block then straight to a heading (${list.length}) ---`);
+  for (const f of list) console.log(`  score=${f.score} gap=${f.gap}  ${f.rel}:${f.line}\n        ${f.detail}`);
+}
+if (process.argv.includes('--pairs')) {
+  const list = findings.filter((f) => f.kind === 'PAIR')
+    .sort((a, b) => b.score - a.score || a.rel.localeCompare(b.rel));
+  console.log(`\n--- PAIR: adjacent blocks, explained only after the second (${list.length}) ---`);
+  for (const f of list) console.log(`  score=${f.score} gap=${f.gap}  ${f.rel}:${f.line}\n        ${f.detail}`);
 }
