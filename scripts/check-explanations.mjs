@@ -7,8 +7,27 @@
 //   ORPHAN    a CodeBlock that is the last thing before the next heading, with
 //             no prose after it. The example never gets a conclusion.
 //
-// Prose inside an InfoBox counts as explanation; code comments do not, because
-// they are not visible as the argument a reader is following.
+// Prose inside an InfoBox counts as explanation. Substantive code comments do
+// too -- the original version of this file said they did not, "because they are
+// not visible as the argument a reader is following", and that assumption was
+// the single biggest source of noise here. In this repo the comment very often
+// IS the argument.
+//
+// WHAT THE RESIDUE IS WORTH. Of the three kinds this reports, only CRITICAL is
+// a defect list; it is empty, and the fixtures below the FACTS keep it honest.
+// ORPHAN and PAIR are advisory and the remainder is NOT a to-do list. A full
+// triage of the top findings in react18, java, javascript, typescript and
+// springboot found no unexplained examples: the heuristic simply cannot tell
+// "unexplained" from this repo's several legitimate framing devices --
+//
+//   lead-in paragraph · preceding InfoBox · explanatory code comments ·
+//   lettered/numbered subsection series · a bad/good pair whose second half
+//   is followed by the next heading · output whose title does not say so
+//
+// -- the first four of which it now understands. Before "fixing" anything it
+// reports, open the file: the odds strongly favour the check being wrong. It
+// earns its place by catching a genuinely bare block in NEW writing, which is
+// why it is not in `verify` and does not gate CI.
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -214,6 +233,12 @@ for (const file of walk(PAGES)) {
       const prev = marks[i - 1];
       const leadIn = prose(src.slice(prev ? prev.end : 0, m.start));
       if (leadIn.length >= MIN_PROSE) continue;
+      // An InfoBox immediately before the block is also a lead-in: it is prose,
+      // and in this repo it is routinely the thing that sets the example up --
+      // Fundamentals' typeof-null box ends "to actually test for null, use
+      // value === null directly", and the block right after it is the helper
+      // that does exactly that.
+      if (prev && prev.type === 'info' && prose(src.slice(prev.start, prev.end)).length >= MIN_PROSE) continue;
       findings.push({
         section, rel, line: lineOf(m.end), kind: 'ORPHAN',
         score: (BAD.test(m.title) || GOOD.test(m.title) ? 1 : 0) + (between.length < 20 ? 1 : 0),
