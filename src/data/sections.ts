@@ -841,6 +841,33 @@ export const sections: Section[] = [
       { id: 'cheatsheet', title: '📋 MUI v9 Field Guide', path: '/mui9/cheatsheet' },
     ],
   },
+  {
+    id: 'ai-agents',
+    label: 'Agent Foundations',
+    icon: '🤖',
+    color: '#c084fc',
+    lessons: [
+      { id: 'concepts', title: 'Model, Agent, Harness', path: '/ai-agents/concepts' },
+      { id: 'context', title: 'Tokens, Context & Compaction', path: '/ai-agents/context' },
+      { id: 'caching', title: 'Prompt Caching', path: '/ai-agents/caching' },
+      { id: 'optimization', title: 'Optimizing Agents', path: '/ai-agents/optimization' },
+      { id: 'design', title: 'Designing an Agent System', path: '/ai-agents/design' },
+    ],
+  },
+  {
+    id: 'agent-harness',
+    label: 'Harness Engineering',
+    icon: '⚙️',
+    color: '#818cf8',
+    lessons: [
+      { id: 'anatomy', title: 'Anatomy of a Harness', path: '/agent-harness/anatomy' },
+      { id: 'providers', title: 'Provider Shapes', path: '/agent-harness/providers' },
+      { id: 'roles-and-tools', title: 'Roles, Tools & Routing', path: '/agent-harness/roles-and-tools' },
+      { id: 'memory', title: 'Memory & the Audit Ledger', path: '/agent-harness/memory' },
+      { id: 'guardrails', title: 'Guardrails & Budgets', path: '/agent-harness/guardrails' },
+      { id: 'operating', title: 'Operating & Extending', path: '/agent-harness/operating' },
+    ],
+  },
 ];
 
 export const groups: Group[] = [
@@ -971,6 +998,19 @@ export const groups: Group[] = [
     icon: '🛡️',
     color: '#ef4444',
     sectionIds: ['auth', 'cryptography'],
+  },
+  // Two sections rather than one, deliberately. A group whose only section
+  // shares its name renders a redundant "AI & Agents > AI & Agents" row (the
+  // defect documented above the Languages group), and the material genuinely
+  // splits: provider-neutral concepts first, then one real harness traced in
+  // detail. Read 'Agent Foundations' before 'Harness Engineering' — the second
+  // assumes the vocabulary of the first.
+  {
+    id: 'ai',
+    label: 'AI & Agents',
+    icon: '🧠',
+    color: '#c084fc',
+    sectionIds: ['ai-agents', 'agent-harness'],
   },
   // CSS is the web platform itself, not a language ecosystem and not a
   // framework, so it gets its own top-level group.

@@ -518,6 +518,18 @@ const NpkgModules = lazy(() => import('./pages/npm-packages/Modules'))
 const NpkgPublishing = lazy(() => import('./pages/npm-packages/Publishing'))
 const NpkgAdvanced = lazy(() => import('./pages/npm-packages/Advanced'))
 
+const AiConcepts = lazy(() => import('./pages/ai-agents/Concepts'))
+const AiContext = lazy(() => import('./pages/ai-agents/Context'))
+const AiCaching = lazy(() => import('./pages/ai-agents/Caching'))
+const AiOptimization = lazy(() => import('./pages/ai-agents/Optimization'))
+const AiDesign = lazy(() => import('./pages/ai-agents/Design'))
+const HarnessAnatomy = lazy(() => import('./pages/agent-harness/Anatomy'))
+const HarnessProviders = lazy(() => import('./pages/agent-harness/Providers'))
+const HarnessRolesAndTools = lazy(() => import('./pages/agent-harness/RolesAndTools'))
+const HarnessMemory = lazy(() => import('./pages/agent-harness/Memory'))
+const HarnessGuardrails = lazy(() => import('./pages/agent-harness/Guardrails'))
+const HarnessOperating = lazy(() => import('./pages/agent-harness/Operating'))
+
 function NotFound() {
   return (
     <div style={{
@@ -1021,6 +1033,18 @@ function App() {
         <Route path="npm-packages/modules" element={<NpkgModules />} />
         <Route path="npm-packages/publishing" element={<NpkgPublishing />} />
         <Route path="npm-packages/advanced" element={<NpkgAdvanced />} />
+        {/* AI & Agents */}
+        <Route path="ai-agents/concepts" element={<AiConcepts />} />
+        <Route path="ai-agents/context" element={<AiContext />} />
+        <Route path="ai-agents/caching" element={<AiCaching />} />
+        <Route path="ai-agents/optimization" element={<AiOptimization />} />
+        <Route path="ai-agents/design" element={<AiDesign />} />
+        <Route path="agent-harness/anatomy" element={<HarnessAnatomy />} />
+        <Route path="agent-harness/providers" element={<HarnessProviders />} />
+        <Route path="agent-harness/roles-and-tools" element={<HarnessRolesAndTools />} />
+        <Route path="agent-harness/memory" element={<HarnessMemory />} />
+        <Route path="agent-harness/guardrails" element={<HarnessGuardrails />} />
+        <Route path="agent-harness/operating" element={<HarnessOperating />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
