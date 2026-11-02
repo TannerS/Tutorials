@@ -43,7 +43,7 @@ export default function Optimization() {
 
       <FlowChart
         title="Optimization lever order"
-        chart={"graph TD\n  M[Measure a baseline] --> F[Free wins]\n  F --> F1[Prompt caching]\n  F --> F2[Input hygiene]\n  F --> F3[Loop hygiene]\n  F --> F4[Batch where latency is irrelevant]\n  F1 --> T[Quality tradeoffs]\n  F2 --> T\n  F3 --> T\n  F4 --> T\n  T --> T1[Lower effort]\n  T --> T2[Cheaper model for narrow jobs]\n  T --> T3[Multi-model routing]\n  style F fill:#1a3329\n  style T fill:#3d2f14"}
+        chart={"graph TD\n  M[Measure a baseline] --> F[Free wins]\n  F --> F1[Prompt caching]\n  F --> F2[Input hygiene]\n  F --> F3[Loop hygiene]\n  F --> F4[Batch where latency is irrelevant]\n  F1 --> E[Build an eval — the quality baseline]\n  F2 --> E\n  F3 --> E\n  F4 --> E\n  E --> T[Quality tradeoffs]\n  T --> T1[Lower effort]\n  T --> T2[Cheaper model for narrow jobs]\n  T --> T3[Multi-model routing]\n  style F fill:#1a3329\n  style E fill:#1a2744\n  style T fill:#3d2f14"}
       />
 
       <h3>Free win 1: caching</h3>
@@ -63,7 +63,32 @@ export default function Optimization() {
         <li><strong>Unbounded tool output.</strong> A directory listing of <code>node_modules</code>, a full test log, an un-truncated stack trace. Cap tool results in the harness and say so in the returned text, so the agent knows it was truncated and can ask for more.</li>
         <li><strong>Documents loaded for every role.</strong> A QA agent probably does not need the full coding standards document. Load per role.</li>
         <li><strong>Dead history.</strong> Old tool results that have been superseded. Clear them rather than compacting them.</li>
+        <li><strong>Tool definitions for tools this role cannot call.</strong> Every schema is sent on every request. A harness that ships all twenty tools to an agent allowed to use four is paying for sixteen descriptions per turn, forever.</li>
       </ul>
+
+      <InfoBox variant="tip" title="Measure the input instead of estimating it">
+        Input hygiene is guesswork until you count. The API has a token-counting endpoint
+        (<code>client.messages.countTokens</code>) that takes the same{' '}
+        <code>system</code>, <code>messages</code> and <code>tools</code> you were going to
+        send and returns the exact input count &mdash; free, and without running the
+        request. Point it at one real turn and the answer is usually uncomfortable: the
+        tool schemas and the system prompt frequently outweigh the actual conversation.
+        Do not reach for a generic tokenizer such as <code>tiktoken</code>; it is a
+        different tokenizer and the number it gives you is not the number you are billed
+        for.
+      </InfoBox>
+
+      <InfoBox variant="tip" title="Many tools? Let the model search them instead of sending them all">
+        Once a harness has dozens of tools, the definitions themselves become a real
+        fraction of every request. The tool-search tools (
+        <code>tool_search_tool_regex_20251119</code> /{' '}
+        <code>tool_search_tool_bm25_20251119</code>) solve this directly: mark the bulk of
+        your tools <code>defer_loading: true</code> and the model is sent a searchable
+        index instead of the full schemas, pulling in only the ones a task actually needs.
+        One rule the API enforces &mdash; the search tool itself must not be deferred, and
+        at least one tool must stay non-deferred, or the request is rejected with{' '}
+        <code>All tools have defer_loading set</code>.
+      </InfoBox>
 
       <h3>Free win 3: loop hygiene</h3>
       <p>
@@ -82,6 +107,60 @@ export default function Optimization() {
         an eval sweep — runs through the Batches API asynchronously at half price. This is
         a pure win for anything that does not need an answer now, and it is routinely
         left on the table.
+      </p>
+
+      <h2>Before You Trade Anything: Build an Eval</h2>
+      <p>
+        Everything above this line is free. Everything below it buys cost with quality,
+        and that trade is unmeasurable without something to measure quality <em>with</em>.
+        This is the step most people skip, and skipping it is why so much tuning gets
+        reverted months later by someone who notices the agent has quietly got worse.
+      </p>
+      <p>
+        An eval does not have to be sophisticated. At minimum it is two things: a fixed set
+        of representative inputs, and a way to score the output. Thirty real tasks pulled
+        from your own logs beat five hundred synthetic ones, because the synthetic set
+        measures a distribution you do not actually serve.
+      </p>
+
+      <CodeBlock language="text" title="Three ways to grade, cheapest first">
+{`PROGRAMMATIC    Did the tests pass? Does the JSON parse? Did the file change?
+                Free, instant, perfectly repeatable. Use it wherever the task
+                has an objective finish line -- which, for coding agents, is
+                most of the time. This is the one to reach for first.
+
+LLM JUDGE       A second model scores the output against a written rubric.
+                Necessary for "is this summary any good", where no checker
+                exists. Costs money per eval run, and the judge needs its own
+                spot-check -- grade 20 of its grades by hand before trusting it.
+
+HUMAN           You read the outputs. Slow and unscalable, and still the right
+                answer for the first 20 cases, because that is how you find out
+                what your rubric should have said.`}
+      </CodeBlock>
+
+      <p>
+        For agents specifically, grade the <strong>outcome</strong>, not the transcript. A
+        run that took nine turns and a wrong path but produced a correct, tested change is
+        a pass; a confident, elegantly-worded run that verified nothing is a failure. This
+        is the same point as <em>cost per completed task</em>, applied to quality: the
+        thing you are scoring is whether the work got done.
+      </p>
+
+      <InfoBox variant="warning" title="Split the set, or you will tune yourself into a corner">
+        If you tune against every case you have, you will eventually be fitting the eval
+        rather than the job &mdash; scores climb while real performance does not. Hold a
+        portion back and never look at it while iterating; score it at the end. If the held-back
+        set disagrees with the one you tuned on, believe the held-back set. The same
+        discipline applies to the judge rubric: a rubric edited until the scores look good
+        is no longer measuring anything.
+      </InfoBox>
+
+      <p>
+        Then the loop is mechanical, and it is the only part of optimization that is:
+        establish the baseline score and cost, change <em>one</em> lever, re-run, keep it
+        if quality held and cost fell, revert otherwise. Changing two levers at once tells
+        you nothing about either.
       </p>
 
       <h2>Then the Tradeoffs</h2>
@@ -246,9 +325,11 @@ const response = await stream.finalMessage();`}
         <li>Record a baseline: turns, cached and uncached input, output, duration, success.</li>
         <li>Confirm caching works at all — <code>cache_read_input_tokens</code> above zero on repeat requests.</li>
         <li>Fix the prefix order so shared content is cached once, not per agent.</li>
+        <li>Count one real request with <code>countTokens</code> and see what the input is actually made of.</li>
         <li>Cap tool output and narrow the read tools.</li>
         <li>Cap iterations and add repetition detection.</li>
         <li>Move latency-insensitive work to batch.</li>
+        <li>Build the eval and score the baseline — before any lever below this line.</li>
         <li>Sweep effort per route; step down only where quality holds.</li>
         <li>Only now consider a cheaper model for the narrowest jobs, and verify its capabilities first.</li>
         <li>Re-measure cost per <em>completed</em> task and compare with the baseline.</li>

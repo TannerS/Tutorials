@@ -121,7 +121,13 @@ Local model returns prose, not JSON   The model's declared capabilities, and num
                                      A small default context truncates silently.
 
 Everything fails identically          A config change. Boot validation catches schema
-                                     errors; it does not catch a wrong-but-valid value.`}
+                                     errors; it does not catch a wrong-but-valid value.
+
+Runs fail in bursts, then recover    Rate limiting (429). Read the retry-after header
+                                     rather than picking a backoff out of the air.
+
+A long run dies partway with no      A transient 529/5xx that nothing retried. One
+useful row in the ledger             failed HTTP call should not discard an hour of work.`}
       </CodeBlock>
 
       <p>
@@ -129,6 +135,35 @@ Everything fails identically          A config change. Boot validation catches s
         points somewhere other than the cause. That is the characteristic difficulty of
         operating agent systems, and it is why the ledger is worth its cost.
       </p>
+
+      <h3>Transient Failures Are an Operating Concern, Not an Edge Case</h3>
+      <p>
+        The last two rows deserve their own note, because a long-running agent meets them
+        far more often than a request/response app does. A single run can make hundreds of
+        API calls over an hour, so a failure rate low enough to ignore in a web handler is
+        close to a certainty across a run.
+      </p>
+      <p>
+        Two failure classes matter and they want different treatment.{' '}
+        <strong>Rate limits</strong> (429) are the API telling you the pace is wrong; they
+        come with a <code>retry-after</code> header, and honouring that is both more
+        polite and faster than guessing a backoff. <strong>Transient server errors</strong>{' '}
+        (529 overloaded, 5xx, dropped connections) are not about you and usually clear in
+        seconds. Both are retryable. A 400 or a 404 is not &mdash; retrying a malformed
+        request just spends the same money twice.
+      </p>
+
+      <InfoBox variant="tip" title="The SDK already retries; know what it covers">
+        The official SDKs retry by default &mdash; <code>max_retries</code> is 2, covering
+        408, 409, 429, 5xx and connection errors, with backoff. Two consequences people
+        miss. First, your effective timeout is{' '}
+        <code>timeout &times; (max_retries + 1)</code>, so a 10-minute default can hold a
+        request for half an hour before surfacing anything; set the timeout deliberately on
+        agent calls. Second, the default of 2 is tuned for interactive apps, not for an
+        hour-long autonomous run where losing the work costs far more than waiting &mdash;
+        raising it for agent traffic is usually right. Catch errors as a most-specific-first
+        chain rather than one broad class, so a 404 is not retried like a 429.
+      </InfoBox>
 
       <h2>Dependency Minimalism Is a Design Choice</h2>
       <p>

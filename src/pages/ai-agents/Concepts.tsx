@@ -135,6 +135,60 @@ async function runTool(call) {
         worktree are refused.&quot; sets expectations the harness will actually enforce.
       </InfoBox>
 
+      <h3>Making the Arguments Trustworthy</h3>
+      <p>
+        A schema in <code>input_schema</code> documents what you want; it does not by
+        itself guarantee you get it. The model can return arguments that miss a required
+        field or invent an extra one, and your tool then crashes on input it never
+        expected. Two settings close that gap, and both are worth switching on by default
+        in a harness.
+      </p>
+
+      <CodeBlock language="typescript" title="strict: true — schema-valid arguments, guaranteed">
+{`{
+  name: "read_file",
+  description: "Reads a UTF-8 text file inside the agent's worktree.",
+  strict: true,                    // top-level on the TOOL, not on tool_choice
+  input_schema: {
+    type: "object",
+    properties: { path: { type: "string" } },
+    required: ["path"],
+    additionalProperties: false,   // strict requires this and 'required'
+  },
+}`}
+      </CodeBlock>
+
+      <p>
+        With <code>strict: true</code> the API guarantees <code>tool_use.input</code>{' '}
+        validates against the schema, so the defensive argument-checking most harnesses
+        accumulate stops being necessary. The two schema requirements are easy to forget:
+        it needs both <code>required</code> and{' '}
+        <code>additionalProperties: false</code>.
+      </p>
+
+      <InfoBox variant="danger" title="Forcing a tool call is gone on current models">
+        The old way to guarantee a tool call was{' '}
+        <code>tool_choice: {'{'} type: &quot;any&quot; {'}'}</code> or{' '}
+        <code>{'{'} type: &quot;tool&quot;, name {'}'}</code>. On Claude Opus 5.5, Sonnet 5.5
+        and Fable 5.1 both now return a <strong>400</strong>, on{' '}
+        <code>count_tokens</code> and the Batches API too. This breaks a lot of ported
+        agent code, and the replacement depends on why you were forcing it:
+        <ul>
+          <li>
+            <strong>To make the model use a tool</strong> &mdash; keep{' '}
+            <code>tool_choice: {'{'} type: &quot;auto&quot; {'}'}</code> and name the tool
+            in the prompt. Add <code>strict: true</code> so the arguments stay valid.
+          </li>
+          <li>
+            <strong>To get structured JSON back</strong> &mdash; that is not really a tool
+            call at all. Use structured outputs (<code>output_config.format</code>), which
+            constrains the response itself and skips the round trip.
+          </li>
+        </ul>
+        <code>tool_choice: {'{'} type: &quot;none&quot; {'}'}</code> still works, and so
+        does <code>disable_parallel_tool_use</code> alongside <code>auto</code>.
+      </InfoBox>
+
       <h2>The Core Loop</h2>
       <p>
         An agent is this, and the interesting versions are this plus bookkeeping. Read
@@ -168,6 +222,28 @@ async function runTool(call) {
         line per tool call, usage accounting, and a wall-clock timeout. None of them
         changes the control flow.
       </p>
+
+      <InfoBox variant="warning" title="One assistant turn, one user message of results">
+        <p>
+          The single line <code>messages.push({'{'} role: &quot;user&quot;, content: results {'}'})</code>{' '}
+          is carrying more weight than it looks. A model can return{' '}
+          <em>several</em> <code>tool_use</code> blocks in one assistant turn, and every
+          matching <code>tool_result</code> must come back in <strong>one</strong> user
+          message. The natural refactor &mdash; loop over the calls and push each result as
+          it finishes &mdash; is the bug, and it is a quiet one: you get no error, the run
+          completes, and the model gradually stops issuing parallel calls at all because
+          the transcript keeps showing it that one call per turn is the house style. The
+          symptom is a slow agent, weeks later, with nothing in the logs.
+        </p>
+        <p>
+          The same applies to failures. A tool that throws still owes the model a{' '}
+          <code>tool_result</code> carrying <code>is_error: true</code> &mdash; dropping the
+          block leaves a <code>tool_use</code> with no answer, which the API rejects
+          outright. Returning the error text is also strictly better for the agent: it can
+          read &ldquo;file not found&rdquo; and try a different path, where a dropped block
+          just ends the run.
+        </p>
+      </InfoBox>
 
       <h2>Turns, and Why They Are the Unit That Matters</h2>
       <p>

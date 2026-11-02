@@ -193,13 +193,39 @@ messages.push({ role: "assistant", content: response.content });`}
         your token bill rather than from a stack trace.
       </p>
 
-      <InfoBox variant="tip" title="Context editing is not compaction">
-        Two features that sound alike. <strong>Compaction</strong> summarizes old content.
-        <strong>Context editing</strong> (<code>clear_tool_uses_20250919</code>,
-        <code>clear_thinking_20251015</code>) deletes it outright. Clearing is cheaper and
-        lossier; use it for stale tool results you are certain nobody needs again, and
-        compaction for conversation you want condensed rather than dropped.
+      <InfoBox variant="tip" title="Context editing is not compaction — and it takes a different beta header">
+        <p>
+          Two features that sound alike. <strong>Compaction</strong> summarizes old content.
+          <strong>Context editing</strong> (<code>clear_tool_uses_20250919</code>,
+          <code>clear_thinking_20251015</code>) deletes it outright. Clearing is cheaper and
+          lossier; use it for stale tool results you are certain nobody needs again, and
+          compaction for conversation you want condensed rather than dropped.
+        </p>
+        <p>
+          They also travel under <em>different</em> beta headers, which is the trap when you
+          move from one to the other. The example above sends{' '}
+          <code>compact-2026-01-12</code>; context editing needs{' '}
+          <code>context-management-2025-06-27</code>. Swapping the strategy type while
+          leaving the header alone is the obvious edit and it returns a 400.
+        </p>
       </InfoBox>
+
+      <CodeBlock language="typescript" title="Context editing: clearing, not summarizing">
+{`// Different beta header from compaction, same context_management field.
+const response = await client.beta.messages.create({
+  betas: ["context-management-2025-06-27"],
+  model: "claude-opus-5-5",
+  max_tokens: 16000,
+  tools,
+  messages,
+  context_management: {
+    edits: [{ type: "clear_tool_uses_20250919" }],
+  },
+});
+
+// clear_tool_inputs: true also drops the tool_use PARAMS, not just the
+// results. Worth it when an agent passes large payloads into its tools.`}
+      </CodeBlock>
 
       <h2>What to Measure</h2>
       <p>
