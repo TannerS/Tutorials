@@ -288,6 +288,257 @@ ThreadFactory tf = r -> {
         </CodeBlock>
       </InfoBox>
 
+      <h2>Waiting Without Futures: <code>CountDownLatch</code></h2>
+      <p>
+        <code>invokeAll</code> waits for a batch and hands you results. But plenty of work
+        returns nothing — write a row, push a file, warm a cache — and holding a{' '}
+        <code>List&lt;Future&lt;Void&gt;&gt;</code> purely to know when it finished is
+        ceremony. <code>CountDownLatch</code> is the direct way to say &quot;block until N
+        things have happened&quot;.
+      </p>
+
+      <p>
+        It is a countdown gate. Construct it with a count, every finishing task calls{' '}
+        <code>countDown()</code>, and a thread sitting in <code>await()</code> is released
+        when the count reaches zero. Three pieces combine into the pattern you will actually
+        write:
+      </p>
+
+      <ul>
+        <li><strong><code>ExecutorService</code></strong> — the pool of worker threads that run the tasks.</li>
+        <li><strong><code>CountDownLatch</code></strong> — the gate that tells the submitting thread when they are all done.</li>
+        <li><strong><code>AtomicInteger</code></strong> — a counter many threads can update without a lock and without losing increments.</li>
+      </ul>
+
+      <CodeBlock language="java" title="The fan-out-and-wait pattern">
+{`ExecutorService executor = Executors.newFixedThreadPool(4);
+int tasks = 10;
+CountDownLatch latch = new CountDownLatch(tasks);
+AtomicInteger successCount = new AtomicInteger();
+
+for (int i = 0; i < tasks; i++) {
+    int id = i;
+    executor.submit(() -> {
+        try {
+            doWork(id);                     // runs on a pool thread
+            successCount.incrementAndGet(); // safe from many threads
+        } finally {
+            latch.countDown();              // ALWAYS count down, even on failure
+        }
+    });
+}
+
+latch.await();                              // the calling thread waits here
+System.out.println("Succeeded: " + successCount.get());
+executor.shutdown();`}
+      </CodeBlock>
+
+      <p>
+        Four lines in there are load-bearing, and each is a bug if you get it wrong.
+      </p>
+
+      <p>
+        <code>submit</code> <strong>returns immediately.</strong> The loop finishes almost
+        instantly; it has queued ten tasks, not run them. Four pool threads then pick them off
+        the queue, so at most four are in flight at once and the other six wait their turn.
+      </p>
+
+      <p>
+        <code>incrementAndGet()</code> is used <strong>instead of <code>count++</code></strong>.
+        A plain increment is three operations — read, add, write — and two threads can
+        interleave between them, so one update overwrites the other. This is not a theoretical
+        risk at scale:
+      </p>
+
+      <CodeBlock language="java" title="LatchLab.java — both counters incremented in the same loop">
+{`static int plainCount = 0;                       // deliberately unsafe
+static final AtomicInteger atomicCount = new AtomicInteger();
+
+static void bump() {
+    plainCount++;                                // read, add, write -- interleavable
+    atomicCount.incrementAndGet();
+}
+
+// ... 1000 tasks on a 4-thread pool, each calling bump() 1000 times,
+//     coordinated by a CountDownLatch(1000).`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Real output on java 26.0.1">
+{`1. LOST UPDATES (1000 tasks x 1000 increments each)
+   await returned      : true
+   expected            : 1000000
+   plain int           : 575283
+   AtomicInteger       : 1000000
+   lost by plain int   : 424717`}
+      </CodeBlock>
+
+      <p>
+        The plain <code>int</code> lost <strong>424,717 of a million increments</strong> — not a
+        rare interleaving you might get away with, but 42% of the work silently discarded. The{' '}
+        <code>AtomicInteger</code> in the same loop, incremented the same number of times,
+        landed exactly on 1,000,000.
+      </p>
+
+      <InfoBox variant="warning" title="countDown() belongs in a finally, and this is why">
+        <p>
+          If a task throws before reaching <code>countDown()</code>, the latch never reaches
+          zero and <code>await()</code> blocks <em>forever</em>. Worse, combine that with the
+          previous section: <code>submit</code> captured the exception inside a{' '}
+          <code>Future</code> nobody read, so there is no stack trace anywhere. You get a hang
+          with no error — the hardest shape of bug to diagnose. Measured, with one of three
+          tasks throwing and no <code>finally</code>:
+        </p>
+        <CodeBlock language="text" title="Real output on java 26.0.1">
+{`2. ONE TASK THREW, NO finally
+   await(2s) returned  : false
+   waited              : 2002 ms
+   latch count stuck at: 1`}
+        </CodeBlock>
+        <p>
+          The count is stuck at 1 and stays there. A plain <code>await()</code> would still be
+          sitting on that line now.
+        </p>
+      </InfoBox>
+
+      <p>
+        Which leads to the fourth detail: <strong>prefer the timed{' '}
+        <code>await(timeout, unit)</code></strong>. It returns <code>boolean</code> —{' '}
+        <code>true</code> if the count reached zero, <code>false</code> if it gave up — and that
+        return value is the difference between detecting the bug above and hanging on it. The
+        measured run returned <code>false</code> after 2,002 ms rather than never returning.
+      </p>
+
+      <CodeBlock language="java" title="Treat the timeout as a result, not a formality">
+{`if (!latch.await(30, TimeUnit.SECONDS)) {
+    // Do not just carry on: successCount is still being mutated by live tasks.
+    log.error("{} of {} tasks never finished", latch.getCount(), tasks);
+    executor.shutdownNow();
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="A latch is one-shot">
+        The count only goes down. Once it hits zero, every present and future{' '}
+        <code>await()</code> returns immediately, and there is no reset. If you need a gate that
+        rearms each round, that is <code>CyclicBarrier</code>; if you need a counting permit,
+        that is <code>Semaphore</code>. Creating a new <code>CountDownLatch</code> per batch is
+        normal and correct.
+      </InfoBox>
+
+      <h3>Modern alternatives, and when a latch is still right</h3>
+      <p>
+        Two newer APIs cover most of what latches were used for. <code>invokeAll</code>, from
+        earlier in this lesson, already blocks until every task completes — if your tasks return
+        values, use it and skip the latch entirely.
+      </p>
+
+      <p>
+        <code>CompletableFuture.allOf(...)</code> is the closest Java equivalent to
+        JavaScript&apos;s <code>Promise.all</code>, with one difference that catches people:
+      </p>
+
+      <CodeBlock language="text" title="Real output on java 26.0.1">
+{`4. CompletableFuture.allOf(a, b).join()
+   returns             : null
+   values need separate joins: 1, 2`}
+      </CodeBlock>
+
+      <p>
+        <code>allOf</code> returns <code>CompletableFuture&lt;Void&gt;</code>, so{' '}
+        <code>join()</code> gives you <code>null</code>, not an array of results. Unlike{' '}
+        <code>Promise.all</code>, it signals <em>completion only</em> — you still join each
+        future individually to collect the values. Forgetting this produces code that compiles,
+        runs, and quietly discards every result.
+      </p>
+
+      <p>
+        Latches remain the right tool in two cases: when tasks return nothing and you only need
+        to know they finished, and when coordinating in tests — releasing several threads at one
+        instant to provoke a race, or blocking the test thread until a background callback has
+        fired.
+      </p>
+
+      <h2>If You Came From Node.js</h2>
+      <p>
+        This pattern looks like <code>await Promise.all(tasks)</code>: fire off work, collect
+        results later. The resemblance is real at the level of intent and misleading at the
+        level of mechanism — and the difference is exactly why <code>AtomicInteger</code> is
+        necessary in the Java version and has no counterpart in the JavaScript one.
+      </p>
+
+      <CodeBlock language="text" title="The same job, two concurrency models">
+{`                   Java executor                    Node.js async
+-----------------  -------------------------------  ------------------------------
+Concurrency model  real OS threads, genuinely       one JS thread with an event
+                   parallel across cores            loop; I/O waits in background
+Where your code    task bodies execute              your JS runs one piece at a
+runs               simultaneously                   time, never interleaved
+Shared data        needs thread safety: atomics,    no torn or lost updates on
+                   locks, concurrent collections    your own variables
+Waiting            latch.await() BLOCKS a thread    await suspends the function,
+                                                    the thread keeps working
+Closest idiom      invokeAll / CompletableFuture    await Promise.all(tasks)
+                   .allOf`}
+      </CodeBlock>
+
+      <p>
+        So in Java two tasks can literally execute in the same instant, which is why an
+        unsynchronized <code>count++</code> loses updates. In Node only one callback runs at a
+        time, and the same bare <code>++</code> is safe. Run the equivalent of the lab above on
+        Node and nothing is lost:
+      </p>
+
+      <CodeBlock language="text" title="Real output on node v25.2.1 — the same 1,000,000 increments">
+{`1. BARE ++ ACROSS 1000 CONCURRENT TASKS
+   expected : 1000000
+   actual   : 1000000
+   lost     : 0`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="But &quot;no races in Node&quot; is only half true">
+        <p>
+          Single-threaded execution protects you from <em>lost updates</em>, not from{' '}
+          <em>race conditions</em>. Every <code>await</code> is a yield point: other callbacks
+          run there, and a decision you made before it may be stale after it. Measured on node
+          v25.2.1 — three concurrent withdrawals against a balance of 100, with an{' '}
+          <code>await</code> between the check and the deduction:
+        </p>
+        <CodeBlock language="text" title="Real output on node v25.2.1">
+{`2. CHECK-THEN-ACT ACROSS AN await (balance started at 100)
+   withdrawals approved : 3 of 3
+   final balance        : -200
+   overdrawn            : true
+
+3. SAME LOGIC, NO await BETWEEN READ AND WRITE
+   withdrawals approved : 1 of 3
+   final balance        : 0`}
+        </CodeBlock>
+        <p>
+          All three withdrawals were approved and the account went to −200, because all three
+          read the balance before any of them wrote it. Remove the <code>await</code> from
+          between the read and the write and the same logic is correct. Java needs a lock to
+          make check-then-act atomic; Node needs you not to yield in the middle of it. Neither
+          language lets you skip thinking about it.
+        </p>
+      </InfoBox>
+
+      <p>
+        One more difference worth measuring, because the word &quot;concurrent&quot; invites the
+        wrong expectation. <code>Promise.all</code> is not parallelism — four CPU-bound tasks of
+        300 ms each take four times as long, because they share one thread:
+      </p>
+
+      <CodeBlock language="text" title="Real output on node v25.2.1">
+{`4. FOUR 300ms CPU-BOUND "CONCURRENT" TASKS
+   wall clock : 1200 ms   (parallel would be ~300)`}
+      </CodeBlock>
+
+      <p>
+        The Java <code>invokeAll</code> run earlier in this lesson finished three tasks in 304
+        ms — the duration of the slowest, not the sum. That is the practical payoff of real
+        threads, and the reason CPU-bound work in Node needs <code>worker_threads</code> rather
+        than <code>async</code>.
+      </p>
+
       <h2>Shutdown: The Part That Hangs Your Build</h2>
       <p>
         Pool threads created by <code>Executors</code> are <strong>non-daemon</strong>. From the
@@ -713,6 +964,10 @@ keepAlive       60s`}
           <li>Every task body, and especially every scheduled task body, catches and logs its
               own exceptions.</li>
           <li>Every <code>get()</code> in request-handling code has a timeout.</li>
+          <li>Every <code>CountDownLatch</code> is counted down in a <code>finally</code>, and
+              every <code>await()</code> uses the timed overload and checks what it returns.</li>
+          <li>Counters shared by pool threads are atomic types, not plain{' '}
+              <code>int</code> fields.</li>
           <li>Threads are named by a <code>ThreadFactory</code>, so a thread dump is readable.</li>
           <li>Slow work and fast work do not share a pool.</li>
           <li>No <code>*Async</code> call relies on the common <code>ForkJoinPool</code>.</li>

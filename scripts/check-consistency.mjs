@@ -159,6 +159,19 @@ const FACTS = [
     wrong: /non-?public[^.\n]{0,40}(are|is)\s+ignored|public\s+(methods\s+)?only[^.\n]{0,40}prox/i,
     allow: /Spring 5|as of 6|since (Framework )?6|outlived/i,
   },
+  {
+    id: 'node-single-thread-stops-lost-updates-not-races',
+    // Pre-emptive. "One callback at a time, so no races" is the natural thing to
+    // write when contrasting Node with Java threads, and it is half wrong: the
+    // single thread removes torn/lost updates, not race conditions. Measured on
+    // node v25.2.1 -- three concurrent withdrawals that check a balance of 100,
+    // await, then deduct, all passed the check and left the balance at -200.
+    // Removing the await between read and write makes the same logic correct.
+    fact: "Node's single thread prevents lost updates, not race conditions: check-then-act across an await is a genuine race",
+    fixedBy: 'measured, no prior defect',
+    wrong: /(single[- ]threaded|one callback|event loop)[^.\n]{0,90}(no|cannot|can't|impossible|never|free of)[^.\n]{0,30}rac(e|es|ing)\b/i,
+    allow: /half true|check-then-act|yield point|across an await|lost updates|logical|stale/i,
+  },
 ];
 
 // ---------------------------------------------------------------------------

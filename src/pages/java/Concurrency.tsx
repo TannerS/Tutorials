@@ -420,7 +420,10 @@ long snapshot = totalBytes.sum();`}
       <h3>Coordination primitives</h3>
       <p>
         Locks protect state. These protect <em>sequencing</em> — one thread waiting until others
-        reach a point, or limiting how many run at once.
+        reach a point, or limiting how many run at once. The fan-out-and-wait pattern a latch
+        usually appears in — a pool, a latch and an atomic counter together, plus the measured
+        consequence of putting <code>countDown()</code> outside a <code>finally</code> — is
+        worked through in <strong>Executors &amp; Thread Pools</strong>.
       </p>
       <CodeBlock language="java" title="Latches, semaphores, barriers">
 {`// CountDownLatch — one-shot gate. "Wait until N things have happened."
