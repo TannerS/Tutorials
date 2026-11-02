@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Sandpack } from '@codesandbox/sandpack-react';
-import { useTheme } from './ThemeProvider';
+import { useTheme } from './theme-context';
 
 interface Challenge {
   id: number;

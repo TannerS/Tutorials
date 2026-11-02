@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import mermaid from 'mermaid';
-import { useTheme } from './ThemeProvider';
+import { useTheme } from './theme-context';
 
 const darkThemeVariables = {
   primaryColor: '#252a3f',

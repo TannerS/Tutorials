@@ -2,8 +2,8 @@ import { NavLink, useLocation } from 'react-router';
 import { useState, useEffect } from 'react';
 import { sections, groups, rootSectionIds } from '../data/sections';
 import type { Group, Section } from '../data/types';
-import { useProgress } from './ProgressTracker';
-import { useTheme } from './ThemeProvider';
+import { useProgress } from './useProgress';
+import { useTheme } from './theme-context';
 
 // Sections rendered directly at the sidebar root, as siblings of `groups`,
 // with no wrapping group header — see rootSectionIds in data/sections.ts.
