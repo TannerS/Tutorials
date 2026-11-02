@@ -756,9 +756,14 @@ li {
   :root[data-pdf-mode="dark"] [style*="var(--bg-hover)"] { background: var(--bg-hover) !important; }
 }
 
-/* Sidebar collapse handle — a tab riding the sidebar's right edge at widths
-   where the sidebar is a permanent column. Below the drawer breakpoint the
-   hamburger already does this job, so the handle is hidden there. */
+/* Sidebar collapse handle — a tab riding the sidebar's right edge, and the
+   ONLY sidebar control at every width. It is deliberately not hidden below the
+   drawer breakpoint: it replaced a top-left hamburger that existed only under
+   768px, which left no way to reclaim the 280px column between 769px and
+   desktop. See the MOBILE_QUERY comment in components/Layout.tsx.
+   Verified at 1400 / 1024 / 1023 / 844 / 390px: the handle is visible and
+   labelled at all five, and `left` slides it to the screen edge when the
+   sidebar is away. */
 .sidebar-handle {
   position: fixed;
   top: 50%;

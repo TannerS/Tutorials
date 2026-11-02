@@ -328,6 +328,49 @@ input, button, select, textarea { font: inherit; }`}
 *, *::before, *::after { box-sizing: border-box; }`}
       </CodeBlock>
 
+      <CodeBlock language="text" title="The same three declarations, drawn to scale (1 character = 5px)">
+{`width: 200px;  padding: 20px;  border: 5px solid     <- identical in both
+
+box-sizing: content-box          the default
++------------------------------------------------+
+|ppppccccccccccccccccccccccccccccccccccccccccpppp|
++------------------------------------------------+
+<--------------- 250px on screen ---------------->
+     <------------ width: 200px ------------>
+     your number described the c's ONLY, and the
+     padding and border were then added OUTSIDE it
+
+box-sizing: border-box           what you want
++--------------------------------------+
+|ppppccccccccccccccccccccccccccccccpppp|
++--------------------------------------+
+<---------- 200px on screen ----------->
+     <---------- 150px ----------->
+     your number described the WHOLE box, and the
+     content gave up room to fit the padding inside
+
+| = border (5px)   p = padding (20px)   c = content
+Both boxes are drawn from the same left edge, so the
+second one really is 10 characters -- 50px -- shorter.`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Measured in Chromium 149 — both boxes, and what percentages do">
+{`// Measured with getBoundingClientRect, plus a width:100% child
+// to read the real content width rather than trusting one number.
+
+content-box   rendered 250px   content box 200px   <- 50px bigger than asked
+border-box    rendered 200px   content box 150px   <- exactly as asked
+
+// Why this matters the moment you use percentages:
+// three items at width: 33.333% with 10px padding, in a 300px parent
+
+content-box   each 119.98px   total 359.95px   OVERFLOWS by 59.95px
+              ^ 33.333% of 300 = 100px, then 2x10px padding added to each
+              ^ the overflow is exactly the six paddings you added
+
+border-box    each 100px      total 300px      fits`}
+      </CodeBlock>
+
       <InfoBox variant="tip" title="Why border-box makes math work">
         With <code>border-box</code>, three columns at <code>width: 33.333%</code> with padding still
         add up to 100% &mdash; the padding lives inside the percentage. With{' '}
@@ -396,6 +439,43 @@ input, button, select, textarea { font: inherit; }`}
 /* NONE — removed from layout AND the accessibility tree */
 .hidden { display: none; }`}
       </CodeBlock>
+
+      <p>
+        Those comments are easy to nod along to and hard to believe until you see the numbers. Here
+        are three <code>&lt;span&gt;</code>s given <em>byte-identical</em> declarations &mdash;{' '}
+        <code>width: 300px; height: 100px; margin: 50px 20px; padding: 30px 10px</code> &mdash; with
+        nothing different but <code>display</code>:
+      </p>
+
+      <CodeBlock language="text" title="Measured in Chromium 149 — one set of declarations, three outcomes">
+{`                    asked for 300 x 100     got            verdict
+  display: inline       300 x 100          56.44 x 78    width/height IGNORED
+  display: inline-block 300 x 100          320   x 160   respected, + padding
+  display: block        300 x 100          300   x 100   respected exactly
+
+  Where inline's 56.44 x 78 comes from:
+    width  = the text's own 36.44px + 10px padding + 10px padding
+             (horizontal padding DOES apply to an inline box)
+    height = the line's 18px + 30px padding + 30px padding
+             (vertical padding RENDERS, but see below)
+
+  Now measure the PARENT <p> each one sits in:
+    parent of the inline span       ->  18px tall
+    parent of the inline-block span -> 260px tall   (160 + 50 + 50 margin)
+
+  18px. The inline span PAINTS 78px tall inside an 18px line box, so it
+  bleeds over the text above and below it and pushes nothing away. That is
+  the whole meaning of "vertical padding renders but doesn't affect line
+  height" -- and it is why a padded inline <a> overlaps the next paragraph.`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="The 18px line box is the bug you will actually hit">
+        Give an inline link generous vertical padding for a bigger tap target and it looks right in
+        isolation and broken in a paragraph: the ink overlaps neighbouring lines while the layout
+        still reserves only the original 18px. Nothing overflows, nothing warns, the text just
+        collides. <code>display: inline-block</code> is the one-line fix &mdash; measured, the parent
+        grows to 260px and the padding is finally load-bearing.
+      </InfoBox>
 
       <InfoBox variant="warning" title="display: none vs visibility: hidden vs opacity: 0">
         <code>display: none</code> removes the element from layout entirely and hides it from screen
@@ -482,6 +562,57 @@ input, button, select, textarea { font: inherit; }`}
 .overlay { position: absolute; inset: 0; }  /* inset: 0 = top/right/bottom/left: 0 */`}
       </CodeBlock>
 
+      <p>
+        The flowchart says <em>which</em> box the offsets are measured from. These are the actual
+        coordinates, so you can check the rule against numbers instead of trusting the diagram. One
+        ancestor, four children, every offset set to a round number:
+      </p>
+
+      <CodeBlock language="text" title="Measured in Chromium 149 — where each position value actually lands">
+{`.anchor { position: relative; margin: 50px; width: 400px; height: 200px;
+          padding: 25px; border: 5px solid; }      /* body margin: 8px */
+
+  .anchor's BORDER box starts at   top 50,  left 58
+  .anchor's PADDING box starts at  top 55,  left 63   (inside the 5px border)
+
+  child                              measured      measured against
+  ---------------------------------  ------------  ----------------------------
+  position: absolute; top:0 right:0  top 55        the PADDING box, not the
+                                     left 453      border box -- note 55, not 50
+  position: relative; top:10 left:20 top 90        its own normal spot (80,88)
+                                     left 108      shifted by exactly 10 and 20
+  position: fixed;    top:0 left:0   top 0         the viewport -- the 50px
+                                     left 0        margin and the positioned
+                                                   ancestor are both ignored
+
+  The sibling that FOLLOWS the relative child      top 110
+    The relative child's normal spot was top 80 and it is 30px tall.
+    110 = 80 + 30. Its original space is still reserved, which is the
+    one-line difference between relative and absolute: relative moves
+    the paint, absolute removes the box.`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="transform on an ancestor steals position: fixed">
+        &ldquo;Fixed measures from the viewport&rdquo; has an exception big enough to ruin an
+        afternoon: a <code>transform</code>, <code>filter</code>, or <code>will-change</code> on{' '}
+        <em>any</em> ancestor makes that ancestor the containing block instead. The same{' '}
+        <code>position: fixed; top: 0; left: 0</code> child, measured in four identical sections:
+        <br />
+        <code>plain ancestor &rarr; 0,0</code> (the viewport, as documented)
+        <br />
+        <code>ancestor with transform: translateX(0) &rarr; 353,101</code>
+        <br />
+        <code>ancestor with filter: blur(0px) &rarr; 605,101</code>
+        <br />
+        <code>ancestor with will-change: transform &rarr; 857,101</code>
+        <br />
+        Each landed on its own ancestor&apos;s padding box. Note that{' '}
+        <code>translateX(0)</code> and <code>blur(0px)</code> are no-ops that change nothing visually
+        &mdash; and still capture the fixed child. A modal that works until you add a CSS animation
+        to a wrapper is this bug, and so is a sticky header that stops being sticky inside a
+        transformed card.
+      </InfoBox>
+
       <InfoBox variant="warning" title="Why your position: sticky silently does nothing">
         Three requirements, and all three must hold. (1) It needs a threshold &mdash;{' '}
         <code>top: 0</code> or similar; <code>position: sticky</code> alone does nothing.
@@ -492,6 +623,37 @@ input, button, select, textarea { font: inherit; }`}
       </InfoBox>
 
       <h3>z-index and Stacking</h3>
+      <p>
+        Everything so far has been about where boxes sit on a flat plane. Stacking is the third
+        dimension: when two boxes overlap, <strong>which one is painted on top</strong>. The browser
+        already has an answer before you write any CSS &mdash; it paints in document order, so a
+        later sibling covers an earlier one. <code>z-index</code> is how you override that order.
+      </p>
+      <p>
+        Two terms carry the whole topic:
+      </p>
+      <ul>
+        <li>
+          <strong>Painting order</strong> &mdash; the sequence the browser draws boxes in. Later =
+          on top. Backgrounds and borders are painted first, then floats, then inline content, then
+          anything positioned. This is why a positioned element covers a non-positioned one even with
+          no <code>z-index</code> at all.
+        </li>
+        <li>
+          <strong>Stacking context</strong> &mdash; a self-contained stacking &ldquo;universe&rdquo;.
+          Its children are stacked among <em>themselves</em>, and then the whole context is stacked
+          as a single unit in its parent. This is the part that surprises people, because it means a{' '}
+          <code>z-index</code> can be enormous and still lose.
+        </li>
+      </ul>
+      <p>
+        The page itself is the root stacking context. Certain properties create new ones, and once an
+        element is inside a context, its <code>z-index</code> is only compared against its siblings
+        in that same context &mdash; never against elements outside it. A{' '}
+        <code>z-index: 9999</code> that refuses to come to the front is almost always an element
+        trapped in a context whose own <code>z-index</code> is 1.
+      </p>
+
       <CodeBlock language="css" title="z-index Only Works on Positioned Elements">
 {`.a { z-index: 999; }                      /* IGNORED — position is static */
 .b { position: relative; z-index: 999; }  /* works */
@@ -513,6 +675,79 @@ input, button, select, textarea { font: inherit; }`}
         title="Stacking Contexts Nest — z-index Only Wins Locally"
         chart={"graph TD\n  ROOT[\"Page — root stacking context\"] --> PARENT[\".parent — position:relative; z-index:1 — NEW stacking context\"]\n  ROOT --> SIB[\".sibling — position:relative; z-index:2 — a later sibling of .parent, same root context\"]\n  PARENT --> CHILD[\".child — position:relative; z-index:9999 — trapped inside .parent\"]\n  CHILD -.->|\"9999 only ranks among .parent's OWN children\"| PARENT\n  SIB -.->|\".sibling's 2 beats .parent's 1 in the root context — so .sibling renders above .child too, despite 9999\"| PARENT\n  style PARENT fill:#1a2744\n  style CHILD fill:#3b1a1a\n  style SIB fill:#1a3329"}
       />
+
+      <h2>What Exactly Is the Viewport?</h2>
+      <p>
+        The word has appeared three times already &mdash; <code>position: fixed</code> measures from
+        it, and <code>vw</code> / <code>vh</code> below are percentages of it &mdash; so it is worth
+        pinning down before it does any more work. The <strong>viewport</strong> is simply{' '}
+        <em>the window you are looking at the document through</em>: the rectangle of screen the page
+        is rendered into, excluding browser chrome like tabs, the address bar and bookmarks.
+      </p>
+      <p>
+        The thing to get straight is that the viewport is <strong>not</strong> the document, and{' '}
+        <strong>not</strong> the window. Three different rectangles:
+      </p>
+      <ul>
+        <li>
+          <strong>The window</strong> is the whole application frame, chrome included (
+          <code>window.outerWidth</code>).
+        </li>
+        <li>
+          <strong>The viewport</strong> is the content area inside it (
+          <code>window.innerWidth</code>). This is what CSS means.
+        </li>
+        <li>
+          <strong>The document</strong> is the full page, most of which is usually scrolled out of
+          sight (<code>documentElement.scrollWidth</code>).
+        </li>
+      </ul>
+
+      <CodeBlock language="text" title="Measured in Chromium 149 — a 1000x800 viewport on a 2500x4000 page">
+{`window.outerWidth / outerHeight          1000 x 800   the window
+window.innerWidth / innerHeight          1000 x 800   THE VIEWPORT
+documentElement.clientWidth/Height       1000 x 800   the viewport, layout-side
+documentElement.scrollWidth/scrollHeight 2500 x 4000  the whole document
+
+1vw = 10px      (1% of 1000)
+1vh =  8px      (1% of  800)
+
+Then scroll to x=300, y=500 and measure again:
+
+  window.scrollX / scrollY   -> 300 / 500    changed
+  1vw / 1vh                  -> 10px / 8px   UNCHANGED
+
+The viewport is a fixed-size window that the document slides behind. It
+does not get smaller as you scroll, and vw/vh are not affected by scrolling
+-- which is exactly why 'position: fixed' appears to stay still.`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="On phones, the viewport changes size while you scroll">
+        A mobile browser retracts its URL bar as you scroll down, so the visible area grows. CSS
+        handles this with three named viewport sizes, straight from the spec: the{' '}
+        <strong>large</strong> viewport assumes those interfaces are{' '}
+        <em>retracted</em> (<code>lvh</code>), the <strong>small</strong> viewport assumes they are{' '}
+        <em>expanded</em> (<code>svh</code>), and the <strong>dynamic</strong> viewport tracks them
+        live (<code>dvh</code>). The trap: plain <code>vh</code> is defined as equal to{' '}
+        <code>lvh</code>, the <em>largest</em> one &mdash; so <code>height: 100vh</code> is taller
+        than the screen for as long as the URL bar is showing, and your footer sits just below the
+        fold. You will never see it on a desktop: measured there, all four units resolve to the same
+        800px, because nothing retracts. <code>100dvh</code> is usually the fix; the{' '}
+        <strong>Responsive Design</strong> lesson covers the trade-offs.
+      </InfoBox>
+
+      <InfoBox variant="tip" title="100vw is not always 100% — the classic scrollbar gap">
+        Per the CSS Values spec, viewport-percentage units are &ldquo;sized assuming that scrollbars
+        do not exist&rdquo; unless the root element reserves their space unconditionally. So on a
+        platform with classic (space-consuming) scrollbars, <code>100vw</code> is the full viewport
+        including the strip the vertical scrollbar occupies, while <code>width: 100%</code> on a
+        block child resolves against the content area, which excludes it. That is why{' '}
+        <code>width: 100vw</code> on a tall page produces a horizontal scrollbar and a few pixels of
+        sideways wobble. Prefer <code>100%</code> for full-width blocks and keep{' '}
+        <code>100vw</code> for deliberate breakout layouts &mdash; see the full-bleed pattern in{' '}
+        <strong>CSS Patterns</strong>. (Not reproducible on macOS, where overlay scrollbars take no
+        layout space: measured here, <code>100vw</code> and <code>100%</code> were both 1000px.)
+      </InfoBox>
 
       <h2>Units</h2>
       <p>
