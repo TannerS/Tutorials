@@ -172,6 +172,26 @@ const FACTS = [
     wrong: /(single[- ]threaded|one callback|event loop)[^.\n]{0,90}(no|cannot|can't|impossible|never|free of)[^.\n]{0,30}rac(e|es|ing)\b/i,
     allow: /half true|check-then-act|yield point|across an await|lost updates|logical|stale/i,
   },
+  {
+    id: 'stored-procedures-are-not-precompiled',
+    // StoredProcedures.tsx opened by calling a procedure "a named, PRECOMPILED
+    // block of SQL" that is "compiled once, cached by the server", while its own
+    // later InfoBox said plans are cached PER SESSION. Measured on PostgreSQL
+    // 18.6: CREATE PROCEDURE whose body INSERTs into a nonexistent table
+    // succeeds, and the error surfaces only at CALL; a true syntax error does
+    // fail at CREATE. So syntax is checked at creation and the body is compiled
+    // on first use in each session. The word matters because the false half is
+    // the one that bites: a clean deploy, then a failure on first call.
+    fact: 'A stored procedure is not precompiled: syntax is checked at CREATE, the body compiles on first use per session',
+    fixedBy: 'measured on PostgreSQL 18.6',
+    wrong: /\bprocedures?\b[^.\n]{0,60}\bpre-?compiled\b|\bpre-?compiled\b[^.\n]{0,40}\bprocedures?\b|compiled once[^.\n]{0,40}cached by the server/i,
+    // `often described as` earns its place: allow is matched per sentence, so
+    // the sentence that SETS UP the debunk ("Procedures are often described as
+    // precompiled.") carries no correction of its own -- the correction is the
+    // sentence after it. Narrow enough to be safe: a lesson asserting the myth
+    // states it flatly, it does not attribute it to other people first.
+    allow: /half true|per[- ]session|first use|not (actually )?pre-?compiled|syntax is checked|often (described|called|said)/i,
+  },
 ];
 
 // ---------------------------------------------------------------------------
