@@ -281,8 +281,10 @@ END
 
 MULTI-STATEMENT table function   returns a @table variable
   RETURNS @t TABLE (...) AS BEGIN INSERT INTO @t ... RETURN END
-  *** The optimiser cannot see inside. Pre-2017 it assumed 1 row;
-      2017+ uses interleaved execution to estimate better. Still slow. ***
+  *** The optimiser cannot see inside, so it guesses a FIXED row count:
+      1 row before 2014, then 100 on 2014 and 2016. 2017+ at compat
+      level 140 pauses, runs the function, and plans the rest on the
+      REAL count (interleaved execution). Still slow. ***
 
 INLINE table function            a single RETURN (SELECT ...)
   RETURNS TABLE AS RETURN (SELECT ...)

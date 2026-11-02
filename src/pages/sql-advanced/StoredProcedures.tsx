@@ -13,7 +13,7 @@ export default function StoredProcedures() {
       next={{ path: '/sql-advanced/advanced', label: 'Advanced SQL Patterns' }}
     >
       <p>
-        A stored procedure is a named, precompiled block of SQL — with parameters, variables, and
+        A stored procedure is a named, server-side block of SQL — with parameters, variables, and
         control flow — that lives and runs inside the database server itself. Instead of an
         application sending a full query string over the network every time, it sends a short
         invocation (<code>CALL proc_name(...)</code>) and the database does the rest. The main
@@ -26,10 +26,45 @@ export default function StoredProcedures() {
       <p>
         In PostgreSQL, a stored procedure is written in a procedural language — almost always
         PL/pgSQL, the dialect used throughout this lesson (Postgres also supports PL/Python,
-        PL/Perl, and others, but PL/pgSQL is the default and by far the most common). It's compiled
-        once, cached by the server, and invoked by name and argument list rather than resent as
-        text every call.
+        PL/Perl, and others, but PL/pgSQL is the default and by far the most common). Its syntax is
+        checked when you create it, its body is compiled on first use in each session, and it is
+        invoked by name and argument list rather than resent as text every call.
       </p>
+
+      <InfoBox variant="warning" title="&quot;Precompiled&quot; is half true, and the false half bites">
+        <p>
+          Procedures are often described as precompiled. Syntax is indeed checked at{' '}
+          <code>CREATE</code> time — but the names inside the body are <strong>not</strong>{' '}
+          resolved until the procedure actually runs. A procedure referencing a table that does not
+          exist is created without complaint:
+        </p>
+        <CodeBlock language="sql" title="Real output on PostgreSQL 18.6">
+{`CREATE OR REPLACE PROCEDURE p_missing()
+LANGUAGE plpgsql AS $$
+BEGIN
+  INSERT INTO table_that_does_not_exist VALUES (1);
+END; $$;
+-- CREATE PROCEDURE            <- no error. The table does not exist.
+
+CALL p_missing();
+-- ERROR:  relation "table_that_does_not_exist" does not exist
+-- CONTEXT:  PL/pgSQL function p_missing() line 3 at SQL statement
+
+-- A genuine SYNTAX error, by contrast, is caught immediately:
+CREATE OR REPLACE PROCEDURE p_badsyntax()
+LANGUAGE plpgsql AS $$
+BEGIN
+  THIS IS NOT PLPGSQL
+END; $$;
+-- ERROR:  syntax error at or near "THIS"`}
+        </CodeBlock>
+        <p>
+          Two practical consequences. A migration that deploys a procedure can succeed while the
+          procedure is broken, so deploying one is not the same as testing it — call it in the
+          migration or in a test. And a typo in a column name inside a rarely-run branch will sit
+          there until that branch executes in production.
+        </p>
+      </InfoBox>
 
       <CodeBlock language="sql" title="Minimal Stored Procedure" showLineNumbers={true}>
 {`CREATE OR REPLACE PROCEDURE greet(p_name TEXT)
@@ -353,6 +388,76 @@ CALL transfer_funds(1, 2, 250.00);`}
           half-applied. This is genuine atomicity, but it's coming from PL/pgSQL's block semantics,
           not from "it's a stored procedure" in the abstract — the same guarantee applies to
           functions and to plain <code>BEGIN...EXCEPTION...END</code> blocks anywhere in PL/pgSQL.
+        </p>
+      </InfoBox>
+
+      <h2>A Procedure That Commits Is No Longer One Atomic Call</h2>
+
+      <p>
+        Procedures may issue their own <code>COMMIT</code>, which functions never can. That power
+        quietly removes the atomicity the earlier sections relied on, and it is worth seeing
+        happen rather than taking on trust. This procedure inserts, commits, inserts again, then
+        fails:
+      </p>
+
+      <CodeBlock language="sql" title="Real output on PostgreSQL 18.6">
+{`CREATE OR REPLACE PROCEDURE p_commits()
+LANGUAGE plpgsql AS $$
+BEGIN
+  INSERT INTO t VALUES (7);
+  COMMIT;                             -- everything before this is now permanent
+  INSERT INTO t VALUES (8);
+  RAISE EXCEPTION 'fails AFTER the commit';
+END; $$;
+
+CALL p_commits();
+-- ERROR:  fails AFTER the commit
+
+SELECT count(*) FROM t WHERE id = 7;  -- 1  <- survived the commit
+SELECT count(*) FROM t WHERE id = 8;  -- 0  <- rolled back with the failure`}
+      </CodeBlock>
+
+      <p>
+        The call failed, and yet half its work persisted. Any caller written on the assumption
+        that one <code>CALL</code> either fully happens or fully does not is now wrong, and no
+        error says so. If a procedure commits internally, its partial states are part of its
+        contract and the caller has to be able to cope with them.
+      </p>
+
+      <InfoBox variant="warning" title="Two errors you will hit the moment you combine COMMIT with anything">
+        <p>
+          <code>COMMIT</code> inside a procedure is only legal when that procedure owns the
+          transaction. Both of these are measured on PostgreSQL 18.6:
+        </p>
+        <CodeBlock language="sql" title="Real output on PostgreSQL 18.6">
+{`-- 1. Called from inside an explicit transaction, it cannot commit at all:
+BEGIN;
+CALL p_commits();
+-- ERROR:  invalid transaction termination
+-- CONTEXT:  PL/pgSQL function p_commits() line 4 at COMMIT
+ROLLBACK;
+
+-- 2. And it cannot commit inside a block that has an EXCEPTION handler,
+--    because that handler is implemented as a subtransaction:
+CREATE OR REPLACE PROCEDURE p_commit_in_handler_block()
+LANGUAGE plpgsql AS $$
+BEGIN
+  INSERT INTO t VALUES (5);
+  COMMIT;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'handler: %', SQLERRM;
+END; $$;
+
+CALL p_commit_in_handler_block();
+-- NOTICE:  handler: cannot commit while a subtransaction is active`}
+        </CodeBlock>
+        <p>
+          The second one is the trap, because it is <em>silent</em>: the handler catches the
+          failure and reports a notice, so the <code>CALL</code> succeeds while the commit never
+          happened. Note what this means for <code>transfer_funds</code> above — it has an{' '}
+          <code>EXCEPTION</code> block, so adding a <code>COMMIT</code> to it would not work. The
+          implicit savepoint that makes the error handling safe is exactly what forbids the
+          commit. Pick one: catch errors, or control transactions.
         </p>
       </InfoBox>
 
