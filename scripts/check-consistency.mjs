@@ -173,6 +173,25 @@ const FACTS = [
     allow: /half true|check-then-act|yield point|across an await|lost updates|logical|stale/i,
   },
   {
+    id: 'bean-overriding-does-not-fix-scan-conflicts',
+    // The top search result for ConflictingBeanDefinitionException is always
+    // spring.main.allow-bean-definition-overriding=true, and for THIS exception
+    // it does nothing. Measured on Spring Boot 4.1.1: two @Service classes with
+    // the same simple name in two scanned packages, property set to true, and
+    // the error came back byte-identical. The property governs the bean
+    // definition REGISTRY (one definition replacing a registered one); the
+    // classpath scanner refuses to register at all, so there is nothing for the
+    // overriding rule to permit. Guarded because the myth is load-bearing: a
+    // reader who believes it spends the afternoon on the wrong property.
+    fact: 'allow-bean-definition-overriding does not fix ConflictingBeanDefinitionException from a component scan',
+    fixedBy: 'measured on Spring Boot 4.1.1',
+    wrong: /allow-bean-definition-overriding[^.\n]{0,80}(fix|solve|resolve|avoid)(es|s)?[^.\n]{0,40}(conflict|scan)|(fix|solve|resolve)(es|s)?[^.\n]{0,40}ConflictingBeanDefinition/i,
+    // The lesson has to NAME the property to debunk it, so allow the sentences
+    // that do the debunking: they all either deny the effect or name the
+    // registry/scanner distinction that explains why.
+    allow: /changed nothing|does not (work|fix|apply|help)|byte-identical|never gets that far|refuses to register|registry|scan[- ]time/i,
+  },
+  {
     id: 'stored-procedures-are-not-precompiled',
     // StoredProcedures.tsx opened by calling a procedure "a named, PRECOMPILED
     // block of SQL" that is "compiled once, cached by the server", while its own

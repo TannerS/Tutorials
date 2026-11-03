@@ -97,6 +97,108 @@ export default function ModularMonolith() {
         </p>
       </InfoBox>
 
+      <h2>First Wall: A Boot Jar Is Not a Dependency</h2>
+      <p>
+        Step 1 above says each service is built as &ldquo;an ordinary jar&rdquo;. If those ten
+        services are real Spring Boot applications, <strong>that is the one thing they are
+        not</strong>, and this is the wall you hit before any of the rest of the lesson
+        becomes relevant. It is worth understanding first because the error it produces
+        points nowhere near the cause.
+      </p>
+      <p>
+        <code>spring-boot-maven-plugin</code> runs a <code>repackage</code> goal that rewrites
+        the jar into an executable one. The service&apos;s own classes are moved <em>down</em>{' '}
+        into <code>BOOT-INF/classes/</code>, its dependencies are nested under{' '}
+        <code>BOOT-INF/lib/</code>, and Boot&apos;s own loader is unpacked at the root to find
+        them at run time:
+      </p>
+
+      <CodeBlock language="text" title="Real output — unzip -l on a default-configured Boot 4.1.1 service jar">
+{`$ unzip -l svc-a/target/svc-a-1.0.jar | grep "com/acme/a"
+      489  BOOT-INF/classes/com/acme/a/AProcessor.class
+     1300  BOOT-INF/classes/com/acme/a/AController.class
+      729  BOOT-INF/classes/com/acme/a/ServiceAApplication.class
+
+$ unzip -l svc-a/target/svc-a-1.0.jar | grep loader | head -2
+     3757  org/springframework/boot/loader/jar/JarEntriesStream.class
+     1617  org/springframework/boot/loader/jar/ManifestInfo.class`}
+      </CodeBlock>
+
+      <p>
+        A normal classpath entry is searched from the <em>root</em> of the archive. A class in{' '}
+        <code>BOOT-INF/classes/com/acme/a/</code> is therefore not at{' '}
+        <code>com/acme/a/</code> as far as <code>javac</code> or the standard class loader is
+        concerned. The class is in the file, the file is on the classpath, and the package is
+        still invisible:
+      </p>
+
+      <CodeBlock language="text" title="Real output — compiling against a Boot fat jar vs. a plain jar">
+{`// Probe.java referenced one public class from each service:
+//   com.acme.a.ServiceAApplication   from svc-a, default config  (FAT jar)
+//   com.acme.b.ServiceBApplication   from svc-b, classifier set  (PLAIN jar)
+
+[ERROR] Probe.java:[4,30] package com.acme.a does not exist
+
+// com.acme.b resolved without complaint. Same classpath, same build,
+// one line of plugin configuration apart.`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="Why this reaches production builds: the reactor hides it">
+        <p>
+          In a multi-module build, Maven resolves a sibling module to its{' '}
+          <code>target/classes</code> <em>directory</em>, not to the packaged jar. So a monorepo
+          that builds the ten services and the wrapper in one reactor compiles and runs
+          perfectly &mdash; the repackaged jars are never consulted. The failure appears only
+          when the wrapper is built <em>separately</em> against the services as published
+          artifacts, which is exactly what happens when ten teams release independently.
+        </p>
+        <p>
+          That measurement was the order this lab actually went in: the reactor build passed,
+          and the identical dependency failed to resolve once it came from the repository. If
+          you intend to consume the services as artifacts, prove it with a standalone build of
+          the wrapper &mdash; a green monorepo build is not evidence.
+        </p>
+      </InfoBox>
+
+      <p>
+        The fix is one line per service, and the plugin is designed for it. Setting a{' '}
+        <code>classifier</code> tells <code>repackage</code> to write the executable jar under
+        that suffix and leave the plain jar as the module&apos;s main artifact, so the service
+        stays independently runnable <em>and</em> becomes consumable as a library:
+      </p>
+
+      <CodeBlock language="xml" title="Each service publishes both shapes">
+{`<plugin>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-maven-plugin</artifactId>
+  <configuration>
+    <classifier>boot</classifier>
+  </configuration>
+</plugin>
+
+<!-- Result, verified with ls:
+
+     svc-a-1.0.jar
+       PLAIN. Classes at the root, and it is the module's MAIN artifact,
+       so a <dependency> on svc-a now resolves.
+
+     svc-a-1.0-boot.jar
+       EXECUTABLE. java -jar still runs the service standalone.
+-->`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="If you cannot change the services' builds">
+        <p>
+          Without the classifier the plain jar is not lost &mdash; <code>repackage</code> moves
+          it aside as <code>svc-a-1.0.jar.original</code> in that module&apos;s{' '}
+          <code>target/</code>. It is only ever a local build artifact, never published, so
+          treat it as a diagnostic that confirms the diagnosis rather than something to depend
+          on. The durable options are the classifier above, or Gradle&apos;s equivalent &mdash;
+          where the <code>bootJar</code> and plain <code>jar</code> tasks are already separate
+          and you enable the second rather than reconfiguring the first.
+        </p>
+      </InfoBox>
+
       <h2>A Complete Working Example</h2>
       <p>
         Below is the whole pattern at two-service scale. Everything in this lesson was compiled
@@ -338,6 +440,67 @@ public class UserService { }
 // under a chosen name. Use when you cannot change the service's source.`}
       </CodeBlock>
 
+      <InfoBox variant="danger" title="The fix every search result offers does not work here">
+        <p>
+          <code>ConflictingBeanDefinitionException</code> is usually answered with{' '}
+          <code>spring.main.allow-bean-definition-overriding=true</code>. Tested against this
+          exact failure, it changed nothing &mdash; the error came back byte-identical.
+        </p>
+        <p>
+          The reason is worth internalising, because it tells you what kind of problem this is.
+          That property governs overriding in the bean definition <em>registry</em>: one
+          definition replacing another that is already registered. The classpath scanner never
+          gets that far. It compares the candidate against what it has already found and{' '}
+          <strong>refuses to register at all</strong>, so there is nothing for the overriding
+          rule to permit. Scan-time conflict, not a registry conflict.
+        </p>
+      </InfoBox>
+
+      <p>
+        All three fixes above require editing the service&apos;s source, which you may not own.
+        When you do not, there is a fourth option that fixes every collision at once: change
+        how names are <em>derived</em> rather than changing the classes. Spring ships a
+        generator that uses the fully-qualified class name, and two classes cannot share one of
+        those:
+      </p>
+
+      <CodeBlock language="java" title="One switch, all name collisions gone">
+{`@SpringBootApplication
+@ComponentScan(
+    basePackages = { "com.acme.wrapper", "com.acme.orders", "com.acme.users" },
+    nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class,
+    // REQUIRED -- see below. Without this the line above is silently ineffective.
+    excludeFilters = @ComponentScan.Filter(
+        type = FilterType.ANNOTATION, classes = SpringBootApplication.class))
+public class WrapperApplication { }
+
+// Beans are now named "com.acme.orders.OrderService" and
+// "com.acme.users.OrderService". Injection BY TYPE is unaffected, which is
+// how almost all wiring is written -- so this is far less invasive than it looks.`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Why that exclude filter is not optional">
+        <p>
+          Setting <code>nameGenerator</code> alone did <em>not</em> fix the collision. It failed
+          with the identical message, which makes it look as though the setting is ignored.
+        </p>
+        <p>
+          It is not ignored &mdash; it is bypassed, and the cause is the behaviour two sections
+          up. Scanning <code>com.acme.orders</code> finds{' '}
+          <code>OrdersApplication</code>, which is a <code>@Configuration</code>, so Spring
+          processes <em>its</em> meta-<code>@ComponentScan</code> as well &mdash; re-scanning
+          that same package with the <strong>default</strong> name generator. The duplicate{' '}
+          <code>orderService</code> is registered by the service&apos;s own scan, not yours, and
+          your generator never applies to it. Excluding the entry-point classes removes the
+          nested scan, and only then does the generator take effect.
+        </p>
+        <p>
+          The general shape is the lesson here: each absorbed service&apos;s entry point
+          imports a second application&apos;s entire configuration behind your back, and the
+          symptom it produces points at <em>your</em> bean names rather than at the real cause.
+        </p>
+      </InfoBox>
+
       <h3>2. Two controllers that map the same route</h3>
       <p>
         Two services that each expose <code>GET /health</code> — again, individually
@@ -373,6 +536,56 @@ public class OrderController {
           <code>spring.mvc.servlet.path</code>. Per-service prefixes have to come from the
           mappings themselves — which is why wrapper setups tend to standardise{' '}
           <code>/&#123;service&#125;/...</code> as a convention enforced in review.
+        </p>
+      </InfoBox>
+
+      <p>
+        A convention enforced in review only works on code you review. For ten services you did
+        not write, there is a mechanism that applies a prefix <em>from the wrapper</em>, with no
+        edit to any controller: <code>PathMatchConfigurer.addPathPrefix</code> takes a prefix
+        and a predicate over the handler class, so the package a controller came from can decide
+        its prefix.
+      </p>
+
+      <CodeBlock language="java" title="Namespacing ten services without touching their source">
+{`@Configuration
+public class PathNamespacing implements WebMvcConfigurer {
+    @Override
+    public void configurePathMatch(PathMatchConfigurer c) {
+        c.addPathPrefix("/orders", t -> t.getPackageName().startsWith("com.acme.orders"));
+        c.addPathPrefix("/users",  t -> t.getPackageName().startsWith("com.acme.users"));
+    }
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Real output — Spring Boot 4.1.1, both services' /shared now coexisting">
+{`>>> STARTED OK. total beans = 152
+>>> bean by FQ name = com.acme.a.OrderService
+>>> bean by FQ name = com.acme.b.OrderService
+>>> route {GET [/svc-a/a]}
+>>> route {GET [/svc-a/shared]}
+>>> route {GET [/svc-b/b]}
+>>> route {GET [/svc-b/shared]}`}
+      </CodeBlock>
+
+      <p>
+        That transcript is the whole pattern working at once, which is why it is worth reading
+        closely: two services that each declared <code>GET /shared</code> and each declared an{' '}
+        <code>OrderService</code> are both live in one container, on one port, with nothing
+        edited in either service. The two previously-colliding routes are now distinct, and the
+        two previously-colliding beans are addressable by fully-qualified name.
+      </p>
+
+      <InfoBox variant="note" title="One prefix per deployment shape, and the order it runs in">
+        <p>
+          Two practical notes. The predicate receives the handler <em>class</em>, so it can key
+          on anything static about it &mdash; package, annotation, interface &mdash; but not on
+          the request; this is startup-time mapping registration, not routing. And the prefix is
+          applied <em>on top of</em> whatever <code>@RequestMapping</code> the controller
+          already declares, so a service that already prefixes its own paths will end up
+          double-prefixed. Print the mappings after a change rather than assuming; the snippet
+          that produced the transcript above is just{' '}
+          <code>RequestMappingHandlerMapping.getHandlerMethods().keySet()</code>.
         </p>
       </InfoBox>
 
@@ -556,6 +769,90 @@ Observability              Metric and trace names collide. Eight services
           A genuinely shared response shape — one <code>ErrorResponse</code> every service
           returns — belongs in the framework jar and should be generated once there, not eight
           times into eight packages.
+        </p>
+      </InfoBox>
+
+      <h3>One Combined Spec Is Usually the Wrong Shape</h3>
+      <p>
+        Code-first gives you one spec covering all ten services, and that sounds like the goal
+        until you open it. Ten services&apos; endpoints in a single flat document is a Swagger
+        UI nobody can navigate, and it erases the one piece of information a reader most wants:
+        which service owns this endpoint. <code>springdoc-openapi</code> has a better answer
+        built in. A <code>GroupedOpenApi</code> bean per service keeps the documents separate
+        while still serving them all from the one application:
+      </p>
+
+      <CodeBlock language="java" title="One group per absorbed service">
+{`@Bean
+public GroupedOpenApi ordersApi() {
+    return GroupedOpenApi.builder()
+        .group("orders")
+        .packagesToScan("com.acme.orders")   // or .pathsToMatch("/orders/**")
+        .build();
+}
+// ...one of these per service.
+
+// Each group is then served at /v3/api-docs/{groupName}:
+//   /v3/api-docs/orders
+//   /v3/api-docs/users
+// while the ungrouped default stays at /v3/api-docs.`}
+      </CodeBlock>
+
+      <p>
+        Note how neatly <code>packagesToScan</code> lines up with the path-prefix predicate
+        above: the package a class came from is the one durable marker of which service it
+        belonged to, so it ends up doing double duty as both the routing namespace and the
+        documentation boundary. That is a good reason to keep the ten packages distinct even
+        where nothing forces you to.
+      </p>
+
+      <p>
+        The related question is the <em>docs-only</em> case: if you are not absorbing the code
+        at all and simply want one Swagger UI in front of ten still-running services, you do not
+        need any of this lesson. Swagger UI can list several specs itself, and they can be
+        remote:
+      </p>
+
+      <CodeBlock language="yaml" title="One Swagger UI, ten independent services, no merging">
+{`springdoc:
+  swagger-ui:
+    urls[0].name: Orders
+    urls[0].url: https://orders.internal/v3/api-docs
+    urls[1].name: Users
+    urls[1].url: https://users.internal/v3/api-docs
+    urlsPrimaryName: Orders        # which one is selected on load`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="Three different things 'combining the YAML specs' can mean">
+        <p>
+          Worth separating before you build anything, because the three have almost nothing in
+          common beyond the phrase:
+        </p>
+        <ul>
+          <li>
+            <strong>Describe ten APIs in one place.</strong> The{' '}
+            <code>urls[N]</code> block above. No code is combined, the ten services keep
+            running, and this is a config change measured in minutes. Each{' '}
+            <code>url</code> and each <code>name</code> must be unique, and the browser fetches
+            those specs directly, so they need CORS.
+          </li>
+          <li>
+            <strong>Call ten APIs from one place.</strong> Run{' '}
+            <code>openapi-generator</code> over the ten YAML files to emit typed clients, and
+            have the new service aggregate over HTTP. The ten services keep running and keep
+            their own failure domains; you have built a BFF, not a monolith.
+          </li>
+          <li>
+            <strong>Serve ten APIs from one process.</strong> The wrapper pattern this lesson
+            describes. The only one of the three that actually merges the class files, and the
+            only one that inherits every collision above.
+          </li>
+        </ul>
+        <p>
+          If what you were handed is described as &ldquo;one giant service&rdquo;, it is the
+          third &mdash; but the first two are what people often turn out to have wanted, and
+          they are dramatically cheaper. Establish which one is intended before debugging a
+          bean-name collision you did not need to have.
         </p>
       </InfoBox>
 
