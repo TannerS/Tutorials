@@ -715,6 +715,176 @@ Observability              Metric and trace names collide. Eight services
                            are meaningless.`}
       </CodeBlock>
 
+      <h3>5. Migrations: ten services, one database, no error</h3>
+      <p>
+        The collisions so far cost you a startup failure or a wrong response. This one can cost
+        you data, and it is the reason to take the whole arrangement seriously rather than
+        treating it as a packaging exercise.
+      </p>
+      <p>
+        Flyway&apos;s default location is <code>classpath:db/migration</code>. Not &ldquo;this
+        module&apos;s&rdquo; <code>db/migration</code> &mdash; the classpath&apos;s, which after
+        merging is the union of all ten. Spring Boot auto-configures{' '}
+        <strong>one</strong> Flyway bean against the primary <code>DataSource</code>. So ten
+        services&apos; migration sets become one migration set, run in version order, against
+        one database.
+      </p>
+      <p>
+        Two services shipping a file at the same path behave exactly like the resource
+        shadowing above &mdash; measurably so:
+      </p>
+
+      <CodeBlock language="text" title="Real output — two jars, each with db/migration/V1__init.sql">
+{`>>> copies of db/migration/V1__init.sql on classpath: 2
+>>>   jar:file:/.../lab/svc-a/1.0/svc-a-1.0.jar!/db/migration/V1__init.sql
+>>>   jar:file:/.../lab/svc-b/1.0/svc-b-1.0.jar!/db/migration/V1__init.sql
+
+>>> getResource() -- what a single-resource lookup returns:
+>>>   jar:file:/.../lab/svc-a/1.0/svc-a-1.0.jar!/db/migration/V1__init.sql
+
+// Both files exist and are enumerable. A lookup for ONE of them
+// silently gets svc-a's, and svc-b's is unreachable.`}
+      </CodeBlock>
+
+      <p>
+        Which of two outcomes you get depends on whether the version numbers happen to clash,
+        and the louder one is the one you want:
+      </p>
+
+      <ul>
+        <li>
+          <strong>Same version numbers &mdash; a loud failure.</strong> Two services both
+          starting at <code>V1__</code> gives{' '}
+          <code>Found more than one migration with version 1</code> and the application does
+          not start. Irritating, and safe.
+        </li>
+        <li>
+          <strong>Different version numbers &mdash; silence, and that is the problem.</strong>{' '}
+          If the ten services happen not to collide, Flyway cheerfully runs{' '}
+          <em>all</em> of their migrations against the one database, ordered by version across
+          services rather than within them. Service A&apos;s <code>V2</code> can execute before
+          service B&apos;s <code>V1</code>. Every service&apos;s schema lands in one schema,
+          and the <code>flyway_schema_history</code> table now describes a database none of the
+          ten services was written against.
+        </li>
+      </ul>
+
+      <InfoBox variant="danger" title="Decide this before the first merged startup, not after">
+        <p>
+          There is no clever fix to apply afterwards, because the damage is applied schema. The
+          decision has to be explicit up front, and there are only really three honest answers:
+        </p>
+        <ul>
+          <li>
+            <strong>One schema, one owner.</strong> Consolidate the ten migration sets into a
+            single renumbered set owned by the merged application. Correct, and a genuine
+            migration project &mdash; not a side effect of packaging.
+          </li>
+          <li>
+            <strong>One database, ten schemas.</strong> Give each service its own{' '}
+            <code>DataSource</code>, its own Flyway bean with{' '}
+            <code>locations</code> and <code>defaultSchema</code> set per service, and mark one{' '}
+            <code>@Primary</code>. Preserves ownership; you are now hand-wiring the
+            auto-configuration you displaced for every service.
+          </li>
+          <li>
+            <strong>Leave the data alone.</strong> Keep the ten databases and their owning
+            services, and let the merged application be a client of them. Which is to say: the
+            aggregator from the previous section, not this pattern.
+          </li>
+        </ul>
+        <p>
+          The same reasoning applies unchanged to Liquibase, and to anything else Boot
+          auto-configures one of per application.
+        </p>
+      </InfoBox>
+
+      <h3>6. Security: nine of the ten filter chains stop existing</h3>
+      <p>
+        A <code>SecurityFilterChain</code>&apos;s <code>securityMatcher</code>{' '}
+        <strong>defaults to matching any request</strong>. Each of the ten services was the
+        only application in its own process, so each wrote one unscoped chain and had no reason
+        to scope it. Merged, all ten match every request, the first one wins, and the other
+        nine never get invoked.
+      </p>
+      <p>
+        Recent Spring Security versions assert on this at startup and tell you a later chain
+        &ldquo;will never get invoked&rdquo;, which is the outcome to hope for. The outcome to
+        fear is the quiet one: if the orders resolve without tripping that check, the
+        application starts and <strong>one service&apos;s security policy silently governs the
+        other nine</strong> &mdash; authentication, authorisation, CORS and CSRF rules included.
+        Nothing fails, and the endpoints are simply protected by the wrong rules.
+      </p>
+
+      <CodeBlock language="java" title="Scope every chain, and let exactly one be the catch-all">
+{`@Bean @Order(1)
+SecurityFilterChain ordersChain(HttpSecurity http) throws Exception {
+    http.securityMatcher("/orders/**")        // REQUIRED once chains coexist
+        .authorizeHttpRequests(a -> a.anyRequest().hasRole("ORDERS"));
+    return http.build();
+}
+
+@Bean @Order(2)
+SecurityFilterChain usersChain(HttpSecurity http) throws Exception {
+    http.securityMatcher("/users/**")
+        .authorizeHttpRequests(a -> a.anyRequest().hasRole("USERS"));
+    return http.build();
+}
+
+// Exactly ONE unscoped chain, ordered LAST, as the deny-by-default backstop.
+@Bean @Order(Ordered.LOWEST_PRECEDENCE)
+SecurityFilterChain fallback(HttpSecurity http) throws Exception {
+    http.authorizeHttpRequests(a -> a.anyRequest().denyAll());
+    return http.build();
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="requestMatchers does not widen a chain">
+        <p>
+          A trap worth naming because it produces endpoints with no protection at all:{' '}
+          <code>requestMatchers(...)</code> inside <code>authorizeHttpRequests</code> only
+          selects among requests the chain <em>already</em> matched via{' '}
+          <code>securityMatcher</code>. A rule naming <code>/users/**</code> inside a chain
+          scoped to <code>/orders/**</code> does nothing &mdash; it is not an error, it simply
+          never applies. Lower <code>@Order</code> values are evaluated first, and the first
+          chain whose matcher accepts the request handles it alone.
+        </p>
+        <p>
+          The path prefixes from the routing fix earlier are what make this tractable: once
+          every service&apos;s endpoints live under <code>/&#123;service&#125;/**</code>, each
+          chain has an obvious <code>securityMatcher</code>.
+        </p>
+      </InfoBox>
+
+      <h3>7. One version of each library wins, for everyone</h3>
+      <p>
+        Ten independent services had ten independent dependency graphs. One classpath can hold
+        one version of a class, so the build resolves a single version of every shared library
+        and all ten services get it &mdash; including the nine that were never tested against
+        it.
+      </p>
+      <p>
+        The resolution rules differ by tool and neither is &ldquo;safest wins&rdquo;:{' '}
+        <strong>Maven picks nearest-wins</strong> by depth in the dependency tree, while{' '}
+        <strong>Gradle picks the highest version</strong>. Both are covered in{' '}
+        <a href="/java/build-tools">Build Tools</a>. The failure does not appear at compile
+        time, because compilation happens against whatever version resolved; it appears at run
+        time, in the service that needed the other one, as{' '}
+        <code>NoSuchMethodError</code>, <code>NoClassDefFoundError</code> or{' '}
+        <code>AbstractMethodError</code> &mdash; the error table at the end of the classpath
+        lesson decodes these.
+      </p>
+      <p>
+        Print the resolved graph before merging rather than discovering it in staging, and pin
+        the shared libraries deliberately in the wrapper:
+      </p>
+
+      <CodeBlock language="bash" title="See what actually resolved">
+{`mvn dependency:tree -Dverbose           # 'omitted for conflict' marks every loser
+./gradlew :merged:dependencies --configuration runtimeClasspath
+# Gradle annotates each bump:  2.17.0 -> 2.18.0 (*)`}
+      </CodeBlock>
+
       <h2>Where the Swagger/OpenAPI YAML Fits</h2>
       <p>
         A common follow-up: if each service has its own OpenAPI YAML that generates its

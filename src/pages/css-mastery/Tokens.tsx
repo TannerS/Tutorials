@@ -178,11 +178,26 @@ export default function Tokens() {
       </CodeBlock>
 
       <CodeBlock language="tsx" title="From src/components/ThemeProvider.tsx — What Actually Flips the Attribute">
-{`useEffect(() => {
+{`const STORAGE_KEY = 'site-theme';
+
+useEffect(() => {
   document.documentElement.dataset.theme = theme; // sets data-theme="light" | "dark"
-  localStorage.setItem('site-theme', theme);
+  try {
+    localStorage.setItem(STORAGE_KEY, theme);
+  } catch {
+    /* storage blocked — the theme still applies for this session */
+  }
 }, [theme]);`}
       </CodeBlock>
+
+      <InfoBox variant="note" title="Why the try/catch is in the real file">
+        It is not defensive boilerplate. Reading or writing{' '}
+        <code>localStorage</code> does not return <code>null</code> when storage is blocked
+        &mdash; <strong>it throws</strong>, which is what Safari private mode does. An
+        unguarded <code>setItem</code> inside this effect took the whole app down at mount,
+        so both accesses in <code>ThemeProvider</code> are wrapped. The theme still applies
+        for the session; only the persistence is lost.
+      </InfoBox>
 
       <InfoBox variant="warning" title="Notice what ISN'T there">
         There is no per-component dark-mode CSS anywhere in this site&apos;s ~30 lesson pages. Every
