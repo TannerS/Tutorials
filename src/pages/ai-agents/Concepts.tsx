@@ -135,6 +135,43 @@ async function runTool(call) {
         worktree are refused.&quot; sets expectations the harness will actually enforce.
       </InfoBox>
 
+      <h3>Shaping the Tool Surface</h3>
+      <p>
+        Beyond each description, the <em>set</em> of tools is itself a design decision, and
+        three rules do most of the work:
+      </p>
+      <ul>
+        <li>
+          <strong>Consolidate related operations.</strong> Rather than{' '}
+          <code>create_pr</code>, <code>review_pr</code> and <code>merge_pr</code>, prefer
+          one <code>pull_request</code> tool with an <code>action</code> parameter. Fewer,
+          more capable tools reduce selection ambiguity &mdash; and cost fewer tokens per
+          turn, since every schema is re-sent on every request.
+        </li>
+        <li>
+          <strong>Namespace the names.</strong> Once tools span services, prefix them:{' '}
+          <code>github_list_prs</code>, <code>slack_send_message</code>. Ambiguity between
+          two similarly-named tools is a selection error waiting to happen, and
+          namespacing matters more as the library grows.
+        </li>
+        <li>
+          <strong>Return high-signal results.</strong> Return stable identifiers and only
+          the fields the agent needs for its next step. A bloated response wastes context
+          twice: once on the way in, and again on every turn it stays in history.
+        </li>
+      </ul>
+
+      <InfoBox variant="tip" title="input_examples, for tools whose shape is hard to describe">
+        For a tool with nested objects, optional parameters, or format-sensitive inputs, a
+        description can only get you so far. The optional <code>input_examples</code> field
+        takes an array of example input objects, which are shown to the model alongside the
+        schema &mdash; concrete patterns for what a well-formed call looks like, including
+        when to include an optional parameter and when to leave it out. Each example is
+        validated against your <code>input_schema</code>, so a wrong one is a 400 rather
+        than a silent bad example. Budget roughly 20&ndash;50 tokens for a simple example
+        and 100&ndash;200 for a complex nested one.
+      </InfoBox>
+
       <h3>Making the Arguments Trustworthy</h3>
       <p>
         A schema in <code>input_schema</code> documents what you want; it does not by
@@ -187,6 +224,14 @@ async function runTool(call) {
         </ul>
         <code>tool_choice: {'{'} type: &quot;none&quot; {'}'}</code> still works, and so
         does <code>disable_parallel_tool_use</code> alongside <code>auto</code>.
+        <br />
+        <br />
+        Worth knowing even where forcing <em>is</em> supported: a forced call{' '}
+        <strong>skips thinking entirely</strong>. The API prefills the assistant turn, so
+        the response starts with the <code>tool_use</code> block, carries no{' '}
+        <code>thinking</code> block, and includes no natural-language explanation even if
+        you asked for one. If you want the model to reason before it calls, the answer is
+        the same either way: <code>auto</code>, plus an instruction naming the tool.
       </InfoBox>
 
       <h2>The Core Loop</h2>
@@ -243,6 +288,42 @@ async function runTool(call) {
           read &ldquo;file not found&rdquo; and try a different path, where a dropped block
           just ends the run.
         </p>
+      </InfoBox>
+
+      <CodeBlock language="text" title="Three placement rules the API enforces with a 400">
+{`1. Results go in the message IMMEDIATELY after the tool_use message.
+   Nothing may sit between them.
+
+2. Inside that user message, tool_result blocks come FIRST.
+   Any text you add comes AFTER all of them.
+
+   WRONG -> 400                          RIGHT
+   { role: "user", content: [            { role: "user", content: [
+     { type: "text", ... },      <-- x     { type: "tool_result", ... },
+     { type: "tool_result", ... }          { type: "tool_result", ... },
+   ]}                                      { type: "text", ... }
+                                         ]}
+
+3. One tool_result per tool_use id, every time. The error when you
+   get this wrong names it almost exactly:
+
+   "tool_use ids were found without tool_result blocks immediately after"`}
+      </CodeBlock>
+
+      <p>
+        Rule 2 is the one that surprises people, because adding a friendly{' '}
+        &ldquo;Here are the results:&rdquo; line before the blocks is such a natural thing
+        to write. It is a 400 every time.
+      </p>
+
+      <InfoBox variant="tip" title="Error text is a prompt, so write it like one">
+        Since the model reads the error and decides what to do next, the wording is
+        load-bearing. <code>&quot;failed&quot;</code> gives it nothing and it will usually
+        retry the identical call. <code>&quot;Rate limit exceeded. Retry after 60
+        seconds.&quot;</code> tells it both what happened and what to do, and it will wait
+        or pick a different approach. Claude will generally retry an invalid call two or
+        three times with corrections before giving up, so an informative message is often
+        the difference between a self-healing run and a dead one.
       </InfoBox>
 
       <h2>Turns, and Why They Are the Unit That Matters</h2>

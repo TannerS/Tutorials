@@ -192,8 +192,24 @@ other's shared content`}
       <CodeBlock language="typescript" title="The only check that matters">
 {`console.log(response.usage.cache_creation_input_tokens); // written to cache
 console.log(response.usage.cache_read_input_tokens);     // served from cache
-console.log(response.usage.input_tokens);                // paid at full price`}
+console.log(response.usage.input_tokens);                // paid at full price
+
+// The three are disjoint, so this is your total input for the request:
+//   cache_read_input_tokens + cache_creation_input_tokens + input_tokens
+
+// Writes also break down by TTL, which is how you confirm the 1-hour
+// window is being used where you asked for it:
+console.log(response.usage.cache_creation);
+// { ephemeral_5m_input_tokens: 148, ephemeral_1h_input_tokens: 100 }`}
       </CodeBlock>
+
+      <p>
+        The <code>cache_creation</code> breakdown is worth logging in its own column. The
+        two TTLs cost different multiples of base input &mdash; 1.25x against 2x &mdash;
+        so a harness that meant to write a 5-minute cache and is quietly writing 1-hour
+        entries is paying 60% more per write than its own cost model says. The totals in{' '}
+        <code>cache_creation_input_tokens</code> hide that; the breakdown does not.
+      </p>
 
       <p>
         If <code>cache_read_input_tokens</code> is zero across repeated requests that
@@ -240,7 +256,20 @@ console.log(response.usage.input_tokens);                // paid at full price`}
         <li><strong>Editing earlier turns.</strong> Any rewrite of history changes the prefix from that point on.</li>
         <li><strong>A mid-conversation change to top-level settings.</strong> Changing the top-level effort setting mid-run resets the messages cache.</li>
         <li><strong>A model switch.</strong> Caches are scoped to a model. Routing the same conversation to a cheaper model starts from an empty cache.</li>
+        <li><strong>Toggling a server tool, citations, or fast mode.</strong> These render ahead of the conversation, so flipping any of them invalidates <em>system and messages</em> while leaving <code>tools</code> intact.</li>
+        <li><strong>Changing <code>tool_choice</code>, or adding/removing an image anywhere.</strong> Narrower blast radius — messages only — but still a full reprocess of the conversation.</li>
       </ul>
+
+      <InfoBox variant="warning" title="The 20-block lookback limit">
+        One rule that catches people with long conversations: for each breakpoint the API
+        only looks back <strong>20 content blocks</strong> hunting for a cache hit. If your
+        last breakpoint sits further than 20 blocks behind the end of a growing
+        conversation, the lookup quietly misses and you pay full price on content that is
+        genuinely still cached. This is a real argument for moving a breakpoint forward as
+        the conversation grows rather than setting four at the start and never touching
+        them again &mdash; and it looks exactly like a silent invalidator when it bites,
+        because <code>cache_read_input_tokens</code> simply drops to zero.
+      </InfoBox>
 
       <p>
         That last point has a design consequence worth stating plainly, because it cuts

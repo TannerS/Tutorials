@@ -264,6 +264,23 @@ Local models                  time and hardware      concurrency, wall clock`}
         <li><strong>Make the allowlist the backstop.</strong> An injected instruction to exfiltrate a file cannot succeed if no tool in the role's allowlist can reach the network. This is the guardrail that does not depend on the model's judgment at all.</li>
       </ul>
 
+      <InfoBox variant="warning" title="Which block type you put untrusted content in actually matters">
+        The first bullet has a concrete form that is easy to get wrong. The published
+        guidance is to keep untrusted content inside{' '}
+        <strong><code>tool_result</code> blocks</strong> &mdash; not pasted into the{' '}
+        <code>system</code> prompt, and not inlined into a plain user{' '}
+        <code>text</code> block. Those channels carry different authority, so a harness
+        that reads a file and splices its contents into the system prompt has just handed
+        whatever was in that file the most trusted position in the request.
+        <br />
+        <br />
+        This catches hand-rolled harnesses in particular, because &ldquo;put the file
+        contents in the system prompt so the model definitely sees it&rdquo; is such a
+        reasonable-sounding instinct, and it inverts the trust model. Web pages, inbound
+        email, user uploads, ticket text and third-party API responses all belong in{' '}
+        <code>tool_result</code>.
+      </InfoBox>
+
       <h2>The Remaining Guardrails</h2>
       <p>
         Shorter treatments, each of which earns its place:
