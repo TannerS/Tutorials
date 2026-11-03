@@ -54,6 +54,7 @@ export const sections: Section[] = [
       { id: 'webflux', title: 'Reactive Programming with WebFlux', path: '/springboot/webflux' },
       { id: 'resilience', title: 'Resilience4j & Circuit Breakers', path: '/springboot/resilience' },
       { id: 'modular-monolith', title: 'Many Services, One App — The Wrapper Pattern', path: '/springboot/modular-monolith' },
+      { id: 'annotation-pipeline', title: 'How an Annotation Becomes a Bean', path: '/springboot/annotation-pipeline' },
       { id: 'cheatsheet', title: '📋 Spring Boot 4 Field Guide', path: '/springboot/cheatsheet' },
     ],
   },

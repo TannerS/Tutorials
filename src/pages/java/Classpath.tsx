@@ -132,6 +132,88 @@ Runtime only recognizes class file versions up to 61.0`}
         </p>
       </InfoBox>
 
+      <h3>Where Annotations Live, and Why Only Some Survive</h3>
+      <p>
+        An annotation is not a comment and not an instruction — it is{' '}
+        <strong>data stored in the class file</strong>, in a named attribute. Which attribute,
+        or whether it is stored at all, is decided entirely by the annotation&apos;s{' '}
+        <code>@Retention</code>. That one setting is the whole reason Spring can find your{' '}
+        <code>@Component</code> classes, so it is worth seeing rather than taking on trust.
+        Three annotations, one per retention policy, on one class:
+      </p>
+
+      <CodeBlock language="java" title="Anno.java — the experiment">
+{`import java.lang.annotation.*;
+
+@Retention(RetentionPolicy.SOURCE)  @interface KeptInSource  {}
+@Retention(RetentionPolicy.CLASS)   @interface KeptInClass   {}
+@Retention(RetentionPolicy.RUNTIME) @interface KeptAtRuntime {}
+
+@KeptInSource @KeptInClass @KeptAtRuntime
+public class Anno {}`}
+      </CodeBlock>
+
+      <CodeBlock language="bash" title="Real output — javac then javap -v, Java 26.0.1">
+{`$ javap -v Anno.class | grep -E "RuntimeVisible|RuntimeInvisible|KeptIn|KeptAt"
+  #13 = Utf8               RuntimeVisibleAnnotations
+  #14 = Utf8               LKeptAtRuntime;
+  #15 = Utf8               RuntimeInvisibleAnnotations
+  #16 = Utf8               LKeptInClass;
+RuntimeVisibleAnnotations:
+    KeptAtRuntime
+RuntimeInvisibleAnnotations:
+    KeptInClass
+
+# KeptInSource appears NOWHERE in the output. Not in the constant pool,
+# not in any attribute. javac discarded it after compiling.`}
+      </CodeBlock>
+
+      <p>
+        So the three policies map onto three concrete outcomes, and the names in that output
+        say exactly what each one means:
+      </p>
+
+      <ul>
+        <li>
+          <strong><code>SOURCE</code> — erased.</strong> Used by tools that run during
+          compilation and have no business at run time: <code>@Override</code>,{' '}
+          <code>@SuppressWarnings</code>, Lombok&apos;s annotations. Nothing downstream can
+          ever see it, because there is nothing to see.
+        </li>
+        <li>
+          <strong><code>CLASS</code> — stored, but not reflectable.</strong> It lands in{' '}
+          <code>RuntimeInvisibleAnnotations</code>. &ldquo;Invisible&rdquo; means invisible{' '}
+          <em>to reflection</em>, not absent — a bytecode tool reading the file directly still
+          finds it. This is the one people get wrong, usually by assuming{' '}
+          <code>CLASS</code> means discarded. It is also the <em>default</em> when you write{' '}
+          <code>@interface</code> without a <code>@Retention</code>, which is a common way to
+          write an annotation Spring then cannot see.
+        </li>
+        <li>
+          <strong><code>RUNTIME</code> — stored and reflectable.</strong> It lands in{' '}
+          <code>RuntimeVisibleAnnotations</code>, and only then does{' '}
+          <code>getAnnotation()</code> return it. Every Spring annotation you have ever used
+          is <code>RUNTIME</code>.
+        </li>
+      </ul>
+
+      <InfoBox variant="tip" title="This is the hinge between this lesson and Spring">
+        <p>
+          The practical consequence is worth stating in one sentence, because it connects the
+          whole stack: <strong>a framework can only act on an annotation that is physically in
+          the class file.</strong> Component scanning is not magic and it is not reading your
+          source code — it is opening class files and looking for an attribute that{' '}
+          <code>javac</code> wrote there, exactly the attribute printed above.
+        </p>
+        <p>
+          A detail that follows from it, and that trips people up: because the annotation is in
+          the <em>file</em>, a framework does not have to load or initialise the class to read
+          it. Spring exploits this deliberately — the Spring Boot lessons demonstrate a{' '}
+          <code>@Component</code> that gets registered as a bean while its static initialiser
+          provably never runs.
+        </p>
+      </InfoBox>
+
       <h2>Step 2: <code>.class</code> Files Become a <code>.jar</code></h2>
       <p>
         Shipping a tree of loose <code>.class</code> files is impractical, so Java packages

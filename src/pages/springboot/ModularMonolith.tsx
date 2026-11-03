@@ -10,7 +10,7 @@ export default function ModularMonolith() {
       sectionId="springboot"
       lessonIndex={18}
       prev={{ path: '/springboot/resilience', label: 'Resilience4j & Circuit Breakers' }}
-      next={{ path: '/springboot/cheatsheet', label: 'Spring Boot 4 Field Guide' }}
+      next={{ path: '/springboot/annotation-pipeline', label: 'How an Annotation Becomes a Bean' }}
     >
       <p>
         Here is a setup that exists in a lot of real companies and sounds impossible the first

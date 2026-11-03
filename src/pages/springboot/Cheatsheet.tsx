@@ -11,7 +11,7 @@ export default function SpringBootCheatsheet() {
       meta={['Spring Boot 4', 'Jakarta EE 11 · Framework 7', '20 panels']}
       page="1 / 1"
       footer="This page is for recall. The lessons in this section carry the reasoning, the worked examples, and the full migration story to Boot 4."
-      prev={{ path: '/springboot/modular-monolith', label: 'Many Services, One App — The Wrapper Pattern' }}
+      prev={{ path: '/springboot/annotation-pipeline', label: 'How an Annotation Becomes a Bean' }}
       next={null}
     >
       <GuidePanel n={1} title="Startup Failure Triage" accent="blue" glyph="🚑">
