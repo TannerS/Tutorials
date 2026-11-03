@@ -335,6 +335,163 @@ dependencies {
         mechanism, which is the main reason large multi-module builds tend to reach for Gradle.
       </p>
 
+      <h3>The Configuration Cache Is a Different Cache</h3>
+
+      <p>
+        The build cache above stores <strong>task outputs</strong>. The{' '}
+        <strong>configuration cache</strong> stores something else entirely: the result of the{' '}
+        <em>configuration phase</em> — the task graph Gradle builds by executing your build
+        scripts before any task runs. The two are independent, and the names being so similar
+        is most of why they get confused.
+      </p>
+
+      <p>
+        A Gradle build has two phases. <em>Configuration</em> runs your{' '}
+        <code>build.gradle.kts</code> top to bottom to work out which tasks exist and how they
+        depend on each other. <em>Execution</em> then runs the ones you asked for. On a large
+        multi-project build the configuration phase alone can take seconds, every single
+        invocation, even when the answer is identical. The configuration cache serialises that
+        graph and skips the phase entirely.
+      </p>
+
+      <InfoBox variant="warning" title="It is opt-in on Gradle 9.5, not automatic">
+        <p>
+          Worth checking rather than assuming, because this has been changing release to
+          release. On Gradle 9.5.0 it is still <strong>off by default</strong> — a plain build
+          tells you so:
+        </p>
+        <CodeBlock language="bash" title="Real output — Gradle 9.5.0, no flags">
+{`$ gradle show
+BUILD SUCCESSFUL in 5s
+Consider enabling configuration cache to speed up this build:
+https://docs.gradle.org/9.5.0/userguide/configuration_cache_enabling.html`}
+        </CodeBlock>
+        <p>
+          Turn it on per-invocation with <code>--configuration-cache</code>, or permanently
+          with <code>org.gradle.configuration-cache=true</code> in{' '}
+          <code>gradle.properties</code>.
+        </p>
+      </InfoBox>
+
+      <CodeBlock language="bash" title="Real output — Gradle 9.5.0, the store/reuse cycle">
+{`$ gradle show --configuration-cache          # cold
+BUILD SUCCESSFUL in 540ms
+Configuration cache entry stored.
+
+$ gradle show --configuration-cache          # identical invocation
+Reusing configuration cache.
+BUILD SUCCESSFUL in 300ms
+Configuration cache entry reused.`}
+      </CodeBlock>
+
+      <p>
+        What counts as an input is narrower than people expect, and pleasantly precise. Passing{' '}
+        <code>-Pfoo=bar</code> for a property <em>no script reads</em> did not invalidate the
+        entry at all. A property the build actually reads is tracked, so changing its value
+        does:
+      </p>
+
+      <CodeBlock language="text" title="Real output — only inputs the build reads are tracked">
+{`-Pmode=one     Configuration cache entry stored.      <- cold
+-Pmode=one     Configuration cache entry reused.      <- same input
+-Pmode=two     Configuration cache entry stored.      <- input changed, re-stored
+
+Editing build.gradle.kts also re-stores it: the script is an input.`}
+      </CodeBlock>
+
+      <InfoBox variant="danger" title="The error you will actually hit, and the one-line fix">
+        <p>
+          Enabling it on an existing build usually produces{' '}
+          <code>Configuration cache entry discarded with N problems</code> rather than a
+          speedup. The cache has to <em>serialise</em> the task graph, so anything a task
+          action references must be serialisable — and the most common offender is a build
+          script closure accidentally capturing the whole script object. This version fails:
+        </p>
+        <CodeBlock language="kotlin" title="Fails — the doLast closure captures the script">
+{`val mode = providers.gradleProperty("mode").getOrElse("default")
+tasks.register("show") {
+    doLast { println("mode = " + mode) }   // references a script-level val
+}`}
+        </CodeBlock>
+        <p>
+          The report named the culprit as a field{' '}
+          <code>this$0</code> on the generated script class, held by the task&apos;s action
+          list &mdash; i.e. the lambda dragged in the entire build script. Copying the value
+          into the registration scope first makes the closure capture only a{' '}
+          <code>String</code>:
+        </p>
+        <CodeBlock language="kotlin" title="Works — verified, stored then reused">
+{`val mode = providers.gradleProperty("mode").getOrElse("default")
+tasks.register("show") {
+    val m = mode                           // copy into the registration scope
+    doLast { println("mode = " + m) }      // captures a String, nothing else
+}`}
+        </CodeBlock>
+        <p>
+          Read the HTML report Gradle links to rather than guessing &mdash; it names the exact
+          field, task and script location for each problem, which is the only efficient way to
+          work through a real build&apos;s list.
+        </p>
+      </InfoBox>
+
+      <h3>Version Catalogs: One Place for Versions</h3>
+
+      <p>
+        The modern answer to &ldquo;where do dependency versions live&rdquo; in Gradle, and the
+        default for new projects. Instead of version strings scattered across every module&apos;s{' '}
+        <code>build.gradle.kts</code>, they are declared once and referenced through a
+        generated, type-safe accessor &mdash; so a typo is a compile error in the build script
+        rather than a download failure.
+      </p>
+
+      <CodeBlock language="text" title="gradle/libs.versions.toml — the conventional file">
+{`[versions]
+junit = "5.11.3"
+spring-boot = "4.1.1"
+
+[libraries]
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+spring-web = { module = "org.springframework:spring-web", version.ref = "spring-boot" }
+
+[bundles]
+testing = ["junit-api"]
+
+[plugins]
+boot = { id = "org.springframework.boot", version.ref = "spring-boot" }`}
+      </CodeBlock>
+
+      <CodeBlock language="kotlin" title="Referencing it — no version strings anywhere">
+{`dependencies {
+    testImplementation(libs.junit.api)        // one library
+    testImplementation(libs.bundles.testing)  // a whole bundle
+}`}
+      </CodeBlock>
+
+      <InfoBox variant="tip" title="The accessor name is not the alias you wrote">
+        <p>
+          The one thing that reliably catches people: <strong>hyphens in the alias become dots
+          in the accessor.</strong> An alias <code>junit-api</code> is referenced as{' '}
+          <code>libs.junit.api</code>, and <code>spring-web</code> as{' '}
+          <code>libs.spring.web</code>. The hyphen is the nesting separator, so{' '}
+          <code>libs.junit-api</code> does not compile.
+        </p>
+        <p>
+          Catalogs can also be declared inline in <code>settings.gradle.kts</code> under{' '}
+          <code>dependencyResolutionManagement</code>, which is how the lab above was built;
+          the <code>libs.versions.toml</code> file is the convention Gradle picks up
+          automatically and the one to prefer. Either way the accessors are generated, so the
+          IDE completes them.
+        </p>
+      </InfoBox>
+
+      <p>
+        This is the Gradle counterpart to the Maven BOM pattern above, with one real
+        difference: a BOM aligns the versions of <em>a library&apos;s own modules</em> and is
+        consumed with <code>platform(...)</code>, whereas a catalog is <em>your</em> list of
+        what you depend on. They compose rather than compete — a catalog entry commonly points
+        at a BOM.
+      </p>
+
       <h2>Which One Do Teams Actually Pick?</h2>
 
       <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1rem 0' }}>

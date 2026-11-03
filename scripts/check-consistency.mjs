@@ -173,6 +173,24 @@ const FACTS = [
     allow: /half true|check-then-act|yield point|across an await|lost updates|logical|stale/i,
   },
   {
+    id: 'gradle-does-not-disable-the-plain-jar',
+    // I wrote this wrong myself and caught it against the plugin docs, which is
+    // exactly why it is worth guarding. The Maven mental model does not carry
+    // over: `repackage` REPLACES Maven's main artifact, so the plain jar is
+    // gone. Gradle builds BOTH -- it gives the ordinary `jar` task the
+    // classifier `plain`, so myapp-1.0.jar (fat) and myapp-1.0-plain.jar both
+    // exist and nothing is disabled. The only real problem is that bootJar owns
+    // the unclassified name, so the fix is swapping archiveClassifier values,
+    // never "enabling" a task. Getting this backwards sends a reader looking
+    // for a disabled task that was never disabled.
+    fact: 'Gradle does not disable the plain jar task; it classifies it "plain" and both archives build',
+    fixedBy: 'Spring Boot Gradle plugin packaging docs',
+    wrong: /plain (jar|archive)[^.\n]{0,70}disabled by default|jar task is disabled by default|(enable|re-enable|enabling) the plain jar/i,
+    // The lessons have to describe the wrong model in order to correct it, and
+    // every correcting sentence either denies it or names the real mechanism.
+    allow: /not disabled|builds both|nothing (is disabled|needs enabling)|classifier|opposite route|do not carry/i,
+  },
+  {
     id: 'bean-overriding-does-not-fix-scan-conflicts',
     // The top search result for ConflictingBeanDefinitionException is always
     // spring.main.allow-bean-definition-overriding=true, and for THIS exception

@@ -193,9 +193,16 @@ $ unzip -l svc-a/target/svc-a-1.0.jar | grep loader | head -2
           it aside as <code>svc-a-1.0.jar.original</code> in that module&apos;s{' '}
           <code>target/</code>. It is only ever a local build artifact, never published, so
           treat it as a diagnostic that confirms the diagnosis rather than something to depend
-          on. The durable options are the classifier above, or Gradle&apos;s equivalent &mdash;
-          where the <code>bootJar</code> and plain <code>jar</code> tasks are already separate
-          and you enable the second rather than reconfiguring the first.
+          on. The durable fix is the classifier above.
+        </p>
+        <p>
+          Gradle reaches the same bad default by the opposite route, so do not carry the Maven
+          mental model across. Gradle builds <em>both</em> archives &mdash; it gives the plain{' '}
+          <code>jar</code> task the classifier <code>plain</code>, so nothing is disabled and
+          nothing needs enabling. The problem is only that <code>bootJar</code> holds the
+          unclassified name, so a dependency still resolves to the fat jar. You swap the two{' '}
+          <code>archiveClassifier</code> values rather than enabling anything. The{' '}
+          <a href="/springboot/annotation-pipeline">next lesson</a> shows that build file.
         </p>
       </InfoBox>
 
