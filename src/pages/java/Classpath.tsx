@@ -208,9 +208,12 @@ RuntimeInvisibleAnnotations:
         <p>
           A detail that follows from it, and that trips people up: because the annotation is in
           the <em>file</em>, a framework does not have to load or initialise the class to read
-          it. Spring exploits this deliberately — the Spring Boot lessons demonstrate a{' '}
-          <code>@Component</code> that gets registered as a bean while its static initialiser
-          provably never runs.
+          it. Spring exploits this deliberately: its scanner parses the bytes with a bundled
+          copy of ASM rather than loading anything, which is what stops a package scan from
+          running the static initialisers of every class it walks past.{' '}
+          <a href="/springboot/annotation-pipeline">How an Annotation Becomes a Bean</a>{' '}
+          demonstrates it with a <code>@Component</code> that gets registered as a bean while
+          its static initialiser provably never runs.
         </p>
       </InfoBox>
 
