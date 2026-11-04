@@ -530,6 +530,7 @@ const HarnessRolesAndTools = lazy(() => import('./pages/agent-harness/RolesAndTo
 const HarnessMemory = lazy(() => import('./pages/agent-harness/Memory'))
 const HarnessGuardrails = lazy(() => import('./pages/agent-harness/Guardrails'))
 const HarnessOperating = lazy(() => import('./pages/agent-harness/Operating'))
+const HarnessPortableModels = lazy(() => import('./pages/agent-harness/PortableModels'))
 
 function NotFound() {
   return (
@@ -1047,6 +1048,7 @@ function App() {
         <Route path="agent-harness/memory" element={<HarnessMemory />} />
         <Route path="agent-harness/guardrails" element={<HarnessGuardrails />} />
         <Route path="agent-harness/operating" element={<HarnessOperating />} />
+        <Route path="agent-harness/portable-models" element={<HarnessPortableModels />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

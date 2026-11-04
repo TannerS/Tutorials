@@ -10,7 +10,7 @@ export default function Operating() {
       sectionId="agent-harness"
       lessonIndex={5}
       prev={{ path: '/agent-harness/guardrails', label: 'Guardrails & Budgets' }}
-      next={null}
+      next={{ path: '/agent-harness/portable-models', label: 'Any Model, Any Provider' }}
     >
       <h2>Running One Is a Different Skill From Building One</h2>
       <p>

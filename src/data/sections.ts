@@ -867,6 +867,7 @@ export const sections: Section[] = [
       { id: 'memory', title: 'Memory & the Audit Ledger', path: '/agent-harness/memory' },
       { id: 'guardrails', title: 'Guardrails & Budgets', path: '/agent-harness/guardrails' },
       { id: 'operating', title: 'Operating & Extending', path: '/agent-harness/operating' },
+      { id: 'portable-models', title: 'Any Model, Any Provider', path: '/agent-harness/portable-models' },
     ],
   },
 ];
