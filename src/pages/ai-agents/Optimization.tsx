@@ -41,6 +41,40 @@ export default function Optimization() {
         place once the free wins are exhausted.
       </p>
 
+      <InfoBox variant="note" title="Which of these survive a change of model">
+        <p>
+          Worth separating up front, because it decides how much of this lesson you can take
+          with you. Most of the lever order is <strong>mechanics</strong> &mdash; it works on
+          any model from any provider, including a local one with no caching or budget features
+          at all, because it reduces how many tokens exist rather than what they cost:
+        </p>
+        <CodeBlock language="text" title="Universal mechanics vs. provider features">
+{`universal -- works on any model, any provider
+  input hygiene        send less: ranges not whole files, capped tool
+                       output, per-role documents, per-role tool schemas
+  loop hygiene         fewer turns, no redundant re-reads
+  output discipline    cap output; "explain at length" is a standing
+                       order to spend the expensive tokens
+  externalizing        write conclusions to a store, keep a pointer
+  stable prefixes      free reproducibility now, free caching later
+
+provider features -- check availability before you design around them
+  prompt caching       widely available, but TTLs, write multipliers and
+                       minimum cacheable prefix all differ
+  effort / thinking    named and shaped differently per provider
+  task budgets         Claude-specific as described here
+  batch discounts      common, but the discount and semantics vary`}
+        </CodeBlock>
+        <p>
+          The concrete figures in this lesson are Claude&apos;s. The ordering &mdash; free wins,
+          then an eval, then tradeoffs &mdash; is not, and neither is the discipline of
+          measuring a baseline first. For running the same harness against OpenAI, Gemini or an
+          open-weight model on your own hardware, see{' '}
+          <a href="/agent-harness/portable-models">Any Model, Any Provider</a>, which measures
+          what actually differs at the seam.
+        </p>
+      </InfoBox>
+
       <FlowChart
         title="Optimization lever order"
         chart={"graph TD\n  M[Measure a baseline] --> F[Free wins]\n  F --> F1[Prompt caching]\n  F --> F2[Input hygiene]\n  F --> F3[Loop hygiene]\n  F --> F4[Batch where latency is irrelevant]\n  F1 --> E[Build an eval — the quality baseline]\n  F2 --> E\n  F3 --> E\n  F4 --> E\n  E --> T[Quality tradeoffs]\n  T --> T1[Lower effort]\n  T --> T2[Cheaper model for narrow jobs]\n  T --> T3[Multi-model routing]\n  style F fill:#1a3329\n  style E fill:#1a2744\n  style T fill:#3d2f14"}

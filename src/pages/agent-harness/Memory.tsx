@@ -304,6 +304,130 @@ FIX       REPORTING_TIMEZONE=America/Chicago in .env, pinned on every
         <li><strong>Prefer fewer, better records.</strong> Every row added to the curated tier dilutes every search over it.</li>
       </ul>
 
+      <h2>The Message Log: Conversation History You Can Replay</h2>
+      <p>
+        The ledger records messages <em>for you</em>, and for that purpose a readable
+        approximation is fine. Resuming or replaying a run is a stricter requirement: it needs
+        the conversation back in a form the <em>model</em> will accept. Those are different
+        enough that it is worth being deliberate about which one your message rows satisfy,
+        because the gap only shows up the first time you try to resume something.
+      </p>
+
+      <CodeBlock language="text" title="Same rows, two jobs, different bars to clear">
+{`job                what it needs                             tolerant of
+-----------------  ----------------------------------------  ---------------------
+audit / debugging  readable, roughly ordered, searchable      gaps, truncation,
+                   (who did what, when, why)                  prose summaries
+
+resume / replay    COMPLETE and EXACTLY ordered, every        nothing -- a missing
+                   tool_call paired with its result,          tool result is an
+                   in your INTERNAL format                    unanswerable turn`}
+      </CodeBlock>
+
+      <p>
+        The pairing requirement is the one that bites. As the tool-use lessons cover, a{' '}
+        <code>tool_call</code> with no matching result is rejected outright &mdash; so a
+        message log that dropped a single tool result is not resumable, however complete it
+        looks in a <code>SELECT</code>. Write the call and its result in one transaction and
+        the invariant holds by construction:
+      </p>
+
+      <CodeBlock language="sql" title="A message log built for replay">
+{`CREATE TABLE message (
+  run_id      TEXT    NOT NULL,
+  seq         INTEGER NOT NULL,      -- monotonic PER RUN; ordering is not a timestamp
+  role        TEXT    NOT NULL,      -- 'system' | 'user' | 'assistant' | 'tool'
+  content     TEXT    NOT NULL,      -- JSON: your INTERNAL block format
+  tool_call_id TEXT,                 -- set on tool calls AND their results
+  provider    TEXT    NOT NULL,      -- who served this turn
+  model       TEXT    NOT NULL,
+  prompt_tokens  INTEGER,
+  output_tokens  INTEGER,
+  created_at  TEXT    NOT NULL,
+  PRIMARY KEY (run_id, seq)
+);
+
+-- Replay is then just a read, in order:
+SELECT role, content FROM message WHERE run_id = ? ORDER BY seq;`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Store your internal format, not the provider's wire format">
+        <p>
+          It is tempting to persist the exact JSON you sent and received &mdash; it is right
+          there, and it replays perfectly. It also welds your history to one vendor. As{' '}
+          <a href="/agent-harness/portable-models">Any Model, Any Provider</a> measures, the
+          dialects disagree on where the system prompt lives, whether tool arguments are a
+          string or an object, and what the token fields are called. A log of raw OpenAI-shaped
+          messages cannot be resumed on Anthropic, or vice versa.
+        </p>
+        <p>
+          Persist the normalised form your loop already speaks and let the adapter re-render it
+          on the way out. That also makes <code>seq</code> meaningful across a run that was
+          served by two different models, which is the situation any routing harness is in.
+        </p>
+      </InfoBox>
+
+      <p>
+        Use <code>seq</code> rather than <code>created_at</code> for ordering. Timestamps
+        collide at the resolution agents work at, they are not monotonic across a clock change,
+        and &mdash; per the timezone bug earlier in this lesson &mdash; they are the part of a
+        schema most likely to be subtly wrong. Ordering a replay by a colliding timestamp
+        reorders a conversation, which produces a failure that looks like a model problem.
+      </p>
+
+      <h3>If the store is SQLite, one PRAGMA decides whether this works</h3>
+      <p>
+        A single-machine harness reasonably reaches for SQLite instead of Postgres, and the
+        usual advice is &ldquo;enable WAL and concurrent access is fine&rdquo;. That is half
+        right in a way worth measuring, because the failure is silent data loss rather than an
+        error you notice. Two agents writing turns concurrently, WAL enabled, defaults
+        otherwise:
+      </p>
+
+      <CodeBlock language="text" title="Measured — SQLite 3.51.0, WAL on, two concurrent writers">
+{`journal_mode = wal
+rows written : 124 / 240 attempted
+locked errors: 116      ("database is locked")`}
+      </CodeBlock>
+
+      <p>
+        Nearly half the conversation lost. WAL lets readers run concurrently with a writer; it
+        does <strong>not</strong> make writers concurrent. Writers still serialise, and
+        SQLite&apos;s default <code>busy_timeout</code> is <code>0</code> &mdash; so the second
+        writer does not wait its turn, it fails immediately. Same test, one line added:
+      </p>
+
+      <CodeBlock language="text" title="Measured — identical test plus PRAGMA busy_timeout=5000">
+{`rows written : 240 / 240 attempted
+locked errors: 0
+per-agent    : agentA=120  agentB=120`}
+      </CodeBlock>
+
+      <p>
+        Set <code>busy_timeout</code> on <em>every</em> connection &mdash; it is per-connection,
+        not a property of the file, so one unconfigured connection is enough to lose turns.
+        Keep writes short and batched, since every writer is queuing behind this one. And if
+        several agents will write continuously rather than in bursts, that queue is the signal
+        to move to Postgres rather than tune further.
+      </p>
+
+      <InfoBox variant="danger" title="A message log is the most sensitive table you own">
+        <p>
+          Two consequences of keeping full conversations that are easier to handle now than
+          after an incident. First, this table contains <em>everything</em> an agent was shown
+          &mdash; source code, config, ticket text, any secret that leaked into a tool result.
+          It deserves the access controls of a credential store, not of a log.
+        </p>
+        <p>
+          Second, it grows without bound and is the one table where that is expensive, so give
+          it a retention policy on the day you create it. The usual split works well: keep{' '}
+          <code>message</code> rows for weeks, because their value is resume and recent
+          debugging, and keep the curated decisions indefinitely, because that is where the
+          durable knowledge was deliberately written. That is the two-tier principle from the
+          top of this lesson, applied to disk.
+        </p>
+      </InfoBox>
+
       <h2>Crash Recovery Falls Out of the Design</h2>
       <p>
         Because run state lives in Postgres rather than in process memory, recovery is
@@ -316,6 +440,44 @@ FIX       REPORTING_TIMEZONE=America/Chicago in .env, pinned on every
         is not durability for its own sake — it is that the alternative makes every crash
         a loss of work nobody can reconstruct.
       </p>
+
+      <p>
+        With a replayable message log there are now two recovery granularities available, and
+        the coarse one is usually still the right default:
+      </p>
+
+      <CodeBlock language="text" title="Two granularities, and when each is right">
+{`requeue the ticket          replay the message log
+(coarse, the default)       (fine, turn-level resume)
+
+discards the in-flight      restores the conversation and continues
+conversation; the agent     from the last completed turn
+restarts from its last
+handoff note
+
+cheap, simple, and the      recovers the tokens already spent on a
+handoff note is usually     long run -- worth it when a run is
+enough to continue well     expensive and nearly finished
+
+ALWAYS safe                 safe ONLY if no side effect was applied
+                            between the last stored turn and the crash`}
+      </CodeBlock>
+
+      <InfoBox variant="warning" title="Replay repeats side effects unless the work is idempotent">
+        <p>
+          The caveat that decides which one you can use. Replaying a conversation re-runs the
+          agent from a stored state, but it does not un-run what already happened: if the crash
+          landed after a tool opened a merge request and before that turn was committed, the
+          resumed run opens a second one. A log that is written after the side effect, not
+          before, narrows the window but never closes it.
+        </p>
+        <p>
+          So turn-level resume is a capability you earn by making tools idempotent &mdash; keyed
+          creates, upserts, a natural key on the ticket &mdash; which is the same property the{' '}
+          <a href="/agent-harness/operating">retry guidance</a> depends on. Until the tools have
+          it, requeue the ticket and accept the lost tokens; it is the cheaper mistake.
+        </p>
+      </InfoBox>
 
       <InfoBox variant="success" title="What to take from this lesson">
         Two tiers with different audiences: an append-only ledger for you, a small curated
