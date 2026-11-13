@@ -9,7 +9,7 @@ export default function ReactEvents() {
       title="React's Event System"
       sectionId="react18"
       lessonIndex={1}
-      prev={{ path: '/react18/jsx', label: 'What JSX Really Is' }}
+      prev={{ path: '/react18/virtual-dom', label: 'The Virtual DOM, Fibers & Reconciliation' }}
       next={{ path: '/react18/lifecycle', label: 'Component Lifecycle' }}
     >
       <p>

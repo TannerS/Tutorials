@@ -9,7 +9,7 @@ export default function Forms() {
       title="Testing Forms & Routing"
       sectionId="react-testing"
       lessonIndex={5}
-      prev={{ path: '/react-testing/async-deep-dive', label: 'Waiting, act(), and Async Failure Modes' }}
+      prev={{ path: '/react-testing/leaks', label: 'Leaking Tests: What Survives, and What Keeps Jest Alive' }}
       next={{ path: '/react-testing/patterns', label: 'Testing Patterns & CI' }}
     >
       <h2>Testing Form Inputs</h2>

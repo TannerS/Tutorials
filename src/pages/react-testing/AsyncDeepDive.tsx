@@ -10,7 +10,7 @@ export default function AsyncDeepDive() {
       sectionId="react-testing"
       lessonIndex={4}
       prev={{ path: '/react-testing/async', label: 'Testing Async & APIs' }}
-      next={{ path: '/react-testing/forms', label: 'Testing Forms & Routing' }}
+      next={{ path: '/react-testing/leaks', label: 'Leaking Tests: What Survives, and What Keeps Jest Alive' }}
     >
       <p>
         The previous lesson, <em>Testing Async &amp; APIs</em>, showed you <strong>which</strong>{' '}

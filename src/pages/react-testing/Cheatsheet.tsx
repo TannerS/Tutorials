@@ -8,7 +8,7 @@ export default function ReactTestingCheatsheet() {
       kicker="FIELD GUIDE"
       glyph="🧪"
       tagline="Jest, RTL and MSW — every signature, default and error string here was measured against the real stack, not recalled."
-      meta={['Jest 30.5 · RTL 16.3 · MSW 2.15', 'React 19.3 · user-event 14.6', '19 panels']}
+      meta={['Jest 30.5 · RTL 16.3 · MSW 2.15', 'React 19.3 · user-event 14.6', '20 panels']}
       page="1 / 1"
       footer="The nine lessons in this section carry the reasoning and the worked examples; this page is the recall sheet."
       prev={{ path: '/react-testing/third-party-layered', label: 'Testing Layered & Third-Party Components' }}
@@ -358,21 +358,49 @@ await user.click(within(header).getByText('Name'));   // this works`}</GuideCode
             ['TypeError: toggle is not a function', 'Zustand setState(obj, true) replaced the store and wiped the actions'],
             ['AG Grid: error #200 ... moduleName=Pagination', 'A separate-module feature needs ModuleRegistry — console.error, not a throw'],
             ['[MSW] intercepted request without handler', "onUnhandledRequest: 'error' doing its job — add the handler, or check the URL"],
+            ['Jest did not exit one second after…', 'A NODE handle is open — server, pool, socket, node:timers. --detectOpenHandles names the line. A leaked jsdom timer is NOT this'],
+            ['A worker process has failed to exit gracefully', 'Same cause, but Jest force-killed the worker and exited 0 — a green suite with an open handle'],
+            ['…after the Jest environment has been torn down', 'Async outlived the whole file. The message names the file, the stack names the line'],
+            ['Exceeded timeout of N ms on a 10ms await', 'Fake timers left installed by an earlier test — afterEach(() => jest.useRealTimers())'],
+            ['Unable to find… and the dump shows <body />', 'render() in beforeAll: cleanup ran after the first test'],
+            ['Your test suite is leaking memory (EXPERIMENTAL)', '--detectLeaks found the environment still reachable; note it reports Tests: 0 total'],
           ]}
         />
       </GuidePanel>
 
-      <GuidePanel n={19} title="Section Index" accent="pink" glyph="📖" span={2}>
+      <GuidePanel n={19} title="Leaks — Which One Do You Have?" accent="blue" glyph="💧" span={2}>
+        <GuideTable
+          head={['Symptom', 'Family', 'First move']}
+          rows={[
+            ['Fails in the file, passes under -t alone', 'crossed a test boundary', '--randomize --seed=N, then read the tests BEFORE it'],
+            ['Found multiple elements / a false pass', 'state survived cleanup', 'print document.body.innerHTML'],
+            ['act() warnings, suite green', 'async outlived the test', 'read the BOTTOM of the stack — it names the test that started it'],
+            ['Hangs, or "worker failed to exit"', 'an open NODE handle', '--detectOpenHandles'],
+            ['CI out of memory after N files', 'a handle retaining the env', '--logHeapUsage --runInBand WITH --expose-gc'],
+          ]}
+        />
+        <GuideRules items={[
+          'cleanup() unmounts RTL\'s roots and removes its containers. That is all: timers, module state, localStorage and anything your code appended to document.body survive it.',
+          'A leaked window.setInterval does NOT keep Jest alive — teardown calls jsdom\'s window.close(). Measured: clean exit in 0.9s, zero open handles. The same timer from node:timers hangs forever.',
+          'clearAllMocks does not fix a cross-test leak: it clears history between tests, and the stray call lands during the next one. Measured — identical failure with --clearMocks.',
+          '--logHeapUsage is useless without --expose-gc: both a clean and a leaking run climbed 130MB to 260MB. With forced GC the clean run was flat at ~108MB and the leaking one rose ~17MB per file.',
+          'afterEach(() => jest.useRealTimers()) belongs in setupTests for any suite that uses fake timers anywhere.',
+          '--forceExit converts a hang into a green build without fixing anything. Use it to unblock a release, never as a resting state.',
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={20} title="Section Index" accent="pink" glyph="📖" span={2}>
         <GuideCode>{`0. RTL Fundamentals                  queries, setup, philosophy
 1. Testing Components                props, events, conditional render
 2. Testing Custom Hooks              renderHook, act, rerender
 3. Testing Async & APIs              MSW, fetch, loading/error states
 4. Waiting, act(), Async Failures    waitFor internals, fake timers, flakes
-5. Testing Forms & Routing           validation, submission, router
-6. Testing Patterns & CI             custom render, factories, coverage
-7. Best Practices & Anti-Patterns    query ladder, what not to test
-8. Layered & Third-Party             AG Grid, Zustand, handler passing
-9. This field guide`}</GuideCode>
+5. Leaking Tests                     cleanup, open handles, heap, --randomize
+6. Testing Forms & Routing           validation, submission, router
+7. Testing Patterns & CI             custom render, factories, coverage
+8. Best Practices & Anti-Patterns    query ladder, what not to test
+9. Layered & Third-Party             AG Grid, Zustand, handler passing
+10. This field guide`}</GuideCode>
         <GuideRules items={[
           'Printing: hit Ctrl/Cmd-P straight from the page — print styles force the light palette regardless of the on-screen toggle, and keep each panel whole across page breaks.',
         ]} />

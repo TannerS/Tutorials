@@ -8,7 +8,7 @@ export default function CheatSheet() {
       kicker="FIELD GUIDE"
       glyph="⚛️"
       tagline="Hooks, re-renders, refs and effects, plus the patterns, styling, routing, state and testing calls that come up daily — the parts that decide whether an app is fast, stable and shippable."
-      meta={['React 18 core', 'measured on 19.2.6', '26 panels']}
+      meta={['React 18 core', 'measured on 19.2.6', '27 panels']}
       page="1 / 1"
       footer="Behaviour marked 'measured' was verified in a real browser. What's new in React 19 has its own section; this page is the core model."
       prev={{ path: '/react18/portals', label: 'Portals, In Depth' }}
@@ -380,6 +380,24 @@ useState(() => expensiveCompute()); // ✅ React calls this once, on mount only`
         <GuideRules items={[
           "Drilling through 2-3 levels that all use the value is fine — plain props. Drilling through layers that only forward it is the smell context fixes.",
           "Don't over-correct: every context consumer re-renders on any value change, so keep fast-changing state (cursor position, per-keystroke form fields) out of it.",
+        ]} />
+      </GuidePanel>
+
+      <GuidePanel n={27} title="Reconciliation — The Four Rules" accent="cyan" glyph="🌲" span={2}>
+        <GuideCode>{`// 1. same position + same TYPE -> update in place, keep state
+// 2. different type          -> destroy the subtree, state and DOM nodes
+// 3. the SAME element object  -> skip the subtree entirely (no memo needed)
+// 4. key identifies a child among its siblings, overriding position
+
+{wide ? <div><Form/></div> : <section><Form/></section>}   // remounts Form
+function Outer() { function Inner() {...} return <Inner/>; }  // remounts EVERY render`}</GuideCode>
+        <GuideRules items={[
+          'The diff compares the new element tree with the PREVIOUS element tree — never the document. Measured on React 19.3.1: a hand-edited DOM node survived a re-render with the same value, 0 mutations.',
+          'Component types are compared by reference, so a component declared inside a component is a new type every render: state, typed text, focus and the DOM node are all replaced.',
+          'Passing <Heavy /> as children from a parent that does not re-render gives free memoisation — 3 parent renders, 1 child render, no memo() involved.',
+          'One row of a list changing text cost ONE characterData mutation and kept every node — identical to hand-optimal imperative code, where ul.innerHTML = … replaced all 6 nodes. React is not faster than the DOM; it is as good as careful code without the bookkeeping.',
+          'Index keys are a correctness bug, not a slow path: the typed value and the useRef stayed with the POSITION while the labels moved. 7 mutations vs 5 — the count is noise.',
+          'Fibers are the persistent half: one per instance, holding state, the hook chain (a linked list in call order) and stateNode. There are exactly TWO fiber trees — five commits produced two objects, alternating.',
         ]} />
       </GuidePanel>
     </GuideLayout>

@@ -407,6 +407,7 @@ const A11yTesting = lazy(() => import('./pages/accessibility/Testing'))
 const CSSSizing = lazy(() => import('./pages/css-mastery/Sizing'))
 const CSSGotchas = lazy(() => import('./pages/css-mastery/Gotchas'))
 const ReactJsx = lazy(() => import('./pages/react18/Jsx'))
+const ReactVirtualDom = lazy(() => import('./pages/react18/VirtualDom'))
 const ReactEvents = lazy(() => import('./pages/react18/Events'))
 const StateChoosing = lazy(() => import('./pages/state-mgmt/Choosing'))
 
@@ -488,6 +489,7 @@ const RTComponents = lazy(() => import('./pages/react-testing/Components'))
 const RTHooks = lazy(() => import('./pages/react-testing/Hooks'))
 const RTAsync = lazy(() => import('./pages/react-testing/Async'))
 const RTAsyncDeepDive = lazy(() => import('./pages/react-testing/AsyncDeepDive'))
+const RTLeaks = lazy(() => import('./pages/react-testing/Leaks'))
 const RTForms = lazy(() => import('./pages/react-testing/Forms'))
 const RTThirdPartyLayered = lazy(() => import('./pages/react-testing/ThirdPartyLayered'))
 const RTPatterns = lazy(() => import('./pages/react-testing/Patterns'))
@@ -682,6 +684,7 @@ function App() {
         <Route path="from-scratch/consensus" element={<FSConsensus />} />
         {/* React 19 */}
         <Route path="react18/jsx" element={<ReactJsx />} />
+        <Route path="react18/virtual-dom" element={<ReactVirtualDom />} />
         <Route path="react18/events" element={<ReactEvents />} />
         <Route path="react18/lifecycle" element={<ReactLifecycle />} />
         <Route path="react18/lifecycle-sim" element={<ReactLifecycleSim />} />
@@ -1009,6 +1012,7 @@ function App() {
         <Route path="react-testing/hooks" element={<RTHooks />} />
         <Route path="react-testing/async" element={<RTAsync />} />
         <Route path="react-testing/async-deep-dive" element={<RTAsyncDeepDive />} />
+        <Route path="react-testing/leaks" element={<RTLeaks />} />
         <Route path="react-testing/forms" element={<RTForms />} />
         <Route path="react-testing/third-party-layered" element={<RTThirdPartyLayered />} />
         <Route path="react-testing/patterns" element={<RTPatterns />} />

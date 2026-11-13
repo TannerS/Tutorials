@@ -170,6 +170,7 @@ export const sections: Section[] = [
     color: '#22d3ee',
     lessons: [
       { id: 'jsx', title: 'What JSX Really Is', path: '/react18/jsx' },
+      { id: 'virtual-dom', title: 'The Virtual DOM, Fibers & Reconciliation', path: '/react18/virtual-dom' },
       { id: 'events', title: "React's Event System", path: '/react18/events' },
       { id: 'lifecycle', title: 'Component Lifecycle', path: '/react18/lifecycle' },
       { id: 'lifecycle-sim', title: '🧪 Lifecycle Simulator', path: '/react18/lifecycle-sim' },
@@ -751,6 +752,7 @@ export const sections: Section[] = [
       { id: 'hooks', title: 'Testing Custom Hooks', path: '/react-testing/hooks' },
       { id: 'async', title: 'Testing Async & APIs', path: '/react-testing/async' },
       { id: 'async-deep-dive', title: 'Waiting, act(), and Async Failure Modes', path: '/react-testing/async-deep-dive' },
+      { id: 'leaks', title: 'Leaking Tests: What Survives, and What Keeps Jest Alive', path: '/react-testing/leaks' },
       { id: 'forms', title: 'Testing Forms & Routing', path: '/react-testing/forms' },
       { id: 'patterns', title: 'Testing Patterns & CI', path: '/react-testing/patterns' },
       { id: 'best-practices', title: 'Best Practices & Anti-Patterns', path: '/react-testing/best-practices' },

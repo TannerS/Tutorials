@@ -251,7 +251,11 @@ Time:        0.401 s, estimated 3 s`}
 
       <h2>The render Function</h2>
       <p>
-        <code>render()</code> mounts your component into a virtual DOM (jsdom) and
+        <code>render()</code> mounts your component into jsdom — a real DOM
+        implementation written in JavaScript, not React&apos;s virtual DOM (the two get
+        conflated constantly; <a href="/react18/virtual-dom">The Virtual DOM, Fibers
+        &amp; Reconciliation</a> separates them, and it matters as soon as you are
+        debugging <a href="/react-testing/leaks">a leaking test</a>). It
         returns an object of query utilities scoped to that render. You can use
         those, but prefer <code>screen</code>, imported directly from the library:
         its queries run against <code>document.body</code>, so there is nothing to

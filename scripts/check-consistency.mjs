@@ -229,6 +229,44 @@ const FACTS = [
     // states it flatly, it does not attribute it to other people first.
     allow: /half true|per[- ]session|first use|not (actually )?pre-?compiled|syntax is checked|often (described|called|said)/i,
   },
+  {
+    id: 'jsdom-is-not-a-virtual-dom',
+    // react-testing/Intro.tsx said render() "mounts your component into a
+    // virtual DOM (jsdom)". jsdom is the opposite of a virtual DOM: a real DOM
+    // implementation, with real Element/Node classes, a real querySelector and
+    // a real MutationObserver -- the measurements in react18/virtual-dom are
+    // React driving jsdom as a host, exactly as it drives a browser. React's
+    // virtual DOM is the element tree, which contains no nodes at all. The
+    // conflation is worth guarding because it is load-bearing for a reader
+    // debugging a leaking test: "which document am I querying" is the bug, and
+    // you cannot ask that question if you think the document is a React
+    // internal.
+    fact: 'jsdom is a real DOM implementation, not React’s virtual DOM',
+    fixedBy: 'measured on React 19.3.1 + jsdom 29.1.1, confirmed in Chromium 149',
+    wrong: /virtual DOM\s*\(\s*jsdom|jsdom\s*[,(]?\s*(a|the)\s+virtual DOM|jsdom\b[^.\n]{0,20}\bis\b[^.\n]{0,20}virtual DOM/i,
+    // The two lessons that separate them have to put both terms in one sentence
+    // to do it, and each such sentence either denies the equation or names what
+    // jsdom actually is.
+    allow: /real DOM|not (a |the |React.s )?virtual DOM|conflated|implementation|muddle/i,
+  },
+  {
+    id: 'jsdom-timers-do-not-keep-jest-alive',
+    // The universal answer to "Jest did not exit one second after the test run
+    // has completed" is a component setInterval with no cleanup. Measured on
+    // Jest 30.5.2 + jest-environment-jsdom 30.5.2: that exact component exits
+    // code 0 in 0.9s and --detectOpenHandles reports NOTHING, because teardown()
+    // calls this.global.close() and jsdom takes its whole timer queue with it.
+    // Swap the timer for one from node:timers and the same test hangs forever
+    // with an open `Timeout` handle. So the symptom means a NODE handle is open
+    // -- a server, a pool, a socket, a node timer -- and a reader who believes
+    // the folklore audits their components instead of their fixtures.
+    fact: 'A leaked jsdom timer does not keep Jest alive; teardown closes the window. Only Node-level handles hang the process',
+    fixedBy: 'measured on Jest 30.5.2, jest-environment-jsdom 30.5.2',
+    wrong: /(setInterval|setTimeout|interval|timer)s?\b[^.\n]{0,100}\b(keeps?|keeping|prevents?|preventing)\b[^.\n]{0,30}(Jest|the (test )?process)\b[^.\n]{0,30}(alive|from exiting|exiting)/i,
+    // The lesson states the myth only in order to disprove it, and every such
+    // sentence either denies the effect or names the real mechanism.
+    allow: /did not|does not|node:timers|Node(-level)? handle|window\.close|zero open handles|clean exit|folklore|outside jsdom/i,
+  },
 ];
 
 // ---------------------------------------------------------------------------
