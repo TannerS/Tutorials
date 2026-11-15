@@ -28,6 +28,39 @@ export default function ReactVirtualDom() {
         <code>key</code>, lost component state, why a component declared inside another
         component resets, why you cannot read the DOM during render.
       </p>
+
+      <InfoBox variant="tip" title="The 30-second version, in plain words">
+        <p>
+          If you read nothing else on this page, read these three sentences. Everything
+          after section 2 is one of them, measured.
+        </p>
+        <ol style={{ marginBottom: 0 }}>
+          <li>
+            An <strong>element</strong> is a plain JavaScript object:{' '}
+            <code>{'{ type: "p", props: { children: "7 items" } }'}</code>. A{' '}
+            <em>tree</em> of them is just that object nested inside{' '}
+            <code>props.children</code>. That tree — objects, no methods, no DOM nodes —
+            is the thing people call the virtual DOM.
+          </li>
+          <li>
+            Re-rendering means React <strong>calls your functions again</strong> and gets
+            a <em>second</em> such tree. It then walks the new tree and the previous tree
+            together, position by position, and notes the differences.
+          </li>
+          <li>
+            Then, in a separate pass, it makes exactly those changes to the real DOM —{' '}
+            <code>textNode.data = &quot;8 items&quot;</code> and nothing else — and
+            throws the element objects away.
+          </li>
+        </ol>
+      </InfoBox>
+
+      <p>
+        That is the whole idea, and it is deliberately unimpressive: a diff between two
+        descriptions, not a clever mirror of the browser. The rest of this page makes each
+        of those three sentences concrete, because the details are where the surprising
+        React behaviours live.
+      </p>
       <InfoBox variant="note" title="How the numbers below were produced">
         <p style={{ marginBottom: 0 }}>
           Every mutation count, node-identity check and fiber dump on this page came
@@ -41,17 +74,221 @@ export default function ReactVirtualDom() {
         </p>
       </InfoBox>
 
-      <h2>1. There Is No Copy of the DOM</h2>
+      <h2>1. What It Actually Is: One Object, Nested</h2>
       <p>
-        The previous lesson established what <code>jsx(...)</code> returns: a plain
-        object with <code>type</code>, <code>props</code> and <code>key</code>. A
-        component returns a tree of those objects, and that tree is the whole of the
-        &ldquo;virtual DOM&rdquo;. It contains no DOM nodes, no methods, no parent
-        pointers and nothing read from the document.
+        Start with a component small enough to hold in your head, and look at the thing
+        it returns. Not a diagram of it — the actual object.
+      </p>
+
+      <CodeBlock language="jsx" title="The component">
+{`function Card({ count }) {
+  return (
+    <div className="card">
+      <h2>Total</h2>
+      <p className="big">{count} items</p>
+    </div>
+  );
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Real output — what Card({ count: 7 }) returns, printed as JSON">
+{`{
+  "type": "div",
+  "props": {
+    "className": "card",
+    "children": [
+      {
+        "type": "h2",
+        "props": { "children": "Total" }
+      },
+      {
+        "type": "p",
+        "props": { "className": "big", "children": "7 items" }
+      }
+    ]
+  }
+}`}
+      </CodeBlock>
+
+      <p>
+        That is it. That is the virtual DOM for this component:{' '}
+        <strong>one object with a <code>type</code> and a <code>props</code>, and the
+        children nested inside <code>props.children</code></strong>. There is no separate
+        &ldquo;tree&rdquo; data structure — the nesting <em>is</em> the tree, the same way
+        a nested JSON object is a tree. Tags became the <code>type</code> string,
+        attributes became props, and <code>{'{count}'}</code> became the plain
+        string <code>&quot;7 items&quot;</code> because the interpolation was evaluated
+        before the object was built.
+      </p>
+
+      <FlowChart
+        title="The same card, in the four forms it takes"
+        chart={"graph TD\n  A[\"&lt;div className='card'&gt;…&lt;/div&gt;\\nthe JSX you type\"] -->|\"compiled ONCE, at build time.\\nthe browser never sees JSX\"| B[\"{ type: 'div', props: { … } }\\nplain objects, nested via props.children\\nTHIS is the 'virtual DOM'\"]\n  B -->|\"React calls your component functions,\\nthen compares this tree with the\\nprevious render's tree\"| C[\"a short list of operations:\\n'set that text node to 8 items'\"]\n  C -->|\"the commit: the only step\\nthat touches the browser\"| D[\"&lt;div class='card'&gt;…\\nreal DOM nodes — the only\\nthing actually on screen\"]\n  style B fill:#1a3329,stroke:#4ade80\n  style D fill:#1a2744,stroke:#5b9cf6"}
+      />
+
+      <h3>A component element is one node until React calls it</h3>
+      <p>
+        One wrinkle that explains a lot later: when you write{' '}
+        <code>{'<Card count={7} />'}</code> you do not get the tree above. You get a
+        single element whose <code>type</code> is <em>the function</em> —{' '}
+        <code>Card</code> itself, not its output. React expands it by calling it, and
+        &ldquo;rendering a component&rdquo; means nothing more than that call:
+      </p>
+
+      <CodeBlock language="text" title="Real output — the same subtree before and after React calls the function">
+{`what <Card count={7} /> is before React touches it:
+  <Card />        type is the FUNCTION ITSELF   props: count
+
+…and after React calls that function (which is all "rendering" means):
+  <div>   props: className
+    <h2>
+      "Total"   <- a string child, not an element
+    <p>   props: className
+      "7 items"   <- a string child, not an element`}
+      </CodeBlock>
+
+      <p>
+        So the tree React ends up holding is built by walking down from the root,
+        calling every component function it meets, and splicing each return value in
+        where the component element sat. Host elements (<code>div</code>,{' '}
+        <code>p</code> — a <code>type</code> that is a string) are the leaves of that
+        process; they are the only ones that become DOM nodes.
+      </p>
+
+      <h3>Why &ldquo;lightweight copy of the DOM&rdquo; is the wrong picture</h3>
+      <p>
+        The word &ldquo;copy&rdquo; suggests something DOM-shaped. It is worth measuring
+        just how little these objects have in common with a DOM node:
+      </p>
+
+      <CodeBlock language="text" title="Real output — the element object vs the DOM node it described">
+{`own properties on the element :
+  production build  -> ["$$typeof", "type", "key", "ref", "props"]          (5)
+  development build -> the same 5, plus _owner, _store and three _debug*   (10)
+
+how many of those are functions   : 0
+frozen (development build only)   : true
+has a parent pointer?             : false     (no parentNode, no parent, nothing)
+holds anything read from the DOM? : false
+
+properties reachable on the real <p> node (own + prototype chain) : 281
+properties reachable on the element object that described it      :  10`}
+      </CodeBlock>
+
+      <p>
+        Five properties against 281. No <code>appendChild</code>, no{' '}
+        <code>parentNode</code>, no <code>style</code>, no event handlers of its own, no
+        way to walk <em>upwards</em>. You cannot query it, you cannot mutate it (in
+        development React freezes it outright), and it knows nothing about the document.
+        A better word than &ldquo;copy&rdquo; is <strong>description</strong>: the
+        element tree is a value describing what the UI should look like, in the same
+        sense that a recipe is not a cake.
+      </p>
+
+      <InfoBox variant="note" title="Where the objects come from">
+        <p style={{ marginBottom: 0 }}>
+          JSX is not involved in any of this at runtime. Your{' '}
+          <code>{'<p className="big">…</p>'}</code> was compiled to a{' '}
+          <code>jsx(&apos;p&apos;, {'{ … }'})</code> call before the browser ever saw it,
+          and that function&apos;s only job is to return the object above — the previous
+          lesson, <a href="/react18/jsx">What JSX Really Is</a>, takes the single element
+          apart field by field, including what <code>$$typeof</code> is for.
+        </p>
+      </InfoBox>
+
+      <h2>2. The Diff, Small Enough to Do by Hand</h2>
+      <p>
+        Now the second sentence from the summary. Bump <code>count</code> from{' '}
+        <code>7</code> to <code>8</code> and React calls <code>Card</code> again, which
+        produces a <em>brand-new</em> tree of brand-new objects. Nothing is reused — even
+        the <code>&lt;h2&gt;</code> element, whose content never changed, is a different
+        object:
+      </p>
+
+      <CodeBlock language="text" title="Real output — the two trees either side of one state change">
+{`render 1 described: {"type":"p","props":{"className":"big","children":"7 items"}}
+render 2 described: {"type":"p","props":{"className":"big","children":"8 items"}}
+same object?         false
+same <h2> element?   false   (every element is rebuilt, even the unchanged one)`}
+      </CodeBlock>
+
+      <p>
+        Those two plain objects are the only inputs the diff gets. Which means you can
+        write the diff yourself — here is one, in about 25 lines, that walks two of these
+        trees together and prints the decision it reaches at each position:
+      </p>
+
+      <CodeBlock language="javascript" title="A toy reconciler over the same two objects">
+{`// props.children is a single value when there is one child, an array when there
+// are several, and absent for a leaf — so both helpers normalise that away.
+const childList = (el) => [el.props.children ?? []].flat();
+const attrNames = (a, b) =>
+  [...new Set([...Object.keys(a.props), ...Object.keys(b.props)])].filter((k) => k !== 'children');
+
+function diff(a, b, path = 'root', out = []) {
+  if (a === undefined) return out.push(\`\${path}: CREATE  \${JSON.stringify(b)}\`), out;
+  if (b === undefined) return out.push(\`\${path}: DELETE  the old node and its subtree\`), out;
+
+  const primitive = (x) => x === null || typeof x !== 'object';
+  if (primitive(a) || primitive(b)) {                      // a text child
+    out.push(a !== b ? \`\${path}: SET TEXT  \${JSON.stringify(a)} -> \${JSON.stringify(b)}\`
+                     : \`\${path}: text identical, nothing to do\`);
+    return out;
+  }
+  if (a.type !== b.type) {                                 // <div> became <span>
+    out.push(\`\${path}: TYPE CHANGED <\${a.type}> -> <\${b.type}>  =>  destroy + rebuild subtree\`);
+    return out;                                            // <- note: no recursion
+  }
+  for (const k of attrNames(a, b)) {                       // same type: compare props
+    if (a.props[k] !== b.props[k]) out.push(\`\${path}: SET ATTR \${k} = \${JSON.stringify(b.props[k])}\`);
+  }
+  const [la, lb] = [childList(a), childList(b)];           // then recurse BY POSITION
+  for (let i = 0; i < Math.max(la.length, lb.length); i++) {
+    diff(la[i], lb[i], \`\${path} > child \${i}\`, out);
+  }
+  return out;
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="text" title="Real output — the toy diff on the two trees above, then what React really did">
+{`  root > child 0 > child 0: text identical, nothing to do
+  root > child 1 > child 0: SET TEXT  "7 items" -> "8 items"
+
+  real React, for the same change:
+    mutations: 1
+      characterData on text node -> "8 items"
+    same <p> DOM node as before?  true
+    html now: <div class="card"><h2>Total</h2><p class="big">8 items</p></div>`}
+      </CodeBlock>
+
+      <p>
+        The toy found one change; React performed one DOM operation and kept every node.
+        That is not a coincidence or a simplification — <strong>the real algorithm has
+        the same shape as those 25 lines</strong>. It walks both trees in step, compares{' '}
+        <code>type</code> first and props second, recurses by position, and refuses to
+        recurse at all when the types differ. Section 5 is just those decisions, named
+        and measured one at a time.
       </p>
       <p>
-        So what does React diff it against? <strong>The element tree from the previous
-        render.</strong> Not the document. That distinction sounds academic until you
+        What the real one adds is mostly bookkeeping rather than cleverness: it matches
+        children by <code>key</code> before falling back to position, it records its
+        decisions as flags on a persistent tree instead of as strings in an array
+        (section 7), it can pause halfway through, and it skips whole subtrees when it
+        can prove nothing changed. Notably, it does <em>not</em> add the one thing people
+        assume — a smarter tree comparison. Optimal tree diffing is O(n³) and React
+        deliberately does not attempt it.
+      </p>
+
+      <h2>3. There Is No Copy of the DOM</h2>
+      <p>
+        Look again at what the toy diff was given: two element trees, and no access to
+        the document at all. The real reconciler is in the same position, and that is the
+        single most load-bearing fact on this page. React compares{' '}
+        <strong>the new element tree with the element tree from the previous
+        render</strong> — never with what is actually on screen.
+      </p>
+      <p>
+        It sounds academic until you
         edit the DOM behind React&apos;s back and watch what it does and does not
         notice:
       </p>
@@ -112,7 +349,7 @@ watched.setAttribute('data-hand', 'yes');
         chart={"graph TD\n  A[\"setState / new props\"] --> B[\"RENDER PHASE\\ncall your component functions\"]\n  B --> C[\"a NEW tree of element objects\"]\n  C --> D[\"RECONCILE\\ncompare new elements with the\\nPREVIOUS elements, fiber by fiber\"]\n  D --> E[\"mark each fiber with flags:\\nPlacement / Update / Deletion\"]\n  E --> F[\"COMMIT PHASE\\nwalk the marked fibers and call\\nappendChild / setAttribute / data =\"]\n  F --> G[\"the real DOM, now in sync\"]\n  H[\"the document itself\"] -.->|\"never read\"| D\n  style D fill:#1a3329,stroke:#4ade80\n  style H fill:#3b1a1a,stroke:#f87171"}
       />
 
-      <h2>2. What a Re-render Actually Costs</h2>
+      <h2>4. What a Re-render Actually Costs</h2>
       <p>
         The same list rendered four ways, with a <code>MutationObserver</code> counting
         every DOM operation. One row&apos;s text changes from <code>beta</code> to{' '}
@@ -208,7 +445,7 @@ IMPERATIVE B: node.firstChild.data = ...  (the optimum)
         </p>
       </InfoBox>
 
-      <h2>3. The Four Rules the Diff Follows</h2>
+      <h2>5. The Four Rules the Diff Follows</h2>
       <p>
         Reconciliation is not a general tree-diff. A real minimal-edit-distance diff
         between two trees is O(n³), which is unusable, so React applies a handful of
@@ -379,7 +616,7 @@ child element rebuilt each render: { "shell": 3, "heavy": 3 }`}
         there is no key. The next section measures what that changes.
       </p>
 
-      <h2>4. Keys, Measured</h2>
+      <h2>6. Keys, Measured</h2>
       <p>
         A two-row list, where each row contains an uncontrolled{' '}
         <code>&lt;input&gt;</code> the user has typed into and a per-mount id from a{' '}
@@ -460,7 +697,7 @@ after prepending ZERO:
         </p>
       </InfoBox>
 
-      <h2>5. What the Elements Become: Fibers</h2>
+      <h2>7. What the Elements Become: Fibers</h2>
       <p>
         Element objects are created and thrown away on every render. The thing that{' '}
         <em>persists</em> — the thing holding your state, your effect list, the DOM node
@@ -583,7 +820,7 @@ distinct <p> fiber objects across five commits: 2`}
         </p>
       </InfoBox>
 
-      <h2>6. Render and Commit Are Two Separate Passes</h2>
+      <h2>8. Render and Commit Are Two Separate Passes</h2>
       <p>
         Reconciliation happens in the render pass; DOM writes happen in the commit pass.
         It is tempting to treat that as an implementation detail until you notice it is
@@ -661,7 +898,7 @@ function Watcher({ n }) {
         write sits relative to your code.
       </p>
 
-      <h2>7. Four Things &ldquo;Virtual DOM&rdquo; Is Not</h2>
+      <h2>9. Four Things &ldquo;Virtual DOM&rdquo; Is Not</h2>
       <p>
         Most of the confusion around the term comes from it being used for four
         different things. Separating them is the single most useful thing on this page.
@@ -717,7 +954,7 @@ function Watcher({ n }) {
               <strong>A copy of the DOM</strong>
             </td>
             <td>
-              Measured in section 1: React holds its own two element trees and never
+              Measured in section 3: React holds its own two element trees and never
               reads the document. The word &ldquo;virtual&rdquo; means &ldquo;a
               description of a UI&rdquo;, not &ldquo;a mirror of what is on
               screen&rdquo;.
@@ -738,7 +975,7 @@ function Watcher({ n }) {
         </p>
       </InfoBox>
 
-      <h2>8. The Shape to Remember</h2>
+      <h2>10. The Shape to Remember</h2>
       <ul>
         <li>
           <strong>Elements</strong> are disposable descriptions. <strong>Fibers</strong>{' '}
